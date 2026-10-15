@@ -184,11 +184,59 @@ def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() ->
     assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
 
 
-def test_quote_v4_preflight_proves_the_reviewed_schedule_stays_disabled() -> None:
-    """The hardening-phase effect guard fails closed if the schedule is armed."""
+def test_quote_v4_preflight_binds_schedule_arming_to_the_reviewed_activation() -> None:
+    """Arming is only legitimate when the reviewed checkpoint authorizes writes."""
 
     workflow = _workflow()
 
-    assert 'if schedule["enabled"] is not False:' in workflow
-    assert "read-only preflight must not proceed on an armed schedule" in workflow
+    assert 'if schedule["enabled"] is not activation["provider_writes_authorized"]:' in workflow
+    assert "read-only preflight must not proceed on an unreviewed arming state" in workflow
+    assert 'if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:' in workflow
     assert 'digest == activation["queue_digest"] == schedule["successor_queue_digest"]' in workflow
+
+
+def test_quote_v4_preflight_inertness_is_proven_by_the_run_not_by_an_authorization_flag() -> None:
+    """An activated checkpoint must not make the read-only preflight less inert."""
+
+    workflow = _workflow()
+    step = workflow.split("      - name: Assert preflight remained provider-inert", 1)[1].split(
+        "      - name: Publish exact read-only preflight evidence", 1
+    )[0]
+
+    # Behavioural inertness: nothing was written, nothing was materialized and the
+    # workflow owns no publishing entrypoint at all.
+    assert 'git -C "$STATE_DIR" status --porcelain' in step
+    assert "lordchrist-dispatch.json" in step
+    assert "lordchrist-rendered.json" in step
+    assert "lordchrist-outcome.json" in step
+    # The active selection legitimately inherits write authorization from the reviewed
+    # activation, so it must never be used as an inertness signal.
+    assert 'selection["provider_writes_authorized"]' not in step
+    assert 'render_proof["provider_writes_authorized"] != activation["provider_writes_authorized"]' in step
+    assert 'schedule["enabled"] is not activation["provider_writes_authorized"]' in step
+
+    # The obsolete hardening-phase assertions must not come back: they would fail an
+    # activated release for reasons that say nothing about this run's effects.
+    assert 'activation["provider_writes_authorized"] is not False' not in step
+    assert 'render_proof["provider_writes_authorized"] is not False' not in step
+
+
+def test_quote_v4_preflight_owns_no_provider_write_entrypoint_at_all() -> None:
+    """Structural inertness: the workflow cannot publish, whatever the activation says."""
+
+    workflow = _workflow()
+
+    for entrypoint in (
+        "telegram_cli send",
+        "telegram_cli prepare",
+        "render-dispatch",
+        "sendMessage",
+        "LORDCHRIST_POSTING_ENABLED",
+    ):
+        assert entrypoint not in workflow, entrypoint
+
+    # The only live provider contact is the read-only identity preflight subcommand,
+    # which reads getMe/getChat and never sends.
+    assert "            preflight \\" in workflow
+    assert "--mode manual" in workflow
+    assert workflow.count("video_channel_manager.telegram_cli") == 2

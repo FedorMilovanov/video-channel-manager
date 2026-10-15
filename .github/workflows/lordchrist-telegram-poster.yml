@@ -41,7 +41,14 @@ env:
   PYTHONPATH: src
   PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
-  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
+  PRESENTATION_POLICY_V3_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
+  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
+  DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
+  DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
   PRODUCTION_CONFIG_PATH: content/telegram/lordchrist/production-schedule.json
   SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
   SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
@@ -55,6 +62,7 @@ env:
   DEPTH_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
   DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
   ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
+  QUOTE_CHECKPOINT_PATH: .runtime/lordchrist-quote-runtime-checkpoint.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
   PREDECESSOR_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
@@ -289,6 +297,58 @@ jobs:
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
+
+      - name: Bind the reviewed quote-v4 runtime activation checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          provider_write_args=()
+          if [[ "${{ steps.intent.outputs.do_publish }}" == "true" ]]; then
+            provider_write_args+=(--require-provider-writes)
+          fi
+          python -m video_channel_manager.telegram_quote_runtime_activation \
+            --activation "$RUNTIME_ACTIVATION_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            --v3-policy "$PRESENTATION_POLICY_V3_PATH" \
+            --migration "$PRESENTATION_MIGRATION_PATH" \
+            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
+            --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            "${provider_write_args[@]}" \
+            --output "$QUOTE_CHECKPOINT_PATH"
+
+          python - <<'PY_ARM'
+          import json
+          import os
+          from pathlib import Path
+
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          schedule = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
+          if schedule["enabled"] is not activation["provider_writes_authorized"]:
+              raise SystemExit(
+                  "Reviewed schedule arming disagrees with the rolling runtime activation checkpoint; "
+                  "autonomous dispatch may only be armed by the same reviewed activation that authorizes writes."
+              )
+          if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
+              raise SystemExit("Reviewed schedule presentation policy differs from the runtime activation checkpoint.")
+          PY_ARM
+
+
+      - name: Prove the exact next quote-v4 reading unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_v4_render_proof \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            --activation "$RUNTIME_ACTIVATION_PATH" \
+            --output .runtime/lordchrist-next-reading-unit.json
 
       - name: Preview next publication
         if: steps.intent.outputs.do_preflight != 'true' && steps.intent.outputs.do_publish != 'true'
@@ -707,6 +767,7 @@ jobs:
           include-hidden-files: true
 
       - name: Persist exact Telegram result
+        id: persist_result
         if: steps.persist_intent.outputs.persisted == 'true' && always()
         shell: bash
         run: |
@@ -761,6 +822,15 @@ jobs:
             echo "Telegram did not return a fully verified success. Review the state ledger before any ambiguous retry." >&2
             exit 4
           fi
+
+      - name: Report actual quote publication status
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EXECUTION_REASON: ${{ steps.intent.outputs.reason }}
+          DURABLE_RESULT: ${{ steps.persist_result.outcome }}
+        shell: bash
+        run: python -m video_channel_manager.telegram_quote_status
 
   historical-rich:
     if: >-

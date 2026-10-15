@@ -12,6 +12,7 @@ from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_publisher import load_ledger
 from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID, build_depth_runtime_queue
 from video_channel_manager.telegram_quote_presentation_migration import validate_migration
+from video_channel_manager.telegram_quote_progress import validate_quote_progress
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue
 from video_channel_manager.telegram_quote_source_audit import (
     assert_future_exact_source_coverage,
@@ -30,7 +31,9 @@ class RuntimeActivation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-successor-depth-runtime-activation"]
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2]
+    progress_policy: Literal["exact_checkpoint", "verified_prefix"] = "exact_checkpoint"
+    published_history_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
     release_id: Literal["lordchrist-successor-depth-v2"]
@@ -55,6 +58,17 @@ class RuntimeActivation(BaseModel):
             raise ValueError("runtime activation checkpoint must cover all 60 positional slots")
         if self.required_published_prefix < self.sealed_handoff_published_prefix:
             raise ValueError("runtime activation cannot move behind the sealed 14/46 handoff")
+        if self.schema_version == 1:
+            if self.progress_policy != "exact_checkpoint" or self.published_history_sha256 is not None:
+                raise ValueError("schema-v1 runtime activation remains an exact checkpoint")
+        elif (
+            self.progress_policy != "verified_prefix"
+            or self.published_history_sha256 is None
+            or self.required_published_prefix != 15
+        ):
+            raise ValueError(
+                "schema-v2 activation requires verified-prefix progress and exact accepted 15-post history"
+            )
         return self
 
 
@@ -164,42 +178,16 @@ def validate_runtime_checkpoint(
         raise ValueError("runtime queue differs from the rolling activation identity")
 
     ledger: TelegramLedger = load_ledger(ledger_path, queue)
-    expected_ids = [post.publication_id for post in queue.posts]
-    if list(ledger.entries) != expected_ids:
-        raise ValueError("durable ledger ordering/inventory differs from the exact runtime queue")
-
-    boundary = activation.required_published_prefix
-    for post in queue.posts[:boundary]:
-        entry = ledger.entries[post.publication_id]
-        if entry.state != "published" or entry.provider_effect != "verified" or not entry.message_id:
-            raise ValueError(f"runtime checkpoint requires verified published prefix: {post.publication_id}")
-        if entry.payload_sha256 != post.payload_sha256:
-            raise ValueError(f"published runtime checkpoint payload differs: {post.publication_id}")
-
-    pristine_effects = {"impossible", "not_dispatched", "confirmed_absent"}
-    for post in queue.posts[boundary:]:
-        entry = ledger.entries[post.publication_id]
-        if entry.state != "pending" or entry.provider_effect not in pristine_effects:
-            raise ValueError(f"runtime checkpoint requires pristine pending suffix: {post.publication_id}")
-        if any(
-            value is not None
-            for value in (
-                entry.intent_id,
-                entry.dispatch_mode,
-                entry.scheduled_slot,
-                entry.workflow_run_id,
-                entry.workflow_run_attempt,
-                entry.github_sha,
-                entry.github_workflow_sha,
-                entry.attempted_at_utc,
-                entry.published_at_utc,
-                entry.message_id,
-                entry.message_url,
-            )
-        ):
-            raise ValueError(f"pending runtime checkpoint retains dispatch/provider identity: {post.publication_id}")
-        if entry.payload_sha256 != post.payload_sha256:
-            raise ValueError(f"pending runtime checkpoint payload differs: {post.publication_id}")
+    initial_boundary = activation.required_published_prefix
+    boundary = validate_quote_progress(
+        queue,
+        ledger,
+        minimum_published=initial_boundary,
+        allow_progress=activation.progress_policy == "verified_prefix",
+        history_digest=activation.published_history_sha256,
+        policy=policy,
+        evidence_root=ledger_path.parent / "dispatches",
+    )
 
     migration = validate_migration(
         migration_path=migration_path,
@@ -209,8 +197,9 @@ def validate_runtime_checkpoint(
         candidate_path=candidate_path,
         translation_ledger_path=translation_ledger_path,
         integrity_amendment_path=integrity_amendment_path,
+        allow_verified_progress=activation.progress_policy == "verified_prefix",
     )
-    if migration["published_boundary"] != boundary:
+    if migration["published_boundary"] != initial_boundary:
         raise ValueError("presentation migration boundary differs from the rolling activation checkpoint")
 
     web_audit = load_source_web_audit(source_web_audit_path)
@@ -230,7 +219,9 @@ def validate_runtime_checkpoint(
         "queue_digest": activation.queue_digest,
         "presentation_policy_id": policy.policy_id,
         "published_verified": boundary,
-        "pending_pristine": activation.required_pending_suffix,
+        "pending_pristine": len(queue.posts) - boundary,
+        "initial_published_prefix": initial_boundary,
+        "queue_complete": boundary == len(queue.posts),
         "next_sequence": next_post.sequence if next_post is not None else None,
         "next_publication_id": next_post.publication_id if next_post is not None else None,
         "exact_future_source_urls": len(set(exact_sources.values())),
@@ -257,6 +248,7 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--depth-audit", type=Path, required=True)
     root.add_argument("--replacements", type=Path, required=True)
     root.add_argument("--require-provider-writes", action="store_true")
+    root.add_argument("--output", type=Path)
     return root
 
 
@@ -277,7 +269,11 @@ def main() -> int:
         replacements_path=args.replacements,
         require_provider_writes=args.require_provider_writes,
     )
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    payload = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(payload + "\n", encoding="utf-8")
+    print(payload)
     return 0
 
 

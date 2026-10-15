@@ -21,6 +21,7 @@ from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_publisher import load_ledger, load_queue
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue
 from video_channel_manager.telegram_quote_runtime_activation import load_runtime_activation
+from video_channel_manager.telegram_quote_progress import validate_quote_progress
 
 V4_POLICY_ID = "lordchrist-quote-v4"
 V4_ENTITY_LAYOUT = ("bold", "blockquote", "italic")
@@ -60,32 +61,36 @@ def build_render_proof(
         raise ValueError("render proof queue differs from the rolling activation checkpoint")
 
     ledger = load_ledger(ledger_path, queue)
-    published = [post for post in queue.posts if ledger.entries[post.publication_id].state == "published"]
-    pending = [post for post in queue.posts if ledger.entries[post.publication_id].state == "pending"]
-    if len(published) + len(pending) != len(queue.posts):
-        raise ValueError("render proof requires an exact published/pending ledger split")
-    if len(published) != activation.required_published_prefix:
-        raise ValueError(
-            f"render proof published prefix is {len(published)}, checkpoint requires "
-            f"{activation.required_published_prefix}"
+    boundary = validate_quote_progress(
+        queue,
+        ledger,
+        minimum_published=activation.required_published_prefix,
+        allow_progress=activation.progress_policy == "verified_prefix",
+        history_digest=activation.published_history_sha256,
+        policy=policy,
+        evidence_root=ledger_path.parent / "dispatches",
+    )
+    base = {
+        "release_id": activation.release_id,
+        "queue_digest": activation.queue_digest,
+        "presentation_policy_id": policy.policy_id,
+        "presentation_policy_sha256": policy.digest,
+        "published_prefix": boundary,
+        "pending_suffix": len(queue.posts) - boundary,
+        "provider_writes_authorized": activation.provider_writes_authorized,
+        "queue_complete": boundary == len(queue.posts),
+    }
+    if boundary == len(queue.posts):
+        return dict(
+            base,
+            next_sequence=None,
+            next_publication_id=None,
+            entity_layout=[],
+            rendered_text_length=0,
+            provider_payload_sha256=None,
+            attribution_line_immediately_follows_quotation=True,
         )
-    if len(pending) != activation.required_pending_suffix:
-        raise ValueError(
-            f"render proof pending suffix is {len(pending)}, checkpoint requires {activation.required_pending_suffix}"
-        )
-    for post in published:
-        entry = ledger.entries[post.publication_id]
-        if entry.provider_effect != "verified" or not entry.message_id:
-            raise ValueError(f"render proof published entry is not provider-verified: {post.publication_id}")
-
-    if not pending:
-        raise ValueError("render proof requires at least one pending publication")
-    next_post = pending[0]
-    if next_post.sequence != len(published) + 1:
-        raise ValueError(
-            f"strict next publication is sequence {next_post.sequence}, "
-            f"but the verified published prefix is {len(published)}"
-        )
+    next_post = queue.posts[boundary]
 
     # The reviewed successor runtime card exposes the same quote-card fields the
     # renderer consumes; the runtime type is intentionally narrower than the
@@ -96,8 +101,16 @@ def build_render_proof(
     attribution = f"— {reviewed_attribution}"
     if reviewed_attribution.count("«") != reviewed_attribution.count("»"):
         raise ValueError("quote-v4 source line must keep balanced quotation marks")
-    if "«" in reviewed_attribution.split("«", 1)[1].split("»", 1)[0][-1:]:
-        raise ValueError("quote-v4 source line must not nest quotation marks")
+    depth = 0
+    for character in reviewed_attribution:
+        if character == "«":
+            depth += 1
+            if depth > 1:
+                raise ValueError("quote-v4 source line must not nest quotation marks")
+        elif character == "»":
+            depth -= 1
+            if depth < 0:
+                raise ValueError("quote-v4 source line must keep ordered quotation marks")
 
     if not rendered.text.startswith(f"{title}\n"):
         raise ValueError("quote-v4 rendering must open with the reviewed title line")
@@ -134,12 +147,7 @@ def build_render_proof(
         )
 
     return {
-        "release_id": activation.release_id,
-        "queue_digest": activation.queue_digest,
-        "presentation_policy_id": policy.policy_id,
-        "presentation_policy_sha256": policy.digest,
-        "published_prefix": len(published),
-        "pending_suffix": len(pending),
+        **base,
         "next_sequence": next_post.sequence,
         "next_publication_id": next_post.publication_id,
         "attribution_line": reviewed_attribution,
