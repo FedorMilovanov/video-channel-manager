@@ -24,9 +24,14 @@ def test_v4_runtime_activation_is_exact_provider_inert_15_45_checkpoint() -> Non
     assert activation.sealed_handoff_published_prefix == 14
     assert activation.required_published_prefix == 15
     assert activation.required_pending_suffix == 45
+    assert activation.schema_version == 2
+    assert activation.progress_policy == "verified_prefix"
+    assert (
+        activation.published_history_sha256 == "sha256:970aeef63ee15ee319a550324ab75bb76ca1efba357292f538ee49dcb1ef5283"
+    )
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v4"
     assert activation.presentation_policy_sha256 == policy.digest
-    assert activation.provider_writes_authorized is False
+    assert activation.provider_writes_authorized is True
 
 
 def test_v4_runtime_activation_points_only_to_reviewed_migration_and_source_evidence() -> None:

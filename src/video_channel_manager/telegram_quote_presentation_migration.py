@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from video_channel_manager.telegram_models import SHA256_PATTERN, TelegramLedger
 from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID, build_depth_runtime_queue
+from video_channel_manager.telegram_quote_progress import validate_quote_progress
 
 MIGRATION_FILENAME = "successor-depth-presentation-migration-v1.json"
 EXPECTED_BOUNDARY = 15
@@ -63,6 +64,7 @@ def validate_migration(
     candidate_path: Path,
     translation_ledger_path: Path,
     integrity_amendment_path: Path,
+    allow_verified_progress: bool = False,
 ) -> dict[str, object]:
     migration = load_migration(migration_path)
     v3 = load_presentation_policy(v3_policy_path)
@@ -86,40 +88,21 @@ def validate_migration(
     if ledger.queue_digest != migration.queue_digest:
         raise ValueError("durable state ledger differs from migration queue digest")
 
-    expected_ids = [post.publication_id for post in queue.posts]
-    if set(ledger.entries) != set(expected_ids):
-        missing = sorted(set(expected_ids) - set(ledger.entries))
-        extra = sorted(set(ledger.entries) - set(expected_ids))
-        raise ValueError(f"durable ledger inventory differs from runtime queue: missing={missing}, extra={extra}")
-
-    for post in queue.posts[: migration.published_boundary]:
-        entry = ledger.entries[post.publication_id]
-        if entry.state != "published" or entry.provider_effect != "verified":
-            raise ValueError(
-                f"published migration prefix is not immutable provider-verified history: {post.publication_id}"
-            )
-        if entry.payload_sha256 != post.source_payload_sha256:
-            raise ValueError(f"published migration prefix payload differs from runtime identity: {post.publication_id}")
-
-    for post in queue.posts[migration.published_boundary :]:
-        entry = ledger.entries[post.publication_id]
-        if entry.state != "pending" or entry.provider_effect not in {
-            "impossible",
-            "not_dispatched",
-            "confirmed_absent",
-        }:
-            raise ValueError(f"future migration suffix is not pristine pending state: {post.publication_id}")
-        if entry.intent_id is not None or entry.message_id is not None:
-            raise ValueError(f"future migration suffix already has dispatch/provider identity: {post.publication_id}")
-        if entry.payload_sha256 != post.source_payload_sha256:
-            raise ValueError(f"future migration suffix payload differs from runtime identity: {post.publication_id}")
+    boundary = validate_quote_progress(
+        queue,
+        ledger,
+        minimum_published=migration.published_boundary,
+        allow_progress=allow_verified_progress,
+        policy=v4,
+        evidence_root=ledger_path.parent / "dispatches",
+    )
 
     return {
         "release_id": migration.release_id,
         "queue_digest": migration.queue_digest,
         "published_boundary": migration.published_boundary,
-        "published_verified": migration.published_boundary,
-        "pending_pristine": EXPECTED_TOTAL - migration.published_boundary,
+        "published_verified": boundary,
+        "pending_pristine": EXPECTED_TOTAL - boundary,
         "from_policy_id": migration.from_policy_id,
         "to_policy_id": migration.to_policy_id,
         "provider_writes_authorized": migration.provider_writes_authorized,

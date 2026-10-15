@@ -12,9 +12,9 @@
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
 5. только затем task-specific research/evidence.
 
-## Rolling quote-v4 — reviewed evidence для остаточных 45 карточек
+## Quote-v4 — непрерывная публикация reviewed-очереди (#692)
 
-Rolling-релиз depth-v2 (`successor-depth-runtime-activation-v4.json`) публикует остаточную очередь после последовательности 15. Пока `enabled = false`, доказательства reviewed-слоя читаются только preflight-ом:
+Релиз depth-v2 (`successor-depth-runtime-activation-v4.json`, schema v2) связывает начальную границу **15 published / 45 pending**, exact hash всей принятой истории 1–15 и политику `verified_prefix`. Это граница миграции, а не требование навсегда оставаться на 15 постах. После каждой verified-публикации допускается только непрерывный рост prefix; для каждого нового поста обязательны durable reviewed v4 `dispatches/<run>-<attempt>/rendered.json`, точный target и pristine remaining suffix. Неоднозначные outcomes, пробел в порядке или изменённая история блокируют продолжение. Доказательства reviewed-слоя:
 
 ```text
 quote-standalone-review-v1.json      — 45 reviewed карточек 16..60: opening class, title-context resolution, пометки ревьюера
@@ -26,7 +26,7 @@ quote-depth-replacements-v1.json     — reviewed replacement-карточки (
 
 Правило карточки: reader-facing подпись — это **reviewed строка из карточки, verbatim**; рендер никогда не выводит её заново из evidence identity. Цитата и подпись образуют одну единицу чтения (`\n`), затем обычный абзацный воздух до редакционного текста. Короткие полные афоризмы допустимы; длина цитаты не является критерием качества.
 
-Канонический read-only preflight — `.github/workflows/lordchrist-quote-v4-preflight.yml` (20 шагов, provider-inert). Он падает closed, если расписание включено: пока идёт hardening, `production-schedule.json` обязан оставаться `enabled = false`, а включение — отдельное reviewed изменение активации.
+Канонический read-only preflight — `.github/workflows/lordchrist-quote-v4-preflight.yml` (provider-inert). Он допустим как на выключенном, так и на reviewed-включённом расписании: `enabled` обязан совпадать с `provider_writes_authorized`, а policy digest — с activation checkpoint. Инертность доказывается отсутствием отправок/intent/outcome и неизменным state checkout, а не вечным запретом записи. Только main является production baseline.
 
 ### Canary для последовательности 16
 
@@ -38,7 +38,11 @@ queue digest  sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359
 policy        lordchrist-quote-v4 sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f
 ```
 
-Ожидаемый результат: ровно один новый пост от `preaching_mp3_bot` (8716602202) в @lordchrist (-1001295216957); жирный заголовок, native blockquote, подпись `— Чарльз Сперджен, проповедь «Божественный суверенитет», 1856` непосредственно под цитатой без пустой строки, затем обычный абзац и хэштеги; durable ledger переходит в 15 опубликованных / 45 pending → 16 опубликованных / 44 pending ровно один раз, с `message_url`; дублей и backfill нет. Любое отклонение — fail closed: последовательность 17 не публикуется, инцидент фиксируется, состояние сверяется read-only с провайдером.
+Ожидаемый результат: ровно один новый пост от `preaching_mp3_bot` (8716602202) в @lordchrist (-1001295216957); жирный заголовок, native blockquote, подпись `— Чарльз Сперджен, проповедь «Божественный суверенитет», 1856` непосредственно под цитатой без пустой строки, затем обычный абзац и хэштеги; durable ledger переходит в 15 опубликованных / 45 pending → 16 опубликованных / 44 pending ровно один раз, с `message_url`; дублей и backfill нет. Любое отклонение — fail closed: последовательность 17 не публикуется, инцидент фиксируется, состояние сверяется read-only с провайдером. После **успешного** canary verified receipt плюс точное durable v4-оформление разрешают №17 и далее без ручного переписывания checkpoint на каждом cron. Проверяется весь positional range 15..60; на 60 очередь корректно завершается, не запускается заново.
+
+### Операционный контроль
+
+Каждый запуск publisher пишет `GITHUB_STEP_SUMMARY` и `.runtime/lordchrist-publication-status.json`: `PUBLISHED` только при verified ответе и успешной durable-записи; `PAUSED`, `NO_SEND`, `BLOCKED`, `EXHAUSTED` не являются публикацией. При остатке ≤7 выдаётся предупреждение о reviewed successor. Корпус конечен: активация не разрешает генерировать или отправлять непроверенные новые цитаты автоматически. Дефект перевода №44 остаётся явно учтён в `quote-pending-content-findings-v1.json`; его исправляют новым reviewed release/rebind, не скрытой правкой sealed bytes.
 
 **Research drafts не являются presentation authority.** Старый draft может хранить правильные факты и source anchors, но его типографику нельзя механически копировать, если она расходится с текущими стандартами.
 
@@ -54,7 +58,7 @@ policy        lordchrist-quote-v4 sha256:a87dd04d605a749c84ecd47d18c127dd921ddde
 
 не является текущим визуальным шаблоном Telegram.
 
-## Короткая quote-линия — текущий production
+## Историческая короткая quote-линия / source-v1 policy
 
 Canonical policy:
 
@@ -63,7 +67,7 @@ presentation-policy.json
 policy_id = lordchrist-editorial-v2
 ```
 
-Короткая линия остаётся живым production-форматом и не должна переписывать immutable source cards. `lordchrist-editorial-v2` выбирает для основного акцента самую содержательную прямую цитату, сохраняет спокойную типографику attribution и текущие spacing/link-preview правила.
+Эта policy сохранена для исходной линии и source-v1 provenance. Текущий depth-v2 publisher использует `presentation-policy-v4.json`; нельзя откатывать его на source policy ради обхода gates. Immutable source cards не переписываются. `lordchrist-editorial-v2` выбирает для основного акцента самую содержательную прямую цитату, сохраняет спокойную типографику attribution и текущие spacing/link-preview правила.
 
 Renderer реализован в:
 
