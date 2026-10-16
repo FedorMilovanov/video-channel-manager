@@ -31,7 +31,6 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     runtime_activation = json.loads(
         (CONTENT / "successor-depth-runtime-activation-v5.json").read_text(encoding="utf-8")
     )
-    v4_policy = load_presentation_policy(CONTENT / "presentation-policy-v4.json")
     v5_policy = load_presentation_policy(CONTENT / "presentation-policy-v5.json")
     assert activation.required_published_prefix == 14
     assert activation.required_pending_suffix == 46

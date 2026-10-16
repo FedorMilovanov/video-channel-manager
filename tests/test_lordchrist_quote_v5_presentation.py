@@ -111,9 +111,7 @@ def test_quote_v5_pending_suffix_renders_only_three_reviewed_titles() -> None:
         integrity_amendment_path=CONTENT / "successor-integrity-amendments-v1.json",
     )
     titled = [
-        post.sequence
-        for post in queue.posts[16:]
-        if post.payload_sha256 in policy.reviewed_title_payload_sha256s
+        post.sequence for post in queue.posts[16:] if post.payload_sha256 in policy.reviewed_title_payload_sha256s
     ]
 
     assert titled == [17, 32, 36]

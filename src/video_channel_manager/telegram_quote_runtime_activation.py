@@ -177,8 +177,6 @@ def validate_runtime_checkpoint(
 ) -> dict[str, object]:
     activation = load_runtime_activation(activation_path)
     policy = load_presentation_policy(presentation_policy_path)
-    if activation.schema_version == 3 and v4_policy_path is None:
-        raise ValueError("schema-v3 activation validation requires the immutable quote-v4 policy path")
     if activation.presentation_policy_id != policy.policy_id:
         raise ValueError("runtime activation presentation policy id differs from the loaded policy")
     if activation.presentation_policy_sha256 != policy.digest:
@@ -210,9 +208,15 @@ def validate_runtime_checkpoint(
         evidence_root=ledger_path.parent / "dispatches",
     )
 
+    if activation.schema_version == 3:
+        if v4_policy_path is None:
+            raise ValueError("schema-v3 activation validation requires the immutable quote-v4 policy path")
+        migration_source_policy_path = v4_policy_path
+    else:
+        migration_source_policy_path = v3_policy_path
     migration = validate_migration(
         migration_path=migration_path,
-        from_policy_path=v4_policy_path if activation.schema_version == 3 else v3_policy_path,
+        from_policy_path=migration_source_policy_path,
         to_policy_path=presentation_policy_path,
         ledger_path=ledger_path,
         candidate_path=candidate_path,
@@ -255,9 +259,7 @@ def validate_runtime_checkpoint(
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(
-        description="Validate the rolling LordChrist quote runtime activation checkpoint."
-    )
+    root = argparse.ArgumentParser(description="Validate the rolling LordChrist quote runtime activation checkpoint.")
     root.add_argument("--activation", type=Path, required=True)
     root.add_argument("--presentation-policy", type=Path, required=True)
     root.add_argument("--v3-policy", type=Path, required=True)

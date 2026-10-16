@@ -76,9 +76,7 @@ def build_render_proof(
         entry.payload_sha256 for entry in review.entries if entry.opening == "title_resolved_anaphora"
     }
     if reviewed_title_payloads != set(policy.reviewed_title_payload_sha256s):
-        raise ValueError(
-            "quote-v5 reviewed title bindings differ from the standalone review title-resolved payloads"
-        )
+        raise ValueError("quote-v5 reviewed title bindings differ from the standalone review title-resolved payloads")
 
     queue = load_queue(queue_path)
     if not isinstance(queue, SuccessorRuntimeQueue):
