@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "publication_id": "lordchrist-successor-depth-v2-16-spurgeon-sovereignty-comfort",
+  "sequence": 16,
+  "intent_id": "8e0e1282c675c467343e5626545f04a0",
+  "workflow_run_id": "38893001001",
+  "workflow_run_attempt": "1",
+  "github_sha": "17c4521d44a305964fb0d7177c98e71c5e81636f",
+  "github_workflow_sha": "17c4521d44a305964fb0d7177c98e71c5e81636f",
+  "payload_sha256": "sha256:08d7ae93b21177ed921954d0edf35abada141931d73327f6a45a54488326519f",
+  "text": "Нет свойства Бога более утешительного для Его детей, чем учение о Божественном суверенитете.\n\n— Чарльз Сперджен, проповедь «Божественный суверенитет», 1856\n\nСперджен не превращает суверенитет в холодную схему детерминизма. Для верующего именно Божье господство означает, что скорбь не выпала из Его рук, не победила Его замысел и не стала областью, где Бог перестал быть Царём.\n\n#Сперджен #Суверенитет #Провидение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-16T11:19:39.825770Z"
+  },
+  "prepared_at_utc": "2026-10-16T11:19:40.876986Z"
+}
