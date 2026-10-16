@@ -13,7 +13,7 @@
   "catchup_time": "21:17",
   "slots": {
     "morning": {
-      "cron": "17 9 * * *",
+      "cron": "17 6 * * *",
       "time": "09:17",
       "iso_weekdays": [
         1,
@@ -27,7 +27,7 @@
       "max_lateness_minutes": 720
     },
     "evening": {
-      "cron": "17 21 * * 2,5,0",
+      "cron": "17 18 * * 2,5,0",
       "time": "21:17",
       "iso_weekdays": [
         2,
@@ -42,7 +42,7 @@
   "backfill_policy": "none",
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "successor_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
-  "presentation_policy_id": "lordchrist-quote-v4",
-  "presentation_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
-  "activation_note": "Autonomous depth-v2 quote-v4 restoration authorized under issue #692 on 2026-10-15. Initial state: 15 published and 45 pristine pending; sequence 16 is first. Only contiguous verified progress with exact durable v4 rendering evidence can unlock later posts. Immutable published history 1-15, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced. Exhaustion and low stock are reported explicitly; activation does not authorize an unreviewed successor corpus."
+  "presentation_policy_id": "lordchrist-quote-v5",
+  "presentation_policy_sha256": "sha256:1baa56feba381fcf6147222a8cdc6e0e2da569ad9af3b159fe1b0e548307c1f6",
+  "activation_note": "Reader-facing quote-v5 rework authorized on 2026-10-17 under the continuous publication request that resumed issue #692. State: 16 published and 44 pristine pending in the depth-v2 queue; sequence 17 is first. Pending cards open directly with the quotation and its reviewed source line; a bold reviewed title appears only for the three reviewed load-bearing openings (17, 32, 36) followed by paragraph air. Slot cron expressions now fire at the documented Moscow times (06:17 UTC = 09:17 Moscow, 18:17 UTC = 21:17 Moscow). Immutable published history 1-16, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced. Exhaustion and low stock are reported explicitly; activation does not authorize an unreviewed successor corpus."
 }

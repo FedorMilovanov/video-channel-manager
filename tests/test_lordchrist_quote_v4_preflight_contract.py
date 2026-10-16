@@ -48,14 +48,14 @@ def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
     ordered = [
         "Build exact depth-v2 runtime queue without provider authorization",
         "Bind the exact reviewed queue digest for the read-only preflight",
-        "Validate rolling v4 checkpoint and evidence",
+        "Validate rolling v5 checkpoint and evidence",
         "Validate the reviewed standalone ledger for exact future suffix 16 through 60",
         "Validate reviewed pending content findings",
         "Validate reviewed source coverage with safe canonicalization",
         "Classify live source retrieval read-only (report only, never invalidating)",
         "Re-run standalone quality gate for exact future suffix 16 through 60",
-        "Validate queue and ledger through quote-v4 renderer",
-        "Prove quote-v4 reading unit for the exact next pending publication",
+        "Validate queue and ledger through quote-v5 renderer",
+        "Prove quote-v5 reading unit for the exact next pending publication",
         "Prove exact Telegram target configuration",
         "Read-only live bot and channel identity preflight",
         "Assert preflight remained provider-inert",
@@ -104,7 +104,7 @@ def test_quote_v4_preflight_is_provider_inert_and_never_writes_state() -> None:
     assert "git push" not in workflow
     assert "sendMessage" not in workflow
     assert (
-        'telegram_cli \\\n            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \\\n            --ledger "$DEPTH_LEDGER_PATH" \\\n            --presentation-policy "$V4_POLICY_PATH" \\\n            preflight'
+        'telegram_cli \\\n            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \\\n            --ledger "$DEPTH_LEDGER_PATH" \\\n            --presentation-policy "$V5_POLICY_PATH" \\\n            preflight'
         in workflow
     )
     assert 'if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"])' in workflow
@@ -130,7 +130,7 @@ def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout()
     assert "! -e .runtime/lordchrist-rendered.json" in workflow
     assert 'if selection["provider_writes_authorized"] is not False' not in workflow
     assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in workflow
-    assert ".runtime/lordchrist-quote-v4-target-proof.json" in workflow
+    assert ".runtime/lordchrist-quote-v5-target-proof.json" in workflow
     assert '"read-only Telegram target proof",' in workflow
     assert '"provider inertness"' in workflow
 
@@ -153,7 +153,7 @@ def test_quote_v4_preflight_reprobes_source_retrieval_read_only_without_invalida
     workflow = _workflow()
 
     probe_step = workflow.index("Classify live source retrieval read-only")
-    renderer_step = workflow.index("Validate queue and ledger through quote-v4 renderer")
+    renderer_step = workflow.index("Validate queue and ledger through quote-v5 renderer")
     assert probe_step < renderer_step
     assert "python -m video_channel_manager.telegram_quote_source_probe" in workflow
     assert '--out "$SOURCE_PROBE_REPORT_PATH" || true' in workflow

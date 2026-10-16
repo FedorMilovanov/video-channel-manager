@@ -34,7 +34,7 @@ AMENDMENTS = CONTENT / "successor-integrity-amendments-v1.json"
 RELEASE = CONTENT / "successor-release-v2.json"
 ACTIVATION = CONTENT / "successor-activation-v1.json"
 POLICY = CONTENT / "presentation-policy.json"
-SCHEDULE_POLICY = CONTENT / "presentation-policy-v4.json"
+SCHEDULE_POLICY = CONTENT / "presentation-policy-v5.json"
 SCHEDULE = CONTENT / "production-schedule.json"
 CHAT_ID = -1001295216957
 BOT_ID = 8716602202
@@ -69,7 +69,7 @@ def test_delayed_morning_schedule_remains_same_day_eligible() -> None:
     # used to green-skip under the old two-hour window.
     decision = decide_scheduled_slot(
         schedule,
-        event_schedule="17 9 * * *",
+        event_schedule="17 6 * * *",
         now=datetime(2026, 9, 9, 11, 19, tzinfo=UTC),
     )
     assert decision.active is True
@@ -78,7 +78,7 @@ def test_delayed_morning_schedule_remains_same_day_eligible() -> None:
     # The same morning event is not allowed to spill across the 21:17 boundary.
     expired = decide_scheduled_slot(
         schedule,
-        event_schedule="17 9 * * *",
+        event_schedule="17 6 * * *",
         now=datetime(2026, 9, 9, 18, 17, tzinfo=UTC),
     )
     assert expired.active is False
@@ -89,7 +89,7 @@ def test_evening_schedule_expires_before_moscow_midnight() -> None:
     schedule = load_production_schedule(SCHEDULE).model_copy(update={"enabled": True})
     active = decide_scheduled_slot(
         schedule,
-        event_schedule="17 21 * * 2,5,0",
+        event_schedule="17 18 * * 2,5,0",
         now=datetime(2026, 9, 8, 20, 56, tzinfo=UTC),  # 23:56 Moscow, Tuesday
     )
     assert active.active is True
@@ -97,7 +97,7 @@ def test_evening_schedule_expires_before_moscow_midnight() -> None:
 
     expired = decide_scheduled_slot(
         schedule,
-        event_schedule="17 21 * * 2,5,0",
+        event_schedule="17 18 * * 2,5,0",
         now=datetime(2026, 9, 8, 20, 57, tzinfo=UTC),
     )
     assert expired.active is False

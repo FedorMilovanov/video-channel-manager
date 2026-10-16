@@ -69,7 +69,7 @@ def test_lordchrist_migration_profile_matches_live_identity_while_slot_policy_ow
     production = json.loads(LORDCHRIST_PRODUCTION_PATH.read_text(encoding="utf-8"))
 
     activation = json.loads(
-        (LORDCHRIST_PRODUCTION_PATH.parent / "successor-depth-runtime-activation-v4.json").read_text(encoding="utf-8")
+        (LORDCHRIST_PRODUCTION_PATH.parent / "successor-depth-runtime-activation-v5.json").read_text(encoding="utf-8")
     )
     assert production["enabled"] is activation["provider_writes_authorized"]
     note = production["activation_note"].casefold()

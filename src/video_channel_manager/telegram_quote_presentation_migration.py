@@ -13,11 +13,15 @@ from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH
 from video_channel_manager.telegram_quote_progress import validate_quote_progress
 
 MIGRATION_FILENAME = "successor-depth-presentation-migration-v1.json"
+MIGRATION_V2_FILENAME = "successor-depth-presentation-migration-v2.json"
 EXPECTED_BOUNDARY = 15
+EXPECTED_V2_BOUNDARY = 16
 EXPECTED_TOTAL = 60
 
 
 class QuotePresentationMigration(BaseModel):
+    """Immutable v3 -> v4 presentation migration boundary (historical)."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-quote-presentation-migration"]
@@ -41,10 +45,51 @@ class QuotePresentationMigration(BaseModel):
         return self
 
 
-def load_migration(path: Path) -> QuotePresentationMigration:
+class QuotePresentationMigrationV2(BaseModel):
+    """Immutable v4 -> v5 presentation migration boundary.
+
+    Sequence 16 is the only card ever published under quote-v4. The v5 policy
+    renders the pending suffix quote-first: no decorative leading title, a bold
+    reviewed title only for the reviewed load-bearing openings, and real
+    paragraph air between that title and the quotation.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-quote-presentation-migration"]
+    schema_version: Literal[2]
+    release_id: Literal["lordchrist-successor-depth-v2"]
+    queue_digest: str = Field(pattern=SHA256_PATTERN)
+    published_boundary: Literal[16]
+    from_policy_id: Literal["lordchrist-quote-v4"]
+    from_policy_sha256: str = Field(pattern=SHA256_PATTERN)
+    to_policy_id: Literal["lordchrist-quote-v5"]
+    to_policy_sha256: str = Field(pattern=SHA256_PATTERN)
+    provider_writes_authorized: Literal[False]
+    reason: str = Field(min_length=80, max_length=1000)
+
+    @model_validator(mode="after")
+    def exact_release_identity(self) -> "QuotePresentationMigrationV2":
+        if self.release_id != DEPTH_RELEASE_ID or self.queue_digest != DEPTH_QUEUE_DIGEST:
+            raise ValueError("presentation migration differs from the sealed depth-v2 release identity")
+        if self.from_policy_sha256 == self.to_policy_sha256:
+            raise ValueError("presentation migration must change the presentation policy digest")
+        return self
+
+
+MigrationContract = QuotePresentationMigration | QuotePresentationMigrationV2
+
+
+def load_migration(path: Path) -> MigrationContract:
     try:
-        return QuotePresentationMigration.model_validate_json(path.read_text(encoding="utf-8"))
-    except (OSError, ValidationError) as exc:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        schema_version = payload.get("schema_version") if isinstance(payload, dict) else None
+        if schema_version == 1:
+            return QuotePresentationMigration.model_validate(payload)
+        if schema_version == 2:
+            return QuotePresentationMigrationV2.model_validate(payload)
+        raise ValueError(f"unsupported quote presentation migration schema version: {schema_version!r}")
+    except (OSError, json.JSONDecodeError, ValidationError, ValueError) as exc:
         raise ValueError(f"invalid LordChrist quote presentation migration {path}: {exc}") from exc
 
 
@@ -58,8 +103,8 @@ def load_ledger(path: Path) -> TelegramLedger:
 def validate_migration(
     *,
     migration_path: Path,
-    v3_policy_path: Path,
-    v4_policy_path: Path,
+    from_policy_path: Path,
+    to_policy_path: Path,
     ledger_path: Path,
     candidate_path: Path,
     translation_ledger_path: Path,
@@ -67,12 +112,12 @@ def validate_migration(
     allow_verified_progress: bool = False,
 ) -> dict[str, object]:
     migration = load_migration(migration_path)
-    v3 = load_presentation_policy(v3_policy_path)
-    v4 = load_presentation_policy(v4_policy_path)
-    if migration.from_policy_id != v3.policy_id or migration.from_policy_sha256 != v3.digest:
-        raise ValueError("migration source presentation identity differs from reviewed quote-v3")
-    if migration.to_policy_id != v4.policy_id or migration.to_policy_sha256 != v4.digest:
-        raise ValueError("migration target presentation identity differs from reviewed quote-v4")
+    from_policy = load_presentation_policy(from_policy_path)
+    to_policy = load_presentation_policy(to_policy_path)
+    if migration.from_policy_id != from_policy.policy_id or migration.from_policy_sha256 != from_policy.digest:
+        raise ValueError("migration source presentation identity differs from the reviewed source policy")
+    if migration.to_policy_id != to_policy.policy_id or migration.to_policy_sha256 != to_policy.digest:
+        raise ValueError("migration target presentation identity differs from the reviewed target policy")
 
     queue = build_depth_runtime_queue(
         candidate_path=candidate_path,
@@ -93,11 +138,12 @@ def validate_migration(
         ledger,
         minimum_published=migration.published_boundary,
         allow_progress=allow_verified_progress,
-        policy=v4,
+        policy=to_policy,
         evidence_root=ledger_path.parent / "dispatches",
     )
 
     return {
+        "migration_schema_version": migration.schema_version,
         "release_id": migration.release_id,
         "queue_digest": migration.queue_digest,
         "published_boundary": migration.published_boundary,
@@ -110,10 +156,10 @@ def validate_migration(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Validate the immutable quote-v3 to quote-v4 migration boundary.")
+    parser = argparse.ArgumentParser(description="Validate an immutable quote presentation migration boundary.")
     parser.add_argument("--migration", type=Path, required=True)
-    parser.add_argument("--v3-policy", type=Path, required=True)
-    parser.add_argument("--v4-policy", type=Path, required=True)
+    parser.add_argument("--from-policy", type=Path, required=True)
+    parser.add_argument("--to-policy", type=Path, required=True)
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--translation-ledger", type=Path, required=True)
@@ -125,8 +171,8 @@ def main() -> int:
     args = _parser().parse_args()
     result = validate_migration(
         migration_path=args.migration,
-        v3_policy_path=args.v3_policy,
-        v4_policy_path=args.v4_policy,
+        from_policy_path=args.from_policy,
+        to_policy_path=args.to_policy,
         ledger_path=args.ledger,
         candidate_path=args.candidate,
         translation_ledger_path=args.translation_ledger,

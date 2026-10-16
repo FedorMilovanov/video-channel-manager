@@ -41,3 +41,36 @@ def test_quote_v4_migration_reason_records_title_context_and_tight_source_spacin
     assert "title" in migration.reason.casefold()
     assert "source" in migration.reason.casefold()
     assert migration.provider_writes_authorized is False
+
+
+def test_presentation_migration_v2_preserves_published_1_to_16_and_only_targets_future_suffix() -> None:
+    migration = load_migration(CONTENT / "successor-depth-presentation-migration-v2.json")
+
+    assert migration.schema_version == 2
+    assert migration.release_id == "lordchrist-successor-depth-v2"
+    assert migration.queue_digest == EXPECTED_QUEUE_DIGEST
+    assert migration.published_boundary == 16
+    assert migration.provider_writes_authorized is False
+    assert "17-60" in migration.reason
+
+
+def test_presentation_migration_v2_is_bound_to_exact_reviewed_v4_and_v5_policies() -> None:
+    migration = load_migration(CONTENT / "successor-depth-presentation-migration-v2.json")
+    v4 = load_presentation_policy(CONTENT / "presentation-policy-v4.json")
+    v5 = load_presentation_policy(CONTENT / "presentation-policy-v5.json")
+
+    assert migration.from_policy_id == v4.policy_id == "lordchrist-quote-v4"
+    assert migration.from_policy_sha256 == v4.digest == EXPECTED_V4_DIGEST
+    assert migration.to_policy_id == v5.policy_id == "lordchrist-quote-v5"
+    assert migration.to_policy_sha256 == v5.digest
+    assert migration.from_policy_sha256 != migration.to_policy_sha256
+
+
+def test_presentation_migration_v2_reason_records_quote_first_and_title_air() -> None:
+    migration = load_migration(CONTENT / "successor-depth-presentation-migration-v2.json")
+    reason = migration.reason.casefold()
+
+    assert "quote-v4" in reason
+    assert "quote-v5" in reason
+    assert "air" in reason
+    assert "17, 32, 36" in migration.reason

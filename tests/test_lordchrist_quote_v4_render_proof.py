@@ -401,9 +401,10 @@ def test_publisher_gates_and_status_share_the_production_workflow() -> None:
     workflow = (ROOT / ".github/workflows/lordchrist-telegram-poster.yml").read_text()
     quote_job = workflow.split("  historical-rich:\n", 1)[0]
     assert "video_channel_manager.telegram_quote_runtime_activation" in quote_job
-    assert "video_channel_manager.telegram_quote_v4_render_proof" in quote_job
+    assert "video_channel_manager.telegram_quote_v5_render_proof" in quote_job
+    assert "--standalone-review" in quote_job
     assert "video_channel_manager.telegram_quote_status" in quote_job
-    assert quote_job.index("Prove the exact next quote-v4 reading unit") < quote_job.index(
+    assert quote_job.index("Prove the exact next quote-v5 reading unit") < quote_job.index(
         "Enable publication ledger writer"
     )
     assert "id: persist_result" in quote_job

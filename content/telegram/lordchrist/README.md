@@ -12,7 +12,43 @@
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
 5. только затем task-specific research/evidence.
 
-## Quote-v4 — непрерывная публикация reviewed-очереди (#692)
+## Quote-v5 — текущий ридерский формат постов-цитат (2026-10-17)
+
+Редакционная переработка по прямому запросу читателя: **маленькие посты-цитаты открываются самой цитатой, без обязательного заголовка**. Формат карточки:
+
+```text
+<blockquote>Цитата — большая, средняя или маленькая</blockquote>
+— Автор, труд, год            ← tight, одной строкой под цитатой
+
+Качественное разъяснение.      ← обычный абзацный воздух
+
+#Хэштеги
+```
+
+Заголовок **остаётся только там, где он реально нужен**: ровно три reviewed-карточки суффикса (17 «Доспехи для страдания, не от страдания», 32 «Послушание Сына не делает Его рабом», 36 «Его победа — моя во Христе») открываются анафорой, которую разрешает видимый заголовок (`title_resolved_anaphora` в `quote-standalone-review-v1.json`). Для них пост начинается с жирного заголовка, за которым следует **настоящий абзацный воздух** (пустая строка) перед цитатой:
+
+```text
+Жирный заголовок
+
+<blockquote>Цитата</blockquote>
+— Автор, труд, год
+…
+```
+
+Действующие артефакты v5:
+
+```text
+presentation-policy-v5.json                     — policy digest sha256:1baa56fe…307c1f6; title_mode=reviewed_load_bearing_only
+successor-depth-presentation-migration-v2.json  — immutable граница v4→v5: 16 published / 44 pending
+successor-depth-runtime-activation-v5.json      — schema v3, verified_prefix, exact history hash 1–16
+.github/workflows/lordchrist-quote-v4-preflight.yml — read-only preflight (проверяет rolling v5 checkpoint)
+```
+
+№16 (`lordchrist-successor-depth-v2-16-spurgeon-sovereignty-comfort`, сообщение 1566 от 2026-10-16) — единственный пост, вышедший в старом формате v4 с заголовком впритык; он остаётся immutable history со своим durable v4-rendered evidence. С №17 очередь публикуется в формате v5. Длины цитат в суффиксе 17–60 варьируются естественно: 18 коротких афоризмов (<150 символов), 26 средних; длина не является критерием качества, короткий полный афоризм допустим.
+
+Слоты расписания теперь реально совпадают с документируемым московским временем: утренний cron `17 6 * * *` (06:17 UTC = 09:17 МСК, ежедневно), вечерний `17 18 * * 2,5,0` (18:17 UTC = 21:17 МСК, вт/пт/вс), исторический `17 16 * * 1,3,6` (16:17 UTC = 19:17 МСК, пн/ср/сб). Прежние выражения `17 9`/`17 21`/`17 19` срабатывали на три часа позже заявленных слотов: утренний выживал только за счёт lease 720 минут (фактическая публикация ~12:17–14:30 МСК), вечерний и исторический не публиковались никогда. Подробности — в `docs/audits/2026-10-17-lordchrist-quote-v5-rework-and-queue-audit.md`.
+
+## Quote-v4 — непрерывная публикация reviewed-очереди (#692, история)
 
 Релиз depth-v2 (`successor-depth-runtime-activation-v4.json`, schema v2) связывает начальную границу **15 published / 45 pending**, exact hash всей принятой истории 1–15 и политику `verified_prefix`. Это граница миграции, а не требование навсегда оставаться на 15 постах. После каждой verified-публикации допускается только непрерывный рост prefix; для каждого нового поста обязательны durable reviewed v4 `dispatches/<run>-<attempt>/rendered.json`, точный target и pristine remaining suffix. Неоднозначные outcomes, пробел в порядке или изменённая история блокируют продолжение. Доказательства reviewed-слоя:
 
@@ -67,7 +103,7 @@ presentation-policy.json
 policy_id = lordchrist-editorial-v2
 ```
 
-Эта policy сохранена для исходной линии и source-v1 provenance. Текущий depth-v2 publisher использует `presentation-policy-v4.json`; нельзя откатывать его на source policy ради обхода gates. Immutable source cards не переписываются. `lordchrist-editorial-v2` выбирает для основного акцента самую содержательную прямую цитату, сохраняет спокойную типографику attribution и текущие spacing/link-preview правила.
+Эта policy сохранена для исходной линии и source-v1 provenance. Текущий depth-v2 publisher использует `presentation-policy-v5.json`; нельзя откатывать его на source policy ради обхода gates. Immutable source cards не переписываются. `lordchrist-editorial-v2` выбирает для основного акцента самую содержательную прямую цитату, сохраняет спокойную типографику attribution и текущие spacing/link-preview правила.
 
 Renderer реализован в:
 

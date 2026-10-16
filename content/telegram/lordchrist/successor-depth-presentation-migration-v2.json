@@ -1,0 +1,13 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-presentation-migration",
+  "schema_version": 2,
+  "release_id": "lordchrist-successor-depth-v2",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "published_boundary": 16,
+  "from_policy_id": "lordchrist-quote-v4",
+  "from_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
+  "to_policy_id": "lordchrist-quote-v5",
+  "to_policy_sha256": "sha256:1baa56feba381fcf6147222a8cdc6e0e2da569ad9af3b159fe1b0e548307c1f6",
+  "provider_writes_authorized": false,
+  "reason": "Sequence 16 (Spurgeon, Divine Sovereignty) is the only card published under the mandatory-title quote-v4 layout and remains immutable history. The reader-facing rework of 2026-10-17 moves the pending suffix 17-60 to quote-v5: the quotation opens the post directly, the reviewed source line stays tight under it, and a bold title is rendered only for the three reviewed load-bearing openings (17, 32, 36) with real paragraph air between title and quotation."
+}

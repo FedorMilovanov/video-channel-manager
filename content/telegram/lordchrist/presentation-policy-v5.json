@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.telegram-presentation-policy",
+  "schema_version": 5,
+  "policy_id": "lordchrist-quote-v5",
+  "parse_mode": "HTML",
+  "title_mode": "reviewed_load_bearing_only",
+  "reviewed_title_payload_sha256s": [
+    "sha256:3a822e24da42fb4f6e8f2575be5539c4484ffeec395706f57811af5b636e09d8",
+    "sha256:9343f845d7ad45803a57110ac68f25bfbc1029fbbb3c94773327fbb125de9b77",
+    "sha256:e761a1a22bfa697f405227702ddbc4a7057b662d79bcef28954c46c791bf0abb"
+  ],
+  "title_style": "bold",
+  "title_to_quote_separator": "\n\n",
+  "quote_style": "blockquote",
+  "attribution_style": "italic",
+  "attribution_prefix": "— ",
+  "quote_to_attribution_separator": "\n",
+  "block_separator": "\n\n",
+  "link_preview_disabled": true
+}

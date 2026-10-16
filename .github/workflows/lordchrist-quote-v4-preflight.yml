@@ -1,4 +1,4 @@
-name: Lordchrist quote-v4 read-only preflight
+name: Lordchrist quote-v5 read-only preflight
 
 on:
   workflow_run:
@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: lordchrist-quote-v4-read-only-preflight
+  group: lordchrist-quote-v5-read-only-preflight
   cancel-in-progress: true
 
 env:
@@ -43,8 +43,9 @@ env:
   ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
   V3_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
   V4_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
-  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
-  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  V5_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v5.json
+  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v5.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v2.json
   PRODUCTION_SCHEDULE_PATH: content/telegram/lordchrist/production-schedule.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
   STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json
@@ -53,8 +54,8 @@ env:
   SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
   DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
   DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
-  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
-  RENDER_PROOF_PATH: .runtime/lordchrist-quote-v4-render-proof.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v5-target-proof.json
+  RENDER_PROOF_PATH: .runtime/lordchrist-quote-v5-render-proof.json
   STATE_DIR: .state/lordchrist
   STATE_BRANCH: state/lordchrist-telegram
   # The channel-wide no-blind-replay barrier must inspect the immutable predecessor
@@ -222,14 +223,15 @@ jobs:
           print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
           PY
 
-      - name: Validate rolling v4 checkpoint and evidence
+      - name: Validate rolling v5 checkpoint and evidence
         shell: bash
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_quote_runtime_activation \
             --activation "$RUNTIME_ACTIVATION_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             --v3-policy "$V3_POLICY_PATH" \
+            --v4-policy "$V4_POLICY_PATH" \
             --migration "$PRESENTATION_MIGRATION_PATH" \
             --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
             --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
@@ -327,25 +329,26 @@ jobs:
             --standalone-review "$STANDALONE_REVIEW_PATH" \
             --published-boundary 15
 
-      - name: Validate queue and ledger through quote-v4 renderer
+      - name: Validate queue and ledger through quote-v5 renderer
         shell: bash
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_cli \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
             --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             validate
 
-      - name: Prove quote-v4 reading unit for the exact next pending publication
+      - name: Prove quote-v5 reading unit for the exact next pending publication
         shell: bash
         run: |
           set -euo pipefail
-          python -m video_channel_manager.telegram_quote_v4_render_proof \
+          python -m video_channel_manager.telegram_quote_v5_render_proof \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
             --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             --activation "$RUNTIME_ACTIVATION_PATH" \
+            --standalone-review "$STANDALONE_REVIEW_PATH" \
             --output "$RENDER_PROOF_PATH"
 
       - name: Prove exact Telegram target configuration
@@ -374,7 +377,7 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
             --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             preflight \
             --mode manual \
             --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
@@ -437,7 +440,7 @@ jobs:
           mode = os.environ["PREFLIGHT_MODE"]
           label = "exact current-main" if mode == "current_main" else "read-only staging"
           print(
-              f"PASS: {label} quote-v4 preflight is provider-inert; "
+              f"PASS: {label} quote-v5 preflight is provider-inert; "
               f"published prefix {render_proof['published_prefix']}, pending suffix {render_proof['pending_suffix']}, "
               f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})."
           )
@@ -459,7 +462,7 @@ jobs:
           emit("preflight mode", f"{os.environ.get('PREFLIGHT_MODE', 'unknown')} at {os.environ.get('PREFLIGHT_SHA', 'unknown')}")
           activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
           emit("rolling checkpoint release", f"{activation['release_id']} {activation['queue_digest']}")
-          emit("quote-v4 policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
+          emit("quote policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
           render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
           emit(
               "state boundary",
@@ -467,7 +470,7 @@ jobs:
               f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})",
           )
           emit(
-              "quote-v4 reading unit",
+              "quote-v5 reading unit",
               f"entities {','.join(render_proof['entity_layout'])}; "
               f"attribution immediately below quotation; {render_proof['rendered_text_length']} characters; "
               f"provider payload {render_proof['provider_payload_sha256']}",
@@ -502,11 +505,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: lordchrist-quote-v4-preflight-proofs
+          name: lordchrist-quote-v5-preflight-proofs
           retention-days: 30
           if-no-files-found: warn
           path: |
             .runtime/lordchrist-active-quote-selection.json
-            .runtime/lordchrist-quote-v4-render-proof.json
-            .runtime/lordchrist-quote-v4-target-proof.json
+            .runtime/lordchrist-quote-v5-render-proof.json
+            .runtime/lordchrist-quote-v5-target-proof.json
             .runtime/lordchrist-quote-source-probe-report.json
