@@ -73,10 +73,16 @@ class ProductionSchedule(BaseModel):
             raise ValueError("morning slot must remain bound to primary_time")
         if self.slots["evening"].time != self.catchup_time:
             raise ValueError("evening slot must remain bound to catchup_time")
-        if self.slots["morning"].cron != "17 9 * * *":
-            raise ValueError("morning slot cron differs from the release contract")
-        if self.slots["evening"].cron != "17 21 * * 2,5,0":
-            raise ValueError("evening slot cron differs from the release contract")
+        # GitHub schedule cron always fires in UTC. The slot times are Europe/
+        # Moscow local editorial boundaries, so the cron expressions must be the
+        # UTC translation of those exact local times: 06:17 UTC = 09:17 Moscow
+        # and 18:17 UTC = 21:17 Moscow. The previous "17 9 * * *" / "17 21 * * *"
+        # expressions fired at 12:17 and 00:17 Moscow, silently outside the
+        # documented slots.
+        if self.slots["morning"].cron != "17 6 * * *":
+            raise ValueError("morning slot cron must fire at 06:17 UTC (09:17 Moscow)")
+        if self.slots["evening"].cron != "17 18 * * 2,5,0":
+            raise ValueError("evening slot cron must fire at 18:17 UTC (21:17 Moscow)")
         if self.slots["morning"].max_lateness_minutes != 720:
             raise ValueError("morning slot must remain valid only until the 21:17 editorial boundary")
         if self.slots["evening"].max_lateness_minutes != 160:

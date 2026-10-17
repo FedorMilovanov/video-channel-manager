@@ -19,6 +19,7 @@ from video_channel_manager.telegram_models import (
 CANONICAL_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy.json")
 QUOTE_V3_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy-v3.json")
 QUOTE_V4_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy-v4.json")
+QUOTE_V5_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy-v5.json")
 DIRECT_QUOTE_RE = re.compile(r"«[^»\n]+»")
 FormattingType = Literal["bold", "italic", "blockquote"]
 
@@ -124,8 +125,40 @@ class QuotePresentationPolicyV4(BaseModel):
         return sha256_text(canonical_json(self.model_dump(mode="json")))
 
 
-PresentationPolicyContract = PresentationPolicy | QuotePresentationPolicyV3 | QuotePresentationPolicyV4
-QuoteCardPresentationPolicy = QuotePresentationPolicyV3 | QuotePresentationPolicyV4
+class QuotePresentationPolicyV5(BaseModel):
+    """Quote-first presentation policy for the post-v4 future suffix.
+
+    A quotation is a complete thought that names its own subject, so no card
+    renders a leading title at all: the post opens directly with the blockquote
+    and its reviewed source line sits tight on the next line as one reading
+    unit. The editorial context and hashtags stay separate blocks. The depth-v3
+    restore release guarantees complete openings; a title would only add a
+    decorative echo above the quotation.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-presentation-policy"]
+    schema_version: Literal[5]
+    policy_id: Literal["lordchrist-quote-v5"]
+    parse_mode: Literal["HTML"]
+    title_mode: Literal["none"]
+    quote_style: Literal["blockquote"]
+    attribution_style: Literal["italic"]
+    attribution_prefix: Literal["— "]
+    quote_to_attribution_separator: Literal["\n"]
+    block_separator: Literal["\n\n"]
+    link_preview_disabled: Literal[True] = True
+
+    @property
+    def digest(self) -> str:
+        return sha256_text(canonical_json(self.model_dump(mode="json")))
+
+
+PresentationPolicyContract = (
+    PresentationPolicy | QuotePresentationPolicyV3 | QuotePresentationPolicyV4 | QuotePresentationPolicyV5
+)
+QuoteCardPresentationPolicy = QuotePresentationPolicyV3 | QuotePresentationPolicyV4 | QuotePresentationPolicyV5
 
 
 class TelegramTextEntity(BaseModel):
@@ -143,7 +176,9 @@ class RenderedTelegramPost(BaseModel):
     schema_version: Literal[2]
     publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
-    presentation_policy_id: Literal["lordchrist-editorial-v2", "lordchrist-quote-v3", "lordchrist-quote-v4"]
+    presentation_policy_id: Literal[
+        "lordchrist-editorial-v2", "lordchrist-quote-v3", "lordchrist-quote-v4", "lordchrist-quote-v5"
+    ]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
     provider_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     parse_mode: Literal["HTML"]
@@ -170,6 +205,8 @@ class RenderedTelegramPost(BaseModel):
             required_types = {"blockquote", "italic"}
             if self.presentation_policy_id == "lordchrist-quote-v4":
                 required_types.add("bold")
+            if self.presentation_policy_id == "lordchrist-quote-v5" and "bold" in types:
+                raise ValueError("quote-v5 publication renders no leading title and must not carry bold entities")
             if not required_types.issubset(types):
                 raise ValueError("quote publication is missing required presentation entities")
         return self
@@ -205,6 +242,22 @@ DEFAULT_QUOTE_V4_PRESENTATION_POLICY = QuotePresentationPolicyV4(
     parse_mode="HTML",
     title_style="bold",
     title_to_quote_separator="\n",
+    quote_style="blockquote",
+    attribution_style="italic",
+    attribution_prefix="— ",
+    quote_to_attribution_separator="\n",
+    block_separator="\n\n",
+    link_preview_disabled=True,
+)
+
+# Quote-v5 renders no leading title: the depth-v3 restore release guarantees
+# that every pending quotation opens as a complete, self-contained thought.
+DEFAULT_QUOTE_V5_PRESENTATION_POLICY = QuotePresentationPolicyV5(
+    schema_name="video-channel-manager.telegram-presentation-policy",
+    schema_version=5,
+    policy_id="lordchrist-quote-v5",
+    parse_mode="HTML",
+    title_mode="none",
     quote_style="blockquote",
     attribution_style="italic",
     attribution_prefix="— ",
@@ -274,6 +327,9 @@ def load_presentation_policy(
         elif policy_id == "lordchrist-quote-v4":
             policy = QuotePresentationPolicyV4.model_validate(payload)
             expected_digest = DEFAULT_QUOTE_V4_PRESENTATION_POLICY.digest
+        elif policy_id == "lordchrist-quote-v5":
+            policy = QuotePresentationPolicyV5.model_validate(payload)
+            expected_digest = DEFAULT_QUOTE_V5_PRESENTATION_POLICY.digest
         else:
             raise ValueError(f"unsupported Telegram presentation policy id: {policy_id!r}")
     except (OSError, json.JSONDecodeError, ValidationError, ValueError) as exc:
@@ -531,6 +587,30 @@ def _render_post_v4(post: TelegramPost, policy: QuotePresentationPolicyV4) -> Re
     return rendered
 
 
+def _render_post_v5(post: TelegramPost, policy: QuotePresentationPolicyV5) -> RenderedTelegramPost:
+    quote, attribution, context, hashtags = _quote_card_blocks(post, policy)
+
+    builder = _RenderBuilder()
+    builder.append_styled(quote, "blockquote")
+    builder.append(policy.quote_to_attribution_separator)
+    builder.append_styled(attribution, "italic")
+    builder.append(policy.block_separator)
+    builder.append(context)
+    builder.append(policy.block_separator)
+    builder.append(hashtags)
+
+    rendered = _provider_payload(post=post, policy=policy, builder=builder)
+    reading_unit = f"{quote}{policy.quote_to_attribution_separator}{attribution}"
+    if not rendered.text.startswith(reading_unit):
+        raise ValueError("quote-v5 must open directly with the quotation and its source line")
+    # No title is rendered at all: the rendered-post contract itself forbids any
+    # bold entity under quote-v5, and a quotation may legitimately open with the
+    # same words as its unrendered editorial title.
+    if f"{quote}\n\n{attribution}" in rendered.text:
+        raise ValueError("quote-v5 must not insert a blank line between quotation and source attribution")
+    return rendered
+
+
 def render_post(
     post: TelegramPost,
     policy: PresentationPolicyContract = DEFAULT_PRESENTATION_POLICY,
@@ -547,6 +627,10 @@ def render_post(
         if policy.digest != DEFAULT_QUOTE_V4_PRESENTATION_POLICY.digest:
             raise ValueError("unsupported Telegram quote-v4 presentation policy")
         return _render_post_v4(post, policy)
+    if isinstance(policy, QuotePresentationPolicyV5):
+        if policy.digest != DEFAULT_QUOTE_V5_PRESENTATION_POLICY.digest:
+            raise ValueError("unsupported Telegram quote-v5 presentation policy")
+        return _render_post_v5(post, policy)
     raise ValueError("unsupported Telegram presentation policy type")
 
 

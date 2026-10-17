@@ -74,7 +74,7 @@ def test_unified_writer_preserves_v2_schedule_and_routes_exact_v3_canary() -> No
     assert "production-release-spurgeon-v3-media-canary.json" in workflow
     assert "publication-ledger-spurgeon-v3-media.json" in workflow
     assert '[[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade-1887-v3" ]]' in workflow
-    assert "(github.event_name == 'schedule' && github.event.schedule == '17 19 * * 1,3,6')" in workflow
+    assert "(github.event_name == 'schedule' && github.event.schedule == '17 16 * * 1,3,6')" in workflow
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "telegram_historical_production send" in workflow
 

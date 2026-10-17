@@ -10,11 +10,11 @@ from video_channel_manager.telegram_schedule import decide_scheduled_slot, load_
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
-POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v4.json"
-ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/successor-depth-runtime-activation-v4.json"
+POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v5.json"
+ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/successor-depth-runtime-activation-v5.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 EXPECTED_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-EXPECTED_SUCCESSOR_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
+EXPECTED_SUCCESSOR_DIGEST = "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -37,22 +37,22 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     # bind the identical reviewed presentation policy.
     assert config.enabled is activation["provider_writes_authorized"]
     assert config.presentation_policy_sha256 == activation["presentation_policy_sha256"]
-    assert activation["required_published_prefix"] == 15
-    assert activation["required_pending_suffix"] == 45
+    assert activation["required_published_prefix"] == 17
+    assert activation["required_pending_suffix"] == 43
     note = config.activation_note.casefold()
-    assert "depth-v2" in note
-    assert "sequence 16" in note
-    assert "15 published and 45 pristine pending" in note
+    assert "depth-v3" in note
+    assert "sequence 18" in note
+    assert "17 published and 43 pristine pending" in note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
     assert config.catchup_time == "21:17"
     assert config.slots["morning"].time == config.primary_time
-    assert config.slots["morning"].cron == "17 9 * * *"
+    assert config.slots["morning"].cron == "17 6 * * *"
     assert config.slots["morning"].iso_weekdays == (1, 2, 3, 4, 5, 6, 7)
     assert config.slots["morning"].max_lateness_minutes == 720
     assert config.slots["evening"].time == config.catchup_time
-    assert config.slots["evening"].cron == "17 21 * * 2,5,0"
+    assert config.slots["evening"].cron == "17 18 * * 2,5,0"
     assert config.slots["evening"].iso_weekdays == (2, 5, 7)
     assert config.slots["evening"].max_lateness_minutes == 160
     assert config.max_verified_per_slot == 1
@@ -68,7 +68,7 @@ def test_disabled_depth_v2_schedule_fails_closed_before_slot_evaluation() -> Non
     config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": False})
     decision = decide_scheduled_slot(
         config,
-        event_schedule="17 9 * * *",
+        event_schedule="17 6 * * *",
         now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
     )
 
@@ -87,7 +87,7 @@ def test_armed_depth_v2_schedule_still_publishes_at_most_one_verified_post_per_s
     assert (
         decide_scheduled_slot(
             config,
-            event_schedule="17 9 * * *",
+            event_schedule="17 6 * * *",
             now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
         ).slot
         == "morning"
@@ -103,11 +103,11 @@ def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_even
     sunday_evening = datetime(2026, 9, 13, 18, 17, tzinfo=UTC)
     monday_evening = datetime(2026, 9, 7, 18, 17, tzinfo=UTC)
 
-    assert decide_scheduled_slot(config, event_schedule="17 9 * * *", now=monday).slot == "morning"
-    assert decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=tuesday_evening).slot == "evening"
-    assert decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=friday_evening).slot == "evening"
-    assert decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=sunday_evening).slot == "evening"
-    monday_result = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=monday_evening)
+    assert decide_scheduled_slot(config, event_schedule="17 6 * * *", now=monday).slot == "morning"
+    assert decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=tuesday_evening).slot == "evening"
+    assert decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=friday_evening).slot == "evening"
+    assert decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=sunday_evening).slot == "evening"
+    monday_result = decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=monday_evening)
     assert monday_result.active is False
     assert monday_result.slot is None
 
@@ -121,11 +121,11 @@ def test_schedule_decision_rejects_premature_and_stale_runs_without_backfill() -
     fresh_delayed_evening = datetime(2026, 9, 8, 20, 56, 59, tzinfo=UTC)  # 23:56:59 Moscow
     evening_deadline = datetime(2026, 9, 8, 20, 57, tzinfo=UTC)  # 23:57 Moscow
 
-    premature = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=before_morning)
-    delayed_morning = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=fresh_delayed_morning)
-    stale_morning = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=morning_deadline)
-    delayed_evening = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=fresh_delayed_evening)
-    stale_evening = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=evening_deadline)
+    premature = decide_scheduled_slot(config, event_schedule="17 6 * * *", now=before_morning)
+    delayed_morning = decide_scheduled_slot(config, event_schedule="17 6 * * *", now=fresh_delayed_morning)
+    stale_morning = decide_scheduled_slot(config, event_schedule="17 6 * * *", now=morning_deadline)
+    delayed_evening = decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=fresh_delayed_evening)
+    stale_evening = decide_scheduled_slot(config, event_schedule="17 18 * * 2,5,0", now=evening_deadline)
 
     assert premature.active is False
     assert premature.reason == "morning slot is not due yet"
@@ -149,15 +149,20 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
     assert '--scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}"' in workflow
     assert "production schedule chat id does not match configured Telegram target" not in workflow
     assert "LORDCHRIST_SCHEDULE_ENABLED is not true." not in workflow
-    assert 'cron: "17 9 * * *"' in workflow
-    assert 'cron: "17 21 * * 2,5,0"' in workflow
-    assert 'cron: "17 21 * * *"' not in workflow
+    assert 'cron: "17 6 * * *"' in workflow
+    assert 'cron: "17 18 * * 2,5,0"' in workflow
+    assert 'cron: "17 16 * * 1,3,6"' in workflow
+    # The previous UTC-as-Moscow expressions fired three hours past every
+    # documented slot boundary and must never return.
+    assert 'cron: "17 9 * * *"' not in workflow
+    assert 'cron: "17 21 * * 2,5,0"' not in workflow
+    assert 'cron: "17 19 * * 1,3,6"' not in workflow
 
 
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
+    gate_end = workflow.index("      - name: Discard read-only depth-v3 ledger before durable initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -185,16 +190,16 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
 def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    local_start = workflow.index("      - name: Materialize missing depth-v2 ledger locally for read-only validation")
+    local_start = workflow.index("      - name: Materialize missing depth-v3 ledger locally for read-only validation")
     validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
     preview_start = workflow.index("      - name: Preview next publication")
     quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
     target_start = workflow.index("      - name: Validate read-only target configuration")
     preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    discard_start = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
-    writer_start = workflow.index("      - name: Enable state writer for one-time depth-v2 ledger initialization")
-    durable_start = workflow.index("      - name: Persist exact depth-v2 ledger after current-main proof")
+    discard_start = workflow.index("      - name: Discard read-only depth-v3 ledger before durable initialization")
+    writer_start = workflow.index("      - name: Enable state writer for one-time depth-v3 ledger initialization")
+    durable_start = workflow.index("      - name: Persist exact depth-v3 ledger after current-main proof")
     publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
 
     assert (
@@ -224,10 +229,13 @@ def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_cur
     durable_step = workflow[durable_start:publication_writer_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
     assert "steps.intent.outputs.do_publish == 'true'" in durable_step
-    assert "Initialize reviewed Lordchrist depth-v2 ledger" in durable_step
+    assert "Initialize reviewed Lordchrist depth-v3 ledger" in durable_step
     assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
-    assert "remote-depth-v2-ledger.json" in durable_step
+    assert "remote-depth-v3-ledger.json" in durable_step
+    # The depth-v3 handoff rebinds the exact durable depth-v2 state; both ledgers
+    # must be present in the read-only snapshot before any initialization runs.
+    assert "depth-v2 ledger in the state snapshot" in durable_step
 
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality[local_start:]
-    assert "Initialize reviewed Lordchrist depth-v2 ledger" not in before_quality
+    assert "Initialize reviewed Lordchrist depth-v3 ledger" not in before_quality

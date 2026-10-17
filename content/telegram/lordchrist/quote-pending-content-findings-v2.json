@@ -1,0 +1,30 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-pending-content-findings",
+  "schema_version": 2,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v3",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "published_boundary": 17,
+  "reviewed_on": "2026-10-17",
+  "method": "Rebinding of the reviewed open content findings to the depth-v3 restore release after sequence 17 was published as immutable history. The depth-v2 finding for sequence 44 is carried over unchanged: its quotation was not touched by the restore, and the prepared correction still requires a future reviewed release identity plus a durable-state rebind rather than a silent edit of the sealed card.",
+  "entries": [
+    {
+      "sequence": 44,
+      "publication_id": "lordchrist-successor-depth-v2-44-macarthur-repentance-not-merit",
+      "quotation_sha256": "sha256:63bdeb8681f0d9a3f87d9645d41fdeb3b4d1a7c187575057e2a162e17494b23f",
+      "kind": "translation_grammar",
+      "severity": "editorial_language",
+      "finding": "The sealed Russian translation drops the copula dash and keeps the accusative complement: 'Покаяние не более заслуживающее спасение дело, чем вера. Это внутренний ответ.' The sentence is faithful to the source fragment but reads as a word-for-word calque; a native reader expects 'Покаяние заслуживает спасения не более, чем вера.' and 'Это внутренний отклик.'",
+      "proposed_quotation_ru": "Покаяние заслуживает спасения не более, чем вера. Это внутренний отклик.",
+      "source_fragment": "Repentance is no more a meritorious work than its counterpart, faith. It is an inward response.",
+      "origin": "reviewed_sealed_translation",
+      "not_applied_because": "The visible quotation is the sealed reviewed translation. Applying the correction changes the card payload hash, and the durable depth-v2 ledger binds that hash for every pending sequence, so the correction belongs to a new reviewed release identity that also re-binds the durable state.",
+      "requires_reseal_of": [
+        "successor-depth-restore-v1",
+        "successor-depth-runtime-activation-v5",
+        "durable-depth-v3-ledger-binding"
+      ]
+    }
+  ]
+}

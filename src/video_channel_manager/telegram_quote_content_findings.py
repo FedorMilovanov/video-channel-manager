@@ -25,12 +25,18 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_models import SHA256_PATTERN
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    DEPTH_RELEASE_ID,
+    DEPTH_V3_QUEUE_DIGEST,
+    DEPTH_V3_RELEASE_ID,
+)
 from video_channel_manager.telegram_quote_quality_v4 import semantic_blocks
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 from video_channel_manager.telegram_quote_standalone_review import quotation_sha256
 
 CONTENT_FINDINGS_FILENAME = "quote-pending-content-findings-v1.json"
+CONTENT_FINDINGS_V2_FILENAME = "quote-pending-content-findings-v2.json"
 CONTENT_FINDINGS_SCHEMA = "video-channel-manager.telegram-quote-pending-content-findings"
 PUBLISHED_BOUNDARY = 15
 FINDING_KINDS = Literal["translation_grammar", "wording_clarity", "missing_evidence"]
@@ -38,7 +44,10 @@ RESEAL_REQUIREMENTS = Literal[
     "successor-release-v2",
     "successor-depth-release-v1",
     "successor-depth-runtime-activation-v4",
+    "successor-depth-runtime-activation-v5",
+    "successor-depth-restore-v1",
     "durable-depth-v2-ledger-binding",
+    "durable-depth-v3-ledger-binding",
 ]
 
 
@@ -67,7 +76,10 @@ class PendingContentFinding(BaseModel):
             raise ValueError("a proposed correction must differ from the sealed reviewed quotation")
         if self.proposed_quotation_ru.count("«") != self.proposed_quotation_ru.count("»"):
             raise ValueError("a proposed correction must keep balanced quotation marks")
-        if "durable-depth-v2-ledger-binding" not in self.requires_reseal_of:
+        if not any(
+            requirement in self.requires_reseal_of
+            for requirement in ("durable-depth-v2-ledger-binding", "durable-depth-v3-ledger-binding")
+        ):
             raise ValueError("a sealed pending correction must record the durable state rebind it requires")
         return self
 
@@ -76,20 +88,27 @@ class PendingContentFindings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-quote-pending-content-findings"]
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2]
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
-    release_id: Literal["lordchrist-successor-depth-v2"]
+    release_id: Literal["lordchrist-successor-depth-v2", "lordchrist-successor-depth-v3"]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
-    published_boundary: Literal[15]
+    published_boundary: Literal[15, 16, 17]
     reviewed_on: date
     method: str = Field(min_length=60, max_length=900)
     entries: tuple[PendingContentFinding, ...]
 
     @model_validator(mode="after")
     def findings_contract(self) -> "PendingContentFindings":
-        if self.queue_digest != DEPTH_QUEUE_DIGEST or self.release_id != DEPTH_RELEASE_ID:
-            raise ValueError("pending content findings must bind the sealed depth-v2 release")
+        if self.schema_version == 1:
+            if self.queue_digest != DEPTH_QUEUE_DIGEST or self.release_id != DEPTH_RELEASE_ID:
+                raise ValueError("pending content findings must bind the sealed depth-v2 release")
+            if self.published_boundary != 15:
+                raise ValueError("depth-v2 pending content findings keep the 15-post boundary")
+        elif self.published_boundary != 17:
+            raise ValueError("depth-v3 pending content findings keep the exact 17-post published boundary")
+        elif self.queue_digest != DEPTH_V3_QUEUE_DIGEST or self.release_id != DEPTH_V3_RELEASE_ID:
+            raise ValueError("pending content findings v2 must bind the sealed depth-v3 restore release")
         ids = [entry.publication_id for entry in self.entries]
         if len(ids) != len(set(ids)):
             raise ValueError("pending content findings must be unique per publication")
@@ -142,7 +161,7 @@ def assert_findings_match_pending_suffix(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("findings", type=Path, help="reviewed pending content findings artifact")
-    parser.add_argument("--queue", type=Path, required=True, help="materialized depth-v2 runtime queue")
+    parser.add_argument("--queue", type=Path, required=True, help="materialized depth runtime queue")
     parser.add_argument("--published-boundary", type=int, default=PUBLISHED_BOUNDARY)
     args = parser.parse_args(argv)
 

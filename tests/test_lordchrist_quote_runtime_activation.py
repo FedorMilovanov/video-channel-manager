@@ -6,13 +6,14 @@ from pathlib import Path
 import pytest
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST
+from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_V3_QUEUE_DIGEST
 from video_channel_manager.telegram_quote_runtime_activation import load_runtime_activation
 from video_channel_manager.telegram_quote_source_audit import load_source_web_audit
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content/telegram/lordchrist"
 ACTIVATION_PATH = CONTENT / "successor-depth-runtime-activation-v4.json"
+V5_ACTIVATION_PATH = CONTENT / "successor-depth-runtime-activation-v5.json"
 
 
 def test_v4_runtime_activation_is_exact_provider_inert_15_45_checkpoint() -> None:
@@ -70,3 +71,43 @@ def test_runtime_activation_rejects_write_authorization_in_preflight_artifact(tm
 
     with pytest.raises(ValueError, match="cover all 60"):
         load_runtime_activation(invalid)
+
+
+def test_v5_runtime_activation_is_exact_17_43_quote_first_checkpoint() -> None:
+    activation = load_runtime_activation(V5_ACTIVATION_PATH)
+    policy = load_presentation_policy(CONTENT / "presentation-policy-v5.json")
+
+    assert activation.release_id == "lordchrist-successor-depth-v3"
+    assert activation.queue_digest == DEPTH_V3_QUEUE_DIGEST
+    assert activation.sealed_handoff_published_prefix == 14
+    assert activation.required_published_prefix == 17
+    assert activation.required_pending_suffix == 43
+    assert activation.schema_version == 3
+    assert activation.progress_policy == "verified_prefix"
+    assert (
+        activation.published_history_sha256 == "sha256:2d08a58b30803d3db2b6c5a75b0a844d0aac144598da9f7fb8212431a0d9fd35"
+    )
+    assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v5"
+    assert activation.presentation_policy_sha256 == policy.digest
+    assert activation.presentation_migration == "successor-depth-presentation-migration-v2.json"
+    assert activation.provider_writes_authorized is True
+
+
+def test_v5_runtime_activation_cannot_move_behind_the_v4_boundary(tmp_path: Path) -> None:
+    payload = json.loads(V5_ACTIVATION_PATH.read_text(encoding="utf-8"))
+    payload["required_published_prefix"] = 15
+    payload["required_pending_suffix"] = 45
+    invalid = tmp_path / "invalid-v5-runtime-activation.json"
+    invalid.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="schema-v3 activation requires"):
+        load_runtime_activation(invalid)
+
+
+def test_v5_runtime_activation_cannot_reuse_the_v4_era_migration() -> None:
+    activation = load_runtime_activation(V5_ACTIVATION_PATH)
+
+    assert activation.presentation_migration != "successor-depth-presentation-migration-v1.json"
+    legacy = load_runtime_activation(ACTIVATION_PATH)
+    assert legacy.presentation_policy_id == "lordchrist-quote-v4"
+    assert legacy.schema_version == 2

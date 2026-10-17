@@ -10,7 +10,14 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from video_channel_manager.telegram_models import SHA256_PATTERN, TelegramLedger
 from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_publisher import load_ledger
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID, build_depth_runtime_queue
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    DEPTH_RELEASE_ID,
+    DEPTH_V3_QUEUE_DIGEST,
+    DEPTH_V3_RELEASE_ID,
+    build_depth_runtime_queue,
+    build_depth_v3_runtime_queue,
+)
 from video_channel_manager.telegram_quote_presentation_migration import validate_migration
 from video_channel_manager.telegram_quote_progress import validate_quote_progress
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue
@@ -19,40 +26,51 @@ from video_channel_manager.telegram_quote_source_audit import (
     load_source_web_audit,
 )
 
-RUNTIME_ACTIVATION_FILENAME = "successor-depth-runtime-activation-v4.json"
+RUNTIME_ACTIVATION_FILENAME = "successor-depth-runtime-activation-v5.json"
+DEPTH_RESTORE_FILENAME = "successor-depth-restore-v1.json"
 SOURCE_PROBE_OUTCOMES = frozenset(
     {"retrieved", "transport_failure", "bot_protection", "stale_url_relocated", "not_found", "insufficient_evidence"}
 )
 EXPECTED_TOTAL = 60
 SEALED_HANDOFF_PREFIX = 14
+V4_ERA_BOUNDARY = 15
+V5_ERA_BOUNDARY = 17
 
 
 class RuntimeActivation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-successor-depth-runtime-activation"]
-    schema_version: Literal[1, 2]
+    schema_version: Literal[1, 2, 3]
     progress_policy: Literal["exact_checkpoint", "verified_prefix"] = "exact_checkpoint"
     published_history_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
-    release_id: Literal["lordchrist-successor-depth-v2"]
+    release_id: Literal["lordchrist-successor-depth-v2", "lordchrist-successor-depth-v3"]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
     sealed_handoff_published_prefix: Literal[14]
     required_published_prefix: int = Field(ge=SEALED_HANDOFF_PREFIX, le=EXPECTED_TOTAL)
     required_pending_suffix: int = Field(ge=0, le=EXPECTED_TOTAL)
-    presentation_policy_id: Literal["lordchrist-quote-v4"]
+    presentation_policy_id: Literal["lordchrist-quote-v4", "lordchrist-quote-v5"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
-    state_ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
+    state_ledger_relative_path: Literal[
+        "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json",
+        "content/telegram/lordchrist/successor-depth-v3-publication-ledger.json",
+    ]
     source_web_audit: Literal["quote-source-web-audit-v2.json"]
     source_live_probe: Literal["quote-source-live-probe-v1.json", "quote-source-live-probe-v2.json"]
-    presentation_migration: Literal["successor-depth-presentation-migration-v1.json"]
+    presentation_migration: Literal[
+        "successor-depth-presentation-migration-v1.json", "successor-depth-presentation-migration-v2.json"
+    ]
     provider_writes_authorized: bool
     note: str = Field(min_length=120, max_length=1200)
 
     @model_validator(mode="after")
     def exact_runtime_identity(self) -> "RuntimeActivation":
-        if self.release_id != DEPTH_RELEASE_ID or self.queue_digest != DEPTH_QUEUE_DIGEST:
+        if self.schema_version == 3:
+            if self.release_id != DEPTH_V3_RELEASE_ID or self.queue_digest != DEPTH_V3_QUEUE_DIGEST:
+                raise ValueError("runtime activation differs from the sealed depth-v3 restore queue identity")
+        elif self.release_id != DEPTH_RELEASE_ID or self.queue_digest != DEPTH_QUEUE_DIGEST:
             raise ValueError("runtime activation differs from the sealed depth-v2 queue identity")
         if self.required_published_prefix + self.required_pending_suffix != EXPECTED_TOTAL:
             raise ValueError("runtime activation checkpoint must cover all 60 positional slots")
@@ -61,13 +79,30 @@ class RuntimeActivation(BaseModel):
         if self.schema_version == 1:
             if self.progress_policy != "exact_checkpoint" or self.published_history_sha256 is not None:
                 raise ValueError("schema-v1 runtime activation remains an exact checkpoint")
+        elif self.schema_version == 2:
+            if (
+                self.progress_policy != "verified_prefix"
+                or self.published_history_sha256 is None
+                or self.required_published_prefix != V4_ERA_BOUNDARY
+                or self.presentation_policy_id != "lordchrist-quote-v4"
+                or self.presentation_migration != "successor-depth-presentation-migration-v1.json"
+            ):
+                raise ValueError(
+                    "schema-v2 activation requires verified-prefix progress and exact accepted 15-post history"
+                )
         elif (
             self.progress_policy != "verified_prefix"
             or self.published_history_sha256 is None
-            or self.required_published_prefix != 15
+            or self.required_published_prefix != V5_ERA_BOUNDARY
+            or self.release_id != DEPTH_V3_RELEASE_ID
+            or self.presentation_policy_id != "lordchrist-quote-v5"
+            or self.presentation_migration != "successor-depth-presentation-migration-v2.json"
+            or self.state_ledger_relative_path
+            != "content/telegram/lordchrist/successor-depth-v3-publication-ledger.json"
         ):
             raise ValueError(
-                "schema-v2 activation requires verified-prefix progress and exact accepted 15-post history"
+                "schema-v3 activation requires verified-prefix progress, the depth-v3 restore release, the "
+                "quote-v5 presentation policy, the v2 presentation migration and the exact accepted 16-post history"
             )
         return self
 
@@ -145,6 +180,7 @@ def validate_runtime_checkpoint(
     activation_path: Path,
     presentation_policy_path: Path,
     v3_policy_path: Path,
+    v4_policy_path: Path | None = None,
     migration_path: Path,
     source_web_audit_path: Path,
     source_live_probe_path: Path,
@@ -154,24 +190,34 @@ def validate_runtime_checkpoint(
     integrity_amendment_path: Path,
     depth_audit_path: Path,
     replacements_path: Path,
+    restore_path: Path | None = None,
     require_provider_writes: bool = False,
 ) -> dict[str, object]:
     activation = load_runtime_activation(activation_path)
     policy = load_presentation_policy(presentation_policy_path)
     if activation.presentation_policy_id != policy.policy_id:
-        raise ValueError("runtime activation presentation policy id differs from quote-v4")
+        raise ValueError("runtime activation presentation policy id differs from the loaded policy")
     if activation.presentation_policy_sha256 != policy.digest:
-        raise ValueError("runtime activation presentation policy digest differs from quote-v4")
+        raise ValueError("runtime activation presentation policy digest differs from the loaded policy")
     if require_provider_writes and not activation.provider_writes_authorized:
-        raise ValueError("quote-v4 provider writes are not authorized by the rolling runtime activation")
+        raise ValueError("quote provider writes are not authorized by the rolling runtime activation")
 
-    queue = build_depth_runtime_queue(
-        candidate_path=candidate_path,
-        translation_ledger_path=translation_ledger_path,
-        integrity_amendment_path=integrity_amendment_path,
-        audit_path=depth_audit_path,
-        replacements_path=replacements_path,
-    )
+    if activation.schema_version == 3:
+        restore_path = restore_path or candidate_path.with_name(DEPTH_RESTORE_FILENAME)
+        queue = build_depth_v3_runtime_queue(
+            candidate_path=candidate_path,
+            translation_ledger_path=translation_ledger_path,
+            integrity_amendment_path=integrity_amendment_path,
+            restore_path=restore_path,
+        )
+    else:
+        queue = build_depth_runtime_queue(
+            candidate_path=candidate_path,
+            translation_ledger_path=translation_ledger_path,
+            integrity_amendment_path=integrity_amendment_path,
+            audit_path=depth_audit_path,
+            replacements_path=replacements_path,
+        )
     if not isinstance(queue, SuccessorRuntimeQueue):
         raise ValueError("runtime activation requires the exact successor runtime queue")
     if queue.release_id != activation.release_id or queue.digest != activation.queue_digest:
@@ -189,10 +235,16 @@ def validate_runtime_checkpoint(
         evidence_root=ledger_path.parent / "dispatches",
     )
 
+    if activation.schema_version == 3:
+        if v4_policy_path is None:
+            raise ValueError("schema-v3 activation validation requires the immutable quote-v4 policy path")
+        migration_source_policy_path = v4_policy_path
+    else:
+        migration_source_policy_path = v3_policy_path
     migration = validate_migration(
         migration_path=migration_path,
-        v3_policy_path=v3_policy_path,
-        v4_policy_path=presentation_policy_path,
+        from_policy_path=migration_source_policy_path,
+        to_policy_path=presentation_policy_path,
         ledger_path=ledger_path,
         candidate_path=candidate_path,
         translation_ledger_path=translation_ledger_path,
@@ -201,6 +253,8 @@ def validate_runtime_checkpoint(
     )
     if migration["published_boundary"] != initial_boundary:
         raise ValueError("presentation migration boundary differs from the rolling activation checkpoint")
+    if migration["to_policy_id"] != policy.policy_id:
+        raise ValueError("presentation migration target differs from the rolling activation policy")
 
     web_audit = load_source_web_audit(source_web_audit_path)
     exact_sources = assert_future_exact_source_coverage(
@@ -232,12 +286,11 @@ def validate_runtime_checkpoint(
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(
-        description="Validate the rolling LordChrist quote-v4 runtime activation checkpoint."
-    )
+    root = argparse.ArgumentParser(description="Validate the rolling LordChrist quote runtime activation checkpoint.")
     root.add_argument("--activation", type=Path, required=True)
     root.add_argument("--presentation-policy", type=Path, required=True)
     root.add_argument("--v3-policy", type=Path, required=True)
+    root.add_argument("--v4-policy", type=Path, default=None)
     root.add_argument("--migration", type=Path, required=True)
     root.add_argument("--source-web-audit", type=Path, required=True)
     root.add_argument("--source-live-probe", type=Path, required=True)
@@ -247,6 +300,7 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--integrity-amendment", type=Path, required=True)
     root.add_argument("--depth-audit", type=Path, required=True)
     root.add_argument("--replacements", type=Path, required=True)
+    root.add_argument("--restore", type=Path, default=None)
     root.add_argument("--require-provider-writes", action="store_true")
     root.add_argument("--output", type=Path)
     return root
@@ -258,6 +312,7 @@ def main() -> int:
         activation_path=args.activation,
         presentation_policy_path=args.presentation_policy,
         v3_policy_path=args.v3_policy,
+        v4_policy_path=args.v4_policy,
         migration_path=args.migration,
         source_web_audit_path=args.source_web_audit,
         source_live_probe_path=args.source_live_probe,
@@ -267,6 +322,7 @@ def main() -> int:
         integrity_amendment_path=args.integrity_amendment,
         depth_audit_path=args.depth_audit,
         replacements_path=args.replacements,
+        restore_path=args.restore,
         require_provider_writes=args.require_provider_writes,
     )
     payload = json.dumps(result, ensure_ascii=False, sort_keys=True)

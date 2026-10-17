@@ -1,4 +1,4 @@
-name: Lordchrist quote-v4 read-only preflight
+name: Lordchrist quote-v5 read-only preflight
 
 on:
   workflow_run:
@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: lordchrist-quote-v4-read-only-preflight
+  group: lordchrist-quote-v5-read-only-preflight
   cancel-in-progress: true
 
 env:
@@ -38,23 +38,28 @@ env:
   SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments-v1.json
   SUCCESSOR_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-runtime-queue.json
   SUCCESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
-  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
-  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  DEPTH_V2_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
+  DEPTH_V2_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  DEPTH_RESTORE_PATH: content/telegram/lordchrist/successor-depth-restore-v1.json
+  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v3-runtime-queue.json
+  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v3-publication-ledger.json
+  LOCAL_DEPTH_LEDGER_PATH: .runtime/lordchrist-successor-depth-v3-publication-ledger.json
   ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
   V3_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
   V4_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
-  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
-  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  V5_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v5.json
+  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v5.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v2.json
   PRODUCTION_SCHEDULE_PATH: content/telegram/lordchrist/production-schedule.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
-  STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json
-  CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v1.json
+  STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v2.json
+  CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v2.json
   SOURCE_PROBE_REPORT_PATH: .runtime/lordchrist-quote-source-probe-report.json
   SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
   DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
   DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
-  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
-  RENDER_PROOF_PATH: .runtime/lordchrist-quote-v4-render-proof.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v5-target-proof.json
+  RENDER_PROOF_PATH: .runtime/lordchrist-quote-v5-render-proof.json
   STATE_DIR: .state/lordchrist
   STATE_BRANCH: state/lordchrist-telegram
   # The channel-wide no-blind-replay barrier must inspect the immutable predecessor
@@ -170,7 +175,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Build exact depth-v2 runtime queue without provider authorization
+      - name: Resolve exact depth-v3 restore release without provider authorization
         shell: bash
         run: |
           set -euo pipefail
@@ -183,9 +188,52 @@ jobs:
             --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
             --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
             --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
             --depth-ledger "$DEPTH_LEDGER_PATH" \
             --output "$ACTIVE_SELECTION_PATH"
+
+      - name: Bind the durable ledger used by the read-only validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+          from pathlib import Path
+
+          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          if selection["active_release"] != "depth-v3":
+              raise SystemExit(f"read-only preflight expected the depth-v3 restore release, got {selection['active_release']}")
+          if selection["needs_ledger_initialization"]:
+              # The durable depth-v3 ledger is initialized by the guarded publisher on its
+              # first publish; validate read-only against the exact local materialization.
+              print("EFFECTIVE_DEPTH_LEDGER_PATH=" + os.environ["LOCAL_DEPTH_LEDGER_PATH"])
+          else:
+              print("EFFECTIVE_DEPTH_LEDGER_PATH=" + os.environ["DEPTH_LEDGER_PATH"])
+          PY
+
+      - name: Materialize missing depth-v3 ledger locally for read-only validation
+        if: env.EFFECTIVE_DEPTH_LEDGER_PATH == env.LOCAL_DEPTH_LEDGER_PATH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ ! -e "$DEPTH_LEDGER_PATH" ]] || {
+            echo "Depth-v3 ledger unexpectedly exists in the read-only state snapshot." >&2
+            exit 3
+          }
+          [[ -e "$DEPTH_V2_LEDGER_PATH" ]] || {
+            echo "Depth-v3 handoff requires the durable depth-v2 ledger in the state snapshot." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
+            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
+            --restore "$DEPTH_RESTORE_PATH" \
+            --ledger "$LOCAL_DEPTH_LEDGER_PATH" \
+            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
 
       - name: Bind the exact reviewed queue digest for the read-only preflight
         shell: bash
@@ -202,7 +250,7 @@ jobs:
           digest = selection["queue_digest"]
           if not (digest == activation["queue_digest"] == schedule["successor_queue_digest"]):
               raise SystemExit(
-                  "Resolved depth-v2 queue digest differs from the rolling activation checkpoint "
+                  "Resolved depth-v3 queue digest differs from the rolling activation checkpoint "
                   "and the reviewed production schedule binding."
               )
           # Effect guard: autonomous dispatch may only be armed by the same reviewed
@@ -222,25 +270,27 @@ jobs:
           print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
           PY
 
-      - name: Validate rolling v4 checkpoint and evidence
+      - name: Validate rolling v5 checkpoint and evidence
         shell: bash
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_quote_runtime_activation \
             --activation "$RUNTIME_ACTIVATION_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             --v3-policy "$V3_POLICY_PATH" \
+            --v4-policy "$V4_POLICY_PATH" \
             --migration "$PRESENTATION_MIGRATION_PATH" \
             --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
             --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
+            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
             --candidate "$SUCCESSOR_CANDIDATE_PATH" \
             --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
             --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --depth-audit "$DEPTH_AUDIT_PATH" \
-            --replacements "$DEPTH_REPLACEMENTS_PATH"
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --restore "$DEPTH_RESTORE_PATH"
 
-      - name: Validate the reviewed standalone ledger for exact future suffix 16 through 60
+      - name: Validate the reviewed standalone ledger for exact future suffix 18 through 60
         shell: bash
         run: |
           set -euo pipefail
@@ -251,7 +301,7 @@ jobs:
             --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
-            --published-boundary 15
+            --published-boundary 17
 
       - name: Validate reviewed pending content findings
         shell: bash
@@ -260,7 +310,7 @@ jobs:
           python -m video_channel_manager.telegram_quote_content_findings \
             "$CONTENT_FINDINGS_PATH" \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --published-boundary 15
+            --published-boundary 17
 
       - name: Validate reviewed source coverage with safe canonicalization
         shell: bash
@@ -313,7 +363,7 @@ jobs:
               print("::notice::live source retrieval non-retrieved URLs: " + "; ".join(not_retrieved[:40]))
           PY
 
-      - name: Re-run standalone quality gate for exact future suffix 16 through 60
+      - name: Re-run standalone quality gate for exact future suffix 18 through 60
         shell: bash
         run: |
           set -euo pipefail
@@ -325,27 +375,28 @@ jobs:
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
             --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
             --standalone-review "$STANDALONE_REVIEW_PATH" \
-            --published-boundary 15
+            --published-boundary 17
 
-      - name: Validate queue and ledger through quote-v4 renderer
+      - name: Validate queue and ledger through quote-v5 renderer
         shell: bash
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_cli \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             validate
 
-      - name: Prove quote-v4 reading unit for the exact next pending publication
+      - name: Prove quote-v5 reading unit for the exact next pending publication
         shell: bash
         run: |
           set -euo pipefail
-          python -m video_channel_manager.telegram_quote_v4_render_proof \
+          python -m video_channel_manager.telegram_quote_v5_render_proof \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             --activation "$RUNTIME_ACTIVATION_PATH" \
+            --standalone-review "$STANDALONE_REVIEW_PATH" \
             --output "$RENDER_PROOF_PATH"
 
       - name: Prove exact Telegram target configuration
@@ -373,8 +424,8 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_cli \
             --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --presentation-policy "$V4_POLICY_PATH" \
+            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V5_POLICY_PATH" \
             preflight \
             --mode manual \
             --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
@@ -423,8 +474,15 @@ jobs:
               raise SystemExit("Rendering proof authorization differs from the reviewed activation checkpoint.")
           if schedule["enabled"] is not activation["provider_writes_authorized"]:
               raise SystemExit("Reviewed schedule arming differs from the reviewed activation checkpoint.")
+          if selection["active_release"] != "depth-v3":
+              raise SystemExit("Read-only preflight resolved an unexpected active release.")
           if selection["needs_ledger_initialization"]:
-              raise SystemExit("Existing durable depth-v2 ledger unexpectedly requires initialization.")
+              materialized = Path(os.environ["LOCAL_DEPTH_LEDGER_PATH"])
+              if not materialized.is_file():
+                  raise SystemExit("Depth-v3 ledger initialization is required but was not materialized locally.")
+              local_ledger = json.loads(materialized.read_text(encoding="utf-8"))
+              if local_ledger["queue_digest"] != selection["queue_digest"]:
+                  raise SystemExit("Locally materialized depth-v3 ledger differs from the resolved queue digest.")
           if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
               raise SystemExit("Live target proof resolved a different bot id.")
           if target_proof["chat_id"] != int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]):
@@ -437,7 +495,7 @@ jobs:
           mode = os.environ["PREFLIGHT_MODE"]
           label = "exact current-main" if mode == "current_main" else "read-only staging"
           print(
-              f"PASS: {label} quote-v4 preflight is provider-inert; "
+              f"PASS: {label} quote-v5 preflight is provider-inert; "
               f"published prefix {render_proof['published_prefix']}, pending suffix {render_proof['pending_suffix']}, "
               f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})."
           )
@@ -459,7 +517,7 @@ jobs:
           emit("preflight mode", f"{os.environ.get('PREFLIGHT_MODE', 'unknown')} at {os.environ.get('PREFLIGHT_SHA', 'unknown')}")
           activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
           emit("rolling checkpoint release", f"{activation['release_id']} {activation['queue_digest']}")
-          emit("quote-v4 policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
+          emit("quote policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
           render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
           emit(
               "state boundary",
@@ -467,7 +525,7 @@ jobs:
               f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})",
           )
           emit(
-              "quote-v4 reading unit",
+              "quote-v5 reading unit",
               f"entities {','.join(render_proof['entity_layout'])}; "
               f"attribution immediately below quotation; {render_proof['rendered_text_length']} characters; "
               f"provider payload {render_proof['provider_payload_sha256']}",
@@ -502,11 +560,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: lordchrist-quote-v4-preflight-proofs
+          name: lordchrist-quote-v5-preflight-proofs
           retention-days: 30
           if-no-files-found: warn
           path: |
             .runtime/lordchrist-active-quote-selection.json
-            .runtime/lordchrist-quote-v4-render-proof.json
-            .runtime/lordchrist-quote-v4-target-proof.json
+            .runtime/lordchrist-quote-v5-render-proof.json
+            .runtime/lordchrist-quote-v5-target-proof.json
             .runtime/lordchrist-quote-source-probe-report.json

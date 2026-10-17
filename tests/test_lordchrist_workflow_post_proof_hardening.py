@@ -50,9 +50,9 @@ def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run(
 
 def test_lordchrist_scheduler_preserves_three_moscow_windows_and_pins_runner() -> None:
     text = workflow_text()
-    assert 'cron: "17 9 * * *"' in text
-    assert 'cron: "17 19 * * 1,3,6"' in text
-    assert 'cron: "17 21 * * 2,5,0"' in text
+    assert 'cron: "17 6 * * *"' in text
+    assert 'cron: "17 16 * * 1,3,6"' in text
+    assert 'cron: "17 18 * * 2,5,0"' in text
     assert 'cron: "17 21 * * *"' not in text
     assert text.count("timezone: Europe/Moscow") >= 3
     assert "runs-on: ubuntu-24.04" in text

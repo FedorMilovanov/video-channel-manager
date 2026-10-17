@@ -11,10 +11,16 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from video_channel_manager.telegram_models import SHA256_PATTERN, sha256_text
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    DEPTH_RELEASE_ID,
+    DEPTH_V3_QUEUE_DIGEST,
+    DEPTH_V3_RELEASE_ID,
+)
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 
 STANDALONE_REVIEW_FILENAME = "quote-standalone-review-v1.json"
+STANDALONE_REVIEW_V2_FILENAME = "quote-standalone-review-v2.json"
 STANDALONE_REVIEW_SCHEMA = "video-channel-manager.telegram-quote-standalone-review"
 PUBLISHED_BOUNDARY = 15
 EXPECTED_FUTURE_SEQUENCES = tuple(range(PUBLISHED_BOUNDARY + 1, 61))
@@ -113,10 +119,57 @@ class ReviewedStandaloneSuffix(BaseModel):
         return self
 
 
-def load_standalone_review(path: Path) -> ReviewedStandaloneSuffix:
+class ReviewedStandaloneSuffixV2(BaseModel):
+    """Depth-v3 standalone review of the restored pending suffix 18..60.
+
+    The v2 standard drops title-resolved anaphora openings entirely: every
+    reader-facing quotation must open self-contained. Sequence 17 was published
+    under quote-v4 before this review and belongs to immutable history; the two
+    restored slots are bound to the complete source-v1 first sentences, and the
+    remaining entries inherit their reviewed v1 bindings unchanged against the
+    depth-v3 payloads.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-quote-standalone-review"]
+    schema_version: Literal[2]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    release_id: Literal["lordchrist-successor-depth-v3"]
+    queue_digest: str = Field(pattern=SHA256_PATTERN)
+    published_boundary: Literal[17]
+    reviewed_on: date
+    method: str = Field(min_length=120, max_length=1500)
+    entries: tuple[ReviewedStandaloneEntry, ...]
+
+    @model_validator(mode="after")
+    def exact_reviewed_suffix(self) -> "ReviewedStandaloneSuffixV2":
+        if self.release_id != DEPTH_V3_RELEASE_ID or self.queue_digest != DEPTH_V3_QUEUE_DIGEST:
+            raise ValueError("standalone review v2 differs from the exact depth-v3 restore release identity")
+        if tuple(entry.sequence for entry in self.entries) != tuple(range(18, 61)):
+            raise ValueError("standalone review v2 must cover every pending sequence 18..60 exactly once")
+        ids = [entry.publication_id for entry in self.entries]
+        if len(ids) != len(set(ids)):
+            raise ValueError("standalone review v2 publication ids must be unique")
+        if any(entry.opening != "self_contained" for entry in self.entries):
+            raise ValueError(
+                "standalone review v2 must not accept context-dependent openings; a title cannot repair a fragment"
+            )
+        return self
+
+
+ReviewedStandaloneSuffixContract = ReviewedStandaloneSuffix | ReviewedStandaloneSuffixV2
+
+
+def load_standalone_review(path: Path) -> ReviewedStandaloneSuffixContract:
     try:
-        return ReviewedStandaloneSuffix.model_validate_json(path.read_text(encoding="utf-8"))
-    except (OSError, ValidationError) as exc:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        schema_version = payload.get("schema_version") if isinstance(payload, dict) else None
+        if schema_version == 2:
+            return ReviewedStandaloneSuffixV2.model_validate(payload)
+        return ReviewedStandaloneSuffix.model_validate(payload)
+    except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise ValueError(f"invalid LordChrist quote standalone review {path}: {exc}") from exc
 
 
@@ -124,7 +177,7 @@ def quotation_sha256(quotation: str) -> str:
     return sha256_text(quotation.strip())
 
 
-def reviewed_title_resolutions(reviewed: ReviewedStandaloneSuffix) -> dict[str, str]:
+def reviewed_title_resolutions(reviewed: ReviewedStandaloneSuffixContract) -> dict[str, str]:
     """Map publication id to the exact reviewed visible title that resolves the opening."""
 
     return {
@@ -169,7 +222,7 @@ def near_duplicate_quotations(quotations: dict[str, str]) -> tuple[tuple[str, st
 
 
 def assert_reviewed_standalone_suffix(
-    reviewed: ReviewedStandaloneSuffix,
+    reviewed: ReviewedStandaloneSuffixContract,
     posts: tuple[SuccessorRuntimePost, ...],
     *,
     published_boundary: int = PUBLISHED_BOUNDARY,
@@ -177,7 +230,7 @@ def assert_reviewed_standalone_suffix(
     """Cross-check the reviewed editorial ledger against the exact runtime suffix."""
 
     future = posts[published_boundary:]
-    if tuple(post.sequence for post in future) != EXPECTED_FUTURE_SEQUENCES:
+    if tuple(post.sequence for post in future) != tuple(range(published_boundary + 1, 61)):
         raise ValueError("standalone review requires the exact pending runtime suffix")
 
     by_id = {entry.publication_id: entry for entry in reviewed.entries}
@@ -225,16 +278,26 @@ def main() -> int:
     parser.add_argument("--published-boundary", type=int, default=PUBLISHED_BOUNDARY)
     args = parser.parse_args()
 
-    from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue
+    from video_channel_manager.telegram_quote_depth import (
+        build_depth_runtime_queue,
+        build_depth_v3_runtime_queue,
+    )
 
     reviewed = load_standalone_review(args.path)
-    queue = build_depth_runtime_queue(
-        candidate_path=args.candidate,
-        translation_ledger_path=args.translation_ledger,
-        integrity_amendment_path=args.integrity_amendment,
-        audit_path=args.depth_audit,
-        replacements_path=args.replacements,
-    )
+    if reviewed.schema_version == 2:
+        queue = build_depth_v3_runtime_queue(
+            candidate_path=args.candidate,
+            translation_ledger_path=args.translation_ledger,
+            integrity_amendment_path=args.integrity_amendment,
+        )
+    else:
+        queue = build_depth_runtime_queue(
+            candidate_path=args.candidate,
+            translation_ledger_path=args.translation_ledger,
+            integrity_amendment_path=args.integrity_amendment,
+            audit_path=args.depth_audit,
+            replacements_path=args.replacements,
+        )
     assert_reviewed_standalone_suffix(reviewed, queue.posts, published_boundary=args.published_boundary)
     print(
         json.dumps(
