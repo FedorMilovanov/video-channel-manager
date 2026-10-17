@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "publication_id": "lordchrist-successor-depth-v2-17-gurnall-defend-in-suffering",
+  "sequence": 17,
+  "intent_id": "7d9bb33b31b230747f48a98fe1a677e0",
+  "workflow_run_id": "39025757706",
+  "workflow_run_attempt": "1",
+  "github_sha": "17c4521d44a305964fb0d7177c98e71c5e81636f",
+  "github_workflow_sha": "17c4521d44a305964fb0d7177c98e71c5e81636f",
+  "payload_sha256": "sha256:3a822e24da42fb4f6e8f2575be5539c4484ffeec395706f57811af5b636e09d8",
+  "text": "Они даны защищать его в страдании, а не освобождать от него.\n\n— Уильям Герналл, «Христианин во всеоружии», наставление IX\n\nГерналл разрушает обещание «веры без скорби»: Божьи доспехи предназначены не для отмены всякого страдания, а для сохранения верности внутри него. Божья помощь проявляется не только в избавлении от испытания, но и в том, что человек не оставляет Христа под его тяжестью.\n\n#Герналл #Страдание #Провидение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-17T10:40:13.999971Z"
+  },
+  "prepared_at_utc": "2026-10-17T10:40:15.117896Z"
+}
