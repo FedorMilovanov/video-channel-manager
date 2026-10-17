@@ -46,14 +46,16 @@ def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
     workflow = _workflow()
 
     ordered = [
-        "Build exact depth-v2 runtime queue without provider authorization",
+        "Resolve exact depth-v3 restore release without provider authorization",
+        "Bind the durable ledger used by the read-only validation",
+        "Materialize missing depth-v3 ledger locally for read-only validation",
         "Bind the exact reviewed queue digest for the read-only preflight",
         "Validate rolling v5 checkpoint and evidence",
-        "Validate the reviewed standalone ledger for exact future suffix 16 through 60",
+        "Validate the reviewed standalone ledger for exact future suffix 18 through 60",
         "Validate reviewed pending content findings",
         "Validate reviewed source coverage with safe canonicalization",
         "Classify live source retrieval read-only (report only, never invalidating)",
-        "Re-run standalone quality gate for exact future suffix 16 through 60",
+        "Re-run standalone quality gate for exact future suffix 18 through 60",
         "Validate queue and ledger through quote-v5 renderer",
         "Prove quote-v5 reading unit for the exact next pending publication",
         "Prove exact Telegram target configuration",
@@ -104,9 +106,14 @@ def test_quote_v4_preflight_is_provider_inert_and_never_writes_state() -> None:
     assert "git push" not in workflow
     assert "sendMessage" not in workflow
     assert (
-        'telegram_cli \\\n            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \\\n            --ledger "$DEPTH_LEDGER_PATH" \\\n            --presentation-policy "$V5_POLICY_PATH" \\\n            preflight'
+        'telegram_cli \\\n            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \\\n            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \\\n            --presentation-policy "$V5_POLICY_PATH" \\\n            preflight'
         in workflow
     )
+    # The depth-v3 ledger is only durable after the guarded publisher first runs;
+    # read-only validation materializes the exact artifact locally instead.
+    assert "initialize-v3-ledger" in workflow
+    assert "INITIALIZE_REVIEWED_DEPTH_V3_LEDGER" in workflow
+    assert 'if selection["needs_ledger_initialization"]:' in workflow
     assert 'if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"])' in workflow
     assert 'if target_proof["chat_username"] != "lordchrist"' in workflow
     assert "requirements/telegram-publisher.txt" in workflow
@@ -140,7 +147,7 @@ def test_quote_v4_preflight_validates_the_reviewed_standalone_ledger_and_source_
 
     workflow = _workflow()
 
-    assert "STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json" in workflow
+    assert "STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v2.json" in workflow
     assert "python -m video_channel_manager.telegram_quote_standalone_review" in workflow
     assert '"$STANDALONE_REVIEW_PATH" \\' in workflow
     assert "python -m video_channel_manager.telegram_quote_source_audit" in workflow
@@ -166,7 +173,7 @@ def test_quote_v4_preflight_enforces_the_reviewed_pending_content_findings_recor
 
     workflow = _workflow()
 
-    assert "CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v1.json" in workflow
+    assert "CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v2.json" in workflow
     assert "python -m video_channel_manager.telegram_quote_content_findings" in workflow
     assert '"$CONTENT_FINDINGS_PATH" \\' in workflow
     assert '--queue "$DEPTH_RUNTIME_QUEUE_PATH" \\' in workflow

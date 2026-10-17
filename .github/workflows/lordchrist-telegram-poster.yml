@@ -63,9 +63,13 @@ env:
   SUCCESSOR_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-runtime-queue.json
   DEPTH_RELEASE_PATH: content/telegram/lordchrist/successor-depth-release-v1.json
   DEPTH_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-activation-v1.json
-  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
-  DEPTH_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
-  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  DEPTH_RESTORE_PATH: content/telegram/lordchrist/successor-depth-restore-v1.json
+  DEPTH_V2_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
+  DEPTH_V2_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v3-runtime-queue.json
+  DEPTH_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/successor-depth-v3-publication-ledger.json
+  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v3-publication-ledger.json
+  STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v2.json
   ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
   QUOTE_CHECKPOINT_PATH: .runtime/lordchrist-quote-runtime-checkpoint.json
   STATE_BRANCH: state/lordchrist-telegram
@@ -241,6 +245,8 @@ jobs:
             --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
             --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
             --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
             --depth-ledger "$DEPTH_LEDGER_PATH" \
             "${provider_write_args[@]}" \
@@ -272,26 +278,30 @@ jobs:
                   handle.write(f"{key}={value}\n")
           PY2
 
-      - name: Materialize missing depth-v2 ledger locally for read-only validation
+      - name: Materialize missing depth-v3 ledger locally for read-only validation
         if: steps.active_release.outputs.needs_ledger_initialization == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v2" ]] || {
-            echo "Local depth-v2 ledger materialization requested for another release." >&2
+          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v3" ]] || {
+            echo "Local depth-v3 ledger materialization requested for another release." >&2
             exit 2
           }
           [[ ! -e "$DEPTH_LEDGER_PATH" ]] || {
-            echo "Depth-v2 ledger unexpectedly exists in the read-only state snapshot." >&2
+            echo "Depth-v3 ledger unexpectedly exists in the read-only state snapshot." >&2
             exit 3
           }
-          python -m video_channel_manager.telegram_quote_depth initialize-ledger \
+          [[ -e "$DEPTH_V2_LEDGER_PATH" ]] || {
+            echo "Depth-v3 handoff requires the durable depth-v2 ledger in the state snapshot." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
             --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
-            --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
-            --release "$DEPTH_RELEASE_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
+            --restore "$DEPTH_RESTORE_PATH" \
             --ledger "$DEPTH_LEDGER_PATH" \
-            --confirm INITIALIZE_REVIEWED_DEPTH_V2_LEDGER
+            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -325,6 +335,7 @@ jobs:
             --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --restore "$DEPTH_RESTORE_PATH" \
             "${provider_write_args[@]}" \
             --output "$QUOTE_CHECKPOINT_PATH"
 
@@ -354,7 +365,7 @@ jobs:
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             --activation "$RUNTIME_ACTIVATION_PATH" \
-            --standalone-review content/telegram/lordchrist/quote-standalone-review-v1.json \
+            --standalone-review "$STANDALONE_REVIEW_PATH" \
             --output .runtime/lordchrist-next-reading-unit.json
 
       - name: Preview next publication
@@ -480,14 +491,14 @@ jobs:
             }
           fi
 
-      - name: Discard read-only depth-v2 ledger before durable initialization
+      - name: Discard read-only depth-v3 ledger before durable initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
           rm -f -- "$DEPTH_LEDGER_PATH"
 
-      - name: Enable state writer for one-time depth-v2 ledger initialization
+      - name: Enable state writer for one-time depth-v3 ledger initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -496,48 +507,52 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Persist exact depth-v2 ledger after current-main proof
+      - name: Persist exact depth-v3 ledger after current-main proof
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v2" ]] || {
-            echo "Depth-v2 ledger initialization requested for another release." >&2
+          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v3" ]] || {
+            echo "Depth-v3 ledger initialization requested for another release." >&2
             exit 2
           }
           [[ ! -e "$DEPTH_LEDGER_PATH" ]] || {
-            echo "Depth-v2 ledger appeared after selection; refusing ambiguous initialization." >&2
+            echo "Depth-v3 ledger appeared after selection; refusing ambiguous initialization." >&2
             exit 3
           }
-          python -m video_channel_manager.telegram_quote_depth initialize-ledger \
+          [[ -e "$DEPTH_V2_LEDGER_PATH" ]] || {
+            echo "Depth-v3 handoff requires the durable depth-v2 ledger in the state snapshot." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
             --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
-            --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
-            --release "$DEPTH_RELEASE_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
+            --restore "$DEPTH_RESTORE_PATH" \
             --ledger "$DEPTH_LEDGER_PATH" \
-            --confirm INITIALIZE_REVIEWED_DEPTH_V2_LEDGER
+            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
 
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
           git -C "$STATE_DIR" add -- "$DEPTH_LEDGER_RELATIVE_PATH"
-          git -C "$STATE_DIR" commit -m "Initialize reviewed Lordchrist depth-v2 ledger [skip ci]"
+          git -C "$STATE_DIR" commit -m "Initialize reviewed Lordchrist depth-v3 ledger [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$remote_sha" == "$local_sha" ]] || {
-            echo "Remote depth-v2 ledger initialization commit differs from local exact commit." >&2
+            echo "Remote depth-v3 ledger initialization commit differs from local exact commit." >&2
             exit 3
           }
 
           git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
-          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$DEPTH_LEDGER_RELATIVE_PATH" > .runtime/remote-depth-v2-ledger.json
-          cmp -s "$DEPTH_LEDGER_PATH" .runtime/remote-depth-v2-ledger.json || {
-            echo "Remote depth-v2 ledger differs from the exact initialized ledger." >&2
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$DEPTH_LEDGER_RELATIVE_PATH" > .runtime/remote-depth-v3-ledger.json
+          cmp -s "$DEPTH_LEDGER_PATH" .runtime/remote-depth-v3-ledger.json || {
+            echo "Remote depth-v3 ledger differs from the exact initialized ledger." >&2
             exit 3
           }
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger .runtime/remote-depth-v2-ledger.json \
+            --ledger .runtime/remote-depth-v3-ledger.json \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 

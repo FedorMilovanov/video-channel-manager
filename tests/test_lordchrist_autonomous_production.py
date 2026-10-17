@@ -14,7 +14,7 @@ POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v5.json"
 ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/successor-depth-runtime-activation-v5.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 EXPECTED_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-EXPECTED_SUCCESSOR_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
+EXPECTED_SUCCESSOR_DIGEST = "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -37,12 +37,12 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     # bind the identical reviewed presentation policy.
     assert config.enabled is activation["provider_writes_authorized"]
     assert config.presentation_policy_sha256 == activation["presentation_policy_sha256"]
-    assert activation["required_published_prefix"] == 16
-    assert activation["required_pending_suffix"] == 44
+    assert activation["required_published_prefix"] == 17
+    assert activation["required_pending_suffix"] == 43
     note = config.activation_note.casefold()
-    assert "depth-v2" in note
-    assert "sequence 17" in note
-    assert "16 published and 44 pristine pending" in note
+    assert "depth-v3" in note
+    assert "sequence 18" in note
+    assert "17 published and 43 pristine pending" in note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
@@ -162,7 +162,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
+    gate_end = workflow.index("      - name: Discard read-only depth-v3 ledger before durable initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -190,16 +190,16 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
 def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    local_start = workflow.index("      - name: Materialize missing depth-v2 ledger locally for read-only validation")
+    local_start = workflow.index("      - name: Materialize missing depth-v3 ledger locally for read-only validation")
     validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
     preview_start = workflow.index("      - name: Preview next publication")
     quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
     target_start = workflow.index("      - name: Validate read-only target configuration")
     preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    discard_start = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
-    writer_start = workflow.index("      - name: Enable state writer for one-time depth-v2 ledger initialization")
-    durable_start = workflow.index("      - name: Persist exact depth-v2 ledger after current-main proof")
+    discard_start = workflow.index("      - name: Discard read-only depth-v3 ledger before durable initialization")
+    writer_start = workflow.index("      - name: Enable state writer for one-time depth-v3 ledger initialization")
+    durable_start = workflow.index("      - name: Persist exact depth-v3 ledger after current-main proof")
     publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
 
     assert (
@@ -229,10 +229,13 @@ def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_cur
     durable_step = workflow[durable_start:publication_writer_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
     assert "steps.intent.outputs.do_publish == 'true'" in durable_step
-    assert "Initialize reviewed Lordchrist depth-v2 ledger" in durable_step
+    assert "Initialize reviewed Lordchrist depth-v3 ledger" in durable_step
     assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
-    assert "remote-depth-v2-ledger.json" in durable_step
+    assert "remote-depth-v3-ledger.json" in durable_step
+    # The depth-v3 handoff rebinds the exact durable depth-v2 state; both ledgers
+    # must be present in the read-only snapshot before any initialization runs.
+    assert "depth-v2 ledger in the state snapshot" in durable_step
 
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality[local_start:]
-    assert "Initialize reviewed Lordchrist depth-v2 ledger" not in before_quality
+    assert "Initialize reviewed Lordchrist depth-v3 ledger" not in before_quality

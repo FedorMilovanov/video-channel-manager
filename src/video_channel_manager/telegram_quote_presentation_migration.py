@@ -9,7 +9,14 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from video_channel_manager.telegram_models import SHA256_PATTERN, TelegramLedger
 from video_channel_manager.telegram_presentation import load_presentation_policy
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID, build_depth_runtime_queue
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    DEPTH_RELEASE_ID,
+    DEPTH_V3_QUEUE_DIGEST,
+    DEPTH_V3_RELEASE_ID,
+    build_depth_runtime_queue,
+    build_depth_v3_runtime_queue,
+)
 from video_channel_manager.telegram_quote_progress import validate_quote_progress
 
 MIGRATION_FILENAME = "successor-depth-presentation-migration-v1.json"
@@ -48,19 +55,20 @@ class QuotePresentationMigration(BaseModel):
 class QuotePresentationMigrationV2(BaseModel):
     """Immutable v4 -> v5 presentation migration boundary.
 
-    Sequence 16 is the only card ever published under quote-v4. The v5 policy
-    renders the pending suffix quote-first: no decorative leading title, a bold
-    reviewed title only for the reviewed load-bearing openings, and real
-    paragraph air between that title and the quotation.
+    Sequences 16 and 17 are the only cards ever published under quote-v4 (17
+    went out on 2026-10-17 as durable Telegram message 1567). The v5 policy
+    renders the pending suffix quote-first with no leading title at all; the
+    depth-v3 restore release guarantees that every pending quotation opens as
+    a complete, self-contained thought, so no title is ever needed.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-quote-presentation-migration"]
     schema_version: Literal[2]
-    release_id: Literal["lordchrist-successor-depth-v2"]
+    release_id: Literal["lordchrist-successor-depth-v3"]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
-    published_boundary: Literal[16]
+    published_boundary: Literal[17]
     from_policy_id: Literal["lordchrist-quote-v4"]
     from_policy_sha256: str = Field(pattern=SHA256_PATTERN)
     to_policy_id: Literal["lordchrist-quote-v5"]
@@ -70,8 +78,8 @@ class QuotePresentationMigrationV2(BaseModel):
 
     @model_validator(mode="after")
     def exact_release_identity(self) -> "QuotePresentationMigrationV2":
-        if self.release_id != DEPTH_RELEASE_ID or self.queue_digest != DEPTH_QUEUE_DIGEST:
-            raise ValueError("presentation migration differs from the sealed depth-v2 release identity")
+        if self.release_id != DEPTH_V3_RELEASE_ID or self.queue_digest != DEPTH_V3_QUEUE_DIGEST:
+            raise ValueError("presentation migration differs from the sealed depth-v3 restore release identity")
         if self.from_policy_sha256 == self.to_policy_sha256:
             raise ValueError("presentation migration must change the presentation policy digest")
         return self
@@ -119,11 +127,18 @@ def validate_migration(
     if migration.to_policy_id != to_policy.policy_id or migration.to_policy_sha256 != to_policy.digest:
         raise ValueError("migration target presentation identity differs from the reviewed target policy")
 
-    queue = build_depth_runtime_queue(
-        candidate_path=candidate_path,
-        translation_ledger_path=translation_ledger_path,
-        integrity_amendment_path=integrity_amendment_path,
-    )
+    if migration.schema_version == 2:
+        queue = build_depth_v3_runtime_queue(
+            candidate_path=candidate_path,
+            translation_ledger_path=translation_ledger_path,
+            integrity_amendment_path=integrity_amendment_path,
+        )
+    else:
+        queue = build_depth_runtime_queue(
+            candidate_path=candidate_path,
+            translation_ledger_path=translation_ledger_path,
+            integrity_amendment_path=integrity_amendment_path,
+        )
     if queue.release_id != migration.release_id or queue.digest != migration.queue_digest:
         raise ValueError("runtime queue differs from the migration release identity")
     if len(queue.posts) != EXPECTED_TOTAL:

@@ -44,14 +44,27 @@ DEPTH_REPLACEMENTS_FILENAME = "quote-depth-replacements-v1.json"
 DEPTH_RELEASE_FILENAME = "successor-depth-release-v1.json"
 DEPTH_ACTIVATION_FILENAME = "successor-depth-activation-v1.json"
 DEPTH_PRESENTATION_FILENAME = "presentation-policy-v3.json"
+DEPTH_RESTORE_FILENAME = "successor-depth-restore-v1.json"
 DEPTH_RELEASE_ID = "lordchrist-successor-depth-v2"
+DEPTH_V3_RELEASE_ID = "lordchrist-successor-depth-v3"
 DEPTH_QUEUE_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
+DEPTH_V3_QUEUE_DIGEST = "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913"
 SOURCE_V1_QUEUE_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
 AUDIT_HISTORY_PREFIX = 10
 REVIEWED_TOTAL = 60
 REPLACEMENT_POOL_COUNT = 21
 DEPTH_LEDGER_RELATIVE_PATH = "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"
+DEPTH_V3_LEDGER_RELATIVE_PATH = "content/telegram/lordchrist/successor-depth-v3-publication-ledger.json"
+V3_HANDOFF_PUBLISHED_PREFIX = 17
+RESTORE_SEQUENCES = (32, 36)
 ATTRIBUTION_QUOTED_RE = re.compile(r"^(?P<author>.+?),\s*«(?P<work>[^»]+)»(?P<suffix>.*)$")
+
+# The depth-v3 restore standard: a reader-facing quotation must never open on a
+# pronoun or demonstrative whose antecedent lives in the omitted source context.
+# The quote-v4 era proved that a visible title cannot repair such an opening.
+RESTORE_FORBIDDEN_OPENINGS = frozenset(
+    {"они", "он", "она", "оно", "его", "её", "их", "этот", "эта", "это", "эти", "этих", "те", "всё", "все"}
+)
 
 
 class DepthAuditEntry(BaseModel):
@@ -239,16 +252,94 @@ class DepthActivation(BaseModel):
         return self
 
 
+class DepthRestoreEntry(BaseModel):
+    """One pending slot restored to the complete source-v1 quotation.
+
+    The depth-v2 translation pass replaced the original referent-naming
+    translation with a literal ``exact_fragment_only`` rendering that opens on
+    an unresolved anaphora. The restore binds the complete first sentence of
+    the *sealed source-v1 corpus translation* verbatim, so no new translation
+    is introduced: the reader-facing text returns to already-reviewed bytes.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    sequence: int = Field(ge=18, le=60)
+    publication_id: str = Field(pattern=r"^lordchrist-successor-depth-v2-[a-z0-9-]{4,100}$")
+    base_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+    restored_quote_ru: str = Field(min_length=40, max_length=1800)
+    source_fragment_sha256: str = Field(pattern=SHA256_PATTERN)
+    rationale_ru: str = Field(min_length=80, max_length=900)
+
+    @model_validator(mode="after")
+    def complete_opening(self) -> "DepthRestoreEntry":
+        from video_channel_manager.telegram_presentation import _require_standalone_quotation
+
+        quote = " ".join(self.restored_quote_ru.strip().split())
+        if quote != self.restored_quote_ru:
+            raise ValueError("restored quotation must be a normalized single-line sentence")
+        _require_standalone_quotation(quote)
+        first_word = quote.split(" ", 1)[0].rstrip(",;:").casefold()
+        if first_word in RESTORE_FORBIDDEN_OPENINGS:
+            raise ValueError(
+                "restored quotation must name its own subject instead of opening on an unresolved reference"
+            )
+        return self
+
+
+class DepthRestoreRelease(BaseModel):
+    """Reader-driven restore release layered over the sealed depth-v2 queue.
+
+    Sequence 17 was published under quote-v4 on 2026-10-17 (durable message
+    1567) and is immutable history, so the restore covers only the two pending
+    anaphora-fragment slots that remain. Depth-v3 keeps every payload of the
+    accepted 1-17 history and every other pending card byte-identical to
+    depth-v2. The queue identity digest binds the base release plus the exact
+    restore entries.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-successor-depth-restore"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    release_id: Literal["lordchrist-successor-depth-v3"]
+    owning_issue: int = Field(ge=1)
+    base_release_id: Literal["lordchrist-successor-depth-v2"]
+    base_queue_digest: str = Field(pattern=SHA256_PATTERN)
+    handoff_published_prefix: Literal[17]
+    normalized_queue_digest: str = Field(pattern=SHA256_PATTERN)
+    release_state: Literal["staged_provider_inert"]
+    provider_writes_authorized: Literal[False]
+    reason: str = Field(min_length=120, max_length=1500)
+    restores: tuple[DepthRestoreEntry, ...]
+
+    @model_validator(mode="after")
+    def exact_restore_inventory(self) -> "DepthRestoreRelease":
+        if self.base_release_id != DEPTH_RELEASE_ID or self.base_queue_digest != DEPTH_QUEUE_DIGEST:
+            raise ValueError("depth restore must layer over the exact sealed depth-v2 release")
+        if self.normalized_queue_digest == self.base_queue_digest:
+            raise ValueError("depth restore must change the queue identity digest")
+        if tuple(entry.sequence for entry in self.restores) != RESTORE_SEQUENCES:
+            raise ValueError("depth restore must cover exactly the reviewed pending anaphora slots 32 and 36")
+        if min(RESTORE_SEQUENCES) <= self.handoff_published_prefix:
+            raise ValueError("depth restore slots must stay strictly inside the pending suffix")
+        return self
+
+
 class DepthActiveSelection(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-active-quote-selection"]
     schema_version: Literal[2]
-    active_release: Literal["depth-v2"]
-    release_id: Literal["lordchrist-successor-depth-v2"]
+    active_release: Literal["depth-v2", "depth-v3"]
+    release_id: Literal["lordchrist-successor-depth-v2", "lordchrist-successor-depth-v3"]
     queue_path: str
     ledger_path: str
-    ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
+    ledger_relative_path: str
+    base_release_id: Literal["lordchrist-successor-depth-v2"]
+    base_ledger_path: str
     queue_digest: str = Field(pattern=SHA256_PATTERN)
     predecessor_complete: Literal[True]
     needs_ledger_initialization: bool
@@ -279,6 +370,10 @@ def load_depth_release(path: Path) -> DepthRelease:
 
 def load_depth_activation(path: Path) -> DepthActivation:
     return DepthActivation.model_validate(_load_model(path, DepthActivation, "depth activation"))
+
+
+def load_depth_restore(path: Path) -> DepthRestoreRelease:
+    return DepthRestoreRelease.model_validate(_load_model(path, DepthRestoreRelease, "depth restore release"))
 
 
 def _presentation_identity(attribution_ru: str) -> RuntimeSourceIdentity:
@@ -602,6 +697,191 @@ def build_depth_runtime_queue(
     )
 
 
+def _raw_source_first_sentence(candidate_path: Path, sequence: int) -> tuple[str, str]:
+    """Return the first sentence and exact fragment of the sealed raw source-v1 card."""
+
+    try:
+        payload = json.loads(candidate_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid successor source corpus {candidate_path}: {exc}") from exc
+    posts = payload.get("posts") if isinstance(payload, dict) else None
+    if not isinstance(posts, list):
+        raise ValueError("successor source corpus has no posts")
+    for card in posts:
+        if isinstance(card, dict) and card.get("sequence") == sequence:
+            quote = str(card.get("quote_ru", "")).strip()
+            source = card.get("source")
+            fragment = str(source.get("exact_fragment", "")) if isinstance(source, dict) else ""
+            if not quote or not fragment:
+                raise ValueError(f"raw source card {sequence} lacks the quotation or the exact fragment")
+            boundary = quote.find(". ")
+            return (quote if boundary == -1 else quote[: boundary + 1]), fragment
+    raise ValueError(f"raw source corpus has no card for sequence {sequence}")
+
+
+def build_depth_v3_runtime_queue(
+    *,
+    candidate_path: Path,
+    translation_ledger_path: Path,
+    integrity_amendment_path: Path,
+    restore_path: Path | None = None,
+) -> SuccessorRuntimeQueue:
+    """Build the depth-v3 restore queue over the sealed depth-v2 runtime.
+
+    Only the reviewed anaphora slots are restored, each to the verbatim first
+    sentence of the sealed source-v1 translation. Everything else — including
+    the whole accepted published history — stays byte-identical to depth-v2.
+    """
+
+    restore_path = restore_path or candidate_path.with_name(DEPTH_RESTORE_FILENAME)
+    base = build_depth_runtime_queue(
+        candidate_path=candidate_path,
+        translation_ledger_path=translation_ledger_path,
+        integrity_amendment_path=integrity_amendment_path,
+    )
+    restore = load_depth_restore(restore_path)
+    identity = {
+        "release_id": restore.release_id,
+        "base_release_id": restore.base_release_id,
+        "base_queue_digest": restore.base_queue_digest,
+        "restores": [entry.model_dump(mode="json") for entry in restore.restores],
+    }
+    if sha256_text(canonical_json(identity)) != restore.normalized_queue_digest:
+        raise ValueError("depth-v3 restore identity digest mismatch")
+    if restore.normalized_queue_digest != DEPTH_V3_QUEUE_DIGEST:
+        raise ValueError("depth-v3 restore differs from the reviewed restore release identity")
+
+    restore_by_sequence = {entry.sequence: entry for entry in restore.restores}
+    posts: list[SuccessorRuntimePost] = []
+    for post in base.posts:
+        entry = restore_by_sequence.get(post.sequence)
+        if entry is None:
+            posts.append(post)
+            continue
+        if entry.publication_id != post.publication_id or entry.base_payload_sha256 != post.payload_sha256:
+            raise ValueError(f"depth-v3 restore base payload drifted for sequence {post.sequence}")
+        first_sentence, fragment = _raw_source_first_sentence(candidate_path, post.source_sequence)
+        if entry.restored_quote_ru != first_sentence:
+            raise ValueError(
+                f"depth-v3 restore must quote the sealed source first sentence verbatim: {post.publication_id}"
+            )
+        if entry.source_fragment_sha256 != sha256_text(fragment):
+            raise ValueError(f"depth-v3 restore fragment binding differs for sequence {post.sequence}")
+
+        blocks = post.text.split("\n\n")
+        hashtags = tuple(blocks[-1].split())
+        context = "\n\n".join(blocks[2:-1])
+        payload_sha256 = _future_payload_sha256(
+            publication_id=post.publication_id,
+            source_sequence=post.source_sequence,
+            quote_ru=entry.restored_quote_ru,
+            context_ru=context,
+            attribution_ru=post.attribution_text,
+            hashtags=hashtags,
+            source=post.source.model_dump(mode="json"),
+            provenance={
+                "verdict": "depth_v3_restore",
+                "base_payload_sha256": entry.base_payload_sha256,
+                "restored_from": "source_v1_original_translation_first_sentence",
+                "source_fragment_sha256": entry.source_fragment_sha256,
+            },
+        )
+        posts.append(
+            SuccessorRuntimePost(
+                sequence=post.sequence,
+                publication_id=post.publication_id,
+                title=post.title,
+                text=_render_depth_text(
+                    quote_ru=entry.restored_quote_ru,
+                    attribution_ru=post.attribution_text,
+                    context_ru=context,
+                    hashtags=hashtags,
+                ),
+                source=post.source,
+                attribution_text=post.attribution_text,
+                source_sequence=post.source_sequence,
+                source_payload_sha256=payload_sha256,
+            )
+        )
+
+    return SuccessorRuntimeQueue(
+        schema_name=SUCCESSOR_RUNTIME_SCHEMA,
+        schema_version=SUCCESSOR_RUNTIME_SCHEMA_VERSION,
+        project_key=PROJECT_KEY,
+        channel_username=CHANNEL_USERNAME,
+        release_id=DEPTH_V3_RELEASE_ID,
+        predecessor_queue_digest=LEGACY_QUEUE_DIGEST,
+        normalized_corpus_digest=restore.normalized_queue_digest,
+        posts=tuple(posts),
+    )
+
+
+def require_exact_depth_v2_handoff(
+    depth_v2_queue: SuccessorRuntimeQueue,
+    depth_v2_ledger: TelegramLedger,
+    *,
+    published_prefix: int,
+) -> None:
+    if depth_v2_queue.digest != DEPTH_QUEUE_DIGEST or depth_v2_ledger.queue_digest != DEPTH_QUEUE_DIGEST:
+        raise ValueError("depth-v3 handoff requires the exact sealed depth-v2 queue and ledger")
+    if not V3_HANDOFF_PUBLISHED_PREFIX <= published_prefix <= REVIEWED_TOTAL:
+        raise ValueError("depth-v3 handoff prefix is outside the sealed depth-v2 release")
+
+    for post in depth_v2_queue.posts[:published_prefix]:
+        entry = depth_v2_ledger.entries[post.publication_id]
+        if entry.state != "published" or entry.provider_effect != "verified" or not entry.message_id:
+            raise ValueError(f"depth-v3 handoff requires verified depth-v2 history: {post.publication_id}")
+    for post in depth_v2_queue.posts[published_prefix:]:
+        entry = depth_v2_ledger.entries[post.publication_id]
+        if (
+            entry.state != "pending"
+            or entry.provider_effect != "impossible"
+            or entry.intent_id is not None
+            or entry.attempted_at_utc is not None
+            or entry.message_id is not None
+        ):
+            raise ValueError(f"depth-v3 handoff requires pristine unpublished suffix: {post.publication_id}")
+
+
+def initialize_depth_v3_ledger(
+    *,
+    path: Path,
+    depth_v3_queue: SuccessorRuntimeQueue,
+    depth_v2_queue: SuccessorRuntimeQueue,
+    depth_v2_ledger: TelegramLedger,
+    restore: DepthRestoreRelease,
+) -> TelegramLedger:
+    if path.exists():
+        raise ValueError(f"refusing to overwrite existing depth-v3 ledger: {path}")
+    if depth_v3_queue.digest != DEPTH_V3_QUEUE_DIGEST or restore.normalized_queue_digest != DEPTH_V3_QUEUE_DIGEST:
+        raise ValueError("depth-v3 ledger initialization requires the sealed depth-v3 restore queue")
+    handoff = restore.handoff_published_prefix
+    require_exact_depth_v2_handoff(depth_v2_queue, depth_v2_ledger, published_prefix=handoff)
+
+    entries: dict[str, LedgerEntry] = {}
+    for post in depth_v3_queue.posts[:handoff]:
+        historical = depth_v2_ledger.entries[post.publication_id].model_copy(deep=True)
+        if historical.payload_sha256 != post.payload_sha256:
+            raise ValueError(f"depth-v3 locked history payload differs for {post.publication_id}")
+        entries[post.publication_id] = historical
+    for post in depth_v3_queue.posts[handoff:]:
+        entries[post.publication_id] = LedgerEntry(
+            publication_id=post.publication_id,
+            payload_sha256=post.payload_sha256,
+        )
+
+    ledger = TelegramLedger(
+        schema_name="video-channel-manager.telegram-publication-ledger",
+        schema_version=3,
+        project_key=PROJECT_KEY,
+        channel_username=CHANNEL_USERNAME,
+        queue_digest=depth_v3_queue.digest,
+        entries=entries,
+    )
+    save_ledger(path, ledger)
+    return ledger
+
+
 def require_exact_v1_handoff(
     source_v1_queue: SuccessorRuntimeQueue,
     source_v1_ledger: TelegramLedger,
@@ -677,6 +957,8 @@ def resolve_depth_release(
     integrity_amendment_path: Path,
     source_v1_runtime_queue_path: Path,
     source_v1_ledger_path: Path,
+    depth_v2_runtime_queue_path: Path,
+    depth_v2_ledger_path: Path,
     runtime_queue_path: Path,
     depth_ledger_path: Path,
     require_provider_writes: bool = False,
@@ -716,22 +998,37 @@ def resolve_depth_release(
     if require_provider_writes and not activation.provider_writes_authorized:
         raise ValueError("depth-v2 provider writes are not authorized by the activation artifact")
 
-    depth_queue = build_depth_runtime_queue(
+    depth_v2_queue = build_depth_runtime_queue(
+        candidate_path=candidate_path,
+        translation_ledger_path=translation_ledger_path,
+        integrity_amendment_path=integrity_amendment_path,
+    )
+    depth_v2_runtime_queue_path.parent.mkdir(parents=True, exist_ok=True)
+    depth_v2_runtime_queue_path.write_text(depth_v2_queue.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+    if not depth_ledger_path.is_file() and not depth_v2_ledger_path.is_file():
+        raise ValueError(
+            "depth-v3 resolution requires either the durable depth-v3 ledger or the sealed depth-v2 handoff ledger"
+        )
+
+    depth_v3_queue = build_depth_v3_runtime_queue(
         candidate_path=candidate_path,
         translation_ledger_path=translation_ledger_path,
         integrity_amendment_path=integrity_amendment_path,
     )
     runtime_queue_path.parent.mkdir(parents=True, exist_ok=True)
-    runtime_queue_path.write_text(depth_queue.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    runtime_queue_path.write_text(depth_v3_queue.model_dump_json(indent=2) + "\n", encoding="utf-8")
     return DepthActiveSelection(
         schema_name="video-channel-manager.telegram-active-quote-selection",
         schema_version=2,
-        active_release="depth-v2",
-        release_id=DEPTH_RELEASE_ID,
+        active_release="depth-v3",
+        release_id=DEPTH_V3_RELEASE_ID,
         queue_path=str(runtime_queue_path),
         ledger_path=str(depth_ledger_path),
-        ledger_relative_path=DEPTH_LEDGER_RELATIVE_PATH,
-        queue_digest=depth_queue.digest,
+        ledger_relative_path=DEPTH_V3_LEDGER_RELATIVE_PATH,
+        base_release_id=DEPTH_RELEASE_ID,
+        base_ledger_path=str(depth_v2_ledger_path),
+        queue_digest=depth_v3_queue.digest,
         predecessor_complete=True,
         needs_ledger_initialization=not depth_ledger_path.is_file(),
         history_queue_path=str(predecessor_queue_path),
@@ -753,10 +1050,20 @@ def parser() -> argparse.ArgumentParser:
     resolve.add_argument("--integrity-amendments", type=Path, required=True)
     resolve.add_argument("--source-v1-runtime-queue", type=Path, required=True)
     resolve.add_argument("--source-v1-ledger", type=Path, required=True)
+    resolve.add_argument("--depth-v2-runtime-queue", type=Path, required=True)
+    resolve.add_argument("--depth-v2-ledger", type=Path, required=True)
     resolve.add_argument("--runtime-queue", type=Path, required=True)
     resolve.add_argument("--depth-ledger", type=Path, required=True)
     resolve.add_argument("--require-provider-writes", action="store_true")
     resolve.add_argument("--output", type=Path, required=True)
+
+    initialize_v3 = sub.add_parser("initialize-v3-ledger")
+    initialize_v3.add_argument("--runtime-queue", type=Path, required=True)
+    initialize_v3.add_argument("--depth-v2-runtime-queue", type=Path, required=True)
+    initialize_v3.add_argument("--depth-v2-ledger", type=Path, required=True)
+    initialize_v3.add_argument("--restore", type=Path, required=True)
+    initialize_v3.add_argument("--ledger", type=Path, required=True)
+    initialize_v3.add_argument("--confirm", required=True)
 
     initialize = sub.add_parser("initialize-ledger")
     initialize.add_argument("--runtime-queue", type=Path, required=True)
@@ -770,6 +1077,28 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = parser().parse_args()
+    if args.command == "initialize-v3-ledger":
+        if args.confirm != "INITIALIZE_REVIEWED_DEPTH_V3_LEDGER":
+            raise RuntimeError("depth-v3 ledger initialization requires exact confirmation")
+        from video_channel_manager.telegram_quote_runtime import load_active_queue
+
+        depth_v3_queue = load_active_queue(args.runtime_queue)
+        depth_v2_queue = load_active_queue(args.depth_v2_runtime_queue)
+        if not isinstance(depth_v3_queue, SuccessorRuntimeQueue) or not isinstance(
+            depth_v2_queue, SuccessorRuntimeQueue
+        ):
+            raise ValueError("depth-v3 initialization requires successor runtime queue artifacts")
+        depth_v2_ledger = load_ledger(args.depth_v2_ledger, depth_v2_queue)
+        restore = load_depth_restore(args.restore)
+        ledger = initialize_depth_v3_ledger(
+            path=args.ledger,
+            depth_v3_queue=depth_v3_queue,
+            depth_v2_queue=depth_v2_queue,
+            depth_v2_ledger=depth_v2_ledger,
+            restore=restore,
+        )
+        print(json.dumps({"initialized": True, "queue_digest": ledger.queue_digest}, ensure_ascii=False))
+        return 0
     if args.command == "initialize-ledger":
         if args.confirm != "INITIALIZE_REVIEWED_DEPTH_V2_LEDGER":
             raise RuntimeError("depth-v2 ledger initialization requires exact confirmation")
@@ -798,6 +1127,8 @@ def main() -> int:
         translation_ledger_path=args.translation_ledger,
         integrity_amendment_path=args.integrity_amendments,
         source_v1_runtime_queue_path=args.source_v1_runtime_queue,
+        depth_v2_runtime_queue_path=args.depth_v2_runtime_queue,
+        depth_v2_ledger_path=args.depth_v2_ledger,
         source_v1_ledger_path=args.source_v1_ledger,
         runtime_queue_path=args.runtime_queue,
         depth_ledger_path=args.depth_ledger,

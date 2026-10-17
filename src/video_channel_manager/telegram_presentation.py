@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from video_channel_manager.telegram_models import (
     MAX_TELEGRAM_TEXT_LENGTH,
@@ -128,13 +128,12 @@ class QuotePresentationPolicyV4(BaseModel):
 class QuotePresentationPolicyV5(BaseModel):
     """Quote-first presentation policy for the post-v4 future suffix.
 
-    The reviewed title is no longer a mandatory decorative lead. A card keeps a
-    visible bold title only when the reviewed standalone evidence marks that
-    exact payload as load-bearing (``title_resolved_anaphora``): the quotation
-    itself resolves its opening only through that title. When a title is
-    rendered it is followed by real paragraph air before the quotation. The
-    quotation and its reviewed source line remain one tight reading unit, and
-    the editorial context and hashtags stay separate blocks.
+    A quotation is a complete thought that names its own subject, so no card
+    renders a leading title at all: the post opens directly with the blockquote
+    and its reviewed source line sits tight on the next line as one reading
+    unit. The editorial context and hashtags stay separate blocks. The depth-v3
+    restore release guarantees complete openings; a title would only add a
+    decorative echo above the quotation.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -143,26 +142,13 @@ class QuotePresentationPolicyV5(BaseModel):
     schema_version: Literal[5]
     policy_id: Literal["lordchrist-quote-v5"]
     parse_mode: Literal["HTML"]
-    title_mode: Literal["reviewed_load_bearing_only"]
-    reviewed_title_payload_sha256s: tuple[str, ...] = Field(min_length=1)
-    title_style: Literal["bold"]
-    title_to_quote_separator: Literal["\n\n"]
+    title_mode: Literal["none"]
     quote_style: Literal["blockquote"]
     attribution_style: Literal["italic"]
     attribution_prefix: Literal["— "]
     quote_to_attribution_separator: Literal["\n"]
     block_separator: Literal["\n\n"]
     link_preview_disabled: Literal[True] = True
-
-    @field_validator("reviewed_title_payload_sha256s")
-    @classmethod
-    def _reviewed_title_bindings(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        if len(set(value)) != len(value):
-            raise ValueError("quote-v5 reviewed title bindings must be unique")
-        for item in value:
-            if re.fullmatch(SHA256_PATTERN, item) is None:
-                raise ValueError("quote-v5 reviewed title bindings must be exact payload digests")
-        return value
 
     @property
     def digest(self) -> str:
@@ -219,12 +205,8 @@ class RenderedTelegramPost(BaseModel):
             required_types = {"blockquote", "italic"}
             if self.presentation_policy_id == "lordchrist-quote-v4":
                 required_types.add("bold")
-            if self.presentation_policy_id == "lordchrist-quote-v5":
-                bold_entities = [entity for entity in self.expected_entities if entity.type == "bold"]
-                if len(bold_entities) > 1:
-                    raise ValueError("quote-v5 publication allows at most one bold reviewed title entity")
-                if bold_entities and bold_entities[0].offset != 0:
-                    raise ValueError("quote-v5 bold entity must be the leading reviewed title")
+            if self.presentation_policy_id == "lordchrist-quote-v5" and "bold" in types:
+                raise ValueError("quote-v5 publication renders no leading title and must not carry bold entities")
             if not required_types.issubset(types):
                 raise ValueError("quote publication is missing required presentation entities")
         return self
@@ -268,24 +250,14 @@ DEFAULT_QUOTE_V4_PRESENTATION_POLICY = QuotePresentationPolicyV4(
     link_preview_disabled=True,
 )
 
-# The reviewed standalone evidence (quote-standalone-review-v1.json) marks
-# exactly these three pending payloads as title-resolved anaphora openings:
-# sequence 17 (gurnall-defend-in-suffering), 32 (chrysostom-son-obedience) and
-# 36 (bunyan-union-victory). Every other pending card opens self-contained and
-# renders without a leading title under quote-v5.
+# Quote-v5 renders no leading title: the depth-v3 restore release guarantees
+# that every pending quotation opens as a complete, self-contained thought.
 DEFAULT_QUOTE_V5_PRESENTATION_POLICY = QuotePresentationPolicyV5(
     schema_name="video-channel-manager.telegram-presentation-policy",
     schema_version=5,
     policy_id="lordchrist-quote-v5",
     parse_mode="HTML",
-    title_mode="reviewed_load_bearing_only",
-    reviewed_title_payload_sha256s=(
-        "sha256:3a822e24da42fb4f6e8f2575be5539c4484ffeec395706f57811af5b636e09d8",
-        "sha256:9343f845d7ad45803a57110ac68f25bfbc1029fbbb3c94773327fbb125de9b77",
-        "sha256:e761a1a22bfa697f405227702ddbc4a7057b662d79bcef28954c46c791bf0abb",
-    ),
-    title_style="bold",
-    title_to_quote_separator="\n\n",
+    title_mode="none",
     quote_style="blockquote",
     attribution_style="italic",
     attribution_prefix="— ",
@@ -617,12 +589,8 @@ def _render_post_v4(post: TelegramPost, policy: QuotePresentationPolicyV4) -> Re
 
 def _render_post_v5(post: TelegramPost, policy: QuotePresentationPolicyV5) -> RenderedTelegramPost:
     quote, attribution, context, hashtags = _quote_card_blocks(post, policy)
-    title_required = post.payload_sha256 in policy.reviewed_title_payload_sha256s
 
     builder = _RenderBuilder()
-    if title_required:
-        builder.append_styled(post.title, "bold")
-        builder.append(policy.title_to_quote_separator)
     builder.append_styled(quote, "blockquote")
     builder.append(policy.quote_to_attribution_separator)
     builder.append_styled(attribution, "italic")
@@ -633,16 +601,11 @@ def _render_post_v5(post: TelegramPost, policy: QuotePresentationPolicyV5) -> Re
 
     rendered = _provider_payload(post=post, policy=policy, builder=builder)
     reading_unit = f"{quote}{policy.quote_to_attribution_separator}{attribution}"
-    if title_required:
-        if not rendered.text.startswith(f"{post.title}{policy.title_to_quote_separator}{reading_unit}"):
-            raise ValueError("quote-v5 reviewed title, quotation and source must form one opening reading unit")
-        if f"{post.title}\n{quote}" in rendered.text:
-            raise ValueError("quote-v5 must keep real paragraph air between the reviewed title and the quotation")
-    else:
-        if not rendered.text.startswith(reading_unit):
-            raise ValueError("quote-v5 must open directly with the quotation and its source line")
-        if rendered.text.startswith(post.title):
-            raise ValueError("quote-v5 must not render a decorative leading title")
+    if not rendered.text.startswith(reading_unit):
+        raise ValueError("quote-v5 must open directly with the quotation and its source line")
+    # No title is rendered at all: the rendered-post contract itself forbids any
+    # bold entity under quote-v5, and a quotation may legitimately open with the
+    # same words as its unrendered editorial title.
     if f"{quote}\n\n{attribution}" in rendered.text:
         raise ValueError("quote-v5 must not insert a blank line between quotation and source attribution")
     return rendered

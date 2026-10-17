@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from video_channel_manager.telegram_presentation import _require_standalone_quotation
-from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue
+from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue, build_depth_v3_runtime_queue
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 from video_channel_manager.telegram_quote_source_audit import (
     assert_future_exact_source_coverage,
@@ -15,7 +15,8 @@ from video_channel_manager.telegram_quote_source_audit import (
 )
 from video_channel_manager.telegram_quote_standalone_review import (
     STANDALONE_REVIEW_FILENAME,
-    ReviewedStandaloneSuffix,
+    STANDALONE_REVIEW_V2_FILENAME,
+    ReviewedStandaloneSuffixContract,
     assert_reviewed_standalone_suffix,
     load_standalone_review,
     reviewed_title_resolutions,
@@ -212,7 +213,7 @@ def standalone_quote_issues(
 def assert_future_suffix_quality(
     posts: tuple[SuccessorRuntimePost, ...],
     *,
-    reviewed: ReviewedStandaloneSuffix,
+    reviewed: ReviewedStandaloneSuffixContract,
     published_boundary: int = 15,
 ) -> None:
     future = posts[published_boundary:]
@@ -237,6 +238,15 @@ def assert_future_suffix_quality(
                     detail="review claims a title-context resolution for an opening that needs no antecedent",
                 )
             )
+        if reviewed.schema_version == 2 and entry.opening != "self_contained":
+            issues.append(
+                QuoteQualityIssue(
+                    publication_id=post.publication_id,
+                    sequence=post.sequence,
+                    code="title_resolved_opening_forbidden",
+                    detail="the depth-v3 standard forbids openings that lean on a title; quotations must be complete",
+                )
+            )
 
     if issues:
         detail = "\n".join(
@@ -256,19 +266,34 @@ def main() -> int:
     parser.add_argument("--replacements", type=Path, required=True)
     parser.add_argument("--source-web-audit", type=Path, required=True)
     parser.add_argument("--standalone-review", type=Path)
-    parser.add_argument("--published-boundary", type=int, default=15)
+    parser.add_argument("--restore", type=Path, default=None)
+    parser.add_argument("--published-boundary", type=int, default=None)
     args = parser.parse_args()
 
-    review_path = args.standalone_review or args.candidate.with_name(STANDALONE_REVIEW_FILENAME)
+    review_path = args.standalone_review or args.candidate.with_name(STANDALONE_REVIEW_V2_FILENAME)
+    if not review_path.is_file():
+        review_path = args.candidate.with_name(STANDALONE_REVIEW_FILENAME)
     reviewed = load_standalone_review(review_path)
-    queue = build_depth_runtime_queue(
-        candidate_path=args.candidate,
-        translation_ledger_path=args.translation_ledger,
-        integrity_amendment_path=args.integrity_amendment,
-        audit_path=args.depth_audit,
-        replacements_path=args.replacements,
-    )
-    assert_future_suffix_quality(queue.posts, reviewed=reviewed, published_boundary=args.published_boundary)
+    if args.published_boundary is None:
+        published_boundary = reviewed.published_boundary
+    else:
+        published_boundary = args.published_boundary
+    if reviewed.schema_version == 2:
+        queue = build_depth_v3_runtime_queue(
+            candidate_path=args.candidate,
+            translation_ledger_path=args.translation_ledger,
+            integrity_amendment_path=args.integrity_amendment,
+            restore_path=args.restore,
+        )
+    else:
+        queue = build_depth_runtime_queue(
+            candidate_path=args.candidate,
+            translation_ledger_path=args.translation_ledger,
+            integrity_amendment_path=args.integrity_amendment,
+            audit_path=args.depth_audit,
+            replacements_path=args.replacements,
+        )
+    assert_future_suffix_quality(queue.posts, reviewed=reviewed, published_boundary=published_boundary)
 
     web_audit = load_source_web_audit(args.source_web_audit)
     exact_sources = assert_future_exact_source_coverage(
@@ -288,8 +313,8 @@ def main() -> int:
             {
                 "release_id": queue.release_id,
                 "queue_digest": queue.digest,
-                "published_boundary": args.published_boundary,
-                "pending_quality_verified": len(queue.posts) - args.published_boundary,
+                "published_boundary": published_boundary,
+                "pending_quality_verified": len(queue.posts) - published_boundary,
                 "reviewed_pending_entries": len(reviewed.entries),
                 "title_context_resolutions": len(reviewed_title_resolutions(reviewed)),
                 "exact_future_source_urls": len(set(exact_sources.values())),

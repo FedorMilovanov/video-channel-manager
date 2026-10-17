@@ -5,6 +5,7 @@ from pathlib import Path
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_quote_depth import (
+    DEPTH_V3_QUEUE_DIGEST,
     DEPTH_QUEUE_DIGEST,
     build_depth_runtime_queue,
     load_depth_activation,
@@ -35,8 +36,8 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     assert activation.required_published_prefix == 14
     assert activation.required_pending_suffix == 46
     assert schedule.enabled is runtime_activation["provider_writes_authorized"]
-    assert "depth-v2" in schedule.activation_note.casefold()
-    assert schedule.successor_queue_digest == DEPTH_QUEUE_DIGEST
+    assert "depth-v3" in schedule.activation_note.casefold()
+    assert schedule.successor_queue_digest == DEPTH_V3_QUEUE_DIGEST
     assert schedule.presentation_policy_id == v5_policy.policy_id == "lordchrist-quote-v5"
     assert schedule.presentation_policy_sha256 == v5_policy.digest
     assert runtime_activation["presentation_policy_sha256"] == v5_policy.digest
@@ -62,14 +63,14 @@ def test_production_workflow_has_no_old_successor_runtime_fallback() -> None:
     publish_next = workflow.split("  historical-rich:\n", 1)[0]
 
     assert "video_channel_manager.telegram_quote_depth resolve" in publish_next
-    assert "video_channel_manager.telegram_quote_depth initialize-ledger" in publish_next
+    assert "video_channel_manager.telegram_quote_depth initialize-v3-ledger" in publish_next
     assert "video_channel_manager.telegram_quote_runtime resolve" not in publish_next
-    assert "INITIALIZE_REVIEWED_DEPTH_V2_LEDGER" in publish_next
-    assert "successor-depth-v2-publication-ledger.json" in publish_next
+    assert "INITIALIZE_REVIEWED_DEPTH_V3_LEDGER" in publish_next
+    assert "successor-depth-v3-publication-ledger.json" in publish_next
     assert "presentation-policy-v5.json" in publish_next
     # quote-v4 remains bound as the immutable migration source of the v5 era.
     assert "presentation-policy-v4.json" in publish_next
-    assert "remote-depth-v2-ledger.json" in publish_next
+    assert "remote-depth-v3-ledger.json" in publish_next
     assert "--require-provider-writes" in publish_next
     assert "steps.intent.outputs.do_publish" in publish_next
 

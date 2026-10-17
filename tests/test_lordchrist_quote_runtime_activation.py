@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST
+from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_V3_QUEUE_DIGEST
 from video_channel_manager.telegram_quote_runtime_activation import load_runtime_activation
 from video_channel_manager.telegram_quote_source_audit import load_source_web_audit
 
@@ -73,19 +73,19 @@ def test_runtime_activation_rejects_write_authorization_in_preflight_artifact(tm
         load_runtime_activation(invalid)
 
 
-def test_v5_runtime_activation_is_exact_16_44_quote_first_checkpoint() -> None:
+def test_v5_runtime_activation_is_exact_17_43_quote_first_checkpoint() -> None:
     activation = load_runtime_activation(V5_ACTIVATION_PATH)
     policy = load_presentation_policy(CONTENT / "presentation-policy-v5.json")
 
-    assert activation.release_id == "lordchrist-successor-depth-v2"
-    assert activation.queue_digest == DEPTH_QUEUE_DIGEST
+    assert activation.release_id == "lordchrist-successor-depth-v3"
+    assert activation.queue_digest == DEPTH_V3_QUEUE_DIGEST
     assert activation.sealed_handoff_published_prefix == 14
-    assert activation.required_published_prefix == 16
-    assert activation.required_pending_suffix == 44
+    assert activation.required_published_prefix == 17
+    assert activation.required_pending_suffix == 43
     assert activation.schema_version == 3
     assert activation.progress_policy == "verified_prefix"
     assert (
-        activation.published_history_sha256 == "sha256:aff979b43beeca9d1bdd12f8ed9ee96022b668c75f1be59a70274516012ec400"
+        activation.published_history_sha256 == "sha256:2d08a58b30803d3db2b6c5a75b0a844d0aac144598da9f7fb8212431a0d9fd35"
     )
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v5"
     assert activation.presentation_policy_sha256 == policy.digest

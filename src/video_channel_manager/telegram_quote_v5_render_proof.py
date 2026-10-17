@@ -4,14 +4,11 @@ The activation checkpoint proves the durable state boundary and source evidence.
 This module proves the *reader-facing* quote-v5 contract for the one publication
 that is next in strict order:
 
-* the quotation opens the post directly, with no decorative leading title;
+* the post opens directly with the quotation and no leading title is rendered;
 * the reviewed source line sits tight on the line immediately under the
   quotation, forming one reading unit;
-* when — and only when — the reviewed standalone evidence marks the payload as a
-  load-bearing opening, the bold reviewed title leads the post and is followed
-  by real paragraph air before the quotation;
-* the reviewed title bindings embedded in the policy are exactly the reviewed
-  ``title_resolved_anaphora`` payloads of the standalone review;
+* the reviewed standalone evidence marks the payload as a self-contained
+  opening (the depth-v3 standard forbids anaphora fragments entirely);
 * the rendered provider payload stays inside the Telegram text limit.
 
 It performs no provider call, no state write, and no ledger mutation.
@@ -37,7 +34,6 @@ from video_channel_manager.telegram_quote_runtime_activation import load_runtime
 from video_channel_manager.telegram_quote_standalone_review import load_standalone_review
 
 V5_POLICY_ID = "lordchrist-quote-v5"
-TITLE_ENTITY_LAYOUT = ("bold", "blockquote", "italic")
 NO_TITLE_ENTITY_LAYOUT = ("blockquote", "italic")
 TEXT_LENGTH_SAFETY_MARGIN = 100
 
@@ -72,11 +68,10 @@ def build_render_proof(
         raise ValueError("render proof presentation policy differs from the rolling activation checkpoint")
 
     review = load_standalone_review(standalone_review_path)
-    reviewed_title_payloads = {
-        entry.payload_sha256 for entry in review.entries if entry.opening == "title_resolved_anaphora"
-    }
-    if reviewed_title_payloads != set(policy.reviewed_title_payload_sha256s):
-        raise ValueError("quote-v5 reviewed title bindings differ from the standalone review title-resolved payloads")
+    if review.schema_version != 2:
+        raise ValueError("render proof requires the depth-v3 standalone review v2")
+    if any(entry.opening != "self_contained" for entry in review.entries):
+        raise ValueError("quote-v5 render proof requires every reviewed opening to be self-contained")
 
     queue = load_queue(queue_path)
     if not isinstance(queue, SuccessorRuntimeQueue):
@@ -122,20 +117,12 @@ def build_render_proof(
     )
     if review_entry is None or review_entry.payload_sha256 != next_post.payload_sha256:
         raise ValueError("render proof next publication differs from the reviewed standalone suffix")
+    if review_entry.opening != "self_contained":
+        raise ValueError("quote-v5 rendering requires a reviewed self-contained opening")
 
     rendered = render_post(cast("TelegramPost", next_post), policy)
-    title = next_post.title
     reviewed_attribution = " ".join(next_post.attribution_text.strip().split())
     attribution = f"— {reviewed_attribution}"
-    title_required = next_post.payload_sha256 in policy.reviewed_title_payload_sha256s
-
-    if title_required:
-        if review_entry.opening != "title_resolved_anaphora":
-            raise ValueError("quote-v5 title rendering requires a reviewed load-bearing opening")
-        if review_entry.title_context_reference != title.strip():
-            raise ValueError("quote-v5 rendered title differs from the reviewed title-context resolution")
-    elif review_entry.opening != "self_contained":
-        raise ValueError("quote-v5 no-title rendering requires a reviewed self-contained opening")
 
     hashtag_block = next_post.text.rsplit("\n\n", 1)[-1]
     if not rendered.text.endswith(hashtag_block):
@@ -146,30 +133,17 @@ def build_render_proof(
         raise ValueError("quote-v5 rendering must carry the exact source line exactly once")
 
     entities = rendered.expected_entities
-    expected_layout = TITLE_ENTITY_LAYOUT if title_required else NO_TITLE_ENTITY_LAYOUT
-    if [entity.type for entity in entities] != list(expected_layout):
+    if [entity.type for entity in entities] != list(NO_TITLE_ENTITY_LAYOUT):
         raise ValueError(
-            "quote-v5 rendering must expose exactly one blockquote, one italic source line "
-            "and at most one bold reviewed title"
+            "quote-v5 rendering must expose exactly one blockquote quotation and one italic source line"
         )
-    quotation, source_line = entities[-2], entities[-1]
-    if title_required:
-        bold = entities[0]
-        if bold.offset != 0 or bold.length != _utf16_length(title):
-            raise ValueError("quote-v5 bold entity must cover exactly the reviewed title")
-        if not rendered.text.startswith(f"{title}\n\n"):
-            raise ValueError("quote-v5 rendering must keep real paragraph air between title and quotation")
-        if quotation.offset != _utf16_length(title) + 2:
-            raise ValueError("quote-v5 quotation entity must begin on the line after the title air")
-        if source_line.offset != quotation.offset + quotation.length + 1:
-            raise ValueError("quote-v5 source entity must begin on the line immediately after the quotation")
-    else:
-        if quotation.offset != 0:
-            raise ValueError("quote-v5 quotation entity must open the publication directly")
-        if source_line.offset != quotation.length + 1:
-            raise ValueError("quote-v5 source entity must begin on the line immediately after the quotation")
-        if rendered.text.startswith(title):
-            raise ValueError("quote-v5 rendering must not open with a decorative leading title")
+    quotation, source_line = entities
+    if quotation.offset != 0:
+        raise ValueError("quote-v5 quotation entity must open the publication directly")
+    if quotation.length != _utf16_length(rendered.text.split("\n", 1)[0]):
+        raise ValueError("quote-v5 quotation entity must cover exactly the opening quotation line")
+    if source_line.offset != quotation.length + 1:
+        raise ValueError("quote-v5 source entity must begin on the line immediately after the quotation")
     if source_line.length != _utf16_length(attribution):
         raise ValueError("quote-v5 source entity must cover exactly the source line")
 
@@ -186,7 +160,7 @@ def build_render_proof(
         "next_sequence": next_post.sequence,
         "next_publication_id": next_post.publication_id,
         "attribution_line": reviewed_attribution,
-        "title_rendered": title_required,
+        "title_rendered": False,
         "provider_payload_sha256": rendered.provider_payload_sha256,
         "rendered_text_length": len(rendered.text),
         "entity_layout": [entity.type for entity in entities],
