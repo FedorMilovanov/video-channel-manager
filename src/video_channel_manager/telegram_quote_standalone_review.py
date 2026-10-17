@@ -11,7 +11,12 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from video_channel_manager.telegram_models import SHA256_PATTERN, sha256_text
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, DEPTH_RELEASE_ID, DEPTH_V3_QUEUE_DIGEST, DEPTH_V3_RELEASE_ID
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    DEPTH_RELEASE_ID,
+    DEPTH_V3_QUEUE_DIGEST,
+    DEPTH_V3_RELEASE_ID,
+)
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 
 STANDALONE_REVIEW_FILENAME = "quote-standalone-review-v1.json"

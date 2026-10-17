@@ -134,9 +134,7 @@ def build_render_proof(
 
     entities = rendered.expected_entities
     if [entity.type for entity in entities] != list(NO_TITLE_ENTITY_LAYOUT):
-        raise ValueError(
-            "quote-v5 rendering must expose exactly one blockquote quotation and one italic source line"
-        )
+        raise ValueError("quote-v5 rendering must expose exactly one blockquote quotation and one italic source line")
     quotation, source_line = entities
     if quotation.offset != 0:
         raise ValueError("quote-v5 quotation entity must open the publication directly")
