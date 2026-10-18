@@ -32,9 +32,9 @@ MAX_CONNECTOR = 120
 MAX_QUOTE = 600
 MAX_ITEM = 400
 HASHTAGS_MIN, HASHTAGS_MAX = 4, 6
-# Эмодзи-маркер раздела допустим только в статьях с крупными редкими разделами:
-# в среднем не меньше этого числа знаков на H2 (RICH_EDITOR_ARTICLE_STANDARD, §3).
-MARKER_MIN_SECTION_CHARS = 3000
+# Эмодзи-маркер раздела не ставится на коротких рубриках короче этого порога
+# (RICH_EDITOR_ARTICLE_STANDARD, §3).
+MARKER_MIN_SECTION_CHARS = 600
 
 ZWSP = "\u200b"
 WJ = "\u2060"
@@ -155,32 +155,35 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     # ---------- 3. H2: регистр, длина, воздух, эмодзи-маркер ----------
     h2_titles = [stripped[s][3:].strip().replace("**", "") for s, _ in h2s]
     numbered = [t for t in h2_titles if NUMBERED_H2_RE.match(EMOJI_RE.sub("", t).lstrip())]
-    section_avg = rep.stats["chars"] // len(h2_titles) if h2_titles else 0
-    markers_allowed = len(numbered) < 2 and section_avg >= MARKER_MIN_SECTION_CHARS
-    rep.stats.update(
-        h2_numbered=len(numbered),
-        section_avg_chars=section_avg,
-        emoji_markers_allowed=markers_allowed,
-    )
+    rep.stats.update(h2_numbered=len(numbered))
     for (s, _), title in zip(h2s, h2_titles, strict=True):
         if len(title) > MAX_H2:
             rep.error(f"H2 «{title[:40]}…» длиннее {MAX_H2} символов")
         if is_caps(title):
             rep.error(f"H2 «{title}» набран ЗАГЛАВНЫМИ: в L2 заголовки разделов обычным регистром")
+
+        next_h = len(stripped)
+        for j in range(s + 1, len(stripped)):
+            if HEADING_RE.match(stripped[j]):
+                next_h = j
+                break
+        section_chars = len("\n".join(stripped[s + 1 : next_h]).strip())
+        is_numbered = bool(NUMBERED_H2_RE.match(EMOJI_RE.sub("", title).lstrip()))
+
         markers = EMOJI_RE.findall(title)
         if markers:
-            if len(markers) > 1:
+            if is_numbered:
+                rep.error(
+                    f"H2 «{title[:40]}»: раздел в нумерованной лесенке — номера уже маркируют место, эмодзи не нужен"
+                )
+            elif len(markers) > 1:
                 rep.error(f"H2 «{title[:40]}»: {len(markers)} эмодзи — маркер может быть только один, в начале строки")
             elif not EMOJI_RE.match(title):
                 rep.error(f"H2 «{title[:40]}»: эмодзи должен вести строку — это маркер раздела, а не украшение")
-            elif len(numbered) >= 2:
+            elif section_chars < MARKER_MIN_SECTION_CHARS:
                 rep.error(
-                    f"H2 «{title[:40]}»: разделы идут пунктами 1. 2. 3. — номера уже маркируют место, эмодзи не нужен"
-                )
-            elif section_avg < MARKER_MIN_SECTION_CHARS:
-                rep.error(
-                    f"H2 «{title[:40]}»: подзаголовки частые (~{section_avg} знаков на раздел) — эмодзи-маркер "
-                    f"допустим только в статье с крупными разделами (от {MARKER_MIN_SECTION_CHARS} знаков в среднем)"
+                    f"H2 «{title[:40]}»: раздел короче ~{MARKER_MIN_SECTION_CHARS} знаков ({section_chars}) — "
+                    "маркер на короткой рубрике не ставится"
                 )
         if s == 0:
             rep.error("статья начинается с H2: первым блоком должен быть H1")
@@ -301,7 +304,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             continue
         para = " ".join(stripped[s0:e0])
         if EMOJI_RE.search(para):
-            rep.warn(
+            rep.error(
                 f"строка {s0 + 1}: эмодзи в обычном абзаце — в тексте их не ставят; маркер живёт только в начале заголовка H2"
             )
 

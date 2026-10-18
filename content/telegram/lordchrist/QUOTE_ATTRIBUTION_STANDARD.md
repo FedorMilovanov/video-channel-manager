@@ -4,7 +4,7 @@ Status: canonical presentation rule for quotations in rich/editorial Telegram po
 
 ## Core rule
 
-The quotation entity contains **only the quoted words**. Author, work title, Scripture reference, section number and other source metadata are never part of the quoted wording. In L1 the attribution is outside the blockquote; L2 uses a blockquote container whose last line is attribution, but that line remains metadata, not part of the quoted words.
+The quotation entity contains **only the quoted words**. Author, work title, Scripture reference, section number and other source metadata are never part of the quoted wording. In L1 the attribution is outside the blockquote; L2 uses a blockquote container whose last line is attribution, but that line remains metadata, not part of the quoted words. In the HTML version, the attribution is marked with a `<cite>` tag inside the same `<blockquote>`; this is transport markup, not part of the quoted words.
 
 Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote.
 
