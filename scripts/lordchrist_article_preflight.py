@@ -141,8 +141,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             rep.error(f"H1 длиннее {MAX_H1} символов ({len(plain_title)})")
         if not (title.startswith("**") and title.endswith("**")):
             rep.warn("H1 лучше делать жирным: `# **ЗАГОЛОВОК**` (требование RICH_EDITORIAL_STANDARD §2)")
-        if len(EMOJI_RE.findall(plain_title)) > 1:
-            rep.warn("в H1 больше одного эмодзи — оставьте один ведущий маркер")
+        if EMOJI_RE.search(plain_title):
+            rep.error("в H1 не должно быть эмодзи — в L2 эмодзи не используются")
 
     # ---------- 3. H2: регистр, длина, воздух ----------
     for s, _ in h2s:
@@ -151,10 +151,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             rep.error(f"H2 «{title[:40]}…» длиннее {MAX_H2} символов")
         if is_caps(title):
             rep.error(f"H2 «{title}» набран ЗАГЛАВНЫМИ: в L2 заголовки разделов обычным регистром")
-        if len(EMOJI_RE.findall(title)) > 1:
-            rep.warn(f"H2 «{title}»: больше одного эмодзи — допустим один ведущий маркер")
-        if EMOJI_RE.search(title) and not re.match(r"^\s*" + EMOJI_RE.pattern, title):
-            rep.warn(f"H2 «{title}»: эмодзи стоит не в начале — маркер должен вести строку")
+        if EMOJI_RE.search(title):
+            rep.error(f"H2 «{title}»: эмодзи в заголовке — в L2 эмодзи не используются")
         if s == 0:
             rep.error("статья начинается с H2: первым блоком должен быть H1")
         else:
@@ -275,7 +273,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             continue
         para = " ".join(stripped[s0:e0])
         if EMOJI_RE.search(para):
-            rep.warn(f"строка {s0 + 1}: эмодзи в обычном абзаце — по стандарту они только в заголовках")
+            rep.warn(f"строка {s0 + 1}: эмодзи в обычном абзаце — в L2 эмодзи не используются")
 
     # ---------- 7. служебные маркеры и мусор ----------
     low = text.casefold()
