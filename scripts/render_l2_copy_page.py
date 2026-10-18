@@ -5,7 +5,7 @@
 Детерминированно материализует то, что Markdown выразить не может:
   • воздух — один пустой блок `<p>&#8203;</p>` строго ПЕРЕД заголовком;
   • каждый пункт списка (`• ` / `1. `) — отдельный абзац;
-  • цитата — `<blockquote>`, подпись курсивом строкой ниже, без разрыва;
+  • цитата — `<blockquote>`, подпись курсивом последней строкой внутри блока;
   • хэштеги — отдельный абзац.
 
     python3 render_l2_copy_page.py статья.md -o copy.html
@@ -103,14 +103,23 @@ def render(md: str):
                 while i < len(block) and block[i].startswith(">"):
                     quote_lines.append(block[i].lstrip("> ").strip())
                     i += 1
-                out.append("<blockquote>" + "<br>".join(inline(q) for q in quote_lines) + "</blockquote>")
-                plain_blocks.append(" ".join(plain(q) for q in quote_lines))
-                stats["quotes"] += 1
-                if i < len(block) and block[i].startswith("*—"):
-                    attr = block[i].strip().strip("*")
-                    out.append(f"<p><i>{inline(attr)}</i></p>")
-                    plain_blocks.append(plain(attr))
+                # L2: подпись — последняя строка блока, внутрь <blockquote>:
+                # отдельный абзац под цитатой получает блочный отступ и даёт воздух
+                attr = ""
+                if quote_lines and quote_lines[-1].startswith("*—"):
+                    attr = quote_lines.pop().strip("*").strip()
+                elif i < len(block) and block[i].startswith("*—"):
+                    # совместимость со старой формой: подпись отдельным абзацем
+                    attr = block[i].strip().strip("*").strip()
                     i += 1
+                inner = "<br>".join(inline(q) for q in quote_lines)
+                if attr:
+                    inner += ("<br>" if inner else "") + f"<i>{inline(attr)}</i>"
+                out.append("<blockquote>" + inner + "</blockquote>")
+                plain_blocks.append(
+                    "\n".join([plain(q) for q in quote_lines] + ([plain(attr)] if attr else [])).strip()
+                )
+                stats["quotes"] += 1
                 continue
             if line.startswith("*—"):
                 flush_text(buf)

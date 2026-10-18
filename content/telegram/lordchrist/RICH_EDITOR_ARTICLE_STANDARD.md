@@ -61,7 +61,7 @@ Spacing matrix for the rendered artifact:
 | H2 → first paragraph | **no air after**; text follows immediately |
 | paragraph → block quote | air before (default) |
 | short connector → block quote | no extra air (narrow exception, §5) |
-| quote → attribution | no gap; attribution on the very next line |
+| quote → attribution | **same block**: attribution is the last line inside the quote, no gap possible (§5) |
 | attribution → next paragraph | ordinary paragraph gap |
 | list item → list item | ordinary paragraph gap; each item is its own block (§6) |
 | anywhere else | ordinary paragraph gap |
@@ -78,33 +78,43 @@ Exact Markdown shape:
 Абзац, который вводит цитату и объясняет, зачем она здесь.
 
 > «Точный текст цитаты»
-
-*— Автор, «Название труда»*
+> *— Автор, «Название труда»*
 ```
 
-Rules (they restate `QUOTE_ATTRIBUTION_STANDARD.md` in transport terms):
+Rules:
 
-- the blockquote contains **only the quoted words** — no author, no reference, no work title;
-- the attribution is the **next block**, outside the blockquote, italic, starting with Unicode em dash `—` and one space; the attribution line never starts with `>`;
-- in Markdown the attribution is separated by one blank line (block syntax); in the rendered artifact it sits directly under the quote with no extra gap;
-- Scripture uses the same shape: `*— Иов 16:2*`;
-- after the attribution — ordinary paragraph break, no extra air;
-- if the client shows a small gap between quote and attribution, that is the editor's block spacing, not a missing rule; never pull the attribution inside the quote to make it look tighter;
-- **air before the quote is the default.** The only exception is a genuinely short connector that exists only to introduce the quote:
+- the quoted words occupy the **opening lines** of the block; the **last line of the same block** is the attribution — italic, starting with Unicode em dash `—` and one space;
+- the attribution is **inside the quote block, as its last line**, never a separate paragraph under it. A paragraph that follows `<blockquote>` always inherits the editor's block spacing, and that is exactly the stray gap readers complain about; inside the block the attribution sits directly under the quoted words with no gap at all. This is a transport decision, not an attribution rule: the words still belong to the author, not to the quoted text, and `QUOTE_ATTRIBUTION_STANDARD.md` governs names and titles;
+- the quoted words never carry the author, the reference or the work title;
+- Scripture uses the same shape: `> *— Иов 16:2*` as the last line;
+- after the quote block — ordinary paragraph break, no extra air;
+- air before the quote is the default. The only exception is a genuinely short connector that exists only to introduce the quote:
 
 ```text
 Об окончательно отпавших Иоанн говорит иначе:
 > «Цитата»
-
-*— 1 Ин. 2:19*
+> *— 1 Ин. 2:19*
 ```
 
-The connector is one short line ending with a colon (≤ 120 characters) that has no independent argument of its own. A colon alone is not a reason to remove air; do not manufacture one-sentence lead-ins. In the rendered artifact the connector is a paragraph and the quote is a block, so the editor still separates them; the exception matters for the L1 composer lane and for how the source is read, not for merging blocks.
+The connector is one short line ending with a colon (≤ 120 characters) that has no independent argument of its own. A colon alone is not a reason to remove air; do not manufacture one-sentence lead-ins.
 
-- One quote block ≤ ~600 characters. A longer passage is split by the author's own narration, not by `…`.
+- One quote block ≤ ~600 characters of quoted words; the attribution line does not count towards the limit. A longer passage is split by the author's own narration, not by `…`.
 - No nested quotes and no second level of `>`.
 - Ellipses mark real omissions; paraphrases never stand inside quotation marks.
 - Inline Scripture inside a running argument stays inline bold (as in the current articles). The blockquote shape is for quotations that stand as evidence on their own; do not convert every reference into a block.
+
+### Lane split for the attribution
+
+The placement of the attribution depends on the lane, and the two rules must not be mixed:
+
+| Lane | Transport | Attribution |
+|---|---|---|
+| **L2** — rich editor «Статья», up to 32 768 characters | Markdown → «Статья» → paste, or HTML copy page | **inside** the quote block, last line: `> *— Автор, «Труд»*` |
+| **L1** — one ordinary message, up to 4 096 characters | plain rich composer | **outside** the quote block, separate paragraph: `*— Автор, «Труд»*` (`QUOTE_ATTRIBUTION_STANDARD.md`) |
+
+Why the difference: in a long article the quote is one block among hundreds, and any block boundary under it produces a visible gap the editor controls, so the attribution is pulled inside. In a short post the attribution is its own line of the layout, and the older L1 rule stands.
+
+Known client behaviour, not a defect: a quote whose last line is an attribution may render collapsed, with the service label `Author` and a `Collapse` control. Expanded, it shows exactly the quote plus the italic attribution. Do not "fix" this by moving the attribution back outside in an L2 article.
 
 ## 6. Lists in L2
 
