@@ -5,7 +5,7 @@
 Детерминированно материализует то, что Markdown выразить не может:
   • воздух — один пустой блок `<p>&#8203;</p>` строго ПЕРЕД заголовком;
   • каждый пункт списка (`• ` / `1. `) — отдельный абзац;
-  • цитата — `<blockquote>`, подпись курсивом последней строкой внутри блока;
+  • цитата — `<blockquote>`, подпись — `<cite>` последней строкой внутри блока;
   • хэштеги — отдельный абзац.
 
     python3 render_l2_copy_page.py статья.md -o copy.html
@@ -114,7 +114,7 @@ def render(md: str):
                     i += 1
                 inner = "<br>".join(inline(q) for q in quote_lines)
                 if attr:
-                    inner += ("<br>" if inner else "") + f"<i>{inline(attr)}</i>"
+                    inner += ("<br>" if inner else "") + f"<cite>{inline(attr)}</cite>"
                 out.append("<blockquote>" + inner + "</blockquote>")
                 plain_blocks.append(
                     "\n".join([plain(q) for q in quote_lines] + ([plain(attr)] if attr else [])).strip()
@@ -162,6 +162,7 @@ TPL = """<!DOCTYPE html>
   .article h2{font-size:17.5px;line-height:1.3;margin:18px 0 8px}
   .article p{margin:0 0 13px}
   .article blockquote{margin:0 0 4px;padding:6px 12px;border-left:3px solid var(--accent);color:#d7e2ec}
+  .article blockquote cite{font-style:italic;opacity:.85}
   .article i{font-style:italic}
   .foot{color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
 </style>
