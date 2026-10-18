@@ -4,6 +4,8 @@ Status: operational guidance for manually copying reviewed `@lordchrist` article
 
 This workflow is intentionally separate from the bot/provider publisher. It exists for occasional interactive articles that the editor wants to post manually from the chat.
 
+> **Scope.** This document covers **lane L1** — one message up to 4096 characters pasted into the ordinary Telegram composer. For long articles up to 32 768 characters pasted into the rich editor «Статья», use `RICH_EDITOR_ARTICLE_STANDARD.md`; invisible `U+2060` spacers are forbidden in that lane.
+
 ## Verified working path on Android
 
 Confirmed on 2026-09-28: the same clipboard entry can paste differently depending on **how Telegram inserts it**.
@@ -57,6 +59,8 @@ If a future Telegram/ChatGPT client preserves real empty lines reliably, the inv
 ## Exact message-length preflight
 
 Telegram `sendMessage` accepts **1–4096 characters after entities parsing**. The authoritative Bot API reference is `https://core.telegram.org/bots/api#sendmessage`.
+
+Lane L2 is different: the rich editor «Статья» accepts up to **32 768 UTF-8 characters / 500 blocks** (`RICH_EDITOR_ARTICLE_STANDARD.md` §2).
 
 For a manually pasted rich post, count the exact reader-facing text that reaches Telegram. Bold, italic and quote entities do not create extra visible wording, but **line breaks and `U+2060` spacer characters are still characters** and must be included in the preflight.
 
