@@ -36,13 +36,12 @@ The 4096 limit and the `U+2060` rules in `DIRECT_COPY_TO_TELEGRAM.md` apply to *
 ## 3. Structure and headings
 
 - **H1 — title.** Exactly one, first block, ALL CAPS, one line, ≤ 120 characters, bold: `# **ЖАЛКИЕ УТЕШИТЕЛИ: 10 СОВЕТОВ…**`.
-- **H2 — sections.** Normal case, bold by heading rendering, ≤ 80 characters, no ALL CAPS, no clickbait. A single leading emoji marker is allowed and encouraged where it helps navigation: `## 🏛 Жан Кальвин`, `## ⏳ Невидимая дисциплина`. Maximum one emoji per heading, always at the start.
+- **H2 — sections.** Normal case, bold by heading rendering, ≤ 80 characters, no ALL CAPS, no clickbait. A single leading emoji marker is permitted only under the marker rule below.
 - H3 only when a section genuinely has two levels; more than two heading levels is a defect.
 - One H2 per **1 500–4 000 characters** of body. A 25 000+ character article normally has 10–16 sections.
 - A heading never ends a message or a part; two headings never stand in a row.
-- Emoji section markers (`⏳`, `🏛`, `🕯`, `🎙`) are allowed in both lanes and work exactly as in the legacy corpus: one leading marker per section heading. They mark sections instead of decorating them — never more than one per heading, never inside body paragraphs.
+- **Emoji marker rule.** Emoji have exactly one permitted place in L2: a single leading marker in a section heading, and only in articles built from large, sparse sections — on average ≥ 3 000 characters per H2. There the pictogram tells the reader what the section is about (`## 🏛 Жан Кальвин`, `## ⏳ Невидимая дисциплина`), so it marks rather than decorates: never more than one per heading, always at the start of the line, never mid-heading. When subheads are frequent (below 3 000 characters per section on average) or the sections form a numbered sequence (`## 1. …`, `## 2. …`, `## 3. …`), emoji are forbidden outright — the numbers already mark position and a pictogram next to them is noise. No emoji in the H1 and in body paragraphs in any case; a stray emoji is a defect.
 - Body bold: short key phrases only (normally ≤ 7 words). Do not bold whole sentences or alternate every paragraph.
-- Body emoji: none. Emoji live in headings only; a stray emoji inside a paragraph is a defect.
 - Italic: attribution, foreign terms, occasional secondary contrast. Not decoration.
 
 ## 4. Spacing
@@ -157,12 +156,12 @@ When the user asks for a paste-ready long article:
 
 - [ ] lane stated explicitly (L2) and the limit checked against 32 768 / 500 blocks;
 - [ ] exactly one H1, ALL CAPS, bold, ≤ 120 characters;
-- [ ] H2 in normal case, at most one leading emoji marker, one section per 1 500–4 000 characters;
+- [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker only under the §3 marker rule (sparse large sections, single, leading, never in numbered `1. 2. 3.` sequences);
 - [ ] artifact: air **before** every heading, none after (empty block only there);
 - [ ] every list item is its own paragraph with `•` or `1.`, none rendered as a tight Markdown list;
 - [ ] quotes: quoted words only inside `>`; attribution on the next line, italic, `— ` prefix;
 - [ ] air before quotations by default; connector exception used only where justified;
-- [ ] no hashtag footer (L2); emoji only as a leading marker in headings, never in body text;
+- [ ] no hashtag footer (L2); no emoji in the H1 or in body text, heading markers only where the §3 rule permits them;
 - [ ] no `U+2060`, no `U+200B`, no visible transport characters;
 - [ ] no slogan ladder; paragraphs are multi-sentence;
 - [ ] evidence rules from `RICH_EDITORIAL_STANDARD.md` satisfied;
