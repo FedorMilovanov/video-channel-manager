@@ -4,9 +4,11 @@ Status: canonical presentation rule for quotations in rich/editorial Telegram po
 
 ## Core rule
 
-A Telegram blockquote contains **only the quoted words**. Author, work title, Scripture reference, section number and other source metadata are never part of the quotation entity.
+The quotation entity contains **only the quoted words**. Author, work title, Scripture reference, section number and other source metadata are never part of the quoted wording. In L1 the attribution is outside the blockquote; L2 uses a blockquote container whose last line is attribution, but that line remains metadata, not part of the quoted words.
 
-Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote. Every reader-facing attribution line begins with a Unicode em dash `—` (`U+2014`) followed by one normal space:
+Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote.
+
+**This placement rule governs the short-post lane (L1).** In the rich article lane (L2, editor «Статья») the attribution is the last line inside the quote block — see `RICH_EDITOR_ARTICLE_STANDARD.md` §5, «Lane split for the attribution». Everything else in this file — naming, titles, the `— ` prefix, balance of quotation marks — applies to both lanes. Every reader-facing attribution line begins with a Unicode em dash `—` (`U+2014`) followed by one normal space:
 
 > «Точный текст цитаты»
 

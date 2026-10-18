@@ -217,8 +217,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     rep.stats["list_items"] = items
 
     # ---------- 5. цитаты ----------
-    # В L2-MD пустая строка — разделитель блоков, а не «воздух».
-    # Подпись обязана идти отдельным блоком сразу за цитатой.
+    # L2: подпись — ПОСЛЕДНЯЯ строка внутри блока цитаты (`> *— …*`).
+    # Отдельный абзац под цитатой даёт блочный отступ редактора и лишний воздух.
     quotes, i = 0, 0
     while i < len(stripped):
         if stripped[i].startswith(">"):
@@ -227,36 +227,35 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             while i + 1 < len(stripped) and stripped[i + 1].startswith(">"):
                 i += 1
             end = i
-            quote_text = " ".join(ln.lstrip("> ").strip() for ln in stripped[start : end + 1])
+            body = [ln.lstrip(">").strip() for ln in stripped[start : end + 1]]
+            has_attr = bool(body) and bool(ATTRIBUTION_RE.match(body[-1]))
+            quote_text = " ".join(body[:-1] if has_attr else body)
+
+            if not has_attr:
+                rep.error(
+                    f"строка {end + 1}: у цитаты нет подписи последней строкой. "
+                    "В L2 правильно: `> *— Автор, «Труд»*` внутри блока"
+                )
+
             if len(quote_text) > MAX_QUOTE:
                 rep.warn(
                     f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — разбейте авторским текстом"
                 )
 
-            # подпись: следующая непустая строка
+            # подпись отдельным блоком — ошибка L2: даёт разрыв под цитатой
             nxt_idx = end + 1
             while nxt_idx < len(stripped) and not stripped[nxt_idx].strip():
                 nxt_idx += 1
-            if nxt_idx >= len(stripped):
-                rep.error(f"строка {start + 1}: у цитаты нет подписи")
-            else:
-                nxt = stripped[nxt_idx].strip()
-                if nxt.startswith(">"):
-                    rep.error(f"строка {nxt_idx + 1}: подпись не должна входить в блок цитаты")
-                elif not ATTRIBUTION_RE.match(nxt):
-                    rep.error(
-                        f"строка {nxt_idx + 1}: подпись должна быть курсивом и начинаться с «— », получено: {nxt[:40]!r}"
-                    )
-                elif nxt_idx != end + 1:
-                    # допустимо (разделитель блоков), но предупредим: в L1 это был бы воздух
-                    rep.warn(
-                        f"строка {nxt_idx + 1}: подпись отделена от цитаты пустой строкой — в артефакте разрыва не будет"
-                    )
-                if ">" in quote_text:
-                    rep.error(f"строка {start + 1}: вложенная цитата (второй уровень `>`) запрещена")
+            if nxt_idx < len(stripped) and ATTRIBUTION_RE.match(stripped[nxt_idx].strip()):
+                rep.error(
+                    f"строка {nxt_idx + 1}: подпись стоит отдельным блоком после цитаты — "
+                    "в L2 она должна быть последней строкой блока: `> *— Автор, «Труд»*`"
+                )
+
+            if ">" in quote_text:
+                rep.error(f"строка {start + 1}: вложенная цитата (второй уровень `>`) запрещена")
 
             # воздух перед цитатой: короткая связка в том же блоке — исключение
-            prev_idx = start - 1
             connector_in_block = start > 0 and stripped[start - 1].strip() and not stripped[start - 1].startswith(">")
             has_blank_before = start > 0 and not stripped[start - 1].strip()
             if connector_in_block:
@@ -265,7 +264,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
                     rep.error(
                         f"строка {start + 1}: цитата приклеена к абзацу без воздуха (и это не короткая связка с двоеточием)"
                     )
-            elif has_blank_before and prev_idx >= 1 and not stripped[prev_idx - 1].strip():
+            elif has_blank_before and start >= 2 and not stripped[start - 2].strip():
                 rep.error(f"строка {start + 1}: две пустые строки перед цитатой — лишний воздух")
             i = end + 1
         else:
