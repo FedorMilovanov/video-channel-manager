@@ -40,7 +40,7 @@ The 4096 limit and the `U+2060` rules in `DIRECT_COPY_TO_TELEGRAM.md` apply to *
 - H3 only when a section genuinely has two levels; more than two heading levels is a defect.
 - One H2 per **1 500–4 000 characters** of body. A 25 000+ character article normally has 10–16 sections.
 - A heading never ends a message or a part; two headings never stand in a row.
-- **Emoji marker rule.** Emoji have exactly one permitted place in L2: a single leading marker in a section heading, and only in articles built from large, sparse sections — on average ≥ 3 000 characters per H2. There the pictogram tells the reader what the section is about (`## 🏛 Жан Кальвин`, `## ⏳ Невидимая дисциплина`), so it marks rather than decorates: never more than one per heading, always at the start of the line, never mid-heading. When subheads are frequent (below 3 000 characters per section on average) or the sections form a numbered sequence (`## 1. …`, `## 2. …`, `## 3. …`), emoji are forbidden outright — the numbers already mark position and a pictogram next to them is noise. No emoji in the H1 and in body paragraphs in any case; a stray emoji is a defect.
+- **Emoji marker rule.** In L2 an emoji is a normal part of the layout, not an exception: one marker leading an H2 line. Use it by default where a section is made of full paragraphs. Two cases take no marker: (1) a section inside a numbered ladder (`## 1. …`, `## 2. …`, `## 3. …`) — the number already marks position, and a pictogram next to it is noise; (2) a short rubric — a section under ~600 characters, meaning one or two sentences, a single item, or a brief insert — where the marker only distracts. No emoji in the H1 and no emoji in body paragraphs in any case; never more than one emoji per heading, always the first character of the line. The 600-character threshold is evaluated per section, not as an average over the article.
 - Body bold: short key phrases only (normally ≤ 7 words). Do not bold whole sentences or alternate every paragraph.
 - Italic: attribution, foreign terms, occasional secondary contrast. Not decoration.
 
@@ -114,7 +114,9 @@ The placement of the attribution depends on the lane, and the two rules must not
 
 Why the difference: in a long article the quote is one block among hundreds, and any block boundary under it produces a visible gap the editor controls, so the attribution is pulled inside. In a short post the attribution is its own line of the layout, and the older L1 rule stands.
 
-Known client behaviour, not a defect: a quote whose last line is an attribution may render collapsed, with the service label `Author` and a `Collapse` control. Expanded, it shows exactly the quote plus the italic attribution. Do not "fix" this by moving the attribution back outside in an L2 article.
+HTML markup: the attribution line is rendered as `<cite>` inside the same `<blockquote>` — `<blockquote>…<br><cite>— Автор, «Труд»</cite></blockquote>`. `cite` is the element Telegram itself reads as the quote's author: Android turns its contents into `pageBlockBlockquote.caption` and shows that line in the author field of the block; Desktop does not know the tag, so the text simply stays inside the quote after a line break. Without `cite` the author stays empty and Android draws its placeholder label `Author` under the quote. Do not use `<br><i>` for the attribution, and do not put it in a separate `<p>` — a paragraph after the quote takes block spacing and gives the stray gap.
+
+Known client behaviour, not a defect: a long quote renders collapsed behind a `Collapse` control, and the author line sits in the author field of the block. That is the intended shape — do not move the attribution outside the block and do not strip the `cite` tag to "fix" the collapse.
 
 ## 6. Lists in L2
 
@@ -166,7 +168,7 @@ When the user asks for a paste-ready long article:
 
 - [ ] lane stated explicitly (L2) and the limit checked against 32 768 / 500 blocks;
 - [ ] exactly one H1, ALL CAPS, bold, ≤ 120 characters;
-- [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker only under the §3 marker rule (sparse large sections, single, leading, never in numbered `1. 2. 3.` sequences);
+- [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker under the §3 rule (single, leading, allowed in paragraph-sized named sections, never in numbered `1. 2. 3.` sequences, never on rubrics under ~600 characters);
 - [ ] artifact: air **before** every heading, none after (empty block only there);
 - [ ] every list item is its own paragraph with `•` or `1.`, none rendered as a tight Markdown list;
 - [ ] quotes: quoted words only inside `>`; attribution on the next line, italic, `— ` prefix;

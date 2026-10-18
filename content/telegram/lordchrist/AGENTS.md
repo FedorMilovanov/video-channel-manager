@@ -25,7 +25,7 @@ For reader-facing rich posts, presentation authority is:
 4. `QUOTE_ATTRIBUTION_STANDARD.md`;
 5. `DIRECT_COPY_TO_TELEGRAM.md` when the target is one ordinary message (lane L1);
 6. task-specific research/evidence;
-7. old drafts/examples/chat history. Attribution placement is lane-dependent: inside the quote block for L2, outside it for L1.
+7. old drafts/examples/chat history. Attribution placement is lane-dependent: inside the quote block for L2, outside it for L1. In HTML the L2 attribution is a `<cite>` element inside the same `<blockquote>` (`<blockquote>…<br><cite>— Автор, «Труд»</cite></blockquote>`): Telegram reads `cite` as the quote's author.
 
 Research drafts are evidence inputs, **not presentation authority**. If an old draft shows an English work title, an attribution placement that conflicts with the target lane, collapsed spacing, slogan-like prose, or another layout that conflicts with the current standards, re-render it under the current standards instead of copying the old layout.
 
@@ -49,7 +49,7 @@ Research drafts are evidence inputs, **not presentation authority**. If an old d
 - Hashtags are lower priority than the article. If the post is close to the limit, reduce or omit hashtags before cutting useful exegesis, evidence, qualifications or the conclusion.
 - **L2 (rich editor «Статья») has no hashtag footer.** A long article ends with its last paragraph: tags do not work as navigation there. Do not silently keep the L1 hashtag block when switching lanes.
 - Manual Android paste: rendered ChatGPT text → Copy → Telegram composer → long-press → system **Paste / «Вставить»**. Never use the keyboard clipboard/history panel for rich posts.
-- **L2 (`«Статья»`) layout:** real headings (`#` title in ALL CAPS, `##` sections in normal case; a single leading emoji marker per section is allowed only in articles with large, sparse sections — ≥ 3 000 characters per H2 on average — and never in numbered `1. 2. 3.` sequences; no emoji in the title or body), **air only before headings — never after**; every list item is its own paragraph starting with `•` or `1.`; no `U+2060` and no `U+200B` anywhere; quote attribution is the **last line inside the `>` block** (`> *— Author, «Work»*`), italic, prefixed with `— `, so that no block gap opens between the quote and the attribution; no hashtag footer.
+- **L2 (`«Статья»`) layout:** real headings (`#` title in ALL CAPS, `##` sections in normal case; a single leading emoji marker per section is the default for named sections made of full paragraphs; it is never used in numbered `1. 2. 3.` sequences and never on rubrics shorter than ~600 characters; no emoji in the title or body), **air only before headings — never after**; every list item is its own paragraph starting with `•` or `1.`; no `U+2060` and no `U+200B` anywhere; quote attribution is the **last line inside the `>` block** (`> *— Author, «Work»*`), italic, prefixed with `— `, so that no block gap opens between the quote and the attribution; no hashtag footer.
 - Never paste L2 Markdown into the ordinary composer: it renders literal `**` and `#`. Never select rendered Arena chat text as a copy source; produce one Markdown block or an HTML copy page instead.
 - Before sending, visually inspect both formatting and paragraph spacing in the Telegram composer.
 
