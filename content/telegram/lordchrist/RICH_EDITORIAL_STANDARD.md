@@ -65,7 +65,7 @@ Do not remove the main exegetical argument, necessary qualification, primary-sou
 
 ### Exact length preflight
 
-The final one-message draft must fit Telegram's message-text limit **after rendering**. Preflight the exact text that will be pasted/sent, including:
+The final one-message draft must fit the limit of its lane **after rendering** (`RICH_EDITOR_ARTICLE_STANDARD.md` §1): **L1** — 4096 characters after entities parsing; **L2/L3** — 32 768 UTF-8 characters, 500 blocks, 16 nesting levels, 50 media. Preflight the exact text that will be pasted/sent, including:
 
 - title;
 - quotation text and attribution;
@@ -78,7 +78,11 @@ If a reviewed draft is only slightly over, make surgical wording reductions whil
 
 ## 4. Paragraph spacing for manual Android posts
 
+This section describes **lane L1** — one message pasted into the ordinary composer.
+
 A manually copied rich article must preserve visible air between independent paragraphs. Telegram/Android can collapse genuinely empty rich-text lines, so the manual-copy representation uses a standalone invisible Unicode **WORD JOINER `U+2060`** spacer line where a paragraph gap must survive paste.
+
+In **lane L2** (rich editor «Статья») invisible spacers are forbidden: the editor builds real paragraph blocks itself, and air is placed only before headings and around quotations per `RICH_EDITOR_ARTICLE_STANDARD.md` §4.
 
 The reader must not see any placeholder character. Never substitute visible bars, dots, Markdown markers or fake quote symbols for spacing.
 
@@ -211,7 +215,9 @@ Do not rank ministers by fame, archive size, sermon count or surviving media. Co
 
 ## 13. Direct ChatGPT → Telegram drafting mode
 
-When the user asks for a manually copyable Telegram article, the assistant should return **one clean rendered rich-text article**, not raw Markdown, raw HTML or a code block.
+This section describes **lane L1** (one message, ≤ 4096). When the reviewed article does not fit one message, use **lane L2** — the rich editor «Статья» with `RICH_EDITOR_ARTICLE_STANDARD.md`; there the article is returned as one copyable Markdown block, not as rendered chat text.
+
+In lane L1, when the user asks for a manually copyable Telegram article, the assistant should return **one clean rendered rich-text article**, not raw Markdown, raw HTML or a code block.
 
 Required reader-facing representation:
 
@@ -234,6 +240,8 @@ Do not insert rich posts via the keyboard clipboard/history panel; that route ca
 Before considering a rich article finished:
 
 - [ ] title is one concise **bold all-caps** line;
+- [ ] lane is stated and the correct limit was preflighted (L1 4096 / L2 32 768);
+- [ ] in L2: air only before headings, never after; every list item is its own block; no `U+2060`;
 - [ ] article has one clear argument/narrative spine;
 - [ ] body paragraphs are real paragraphs, not a slogan ladder;
 - [ ] useful content was not shortened merely for visual compactness;

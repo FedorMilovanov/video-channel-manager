@@ -9,8 +9,9 @@
 1. `AGENTS.md` — локальный read order и приоритет правил;
 2. `RICH_EDITORIAL_STANDARD.md` — канонический стандарт больших богословских/исторических постов;
 3. `QUOTE_ATTRIBUTION_STANDARD.md` — цитаты, подписи и точное правило воздуха перед цитатами;
-4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
-5. только затем task-specific research/evidence.
+4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing (lane L1);
+5. `RICH_EDITOR_ARTICLE_STANDARD.md` — длинные статьи в редакторе «Статья» (lane L2, до 32 768): заголовки, списки, цитаты, воздух;
+6. только затем task-specific research/evidence.
 
 ## Quote-v5 — текущий ридерский формат постов-цитат (2026-10-17)
 
@@ -133,6 +134,8 @@ DIRECT_COPY_TO_TELEGRAM.md
 ```
 
 Канонический Android-путь: rendered ChatGPT text → Copy → Telegram composer → long-press → system **Paste / «Вставить»**. Вставка из clipboard/history панели клавиатуры запрещена для rich posts, потому что она может превратить содержимое в plain text. Обычные пустые строки при rich paste могут схлопываться, поэтому нужный paragraph air сохраняется отдельной невидимой строкой `U+2060 WORD JOINER` согласно runbook.
+
+Для длинных материалов, которые не помещаются в одно сообщение, действует отдельный контракт **lane L2** — `RICH_EDITOR_ARTICLE_STANDARD.md`. Он описывает публикацию через редактор «Статья» (до 32 768 символов и 500 блоков): настоящие заголовки (допускается один ведущий эмодзи-маркер раздела), воздух только перед заголовками, каждый пункт списка отдельным блоком, цитата в `>` с курсивной подписью `— …` строкой ниже, без хэштегов. Невидимые `U+2060` в L2 запрещены.
 
 Текущий подготовленный successor corpus:
 
