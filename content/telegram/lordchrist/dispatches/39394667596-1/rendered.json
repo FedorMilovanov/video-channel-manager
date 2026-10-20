@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-depth-v2-20-ryle-faith-root",
+  "source_payload_sha256": "sha256:74bfa9763dc14ac5cf2ee66894b1940c4b1eb164d6521078fcf54e4704725255",
+  "presentation_policy_id": "lordchrist-quote-v5",
+  "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
+  "provider_payload_sha256": "sha256:403c0185a0e467f3d24f068976a900b0ac599de1017f117dc09768134951e163",
+  "parse_mode": "HTML",
+  "text": "Вера — корень характера настоящего христианина.\n— Дж. К. Райл, «Святость», глава о вере Моисея\n\nРайл не противопоставляет веру святости. Он ставит их в правильный порядок: живое доверие Христу — корень, а преобразованная жизнь — плод. Плод не создаёт корень, но бесплодие заставляет серьёзно спросить, жив ли корень вообще.\n\n#Райл #Вера #Святость",
+  "html_text": "<blockquote>Вера — корень характера настоящего христианина.</blockquote>\n<i>— Дж. К. Райл, «Святость», глава о вере Моисея</i>\n\nРайл не противопоставляет веру святости. Он ставит их в правильный порядок: живое доверие Христу — корень, а преобразованная жизнь — плод. Плод не создаёт корень, но бесплодие заставляет серьёзно спросить, жив ли корень вообще.\n\n#Райл #Вера #Святость",
+  "expected_entities": [
+    {
+      "type": "blockquote",
+      "offset": 0,
+      "length": 47
+    },
+    {
+      "type": "italic",
+      "offset": 48,
+      "length": 46
+    }
+  ],
+  "link_preview_disabled": true
+}

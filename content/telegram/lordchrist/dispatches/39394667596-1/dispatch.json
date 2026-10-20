@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-20-ryle-faith-root",
+  "sequence": 20,
+  "intent_id": "54ab2327e916011e34a92823a225a6f8",
+  "workflow_run_id": "39394667596",
+  "workflow_run_attempt": "1",
+  "github_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "github_workflow_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "payload_sha256": "sha256:74bfa9763dc14ac5cf2ee66894b1940c4b1eb164d6521078fcf54e4704725255",
+  "text": "Вера — корень характера настоящего христианина.\n\n— Дж. К. Райл, «Святость», глава о вере Моисея\n\nРайл не противопоставляет веру святости. Он ставит их в правильный порядок: живое доверие Христу — корень, а преобразованная жизнь — плод. Плод не создаёт корень, но бесплодие заставляет серьёзно спросить, жив ли корень вообще.\n\n#Райл #Вера #Святость",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-20T08:37:09.379420Z"
+  },
+  "prepared_at_utc": "2026-10-20T08:37:10.360093Z"
+}
