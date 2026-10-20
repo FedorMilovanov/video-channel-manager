@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-21-owen-sin-darkens",
+  "sequence": 21,
+  "intent_id": "a27c3b9ba1a3e301130abc8d326dca81",
+  "workflow_run_id": "39482233829",
+  "workflow_run_attempt": "1",
+  "github_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "github_workflow_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "payload_sha256": "sha256:81a2ae218a965296f969253a39714e0f12f94d084a7dbf882e5e5cfe51cee88e",
+  "text": "Как грех ослабляет, так он и помрачает душу.\n\n— Джон Оуэн, «Об умерщвлении греха в верующих»\n\nОуэн обращает внимание не только на видимые поступки, но и на то, что грех делает с духовным зрением. Неумерщвлённый грех притупляет чувствительность к Божьей истине и утешению, поэтому борьба с ним касается не только поведения, но и способности ясно видеть Бога и себя.\n\n#Оуэн #Грех #Освящение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "evening",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-20T19:18:08.152098Z"
+  },
+  "prepared_at_utc": "2026-10-20T19:18:09.476993Z"
+}
