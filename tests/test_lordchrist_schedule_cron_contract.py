@@ -67,6 +67,55 @@ def test_every_workflow_cron_is_either_a_configured_slot_or_the_historical_slot(
     assert HISTORICAL_CRON not in configured
 
 
+def _job_condition(job: str) -> str:
+    """Return the ``if:`` expression of one job, as written in the workflow."""
+
+    jobs = _workflow().split("\njobs:", 1)[1]
+    block = jobs.split(f"\n  {job}:", 1)[1]
+    block = block.split("\n    runs-on:", 1)[0]
+    return block
+
+
+def test_every_declared_cron_has_exactly_one_route() -> None:
+    """A cron nobody routes is a silently dead schedule.
+
+    Two routes exist, and every cron must take exactly one of them:
+
+    * a cron that is a quote/rich slot reaches ``publish-next``, which is only
+      safe because the runtime decider decides whether that slot is due;
+    * a cron that is not a slot of the configured schedule must be excluded from
+      ``publish-next`` and selected by its own job, otherwise it would either do
+      nothing or be mistaken for a queue slot.
+
+    ``17 16 * * 1,3,6`` is the historical rich track: it must be excluded from
+    ``publish-next`` and selected by ``historical-rich``. A cron wired to the
+    wrong job is indistinguishable from a missing schedule until a slot is
+    missed in production.
+    """
+
+    from video_channel_manager.telegram_schedule import load_production_schedule
+
+    crons = _workflow_crons()
+    assert crons, "the publisher must keep an explicit schedule"
+    assert len(crons) == len(set(crons)), "a duplicated cron would run twice"
+
+    slot_crons = {slot.cron for slot in load_production_schedule(SCHEDULE).slots.values()}
+    publish_next = _job_condition("publish-next")
+    historical = _job_condition("historical-rich")
+    exclusion = "&& github.event.schedule == '{cron}'"
+
+    for cron in crons:
+        excluded_from_quote = exclusion.format(cron=cron) in publish_next
+        selected_elsewhere = f"github.event.schedule == '{cron}'" in historical
+        if cron in slot_crons:
+            assert not excluded_from_quote, f"{cron} is a queue slot and must reach publish-next"
+        else:
+            assert excluded_from_quote, f"{cron} is not a queue slot and must not reach publish-next"
+            assert selected_elsewhere, f"{cron} is declared but no job consumes it"
+
+    assert HISTORICAL_CRON not in slot_crons
+
+
 def test_cron_fire_time_matches_the_declared_moscow_slot_time() -> None:
     """Each cron must fire exactly at the Moscow slot boundary it represents."""
 
