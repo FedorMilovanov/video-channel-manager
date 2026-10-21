@@ -27,6 +27,14 @@ def test_vk_upload_reservation_has_one_generic_provider_owner() -> None:
     assert boundary["retry_policy"] == "never_replay"
     assert boundary["attempt_limit"] == 1
 
+    # The one recoverable terminal state is typed, narrow and never automatic.
+    recovery = boundary["known_rejection_recovery"]
+    assert recovery["required_reason"] == "reservation_rejected"
+    assert recovery["archive_field"] == "known_rejections"
+    assert recovery["automatic_retry"] is False
+    assert recovery["reverify_media_before_reservation"] is True
+    assert set(recovery["requires_absent_evidence"]) == {"reservation", "upload", "verification"}
+
 
 def test_vk_binary_transfer_has_one_generic_provider_owner() -> None:
     matches = [item for item in _boundaries() if item.get("scanner_marker") == "http:video.upload"]
@@ -49,6 +57,8 @@ def test_golden_path_forbids_project_specific_upload_semantics() -> None:
         "a second binary-transfer lifecycle",
         "duplicated existing-Clip reconciliation semantics",
         "community-scoped writer serialization",
+        "known_rejections",
+        "separately invoked Wave",
         "Do not refactor an in-progress provider rollout",
     ):
         assert required in text
