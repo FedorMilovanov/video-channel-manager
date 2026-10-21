@@ -494,19 +494,23 @@ provider mutation, and none of them was closed by weakening a test.
 ## Branch hygiene executed (2026-10-21)
 
 Classification came from the GitHub compare API (`main...<branch>`), then from a per-file blob
-comparison of every head-side file against `main`. A branch was deleted only when **every** blob it
-changes is byte-identical to `main`; `state/*` refs were never candidates.
+comparison, then from a line-level check of whether the branch's added lines already exist in `main`.
+A shallow local clone was explicitly ruled out: it reported every branch as thousands of commits ahead.
 
-- **24 refs deleted**, each recorded with its tip SHA in
-  [`../operations/branch-hygiene-2026-10-21-deletion-ledger.md`](../operations/branch-hygiene-2026-10-21-deletion-ledger.md)
-  so any of them can be restored with a single `git push <sha>:refs/heads/<branch>`.
-- **17 refs kept** because they still hold content that is not in `main`. They fall into three groups:
-  - Milovi accepted-video branches (`agent/milovi-video-accepted-*`): unique MP4 artifacts, kept under the
-    external-artifact convention;
-  - unreleased wave/provider work (`feat/lord-god-vk-content-wave`, `fix/vk-wall-fail-fast-flood-remote`,
-    `feat/lordchrist-depth-v3-context-fixes-20261003`): needs a per-branch disposition, not a sweep;
-  - pre-restoration drafts (`agent/lordchrist-depth-v2-*`, `arena/01a1083a`, `feat/lordchrist-quote-v4-stage-20261003`,
-    `ops/lordchrist-depth-v2-readonly-preflight-678`, `agent/sync-vk-*`, `docs/instagram-current-state-625`,
-    `agent/vk-known-rejection-retry-621`, `agent/lordchrist-rich-copy-editorial-standards`): superseded in
-    intent by merged work (#693, #694, #628, #670) but not byte-identical, so each needs an explicit
-    "superseded — safe to delete" decision with its diff reviewed first.
+Result: **40 refs down to 4** (`main`, the three durable `state/*` refs, and one media carrier).
+
+1. **24 refs deleted losslessly** — every head-side blob of every file they change is byte-identical to
+   `main`. Proven by construction, not by inspection.
+2. **12 refs deleted as reviewed-superseded** — each with its own stated reason and the merged change
+   that replaced it (retired quote-v3/v4 drafts, one-off preflight workflows, docs-only edits that would
+   revert newer text, and the #628 prototype that the merged design replaces).
+3. **4 refs deleted as redundant/superseded in the third pass** — three feature branches whose work is
+   96–98 % already in `main` (or, for the depth-v3 context draft, an earlier design of the live #694
+   release), plus one of two byte-identical Milovi artifact branches.
+4. **1 ref kept**: `agent/milovi-video-accepted-f0e25d9c905f`, which is the only carrier of 16 accepted
+   MP4 artifacts (~50 MB) that exist nowhere else. Moving them to external storage and then deleting the
+   ref is recorded as the remaining step; deleting them now would destroy the only copy.
+
+Every deleted ref is recorded with its exact tip SHA and reason in
+[`../operations/branch-hygiene-2026-10-21-deletion-ledger.md`](../operations/branch-hygiene-2026-10-21-deletion-ledger.md),
+so restoration is one `git push <sha>:refs/heads/<branch>` within the object-retention window.
