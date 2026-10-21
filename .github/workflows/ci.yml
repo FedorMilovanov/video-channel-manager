@@ -101,9 +101,16 @@ jobs:
           assert "<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>" in preview["post"]["html_text"]
           assert "<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>" in preview["post"]["html_text"]
           PY
-      - name: Audit pinned Telegram runtime dependencies
+      - name: Audit every pinned production runtime
         if: matrix.python-version == '3.11'
-        run: pip-audit -r requirements/telegram-publisher.txt --desc on
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Repository Dependabot security alerts are not available for this
+          # integration, so every hash-locked production runtime is audited here.
+          # A stale lock is a blocking failure, not an advisory report.
+          pip-audit -r requirements/telegram-publisher.txt --desc on
+          pip-audit -r requirements/milovi-photo-publisher.txt --desc on
       - name: Dependency vulnerability gate
         id: pip_audit
         continue-on-error: true
@@ -113,7 +120,7 @@ jobs:
           pip-audit --skip-editable --desc on 2>&1 | tee pip-audit.log
       - name: Upload dependency audit
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pip-audit-${{ matrix.python-version }}
           path: pip-audit.log
@@ -127,7 +134,7 @@ jobs:
           ruff check . --output-format=concise 2>&1 | tee ruff.log
       - name: Upload Ruff report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ruff-${{ matrix.python-version }}
           path: ruff.log
@@ -141,7 +148,7 @@ jobs:
           ruff format --check . 2>&1 | tee ruff-format.log
       - name: Upload Ruff formatting report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ruff-format-${{ matrix.python-version }}
           path: ruff-format.log
@@ -155,7 +162,7 @@ jobs:
           mypy src --show-error-codes 2>&1 | tee mypy.log
       - name: Upload static typing report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mypy-${{ matrix.python-version }}
           path: mypy.log
@@ -169,7 +176,7 @@ jobs:
           python -m pytest --cov=video_channel_manager --cov-report=term-missing 2>&1 | tee pytest.log
       - name: Upload test report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pytest-${{ matrix.python-version }}
           path: pytest.log

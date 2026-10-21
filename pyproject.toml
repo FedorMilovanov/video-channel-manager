@@ -28,7 +28,7 @@ browser-read = [
   "playwright>=1.54,<2",
 ]
 milovi-gap-read = [
-  "Pillow>=12.3,<13",
+  "Pillow>=13,<14",
 ]
 dev = [
   "mypy>=1.14,<3",

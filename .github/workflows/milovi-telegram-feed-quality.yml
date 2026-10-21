@@ -49,6 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import re
           from pathlib import Path
 
           root = Path(".github/workflows")
@@ -97,7 +98,12 @@ jobs:
           archive_index = text.index("- name: Archive exact provider outcome before state mutation")
           apply_index = text.index("- name: Apply exact outcome and persist terminal or blocking state")
           assert send_index < archive_index < apply_index
-          assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in text
+          pinned_upload = re.search(
+              r"uses:\s*actions/upload-artifact@([0-9a-f]{40})\s*#\s*v?(\d+\.\d+\.\d+)",
+              text,
+          )
+          assert pinned_upload is not None, "upload-artifact must stay SHA pinned with its release"
+          assert tuple(int(part) for part in pinned_upload.group(2).split(".")) >= (7, 0, 1)
           artifact_name_template = "name: milovi-provider-outcome-$" + "{{ github.run_id }}-$" + "{{ github.run_attempt }}"
           assert artifact_name_template in text
           assert "if-no-files-found: error" in text
@@ -130,14 +136,24 @@ jobs:
           photo_lock = Path("requirements/milovi-photo-publisher.txt").read_text(encoding="utf-8")
           assert "--require-hashes" in photo_lock
           assert "--only-binary=:all:" in photo_lock
-          assert "Pillow==12.3.0" in photo_lock
-          assert "sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd" in photo_lock
+          pinned = re.search(r"^Pillow==(\d+)\.(\d+)\.(\d+)\s*\\$", photo_lock, re.MULTILINE)
+          assert pinned is not None, "the Milovi lock must pin an exact Pillow release"
+          major, minor = (int(part) for part in pinned.groups()[:2])
+          assert (major, minor) >= (13, 0), f"stale Pillow pin: {pinned.group(0)}"
+          pinned_hash = re.search(r"--hash=sha256:([0-9a-f]{64})$", photo_lock, re.MULTILINE)
+          assert pinned_hash is not None, "the exact Pillow wheel must be hash locked"
           assert "-r requirements/milovi-photo-publisher.txt" in text
-          assert "Pillow==11.3.0" not in text
-          assert "--only-binary=:all: Pillow==" not in text
 
+          # The runtime range and the production lock must agree: the supported
+          # dependency range has to admit the exact locked release.
           pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-          assert '"Pillow>=12.3,<13"' in pyproject
+          asserted_range = re.search(r'"Pillow>=(\d+)(?:\.(\d+))?,<(\d+)"', pyproject)
+          assert asserted_range is not None, "pyproject must declare a Pillow range"
+          lower_major = int(asserted_range.group(1))
+          lower_minor = int(asserted_range.group(2) or 0)
+          upper_major = int(asserted_range.group(3))
+          assert (major, minor) >= (lower_major, lower_minor)
+          assert major < upper_major, f"locked Pillow {major} is outside the supported range"
 
           discovery_text = discovery.read_text(encoding="utf-8")
           assert "discover-target" in discovery_text

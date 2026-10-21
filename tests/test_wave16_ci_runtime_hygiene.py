@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from _workflow_actions import assert_actions_pinned, assert_no_retired_refs
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CI = ROOT / ".github" / "workflows" / "ci.yml"
@@ -10,20 +12,17 @@ PACKAGE_A = ROOT / "src" / "video_channel_manager" / "wave_engine" / "package_a.
 MP3_CONTRACT = ROOT / "docs" / "operations" / "mp3-batch-processing-contract.md"
 
 
-def test_ci_uses_exact_node24_action_releases() -> None:
+def test_ci_uses_pinned_action_releases_at_reviewed_minimums() -> None:
     text = CI.read_text(encoding="utf-8")
 
-    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1" in text
-    assert "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0" in text
-    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1" in text
-    for retired in (
-        "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
-        "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
-        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
-        "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-    ):
-        assert retired not in text
+    pins = assert_actions_pinned(text, source="ci.yml")
+    pinned_actions = {pin.action for pin in pins}
+    assert pinned_actions == {"actions/checkout", "actions/setup-python", "actions/upload-artifact"}
+
+    # Every reference carries a documented release; the shared contract enforces
+    # the reviewed minimum, full-SHA pinning and the retired-ref denylist.
+    assert all(pin.version is not None for pin in pins)
+    assert_no_retired_refs(text, source="ci.yml")
 
 
 def test_unclosed_sqlite_connections_are_blocking_and_production_closes_them() -> None:
