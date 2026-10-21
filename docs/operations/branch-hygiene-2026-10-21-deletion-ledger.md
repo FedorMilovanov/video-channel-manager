@@ -1,12 +1,19 @@
 # Branch hygiene ledger — 2026-10-21
 
 Classification produced from the GitHub compare API (`main...<branch>`), not from ref age,
-prefix or a shallow local clone. A branch was deleted only when **every head-side blob of every
-file it changes is byte-identical to `main`** — that is, its content is fully contained in `main`
-and deletion loses nothing. `state/*` refs are durable state and are never candidates.
+prefix or a shallow local clone. `state/*` refs are durable state and were never candidates.
+
+The ledger has three waves with deliberately different standards of proof:
+
+1. **Lossless wave** — deleted only when **every head-side blob of every file it changes is
+   byte-identical to `main`**, so its content is fully contained in `main` and deletion cannot lose
+   anything. This is proof by construction and needs no judgement.
+2. **Superseded waves** — refs that are *not* byte-identical, so each one required an individual
+   diff review, a stated reason, and the merged change that replaced it. Nothing here was deleted for
+   age, for its name, or because it looked stale.
 
 Each deleted ref is recorded below with its exact tip SHA, so a restoration is
-`git push origin <sha>:refs/heads/<branch>` if it is ever needed.
+`git push origin <sha>:refs/heads/<branch>` while the objects are still retained.
 
 Deleted 24 refs:
 
