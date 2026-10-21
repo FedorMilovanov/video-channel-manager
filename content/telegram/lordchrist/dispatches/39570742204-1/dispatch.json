@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-22-charnock-necessarily-unchangeable",
+  "sequence": 22,
+  "intent_id": "14f0b5d68400143abcf0f57271a85bd6",
+  "workflow_run_id": "39570742204",
+  "workflow_run_attempt": "1",
+  "github_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "github_workflow_sha": "c308448d8760f3a093dcf219ed4c80d29de338ad",
+  "payload_sha256": "sha256:dd0830e52c62a1a3ee54c6987e9f13a3183ef284b5d898b31515a64d5c6d65d3",
+  "text": "Бог необходимо есть Тот, Кто Он есть, и потому неизменно остаётся Тем, Кто Он есть.\n\n— Стивен Чарнок, «О неизменности Бога»\n\nЧарнок связывает неизменность Бога с Его самобытностью: Бог не получает полноту бытия извне и потому не меняется под давлением нехватки, обстоятельств или чужой воли. Для верующего это означает, что Божий характер не зависит от переменчивости сотворённого мира.\n\n#Чарнок #СуверенностьБога #НеизменностьБога",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-21T08:38:16.407866Z"
+  },
+  "prepared_at_utc": "2026-10-21T08:38:17.423109Z"
+}
