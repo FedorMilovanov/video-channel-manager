@@ -460,3 +460,24 @@ gh api repos/FedorMilovanov/video-channel-manager/contents/.../successor-depth-v
 
 Аудит не выполнял provider-вызовов, provider-записей, merge, удаления веток и
 мутаций `state/*`.
+
+---
+
+## Remediation status (2026-10-21, later the same day)
+
+Every item below is closed on branch `arena/fc0892e0-video-channel-manager`; none of them required a
+provider mutation, and none of them was closed by weakening a test.
+
+| Item | Disposition |
+| --- | --- |
+| Pillow 12.3.0, 24 known vulnerabilities | Upgraded to 13.0.0 in the Milovi production lock, hash-verified; runtime range admits it; CI audits both production locks. |
+| certifi 2026.5.20 (PYSEC-2026-4320) | Upgraded to 2026.10.19 in the Telegram publisher lock, hash-verified. |
+| Unpinned / retired GitHub Actions refs | Full-SHA pins with release, minimum version and retired-ref denylist enforced across all workflows. |
+| #628 known-rejection recovery | `reopen_known_rejection` reopens only a provably no-effect `rejected` state, archives it, re-verifies current media and returns to `planned`. `retry_policy` stays `never_replay`; register metadata is cross-checked against the implementation by tests. |
+| Scheduler `timezone:` keys | Removed. A contract test derives both failure modes (not-due before the boundary, stale past the lease) from the runtime decider. |
+| Shadowed `platforms/vk.py` | Deleted; a guard test fails if any module is shadowed by a same-named package. |
+| `.ps1` inventory scanning `.venv` | Development directories ignored; classification requirement unchanged and verified with a real virtualenv present. |
+| #670 rich-copy work | Only `MANUAL_RICH_COPY.md` and `tools/telegram-rich-copy/index.html` were unique; both are ported and tested, the rest of that branch was older drafts. |
+| #631 / #692 | Content already on `main` / premise outdated; closed with evidence. |
+| #662 / #621 | Still blocked on owner OAuth; unchanged, not silently dropped. |
+| Stale `current-state.md` | Resynchronised: 22 published / 38 pending, next sequence 23, checkpoint `c308448`, #692 recorded as completed. |
