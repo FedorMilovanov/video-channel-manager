@@ -490,3 +490,23 @@ provider mutation, and none of them was closed by weakening a test.
 | #631 / #692 | Content already on `main` / premise outdated; closed with evidence. |
 | #662 / #621 | Still blocked on owner OAuth; unchanged, not silently dropped. |
 | Stale `current-state.md` | Resynchronised: 22 published / 38 pending, next sequence 23, checkpoint `c308448`, #692 recorded as completed. |
+
+## Branch hygiene executed (2026-10-21)
+
+Classification came from the GitHub compare API (`main...<branch>`), then from a per-file blob
+comparison of every head-side file against `main`. A branch was deleted only when **every** blob it
+changes is byte-identical to `main`; `state/*` refs were never candidates.
+
+- **24 refs deleted**, each recorded with its tip SHA in
+  [`../operations/branch-hygiene-2026-10-21-deletion-ledger.md`](../operations/branch-hygiene-2026-10-21-deletion-ledger.md)
+  so any of them can be restored with a single `git push <sha>:refs/heads/<branch>`.
+- **17 refs kept** because they still hold content that is not in `main`. They fall into three groups:
+  - Milovi accepted-video branches (`agent/milovi-video-accepted-*`): unique MP4 artifacts, kept under the
+    external-artifact convention;
+  - unreleased wave/provider work (`feat/lord-god-vk-content-wave`, `fix/vk-wall-fail-fast-flood-remote`,
+    `feat/lordchrist-depth-v3-context-fixes-20261003`): needs a per-branch disposition, not a sweep;
+  - pre-restoration drafts (`agent/lordchrist-depth-v2-*`, `arena/01a1083a`, `feat/lordchrist-quote-v4-stage-20261003`,
+    `ops/lordchrist-depth-v2-readonly-preflight-678`, `agent/sync-vk-*`, `docs/instagram-current-state-625`,
+    `agent/vk-known-rejection-retry-621`, `agent/lordchrist-rich-copy-editorial-standards`): superseded in
+    intent by merged work (#693, #694, #628, #670) but not byte-identical, so each needs an explicit
+    "superseded — safe to delete" decision with its diff reviewed first.
