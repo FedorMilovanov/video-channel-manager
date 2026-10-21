@@ -4,5 +4,5 @@
 --require-hashes
 --only-binary=:all:
 
-Pillow==12.3.0 \
-    --hash=sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd
+Pillow==13.0.0 \
+    --hash=sha256:a625df9a2a5597fa5e5266e01aefc82604bb85d291e3547981e863560d75da6c

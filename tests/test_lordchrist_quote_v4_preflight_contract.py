@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from _workflow_actions import assert_actions_pinned
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/lordchrist-quote-v4-preflight.yml"
 
@@ -136,7 +138,8 @@ def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout()
     assert "! -e .runtime/lordchrist-dispatch.json" in workflow
     assert "! -e .runtime/lordchrist-rendered.json" in workflow
     assert 'if selection["provider_writes_authorized"] is not False' not in workflow
-    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in workflow
+    preflight_pins = assert_actions_pinned(workflow, source="lordchrist-quote-v4-preflight.yml")
+    assert any(pin.action == "actions/upload-artifact" for pin in preflight_pins)
     assert ".runtime/lordchrist-quote-v5-target-proof.json" in workflow
     assert '"read-only Telegram target proof",' in workflow
     assert '"provider inertness"' in workflow

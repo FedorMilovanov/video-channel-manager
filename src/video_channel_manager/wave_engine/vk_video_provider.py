@@ -219,6 +219,7 @@ class VkNativeVideoUploadAdapter:
             published_title=str(payload["published_title"]),
             published_description=str(payload["published_description"]),
             readiness=readiness,
+            retry_known_rejection=True,
         )
         if changed or not path.exists():
             write_json_atomic(path, record)

@@ -25,12 +25,17 @@ on:
     # 16:17 UTC = 19:17 Moscow (historical rich slot), 18:17 UTC = 21:17 Moscow
     # (evening quote slot). The previous UTC-as-Moscow expressions fired three
     # hours past every documented slot boundary.
+    #
+    # Do not add a `timezone:` key here. These expressions are already UTC
+    # offsets converted from the Moscow slot times in production-schedule.json,
+    # and the runtime re-derives the slot in Europe/Moscow before publishing. A
+    # timezone key would apply that offset twice: the morning slot would fire at
+    # 06:17 Moscow (before its 09:17 boundary, "slot is not due yet") and the
+    # evening slot at 15:17 UTC (past its 160-minute lease, "too stale").
+    # tests/test_lordchrist_schedule_cron_contract.py enforces this agreement.
     - cron: "17 6 * * *"
-      timezone: Europe/Moscow
     - cron: "17 16 * * 1,3,6"
-      timezone: Europe/Moscow
     - cron: "17 18 * * 2,5,0"
-      timezone: Europe/Moscow
 
 permissions:
   actions: read
@@ -780,7 +785,7 @@ jobs:
 
       - name: Archive exact Lordchrist provider outcome before state mutation
         if: steps.capture_outcome.outcome == 'success' && !cancelled()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lordchrist-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
           path: .runtime/lordchrist-outcome.json
@@ -1096,7 +1101,7 @@ jobs:
       - name: Archive exact historical provider outcome before durable result mutation
         id: historical_archive
         if: steps.historical_send.outcome == 'success' && !cancelled()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lordchrist-historical-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
           path: .runtime/lordchrist-historical-outcome.json

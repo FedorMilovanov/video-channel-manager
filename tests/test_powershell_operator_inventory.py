@@ -40,6 +40,23 @@ def _code_without_comments(path: Path) -> str:
     )
 
 
+# Local development environments live inside the checkout. A virtualenv ships its
+# own activation scripts, so a bare rglob("*.ps1") reports wrapper drift that has
+# nothing to do with this repository and breaks the test for every developer who
+# follows the documented `.venv` setup.
+IGNORED_DEVELOPMENT_DIRECTORIES = frozenset(
+    {".git", ".venv", "venv", "node_modules", "site-packages", "__pycache__", ".mypy_cache", ".ruff_cache"}
+)
+
+
+def _tracked_powershell_paths(base: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in base.rglob("*.ps1")
+        if not IGNORED_DEVELOPMENT_DIRECTORIES.intersection(path.relative_to(ROOT).parts)
+    )
+
+
 def test_every_powershell_wrapper_is_classified_exactly_once() -> None:
     registry = _registry()
     assert registry["schema_name"] == "video-manager.powershell-wrapper-registry"
@@ -48,12 +65,12 @@ def test_every_powershell_wrapper_is_classified_exactly_once() -> None:
     wrappers = registry["wrappers"]
     assert isinstance(wrappers, list)
     registered_paths = [str(item["path"]).replace("\\", "/") for item in wrappers]
-    discovered_paths = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "scripts").rglob("*.ps1"))
+    discovered_paths = [path.relative_to(ROOT).as_posix() for path in _tracked_powershell_paths(ROOT / "scripts")]
 
     test_files = registry["test_files"]
     assert isinstance(test_files, list)
     test_paths = [str(item["path"]).replace("\\", "/") for item in test_files]
-    discovered_all = sorted(path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*.ps1"))
+    discovered_all = [path.relative_to(ROOT).as_posix() for path in _tracked_powershell_paths(ROOT)]
 
     assert len(registered_paths) == len(set(registered_paths))
     assert len(test_paths) == len(set(test_paths))

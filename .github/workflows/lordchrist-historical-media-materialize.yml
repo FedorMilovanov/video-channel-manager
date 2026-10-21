@@ -64,12 +64,21 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends poppler-utils
           python -m pip install --disable-pip-version-check -e '.[dev,milovi-gap-read]'
-          python -m pip install --disable-pip-version-check 'Pillow==12.3.0'
+          # The Milovi production lock is the single source of truth for the
+          # exact Pillow runtime; do not restate the version here.
+          python -m pip install --disable-pip-version-check \
+            -r requirements/milovi-photo-publisher.txt
           command -v pdftoppm
           pdftoppm -v 2>&1 | sed -n '1,2p'
           python - <<'PY'
+          import re
+          from pathlib import Path
+
           import PIL
-          if PIL.__version__ != "12.3.0":
+
+          lock = Path("requirements/milovi-photo-publisher.txt").read_text(encoding="utf-8")
+          expected = re.search(r"^Pillow==(\S+?)\s*\\?$", lock, re.MULTILINE)
+          if expected is None or PIL.__version__ != expected.group(1):
               raise SystemExit(f"unexpected Pillow runtime: {PIL.__version__}")
           PY
 

@@ -10,7 +10,7 @@ LOCK_REFERENCE = "requirements/telegram-publisher.txt"
 EXPECTED_PACKAGES = {
     "annotated-types==0.7.0",
     "anyio==4.14.2",
-    "certifi==2026.5.20",
+    "certifi==2026.10.19",
     "h11==0.16.0",
     "httpcore==1.0.9",
     "httpx==0.28.1",

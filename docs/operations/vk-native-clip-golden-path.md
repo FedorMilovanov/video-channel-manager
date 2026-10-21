@@ -19,7 +19,7 @@ The reusable native-Clip kernel owns these semantics exactly once:
 5. one reservation lifecycle;
 6. one binary-transfer lifecycle;
 7. durable dispatch evidence before ambiguous mutations;
-8. no blind replay after a provider effect may have occurred;
+8. no blind replay after a provider effect may have occurred, while a definite no-effect provider rejection must not become an unrecoverable dead end;
 9. native `short_video` verification using phase-appropriate readiness;
 10. durable per-item completion before advancing the batch.
 
@@ -55,6 +55,8 @@ Any third text state is conflict, even if it still contains a recognizable sourc
 Before the first promotion mutation, the whole bounded batch is read-only preflighted. Deterministic drift on a later item must be discovered before partial edits to earlier items.
 
 Every ambiguous edit persists `dispatch_started` before the provider call, reconciles only from exact readback, and never blindly replays.
+
+An explicit rejection that returned no ticket and no bytes is the one recoverable terminal state. Reopening it is a separate reviewed action, not an automatic retry: the caller must be a later, separately invoked Wave, the durable object identity must be unchanged, the rejected attempt must be archived under `known_rejections`, and current media must be re-verified before a new reservation. Any reservation, transfer or verification evidence keeps the journal non-replayable.
 
 ### CatalogExtension
 

@@ -30,6 +30,22 @@ REQUIRED_BOUNDARY_FIELDS = {
     "required_fault_stages",
     "owning_tests",
 }
+# Optional, explicitly typed extension: a boundary may document one narrow
+# recovery path for a provider outcome that provably had no effect. It never
+# relaxes retry_policy; the invariants below keep that separation enforced.
+OPTIONAL_BOUNDARY_FIELDS = {"known_rejection_recovery"}
+REQUIRED_KNOWN_REJECTION_RECOVERY_FIELDS = {
+    "reopen_from_stage",
+    "required_last_transition_to",
+    "required_reason",
+    "requires_absent_evidence",
+    "requires_present_evidence",
+    "archive_field",
+    "reverify_media_before_reservation",
+    "automatic_retry",
+    "authority",
+    "owning_callable",
+}
 REQUIRED_HIGH_RISK_STAGES = {"before_dispatch", "after_dispatch_before_response"}
 _SAFE_DYNAMIC_VK_CALLS = {
     (
@@ -240,7 +256,8 @@ def test_register_schema_and_unique_boundaries() -> None:
     assert len(boundary_ids) == len(set(boundary_ids))
     assert len(callsite_keys) == len(set(callsite_keys))
     for item in boundaries:
-        assert set(item) == REQUIRED_BOUNDARY_FIELDS
+        assert REQUIRED_BOUNDARY_FIELDS <= set(item) <= REQUIRED_BOUNDARY_FIELDS | OPTIONAL_BOUNDARY_FIELDS
+        assert set(item) - REQUIRED_BOUNDARY_FIELDS <= OPTIONAL_BOUNDARY_FIELDS
         assert item["risk"] in {"P0", "P1"}
         assert item["language"] in {"python", "powershell"}
         assert item["unknown_status"] == "unknown_requires_reconciliation"
@@ -287,6 +304,46 @@ def test_ambiguous_boundaries_are_never_replayed() -> None:
         if boundary["mutation_class"] == "ambiguous_mutation":
             assert boundary["retry_policy"] == "never_replay", boundary["boundary_id"]
             assert boundary["attempt_limit"] == 1
+
+
+def test_known_rejection_recovery_is_typed_and_never_relaxes_retry_policy() -> None:
+    """A documented no-effect recovery must stay narrower than an automatic retry."""
+
+    from video_channel_manager.platforms.vk.upload_lifecycle import (
+        UploadStage,
+        reopen_known_rejection,
+    )
+
+    documented = [boundary for boundary in _load_register()["boundaries"] if "known_rejection_recovery" in boundary]
+    assert [item["boundary_id"] for item in documented] == ["vk.video.upload.reserve"]
+
+    boundary = documented[0]
+    assert boundary["retry_policy"] == "never_replay"
+    assert boundary["attempt_limit"] == 1
+
+    recovery = boundary["known_rejection_recovery"]
+    assert set(recovery) == REQUIRED_KNOWN_REJECTION_RECOVERY_FIELDS
+    assert recovery["reopen_from_stage"] == UploadStage.REJECTED.value
+    assert recovery["required_last_transition_to"] == UploadStage.REJECTED.value
+    assert recovery["required_reason"] == "reservation_rejected"
+    assert recovery["archive_field"] == "known_rejections"
+    assert recovery["reverify_media_before_reservation"] is True
+    # No automatic retry: only a later, separately invoked Wave may reopen.
+    assert recovery["automatic_retry"] is False
+    assert recovery["authority"] == "later_separately_invoked_wave"
+    assert recovery["owning_callable"].endswith(".reopen_known_rejection")
+    assert callable(reopen_known_rejection)
+    assert isinstance(recovery["requires_absent_evidence"], list) and recovery["requires_absent_evidence"]
+    assert isinstance(recovery["requires_present_evidence"], list) and recovery["requires_present_evidence"]
+    assert set(recovery["requires_absent_evidence"]).isdisjoint(recovery["requires_present_evidence"])
+
+
+def test_rejected_stage_has_exactly_one_documented_successor() -> None:
+    """The only edge out of REJECTED is the audited known-rejection reopen."""
+
+    from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage, _ALLOWED_TRANSITIONS
+
+    assert _ALLOWED_TRANSITIONS[UploadStage.REJECTED] == frozenset({UploadStage.PLANNED})
 
 
 def test_ast_mutation_inventory_matches_registered_python_markers() -> None:

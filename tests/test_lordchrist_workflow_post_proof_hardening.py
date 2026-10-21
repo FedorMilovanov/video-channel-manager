@@ -54,7 +54,11 @@ def test_lordchrist_scheduler_preserves_three_moscow_windows_and_pins_runner() -
     assert 'cron: "17 16 * * 1,3,6"' in text
     assert 'cron: "17 18 * * 2,5,0"' in text
     assert 'cron: "17 21 * * *"' not in text
-    assert text.count("timezone: Europe/Moscow") >= 3
+    # These expressions are already the UTC form of the Moscow windows
+    # (06:17 UTC = 09:17 Moscow, 18:17 UTC = 21:17 Moscow). A `timezone:` key
+    # applies the offset a second time and stops publication:
+    # tests/test_lordchrist_schedule_cron_contract.py proves both failure modes.
+    assert "timezone: Europe/Moscow" not in text
     assert "runs-on: ubuntu-24.04" in text
     assert "runs-on: ubuntu-latest" not in text
 

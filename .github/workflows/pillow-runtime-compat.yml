@@ -47,11 +47,18 @@ jobs:
           "$runtime/bin/python" -m pip check
           "$runtime/bin/python" - <<'PY'
           import io
+          import re
+          from pathlib import Path
 
           import PIL
           from PIL import Image
 
-          assert PIL.__version__ == "12.3.0"
+          # The lock file is the only source of truth for the production Pillow
+          # version. A security bump therefore edits the lock, not this proof.
+          lock = Path("requirements/milovi-photo-publisher.txt").read_text(encoding="utf-8")
+          expected = re.search(r"^Pillow==(\S+?)\s*\\?$", lock, re.MULTILINE)
+          assert expected is not None, "the Milovi lock must pin Pillow explicitly"
+          assert PIL.__version__ == expected.group(1), (PIL.__version__, expected.group(1))
           image = Image.new("RGB", (16, 12), (120, 80, 40))
           output = io.BytesIO()
           image.save(output, format="JPEG", quality=95)

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Telegram Rich Copy</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color-scheme: light dark; }
+    body { margin: 0; background: Canvas; color: CanvasText; }
+    main { max-width: 860px; margin: 0 auto; padding: 20px; }
+    textarea { width: 100%; min-height: 260px; box-sizing: border-box; padding: 14px; font: 16px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    button { width: 100%; margin-top: 12px; padding: 14px 16px; border: 0; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; }
+    .secondary { font-weight: 600; }
+    #status { margin: 14px 0; padding: 12px; border-radius: 10px; background: color-mix(in srgb, CanvasText 8%, Canvas); white-space: pre-wrap; }
+    #preview { margin-top: 18px; padding: 18px; border: 1px solid color-mix(in srgb, CanvasText 18%, transparent); border-radius: 14px; line-height: 1.5; }
+    #preview blockquote { margin: 1em 0; padding: .5em .9em; border-left: 4px solid #999; }
+    .small { opacity: .78; font-size: 14px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Telegram Rich Copy</h1>
+  <p class="small">Вставьте Markdown из ChatGPT. Страница создаст Telegram-совместимый HTML и положит в системный буфер одновременно <code>text/plain</code> и <code>text/html</code>. Инструмент должен работать как top-level HTTPS page.</p>
+
+  <textarea id="source" spellcheck="false" placeholder="**Заголовок**&#10;&#10;> «Цитата»&#10;> *Источник*&#10;&#10;Обычный абзац..."></textarea>
+
+  <button id="copy">Преобразовать и скопировать для Telegram</button>
+  <button id="test" class="secondary">Скопировать тест: жирный + курсив + цитата</button>
+  <div id="status">Проверка окружения…</div>
+  <section id="preview" aria-label="Предпросмотр"></section>
+</main>
+
+<script>
+(() => {
+  const source = document.getElementById('source');
+  const preview = document.getElementById('preview');
+  const status = document.getElementById('status');
+
+  function escapeHtml(value) {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function inlineMarkdown(value) {
+    let s = escapeHtml(value);
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+    s = s.replace(/__([^_\n]+)__/g, '<b>$1</b>');
+    s = s.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<i>$1</i>');
+    s = s.replace(/(?<!_)_([^_\n]+)_(?!_)/g, '<i>$1</i>');
+    s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>');
+    return s;
+  }
+
+  function markdownToTelegramHtml(markdown) {
+    const normalized = markdown.replace(/\r\n?/g, '\n').trim();
+    if (!normalized) return '';
+
+    if (/^```/m.test(normalized)) {
+      throw new Error('Кодовые блоки в ручном Telegram article handoff запрещены. Уберите ``` перед копированием.');
+    }
+
+    const lines = normalized.split('\n');
+    const blocks = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      if (!lines[i].trim()) { i += 1; continue; }
+
+      if (/^\s*>/.test(lines[i])) {
+        const quote = [];
+        while (i < lines.length && /^\s*>/.test(lines[i])) {
+          quote.push(lines[i].replace(/^\s*>\s?/, ''));
+          i += 1;
+        }
+        blocks.push('<blockquote>' + quote.map(inlineMarkdown).join('<br>') + '</blockquote>');
+        continue;
+      }
+
+      const paragraph = [];
+      while (i < lines.length && lines[i].trim() && !/^\s*>/.test(lines[i])) {
+        let line = lines[i];
+        if (/^#{1,6}\s+/.test(line)) {
+          line = '**' + line.replace(/^#{1,6}\s+/, '') + '**';
+        }
+        paragraph.push(line);
+        i += 1;
+      }
+      blocks.push(paragraph.map(inlineMarkdown).join('<br>'));
+    }
+
+    return blocks.join('<br><br>');
+  }
+
+  function htmlToPlain(html) {
+    const holder = document.createElement('div');
+    holder.innerHTML = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/blockquote>/gi, '\n\n')
+      .replace(/<blockquote[^>]*>/gi, '');
+    return (holder.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function environmentReport() {
+    const secure = window.isSecureContext;
+    const topLevel = window.top === window.self;
+    const clipboard = !!navigator.clipboard;
+    const clipboardItem = typeof ClipboardItem !== 'undefined';
+    const supportsHtml = clipboardItem && (!ClipboardItem.supports || ClipboardItem.supports('text/html'));
+    return { secure, topLevel, clipboard, clipboardItem, supportsHtml };
+  }
+
+  function assertEnvironment() {
+    const e = environmentReport();
+    if (!e.secure) throw new Error('Нужен HTTPS secure context. Не открывайте helper как file:, data: или небезопасную страницу.');
+    if (!e.topLevel) throw new Error('Helper открыт внутри iframe/preview. Откройте его как отдельную top-level HTTPS страницу.');
+    if (!e.clipboard || !e.clipboardItem || !e.supportsHtml) throw new Error('Этот браузер не подтвердил запись text/html через Clipboard API.');
+  }
+
+  async function copyRich(html) {
+    assertEnvironment();
+    const plain = htmlToPlain(html);
+    const item = new ClipboardItem({
+      'text/plain': new Blob([plain], { type: 'text/plain' }),
+      'text/html': new Blob([html], { type: 'text/html' })
+    });
+    await navigator.clipboard.write([item]);
+    return plain.length;
+  }
+
+  async function renderAndCopy(markdown) {
+    const html = markdownToTelegramHtml(markdown);
+    if (!html) throw new Error('Нет текста для копирования.');
+    preview.innerHTML = html;
+    const count = await copyRich(html);
+    status.textContent = `✓ Clipboard API подтвердил rich write. Видимый текст: ${count} символов.\nТеперь вставьте в Saved Messages обычной системной командой «Вставить» и визуально проверьте bold + italic + quote.`;
+  }
+
+  document.getElementById('copy').addEventListener('click', async () => {
+    try { await renderAndCopy(source.value); }
+    catch (error) { status.textContent = '✗ ' + error.message; }
+  });
+
+  document.getElementById('test').addEventListener('click', async () => {
+    const test = '**Жирный текст** и *курсив*.\n\n> «Настоящий блок цитаты»\n> *Тестовый источник*';
+    source.value = test;
+    try { await renderAndCopy(test); }
+    catch (error) { status.textContent = '✗ ' + error.message; }
+  });
+
+  const env = environmentReport();
+  status.textContent = `secure=${env.secure}; top-level=${env.topLevel}; clipboard=${env.clipboard}; ClipboardItem=${env.clipboardItem}; text/html=${env.supportsHtml}`;
+})();
+</script>
+</body>
+</html>

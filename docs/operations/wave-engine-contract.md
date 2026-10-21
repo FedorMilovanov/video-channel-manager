@@ -76,12 +76,16 @@ For an ambiguous mutation:
 - an unknown or unclassified post-dispatch failure becomes `unknown_requires_reconciliation`;
 - `attempt_count` is exactly `1`;
 - dispatched ambiguous outcomes are never retry-safe;
+- an explicit provider rejection that provably had no effect is terminal for that invocation but is
+  not a permanent dead end: a later, separately invoked adapter may reopen only that recorded
+  no-effect state, archive the rejected attempt, and re-verify current media before one new
+  reservation attempt;
 - subsequent operations are `not_attempted`;
 - no automatic replay occurs.
 
 Result validation derives the allowed overall status from the operation statuses, rejects safe-read `unknown` outcomes, rejects dispatched ambiguous failures presented as ordinary retryable failures, and requires exact ordered operation coverage.
 
-Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video policy `vk-native-video-wave-v2` uses a stable durable object key derived from project/community plus YouTube channel/video identity. Snapshot IDs, sequence, titles, output paths and other attempt evidence do not create a new upload object. Each run prepares exactly one source video, uses a canonical provider journal under `operator-output/vk-upload-state/<project>/`, takes the community writer mutex, performs a fresh video-only duplicate check immediately before a new `video.save`, and then verifies the exact returned VK video ID. Native video does not depend on `wall.get`; wall publication is a separate workflow. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
+Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video policy `vk-native-video-wave-v2` uses a stable durable object key derived from project/community plus YouTube channel/video identity. Snapshot IDs, sequence, titles, output paths and other attempt evidence do not create a new upload object. Each run prepares exactly one source video, uses a canonical provider journal under `operator-output/vk-upload-state/<project>/`, takes the community writer mutex, performs a fresh video-only duplicate check immediately before a new `video.save`, and then verifies the exact returned VK video ID. A definite `video.save` rejection with no returned ticket, no binary-transfer evidence and no verification evidence leaves the durable journal in `rejected`. A later separately invoked Wave may reopen exactly that state through `reopen_known_rejection`, which requires the same durable object identity, archives the rejected media/intent/error under `known_rejections`, returns the journal to `planned`, and therefore re-hashes and re-verifies current media before one new reservation. `retry_policy` remains `never_replay`; any reservation/ticket, transfer or verification evidence keeps the journal permanently non-replayable. Native video does not depend on `wall.get`; wall publication is a separate workflow. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
 
 ## Reconciliation
 

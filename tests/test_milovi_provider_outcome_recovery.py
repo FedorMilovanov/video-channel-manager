@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from _workflow_actions import assert_actions_pinned
 
 from video_channel_manager.telegram_milovi_outcome_artifact import (
     ARCHIVE_STEP,
@@ -164,7 +165,8 @@ def test_milovi_archive_precedes_state_apply_and_recovery_is_provider_free() -> 
     archive = publisher.index("- name: Archive exact provider outcome before state mutation")
     apply = publisher.index("- name: Apply exact outcome and persist terminal or blocking state")
     assert send < archive < apply
-    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in publisher
+    publisher_pins = assert_actions_pinned(publisher, source="milovi-telegram-feed-publisher.yml")
+    assert any(pin.action == "actions/upload-artifact" for pin in publisher_pins)
     assert "name: milovi-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}" in publisher
     assert "if-no-files-found: error" in publisher
 
