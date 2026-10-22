@@ -115,50 +115,50 @@ def test_deletion_ledger_never_lists_a_protected_ref_as_deleted() -> None:
             assert entry["tip_commit"] in entry["restore"], entry["ref"]
 
 
-def test_artifact_workflow_can_only_reproduce_the_accepted_evidence_ref() -> None:
-    """A regenerated digest must fail the build, not spawn an untracked evidence ref.
+def test_artifact_workflow_never_mints_a_ref_from_a_rebuild() -> None:
+    """A rebuild must prove the accepted bytes, not name a new evidence ref.
 
-    The workflow derives its branch name from the evidence digest. Before this gate, a
-    regeneration would create `agent/milovi-video-accepted-<new12>` — a ref that no binding
-    names, that is absent from the protected inventory, and that the next hygiene pass would
-    treat as a disposable work branch. That is the same failure mode as the deletion this
-    file already guards against, one step earlier in the pipeline.
+    The workflow used to derive its branch name from the rebuilt evidence digest. A rebuild
+    legitimately produces a different identity (runner toolchain metadata is part of it),
+    so that derivation created untracked evidence refs — which is how the second Milovi
+    evidence branch came into existence and how a pristine ref became deletable-looking.
     """
 
     workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
 
-    # The name is still derived from the digest...
-    assert 'branch="agent/milovi-video-accepted-${evidence_sha:0:12}"' in workflow
-    # ...but it must equal the accepted ref before anything is pushed.
-    assert "accepted_branch=" in workflow
-    assert 'if [[ "$branch" != "$accepted_branch" ]]' in workflow
-    assert "protected-evidence-refs.json entry" in workflow
-    assert workflow.index("accepted_branch=") < workflow.index("git push origin")
+    assert 'branch="agent/milovi-video-accepted-${evidence_sha:0:12}"' not in workflow
+    # The accepted identity comes from the reservoir, never from the rebuild.
+    assert 'print(reservoir["artifact_ref"], reservoir["artifact_commit"])' in workflow
+    assert 'read -r accepted_branch accepted_commit <<<"$accepted"' in workflow
+    # Nothing in this workflow writes to the repository any more.
+    assert "git push" not in workflow
+    assert "contents: write" not in workflow
 
 
-def test_artifact_workflow_rerun_is_verified_not_refused() -> None:
-    """An identical rebuild is not an error; drift is.
-
-    The accepted artifacts are immutable, so the workflow could not simply overwrite them.
-    It used to exit 3 whenever the ref existed, which made every later run on `main` fail
-    for a state that was in fact correct. A re-run now proves the rebuild reproduced the
-    accepted blobs byte-for-byte and succeeds, and only genuine drift stays fatal.
-    """
+def test_artifact_workflow_proves_artifacts_against_the_pinned_commit() -> None:
+    """Verification is by exact commit, not by a movable ref name."""
 
     workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
 
-    existing = workflow.index('if git ls-remote --exit-code origin "refs/heads/$branch"')
-    push = workflow.index("git push origin")
-    existing_block = workflow[existing:push]
+    assert 'git fetch --depth=1 --no-tags origin "$accepted_commit:refs/remotes/accepted/evidence"' in workflow
+    assert "git hash-object" in workflow
+    assert "artifact drift on" in workflow
+    assert "artifact drift on $file: accepted=$expected rebuilt=$actual" in workflow
+    assert "does not contain $file" in workflow
+    # Drift is fatal and produces no output that later steps could mistake for success.
+    drift_guard = workflow.index('if [[ "$drift" -ne 0 ]]')
+    assert "exit 3" in workflow[drift_guard : drift_guard + 400]
 
-    assert "git hash-object" in existing_block
-    assert "git rev-parse" in existing_block
-    assert "artifact drift on" in existing_block
-    assert "exit 3" in existing_block  # drift stays fatal
-    assert "exit 0" in existing_block  # identical rebuild succeeds
-    # The no-op path must still surface the ref and digest for later steps.
-    assert 'echo "branch=$branch" >> "$GITHUB_OUTPUT"' in existing_block
-    assert 'echo "evidence_sha256=sha256:$evidence_sha" >> "$GITHUB_OUTPUT"' in existing_block
+
+def test_artifact_workflow_missing_accepted_ref_fails_loudly() -> None:
+    """If the accepted evidence ref is gone, the build must say so and point at the fix."""
+
+    workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+
+    # A missing commit makes the fetch fail, which under `set -e` stops the step before any
+    # comparison can report "drift" for the wrong reason.
+    assert "set -euo pipefail" in workflow
+    assert "protected-evidence-refs.json" in workflow
 
 
 def test_derived_artifact_ref_equals_the_accepted_binding_for_current_evidence() -> None:

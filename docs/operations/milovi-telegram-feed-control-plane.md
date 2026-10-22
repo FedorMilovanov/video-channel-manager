@@ -47,7 +47,7 @@ Poll publication is not added to the Milovi permanent feed by this contract.
 
 `content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json` is the main-branch index of the exact 16 already-accepted Telegram-ready MP4s.
 
-The bytes remain on the content-addressed artifact branch `agent/milovi-video-accepted-73c578eff825`. The reservoir freezes each media id, artifact path, Git blob SHA-1, byte size and SHA-256 and binds the shared conversion evidence digest:
+The bytes remain on the content-addressed artifact branch `agent/milovi-video-accepted-73c578eff825` (commit `f4f5512d7b60f1b9c61c293c07620b128536df27`). `milovi-telegram-video-artifacts.yml` no longer mints refs: it rebuilds the 16 artifacts and proves each blob against that exact commit, failing on any difference. A rebuild produces a different evidence identity because runner toolchain metadata is part of it, so the ref name can never be derived from a rebuild without creating an evidence branch that nothing binds. Both jobs now run with `contents: read`. The reservoir freezes each media id, artifact path, Git blob SHA-1, byte size and SHA-256 and binds the shared conversion evidence digest:
 
 `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`
 
