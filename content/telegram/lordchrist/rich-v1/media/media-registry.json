@@ -7,7 +7,7 @@
   "provider_writes_authorized": false,
   "provider_upload_status": "not_uploaded",
   "note": "Provider-inert provenance registry only. No Telegram API is called and no byte checksum is claimed until the guarded live acquisition step fetches the exact HTTPS asset.",
-  "unique_remote_files": 4,
+  "unique_remote_files": 7,
   "slot_bindings": 6,
   "assets": [
     {
@@ -128,6 +128,28 @@
       "content_checksum": null,
       "remote_ready": true,
       "acquisition_status": "source_and_license_reviewed",
+      "provider_upload_status": "not_uploaded"
+    },
+    {
+      "asset_id": "asset-lordchrist-charnock-01-cover",
+      "article_id": "lordchrist-rich-charnock-01",
+      "media_slot_id": "media-cover",
+      "kind": "photo",
+      "provenance": "AI-generated (Arena image generation, battle mode), reference-guided by the public-domain 1684 Robert White engraving of Stephen Charnock",
+      "prompt": "Cinematic 16:9 cover derived from the supplied 17th-century engraving, preserving the real likeness exactly: long wavy dark hair to the shoulders, narrow face, severe calm eyes, small plain white collar, dark coat. Scene: the man leans slightly forward across a dark table towards a single low candle flame in the left foreground, his face lit from below and the side in strong warm amber, hands folded and still, the rest of the room swallowed by brown-black darkness; a thin curl of smoke rises past his cheek. Candle is the only source; deep shadows, warm ochre highlights, cold darkness beyond, heavy film grain, shallow focus, painterly photorealism. Subject right of the candle, empty darkness on the right edge. Strictly no text, no letters, no numbers, no writing, no frame, no logo, no watermark, no halo, no cross or religious symbol, no other figures.",
+      "reference_source": "https://commons.wikimedia.org/wiki/File:Portrait_of_Stephen_Charnock_B.D_(4672427).jpg",
+      "reference_note": "Real historical likeness only; the engraving itself is not embedded in the cover.",
+      "local_path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-01-cover.jpg",
+      "chosen_by": "operator",
+      "approved": true,
+      "approved_at": "2026-10-22",
+      "generated_size": "1920x1280 (generation) -> 1920x1080 (center crop, 16:9)",
+      "depicts": "Стивен Чарнок (1628-1680) при одной свече",
+      "caption": null,
+      "expected_mime": "image/jpeg",
+      "content_checksum": "sha256:897c5b1821517ae0765d0e90f846f4eda9f73d1b7943d83d836e7d77d903757a",
+      "remote_ready": false,
+      "acquisition_status": "operator_approved_local_only",
       "provider_upload_status": "not_uploaded"
     }
   ]
