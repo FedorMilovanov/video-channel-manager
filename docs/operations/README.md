@@ -6,6 +6,9 @@ Operational documents are living sources of truth. They override chat history, s
 
 - [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, IDs, routes, and no-mixing rules.
 - [`current-state.md`](current-state.md) — concise current operational interpretation and permanent safety boundaries.
+- [`vk-credential-quarantine.md`](vk-credential-quarantine.md) — the quarantined `legendary-poet` VK credential, why the
+  quarantine is a policy decision rather than a code-9 rule, and the only supported resume condition (OAuth consent
+  for the owner's own app `54555649`). Read before any VK recovery attempt.
 - [`protected-evidence-refs.json`](protected-evidence-refs.json) — the refs branch hygiene must never delete (durable
   state and content-addressed evidence), with the exact immutable tip and a restore command for each. Read this
   before deleting any ref; byte-identical duplication is not a reason to delete a bound evidence ref. Wave-16 and older audit registers below are historical evidence, not live backlog.
