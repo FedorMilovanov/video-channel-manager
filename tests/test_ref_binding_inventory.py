@@ -125,6 +125,22 @@ def test_runtime_code_never_binds_a_ref_by_prefix_alone() -> None:
         assert REF_PATTERN.fullmatch(value), source
 
 
+def test_deletion_ledger_rows_are_restorable_records() -> None:
+    """The ledger is the only way back to a deleted ref, so its rows must be usable."""
+
+    ledger = (ROOT / "docs" / "operations" / "branch-hygiene-2026-10-21-deletion-ledger.md").read_text(encoding="utf-8")
+    rows = re.findall(r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`", ledger, re.MULTILINE)
+
+    assert rows, "the ledger must record what was deleted"
+    refs = [ref for ref, _ in rows]
+    assert len(refs) == len(set(refs)), "a ref listed twice makes the count meaningless"
+
+    for ref, sha in rows:
+        assert re.fullmatch(r"[0-9a-f]{40}", sha), (ref, sha)
+        assert not ref.startswith("state/"), ref
+        assert ref != "main", ref
+
+
 def test_branch_policy_documents_the_protected_inventory() -> None:
     """An unread policy file protects nothing, so the policy must name it."""
 
