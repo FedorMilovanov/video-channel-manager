@@ -176,3 +176,5 @@ python -m video_channel_manager.telegram_historical_bundle scaffold-next <manife
 Нельзя вручную изменять source JSON ради оформления уже начатой кампании: это изменит queue digest и нарушит ledger binding. Новое оформление вводится только новой reviewed presentation policy/version или отдельным successor release.
 
 Нельзя считать repository/editorial approval разрешением на Telegram provider write. Provider execution остаётся отдельным exact-target переходом с durable intent, одной mutation authority и readback/reconciliation без blind retry.
+
+Очередь статей живёт в `rich-v1/article-queue.json`; обложки — в `rich-v1/media/cover-registry.json` (`media-registry.json` описывает только Wikimedia-ассеты канарейки и обложек статей не содержит).
