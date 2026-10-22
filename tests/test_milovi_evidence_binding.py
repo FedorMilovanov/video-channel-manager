@@ -12,6 +12,7 @@ RESERVOIR = ROOT / "content" / "telegram" / "milovi-cake" / "accepted-video-rese
 PROTECTED = ROOT / "docs" / "operations" / "protected-evidence-refs.json"
 HYGIENE_LEDGER = ROOT / "docs" / "operations" / "branch-hygiene-2026-10-21-deletion-ledger.md"
 ARTIFACT_WORKFLOW = ROOT / ".github" / "workflows" / "milovi-telegram-video-artifacts.yml"
+PROOF_MODULE = ROOT / "src" / "video_channel_manager" / "milovi_telegram_video_proof.py"
 
 
 def _reservoir() -> dict[str, object]:
@@ -115,7 +116,7 @@ def test_deletion_ledger_never_lists_a_protected_ref_as_deleted() -> None:
             assert entry["tip_commit"] in entry["restore"], entry["ref"]
 
 
-def test_artifact_workflow_never_mints_a_ref_from_a_rebuild() -> None:
+def test_proof_module_never_derives_a_ref_name_from_a_rebuild() -> None:
     """A rebuild must prove the accepted bytes, not name a new evidence ref.
 
     The workflow used to derive its branch name from the rebuilt evidence digest. A rebuild
@@ -125,40 +126,36 @@ def test_artifact_workflow_never_mints_a_ref_from_a_rebuild() -> None:
     """
 
     workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+    proof = PROOF_MODULE.read_text(encoding="utf-8")
 
-    assert 'branch="agent/milovi-video-accepted-${evidence_sha:0:12}"' not in workflow
-    # The accepted identity comes from the reservoir, never from the rebuild.
-    assert 'print(reservoir["artifact_ref"], reservoir["artifact_commit"])' in workflow
-    assert 'read -r accepted_branch accepted_commit <<<"$accepted"' in workflow
+    assert "${evidence_sha:0:12}" not in workflow
+    assert "milovi-video-accepted-${" not in workflow
+    assert "milovi-video-accepted-" not in proof
     # Nothing in this workflow writes to the repository any more.
     assert "git push" not in workflow
     assert "contents: write" not in workflow
 
 
-def test_artifact_workflow_proves_artifacts_against_the_pinned_commit() -> None:
+def test_proof_module_anchors_on_the_reservoir_commit_not_on_a_ref_name() -> None:
     """Verification is by exact commit, not by a movable ref name."""
 
-    workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+    proof = PROOF_MODULE.read_text(encoding="utf-8")
 
-    assert 'git fetch --depth=1 --no-tags origin "$accepted_commit:refs/remotes/accepted/evidence"' in workflow
-    assert "git hash-object" in workflow
-    assert "artifact drift on" in workflow
-    assert "artifact drift on $file: accepted=$expected rebuilt=$actual" in workflow
-    assert "does not contain $file" in workflow
-    # Drift is fatal and produces no output that later steps could mistake for success.
-    drift_guard = workflow.index('if [[ "$drift" -ne 0 ]]')
-    assert "exit 3" in workflow[drift_guard : drift_guard + 400]
+    assert 'reservoir.get("artifact_commit")' in proof
+    assert '"fetch", "--depth=1", "--no-tags", "--force"' in proof
+    assert '["git", "rev-parse", f"{pointer}:{path}"' in proof
+    assert "git hash-object" in proof or '"hash-object"' in proof
+    assert "does not contain" in proof
+    assert "return 3" in proof
 
 
-def test_artifact_workflow_missing_accepted_ref_fails_loudly() -> None:
-    """If the accepted evidence ref is gone, the build must say so and point at the fix."""
+def test_proof_module_points_at_the_protected_inventory_when_the_ref_is_gone() -> None:
+    """If the accepted evidence ref is gone, the proof must say so and point at the fix."""
 
-    workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+    proof = PROOF_MODULE.read_text(encoding="utf-8")
 
-    # A missing commit makes the fetch fail, which under `set -e` stops the step before any
-    # comparison can report "drift" for the wrong reason.
-    assert "set -euo pipefail" in workflow
-    assert "protected-evidence-refs.json" in workflow
+    assert 'GIT_CONFIG_HINT = "docs/operations/protected-evidence-refs.json"' in proof
+    assert "restore the accepted ref from" in proof
 
 
 def test_derived_artifact_ref_equals_the_accepted_binding_for_current_evidence() -> None:
