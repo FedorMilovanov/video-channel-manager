@@ -115,5 +115,28 @@ def test_lordchrist_archives_exact_provider_outcome_before_final_state_persisten
 
 
 def test_completed_rich_live_surfaces_are_not_replayable_from_main() -> None:
+    """The retired rich live-canary contour must stay unreachable, not merely undocumented.
+
+    The previous version of this contract lived in `tests/test_lordchrist_rich_live_canary.py`
+    behind `if not WORKFLOW_PATH.exists(): pytest.skip(...)`. Because the workflow is permanently
+    absent by design, that test could never run: its single-writer and no-schedule assertions had
+    never been evaluated. The retirement is now asserted where it holds — no workflow, no importer
+    — and the canary module stays as tested history for the mutation register.
+    """
+
     assert not RICH_CANARY_WORKFLOW.exists()
     assert not RICH_CONTROLLER_WORKFLOW.exists()
+
+    writers = [
+        path
+        for path in WORKFLOWS_DIR.glob("*.yml")
+        if "lordchrist_rich_live_canary" in path.read_text(encoding="utf-8")
+    ]
+    assert writers == []
+
+    importers = [
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "src").rglob("*.py")
+        if "lordchrist_rich_live_canary" in path.read_text(encoding="utf-8")
+    ]
+    assert importers == []

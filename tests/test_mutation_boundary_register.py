@@ -3,12 +3,17 @@ from __future__ import annotations
 import ast
 import importlib
 import json
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTER_PATH = ROOT / "docs" / "operations" / "mutation-boundary-register.json"
+PROVIDER_COMMAND = re.compile(r"python -m [\w.]+ (send-once|send|apply-outcome|apply)\b")
+PROVIDER_DISPATCH_VERBS = {"send", "send-once"}
+CONCURRENCY_GROUP = re.compile(r"^\s*group:\s*(?P<group>[A-Za-z0-9._${}-]+)", re.MULTILINE)
+STATE_REF = re.compile(r"STATE_BRANCH:\s*(?P<ref>state/[A-Za-z0-9._-]+)")
 REQUIRED_BOUNDARY_FIELDS = {
     "boundary_id",
     "risk",
@@ -57,6 +62,11 @@ _SAFE_VK_EXACT_READ_METHODS = {
     "groups.isMember",
     "utils.resolveScreenName",
 }
+# Telegram uses POST for reads as well, so the HTTP verb says nothing about mutation.
+# A mutation is an API method dispatched through `telegram_transport._api_call` with an
+# explicit literal `mutation=True`; the flag is what the reader and the scanner both trust,
+# which is why a missing or computed flag is a violation rather than an unknown.
+TELEGRAM_REQUIRED_FAULT_STAGES = {"before_dispatch", "after_dispatch_before_response", "after_response_before_commit"}
 
 
 def _load_register() -> dict[str, Any]:
@@ -166,6 +176,18 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
             if method is None or not _vk_method_is_read_only(method):
                 rendered_method = method if method is not None else "dynamic_or_missing_method"
                 self.violations.append((f"vk_api:list_offset:{rendered_method}", self.source_file, callable_name))
+        elif name == "_api_call":
+            mutation = _keyword(node, "mutation")
+            method = _constant_string(_keyword(node, "method"), self.constants)
+            if not isinstance(mutation, ast.Constant) or not isinstance(mutation.value, bool):
+                self.violations.append(
+                    ("telegram_api:mutation_flag_missing_or_dynamic", self.source_file, callable_name)
+                )
+            elif mutation.value is True:
+                if method is None:
+                    self.violations.append(("telegram_api:dynamic_or_missing_method", self.source_file, callable_name))
+                else:
+                    marker = f"telegram_api:{method}"
         elif name == "execute_http_request":
             operation = _keyword(node, "operation")
             resource = _constant_string(_keyword(node, "resource"), self.constants)
@@ -242,11 +264,45 @@ def test_vk_read_inventory_rejects_dynamic_list_offset_dispatch() -> None:
     assert visitor.violations == [("vk_api:list_offset:dynamic_or_missing_method", "snippet.py", "read")]
 
 
+def test_telegram_mutation_inventory_requires_the_explicit_flag() -> None:
+    visitor = _scan_snippet("def send(client):\n    _api_call(client, api_base='b', token='t', method='sendMessage')\n")
+    assert visitor.callsites == []
+    assert visitor.violations == [("telegram_api:mutation_flag_missing_or_dynamic", "snippet.py", "send")]
+
+
+def test_telegram_mutation_inventory_rejects_dynamic_method() -> None:
+    visitor = _scan_snippet(
+        "def send(client, method):\n    _api_call(client, api_base='b', token='t', method=method, mutation=True)\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == [("telegram_api:dynamic_or_missing_method", "snippet.py", "send")]
+
+
+def test_telegram_read_is_not_a_mutation_callsite() -> None:
+    visitor = _scan_snippet(
+        "def read(client):\n    _api_call(client, api_base='b', token='t', method='getMe', mutation=False)\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == []
+
+
+def test_telegram_literal_mutation_is_discovered_by_method() -> None:
+    visitor = _scan_snippet(
+        "def send(client):\n    _api_call(client, api_base='b', token='t', method='sendPhoto', mutation=True)\n"
+    )
+    assert visitor.callsites == [("telegram_api:sendPhoto", "snippet.py", "send")]
+    assert visitor.violations == []
+
+
 def test_register_schema_and_unique_boundaries() -> None:
     payload = _load_register()
     assert payload["schema_name"] == "video-channel-manager.mutation-boundary-register"
     assert payload["schema_version"] == 1
-    assert payload["provider_writes_in_ci"] is False
+    # The old header claimed `provider_writes_in_ci: false`. The repository's own scheduled
+    # publishers write to Telegram, so that claim was false and hid which workflows may write.
+    # It is replaced by an exact inventory that a test can check (below).
+    assert "provider_writes_in_ci" not in payload
+    assert payload["provider_writes_in_quality_ci"] is False
     assert isinstance(payload["baseline_commit"], str) and len(payload["baseline_commit"]) == 40
 
     boundaries = payload["boundaries"]
@@ -264,6 +320,77 @@ def test_register_schema_and_unique_boundaries() -> None:
         assert type(item["attempt_limit"]) is int and item["attempt_limit"] == 1
         assert isinstance(item["required_fault_stages"], list) and item["required_fault_stages"]
         assert isinstance(item["owning_tests"], list) and item["owning_tests"]
+
+
+def test_provider_write_workflows_are_an_exact_declared_inventory() -> None:
+    """Which CI workflows may reach a provider is a claim; this makes it checkable.
+
+    Telegram uses POST for reads as well, so the inventory is built from the command that can
+    dispatch a publication (`send` / `send-once`), not from the HTTP verb. State-only `apply`
+    and `apply-outcome` commands are deliberately excluded: they mutate the durable state ref,
+    not the provider.
+    """
+
+    payload = _load_register()
+    declared = [str(item).replace("\\", "/") for item in payload["provider_write_workflows"]]
+    assert len(declared) == len(set(declared))
+    assert declared
+
+    discovered: dict[str, list[str]] = {}
+    for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        text = path.read_text(encoding="utf-8")
+        verbs = {match.group(1) for match in PROVIDER_COMMAND.finditer(text)} & PROVIDER_DISPATCH_VERBS
+        if verbs:
+            discovered[path.relative_to(ROOT).as_posix()] = sorted(verbs)
+
+    assert set(discovered) == set(declared), {
+        "undeclared_provider_writers": sorted(set(discovered) - set(declared)),
+        "declared_but_never_dispatches": sorted(set(declared) - set(discovered)),
+    }
+
+    for relative in declared:
+        path = ROOT / relative
+        assert path.is_file(), relative
+        text = path.read_text(encoding="utf-8")
+        assert "secrets." in text, relative
+        assert "schedule:" in text or "workflow_dispatch:" in text, relative
+        name = path.name
+        assert "quality" not in name and "preflight" not in name and name != "ci.yml", relative
+
+
+def test_declared_provider_writers_share_one_serialising_group_per_state_ref() -> None:
+    """One durable state namespace must have exactly one serialising concurrency group.
+
+    Two workflows may write the same channel, but only if they are serialised by the same
+    `group` with `cancel-in-progress: false`; two different groups over one state ref would be
+    two writers racing on the same ledger.
+    """
+
+    payload = _load_register()
+    by_state_ref: dict[str, set[str]] = {}
+
+    for relative in payload["provider_write_workflows"]:
+        text = (ROOT / str(relative)).read_text(encoding="utf-8")
+        groups = {match.group("group").split("$")[0].rstrip("-") for match in CONCURRENCY_GROUP.finditer(text)}
+        state_refs = {match.group("ref") for match in STATE_REF.finditer(text)}
+        assert len(groups) == 1, {relative: sorted(groups)}
+        assert state_refs, relative
+        assert "cancel-in-progress: false" in text, relative
+        for state_ref in state_refs:
+            by_state_ref.setdefault(state_ref, set()).update(groups)
+
+    for state_ref, groups in by_state_ref.items():
+        assert len(groups) == 1, {state_ref: sorted(groups)}
+
+
+def test_telegram_boundaries_prove_all_three_mutation_stages() -> None:
+    telegram = [item for item in _load_register()["boundaries"] if item["scanner_marker"].startswith("telegram_api:")]
+
+    assert telegram, "the live Telegram writers must be registered"
+    for boundary in telegram:
+        assert set(boundary["required_fault_stages"]) == TELEGRAM_REQUIRED_FAULT_STAGES, boundary["boundary_id"]
+        assert boundary["mutation_class"] == "ambiguous_mutation", boundary["boundary_id"]
+        assert boundary["retry_policy"] == "never_replay", boundary["boundary_id"]
 
 
 def test_registered_callables_and_owning_tests_exist() -> None:

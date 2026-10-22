@@ -193,6 +193,47 @@
         {"stages": ["during_postflight"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_text_postflight_mismatch_is_unknown_and_never_replayed", "claim": "non-exact postflight becomes unknown after one wall.post with no replay"},
         {"stages": ["before_final_commit"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_schedule_text_requires_exact_single_postflight_delta", "claim": "success requires one exact postponed text post and one-created-post wall delta"}
       ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.message.send",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_message_once_rejects_payload_from_another_profile_before_dispatch", "claim": "a message payload rendered for a different channel profile is rejected with zero provider requests"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_message_once_read_timeout_is_one_ambiguous_attempt", "claim": "a lost sendMessage response is one ambiguous attempt marked may_exist and retryable=False"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_message_once_rejects_omitted_link_preview_echo_for_url_bearing_message", "claim": "a provider echo that omits the exact link-preview semantics becomes may_exist instead of a verified receipt"}
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.poll.send",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_poll_once_rejects_payload_from_another_profile_before_dispatch", "claim": "a poll payload rendered for a different channel profile is rejected with zero provider requests"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_poll_once_read_timeout_is_one_ambiguous_attempt", "claim": "a lost sendPoll response is one ambiguous attempt marked may_exist and retryable=False"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_multichannel_transport.py::test_send_poll_once_rejects_returned_anonymity_drift", "claim": "a returned poll whose anonymity differs from the exact payload becomes may_exist instead of a verified receipt"}
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.photo.send",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_multichannel_photo_transport.py::test_send_photo_once_rejects_local_media_drift_before_http", "claim": "photo bytes that drifted after review are rejected before any provider request"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_multichannel_photo_transport.py::test_send_photo_once_does_not_retry_telegram_5xx", "claim": "a provider 5xx after a photo dispatch is never retried and surfaces one ambiguous attempt"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_multichannel_photo_transport.py::test_send_photo_once_marks_returned_caption_drift_as_ambiguous", "claim": "a returned caption that differs from the exact photo payload becomes may_exist instead of success"}
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.video.send",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_multichannel_video.py::test_send_video_once_rejects_media_drift_before_http", "claim": "video bytes that drifted after review are rejected before any provider request"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_multichannel_video.py::test_send_video_once_read_timeout_is_one_ambiguous_attempt", "claim": "a lost sendVideo response is one ambiguous attempt marked may_exist and retryable=False"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_multichannel_video.py::test_send_video_once_marks_returned_caption_drift_as_ambiguous", "claim": "a returned caption that differs from the exact video payload becomes may_exist instead of success"}
+      ]
+    },
+    {
+      "boundary_id": "telegram.channel.dispatch.prepared",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_publisher.py::test_connect_failure_is_safe_pending_and_retryable", "claim": "a connect failure before dispatch leaves the item pending with provider_effect=not_dispatched and no intent"},
+        {"stages": ["before_dispatch"], "test_id": "tests/test_telegram_publisher.py::test_prepare_persists_exact_provenance_before_dispatch", "claim": "the durable intent with exact provenance and may_exist exists before any provider request"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_publisher.py::test_read_timeout_after_send_becomes_unknown_and_blocks_replay", "claim": "a lost sendMessage response becomes unknown/may_exist and blocks later dispatch instead of replaying"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_publisher.py::test_telegram_429_is_confirmed_absent_and_safe_to_retry_later", "claim": "a 429 response is classified as confirmed_absent and returns the item to pending rather than replaying blindly"}
+      ]
     }
   ],
   "cross_cutting_proofs": [

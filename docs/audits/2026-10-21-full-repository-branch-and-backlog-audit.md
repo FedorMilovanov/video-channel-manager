@@ -586,3 +586,48 @@ accepted bytes are still the release and publication still verifies their blob i
 broken; but if the lane is ever re-accepted from a new build, that evidence should record the
 `dpkg` versions of `libavcodec*`, `libavformat*`, `libavutil*`, `libx264*` and `libvpx*` alongside the
 client binary digests, so the toolchain identity finally covers the encoder.
+
+## 2026-10-22 — second pass: the claims that were not the rules being enforced
+
+A re-audit of `main` (`530c77ac`) looked for the same class of defect instead of new features: a document, test or
+register asserting something that the code and the enforcement do not do. Four were found and closed.
+
+1. **`http-client-ownership.md` described an inventory that did not exist.** The page said it was enforced by
+   `tests/test_http_client_inventory.py` and that `src/` had no direct `httpx.Client()` constructor outside
+   `platforms/http.py`. The test's allowlist permitted 16 more constructors in 11 `src/` modules, and none of them
+   was documented. Nothing compared the document with the allowlist, so both could drift. The document now records
+   all 27 reviewed constructors (17 in `src/` across 12 modules, 10 in one-shot scripts) with an operation class and
+   a lifecycle note, its rule was restated as the rule that is enforced, and a new test compares the document table,
+   the allowlist and the AST-discovered constructors in both directions.
+2. **The mutation-boundary register documented the retired Telegram writer and omitted the live ones.** It listed
+   `telegram.lordchrist.rich_live.send` for `lordchrist_rich_live_canary.py` — a module with no importer and no
+   workflow, retired on purpose — while the multichannel `sendMessage`/`sendPoll`/`sendPhoto`/`sendVideo` path that
+   Milovi and Svodka publish through every run was unregistered. Five boundaries were added
+   (`telegram.multichannel.message|poll|photo|video.send`, `telegram.channel.dispatch.prepared`) with the three fault
+   stages each and exact owning tests; nine new fault-stage tests were written where no existing test proved the
+   stage (profile-binding rejection before dispatch, lost-response ambiguity, and video caption-echo drift), so every
+   stage is proven by a test that would fail if the property were removed. The AST scanner learned the Telegram rule:
+   a mutation is `_api_call(..., mutation=True)` with a literal API method, and a Telegram call without an explicit
+   literal flag is now a violation rather than an unknown.
+3. **`provider_writes_in_ci: false` was simply untrue.** Eleven workflows reference a provider token and four of them
+   dispatch a publication (`send` / `send-once`) on schedule or on demand. The false flag is replaced by
+   `provider_writes_in_quality_ci: false` plus an exact `provider_write_workflows` list, and a test now derives that
+   list from the workflows (state-only `apply`/`apply-outcome` commands excluded, because they write the durable
+   state ref and not the provider), requires each declared writer to reference a secret, and requires every state ref
+   to have exactly one serialising concurrency group with `cancel-in-progress: false`.
+4. **A test that could never run.** `test_live_workflow_is_manual_single_writer_when_present` skipped whenever its
+   workflow was absent — and the workflow is absent permanently, by an assertion in another test. Its single-writer
+   and no-schedule claims had therefore never been evaluated. The dead test is gone and the retirement contract that
+   replaced it proves what actually holds: no workflow, and no `src/` importer, for the retired rich live contour.
+
+Bookkeeping that had drifted is corrected in the same pass: `automation-backlog.md` described a Wave 0–16 programme
+as if nothing else existed and said `Active backlog: None` while `current-state.md` listed seven pending items; it now
+defers to `current-state.md` for open work and names the four open lanes. `docs/operations/README.md` now indexes the
+2026-10-21 audit, the deletion ledger, the Milovi control plane and both mutation registers from its "Start here" list.
+
+Scope boundary, recorded rather than hidden: the register covers VK, the four workflows' PowerShell operator boundary,
+the Wave engine and Telegram. Instagram publish/upload and the YouTube release uploader are still outside it. Their
+transports do not dispatch through one scanned choke point, so each needs its own scanner rule before it can be
+registered; both lanes do have ambiguity tests of their own
+(`tests/test_instagram_local_resumable.py`, `tests/test_youtube_release_provider.py`). Registering them is the next
+increment, and until then this document does not claim they are covered.

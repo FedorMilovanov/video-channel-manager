@@ -1,9 +1,14 @@
 # Operational automation backlog
 
-Updated: 2026-08-05  
+Updated: 2026-10-22  
 Program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`
 
 This backlog is subordinate to [`current-state.md`](current-state.md), current v9, and immutable v8/v7/v6/v5/v4/v3/v2 predecessors.
+Its sections below record the **Wave 0–16 programme** as frozen history. It is not a live queue: the authoritative list of
+what is still open, and what may be started next, is the `## Next safe work` section of
+[`current-state.md`](current-state.md). Until 2026-10-22 this page said `Updated: 2026-08-05` and `Active backlog: None`
+while `current-state.md` already listed seven pending items, so an operator reading only this page would conclude the
+repository had nothing left to do.
 
 ## Completed program foundation
 
@@ -15,9 +20,16 @@ This backlog is subordinate to [`current-state.md`](current-state.md), current v
 
 ## Active backlog
 
-None.
+None inside the Wave 0–16 programme: every item that programme opened is closed, and no provider reconciliation,
+transfer queue, catalog/article-wall/playlist continuation, browser writer, MP3 upload, metadata edit,
+cleanup/reset/recovery or provider-mode research is outstanding from it.
 
-There is no active provider reconciliation, transfer queue, catalog/article-wall/playlist continuation, browser writer, MP3 upload, metadata edit, cleanup/reset/recovery, or provider-mode research after the Wave 16 state-sync merge.
+Outside that programme the repository does have open work, and it is tracked in
+[`current-state.md`](current-state.md) `## Next safe work` instead of being duplicated here. At the time of this update
+that means: the VK credential quarantine (#662, blocked on OAuth consent for the owner's own app `54555649`), the
+native-video canary (#621), the Legendary Poet YouTube→VK live transfer, and the Lord God postponed-content wave
+(blocked on a fresh safe read of the community wall). All of them require provider execution or owner authority, so none
+is a repository-side task.
 
 ## Local MP3 status
 

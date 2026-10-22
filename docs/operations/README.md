@@ -9,6 +9,17 @@ Operational documents are living sources of truth. They override chat history, s
 - [`vk-credential-quarantine.md`](vk-credential-quarantine.md) — the quarantined `legendary-poet` VK credential, why the
   quarantine is a policy decision rather than a code-9 rule, and the only supported resume condition (OAuth consent
   for the owner's own app `54555649`). Read before any VK recovery attempt.
+- [`../audits/2026-10-21-full-repository-branch-and-backlog-audit.md`](../audits/2026-10-21-full-repository-branch-and-backlog-audit.md)
+  — the branch/backlog audit, the 2026-10-21 evidence-ref deletion and its restore, and the defect class it exposed
+  (a name or digest that does not identify what it is compared against). Evidence and method, not live backlog.
+- [`branch-hygiene-2026-10-21-deletion-ledger.md`](branch-hygiene-2026-10-21-deletion-ledger.md) — what was deleted with
+  exact tips, what was restored, and why the two content-addressed evidence refs are not debt.
+- [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md) — the only supported Milovi Telegram
+  writer, the accepted 16-video boundary, and how the artifact workflow proves the release without ever minting a ref.
+- [`mutation-boundary-register.json`](mutation-boundary-register.json) and
+  [`mutation-fault-proof-register.json`](mutation-fault-proof-register.json) — every provider mutation boundary with its
+  intent/dispatch/response evidence, retry policy, and the exact test that proves each fault stage. Read before adding a
+  provider write or changing one.
 - [`protected-evidence-refs.json`](protected-evidence-refs.json) — the refs branch hygiene must never delete (durable
   state and content-addressed evidence), with the exact immutable tip and a restore command for each. Read this
   before deleting any ref; byte-identical duplication is not a reason to delete a bound evidence ref. Wave-16 and older audit registers below are historical evidence, not live backlog.
