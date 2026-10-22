@@ -79,7 +79,9 @@ def test_video_artifact_workflow_has_read_only_pr_proof_and_no_provider_writer_p
     assert "permissions:\n  contents: read" in text
     assert "prove-provider-free-artifacts:" in text
     assert "permissions:\n      contents: read" in text
-    assert "permissions:\n      contents: write" in text
+    # Neither job needs to write: the artifact build proves the accepted bytes and stores
+    # them as a build artifact, so repository write access would be unused authority.
+    assert "permissions:\n      contents: write" not in text
     assert "pull-requests: write" not in text
     assert "conversion_execution_ready" in text
     assert "provider_write_authorized" in text
@@ -118,18 +120,13 @@ def test_video_artifact_workflow_installs_exact_toolchain_and_preserves_main_no_
     assert "ffprobe -version | head -n 1" in text
     assert "main advanced before Milovi video artifact build" in text
     assert "main advanced during Milovi video artifact build" in text
-    # "No overwrite" is expressed as: an existing accepted ref is verified, never replaced.
-    # The step may now succeed on an identical rebuild, so the old blanket failure string is
-    # gone; what must remain is that any difference is fatal and that nothing is pushed over
-    # an existing ref.
+    # "No overwrite" is now structural: the workflow holds `contents: read`, verifies the
+    # rebuilt artifacts against the pinned accepted commit, and fails on any difference.
+    assert "contents: read" in text
+    assert "git push" not in text
     assert "git hash-object" in text
-    assert "rebuilt artifacts differ from the accepted evidence ref; refusing to overwrite" in text
-    assert "agent/milovi-video-accepted-${evidence_sha:0:12}" in text
-    assert 'git push origin "HEAD:refs/heads/$branch"' in text
-
-    existing_ref_branch = text.split('if git ls-remote --exit-code origin "refs/heads/$branch"', 1)[1]
-    existing_ref_branch = existing_ref_branch.split("\n          fi\n", 1)[0]
-    assert "git push" not in existing_ref_branch
+    assert "rebuilt artifacts differ from the accepted evidence ref; refusing to publish" in text
+    assert "refs/remotes/accepted/evidence" in text
 
 
 def test_source_probe_workflow_proves_all_16_without_repository_or_provider_write() -> None:
