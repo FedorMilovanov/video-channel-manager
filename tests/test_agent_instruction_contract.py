@@ -35,6 +35,11 @@ def test_root_agent_contract_stays_concise_and_nonvolatile() -> None:
         "`main` is the only supported repository code/runtime execution baseline",
         "`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs",
         "align it to exact current `main`",
+        # Ref deletion is classified, not guessed from a prefix: content-addressed
+        # evidence refs look like ordinary `agent/...` work branches.
+        "docs/operations/protected-evidence-refs.json",
+        "Byte-identical duplication is **not** a sufficient reason",
+        "Content-addressed evidence refs",
         "repository implementation complete",
         "artifact complete",
         "provider rollout complete",
