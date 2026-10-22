@@ -54,6 +54,7 @@ Code/activation in a branch does not mean production is restored. Require exact-
 Issues #541, #543, #582 and #589 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work, production handoff and state-initialization ordering fixes. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
 The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed, and the retired August research release itself cannot resume, retry, or authorize a successor.
 The authoritative production schedule remains schema v3:
+- `midday`: 12:00 `Europe/Moscow`, Tuesday and Friday, lane `rich_article` (L2 long articles); cron `0 9 * * 2,5`, lease 240 minutes so it closes at 16:00 before the 19:17 rich boundary. It is **not** a quote slot: `decide_scheduled_slot(..., lane="quote")` refuses it, and the poster workflow now asks for the quote lane explicitly. Articles are published manually from the L2 copy page, so no bot run consumes this slot and no provider write is implied by it;
 - `morning`: 09:17 `Europe/Moscow`, every day;
 - `evening`: 21:17 `Europe/Moscow`, Tuesday / Friday / Sunday;
 - one verified publication maximum per slot and two maximum per eligible day;

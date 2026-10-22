@@ -11,6 +11,19 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from video_channel_manager.telegram_models import ScheduledSlot
 
+SlotLane = Literal["quote", "rich_article"]
+
+# A slot is defined by the lane it carries, not by its clock time. ``midday``
+# exists for the long rich-editor article track (Tuesday/Friday 12:00 Moscow);
+# the quote runtime must never spend it on a quote card, and the article track is
+# published from the L2 copy page by the operator, so no bot job consumes it.
+SLOT_LANES: dict[ScheduledSlot, SlotLane] = {
+    "morning": "quote",
+    "evening": "quote",
+    "midday": "rich_article",
+}
+
+
 
 class PublicationSlotConfig(BaseModel):
     """Version-controlled schedule definition for one logical publication slot."""
@@ -63,28 +76,36 @@ class ProductionSchedule(BaseModel):
 
     @model_validator(mode="after")
     def exact_slot_contract(self) -> "ProductionSchedule":
-        if set(self.slots) != {"morning", "evening"}:
-            raise ValueError("production schedule must define exactly morning and evening slots")
+        if set(self.slots) != {"morning", "evening", "midday"}:
+            raise ValueError("production schedule must define exactly morning, evening, and midday slots")
         if self.slots["morning"].iso_weekdays != (1, 2, 3, 4, 5, 6, 7):
             raise ValueError("morning slot must be enabled every day")
         if self.slots["evening"].iso_weekdays != (2, 5, 7):
             raise ValueError("evening slot must be enabled only Tuesday, Friday, and Sunday")
+        if self.slots["midday"].iso_weekdays != (2, 5):
+            raise ValueError("midday slot must be enabled only Tuesday and Friday")
         if self.slots["morning"].time != self.primary_time:
             raise ValueError("morning slot must remain bound to primary_time")
         if self.slots["evening"].time != self.catchup_time:
             raise ValueError("evening slot must remain bound to catchup_time")
+        if self.slots["midday"].time != "12:00":
+            raise ValueError("midday slot must remain bound to 12:00 Moscow")
         # GitHub schedule cron always fires in UTC. The slot times are Europe/
         # Moscow local editorial boundaries, so the cron expressions must be the
-        # UTC translation of those exact local times: 06:17 UTC = 09:17 Moscow
-        # and 18:17 UTC = 21:17 Moscow. The previous "17 9 * * *" / "17 21 * * *"
-        # expressions fired at 12:17 and 00:17 Moscow, silently outside the
-        # documented slots.
+        # UTC translation of those exact local times: 06:17 UTC = 09:17 Moscow,
+        # 09:00 UTC = 12:00 Moscow and 18:17 UTC = 21:17 Moscow. The previous
+        # "17 9 * * *" / "17 21 * * *" expressions fired at 12:17 and 00:17
+        # Moscow, silently outside the documented slots.
         if self.slots["morning"].cron != "17 6 * * *":
             raise ValueError("morning slot cron must fire at 06:17 UTC (09:17 Moscow)")
+        if self.slots["midday"].cron != "0 9 * * 2,5":
+            raise ValueError("midday slot cron must fire at 09:00 UTC (12:00 Moscow)")
         if self.slots["evening"].cron != "17 18 * * 2,5,0":
             raise ValueError("evening slot cron must fire at 18:17 UTC (21:17 Moscow)")
         if self.slots["morning"].max_lateness_minutes != 720:
             raise ValueError("morning slot must remain valid only until the 21:17 editorial boundary")
+        if self.slots["midday"].max_lateness_minutes != 240:
+            raise ValueError("midday slot lease must expire at 16:00 Moscow, before the 19:17 rich boundary")
         if self.slots["evening"].max_lateness_minutes != 160:
             raise ValueError("evening slot must expire before the Moscow calendar day ends")
         if self.queue_digest == self.successor_queue_digest:
@@ -136,14 +157,21 @@ def decide_scheduled_slot(
     *,
     event_schedule: str,
     now: datetime | None = None,
+    lane: SlotLane | None = None,
 ) -> ScheduleDecision:
     """Map one GitHub schedule event to one bounded same-day logical slot.
 
     GitHub explicitly does not guarantee exact delivery of scheduled workflows.
     Lateness here is therefore a lease for the *same* slot, not catch-up or
-    backfill: the morning lease expires at the next editorial boundary and the
-    evening lease expires before the Moscow calendar day ends. Existing ledger
-    guards still enforce one verified publication per slot and two per day.
+    backfill: the morning lease expires at the next editorial boundary, the
+    midday lease expires before the rich track opens, and the evening lease
+    expires before the Moscow calendar day ends. Existing ledger guards still
+    enforce one verified publication per slot and two per day.
+
+    ``lane`` binds the caller to one production lane. A run that asks for the
+    quote lane is refused on the ``midday`` (rich-article) slot instead of
+    spending it on a quote card; without ``lane`` the decision only reports which
+    slot the event belongs to.
     """
 
     current = now or datetime.now(tz=UTC)
@@ -165,6 +193,12 @@ def decide_scheduled_slot(
         return ScheduleDecision(False, None, "schedule event does not map to exactly one configured slot")
     slot_name = matching[0]
     slot = schedule.slots[slot_name]
+    if lane is not None and SLOT_LANES[slot_name] != lane:
+        return ScheduleDecision(
+            False,
+            None,
+            f"{slot_name} slot carries the {SLOT_LANES[slot_name]} lane, not {lane}",
+        )
     if local.isoweekday() not in slot.iso_weekdays:
         return ScheduleDecision(False, None, f"{slot_name} slot is not eligible on ISO weekday {local.isoweekday()}")
 
