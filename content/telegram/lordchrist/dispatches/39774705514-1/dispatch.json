@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-23-gurnall-armour-field",
+  "sequence": 23,
+  "intent_id": "07346d3b6d64daf432a92fe6ca89cf5e",
+  "workflow_run_id": "39774705514",
+  "workflow_run_attempt": "1",
+  "github_sha": "530c77aea5c5d6d410085f475a7988bba7f1ed88",
+  "github_workflow_sha": "530c77aea5c5d6d410085f475a7988bba7f1ed88",
+  "payload_sha256": "sha256:cb9bb97f88fa6c38811767fc13ff5e8436b380440a8ed1e5f97d4e5eec23b206",
+  "text": "Доспехи даны не для того, чтобы носить их дома у очага, а для поля.\n\n— Уильям Герналл, «Христианин во всеоружии», наставление IX\n\nОбраз Герналла прост: доспехи имеют смысл там, где действительно идёт борьба. Доктрина, молитва, вера и церковная жизнь даны не только для спокойного обсуждения; их зрелость обнаруживается, когда послушание Христу встречает давление, усталость и сопротивление.\n\n#Герналл #Стойкость #Служение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-22T11:59:24.216650Z"
+  },
+  "prepared_at_utc": "2026-10-22T11:59:25.481723Z"
+}
