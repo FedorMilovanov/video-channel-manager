@@ -50,6 +50,28 @@
       "remote_ready": false,
       "acquisition_status": "operator_approved_local_only",
       "provider_upload_status": "not_uploaded"
+    },
+    {
+      "asset_id": "asset-lordchrist-charnock-03-cover",
+      "article_id": "lordchrist-rich-charnock-03",
+      "media_slot_id": "media-cover",
+      "kind": "photo",
+      "provenance": "AI-generated (Arena image generation, battle mode), symbolic cover; no portrait reference and no depicted person",
+      "prompt": "Epic symbolic cinematic painting, 16:9 landscape, no people, no faces, no text. Interior of a vast ruined stone hall at night, cold blue-grey stone and dust. A single hard shaft of moonlight falls from a high broken window onto a bare stone table and picks out exactly three objects arranged in a row: (1) a snapped iron chain with a few broken links trailing off the edge of the table — a line of inheritance broken; (2) a bundle of old sealed documents with a wax seal cracked in two and the scattered folds of a conspiracy of rulers; (3) a small clay oil lamp whose flame leans sideways as if pushed by wind from an open door, and beside it a cold hearth, the sign of fear. Deep shadow everywhere else, dust motes drifting in the light, faint warm amber glow only around the lamp flame against the cold blue darkness, heavy film grain, shallow depth of field, painterly baroque realism, monumental scale, muted palette of slate grey, dust ochre and cold blue. No human figures, no animals, no writing, no letters, no numbers, no logos, no watermark, no frame, no border, no religious symbols.",
+      "reference_source": null,
+      "reference_note": "Символический кадр: ни портрета, ни исторической гравюры, ни изображения Христа или Бога Отца. Три предмета — разорванная цепь (предание), документы с расколотой печатью (заговор) и наклонённое пламя лампы (страх) — читаются как три возражения статьи.",
+      "local_path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-03-cover.jpg",
+      "chosen_by": "operator",
+      "approved": true,
+      "approved_at": "2026-10-22",
+      "generated_size": "1536x1024 (generation) -> 16:9 без кадрирования",
+      "depicts": "Разорванная цепь, документы с расколотой печатью и наклонённое пламя лампы на каменном столе в разрушенном зале",
+      "caption": null,
+      "expected_mime": "image/jpeg",
+      "content_checksum": "sha256:87276cffa9f9a51982c264e16e0de2b997c2464a171c8f005be517d33b81dcd3",
+      "remote_ready": false,
+      "acquisition_status": "operator_approved_local_only",
+      "provider_upload_status": "not_uploaded"
     }
   ]
 }

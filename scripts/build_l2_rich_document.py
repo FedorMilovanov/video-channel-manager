@@ -25,10 +25,40 @@ ITALIC_RE = re.compile(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])")
 
 
 def plain(text: str) -> str:
-    """В L2 нет жирного и курсива: историческая разметка снимается."""
+    """Текст без разметки — для сверки и для plain-проекции."""
     text = BOLD_RE.sub(r"\1", text)
     text = ITALIC_RE.sub(r"\1", text)
     return text.replace(ZWSP, "").strip()
+
+
+INLINE_RE = re.compile(r"\*\*(.+?)\*\*|(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])")
+
+
+def rich_text(text: str):
+    """Разметка Markdown → rich-текст документа (решение оператора 2026-10-22).
+
+    Жирный и курсив разрешены, поэтому они не снимаются, а становятся узлами
+    RichText: так форматирование доезжает до провайдера тем же, что видит
+    читатель на копи-странице. Без разметки возвращается обычная строка.
+    """
+    text = text.replace(ZWSP, "").strip()
+    nodes: list = []
+    pos = 0
+    for match in INLINE_RE.finditer(text):
+        if match.start() > pos:
+            nodes.append(text[pos : match.start()])
+        if match.group(1) is not None:
+            nodes.append({"type": "bold", "text": match.group(1)})
+        else:
+            nodes.append({"type": "italic", "text": match.group(2)})
+        pos = match.end()
+    if pos < len(text):
+        nodes.append(text[pos:])
+    if not nodes:
+        return ""
+    if all(isinstance(node, str) for node in nodes):
+        return "".join(nodes)
+    return nodes
 
 
 def parse_blocks(md: str) -> list[dict]:
@@ -56,7 +86,12 @@ def parse_blocks(md: str) -> list[dict]:
                     index += 1
                 credit = None
                 if quote and ATTRIBUTION_RE.match(quote[-1]):
-                    credit = quote.pop()
+                    raw_credit = quote.pop()
+                    # курсивная подпись «*— Автор*» остаётся курсивом и в документе
+                    if raw_credit.startswith("*") and raw_credit.endswith("*"):
+                        credit = [{"type": "italic", "text": raw_credit[1:-1]}]
+                    else:
+                        credit = raw_credit
                 counters["blockquote"] += 1
                 counters["quote_paragraph"] += 1
                 blocks.append(
@@ -67,7 +102,7 @@ def parse_blocks(md: str) -> list[dict]:
                             {
                                 "type": "paragraph",
                                 "block_id": f"qp-{counters['quote_paragraph']}",
-                                "text": "\n".join(quote),
+                                "text": rich_text("\n".join(quote)),
                             }
                         ],
                         **({"credit": credit} if credit else {}),
@@ -81,7 +116,7 @@ def parse_blocks(md: str) -> list[dict]:
                         {
                             "type": "heading",
                             "block_id": f"h-{counters['heading']}",
-                            "text": plain(line[len(level) :]),
+                            "text": rich_text(line[len(level) :]),
                             "size": size,
                         }
                     )
@@ -93,7 +128,7 @@ def parse_blocks(md: str) -> list[dict]:
                     {
                         "type": "paragraph",
                         "block_id": f"p-{counters['paragraph']}",
-                        "text": plain(line),
+                        "text": rich_text(line),
                     }
                 )
             index += 1

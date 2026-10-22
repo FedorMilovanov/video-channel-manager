@@ -35,13 +35,13 @@ The 4096 limit and the `U+2060` rules in `DIRECT_COPY_TO_TELEGRAM.md` apply to *
 
 ## 3. Structure and headings
 
-- **H1 — title.** Exactly one, first block, ALL CAPS, one line, ≤ 120 characters, plain (no `**`): `# ЖАЛКИЕ УТЕШИТЕЛИ: 10 СОВЕТОВ…`. The heading itself already renders large; wrapping it in bold only adds `**` to the pasted source.
-- **H2 — sections.** Normal case, bold by heading rendering, ≤ 80 characters, no ALL CAPS, no clickbait. A single leading emoji marker is permitted only under the marker rule below.
+- **H1 — title.** Exactly one, first block, ALL CAPS, one line, ≤ 120 characters, in bold: `# **ЖАЛКИЕ УТЕШИТЕЛИ: 10 СОВЕТОВ…**`. The title of a long article is the one line that must stand out in the editor, and since 22.10.2026 it carries bold explicitly.
+- **H2 — sections.** Normal case, bold by heading rendering, ≤ 80 characters, no ALL CAPS, no clickbait. No emoji marker (see below).
 - H3 only when a section genuinely has two levels; more than two heading levels is a defect.
 - One H2 per **1 500–4 000 characters** of body. A 25 000+ character article normally has 10–16 sections.
 - A heading never ends a message or a part; two headings never stand in a row.
-- **Emoji marker rule.** In L2 an emoji is a normal part of the layout, not an exception: one marker leading an H2 line. Use it by default where a section is made of full paragraphs. Two cases take no marker: (1) a section inside a numbered ladder (`## 1. …`, `## 2. …`, `## 3. …`) — the number already marks position, and a pictogram next to it is noise; (2) a short rubric — a section under ~600 characters, meaning one or two sentences, a single item, or a brief insert — where the marker only distracts. No emoji in the H1 and no emoji in body paragraphs in any case; never more than one emoji per heading, always the first character of the line. The 600-character threshold is evaluated per section, not as an average over the article.
-- **No bold and no italic in the body.** Neither `**…**` nor `*…*` appears in an L2 article: not for key phrases, not for Latin terms, not for the attribution line, not for sections of the argument. Emphasis is carried by word order and by a sentence of its own. Bold survives only as heading rendering, which the editor applies to `#` / `##` by itself.
+- **No emoji anywhere.** Since 22.10.2026 the series «Чарнок» carries no pictograms at all: not as a marker of an H2, not in the H1, not in a body paragraph, not in the closing bibliographic note. A section is marked by its words. `scripts/lordchrist_article_preflight.py` treats every emoji as an error, including one inside a quote block.
+- **Bold and italic are allowed and used** (operator decision, 22.10.2026): `**…**` and `*…*` are part of the layout of a long article, the same features the big articles use. Where they are used: the H1 (`# **ТИТУЛ**`), the lead of a list item (`• **Грех.** Дальше объяснение.`), the words of Scripture in the section «Писание, на котором он стоит», a foreign term inside the running text (`*consensus gentium*`, `*YHWH*`), and the title of the book in the closing note. Emphasis is still carried first by word order and by a sentence of its own: bold marks what the reader must not miss, it does not replace an argument. The attribution line inside a quote block stays plain (`> — Автор, «Труд»`).
 
 ## 4. Spacing
 
@@ -110,7 +110,7 @@ The connector is one short line ending with a colon (≤ 120 characters) that ha
 - No nested quotes and no second level of `>`.
 - No translation note under a quote: neither «перевод мой» nor any similar mark. A Russian rendering of an English author is the channel's own translation by definition, and the credit line the reader sees in the author field carries only `— Автор, «Труд»`.
 - Ellipses mark real omissions; paraphrases never stand inside quotation marks.
-- Inline Scripture inside a running argument stays plain text inside the quotation marks — no bold, no italic. The blockquote shape is for quotations that stand as evidence on their own; do not convert every reference into a block.
+- Inline Scripture inside a running argument stays plain text inside the quotation marks. The blockquote shape is for quotations that stand as evidence on their own; do not convert every reference into a block. In the section «Писание, на котором он стоит» the words of Scripture are bold — this is the one place where the article quotes Scripture continuously, and bold marks the line between the word of God and the reasoning of the author.
 
 ### Lane split for the attribution
 
@@ -129,11 +129,11 @@ Known client behaviour, not a defect: a long quote renders collapsed behind a `C
 
 ### Bibliographic note at the end
 
-Every article ends with the source note: one paragraph, plain text, no heading. It starts straight with the substance — no «Откуда цитаты», no label of any kind — and the only decoration is one emoji at the very beginning:
+Every article ends with the source note: one paragraph, no heading. It starts straight with the substance — no «Откуда цитаты», no label of any kind, and no emoji: since 22.10.2026 the series carries no pictograms at all. The Russian title of the book is bold, the English one is italic:
 
 ```text
-📖 Цитаты Чарнока — из книги «Беседы о существовании и атрибутах Бога» (Discourses upon the Existence and
-Attributes of God), изданной посмертно в 1682 году; взяты из первой беседы — «О существовании Бога», по
+Цитаты Чарнока — из книги **«Беседы о существовании и атрибутах Бога»** (*Discourses upon the Existence and
+Attributes of God*), изданной посмертно в 1682 году; взяты из первой беседы — «О существовании Бога», по
 словам псалма XIV:1. Текст — по изданию Robert Carter & Brothers, 1853 года, где оба тома напечатаны
 вместе; оно оцифровано Project Gutenberg: eBook #53527, https://www.gutenberg.org/ebooks/53527.
 ```
@@ -144,13 +144,13 @@ Rules:
 
 - it is the **last** block of the article, after the final section;
 - it begins with the words «Цитаты Чарнока — из книги…» — the reader learns the source from the first line, without a service label;
-- exactly **one** emoji, the first character, as a marker of the note (📖 for a book source; the copyright sign if the rights are the point). This is the only place in the article where an emoji may stand in a paragraph — everywhere else it belongs to a heading;
+- it carries **no emoji** — not a book sign, not a copyright sign: in this series a pictogram is a defect anywhere, including here;
 - it names the book, the edition and the source URL; the URL is allowed here and only here;
-- it carries no bold, no italic and no heading, and it does not talk about the translation or its literalness: that is the channel's business, not the reader's.
+- the Russian title of the book is bold and the English title is italic; the rest of the note is plain, it has no heading, and it does not talk about the translation or its literalness: that is the channel's business, not the reader's.
 
 The Russian title of the book is «Беседы о существовании и атрибутах Бога». «Атрибуты» is the term Russian theology actually uses here, so the title keeps it; do not replace it with «свойства».
 
-`scripts/lordchrist_article_preflight.py` fails an article without the note, without the URL in it, or with more than one emoji.
+`scripts/lordchrist_article_preflight.py` fails an article without the note, without the URL in it, or with any emoji in it.
 
 ## 6. Lists in L2
 
@@ -201,15 +201,15 @@ When the user asks for a paste-ready long article:
 ## 10. Review checklist
 
 - [ ] lane stated explicitly (L2) and the limit checked against 32 768 / 500 blocks;
-- [ ] exactly one H1, ALL CAPS, plain (no `**`), ≤ 120 characters;
-- [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker under the §3 rule (single, leading, allowed in paragraph-sized named sections, never in numbered `1. 2. 3.` sequences, never on rubrics under ~600 characters);
+- [ ] exactly one H1, ALL CAPS, in bold (`# **ТИТУЛ**`), ≤ 120 characters;
+- [ ] H2 in normal case, one section per 1 500–4 000 characters; no emoji marker (the series carries no pictograms at all);
 - [ ] artifact: exactly one empty block before every H2 and above/below every quote, none after a heading, none between ordinary paragraphs, never two in a row, and that block is `U+00A0`, not `U+200B`;
 - [ ] every list item is its own paragraph with `•` or `1.`, none rendered as a tight Markdown list;
-- [ ] quotes: quoted words only inside `>`; attribution on the next line, italic, `— ` prefix;
+- [ ] quotes: quoted words only inside `>`; attribution as the last line of the block, plain, `— ` prefix;
 - [ ] air before quotations by default; connector exception used only where justified;
-- [ ] no hashtag footer (L2); no emoji in the H1 or in body text, heading markers only where the §3 rule permits them;
+- [ ] no hashtag footer (L2); no emoji anywhere — not in the H1, not in an H2, not in body text, not in a quote, not in the closing note;
 - [ ] no `U+2060`, no `U+200B`, no visible transport characters (the only invisible character allowed in the artifact is the air block's no-break space);
 - [ ] no slogan ladder; paragraphs are multi-sentence;
 - [ ] evidence rules from `RICH_EDITORIAL_STANDARD.md` satisfied;
-- [ ] the article ends with the bibliographic note: one emoji, «Цитаты Чарнока — из книги…», book, edition, source URL, no heading, no bold, no italic, no talk about the translation;
+- [ ] the article ends with the bibliographic note: no emoji, «Цитаты Чарнока — из книги…», Russian title in bold, English title in italic, book, edition, source URL, no heading, no talk about the translation;
 - [ ] composer inspected after paste: typography, quote blocks, spacing.

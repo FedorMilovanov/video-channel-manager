@@ -34,10 +34,6 @@ MAX_CONNECTOR = 120
 MAX_QUOTE = 4000
 MAX_ITEM = 400
 HASHTAGS_MIN, HASHTAGS_MAX = 4, 6
-# Эмодзи-маркер раздела не ставится на коротких рубриках короче этого порога
-# (RICH_EDITOR_ARTICLE_STANDARD, §3).
-MARKER_MIN_SECTION_CHARS = 600
-
 ZWSP = "\u200b"
 WJ = "\u2060"
 
@@ -57,13 +53,13 @@ EMOJI_RE = re.compile(
 HASHTAG_RE = re.compile(r"#(?=[0-9A-Za-zА-Яа-яЁё_]*[A-Za-zА-Яа-яЁё])[0-9A-Za-zА-Яа-яЁё_]+")
 
 # Библиографическая пометка в конце статьи: книга, издание, источник цитат.
-# Начинается сразу с дела, без служебной фразы-заголовка; значок книги в начале —
-# часть оформления пометки, поэтому эмодзи здесь разрешён (и только здесь).
+# Начинается сразу с дела, без служебной фразы-заголовка и без значка:
+# с 22.10.2026 в серии не используются эмодзи вообще (решение оператора).
 SERVICE_NOTE_LEAD = "Цитаты Чарнока"
 SERVICE_NOTE_URL = "gutenberg.org"
-# Подпись цитаты в L2: обычная строка «— Автор, «Труд»» без жирного и курсива
-# (решение оператора 2026-10-22). Курсивная форма здесь не принимается:
-# предфильтр проверяет новые статьи, а курсив в них запрещён целиком.
+# Подпись цитаты в L2: обычная строка «— Автор, «Труд»» последней строкой блока.
+# Жирный и курсив в тексте разрешены (решение оператора 2026-10-22), но подпись
+# цитаты остаётся plain: это подпись, а не выделение.
 ATTRIBUTION_RE = re.compile(r"^— .+$")
 TRANSLATION_NOTE_RE = re.compile(r"перевод[а-я]*\s+(?:мой|наш)", re.IGNORECASE)
 ITEM_RE = re.compile(r"^(• |\d+\. )")
@@ -161,16 +157,12 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             rep.error("H1 должен быть набран ЗАГЛАВНЫМИ")
         if len(plain_title) > MAX_H1:
             rep.error(f"H1 длиннее {MAX_H1} символов ({len(plain_title)})")
-        if title.startswith("**") and title.endswith("**"):
-            rep.warn("H1 набран жирным: в L2 жирный не используется, пишите `# ЗАГОЛОВОК`")
         if EMOJI_RE.search(plain_title):
-            rep.error(
-                "в H1 не должно быть эмодзи — маркер допускается только в начале строки H2 и только по правилу §3"
-            )
+            rep.error("в H1 не должно быть эмодзи — в этой серии их нет нигде (решение оператора 2026-10-22)")
 
-    # ---------- 3. H2: регистр, длина, воздух, эмодзи-маркер ----------
+    # ---------- 3. H2: регистр, длина, эмодзи ----------
     h2_titles = [stripped[s][3:].strip().replace("**", "") for s, _ in h2s]
-    numbered = [t for t in h2_titles if NUMBERED_H2_RE.match(EMOJI_RE.sub("", t).lstrip())]
+    numbered = [t for t in h2_titles if NUMBERED_H2_RE.match(t.lstrip())]
     rep.stats.update(h2_numbered=len(numbered))
     for (s, _), title in zip(h2s, h2_titles, strict=True):
         if len(title) > MAX_H2:
@@ -178,29 +170,12 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         if is_caps(title):
             rep.error(f"H2 «{title}» набран ЗАГЛАВНЫМИ: в L2 заголовки разделов обычным регистром")
 
-        next_h = len(stripped)
-        for j in range(s + 1, len(stripped)):
-            if HEADING_RE.match(stripped[j]):
-                next_h = j
-                break
-        section_chars = len("\n".join(stripped[s + 1 : next_h]).strip())
-        is_numbered = bool(NUMBERED_H2_RE.match(EMOJI_RE.sub("", title).lstrip()))
-
         markers = EMOJI_RE.findall(title)
         if markers:
-            if is_numbered:
-                rep.error(
-                    f"H2 «{title[:40]}»: раздел в нумерованной лесенке — номера уже маркируют место, эмодзи не нужен"
-                )
-            elif len(markers) > 1:
-                rep.error(f"H2 «{title[:40]}»: {len(markers)} эмодзи — маркер может быть только один, в начале строки")
-            elif not EMOJI_RE.match(title):
-                rep.error(f"H2 «{title[:40]}»: эмодзи должен вести строку — это маркер раздела, а не украшение")
-            elif section_chars < MARKER_MIN_SECTION_CHARS:
-                rep.error(
-                    f"H2 «{title[:40]}»: раздел короче ~{MARKER_MIN_SECTION_CHARS} знаков ({section_chars}) — "
-                    "маркер на короткой рубрике не ставится"
-                )
+            rep.error(
+                f"H2 «{title[:40]}»: {len(markers)} эмодзи — в этой серии их нет нигде "
+                "(решение оператора 2026-10-22), заголовок раздела пишется словами"
+            )
         if s == 0:
             rep.error("статья начинается с H2: первым блоком должен быть H1")
         else:
@@ -298,27 +273,21 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     rep.stats["quotes"] = quotes
 
     # ---------- 5б. жирный и курсив ----------
-    # Решение оператора 2026-10-22: в статьях L2 жирного и курсива нет вообще.
-    body_lines = [ln for ln in stripped if not HEADING_RE.match(ln)]
-    bold_lines = [ln for ln in body_lines if "**" in ln]
-    if bold_lines:
-        rep.error(
-            f"жирный шрифт в тексте: {len(bold_lines)} строк — в L2 он не используется, "
-            "смысловой акцент держится на порядке слов"
-        )
-    italic_lines = [ln for ln in body_lines if re.search(r"(?<![\w*])\*(?!\s)[^*]+(?<!\s)\*(?![\w*])", ln)]
-    if italic_lines:
-        rep.error(
-            f"курсив в тексте: {len(italic_lines)} строк — в L2 он не используется, "
-            "латиница и названия пишутся обычным шрифтом"
-        )
+    # Решение оператора 2026-10-22: в больших статьях жирный и курсив нужны —
+    # это форматирование редактора, а не украшение. Проверяем только целостность
+    # разметки: незакрытая скобка ломает и копи-страницу, и документ для провайдера.
+    for i, ln in enumerate(stripped, 1):
+        if ln.count("**") % 2:
+            rep.error(f"строка {i}: нечётное число ** — жирный не закрыт")
+        if ln.replace("**", "").count("*") % 2:
+            rep.error(f"строка {i}: нечётное число одинарных * — курсив не закрыт")
 
     # ---------- 5в. библиографическая пометка в конце ----------
     # Читатель должен видеть, откуда взяты цитаты, не выходя из статьи.
     note_blocks = [
         " ".join(stripped[s0:e0]).strip()
         for s0, e0 in spans
-        if EMOJI_RE.sub("", " ".join(stripped[s0:e0]).strip()).lstrip().startswith(SERVICE_NOTE_LEAD)
+        if " ".join(stripped[s0:e0]).strip().startswith(SERVICE_NOTE_LEAD)
     ]
     if not note_blocks:
         rep.error(
@@ -353,22 +322,14 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
                         rep.error(f"хэштег {tag}: должен начинаться с заглавной буквы")
 
     # ---------- 6б. эмодзи в теле ----------
+    # Заголовки проверяются отдельно (§2 и §3); здесь — всё остальное, включая
+    # текст цитат: эмодзи в серии не используются нигде.
     for s0, e0 in spans:
-        if HEADING_RE.match(stripped[s0]) or stripped[s0].startswith(">"):
+        if HEADING_RE.match(stripped[s0]):
             continue
         para = " ".join(stripped[s0:e0])
-        if para.strip() in note_blocks:
-            # в пометке об источнике значок книги в начале — часть оформления;
-            # второй значок или значок не в начале — уже дефект
-            head = EMOJI_RE.match(para.strip())
-            rest = para.strip()[head.end() :] if head else para
-            if EMOJI_RE.search(rest):
-                rep.error(f"строка {s0 + 1}: в пометке об источнике допустим только один значок — в начале")
-            continue
         if EMOJI_RE.search(para):
-            rep.error(
-                f"строка {s0 + 1}: эмодзи в обычном абзаце — в тексте их не ставят; маркер живёт только в начале заголовка H2"
-            )
+            rep.error(f"строка {s0 + 1}: эмодзи в тексте — в этой серии их нет нигде (решение оператора 2026-10-22)")
 
     # ---------- 7. служебные маркеры и мусор ----------
     low = text.casefold()
