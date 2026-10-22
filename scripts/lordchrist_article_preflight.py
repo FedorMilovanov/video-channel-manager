@@ -24,12 +24,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 MAX_CHARS = 32_768
-SOFT_CHARS = 30_000
+SOFT_CHARS = 32_000
 MAX_BLOCKS = 500
 MAX_H1 = 120
 MAX_H2 = 80
 MAX_CONNECTOR = 120
-MAX_QUOTE = 600
+# Крупная цитата — норма: ключевой пассаж идёт до ~4 000 знаков, если мысль
+# автора в нём непрерывна (RICH_EDITOR_ARTICLE_STANDARD §5).
+MAX_QUOTE = 4000
 MAX_ITEM = 400
 HASHTAGS_MIN, HASHTAGS_MAX = 4, 6
 # Эмодзи-маркер раздела не ставится на коротких рубриках короче этого порога
@@ -52,7 +54,11 @@ EMOJI_RE = re.compile(
     "[\U0001f300-\U0001faff\U00002300-\U000023ff\U00002600-\U000027bf\U0001f1e6-\U0001f1ff\U00002b00-\U00002bff]"
 )
 HASHTAG_RE = re.compile(r"#[0-9A-Za-zА-Яа-яЁё_]+")
-ATTRIBUTION_RE = re.compile(r"^\*— .+\*$")
+# Подпись цитаты в L2: обычная строка «— Автор, «Труд»» без жирного и курсива
+# (решение оператора 2026-10-22). Курсивная форма здесь не принимается:
+# предфильтр проверяет новые статьи, а курсив в них запрещён целиком.
+ATTRIBUTION_RE = re.compile(r"^— .+$")
+TRANSLATION_NOTE_RE = re.compile(r"перевод[а-я]*\s+(?:мой|наш)", re.IGNORECASE)
 ITEM_RE = re.compile(r"^(• |\d+\. )")
 MD_LIST_RE = re.compile(r"^[-*+] ")
 HEADING_RE = re.compile(r"^#{1,6}\s")
@@ -114,7 +120,10 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     if chars > MAX_CHARS:
         rep.error(f"длина {chars} > {MAX_CHARS} символов")
     elif chars > SOFT_CHARS:
-        rep.warn(f"длина {chars}: близко к лимиту, оставьте запас (мягкий потолок {SOFT_CHARS})")
+        rep.warn(
+            f"длина {chars}: почти у потолка 32 768 — правки после вёрстки будут стоить сокращений "
+            f"(мягкий потолок {SOFT_CHARS})"
+        )
     if "\t" in text:
         rep.error("в тексте есть табуляция")
     for i, ln in enumerate(lines, 1):
@@ -145,8 +154,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             rep.error("H1 должен быть набран ЗАГЛАВНЫМИ")
         if len(plain_title) > MAX_H1:
             rep.error(f"H1 длиннее {MAX_H1} символов ({len(plain_title)})")
-        if not (title.startswith("**") and title.endswith("**")):
-            rep.warn("H1 лучше делать жирным: `# **ЗАГОЛОВОК**` (требование RICH_EDITORIAL_STANDARD §2)")
+        if title.startswith("**") and title.endswith("**"):
+            rep.warn("H1 набран жирным: в L2 жирный не используется, пишите `# ЗАГОЛОВОК`")
         if EMOJI_RE.search(plain_title):
             rep.error(
                 "в H1 не должно быть эмодзи — маркер допускается только в начале строки H2 и только по правилу §3"
@@ -237,12 +246,19 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             if not has_attr:
                 rep.error(
                     f"строка {end + 1}: у цитаты нет подписи последней строкой. "
-                    "В L2 правильно: `> *— Автор, «Труд»*` внутри блока"
+                    "В L2 правильно: `> — Автор, «Труд»` внутри блока"
+                )
+
+            if has_attr and TRANSLATION_NOTE_RE.search(body[-1]):
+                rep.error(
+                    f"строка {end + 1}: под подписью пометка о переводе — в L2 её нет: "
+                    "русский текст иностранного автора и так перевод канала, подпись кончается названием труда"
                 )
 
             if len(quote_text) > MAX_QUOTE:
                 rep.warn(
-                    f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — разбейте авторским текстом"
+                    f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — "
+                    "проверьте, что это один непрерывный пассаж, а не склейка разных мест"
                 )
 
             # подпись отдельным блоком — ошибка L2: даёт разрыв под цитатой
@@ -252,7 +268,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             if nxt_idx < len(stripped) and ATTRIBUTION_RE.match(stripped[nxt_idx].strip()):
                 rep.error(
                     f"строка {nxt_idx + 1}: подпись стоит отдельным блоком после цитаты — "
-                    "в L2 она должна быть последней строкой блока: `> *— Автор, «Труд»*`"
+                    "в L2 она должна быть последней строкой блока: `> — Автор, «Труд»`"
                 )
 
             if ">" in quote_text:
@@ -273,6 +289,22 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         else:
             i += 1
     rep.stats["quotes"] = quotes
+
+    # ---------- 5б. жирный и курсив ----------
+    # Решение оператора 2026-10-22: в статьях L2 жирного и курсива нет вообще.
+    body_lines = [ln for ln in stripped if not HEADING_RE.match(ln)]
+    bold_lines = [ln for ln in body_lines if "**" in ln]
+    if bold_lines:
+        rep.error(
+            f"жирный шрифт в тексте: {len(bold_lines)} строк — в L2 он не используется, "
+            "смысловой акцент держится на порядке слов"
+        )
+    italic_lines = [ln for ln in body_lines if re.search(r"(?<![\w*])\*(?!\s)[^*]+(?<!\s)\*(?![\w*])", ln)]
+    if italic_lines:
+        rep.error(
+            f"курсив в тексте: {len(italic_lines)} строк — в L2 он не используется, "
+            "латиница и названия пишутся обычным шрифтом"
+        )
 
     # ---------- 6. хэштеги ----------
     all_tags = HASHTAG_RE.findall(text)

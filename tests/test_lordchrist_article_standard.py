@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -113,3 +114,95 @@ def test_preflight_article_without_emoji_has_no_emoji_errors(tmp_path: Path) -> 
     )
     rep = check(doc)
     assert not any("эмодзи" in err.lower() for err in rep.errors)
+
+
+LEAD = (
+    "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала. "
+    "Он вводит тему и обещает предметное богословское рассуждение."
+)
+BODY = (
+    "Это полноценный абзац раздела, который подробно раскрывает главную мысль темы и держит "
+    "аргумент на протяжении нескольких предложений подряд, без лозунгов и обрывов. "
+    "В нём есть богословское и историческое основание, позволяющее читателю проследить логику."
+)
+
+
+def _article(quote: str, body: str = BODY) -> str:
+    return (
+        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{body}\n\n{quote}\n"
+    )
+
+
+def test_preflight_accepts_plain_attribution_without_asterisks(tmp_path: Path) -> None:
+    quote = "> «Точный текст цитаты, достаточно длинной для отдельного блока.»\n> — Стивен Чарнок, «О бытии Бога»"
+    doc = tmp_path / "article.md"
+    doc.write_text(_article(quote), encoding="utf-8")
+    rep = check(doc)
+    assert not rep.errors
+    assert not rep.warnings
+
+
+def test_preflight_accepts_large_quote_block(tmp_path: Path) -> None:
+    """Крупная цитата — норма, а не дефект: до ~4 000 знаков одним пассажем."""
+    long_quote = " ".join(["Слово о Боге и о человеке, сказанное прямо и без оговорок."] * 40)
+    quote = f"> «{long_quote}»\n> — Стивен Чарнок, «О бытии Бога»"
+    assert 1_000 < len(long_quote) < 3_000
+    doc = tmp_path / "article.md"
+    doc.write_text(_article(quote), encoding="utf-8")
+    rep = check(doc)
+    assert not rep.errors
+    assert not any("цитата" in warning for warning in rep.warnings)
+
+
+def test_preflight_rejects_bold_and_italic_in_body(tmp_path: Path) -> None:
+    doc = tmp_path / "article.md"
+    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё **жирный акцент**."), encoding="utf-8")
+    assert any("жирный шрифт" in err for err in check(doc).errors)
+
+    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё *курсив*."), encoding="utf-8")
+    assert any("курсив" in err for err in check(doc).errors)
+
+
+def test_build_l2_rich_document_strips_markup_and_keeps_credit(tmp_path: Path) -> None:
+    from build_l2_rich_document import build
+
+    document = {
+        "schema_name": "video-channel-manager.rich-article-document",
+        "document_id": "test",
+        "metadata": {"title": "Тест", "language": "ru"},
+        "blocks": [],
+    }
+    doc_path = tmp_path / "doc.json"
+    doc_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    md_path = tmp_path / "article.md"
+    md_path.write_text(
+        "# **ТЕСТ**\n\nАбзац с *курсивом* и **жирным**.\n\n> «Цитата»\n> *— Стивен Чарнок, «О бытии Бога»*\n",
+        encoding="utf-8",
+    )
+
+    built = build(md_path, doc_path)
+    heading, paragraph, quote = built["blocks"]
+    assert heading["text"] == "ТЕСТ" and heading["size"] == 1
+    assert paragraph["text"] == "Абзац с курсивом и жирным."
+    assert quote["credit"] == "— Стивен Чарнок, «О бытии Бога»"
+    assert quote["blocks"][0]["text"] == "«Цитата»"
+    assert json.loads(doc_path.read_text(encoding="utf-8"))["blocks"] == built["blocks"]
+
+
+def test_preflight_rejects_translation_note_under_quote(tmp_path: Path) -> None:
+    quote = (
+        "> «Точный текст цитаты, достаточно длинной для отдельного блока.»\n"
+        "> — Стивен Чарнок, «О бытии Бога», перевод мой"
+    )
+    doc = tmp_path / "article.md"
+    doc.write_text(_article(quote), encoding="utf-8")
+    assert any("пометка о переводе" in err for err in check(doc).errors)
+
+
+def test_preflight_rejects_italic_attribution(tmp_path: Path) -> None:
+    quote = "> «Точный текст цитаты, достаточно длинной для отдельного блока.»\n> *— Стивен Чарнок, «О бытии Бога»*"
+    doc = tmp_path / "article.md"
+    doc.write_text(_article(quote), encoding="utf-8")
+    rep = check(doc)
+    assert any("нет подписи" in err for err in rep.errors)
+    assert any("курсив" in err for err in rep.errors)
