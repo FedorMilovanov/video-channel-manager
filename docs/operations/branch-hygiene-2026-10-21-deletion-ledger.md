@@ -80,14 +80,49 @@ superseding change are recorded per ref; nothing here was deleted for age or for
 | `fix/vk-wall-fail-fast-flood-remote` | `11e68253b3d993eb9a60046964a3a0cd9f8bb7f7` | 98 % of its added lines already exist in `main` via #652/#659; `assert_method_circuit_closed` is in `platforms/vk/writer.py` and used by both wall providers, so only a reworded doc line differs. |
 | `feat/lord-god-vk-content-wave` | `a6f741784f0f3c4c0e168585a523c24eae19eb79` | 96 % merged via #646/#652/#653/#659; the residue is an older draft of `prepare_lord_god_content_wave.py` and a stale boundary register entry. |
 | `feat/lordchrist-depth-v3-context-fixes-20261003` | `7abb6e606fb5ef03181e09c3aa4b215bf7ce83f1` | A pre-#694 design of the same idea: its release JSON is pinned to a 15/45 boundary with `lordchrist-quote-v4` and amended sequences 17/32, while the merged and live #694 release is quote-v5 over a 17/43 boundary with 32/36 restored. |
-| `agent/milovi-video-accepted-73c578eff825` | `f4f5512d7b60f1b9c61c293c07620b128536df27` | Byte-identical artifacts to `agent/milovi-video-accepted-f0e25d9c905f` (all 17 blobs match); the surviving ref is the newer one and keeps the same content reachable. |
 
-## Kept — one ref, with its reason
+## Correction (2026-10-22): one deletion in this ledger was wrong and was reverted
 
-- `agent/milovi-video-accepted-f0e25d9c905f` — the only ref that carries the 16 accepted Milovi MP4
-  artifacts (about 50 MB of media, thousands of times larger than any code change). They are not in
-  `main` and cannot be regenerated from it, so deleting the ref would destroy the only copy. The
-  correct later step is to move them to the external artifact store and then delete the ref; that is a
-  storage decision, not a hygiene sweep, and it is recorded as outstanding in the audit.
+`agent/milovi-video-accepted-73c578eff825` was deleted in the third wave as a byte-identical duplicate
+of `agent/milovi-video-accepted-f0e25d9c905f`. That was a mistake, and it was reverted by pushing the
+recorded tip SHA back:
 
-Final ref count: `main` + 3 durable `state/*` refs + this one work branch.
+```
+git push origin f4f5512d7b60f1b9c61c293c07620b128536df27:refs/heads/agent/milovi-video-accepted-73c578eff825
+```
+
+Byte-identical duplication is not a sufficient reason to delete a ref when a **name** is the contract.
+This ref is content-addressed evidence: its name is the prefix of the accepted evidence digest
+`sha256:73c578eff82563...`, and it is referenced by
+
+- the runtime binding `milovi_telegram_feed.VIDEO_ARTIFACT_REF` / `VIDEO_EVIDENCE_SHA256`, which gates
+  every Milovi `sendVideo`;
+- `content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json` (`artifact_ref`);
+- `content/telegram/milovi-cake/marathon-wave-2026-08.json` (`evidence_branch`);
+- `.github/workflows/AGENTS.md` and `docs/operations/current-state.md`.
+
+Twenty references in `main` pointed at a ref that no longer existed, and the accepted evidence digest
+could not be re-verified from the repository at all. The class of mistake is now closed structurally
+rather than by memory:
+
+- `docs/operations/protected-evidence-refs.json` lists every ref that hygiene must not delete, with the
+  reason, the exact tip where it is immutable, and the restore command;
+- `tests/test_milovi_evidence_binding.py` fails if a protected ref appears in this ledger's deletion
+  tables, and re-verifies the accepted evidence identity offline.
+
+## Kept — content-addressed evidence, and why it is not debt
+
+Both Milovi refs stay, and neither is a stale work branch:
+
+- `agent/milovi-video-accepted-73c578eff825` — the accepted artifact store: 16 MP4 blobs whose git blob
+  SHAs are exactly the `git_blob_sha1` values in the reservoir (64 746 496 bytes of media). The
+  reservoir, the runtime binding and the workflow contract name this ref, so it is a permanent locator.
+- `agent/milovi-video-accepted-f0e25d9c905f` — a later re-materialization proving reproducibility: all
+  16 artifact blobs are byte-identical, and only the evidence generation differs
+  (`sha256:f0e25d9c905fc95...` versus the accepted `sha256:73c578eff8256...`).
+
+The accepted evidence file itself is now versioned in `main`
+(`content/telegram/milovi-cake/video-conversion-evidence-2026-08.json`), so the digest is checkable
+without network access.
+
+Final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs.
