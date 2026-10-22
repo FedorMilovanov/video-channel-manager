@@ -114,6 +114,8 @@ def check(markdown: Path, document: Path, source: Path | None, specs: list[str])
             errors.append(f"{source_id}: в evidence нет смещения в блоке источника")
             continue
         en = re.split(r"\s*\[", evidence[3:])[0].strip() if evidence.startswith("EN:") else ""
+        if "…" in en:  # монтаж из нескольких мест: сверяется самая длинная часть
+            en = max((part.strip() for part in en.split("…")), key=len)
         if not en:
             errors.append(f"{source_id}: в evidence нет EN-текста якоря")
             continue

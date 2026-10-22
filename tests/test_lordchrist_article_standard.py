@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+BIBLE_DIR = Path("/tmp/bible")  # корпус Синодального перевода (bibleonline/rst)
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lordchrist_article_preflight import check  # noqa: E402
@@ -309,3 +310,51 @@ def test_reviewed_articles_keep_distinct_quotes() -> None:
         article = charnock / name
         rep = check(article)
         assert not any("дубль цитаты" in err for err in rep.errors)
+
+
+def test_scripture_check_rejects_a_quote_that_is_not_synodal(tmp_path: Path) -> None:
+    """Цитата Писания, не совпадающая со Синодальным переводом, — дефект."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return  # корпус Синодального перевода не положен рядом с репозиторием
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТ**\n\n"
+        "Слово Божие говорит: **И сотворил Бог из земли всяких зверей земных** (Быт. 2:19).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(doc, corpus)
+    assert any("Быт. 2:19" in err for err in errors)
+
+
+def test_scripture_check_accepts_a_synodal_quote(tmp_path: Path) -> None:
+    """Дословный стих Синодального перевода — расхождений нет."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТ**\n\n"
+        "Слово Божие говорит: **Господь Бог образовал из земли всех животных полевых** (Быт. 2:19).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(doc, corpus)
+    assert not errors
+
+
+def test_reviewed_articles_have_synodal_scripture() -> None:
+    """Статьи серии: цитаты Писания дословны по Синодальному переводу."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
+    for number in ("01", "02", "03"):
+        article = charnock / f"lordchrist-rich-charnock-{number}.md"
+        errors, _notes = scripture_check(article, corpus)
+        assert not errors, f"{article.name}: {errors}"

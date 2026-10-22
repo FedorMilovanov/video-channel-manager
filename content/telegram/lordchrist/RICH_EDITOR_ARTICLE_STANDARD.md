@@ -214,6 +214,7 @@ When the user asks for a paste-ready long article:
 - [ ] the article ends with the bibliographic note: no emoji, «Цитаты Чарнока — из книги…», Russian title in bold, English title in italic, book, edition, source URL, no heading, no talk about the translation;
 - [ ] the article went through **two independent passes** (§11), both are written into the article's log, and the artifacts were rebuilt after the last fix;
 - [ ] every quote of the article has its own EN anchor in `sources` of the rich document: unique `source_id`s, anchor number equal to the number of the quote block, anchor text found verbatim in the source block;
+- [ ] every Bible quotation of the article is verbatim by the Synodal translation (`scripts/lordchrist_scripture_check.py`; the quotations without a reference are read by eye);
 - [ ] no two quotes of the article are identical;
 - [ ] composer inspected after paste: typography, quote blocks, spacing.
 
@@ -260,7 +261,12 @@ After every fix the cheap automated checks are re-run:
 - `scripts/lordchrist_article_sources_check.py` — one anchor per quote, unique
   `source_id`s, anchor numbers equal to the numbers of the quote blocks; with
   `--source` (the plain text of the edition) and `--block NAME:START:LENGTH` it
-  additionally checks the EN text of every anchor **verbatim** at its offset.
+  additionally checks the EN text of every anchor **verbatim** at its offset;
+- `scripts/lordchrist_scripture_check.py` — every Bible quotation of the article
+  is compared with the Synodal translation: the text next to a reference must be
+  a continuous fragment of that verse. Corpus: `bibleonline/rst` (РБО), parsed
+  into `#глава:стих#текст` files; pass it with `--bible DIR`. Quotations without
+  a reference are listed separately — those are read by eye (pass 2).
 
 Conventions of the source blocks (one convention for the whole series):
 
@@ -270,4 +276,8 @@ Conventions of the source blocks (one convention for the whole series):
   normalized text, `LENGTH` is the length of the slice in the same units;
 - the offset of an anchor is counted from the beginning of its block, and the
   block is written into the article's log — so that any anchor can be checked
-  again by anyone, at any time, with one command.
+  again by anyone, at any time, with one command;
+- the blocks of the series: `B₁` and `B₂` cover the second part of Discourse I
+  (articles 2 and 3), `A₁` covers the beginning of Discourse I (article 1):
+  `A1:52486:20700`, `B1:73582:23690`, `B2:97144:16083` of the normalized text
+  of eBook #53527.

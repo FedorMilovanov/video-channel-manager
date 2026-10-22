@@ -1011,7 +1011,17 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "4a09ed3387abaa9b30732034dd8d74413bd71e430e0377f4159624ef95e3224b",
+      "sha256": "57cd9483ee58b7834d1135679010af9e50e07b810319bcb548f760ba74e7695f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_scripture_check.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "3ba7fe5e2407718db3720ba648cc3c76d5f82398b5f00cea792b566909ccad5e",
       "status": "independent_tool"
     }
   ],
