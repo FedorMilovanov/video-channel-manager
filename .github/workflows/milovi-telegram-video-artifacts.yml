@@ -282,8 +282,32 @@ jobs:
             exit 3
           fi
           if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
-            echo "content-addressed artifact branch already exists; refusing overwrite: $branch" >&2
-            exit 3
+            # The accepted artifacts are immutable, so a re-run must not overwrite them and
+            # must not spawn a sibling ref. It also must not fail: refusing to overwrite is
+            # correct for drift, but an identical rebuild is simply already materialized.
+            # Prove the rebuild reproduced the accepted blobs byte-for-byte.
+            git fetch --depth=1 --no-tags origin "refs/heads/$branch:refs/remotes/accepted/evidence"
+            drift=0
+            for file in "$OUTPUT_DIR"/*.mp4 "$EVIDENCE"; do
+              if ! expected="$(git rev-parse "refs/remotes/accepted/evidence:$file" 2>/dev/null)"; then
+                echo "accepted evidence ref does not contain $file" >&2
+                drift=1
+                continue
+              fi
+              actual="$(git hash-object "$file")"
+              if [[ "$expected" != "$actual" ]]; then
+                echo "artifact drift on $file: accepted=$expected rebuilt=$actual" >&2
+                drift=1
+              fi
+            done
+            if [[ "$drift" -ne 0 ]]; then
+              echo "rebuilt artifacts differ from the accepted evidence ref; refusing to overwrite: $branch" >&2
+              exit 3
+            fi
+            echo "accepted artifacts already materialized at $branch and reproduced byte-for-byte"
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo "evidence_sha256=sha256:$evidence_sha" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           git config user.name "milovi-video-artifacts[bot]"
           git config user.email "milovi-video-artifacts@users.noreply.github.com"
