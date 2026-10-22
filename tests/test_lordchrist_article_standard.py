@@ -321,8 +321,7 @@ def test_scripture_check_rejects_a_quote_that_is_not_synodal(tmp_path: Path) -> 
         return  # корпус Синодального перевода не положен рядом с репозиторием
     doc = tmp_path / "article.md"
     doc.write_text(
-        "# **ТЕСТ**\n\n"
-        "Слово Божие говорит: **И сотворил Бог из земли всяких зверей земных** (Быт. 2:19).\n",
+        "# **ТЕСТ**\n\nСлово Божие говорит: **И сотворил Бог из земли всяких зверей земных** (Быт. 2:19).\n",
         encoding="utf-8",
     )
     errors, _notes = scripture_check(doc, corpus)
@@ -338,8 +337,7 @@ def test_scripture_check_accepts_a_synodal_quote(tmp_path: Path) -> None:
         return
     doc = tmp_path / "article.md"
     doc.write_text(
-        "# **ТЕСТ**\n\n"
-        "Слово Божие говорит: **Господь Бог образовал из земли всех животных полевых** (Быт. 2:19).\n",
+        "# **ТЕСТ**\n\nСлово Божие говорит: **Господь Бог образовал из земли всех животных полевых** (Быт. 2:19).\n",
         encoding="utf-8",
     )
     errors, _notes = scripture_check(doc, corpus)

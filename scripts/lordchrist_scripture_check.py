@@ -172,9 +172,7 @@ def head_index(corpus: dict[str, dict[tuple[int, int], str]]) -> dict[tuple[str,
     return index
 
 
-def check(
-    markdown: Path, corpus: dict[str, dict[tuple[int, int], str]]
-) -> tuple[list[str], list[str]]:
+def check(markdown: Path, corpus: dict[str, dict[tuple[int, int], str]]) -> tuple[list[str], list[str]]:
     text = markdown.read_text(encoding="utf-8")
     errors: list[str] = []
     notes: list[str] = []
@@ -191,9 +189,7 @@ def check(
         if not source:
             continue
         if not is_run_of(words(fragment), words(source)):
-            errors.append(
-                f"эпиграф ({match.group(0).strip()}): текст не совпадает со стихом — {fragment[:80]}"
-            )
+            errors.append(f"эпиграф ({match.group(0).strip()}): текст не совпадает со стихом — {fragment[:80]}")
 
     for sentence in body_sentences(text):
         refs = list(REF_RE.finditer(sentence))
@@ -222,9 +218,7 @@ def check(
             if not source:
                 continue
             if not is_run_of(words(content), words(source)):
-                errors.append(
-                    f"{best.group(0).strip()}: цитата не совпадает со стихом — {content[:80]}"
-                )
+                errors.append(f"{best.group(0).strip()}: цитата не совпадает со стихом — {content[:80]}")
         for _, content in quoted:
             if len(words(content)) >= HEAD and tuple(words(content)[:HEAD]) in index:
                 notes.append(f"цитата Писания без ссылки на стих: {content[:70]}")
