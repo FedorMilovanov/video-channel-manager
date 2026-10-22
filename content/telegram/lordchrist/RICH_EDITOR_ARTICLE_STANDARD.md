@@ -25,7 +25,7 @@ Count the exact reader-facing text:
 - every line break;
 - no invisible spacers (there must be none).
 
-Limits for L2: **≤ 32 768 UTF-8 characters**, **≤ 500 blocks**, **≤ 16 levels** of nesting, **≤ 50 media**, **≤ 20 table columns**. Keep a soft target of **≤ 32 000 characters**: that leaves roughly 700 characters of room, so any late edit still has to be paid for by a cut somewhere else.
+Limits for L2: **≤ 32 768 UTF-8 characters**, **≤ 500 blocks**, **≤ 16 levels** of nesting, **≤ 50 media**, **≤ 20 table columns**. Keep a soft target of **≤ 32 300 characters**: that leaves roughly 470 characters of room, so any late edit still has to be paid for by a cut somewhere else. The closing bibliographic note (§5) takes about 700 characters of this budget and is counted by the preflight.
 
 Block estimate: paragraphs + headings + list items + quote blocks (+ attribution paragraphs) + table rows. A typical 25 000–27 000-character article uses 110–140 blocks — well inside the limit.
 
@@ -49,14 +49,19 @@ L2 has two representations, and they control spacing differently.
 
 **L2-MD — Markdown source (what the agent writes).** Telegram's rich editor builds paragraph and heading blocks itself. A blank line in Markdown is a block separator, not an empty paragraph; an empty paragraph cannot be expressed in Markdown at all. Therefore the Markdown source never simulates air: it uses exactly one blank line between blocks, and the editor supplies the normal paragraph and heading gaps. No invisible characters are allowed in the source.
 
-**L2-HTML — copy page (the publication artifact).** When the house style requires air **before** headings, the renderer emits one explicit empty block — `<p>&#8203;</p>` (a zero-width space) — immediately before each `h1`/`h2` and nowhere else. This is the only permitted invisible character in the whole pipeline, it lives in the artifact, and it is never visible to the reader.
+**L2-HTML — copy page (the publication artifact).** The air **before** headings is one explicit empty block, `<p>&#160;</p>` (a no-break space, `U+00A0`), immediately before each `h2` and nowhere else. The first block of the article is the `h1` and takes no air; there is no air after a heading.
+
+The character matters. A zero-width space (`U+200B`) looks like the obvious choice, and it is the wrong one: the editor «Статья» treats a paragraph with no visible character as empty text and drops it on paste, so the air silently disappears and the article arrives as a solid wall of text with headings glued to the paragraph above. A no-break space survives HTML parsing, renders as exactly one blank line and no glyph. This is the only permitted invisible character in the whole pipeline, it lives in the artifact, and the reader never sees it as text.
+
+Air exists **only in the HTML artifact**. The Markdown paste has no way to express it: a blank line there is a block separator, not an empty paragraph. If the air before headings is missing in a published post, the post was pasted as Markdown, not from the copy page.
 
 Spacing matrix for the rendered artifact:
 
 | Transition | Rendered artifact |
 |---|---|
 | paragraph → paragraph | ordinary paragraph gap |
-| paragraph → H1 / H2 | **air before** — exactly one empty block |
+| paragraph → H2 | **air before** — exactly one empty block (`U+00A0`) |
+| H1 → next block | no air: the title stands alone |
 | H2 → first paragraph | **no air after**; text follows immediately |
 | paragraph → block quote | air before (default) |
 | short connector → block quote | no extra air (narrow exception, §5) |
@@ -65,7 +70,7 @@ Spacing matrix for the rendered artifact:
 | list item → list item | ordinary paragraph gap; each item is its own block (§6) |
 | anywhere else | ordinary paragraph gap |
 
-Air **only before** headings. Air after a heading is a defect: it doubles the gap the editor already adds. A copy page that inserts empty blocks anywhere except before headings fails review.
+Air **only before** headings, and exactly one block each. Air after a heading is a defect: it doubles the gap the editor already adds. Air between ordinary paragraphs is a defect too: the editor already separates them, and empty blocks there turn a long article into a ladder of gaps. A copy page that puts empty blocks anywhere except before headings fails review.
 
 A plain Markdown paste without the renderer is acceptable when headings already look right in the current client; the renderer exists to make the result deterministic across clients.
 
@@ -118,6 +123,25 @@ HTML markup: the attribution line is rendered as `<cite>` inside the same `<bloc
 
 Known client behaviour, not a defect: a long quote renders collapsed behind a `Collapse` control, and the author line sits in the author field of the block. That is the intended shape — do not move the attribution outside the block and do not strip the `cite` tag to "fix" the collapse.
 
+### Bibliographic note at the end
+
+Every article ends with the source note, two short paragraphs, plain text, no heading:
+
+```text
+Откуда цитаты. Цитаты Чарнока — из книги «Беседы о существовании и свойствах Бога» (Discourses upon the
+Existence and Attributes of God), изданной посмертно в 1682 году; взяты из первой беседы — «О существовании
+Бога», по словам псалма XIV:1. Текст — по изданию Robert Carter & Brothers, 1853 года, где оба тома
+напечатаны вместе; оно оцифровано Project Gutenberg: eBook #53527, https://www.gutenberg.org/ebooks/53527.
+
+Перевод наш, буквальный настолько, насколько позволяет русский синтаксис. По-русски книга, насколько нам
+известно, не издавалась, и сверить перевод не с чем. Слова Писания — по Синодальному переводу; нумерация
+псалмов у Чарнока еврейская, поэтому его «псалом XIV» — наш тринадцатый.
+```
+
+Why it exists: the credit line under a quote may only carry the author and the work, so everything a reader might want to check — which book, which edition, whose translation, why the psalm numbers differ — has one place to live, and it is not under 43 quotes. The note is also where the translation status belongs; that is why no «перевод мой» appears under an individual quote.
+
+Rules: it is the **last** block of the article, it starts with the words «Откуда цитаты.», it names the book, the edition and the source URL, and it carries no bold, no italic and no heading. `scripts/lordchrist_article_preflight.py` fails an article without it.
+
 ## 6. Lists in L2
 
 - Lists only for genuinely parallel items (`RICH_EDITORIAL_STANDARD.md` §10).
@@ -167,14 +191,15 @@ When the user asks for a paste-ready long article:
 ## 10. Review checklist
 
 - [ ] lane stated explicitly (L2) and the limit checked against 32 768 / 500 blocks;
-- [ ] exactly one H1, ALL CAPS, bold, ≤ 120 characters;
+- [ ] exactly one H1, ALL CAPS, plain (no `**`), ≤ 120 characters;
 - [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker under the §3 rule (single, leading, allowed in paragraph-sized named sections, never in numbered `1. 2. 3.` sequences, never on rubrics under ~600 characters);
-- [ ] artifact: air **before** every heading, none after (empty block only there);
+- [ ] artifact: exactly one empty block before every H2, none after a heading, none between ordinary paragraphs, and that block is `U+00A0`, not `U+200B`;
 - [ ] every list item is its own paragraph with `•` or `1.`, none rendered as a tight Markdown list;
 - [ ] quotes: quoted words only inside `>`; attribution on the next line, italic, `— ` prefix;
 - [ ] air before quotations by default; connector exception used only where justified;
 - [ ] no hashtag footer (L2); no emoji in the H1 or in body text, heading markers only where the §3 rule permits them;
-- [ ] no `U+2060`, no `U+200B`, no visible transport characters;
+- [ ] no `U+2060`, no `U+200B`, no visible transport characters (the only invisible character allowed in the artifact is the air block's no-break space);
 - [ ] no slogan ladder; paragraphs are multi-sentence;
 - [ ] evidence rules from `RICH_EDITORIAL_STANDARD.md` satisfied;
+- [ ] the article ends with the bibliographic note: «Откуда цитаты.», book, edition, source URL, translation status, no heading, no bold, no italic;
 - [ ] composer inspected after paste: typography, quote blocks, spacing.
