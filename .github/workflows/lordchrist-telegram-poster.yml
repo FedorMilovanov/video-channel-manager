@@ -1191,3 +1191,69 @@ jobs:
           python -m video_channel_manager.telegram_historical_production coverage \
             --release "$HISTORICAL_RELEASE_PATH" \
             --ledger "$HISTORICAL_LEDGER_PATH"
+
+  charnock-rich:
+    # Long L2 articles: one article per midday slot (12:00 Moscow, Tue/Fri).
+    # The midday cron stays a configured queue slot, so it still reaches
+    # publish-next, where the runtime decider refuses the quote lane and exits
+    # inactive; this job is the only consumer of the article lane.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'schedule' &&
+      github.event.schedule == '0 9 * * 2,5'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out immutable code and article queue
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Resolve today's article from the queue
+        id: article
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_articles due > due.json
+          cat due.json
+          publication_id="$(python -c 'import json;print(json.load(open("due.json")).get("due") or "")')"
+          echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
+
+      - name: Preview the exact rich document
+        if: steps.article.outputs.publication_id != ''
+        shell: bash
+        env:
+          PYTHONPATH: src
+          PUBLICATION_ID: ${{ steps.article.outputs.publication_id }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_articles preview \
+            --publication-id "$PUBLICATION_ID" \
+            --media-base-url "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}"
+
+      - name: Publish the article through the shared rich boundary
+        if: steps.article.outputs.publication_id != '' && vars.LORDCHRIST_ARTICLES_PUBLISH == 'true'
+        shell: bash
+        env:
+          PYTHONPATH: src
+          PUBLICATION_ID: ${{ steps.article.outputs.publication_id }}
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_articles send \
+            --publication-id "$PUBLICATION_ID" \
+            --media-base-url "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}" \
+            --outcome "rich-article-outcome.json"

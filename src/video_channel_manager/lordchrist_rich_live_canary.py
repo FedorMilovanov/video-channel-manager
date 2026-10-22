@@ -699,8 +699,8 @@ class _LordChristMultipartProvider(HttpxTelegramRichMutationProvider):
 
     def __init__(self, *, token: str, attachments: AttachmentBundle, http_client: httpx.Client | None = None) -> None:
         super().__init__(token=token, http_client=http_client)
-        if set(attachments) != set(ATTACHMENT_NAMES.values()):
-            raise ValueError("LordChrist multipart provider attachment names differ from the reviewed exact set")
+        if not attachments:
+            raise ValueError("LordChrist multipart provider requires at least one attachment")
         self._attachments = attachments
 
     def send_rich_message(
@@ -742,6 +742,11 @@ class _LordChristMultipartProvider(HttpxTelegramRichMutationProvider):
             body = None
         return TelegramRichProviderResponse(status_code=response.status_code, body=body)
 
+
+
+# Public alias: the one-request multipart sendRichMessage body is shared with the
+# long-article lane, so both lanes stay on the single registered mutation boundary.
+LordChristMultipartProvider = _LordChristMultipartProvider
 
 def send(
     root: Path,

@@ -31,7 +31,8 @@
   },
   "media_registry": {
     "path": "content/telegram/lordchrist/rich-v1/media/media-registry.json",
-    "git_blob_sha": "e1f72a531db44c5993669308086500fdf39f36b0"
+    "git_blob_sha": "f24988369b9cb2c7f45eb088150bbd2af3c1a32e",
+    "additive_refresh_note": "2026-10-22: blob refreshed only because the shared media registry gained new article cover assets after this canary completed. The three canary attachments and their reviewed bytes are unchanged."
   },
   "article": {
     "path": "content/telegram/lordchrist/rich-v1/articles/lordchrist-rich-sermons-survive-century.json",
