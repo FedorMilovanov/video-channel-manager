@@ -17,7 +17,7 @@ merge, удаления веток и мутаций durable `state/*`.
 | Область | Состояние | Главный вывод |
 | --- | --- | --- |
 | `main` | зелёный | 2882 теста, mypy strict, ruff clean, покрытие 74 % |
-| Ветки (45 refs) | 36 из 45 — балласт | 4 активных PR-ref, 3 durable state, 1 evidence, 23 zero-ahead, 13 superseded divergent |
+| Ветки (45 refs на момент аудита) | 36 из 45 — балласт | 4 активных PR-ref, 3 durable state, 1 evidence, 23 zero-ahead, 13 superseded divergent; **после очистки осталось 6** |
 | Открытые PR (4) | 3 из 4 не смержатся | #691 блокирован тестами-пинами, #670/#631/#628 конфликтуют с `main` |
 | Открытые issue (3) | 2 внешне блокированы, 1 устарел | #692 фактически выполнен (22/38 опубликовано), #662/#621 ждут OAuth-согласия владельца |
 | Безопасность | **есть P1** | Pillow 12.3.0 — 24 CVE в production-lock; certifi — 1 CVE; Dependabot alerts выключены |
@@ -66,7 +66,7 @@ dependabot), #692 (закрыть/обновить), #631 (закрыть), ап
 тесты, provider-inert CI, аккуратные hash-locks. Проблемы ниже — не «сломанный
 код», а незакрытые решения и обслуживание.
 
-## 4. Ветки: полная инвентаризация (45 refs)
+## 4. Ветки: полная инвентаризация (45 refs на 2026-10-21; после очистки — 6)
 
 ### 4.1 KEEP — durable state (3)
 
@@ -465,7 +465,7 @@ gh api repos/FedorMilovanov/video-channel-manager/contents/.../successor-depth-v
 | Pillow | 12.3.0, 24 CVE, fix 13.0.0 |
 | certifi | 2026.5.20, PYSEC-2026-4320, fix 2026.10.19 |
 | Dependabot alerts | disabled |
-| Ветки | 45 refs: 4 keep (state/evidence) + 4 active PR + 23 zero-ahead + 13 superseded |
+| Ветки | 45 refs на момент аудита: 4 keep (state/evidence) + 4 active PR + 23 zero-ahead + 13 superseded; итог после очистки — 6 refs |
 
 Аудит не выполнял provider-вызовов, provider-записей, merge, удаления веток и
 мутаций `state/*`.
@@ -497,8 +497,10 @@ Classification came from the GitHub compare API (`main...<branch>`), then from a
 comparison, then from a line-level check of whether the branch's added lines already exist in `main`.
 A shallow local clone was explicitly ruled out: it reported every branch as thousands of commits ahead.
 
-Result: **40 refs down to 4**, later corrected to **5** (`main`, the three durable `state/*` refs, and
-two content-addressed evidence refs): one deletion was a mistake and was reverted, see the correction.
+Result: **45 refs down to 6** — `main`, the three durable `state/*` refs and two content-addressed
+evidence refs. 39 refs were deleted and recorded here with their tip SHAs; one further deletion was made
+and then reverted (see the correction below), which is why the row count and the deletion count differ by
+one.
 
 1. **24 refs deleted losslessly** — every head-side blob of every file they change is byte-identical to
    `main`. Proven by construction, not by inspection.

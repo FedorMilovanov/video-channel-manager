@@ -125,4 +125,6 @@ The accepted evidence file itself is now versioned in `main`
 (`content/telegram/milovi-cake/video-conversion-evidence-2026-08.json`), so the digest is checkable
 without network access.
 
-Final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs.
+Final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs = **6 refs**
+(from 45 at the start of the audit). This ledger records **39** deleted refs; the 40th deletion was
+reverted and is described in the correction above, not in a deletion table.
