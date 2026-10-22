@@ -24,6 +24,10 @@ Operational documents are living sources of truth. They override chat history, s
   [`mutation-fault-proof-register.json`](mutation-fault-proof-register.json) — every provider mutation boundary with its
   intent/dispatch/response evidence, retry policy, and the exact test that proves each fault stage. Read before adding a
   provider write or changing one.
+- [`coverage-ratchet.json`](coverage-ratchet.json) — one coverage floor per module plus the package total,
+  measured once on Python 3.11 and enforced by `scripts/coverage_ratchet.py` in CI (`tests/test_coverage_ratchet.py`
+  proves the checker fails when a floor is missed). `--update` can only raise a floor; a new module below the
+  new-module floor must be registered by hand, so a thin module shows up in review instead of being absorbed.
 - [`protected-evidence-refs.json`](protected-evidence-refs.json) — the refs branch hygiene must never delete (durable
   state and content-addressed evidence), with the exact immutable tip and a restore command for each. Read this
   before deleting any ref; byte-identical duplication is not a reason to delete a bound evidence ref. Wave-16 and older audit registers below are historical evidence, not live backlog.

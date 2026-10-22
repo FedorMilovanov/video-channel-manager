@@ -150,6 +150,17 @@ The minimal Telegram runtime remains exact-version and SHA-256 hash locked with 
 One durable state/concurrency namespace has one write owner at a time. Parallel agents must not create competing provider writers against the same state namespace.
 `mutation-boundary-register.json` now lists the Telegram writers this repository actually publishes through: `sendMessage`, `sendPoll`, `sendPhoto`, `sendVideo` in the generic multichannel transport, and `telegram_transport.dispatch_prepared` for the legacy queue. Each entry carries the three fault stages (before dispatch, after dispatch before response, after response before commit), `attempt_limit: 1`, `never_replay`, and the exact test that proves the stage; the AST scanner derives the inventory from `_api_call(..., mutation=True)` so an unregistered Telegram mutation fails CI, and a call without an explicit literal `mutation=` flag fails too. Before 2026-10-22 the register documented only the retired `lordchrist_rich_live_canary` sender and omitted every live multichannel writer. The same correction replaced the false header claim `provider_writes_in_ci: false` with `provider_writes_in_quality_ci: false` plus an exact `provider_write_workflows` list (four workflows), because the scheduled publishers do write to Telegram; a test now discovers that list from the workflows themselves and checks that each state ref has exactly one serialising concurrency group.
 
+## Quality gates / coverage ratchet
+`docs/operations/coverage-ratchet.json` records the coverage the tree actually has: 340 modules and the package total,
+each at the precision of one Python 3.11 measurement. CI compares a fresh `coverage json` report against those floors
+(`scripts/coverage_ratchet.py`); a module below its floor, an unregistered module, a floor for a deleted module and a
+total below the total floor all fail the quality job. Before 2026-10-22 CI ran `pytest --cov` and compared the table
+against nothing, so any module could lose its tests while the build stayed green.
+The two rules that make the file a ratchet and not a snapshot: `--update` raises a floor and never lowers it, and a
+module that is not registered yet cannot be adopted below the new-module floor (60%), so an exception is a hand-written
+reviewed line rather than a regenerated one. The gate runs on Python 3.11 only, because the register is a 3.11
+measurement and statement counts are not guaranteed identical across interpreters.
+
 ## Local MP3 and Resi DASH
 Local MP3 remains `local_only_read_only_intake_and_manifest`: inspect/probe/hash/tag inventory and deterministic manifests only; no rewrite, rename/transcode, remote upload or provider mutation.
 Resi remains `watch -> sample -> explicit handoff`. The watcher never auto-dispatches a multi-gigabyte FULL download; the retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output` unless explicitly redirected. Provider effect remains `impossible`.

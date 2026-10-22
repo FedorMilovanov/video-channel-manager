@@ -173,21 +173,40 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m pytest --cov=video_channel_manager --cov-report=term-missing 2>&1 | tee pytest.log
+          python -m pytest --cov=video_channel_manager --cov-report=term-missing --cov-report=json:coverage.json 2>&1 | tee pytest.log
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pytest-${{ matrix.python-version }}
-          path: pytest.log
+          path: |
+            pytest.log
+            coverage.json
           if-no-files-found: error
+      - name: Coverage ratchet gate
+        id: coverage_ratchet
+        if: matrix.python-version == '3.11'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/coverage_ratchet.py --report coverage.json \
+            --register docs/operations/coverage-ratchet.json 2>&1 | tee coverage-ratchet.log
+      - name: Upload coverage ratchet report
+        if: always() && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-ratchet-${{ matrix.python-version }}
+          path: coverage-ratchet.log
+          if-no-files-found: warn
       - name: Enforce quality gates
         if: >-
           steps.pip_audit.outcome == 'failure' ||
           steps.ruff.outcome == 'failure' ||
           steps.format.outcome == 'failure' ||
           steps.mypy.outcome == 'failure' ||
-          steps.tests.outcome == 'failure'
+          steps.tests.outcome == 'failure' ||
+          steps.coverage_ratchet.outcome == 'failure'
         run: exit 1
 
   powershell-windows-51:
