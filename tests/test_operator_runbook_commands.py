@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shlex
 from pathlib import Path
 from typing import Any
@@ -11,21 +12,28 @@ from video_channel_manager.cli.vk import community_probe, flood_reset, vk_app, w
 
 ROOT = Path(__file__).resolve().parents[1]
 CURRENT_STATE = ROOT / "docs" / "operations" / "current-state.md"
+QUARANTINE = ROOT / "docs" / "operations" / "vk-credential-quarantine.md"
+RUNBOOKS = (CURRENT_STATE, QUARANTINE)
+
+
+FENCED_BLOCK = re.compile(r"```[a-z]*\n(.*?)```", re.DOTALL)
 
 
 def _documented_invocations() -> list[str]:
-    """Every `vk ...` command the operator is told to run, verbatim.
+    """Every runnable `vk ...` command the operator is told to run.
 
-    The VK code-9 recovery sequence is only ever executed under incident pressure, so a
-    renamed option or a removed command in the runbook surfaces at the worst moment.
-    Parsing the documented text against the real CLI catches that offline.
+    Only fenced code blocks count. Prose mentions exist to *forbid* commands
+    (`vk login --force`), so scraping every inline span would turn a prohibition
+    into an instruction and then fail the parse test for the wrong reason.
     """
 
     invocations: list[str] = []
-    for span in CURRENT_STATE.read_text(encoding="utf-8").split("`"):
-        candidate = span.strip()
-        if candidate.startswith("vk ") and "..." not in candidate and "<" not in candidate:
-            invocations.append(candidate)
+    for path in RUNBOOKS:
+        for block in FENCED_BLOCK.findall(path.read_text(encoding="utf-8")):
+            for line in block.splitlines():
+                candidate = line.strip()
+                if candidate.startswith("vk ") and "..." not in candidate and "<" not in candidate:
+                    invocations.append(candidate)
     return invocations
 
 
@@ -54,6 +62,43 @@ def _documented_options(argv: list[str]) -> dict[str, str]:
         if token.startswith("--") and index + 1 < len(argv):
             pairs[token[2:]] = argv[index + 1]
     return pairs
+
+
+def test_current_state_never_documents_a_probe_of_the_quarantined_credential() -> None:
+    """The legacy credential is quarantined by #662; a "one-shot probe" is still a probe.
+
+    `current-state.md` used to spell out the staged recovery with `--account legendary-poet`,
+    which instructed exactly the action the quarantine forbids. The commands now live in the
+    quarantine runbook, bound to the successor credential only.
+    """
+
+    current_state = CURRENT_STATE.read_text(encoding="utf-8")
+
+    assert "vk-credential-quarantine.md" in current_state
+    for forbidden in (
+        "vk community-probe --account legendary-poet",
+        "vk wall-probe --account legendary-poet",
+        "vk flood-reset --account legendary-poet",
+    ):
+        assert forbidden not in current_state, forbidden
+
+    staged = _documented_invocations()
+    assert staged, "the quarantine runbook must keep the staged sequence"
+    for invocation in staged:
+        assert "legendary-poet" not in invocation, invocation
+
+
+def test_quarantine_runbook_states_the_only_resume_condition() -> None:
+    text = QUARANTINE.read_text(encoding="utf-8")
+
+    assert "54555649" in text
+    assert "video,wall,groups,offline" in text
+    assert "blocked_on_oauth_consent_legacy_quarantined" in text
+    # The quarantine must be justified as a policy decision, not as a code-9 rule, or it
+    # contradicts wall-safety-contract.md.
+    assert "policy decision about one specific" in text.casefold() or "policy decision" in text.casefold()
+    assert "must not** be read as a" in text
+    assert "24h" in text or ">64h" in text
 
 
 def test_operator_runbook_documents_the_staged_recovery() -> None:
