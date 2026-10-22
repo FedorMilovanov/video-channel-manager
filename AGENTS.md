@@ -84,11 +84,17 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 
 ## Branch lifecycle
 
-- `main` is the only supported repository code/runtime execution baseline.
-- `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources.
-- Every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch is ephemeral.
-- After its PR/scope closes, delete an ephemeral ref where supported; if ref deletion is unavailable, align it to exact current `main`.
-- Never execute, deploy, recover, or start new work from a closed, unmerged, superseded, or retired branch. Preserve genuinely unique useful work through a focused current-main PR before retiring its ref.
+Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
+
+1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources.
+2. **Content-addressed evidence refs** — the artifact store of a released media set. The ref name is the prefix of the accepted evidence digest, and runtime bindings reference it by name (for example `milovi_telegram_feed.VIDEO_ARTIFACT_REF` gates every Milovi `sendVideo`). These look like ordinary `agent/...` work branches and are not ephemeral.
+3. **Ephemeral work branches** — every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch.
+
+`main` is the only supported repository code/runtime execution baseline; neither class 1 nor class 2 is ever a code source.
+
+Before deleting **any** ref, read [`docs/operations/protected-evidence-refs.json`](docs/operations/protected-evidence-refs.json); classes 1 and 2 are listed there with a role, an exact tip where the ref is immutable, and a restore command. Byte-identical duplication is **not** a sufficient reason to delete a class-2 ref: when a name is part of a binding, the name is the contract. `tests/test_ref_binding_inventory.py` and `tests/test_milovi_evidence_binding.py` fail if a binding or a deletion ledger contradicts that file.
+
+For class 3: after its PR/scope closes, delete the ref where supported; if ref deletion is unavailable, align it to exact current `main`. Never execute, deploy, recover, or start new work from a closed, unmerged, superseded, or retired branch. Preserve genuinely unique useful work through a focused current-main PR before retiring its ref.
 
 ## Browser and wrapper rules
 

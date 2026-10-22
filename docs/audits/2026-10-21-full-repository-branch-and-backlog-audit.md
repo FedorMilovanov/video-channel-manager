@@ -536,4 +536,12 @@ silently:
 3. The accepted evidence file itself is now versioned in `main`, so `evidence_path`/`evidence_sha256`
    resolve inside the repository instead of dangling.
 
+Root cause, on reflection: `AGENTS.md` said every `agent/...` ref is ephemeral. The accepted evidence ref
+is named `agent/milovi-video-accepted-73c578eff825`, so the policy itself instructed the deletion — the
+mistake was rule-following, not carelessness. The policy now has three classes (durable state,
+content-addressed evidence, ephemeral work), names the protected inventory, and states that
+byte-identical duplication is not a sufficient reason to delete a bound evidence ref.
+`tests/test_ref_binding_inventory.py` enforces it in both directions: every ref named by runtime code,
+workflow or release JSON must be declared protected, and every protected ref must be restorable.
+
 Corrected final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs.
