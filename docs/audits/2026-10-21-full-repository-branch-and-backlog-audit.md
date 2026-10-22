@@ -497,20 +497,43 @@ Classification came from the GitHub compare API (`main...<branch>`), then from a
 comparison, then from a line-level check of whether the branch's added lines already exist in `main`.
 A shallow local clone was explicitly ruled out: it reported every branch as thousands of commits ahead.
 
-Result: **40 refs down to 4** (`main`, the three durable `state/*` refs, and one media carrier).
+Result: **40 refs down to 4**, later corrected to **5** (`main`, the three durable `state/*` refs, and
+two content-addressed evidence refs): one deletion was a mistake and was reverted, see the correction.
 
 1. **24 refs deleted losslessly** — every head-side blob of every file they change is byte-identical to
    `main`. Proven by construction, not by inspection.
 2. **12 refs deleted as reviewed-superseded** — each with its own stated reason and the merged change
    that replaced it (retired quote-v3/v4 drafts, one-off preflight workflows, docs-only edits that would
    revert newer text, and the #628 prototype that the merged design replaces).
-3. **4 refs deleted as redundant/superseded in the third pass** — three feature branches whose work is
-   96–98 % already in `main` (or, for the depth-v3 context draft, an earlier design of the live #694
-   release), plus one of two byte-identical Milovi artifact branches.
-4. **1 ref kept**: `agent/milovi-video-accepted-f0e25d9c905f`, which is the only carrier of 16 accepted
-   MP4 artifacts (~50 MB) that exist nowhere else. Moving them to external storage and then deleting the
-   ref is recorded as the remaining step; deleting them now would destroy the only copy.
+3. **3 refs deleted as reviewed-superseded** — feature branches whose work is 96–98 % already in
+   `main`, or an earlier design of the live #694 release.
+4. **2 refs kept**: the Milovi content-addressed evidence refs. A fourth-pass deletion of one of them as
+   a byte-identical duplicate was a mistake and was reverted — see the correction below, which also
+   explains why the earlier "move the media out of git" plan was wrong: the reservoir and the runtime
+   binding name the ref, so the ref *is* the artifact store.
 
 Every deleted ref is recorded with its exact tip SHA and reason in
 [`../operations/branch-hygiene-2026-10-21-deletion-ledger.md`](../operations/branch-hygiene-2026-10-21-deletion-ledger.md),
 so restoration is one `git push <sha>:refs/heads/<branch>` within the object-retention window.
+
+### Correction: one deletion was wrong, and the class of error is now closed
+
+`agent/milovi-video-accepted-73c578eff825` was deleted as a byte-identical duplicate of the other Milovi
+ref. That was incorrect: the ref is content-addressed evidence whose **name** is the prefix of the
+accepted evidence digest, and 20 references in `main` name it — including the runtime binding
+`milovi_telegram_feed.VIDEO_ARTIFACT_REF`, which gates every Milovi `sendVideo`, and the reservoir,
+workflow contract and `current-state`. It was restored from its recorded tip
+`f4f5512d7b60f1b9c61c293c07620b128536df27`.
+
+The lesson is not "be careful"; it is that a deletion rule based on content identity alone is
+insufficient when a name is part of a contract. Three changes make the mistake impossible to repeat
+silently:
+
+1. `docs/operations/protected-evidence-refs.json` lists every ref hygiene must not delete, with the
+   reason, the exact tip where the ref is immutable, and a restore command.
+2. `tests/test_milovi_evidence_binding.py` fails when a protected ref appears in a deletion ledger, and
+   re-verifies the accepted evidence digest offline.
+3. The accepted evidence file itself is now versioned in `main`, so `evidence_path`/`evidence_sha256`
+   resolve inside the repository instead of dangling.
+
+Corrected final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs.

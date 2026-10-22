@@ -1,0 +1,42 @@
+{
+  "schema_name": "video-channel-manager.protected-evidence-refs",
+  "schema_version": 1,
+  "purpose": "Refs that repository branch hygiene must never delete. They either hold durable provider state or are content-addressed evidence that runtime bindings and operational documents reference by name.",
+  "deletion_rule": "A ref listed here is not a work branch, so neither age, nor a zero-ahead comparison against main, nor byte-identical duplication makes it deletable. Deleting one breaks a live binding: on 2026-10-21 the ref agent/milovi-video-accepted-73c578eff825 was deleted as a byte-identical duplicate and had to be restored, because the Milovi sendVideo binding, the workflow contract and current-state all name it. Any cleanup must read this file first, and tests/test_milovi_evidence_binding.py fails if a listed ref appears in a deletion ledger.",
+  "refs": [
+    {
+      "ref": "state/lordchrist-telegram",
+      "role": "durable_state",
+      "tip_is_stable": false,
+      "why": "Verified LordChrist publication ledger, dispatch intents and results. The publisher reads and advances it; the exact tip is evidence, not an invariant."
+    },
+    {
+      "ref": "state/milovi-cake-telegram",
+      "role": "durable_state",
+      "tip_is_stable": false,
+      "why": "Milovi Telegram feed ledger; losing it would destroy provider-effect history and duplicate-suppression state."
+    },
+    {
+      "ref": "state/svodka-telegram",
+      "role": "durable_state",
+      "tip_is_stable": false,
+      "why": "Svodka publication ledger; the historical 14-entry ledger is terminal no-replay evidence."
+    },
+    {
+      "ref": "agent/milovi-video-accepted-73c578eff825",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "f4f5512d7b60f1b9c61c293c07620b128536df27",
+      "why": "Artifact store for the 16 accepted Milovi Telegram videos. The ref name is the prefix of the accepted evidence digest sha256:73c578eff82563..., and the runtime constant milovi_telegram_feed.VIDEO_ARTIFACT_REF binds sendVideo to it. The 16 MP4 blobs on the ref are exactly the git_blob_sha1 values recorded in content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json.",
+      "restore": "git push origin f4f5512d7b60f1b9c61c293c07620b128536df27:refs/heads/agent/milovi-video-accepted-73c578eff825"
+    },
+    {
+      "ref": "agent/milovi-video-accepted-f0e25d9c905f",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "b77bbf5f65f3f976694d1e4310650799205a5a78",
+      "why": "Later re-materialization of the same 16 videos: every artifact blob is byte-identical to the accepted ref, and only the evidence generation differs (identity sha256:f0e25d9c905fc95... versus the accepted sha256:73c578eff8256...). No code references it, so it proves reproducibility rather than binding a release.",
+      "restore": "git push origin b77bbf5f65f3f976694d1e4310650799205a5a78:refs/heads/agent/milovi-video-accepted-f0e25d9c905f"
+    }
+  ]
+}
