@@ -70,7 +70,9 @@ def _module_string_sequences(tree: ast.Module) -> dict[str, set[str]]:
             target, value = statement.target, statement.value
         if not isinstance(target, ast.Name) or not isinstance(value, ast.List | ast.Tuple | ast.Set):
             continue
-        items = {str(item.value) for item in value.elts if isinstance(item, ast.Constant) and isinstance(item.value, str)}
+        items = {
+            str(item.value) for item in value.elts if isinstance(item, ast.Constant) and isinstance(item.value, str)
+        }
         if len(items) == len(value.elts) and items:
             sequences[target.id] = items
     return sequences

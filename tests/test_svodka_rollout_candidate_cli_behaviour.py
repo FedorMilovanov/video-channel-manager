@@ -54,9 +54,7 @@ def test_main_builds_the_candidate_the_library_builds(tmp_path: Path, capsys: py
     profile = load_channel_profile(PROFILE)
     binding = load_target_binding(BINDING, profile)
     queue = load_svodka_draft(QUEUE, profile, apply_schedule_overlay=True)
-    expected = build_svodka_release_candidate(
-        profile, queue, release_id="svodka-cli-behaviour-test", binding=binding
-    )
+    expected = build_svodka_release_candidate(profile, queue, release_id="svodka-cli-behaviour-test", binding=binding)
     written = load_release(output)
 
     assert written.digest == expected.digest

@@ -71,7 +71,9 @@ def test_main_writes_a_profile_bound_binding_from_a_target_proof(
     proof_path = _write(tmp_path / "proof.json", _proof())
     output = tmp_path / "binding.json"
 
-    printed = _run(monkeypatch, ["--profile", str(PROFILE), "--proof", str(proof_path), "--output", str(output)], capsys)
+    printed = _run(
+        monkeypatch, ["--profile", str(PROFILE), "--proof", str(proof_path), "--output", str(output)], capsys
+    )
 
     assert printed["bound"] is True
     assert printed["evidence_source"] == "generic_target_proof"
@@ -83,9 +85,7 @@ def test_main_writes_a_profile_bound_binding_from_a_target_proof(
     assert binding.project_key == _profile().project_key
 
 
-def test_main_refuses_a_proof_written_for_another_profile(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_refuses_a_proof_written_for_another_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Evidence is only valid for the profile it was produced against."""
 
     foreign = _write(
@@ -96,7 +96,15 @@ def test_main_refuses_a_proof_written_for_another_profile(
 
     monkeypatch.setattr(
         "sys.argv",
-        ["python -m video_channel_manager.telegram_binding_cli", "--profile", str(PROFILE), "--proof", str(foreign), "--output", str(output)],
+        [
+            "python -m video_channel_manager.telegram_binding_cli",
+            "--profile",
+            str(PROFILE),
+            "--proof",
+            str(foreign),
+            "--output",
+            str(output),
+        ],
     )
 
     with pytest.raises(ValueError, match="differs from selected channel profile"):
@@ -105,15 +113,21 @@ def test_main_refuses_a_proof_written_for_another_profile(
     assert not output.exists()
 
 
-def test_main_refuses_a_proof_without_posting_permission(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_refuses_a_proof_without_posting_permission(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     proof_path = _write(tmp_path / "proof.json", _proof(can_post_messages=False))
     output = tmp_path / "binding.json"
 
     monkeypatch.setattr(
         "sys.argv",
-        ["python -m video_channel_manager.telegram_binding_cli", "--profile", str(PROFILE), "--proof", str(proof_path), "--output", str(output)],
+        [
+            "python -m video_channel_manager.telegram_binding_cli",
+            "--profile",
+            str(PROFILE),
+            "--proof",
+            str(proof_path),
+            "--output",
+            str(output),
+        ],
     )
 
     with pytest.raises(ValueError):

@@ -184,9 +184,7 @@ def test_operational_prose_does_not_restate_a_flag_the_snapshot_owns() -> None:
         text = path.read_text(encoding="utf-8")
         if path == RUNBOOK_PATH and "channel-write-authority.json" in text:
             continue
-        if any(profile in text for profile in profiles) and any(
-            pattern.search(text) for pattern in stale_phrasings
-        ):
+        if any(profile in text for profile in profiles) and any(pattern.search(text) for pattern in stale_phrasings):
             offenders.append(path.relative_to(ROOT).as_posix())
     assert not offenders, {
         "restated_profile_flags": offenders,

@@ -288,7 +288,5 @@ def test_readiness_document_tracks_current_activation_state_and_explicit_recover
     assert "approved release: absent" not in readiness
 
     authority = json.loads(AUTHORITY_PATH.read_text(encoding="utf-8"))
-    svodka = next(
-        row for row in authority["channels"] if row["profile"] == "content/telegram/channels/svodka.json"
-    )
+    svodka = next(row for row in authority["channels"] if row["profile"] == "content/telegram/channels/svodka.json")
     assert svodka["provider_writes_authorized"] is True

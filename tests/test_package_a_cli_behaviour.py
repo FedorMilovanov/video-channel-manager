@@ -159,9 +159,7 @@ def test_run_reports_a_rejected_request_as_exit_two(tmp_path: Path) -> None:
         (" 2026-10-22T06:00:00+00:00", "must be a normalized ISO-8601 timestamp"),
     ],
 )
-def test_run_refuses_an_evaluated_at_without_exact_time_identity(
-    tmp_path: Path, value: str, expected: str
-) -> None:
+def test_run_refuses_an_evaluated_at_without_exact_time_identity(tmp_path: Path, value: str, expected: str) -> None:
     request_path = _request_file(tmp_path)
 
     result = RUNNER.invoke(

@@ -265,9 +265,7 @@ def test_instagram_resumable_binary_upload_lost_response_is_one_ambiguous_attemp
 def test_instagram_resumable_binary_upload_rejection_is_not_a_success() -> None:
     client, requests = _instagram_client(
         login_mode="facebook",
-        handler=lambda request: httpx.Response(
-            400, json={"debug_info": {"message": "bad bytes"}}, request=request
-        ),
+        handler=lambda request: httpx.Response(400, json={"debug_info": {"message": "bad bytes"}}, request=request),
     )
     try:
         with pytest.raises(InstagramProviderError):
@@ -460,9 +458,7 @@ def test_youtube_release_client_rejection_is_confirmed_absent(tmp_path: Path, re
 
 
 @pytest.mark.parametrize("resource", YOUTUBE_RESOURCES)
-def test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch(
-    tmp_path: Path, resource: str
-) -> None:
+def test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch(tmp_path: Path, resource: str) -> None:
     """A connection that never opened cannot have created a provider effect."""
 
     def handler(request: httpx.Request) -> httpx.Response:

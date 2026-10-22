@@ -221,10 +221,15 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
             resource = _constant_string(node.args[1], self.constants)
             if method and resource:
                 marker = f"youtube:{method}:{resource}"
-        elif name == "_request" and self.scope and self.scope[0] in {
-            "InstagramProviderClient",
-            "InstagramResumableProviderClient",
-        }:
+        elif (
+            name == "_request"
+            and self.scope
+            and self.scope[0]
+            in {
+                "InstagramProviderClient",
+                "InstagramResumableProviderClient",
+            }
+        ):
             method = _constant_string(node.args[0], self.constants) if node.args else None
             if method is None:
                 self.violations.append(("instagram_api:dynamic_or_missing_method", self.source_file, callable_name))
@@ -268,7 +273,10 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
                     ):
                         if callable_name == known_callable:
                             marker = known_marker
-            elif self.source_file == YOUTUBE_RELEASE_PROVIDER_FILE and callable_name not in _YOUTUBE_RELEASE_REVIEWED_HTTP:
+            elif (
+                self.source_file == YOUTUBE_RELEASE_PROVIDER_FILE
+                and callable_name not in _YOUTUBE_RELEASE_REVIEWED_HTTP
+            ):
                 self.violations.append(
                     (f"youtube_release_api:unclassified_direct_write:{name}", self.source_file, callable_name)
                 )
@@ -597,9 +605,7 @@ def test_instagram_classified_write_is_discovered_by_method_and_resource() -> No
         "    def publish(self, container):\n"
         "        return self._request('POST', 'account/media_publish', data={}, resource='media_publish')\n"
     )
-    assert visitor.callsites == [
-        ("instagram_api:POST:media_publish", "snippet.py", "InstagramProviderClient.publish")
-    ]
+    assert visitor.callsites == [("instagram_api:POST:media_publish", "snippet.py", "InstagramProviderClient.publish")]
     assert visitor.violations == []
 
 
@@ -614,7 +620,11 @@ def test_instagram_direct_provider_write_outside_the_reviewed_points_is_a_violat
     )
     assert visitor.callsites == []
     assert visitor.violations == [
-        ("instagram_api:unclassified_direct_write:post", "src/video_channel_manager/instagram/production.py", "InstagramProviderClient.leak")
+        (
+            "instagram_api:unclassified_direct_write:post",
+            "src/video_channel_manager/instagram/production.py",
+            "InstagramProviderClient.leak",
+        )
     ]
 
 
@@ -670,5 +680,7 @@ def test_youtube_release_classified_write_is_discovered_by_method_and_resource()
         "    def thumbnail(self, video):\n"
         "        return self._mutation_request('POST', 'https://upload/thumbnails/set', resource='thumbnails.set')\n"
     )
-    assert visitor.callsites == [("youtube_release_api:POST:thumbnails.set", "snippet.py", "YouTubeReleaseProvider.thumbnail")]
+    assert visitor.callsites == [
+        ("youtube_release_api:POST:thumbnails.set", "snippet.py", "YouTubeReleaseProvider.thumbnail")
+    ]
     assert visitor.violations == []
