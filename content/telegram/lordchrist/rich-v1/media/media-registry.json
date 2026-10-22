@@ -6,7 +6,7 @@
   "checked_at": "2026-08-18",
   "provider_writes_authorized": false,
   "provider_upload_status": "not_uploaded",
-  "note": "Provider-inert provenance registry only. No Telegram API is called and no byte checksum is claimed until the guarded live acquisition step fetches the exact HTTPS asset.",
+  "note": "Provider-inert provenance registry only. No Telegram API is called and no byte checksum is claimed until the guarded live acquisition step fetches the exact HTTPS asset. 2026-10-22: обложки статей серии по Чарноку вынесены в отдельный cover-registry.json — этот реестр описывает только Wikimedia-иллюстрации канарейки и требует для каждого ассета точный Commons-URL; сгенерированные обложки этому контракту не соответствуют и здесь не хранятся.",
   "unique_remote_files": 4,
   "slot_bindings": 6,
   "assets": [

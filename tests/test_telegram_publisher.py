@@ -927,7 +927,10 @@ def test_workflow_exposes_read_only_preflight_exact_manual_binding_and_max_queue
     assert "state/lordchrist-telegram" in workflow
     assert "getChatMember" not in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in header
-    assert workflow.count("${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}") == 4
+    # The token may appear only in the steps that actually talk to the provider:
+    # quote preflight, quote send, historical proof, historical send, and the
+    # long-article send. The article job has no separate token-bearing proof step.
+    assert workflow.count("${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}") == 5
     assert "Read-only bot and channel preflight" in workflow
     assert "Send exactly one prepared message" in workflow
     assert "Read-only historical Telegram target proof" in workflow

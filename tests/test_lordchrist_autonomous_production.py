@@ -6,7 +6,11 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
-from video_channel_manager.telegram_schedule import decide_scheduled_slot, load_production_schedule
+from video_channel_manager.telegram_schedule import (
+    SLOT_LANES,
+    decide_scheduled_slot,
+    load_production_schedule,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
@@ -239,3 +243,73 @@ def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_cur
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality[local_start:]
     assert "Initialize reviewed Lordchrist depth-v3 ledger" not in before_quality
+
+
+def test_midday_slot_is_the_tuesday_friday_rich_article_lane() -> None:
+    """The 12:00 slot exists for the L2 article track and for nothing else.
+
+    Pinning time, cron, weekdays and lease here means a later "small" edit to the
+    schedule JSON cannot silently turn the article hour into a third quote hour.
+    """
+
+    config = load_production_schedule(CONFIG_PATH)
+    midday = config.slots["midday"]
+
+    assert midday.time == "12:00"
+    assert midday.cron == "0 9 * * 2,5"
+    assert midday.iso_weekdays == (2, 5)
+    # 12:00 + 240 minutes = 16:00 Moscow: the lease must close before the 19:17
+    # historical rich boundary, exactly as the evening lease closes before midnight.
+    assert midday.max_lateness_minutes == 240
+    assert SLOT_LANES["midday"] == "rich_article"
+    assert SLOT_LANES["morning"] == SLOT_LANES["evening"] == "quote"
+
+
+def test_quote_lane_never_spends_the_midday_slot() -> None:
+    """A quote run on the midday cron is refused instead of publishing a card."""
+
+    config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": True})
+    tuesday_noon = datetime(2026, 10, 27, 9, 0, tzinfo=UTC)  # 12:00 Moscow
+
+    quote_run = decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=tuesday_noon, lane="quote")
+    assert quote_run.active is False
+    assert quote_run.slot is None
+    assert quote_run.reason == "midday slot carries the rich_article lane, not quote"
+
+    article_run = decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=tuesday_noon, lane="rich_article")
+    assert article_run.active is True
+    assert article_run.slot == "midday"
+
+    # And the reverse direction: the article lane may not borrow a quote hour.
+    monday_morning = datetime(2026, 10, 26, 6, 17, tzinfo=UTC)  # 09:17 Moscow
+    borrowed = decide_scheduled_slot(config, event_schedule="17 6 * * *", now=monday_morning, lane="rich_article")
+    assert borrowed.active is False
+    assert borrowed.reason == "morning slot carries the quote lane, not rich_article"
+
+
+def test_midday_slot_is_only_eligible_on_tuesday_and_friday() -> None:
+    config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": True})
+
+    wednesday_noon = datetime(2026, 10, 28, 9, 0, tzinfo=UTC)
+    friday_noon = datetime(2026, 10, 30, 9, 0, tzinfo=UTC)
+    tuesday_late = datetime(2026, 10, 27, 13, 0, tzinfo=UTC)  # 16:00 Moscow, lease closed
+
+    assert (
+        decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=wednesday_noon, lane="rich_article").active
+        is False
+    )
+    assert (
+        decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=friday_noon, lane="rich_article").slot
+        == "midday"
+    )
+    stale = decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=tuesday_late, lane="rich_article")
+    assert stale.active is False
+    assert "too stale" in stale.reason
+
+
+def test_poster_runs_the_quote_lane_only() -> None:
+    """The workflow must ask for the quote lane, otherwise it would publish at 12:00."""
+
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert 'lane="quote"' in workflow
+    assert '"0 9 * * 2,5"' in workflow
