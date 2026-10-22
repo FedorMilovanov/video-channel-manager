@@ -212,4 +212,62 @@ When the user asks for a paste-ready long article:
 - [ ] no slogan ladder; paragraphs are multi-sentence;
 - [ ] evidence rules from `RICH_EDITORIAL_STANDARD.md` satisfied;
 - [ ] the article ends with the bibliographic note: no emoji, «Цитаты Чарнока — из книги…», Russian title in bold, English title in italic, book, edition, source URL, no heading, no talk about the translation;
+- [ ] the article went through **two independent passes** (§11), both are written into the article's log, and the artifacts were rebuilt after the last fix;
+- [ ] every quote of the article has its own EN anchor in `sources` of the rich document: unique `source_id`s, anchor number equal to the number of the quote block, anchor text found verbatim in the source block;
+- [ ] no two quotes of the article are identical;
 - [ ] composer inspected after paste: typography, quote blocks, spacing.
+
+## 11. Two review passes before publication
+
+A long article of this series is published only after **two independent checks**.
+One pass is never enough: the second reading is what finds the wording that
+slipped, the mistranslated phrase, the quotation that does not belong to the
+author, the repeated paragraph, the stale number in the log.
+
+- **Pass 1 — construction.** The article is assembled: source, structure,
+  headings, lists, quotes, air, length. Every quotation is checked against the
+  source text character by character; the EN anchor of every quote is recorded
+  in `sources` of the rich document together with its offset in the block of the
+  source. Characters, blocks, headings and quotes are counted.
+- **Pass 2 — independent reading.** The finished text is read again as if it
+  had never been written here: translation fidelity word by word, Russian
+  grammar and style (no calques, no broken sentences, one terminology),
+  Scripture quotations verbatim, no duplicated paragraphs or quotes, every
+  number in the log equal to the number in the article.
+
+Rules:
+
+- the two passes are **separate**: pass 2 is not pass 1 repeated with the same
+  reading, it is a fresh reading of the finished article;
+- **nothing is published between the passes**; a fix made in pass 2 sends the
+  article back to pass 1 for the counters and for the artifacts (HTML copy
+  page, rich document, blob sha in the queue);
+- every pass is written into the article's log (`<article>-проверка.md`) with
+  its date, what was checked and what was changed — the log is the proof that
+  the article was checked twice;
+- a fix in pass 2 that costs characters is paid for by a cut somewhere else
+  (§2), never by going over the limit;
+- an article published before this rule existed is not re-checked
+  retroactively.
+
+After every fix the cheap automated checks are re-run:
+
+- `scripts/lordchrist_article_preflight.py` — format, length, emoji, quote
+  shape, closing note, and no two identical quotes;
+- rebuild of the HTML copy page and of the rich document
+  (`scripts/render_l2_copy_page.py`, `scripts/build_l2_rich_document.py`) —
+  the artifacts must match the Markdown;
+- `scripts/lordchrist_article_sources_check.py` — one anchor per quote, unique
+  `source_id`s, anchor numbers equal to the numbers of the quote blocks; with
+  `--source` (the plain text of the edition) and `--block NAME:START:LENGTH` it
+  additionally checks the EN text of every anchor **verbatim** at its offset.
+
+Conventions of the source blocks (one convention for the whole series):
+
+- the source text is normalized before slicing: the editorial marks `{a1}`,
+  `[12]` and `_` are removed, all whitespace is collapsed into single spaces;
+- a block is a slice of that normalized text: `START` is the position in the
+  normalized text, `LENGTH` is the length of the slice in the same units;
+- the offset of an anchor is counted from the beginning of its block, and the
+  block is written into the article's log — so that any anchor can be checked
+  again by anyone, at any time, with one command.

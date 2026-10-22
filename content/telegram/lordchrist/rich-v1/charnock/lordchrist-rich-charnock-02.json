@@ -66,7 +66,7 @@
         {
           "type": "paragraph",
           "block_id": "qp-2",
-          "text": "Идите в самые дальние пределы Америки: вы можете найти людей, у которых нет иных обломков закона природы, — но не без этой печати и клейма на них, хотя они и не имели сношений с другими народами, кроме столь же диких, как они сами, у которых свет природы был как бы опущен в светильне и которые отстоят от скотов лишь на одну ступень, — тела свои не одевают, наготы своей не прикрывают, — и однако же они так же скоро оказывались знающими Бога, как скоро оказывались народом."
+          "text": "Идите в самые дальние пределы Америки: вы можете найти людей, у которых нет иных обломков закона природы, — но не без этой печати и клейма на них, хотя они и хотели сношений с другими народами, кроме столь же диких, как они сами, у которых свет природы был как бы погребён в патроне светильника и которые отстоят от скотов лишь на одну ступень, — тела свои не одевают, наготы своей не прикрывают, — и однако же они так же скоро оказывались знающими Бога, как скоро оказывались народом."
         }
       ],
       "credit": "— Стивен Чарнок, «О бытии Бога»"
@@ -210,7 +210,7 @@
     {
       "type": "paragraph",
       "block_id": "p-12",
-      "text": "Дальше он переходит от народов к людям и показывает, что дело не в образованности: обладали этим понятием и мудрые, и невежественные, и учёные, и тупые, и те, у кого не было иного вожатого, кроме самого тусклого света природы, и те, чьи светильники были подрезаны более изящным воспитанием, — и обладали, по его слову, без всякого торжественного прения и спора. Последнее обстоятельство важнее перечисления. Убеждение, до которого доходят без спора, ведёт себя иначе, чем добытое в споре: его не защищают, потому что в защите не нуждаются, — им пользуются, как пользуются зрением."
+      "text": "Дальше он переходит от народов к людям и показывает, что дело не в образованности: обладали этим понятием и мудрые, и невежественные, и учёные, и тупые, и те, у кого не было иного наставника, кроме самого тусклого света природы, и те, чьи светильники были подрезаны более изящным воспитанием, — и обладали, по его слову, без всякого торжественного прения и спора. Последнее обстоятельство важнее перечисления. Убеждение, до которого доходят без спора, ведёт себя иначе, чем добытое в споре: его не защищают, потому что в защите не нуждаются, — им пользуются, как пользуются зрением."
     },
     {
       "type": "paragraph",
@@ -600,7 +600,7 @@
         {
           "type": "paragraph",
           "block_id": "qp-30",
-          "text": "То, что есть общее указание природы, есть достоверная истина. Невозможно, чтобы природа природно и всеобще лгала."
+          "text": "То, что есть общее указание природы, есть достоверная истина. Невозможно, чтобы природа обманывала всех и вся."
         }
       ],
       "credit": "— Стивен Чарнок, «О бытии Бога»"
@@ -751,7 +751,7 @@
     {
       "type": "paragraph",
       "block_id": "p-41",
-      "text": "Мысль проста и неопровержима в своей простоте: никто не держится добровольно за то, что причиняет ему боль. Если человечество не смогло отделаться от мысли о Боге, значит, оно не могло, а не не хотело, — и Чарнок добавляет, что ни один человек, насколько в нём властвует повреждённая природа, не желает жить под чужой властью. Дальше он обращается к Адаму: первый человек захотел не отменить Бога, а занять Его место."
+      "text": "Мысль проста и неопровержима в своей простоте: никто не держится добровольно за то, что причиняет ему боль. Если человечество не смогло отделаться от мысли о Боге, значит, оно не могло, а не не хотело, — и Чарнок добавляет, что ни один человек, насколько в нём властвует повреждённая природа, не желает жить под чужой властью. Дальше он обращается к Адаму: первый человек захотел не отречься от Бога, а занять Его место."
     },
     {
       "type": "blockquote",
@@ -870,7 +870,7 @@
         {
           "type": "paragraph",
           "block_id": "qp-46",
-          "text": "Впечатление о Божестве так же обычно, как разум, и одного с разумом возраста."
+          "text": "Впечатление о Божестве так же обычно, как разум, и одного с ним возраста."
         }
       ],
       "credit": "— Стивен Чарнок, «О бытии Бога»"
@@ -1065,7 +1065,7 @@
       "type": "paragraph",
       "block_id": "p-59",
       "text": [
-        "Псалом говорит то же о свидетельстве, не требующем переводчика: ",
+        "Псалом говорит то же самое о свидетельстве, не требующем переводчика: ",
         {
           "type": "bold",
           "text": "Небеса проповедуют славу Божию"
@@ -1127,7 +1127,7 @@
         " — они говорят ",
         {
           "type": "bold",
-          "text": "это бог"
+          "text": "это Бог"
         },
         ". Для Чарнока это опытное подтверждение сказанного: понятие уже есть, ему нужен только повод."
       ]
@@ -1242,7 +1242,7 @@
         {
           "type": "paragraph",
           "block_id": "qp-55",
-          "text": "Природа в человеке и природа вне человека сходятся при первой же встрече, чтобы образовать это чувство: что Бог есть."
+          "text": "Настолько оно вплетено в разум, что человека нельзя считать разумным, если у него нет объекта поклонения; поэтому тот, кто этого не понимает, отказывается от человечности, отказываясь от Божества."
         }
       ],
       "credit": "— Стивен Чарнок, «О бытии Бога»"
@@ -1279,378 +1279,385 @@
       "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Go to the utmost bounds of America, you may find people without some broken pieces of the law of nature, but not without this signature and stamp upon them  [смещение 2128 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Go to the utmost bounds of America, you may find people without some broken pieces of the law of nature, but not without this signature and stamp upon them  [смещение 2128 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-03-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: some have rather defined man by animal religiosum, than animal rationale  [смещение 1227 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: some have rather defined man by animal religiosum, than animal rationale  [смещение 1227 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-04-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: There is no nation but hath owned some kind of religion, and, therefore, no nation but hath consented in the notion of a Supreme Creator and Governor  [смещение 131 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: There is no nation but hath owned some kind of religion, and, therefore, no nation but hath consented in the notion of a Supreme Creator and Governor  [смещение 131 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-05-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No nation hath been exempt from it. All histories of former and latter ages have not produced any one nation but fell under the force of this truth  [смещение 485 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No nation hath been exempt from it. All histories of former and latter ages have not produced any one nation but fell under the force of this truth  [смещение 485 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-06-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Though they have differed in their religions, they have agreed in this truth; here both heathen, Turk, Jew, and Christian, centre without any contention  [смещение 634 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Though they have differed in their religions, they have agreed in this truth; here both heathen, Turk, Jew, and Christian, centre without any contention  [смещение 634 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-07-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No quarrel was ever commenced upon this score; though about other opinions wars have been sharp, and enmities irreconcilable  [смещение 788 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No quarrel was ever commenced upon this score; though about other opinions wars have been sharp, and enmities irreconcilable  [смещение 788 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-08-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The notion of the existence of a Deity was the same in all, Indians as well as Britons, Americans as well as Jews  [смещение 914 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The notion of the existence of a Deity was the same in all, Indians as well as Britons, Americans as well as Jews  [смещение 914 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-09-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: One died for asserting one God; none, in the former ages upon record, hath died for asserting no God  [смещение 2026 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: One died for asserting one God; none, in the former ages upon record, hath died for asserting no God  [смещение 2026 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-10-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Nor doth the idolatry and multiplicity of gods in the world weaken, but confirm this universal consent  [смещение 3628 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Nor doth the idolatry and multiplicity of gods in the world weaken, but confirm this universal consent  [смещение 3628 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-11-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Had not the nations owned the being of a God, they had never offered incense to an idol  [смещение 4333 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Had not the nations owned the being of a God, they had never offered incense to an idol  [смещение 4333 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-12-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: They applied a general notion to a particular image. The difference is in the manner, and immediate object of worship, not in the formal ground of worship  [смещение 4980 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: They applied a general notion to a particular image. The difference is in the manner, and immediate object of worship, not in the formal ground of worship  [смещение 4980 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-13-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: A blind man knows he hath a way to go as well as one of the clearest sight; but because of his blindness he may miss the way and stumble into a ditch  [смещение 5413 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: A blind man knows he hath a way to go as well as one of the clearest sight; but because of his blindness he may miss the way and stumble into a ditch  [смещение 5413 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-14-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No man would be imposed upon to take a Bristol stone instead of a diamond, if he did not know that there were such things as diamonds in the world  [смещение 5564 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No man would be imposed upon to take a Bristol stone instead of a diamond, if he did not know that there were such things as diamonds in the world  [смещение 5564 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-15-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: all their mistakes were grafts inserted in this stock, since they would multiply gods rather than deny a Deity  [смещение 5919 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: all their mistakes were grafts inserted in this stock, since they would multiply gods rather than deny a Deity  [смещение 5919 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-16-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 16",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: People would never have given the title of a God to men or brutes had there not been a pre-existing and unquestioned persuasion, that there was such a being  [смещение 6511 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: People would never have given the title of a God to men or brutes had there not been a pre-existing and unquestioned persuasion, that there was such a being  [смещение 6511 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-17-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 17",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: the notion that there is a God must be more ancient  [смещение 6730 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: the notion that there is a God must be more ancient  [смещение 6730 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-18-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 18",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What jarrings were there among philosophers about natural things!  [смещение 6941 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What jarrings were there among philosophers about natural things!  [смещение 6941 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-19-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 19",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: yet they unanimously concurred in this, as the judgment of universal reason, that there was such a sovereign Being  [смещение 7704 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: yet they unanimously concurred in this, as the judgment of universal reason, that there was such a sovereign Being  [смещение 7704 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-20-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 20",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: those that were skeptical in everything else, and asserted that the greatest certainty was that there was nothing certain, professed a certainty in this  [смещение 7824 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: those that were skeptical in everything else, and asserted that the greatest certainty was that there was nothing certain, professed a certainty in this  [смещение 7824 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-21-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 21",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The question was not whether there was a First Cause, but what it was  [смещение 7978 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The question was not whether there was a First Cause, but what it was  [смещение 7978 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-22-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 22",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Those that have been ready to pull out one another's eyes for their dissent from their judgments  [смещение 8432 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Those that have been ready to pull out one another's eyes for their dissent from their judgments  [смещение 8432 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-23-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 23",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: History doth not reckon twenty professed atheists in all ages in the compass of the whole world  [смещение 9172 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: History doth not reckon twenty professed atheists in all ages in the compass of the whole world  [смещение 9172 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-24-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 24",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: not so much as one grain of ashes is to all that were ever turned into that form by any fires in your chimneys  [смещение 9899 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: not so much as one grain of ashes is to all that were ever turned into that form by any fires in your chimneys  [смещение 9899 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-25-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 25",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Should the laws of a country, agreed universally to by the whole body of the people, be accounted vain  [смещение 10139 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Should the laws of a country, agreed universally to by the whole body of the people, be accounted vain  [смещение 10139 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-26-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 26",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What if some men be blind, shall any conclude from thence that eyes are not natural to men?  [смещение 10419 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What if some men be blind, shall any conclude from thence that eyes are not natural to men?  [смещение 10419 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-27-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 27",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: shall a man in a dungeon, that never saw the sun, deny that there is a sun  [смещение 10648 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: shall a man in a dungeon, that never saw the sun, deny that there is a sun  [смещение 10648 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-28-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 28",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It hath died with the person that started it, and vanished as soon as it appeared  [смещение 11553 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It hath died with the person that started it, and vanished as soon as it appeared  [смещение 11553 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-29-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 29",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: A general consent of all nations is to be esteemed as a law of nature  [смещение 12088 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: A general consent of all nations is to be esteemed as a law of nature  [смещение 12088 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-30-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 30",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What is the general dictate of nature is a certain truth. It is impossible that nature can naturally and universally lie  [смещение 11795 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What is the general dictate of nature is a certain truth. It is impossible that nature can naturally and universally lie  [смещение 11795 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-31-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 31",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Nature cannot plant in the minds of all men an assent to a falsity, for then the laws of nature would be destructive to the reason and minds of men  [смещение 12159 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Nature cannot plant in the minds of all men an assent to a falsity, for then the laws of nature would be destructive to the reason and minds of men  [смещение 12159 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-32-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 32",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: a consent not settled by any law of man to constrain people to a belief of it  [смещение 12650 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: a consent not settled by any law of man to constrain people to a belief of it  [смещение 12650 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-33-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 33",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Would not he deservedly be accounted a fool, that should deny that to be gold  [смещение 12815 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Would not he deservedly be accounted a fool, that should deny that to be gold  [смещение 12815 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-34-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 34",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It hath been as ancient as the first age of the world; no man is able to mention any time, from the beginning of the world, wherein this notion hath not been universally owned  [смещение 13237 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It hath been as ancient as the first age of the world; no man is able to mention any time, from the beginning of the world, wherein this notion hath not been universally owned  [смещение 13237 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-35-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 35",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: nor could absolute atheism in the changes of any laws ever gain the favor of any one body of people to be established by a law  [смещение 13814 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: nor could absolute atheism in the changes of any laws ever gain the favor of any one body of people to be established by a law  [смещение 13814 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-36-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 36",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: When the honor of the heathen idols was laid in the dust, this suffered no impair  [смещение 13942 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: When the honor of the heathen idols was laid in the dust, this suffered no impair  [смещение 13942 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-37-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 37",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It will not be easy to name any imposture that hath walked perpetually in the world without being discovered  [смещение 14677 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It will not be easy to name any imposture that hath walked perpetually in the world without being discovered  [смещение 14677 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-38-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 38",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The fears and anxieties in the consciences of men have given men sufficient occasion to root it out, had it been possible for them to do it  [смещение 15188 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The fears and anxieties in the consciences of men have given men sufficient occasion to root it out, had it been possible for them to do it  [смещение 15188 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-39-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 39",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The first man would rather be a god himself than under one  [смещение 16204 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The first man would rather be a god himself than under one  [смещение 16204 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-40-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 40",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: as Adam, so all his posterity are desirous to hide themselves from God upon the commission of sin  [смещение 16625 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: as Adam, so all his posterity are desirous to hide themselves from God upon the commission of sin  [смещение 16625 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-41-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 41",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Could they possibly have satisfied themselves that there were no God, they had discarded their fears, the disturbers of the repose of their lives, and been unbridled in their pleasures  [смещение 16878 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Could they possibly have satisfied themselves that there were no God, they had discarded their fears, the disturbers of the repose of their lives, and been unbridled in their pleasures  [смещение 16878 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-42-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 42",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: This conception is so perpetual, that the nature of the soul must be dissolved before it be rooted out, nor can it be extinct while the soul endures  [смещение 17543 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: This conception is so perpetual, that the nature of the soul must be dissolved before it be rooted out, nor can it be extinct while the soul endures  [смещение 17543 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-43-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 43",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: the devil did not think fit to tempt man to the denial of the existence of a Deity, but persuaded him to believe he might ascend to that dignity and become a god himself  [смещение 17857 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: the devil did not think fit to tempt man to the denial of the existence of a Deity, but persuaded him to believe he might ascend to that dignity and become a god himself  [смещение 17857 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-44-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 44",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The impressions of a Deity were so strong as not to be struck out by the malice and power of hell  [смещение 18856 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The impressions of a Deity were so strong as not to be struck out by the malice and power of hell  [смещение 18856 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-45-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 45",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: it is so natural that every man is born with a restless instinct to be of some kind of religion or other, which implies some object of religion  [смещение 19695 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: it is so natural that every man is born with a restless instinct to be of some kind of religion or other, which implies some object of religion  [смещение 19695 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-46-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 46",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The impression of a Deity is as common as reason, and of the same age with reason  [смещение 19840 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The impression of a Deity is as common as reason, and of the same age with reason  [смещение 19840 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-47-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 47",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It is a relic of knowledge after the fall of Adam, like fire under ashes, which sparkles as soon as ever the heap of ashes is opened  [смещение 19923 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It is a relic of knowledge after the fall of Adam, like fire under ashes, which sparkles as soon as ever the heap of ashes is opened  [смещение 19923 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-48-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 48",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: yet wherever you find human nature, you find this settled persuasion  [смещение 20654 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: yet wherever you find human nature, you find this settled persuasion  [смещение 20654 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-scripture-synodal",
-      "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
-      "url": "https://github.com/bibleonline/rst",
+      "source_id": "src-49-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 49",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "Сверены по корпусу RST: Пс. 18:2,4; Рим. 10:18; Иов 31:26–28; Деян. 14:11; 28:2,6; 17:23,26,27,30; Рим. 2:14–15; 1:21,23."
+      "evidence": "EN: Nature within man, and nature without man, agree upon the first meeting together to form this sentiment, that there is a God  [смещение 20996 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-50-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 50",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: there is a law of nature writ upon the hearts of men, which will direct them to commendable actions, if they will attend to the writing in their own consciences. This law cannot be considered without the notice of a Lawgiver  [смещение 21863 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: there is a law of nature writ upon the hearts of men, which will direct them to commendable actions, if they will attend to the writing in their own consciences. This law cannot be considered without the notice of a Lawgiver  [смещение 21863 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-51-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 51",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: man knows he never planted this principle of reluctancy in his own soul; he can never be the cause of that which he cannot be friends with  [смещение 22327 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: man knows he never planted this principle of reluctancy in his own soul; he can never be the cause of that which he cannot be friends with  [смещение 22327 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-52-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 52",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It is therefore sown in man by some hand more powerful than man  [смещение 22628 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It is therefore sown in man by some hand more powerful than man  [смещение 22628 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-53-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 53",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: the notion of a Lawgiver must be as natural, as the notion of a printer, or that there is a printer, is obvious upon the sight of a stamp impressed  [смещение 22876 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: the notion of a Lawgiver must be as natural, as the notion of a printer, or that there is a printer, is obvious upon the sight of a stamp impressed  [смещение 22876 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-54-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 54",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: This is sown in us, born with us, and sprouts up with our growth, or as one saith; it is like letters carved upon the bark of a  [смещение 23249 в блоке B₁, 23 690 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: This is sown in us, born with us, and sprouts up with our growth, or as one saith; it is like letters carved upon the bark of a  [смещение 23249 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-55-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 55",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-22",
+      "evidence": "EN: ’Tis so twisted with reason that a man cannot be accounted rational, unless he own an object of religion; therefore he that understands not this, renounceth his humanity when he renounceth a Divinity  [смещение 1301 в блоке B₁ (нормализованный текст источника, позиция 73 582; 23 690 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-scripture-synodal",
       "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
       "url": "https://github.com/bibleonline/rst",
       "verified_on": "2026-10-22",
-      "evidence": "Сверены по корпусу RST: Пс. 18:2,4; Рим. 10:18; Иов 31:26–28; Деян. 14:11; 28:2,6; 17:23,26,27,30; Рим. 2:14–15; 1:21,23."
+      "evidence": "Сверены по корпусу RST: Пс. 18:2,4; Рим. 10:18; Иов 31:26–28; Деян. 14:11; 28:6; 17:23,26,27,30; Рим. 2:14–15; 1:21,23."
     }
   ],
   "media_slots": [
