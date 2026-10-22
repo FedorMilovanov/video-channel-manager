@@ -24,7 +24,6 @@ SLOT_LANES: dict[ScheduledSlot, SlotLane] = {
 }
 
 
-
 class PublicationSlotConfig(BaseModel):
     """Version-controlled schedule definition for one logical publication slot."""
 

@@ -140,7 +140,9 @@ def test_swap_replaces_exactly_one_cover_reference() -> None:
 
 
 def test_queue_item_rejects_a_publication_id_from_another_project() -> None:
-    item = QueueItem(publication_id="svodka-article-01", ordinal=1, scheduled_on=datetime(2026, 10, 27).date(), status="planned")
+    item = QueueItem(
+        publication_id="svodka-article-01", ordinal=1, scheduled_on=datetime(2026, 10, 27).date(), status="planned"
+    )
     assert not item.is_ready
 
 

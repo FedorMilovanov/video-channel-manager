@@ -344,9 +344,7 @@ def send(
         expected_bot_id=binding.bot_id,
         expected_bot_username=binding.bot_username,
     )
-    attachments = {
-        ATTACHMENT_NAME: (item.cover_path.name, (root / item.cover_path).read_bytes(), "image/jpeg")
-    }
+    attachments = {ATTACHMENT_NAME: (item.cover_path.name, (root / item.cover_path).read_bytes(), "image/jpeg")}
     provider = LordChristMultipartProvider(token=token, attachments=attachments)
     try:
         archived = publish_rich_once(
@@ -412,7 +410,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         except LookupError as exc:
             print(json.dumps({"due": None, "reason": str(exc)}, ensure_ascii=False))
             return 0
-        print(json.dumps({"due": item.publication_id, "scheduled_on_moscow": item.scheduled_on.isoformat()}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {"due": item.publication_id, "scheduled_on_moscow": item.scheduled_on.isoformat()}, ensure_ascii=False
+            )
+        )
         return 0
     selected = [item for item in items if item.publication_id == args.publication_id]
     if len(selected) != 1:

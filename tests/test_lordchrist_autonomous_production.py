@@ -282,9 +282,7 @@ def test_quote_lane_never_spends_the_midday_slot() -> None:
 
     # And the reverse direction: the article lane may not borrow a quote hour.
     monday_morning = datetime(2026, 10, 26, 6, 17, tzinfo=UTC)  # 09:17 Moscow
-    borrowed = decide_scheduled_slot(
-        config, event_schedule="17 6 * * *", now=monday_morning, lane="rich_article"
-    )
+    borrowed = decide_scheduled_slot(config, event_schedule="17 6 * * *", now=monday_morning, lane="rich_article")
     assert borrowed.active is False
     assert borrowed.reason == "morning slot carries the quote lane, not rich_article"
 
@@ -296,15 +294,15 @@ def test_midday_slot_is_only_eligible_on_tuesday_and_friday() -> None:
     friday_noon = datetime(2026, 10, 30, 9, 0, tzinfo=UTC)
     tuesday_late = datetime(2026, 10, 27, 13, 0, tzinfo=UTC)  # 16:00 Moscow, lease closed
 
-    assert decide_scheduled_slot(
-        config, event_schedule="0 9 * * 2,5", now=wednesday_noon, lane="rich_article"
-    ).active is False
-    assert decide_scheduled_slot(
-        config, event_schedule="0 9 * * 2,5", now=friday_noon, lane="rich_article"
-    ).slot == "midday"
-    stale = decide_scheduled_slot(
-        config, event_schedule="0 9 * * 2,5", now=tuesday_late, lane="rich_article"
+    assert (
+        decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=wednesday_noon, lane="rich_article").active
+        is False
     )
+    assert (
+        decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=friday_noon, lane="rich_article").slot
+        == "midday"
+    )
+    stale = decide_scheduled_slot(config, event_schedule="0 9 * * 2,5", now=tuesday_late, lane="rich_article")
     assert stale.active is False
     assert "too stale" in stale.reason
 

@@ -743,10 +743,10 @@ class _LordChristMultipartProvider(HttpxTelegramRichMutationProvider):
         return TelegramRichProviderResponse(status_code=response.status_code, body=body)
 
 
-
 # Public alias: the one-request multipart sendRichMessage body is shared with the
 # long-article lane, so both lanes stay on the single registered mutation boundary.
 LordChristMultipartProvider = _LordChristMultipartProvider
+
 
 def send(
     root: Path,
