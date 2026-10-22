@@ -1,0 +1,66 @@
+{
+  "schema_name": "video-channel-manager.channel-write-authority",
+  "schema_version": 1,
+  "purpose": "The machine-checked answer to 'which Telegram channel may write to the provider right now'. Operational documents cite this file instead of restating a mutable profile flag, because a restated flag drifts: on 2026-10-22 the multichannel runbook still said Svodka was provider_writes_authorized=false while the profile had been true.",
+  "derived_from": "content/telegram/channels/*.json (telegram-channel-profile) + their pinned target bindings",
+  "enforced_by": "tests/test_channel_write_authority.py",
+  "reading_rule": "provider_writes_authorized is a property of one profile, not of a channel: @lordchrist has two profiles and they disagree on purpose (the legacy quote queue is closed, the historical rich editorial is open). Read the row for the exact profile a workflow loads.",
+  "channels": [
+    {
+      "profile": "content/telegram/channels/lordchrist.json",
+      "project_key": "lord-god-strength",
+      "channel_username": "@lordchrist",
+      "state_ref": "state/lordchrist-telegram",
+      "concurrency_group": "lordchrist-telegram-publisher",
+      "provider_writes_authorized": false,
+      "profile_digest": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+      "profile_file_sha256": "sha256:c7fa38adbbc4e8df99e589dcc81b16fffd2ea2e93ed58cd23c53e6d0516abbd9",
+      "target_binding": "content/telegram/channels/lordchrist-target-binding.json",
+      "chat_id": -1001295216957,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    {
+      "profile": "content/telegram/channels/lordchrist-rich.json",
+      "project_key": "lord-god-strength",
+      "channel_username": "@lordchrist",
+      "state_ref": "state/lordchrist-telegram",
+      "concurrency_group": "lordchrist-telegram-publisher",
+      "provider_writes_authorized": true,
+      "profile_digest": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+      "profile_file_sha256": "sha256:a3c22548c1467b4b519bbb75ad387d80b3370cffb64c3cbbf76372bc25c8da8e",
+      "target_binding": "content/telegram/channels/lordchrist-rich-target-binding.json",
+      "chat_id": -1001295216957,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    {
+      "profile": "content/telegram/channels/milovi-cake.json",
+      "project_key": "milovi-cake",
+      "channel_username": "@MiloviCake",
+      "state_ref": "state/milovi-cake-telegram",
+      "concurrency_group": "milovi-cake-telegram-publisher",
+      "provider_writes_authorized": true,
+      "profile_digest": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+      "profile_file_sha256": "sha256:0478b221fbd0aa02b5431d84596d61aca3758378ff8c39488d41a9c00a0ee181",
+      "target_binding": "content/telegram/channels/milovi-cake-target-binding.json",
+      "chat_id": -1002215328390,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    {
+      "profile": "content/telegram/channels/svodka.json",
+      "project_key": "svodka",
+      "channel_username": "@deep_info_life",
+      "state_ref": "state/svodka-telegram",
+      "concurrency_group": "svodka-telegram-publisher",
+      "provider_writes_authorized": true,
+      "profile_digest": "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9",
+      "profile_file_sha256": "sha256:58df55d2abd1cfa88434dc27518ea69d43e0af8274692c10474e51de95fb5fbe",
+      "target_binding": "content/telegram/channels/svodka-target-binding.json",
+      "chat_id": -1003527567039,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    }
+  ]
+}

@@ -16,6 +16,10 @@ Operational documents are living sources of truth. They override chat history, s
   exact tips, what was restored, and why the two content-addressed evidence refs are not debt.
 - [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md) — the only supported Milovi Telegram
   writer, the accepted 16-video boundary, and how the artifact workflow proves the release without ever minting a ref.
+- [`channel-write-authority.json`](channel-write-authority.json) — which channel profile may write to the
+  provider right now, derived from the profiles and their pinned bindings and compared with them by
+  `tests/test_channel_write_authority.py`. Cite this instead of restating `provider_writes_authorized` in prose;
+  a restated flag is how the Svodka runbook came to contradict itself.
 - [`mutation-boundary-register.json`](mutation-boundary-register.json) and
   [`mutation-fault-proof-register.json`](mutation-fault-proof-register.json) — every provider mutation boundary with its
   intent/dispatch/response evidence, retry policy, and the exact test that proves each fault stage. Read before adding a

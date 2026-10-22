@@ -234,7 +234,112 @@
         {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_telegram_publisher.py::test_read_timeout_after_send_becomes_unknown_and_blocks_replay", "claim": "a lost sendMessage response becomes unknown/may_exist and blocks later dispatch instead of replaying"},
         {"stages": ["after_response_before_commit"], "test_id": "tests/test_telegram_publisher.py::test_telegram_429_is_confirmed_absent_and_safe_to_retry_later", "claim": "a 429 response is classified as confirmed_absent and returns the item to pending rather than replaying blindly"}
       ]
+    },
+    {
+      "boundary_id": "instagram.reel.container.create",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_instagram_production.py::test_untrusted_media_host_is_refused_before_media_fetch_or_provider_post", "claim": "an untrusted public media host is refused before any media fetch and before any POST /media exists"},
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_unclassified_graph_write_is_refused_before_dispatch[POST:media]", "claim": "a Graph write without an explicit provider resource is refused at the choke point with zero HTTP requests"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_lost_graph_response_is_one_ambiguous_attempt[POST:media]", "claim": "a lost POST /media response is one ambiguous attempt and the container is never re-created blindly"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_server_error_is_reported_and_never_means_success[POST:media]", "claim": "a 5xx from POST /media is a provider error, not a container and not a success"}
+      ]
+    },
+
+    {
+      "boundary_id": "instagram.reel.container.resumable",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_container_requires_supported_mode_before_dispatch", "claim": "the resumable contour refuses any login mode other than the reviewed Facebook Login mode before dispatch"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_container_lost_response_is_one_ambiguous_attempt", "claim": "a lost resumable container response is one ambiguous attempt with no retry"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_container_response_without_uri_is_not_a_container", "claim": "a response without an upload URI is a provider error and never becomes a container to upload to"}
+      ]
+    },
+
+    {
+      "boundary_id": "instagram.reel.upload.binary",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_binary_upload_refuses_a_foreign_upload_uri_before_dispatch", "claim": "an upload URI outside rupload.facebook.com is refused before a single byte is sent"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_binary_upload_lost_response_is_one_ambiguous_attempt", "claim": "a lost binary-upload response is one redacted transport failure with no retry"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_binary_upload_rejection_is_not_a_success", "claim": "a rejected binary upload is a provider error, and the container status poll remains the only success evidence"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_resumable_binary_upload_sends_exactly_one_body_of_the_declared_size", "claim": "the dispatch point sends exactly one request carrying the exact declared bytes"}
+      ]
+    },
+
+    {
+      "boundary_id": "instagram.reel.publish",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_instagram_production.py::test_manual_media_id_is_restricted_to_ambiguous_publish_with_known_container", "claim": "a manual media id is accepted only for an ambiguous publish with a known container, so no publish is dispatched without exact container evidence"},
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_unclassified_graph_write_is_refused_before_dispatch[POST:media_publish]", "claim": "media_publish cannot be dispatched without an explicit provider resource classification"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_lost_graph_response_is_one_ambiguous_attempt[POST:media_publish]", "claim": "a lost media_publish response is one ambiguous attempt and is never replayed"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_instagram_server_error_is_reported_and_never_means_success[POST:media_publish]", "claim": "a 5xx from media_publish is a provider error and never a published media id"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.session",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[videos.insert.resumable-session]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[videos.insert.resumable-session]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[videos.insert.resumable-session]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[videos.insert.resumable-session]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[videos.insert.resumable-session]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.media",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[videos.insert.resumable-media]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[videos.insert.resumable-media]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[videos.insert.resumable-media]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[videos.insert.resumable-media]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[videos.insert.resumable-media]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.metadata",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[videos.update.metadata-status]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[videos.update.metadata-status]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[videos.update.metadata-status]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[videos.update.metadata-status]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[videos.update.metadata-status]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.thumbnail",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[thumbnails.set]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[thumbnails.set]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[thumbnails.set]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[thumbnails.set]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[thumbnails.set]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.playlist",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[playlistItems.insert]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[playlistItems.insert]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[playlistItems.insert]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[playlistItems.insert]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[playlistItems.insert]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
+    },
+
+    {
+      "boundary_id": "youtube.release.visibility",
+      "proofs": [
+        {"stages": ["before_dispatch"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_write_requires_force_ssl_scope_before_dispatch[videos.update.visibility]", "claim": "the write-scope gate refuses the call before any HTTP request exists"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_lost_response_is_may_exist_and_one_attempt[videos.update.visibility]", "claim": "a lost response is may_exist after exactly one attempt, never a retry"},
+        {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_connect_failure_is_confirmed_absent_before_dispatch[videos.update.visibility]", "claim": "a connection that never opened is confirmed_absent rather than an unknown effect"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_server_error_is_may_exist_and_one_attempt[videos.update.visibility]", "claim": "a 5xx is may_exist and is never read as success"},
+        {"stages": ["after_response_before_commit"], "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[videos.update.visibility]", "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"}
+      ]
     }
+
   ],
   "cross_cutting_proofs": [
     {"scenario": "truncated_or_malformed_json", "test_id": "tests/test_wave_engine_evidence_faults.py::test_read_json_object_rejects_truncated_malformed_and_non_object_evidence"},
