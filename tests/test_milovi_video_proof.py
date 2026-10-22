@@ -5,14 +5,19 @@ after merge, on `main`, where it failed for a reason nobody could read. These te
 actual git plumbing — a real commit, real blob ids, a real fetch by SHA — so the guard is
 exercised before it is trusted.
 
-They also pin the distinction the lane depends on: an encoder that changed is reported, a
-build that is nondeterministic with the same encoder fails.
+They also pin the distinction the lane depends on. A second build of the same pinned inputs
+is what attributes a difference: if two builds agree, the difference against the accepted
+bytes cannot be our pipeline's fault; if they disagree, the pipeline is at fault and the job
+fails. An earlier version inferred this from an encoder binary digest recorded in the
+evidence, which does not identify the encoder — `libavcodec`/`libx264` carry the behaviour and
+apt updates them separately — and it accused the pipeline of nondeterminism that was not there.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
@@ -30,10 +35,7 @@ from video_channel_manager.milovi_telegram_video_proof import (
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "milovi-telegram-video-artifacts.yml"
 VIDEO_DIR = "artifacts/milovi-telegram/video"
-ACCEPTED_ENCODER = "sha256:" + "a" * 64
-ACCEPTED_PROBE = "sha256:" + "b" * 64
-OTHER_ENCODER = "sha256:" + "c" * 64
-OTHER_PROBE = "sha256:" + "d" * 64
+SECOND_DIR = "artifacts/milovi-telegram/rebuild"
 
 
 def _git(repo: Path, argv: Sequence[str]) -> str:
@@ -50,7 +52,7 @@ def _blob(repo: Path, path: Path) -> str:
 
 
 class Fixture:
-    """A repository that holds an accepted artifact commit and a rebuild of it."""
+    """A repository with an accepted artifact commit, a rebuild of it, and a second build."""
 
     def __init__(self, root: Path, payloads: dict[str, bytes]) -> None:
         self.root = root
@@ -63,21 +65,21 @@ class Fixture:
         _git(self.repo, ["config", "user.email", "proof-fixture@example.invalid"])
 
         self.output_dir = self.repo / VIDEO_DIR
+        self.second_dir = self.repo / SECOND_DIR
         self.output_dir.mkdir(parents=True)
         for name, payload in payloads.items():
             (self.output_dir / name).write_bytes(payload)
+        self.sync_second_build()
 
+        # The accepted bytes are committed: that commit is what publication is bound to.
         _git(self.repo, ["add", "--all"])
         _git(self.repo, ["commit", "--quiet", "-m", "accepted artifacts"])
         self.commit = _git(self.repo, ["rev-parse", "HEAD"])
-
         self.blobs = {f"{VIDEO_DIR}/{name}": _blob(self.repo, self.output_dir / name) for name in payloads}
+
         self.reservoir = self.repo / "reservoir.json"
         self.accepted_evidence = self.repo / "accepted-evidence.json"
         self.evidence = self.repo / "evidence.json"
-        self.rebuilt_encoder = ACCEPTED_ENCODER
-        self.rebuilt_probe = ACCEPTED_PROBE
-        self.publications: dict[str, dict[str, object]] = {}
         self.write_metadata()
 
         _git(self.repo, ["clone", "--quiet", "--bare", str(self.repo), str(self.origin)])
@@ -85,7 +87,18 @@ class Fixture:
         _git(self.repo, ["remote", "add", "origin", str(self.origin)])
         _git(self.repo, ["update-ref", "refs/heads/agent/milovi-video-accepted-73c578eff825", self.commit])
 
+    def sync_second_build(self) -> None:
+        """Model a deterministic second build: the same bytes, produced independently."""
+
+        if self.second_dir.exists():
+            shutil.rmtree(self.second_dir)
+        self.second_dir.mkdir(parents=True)
+        for name in self.payloads:
+            shutil.copyfile(self.output_dir / name, self.second_dir / name)
+
     def _artifact_rows(self) -> list[dict[str, object]]:
+        """Accepted rows are frozen at construction: they describe the accepted bytes."""
+
         rows = []
         for name, payload in self.payloads.items():
             path = f"{VIDEO_DIR}/{name}"
@@ -100,12 +113,12 @@ class Fixture:
             )
         return rows
 
-    def _output_rows(self) -> list[dict[str, object]]:
-        """Evidence rows describe the bytes that are on disk *now*, as the builder writes them."""
+    def _output_rows(self, directory: Path) -> list[dict[str, object]]:
+        """Evidence rows describe the bytes on disk now, as the builder writes them."""
 
         rows = []
         for name in self.payloads:
-            rebuilt = (self.output_dir / name).read_bytes()
+            rebuilt = (directory / name).read_bytes()
             rows.append(
                 {
                     "media_id": name.split("-")[1].split(".")[0],
@@ -116,17 +129,8 @@ class Fixture:
             )
         return rows
 
-    @staticmethod
-    def _toolchain(encoder: str, probe: str) -> dict[str, object]:
-        return {
-            "ffmpeg_executable_sha256": encoder,
-            "ffprobe_executable_sha256": probe,
-            "ffmpeg_version": "ffmpeg version pinned-by-test",
-        }
-
     def write_metadata(self) -> None:
         artifacts = self._artifact_rows()
-        outputs = self._output_rows()
         self.reservoir.write_text(
             json.dumps(
                 {
@@ -145,8 +149,8 @@ class Fixture:
             json.dumps(
                 {
                     "evidence_sha256": "sha256:accepted-identity",
-                    "toolchain": self._toolchain(ACCEPTED_ENCODER, ACCEPTED_PROBE),
-                    "outputs": outputs,
+                    "toolchain": {"ffmpeg_executable_sha256": "sha256:accepted-encoder"},
+                    "outputs": self._output_rows(self.output_dir),
                 },
                 indent=2,
             ),
@@ -156,25 +160,28 @@ class Fixture:
             json.dumps(
                 {
                     "evidence_sha256": "sha256:rebuilt-identity",
-                    "toolchain": self._toolchain(self.rebuilt_encoder, self.rebuilt_probe),
-                    "outputs": outputs,
+                    "toolchain": {"ffmpeg_executable_sha256": "sha256:rebuilt-encoder"},
+                    "outputs": self._output_rows(self.output_dir),
                 },
                 indent=2,
             ),
             encoding="utf-8",
         )
 
-    def use_a_different_encoder(self) -> None:
-        self.rebuilt_encoder = OTHER_ENCODER
-        self.rebuilt_probe = OTHER_PROBE
-        self.write_metadata()
+    def rebuild(self, name: str, payload: bytes) -> None:
+        """Rebuild one artifact: new bytes plus the evidence the builder would write."""
 
-    def verify(self) -> object:
+        (self.output_dir / name).write_bytes(payload)
+        self.write_metadata()
+        self.sync_second_build()
+
+    def verify(self, *, determinism: bool = True) -> object:
         return verify(
             output_dir=self.output_dir,
             reservoir_path=self.reservoir,
             evidence_path=self.evidence,
             cwd=self.repo,
+            determinism_dir=self.second_dir if determinism else None,
         )
 
 
@@ -189,59 +196,62 @@ def test_rebuild_of_the_accepted_bytes_proves_the_release(fixture: Fixture) -> N
     assert result.artifact_count == 2  # type: ignore[attr-defined]
     assert result.accepted_commit == fixture.commit  # type: ignore[attr-defined]
     assert result.byte_identical is True  # type: ignore[attr-defined]
-    assert result.encoder_changed is False  # type: ignore[attr-defined]
+    assert result.determinism_verified is True  # type: ignore[attr-defined]
     # The rebuilt identity is expected to differ: toolchain metadata is part of it.
     assert result.identity_matches_accepted is False  # type: ignore[attr-defined]
     assert fixture.verify() == result
 
 
-def test_same_encoder_with_different_bytes_is_a_nondeterminism_failure(fixture: Fixture) -> None:
-    """Same binary, different output: that is our bug, and it must stop the lane."""
+def test_deterministic_rebuild_differing_from_the_accepted_bytes_is_reported(fixture: Fixture) -> None:
+    """An archive update is not artifact drift: the two builds agree, so our pipeline is fine."""
 
-    (fixture.output_dir / "milovi-v02.mp4").write_bytes(b"v02-bytes-tampered")
-    fixture.write_metadata()
-
-    with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
-
-    assert "nondeterminism in our own build" in str(raised.value)
-    report = " | ".join(raised.value.details)
-    assert "artifacts/milovi-telegram/video/milovi-v02.mp4" in report
-    assert "accepted sha256:" in report and "rebuilt sha256:" in report
-
-
-def test_a_changed_encoder_is_reported_and_the_release_still_passes(fixture: Fixture) -> None:
-    """An Ubuntu FFmpeg update is not artifact drift: the release bytes did not move."""
-
-    (fixture.output_dir / "milovi-v01.mp4").write_bytes(b"re-encoded-by-a-newer-ffmpeg")
-    fixture.use_a_different_encoder()
+    fixture.rebuild("milovi-v01.mp4", b"re-encoded-by-a-newer-ffmpeg")
 
     result = fixture.verify()
 
     assert result.byte_identical is False  # type: ignore[attr-defined]
-    assert result.encoder_changed is True  # type: ignore[attr-defined]
-    assert [drift.path for drift in result.drifted] == ["artifacts/milovi-telegram/video/milovi-v01.mp4"]  # type: ignore[attr-defined]
-    assert result.accepted_toolchain["ffmpeg_executable_sha256"] == ACCEPTED_ENCODER  # type: ignore[attr-defined]
-    assert result.rebuilt_toolchain["ffmpeg_executable_sha256"] == OTHER_ENCODER  # type: ignore[attr-defined]
+    assert result.determinism_verified is True  # type: ignore[attr-defined]
+    assert [drift.path for drift in result.drifted] == [f"{VIDEO_DIR}/milovi-v01.mp4"]  # type: ignore[attr-defined]
 
 
-def test_rebuild_evidence_without_encoder_identity_is_not_certifiable(fixture: Fixture) -> None:
-    payload = json.loads(fixture.evidence.read_text(encoding="utf-8"))
-    payload["toolchain"].pop("ffmpeg_executable_sha256")
-    fixture.evidence.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+def test_nondeterministic_second_build_fails_the_lane(fixture: Fixture) -> None:
+    """Same inputs, same runner, different bytes: that is our defect, and nothing is published."""
+
+    (fixture.second_dir / "milovi-v02.mp4").write_bytes(b"different-on-the-second-build")
 
     with pytest.raises(ProofFailure) as raised:
         fixture.verify()
 
-    assert "ffmpeg_executable_sha256" in str(raised.value)
-    assert "not certifiable" in str(raised.value)
+    assert "nondeterminism in our own pipeline" in str(raised.value)
+    report = " | ".join(raised.value.details)
+    assert "milovi-v02.mp4" in report
+    assert "first build sha256:" in report and "second build sha256:" in report
+
+
+def test_second_build_with_a_different_artifact_set_fails(fixture: Fixture) -> None:
+    (fixture.second_dir / "milovi-v02.mp4").unlink()
+
+    with pytest.raises(ProofFailure) as raised:
+        fixture.verify()
+
+    assert "did not produce milovi-v02.mp4" in " | ".join(raised.value.details)
+
+
+def test_without_a_second_build_the_difference_is_reported_without_attribution(fixture: Fixture) -> None:
+    fixture.rebuild("milovi-v01.mp4", b"re-encoded")
+
+    result = fixture.verify(determinism=False)
+
+    assert result.determinism_verified is False  # type: ignore[attr-defined]
+    assert result.byte_identical is False  # type: ignore[attr-defined]
+    assert result.as_report()["determinism"] == "not_measured_on_a_second_build"  # type: ignore[attr-defined]
 
 
 def test_unexpected_rebuilt_artifact_is_refused(fixture: Fixture) -> None:
     (fixture.output_dir / "milovi-v03.mp4").write_bytes(b"unreviewed")
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     assert "not part of the accepted artifact set" in " | ".join(raised.value.details)
 
@@ -250,7 +260,7 @@ def test_missing_rebuilt_artifact_is_reported(fixture: Fixture) -> None:
     (fixture.output_dir / "milovi-v02.mp4").unlink()
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     assert "rebuilt output is missing" in " | ".join(raised.value.details)
 
@@ -282,7 +292,7 @@ def test_rebuilt_artifact_absent_from_the_accepted_commit_is_reported(fixture: F
     fixture.evidence.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     report = " | ".join(raised.value.details)
     assert "does not contain artifacts/milovi-telegram/video/milovi-v03.mp4" in report
@@ -295,7 +305,7 @@ def test_stale_reservoir_blob_id_is_reported_instead_of_being_trusted(fixture: F
     fixture.reservoir.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     report = " | ".join(raised.value.details)
     assert "but the reservoir records" in report
@@ -308,7 +318,7 @@ def test_evidence_that_disagrees_with_its_own_bytes_is_reported(fixture: Fixture
     fixture.evidence.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     assert "rebuild evidence disagrees with its own artifact" in " | ".join(raised.value.details)
 
@@ -328,7 +338,7 @@ def test_missing_accepted_commit_fails_loudly(fixture: Fixture) -> None:
     fixture.reservoir.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     with pytest.raises(ProofFailure) as raised:
-        fixture.verify()
+        fixture.verify(determinism=False)
 
     assert "git fetch" in str(raised.value)
 
@@ -337,8 +347,7 @@ def test_cli_fails_the_lane_on_nondeterminism(
     fixture: Fixture, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(fixture.repo)
-    (fixture.output_dir / "milovi-v01.mp4").write_bytes(b"drifted")
-    fixture.write_metadata()
+    (fixture.second_dir / "milovi-v01.mp4").write_bytes(b"unstable")
 
     exit_code = main(
         [
@@ -348,6 +357,8 @@ def test_cli_fails_the_lane_on_nondeterminism(
             str(fixture.reservoir),
             "--evidence",
             str(fixture.evidence),
+            "--determinism-dir",
+            str(fixture.second_dir),
             "--report",
             str(fixture.root / "report.json"),
         ]
@@ -360,15 +371,14 @@ def test_cli_fails_the_lane_on_nondeterminism(
     assert not (fixture.root / "report.json").exists()
 
 
-def test_cli_reports_an_encoder_change_and_writes_the_proof_report(
+def test_cli_reports_a_rebuild_difference_and_writes_the_proof_report(
     fixture: Fixture,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.chdir(fixture.repo)
-    (fixture.output_dir / "milovi-v01.mp4").write_bytes(b"re-encoded")
-    fixture.use_a_different_encoder()
+    fixture.rebuild("milovi-v01.mp4", b"re-encoded")
     output = tmp_path / "github-output.txt"
     output.write_text("", encoding="utf-8")
     report = tmp_path / "report.json"
@@ -381,6 +391,8 @@ def test_cli_reports_an_encoder_change_and_writes_the_proof_report(
             str(fixture.reservoir),
             "--evidence",
             str(fixture.evidence),
+            "--determinism-dir",
+            str(fixture.second_dir),
             "--github-output",
             str(output),
             "--report",
@@ -392,22 +404,23 @@ def test_cli_reports_an_encoder_change_and_writes_the_proof_report(
     assert exit_code == 0
     assert "::warning title=Milovi rebuild differs from the accepted encoding::" in captured.out
     assert "::warning title=Milovi rebuild drift::" in captured.out
+    assert "two builds of the same pinned inputs on this runner agree byte-for-byte" in captured.out
 
     written = output.read_text(encoding="utf-8")
     assert "branch=agent/milovi-video-accepted-73c578eff825" in written
     assert f"artifact_commit={fixture.commit}" in written
     assert "byte_identical=false" in written
     assert "drifted_count=1" in written
+    assert "determinism_verified=true" in written
 
     payload = json.loads(report.read_text(encoding="utf-8"))
     assert payload["release_integrity"] == "verified"
-    assert payload["rebuild_conclusion"] == "encoder_changed"
+    assert payload["determinism"] == "verified"
+    assert payload["rebuild_conclusion"] == "environment_changed"
     assert payload["provider_access_performed"] is False
     assert payload["repository_write_performed"] is False
     assert payload["byte_identical_count"] == 1
     assert payload["drifted"][0]["path"] == f"{VIDEO_DIR}/milovi-v01.mp4"
-    assert payload["toolchain"]["accepted"]["ffmpeg_executable_sha256"] == ACCEPTED_ENCODER
-    assert payload["toolchain"]["rebuilt"]["ffmpeg_executable_sha256"] == OTHER_ENCODER
 
 
 def test_cli_writes_the_proven_binding_to_the_step_output_file(
@@ -429,6 +442,8 @@ def test_cli_writes_the_proven_binding_to_the_step_output_file(
                 str(fixture.reservoir),
                 "--evidence",
                 str(fixture.evidence),
+                "--determinism-dir",
+                str(fixture.second_dir),
                 "--github-output",
                 str(output),
                 "--report",
@@ -454,6 +469,10 @@ def test_workflow_proves_in_both_jobs_and_can_never_write() -> None:
     pull_request_job, main_job = text.split("  build-provider-free-artifacts:", 1)
     assert "milovi_telegram_video_proof" in pull_request_job
     assert "milovi_telegram_video_proof" in main_job
+
+    # Both jobs measure determinism with a second build of the same pinned inputs.
+    assert text.count("Rebuild the same pinned inputs a second time to measure determinism") == 2
+    assert text.count('--determinism-dir "$DETERMINISM_DIR"') == 2
 
     assert "git push" not in text
     assert "contents: write" not in text

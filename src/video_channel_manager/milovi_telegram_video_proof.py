@@ -1,26 +1,26 @@
 """Prove the Milovi Telegram video release, and explain any rebuild difference.
 
-The lane has two claims, and they are not the same claim:
+The lane has three claims, and only the first two are about us:
 
 1. **Release integrity** — the 16 accepted MP4s live on the content-addressed evidence ref
    named by the reservoir, at the exact commit it records, with exactly the blob ids it
-   records. This is checkable without an encoder, and it is what publication depends on.
-   It is blocking.
-2. **Rebuild reproduction** — the current runner's FFmpeg rebuilds those bytes. This is a
-   supply-chain observation about a *third-party encoder build*, not a property of the
-   release: `apt-get install ffmpeg` follows a moving Ubuntu archive, and on 2026-10-22 the
-   archive shipped an FFmpeg whose encode differs from the accepted one by a few hundred
-   bytes per file. The release did not change; the encoder did.
+   records. Checkable without an encoder; publication depends on it. Blocking.
+2. **Determinism** — rebuilding the same pinned source with the same runner produces the
+   same bytes twice. Measured, not inferred. Blocking: if it fails, the pipeline is at
+   fault.
+3. **Reproduction of the accepted bytes** — the current runner's FFmpeg emits the bytes that
+   were accepted on another day. This is a supply-chain observation about a third-party
+   build: `apt-get install ffmpeg` follows a moving Ubuntu archive, and the encoder that
+   actually decides those bytes is `libavcodec`/`libx264`, which apt updates independently
+   of the `ffmpeg` binary itself. On 2026-10-22 the archive shipped such an update: all
+   sixteen files differed from the accepted bytes by between -414 and +4348 bytes while the
+   accepted set, and therefore the release, was unchanged. Reported, never published.
 
-Conflating the two is what kept `main` red: the previous step demanded byte equality from a
-moving encoder, so a normal archive update was reported as artifact drift.
-
-The proof therefore compares the encoder binary digests recorded in both evidence files:
-
-* same encoder, different bytes — our own build is nondeterministic, which is a real defect:
-  blocking;
-* different encoder, different bytes — the toolchain moved, which the release is not bound
-  to: reported, with both digests and every file that differs, and never published.
+Inferring claim 3 from an identity recorded in the evidence is not sound: the accepted
+evidence fingerprints the `ffmpeg`/`ffprobe` binaries only, and two different encoders can
+therefore look identical. That false "same encoder, different bytes" signature is why this
+module measures claim 2 instead of assuming it — pinned inputs plus a deterministic build
+are exactly what makes a difference attributable to the environment.
 
 The proof writes nothing and pushes nothing. It never derives a ref name from a rebuild: a
 rebuild legitimately produces a different evidence identity, because that identity includes
@@ -93,17 +93,12 @@ class ProofResult:
     accepted_evidence_sha256: str
     accepted_toolchain: dict[str, Any]
     rebuilt_toolchain: dict[str, Any]
+    determinism_verified: bool
     drifted: tuple[Drift, ...] = field(default_factory=tuple)
 
     @property
     def byte_identical(self) -> bool:
         return not self.drifted
-
-    @property
-    def encoder_changed(self) -> bool:
-        return any(
-            str(self.accepted_toolchain.get(key)) != str(self.rebuilt_toolchain.get(key)) for key in ENCODER_KEYS
-        )
 
     @property
     def identity_matches_accepted(self) -> bool:
@@ -123,10 +118,8 @@ class ProofResult:
             "rebuilt_evidence_sha256": self.rebuilt_evidence_sha256,
             "artifact_count": self.artifact_count,
             "byte_identical_count": self.artifact_count - len(self.drifted),
-            "rebuild_conclusion": "byte_identical"
-            if self.byte_identical
-            else ("encoder_changed" if self.encoder_changed else "nondeterministic"),
-            "encoder_changed": self.encoder_changed,
+            "determinism": "verified" if self.determinism_verified else "not_measured_on_a_second_build",
+            "rebuild_conclusion": "byte_identical" if self.byte_identical else "environment_changed",
             "toolchain": {
                 "accepted": {key: self.accepted_toolchain.get(key) for key in ENCODER_KEYS},
                 "rebuilt": {key: self.rebuilt_toolchain.get(key) for key in ENCODER_KEYS},
@@ -269,17 +262,42 @@ def _accepted_evidence_path(reservoir: dict[str, Any], *, root: Path, reservoir_
     return candidate
 
 
-def _toolchain(evidence: dict[str, Any], *, label: str) -> dict[str, Any]:
+def _toolchain(evidence: dict[str, Any]) -> dict[str, Any]:
+    """Recorded toolchain metadata, kept for forensics only.
+
+    It is deliberately not used to attribute a difference: the accepted evidence fingerprints
+    the `ffmpeg`/`ffprobe` binaries, while the bytes are decided by `libavcodec`/`libx264`,
+    which apt updates independently. Two different encoders can carry identical digests.
+    """
+
     toolchain = evidence.get("toolchain")
-    if not isinstance(toolchain, dict):
-        raise ProofFailure(f"{label} evidence does not record its toolchain; the encoder cannot be identified")
-    missing = [key for key in ENCODER_KEYS if not str(toolchain.get(key) or "").startswith("sha256:")]
-    if missing:
-        raise ProofFailure(
-            f"{label} evidence does not record {', '.join(missing)}: without the encoder binary digest an "
-            "artifact difference cannot be attributed to the toolchain or to nondeterminism, so it is not certifiable"
+    return dict(toolchain) if isinstance(toolchain, dict) else {}
+
+
+def _determinism_drift(first_build: dict[str, Path], second_build: dict[str, Path]) -> list[str]:
+    """Compare two builds of the same pinned inputs, by artifact name.
+
+    The two builds live in different directories on purpose — the first one must not be
+    overwritten — so the comparison is by artifact name, not by repository path.
+    """
+
+    first = {Path(path).name: path for path in first_build.values()}
+    second = {Path(path).name: path for path in second_build.values()}
+    details: list[str] = []
+    for name in sorted(set(first) - set(second)):
+        details.append(f"the second build of the same inputs did not produce {name}")
+    for name in sorted(set(second) - set(first)):
+        details.append(f"the second build produced {name}, which the first build did not")
+    for name in sorted(set(first) & set(second)):
+        first_bytes = first[name].read_bytes()
+        second_bytes = second[name].read_bytes()
+        if first_bytes == second_bytes:
+            continue
+        details.append(
+            f"{name}: first build {_file_sha256(first[name])} ({len(first_bytes)} bytes) second build "
+            f"{_file_sha256(second[name])} ({len(second_bytes)} bytes)"
         )
-    return toolchain
+    return details
 
 
 def verify(
@@ -289,6 +307,7 @@ def verify(
     evidence_path: Path = DEFAULT_EVIDENCE,
     remote: str = "origin",
     cwd: Path | None = None,
+    determinism_dir: Path | None = None,
 ) -> ProofResult:
     """Prove the release, then attribute any rebuild difference to its actual cause.
 
@@ -380,31 +399,32 @@ def verify(
             details=details,
         )
 
-    accepted_toolchain = _toolchain(
-        _json(_accepted_evidence_path(reservoir, root=root, reservoir_path=reservoir_path)),
-        label="accepted",
-    )
-    rebuilt_toolchain = _toolchain(evidence, label="rebuilt")
+    if determinism_dir is not None:
+        second = _rebuilt_paths(determinism_dir, root)
+        determinism_details = _determinism_drift(rebuilt, second)
+        if determinism_details:
+            raise ProofFailure(
+                "two builds of the same pinned inputs on the same runner produced different bytes. This is "
+                "nondeterminism in our own pipeline, not an archive update, so nothing may be published from "
+                "this workspace until the build is reproducible again.",
+                details=determinism_details,
+            )
+        determinism_verified = True
+    else:
+        determinism_verified = False
 
+    accepted_evidence = _json(_accepted_evidence_path(reservoir, root=root, reservoir_path=reservoir_path))
     result = ProofResult(
         accepted_ref=accepted_ref,
         accepted_commit=accepted_commit,
         artifact_count=len(expected),
         rebuilt_evidence_sha256=str(evidence.get("evidence_sha256") or "") or _evidence_identity(evidence),
         accepted_evidence_sha256=accepted_evidence_sha256,
-        accepted_toolchain=accepted_toolchain,
-        rebuilt_toolchain=rebuilt_toolchain,
+        accepted_toolchain=_toolchain(accepted_evidence),
+        rebuilt_toolchain=_toolchain(evidence),
+        determinism_verified=determinism_verified,
         drifted=tuple(drift),
     )
-
-    if result.drifted and not result.encoder_changed:
-        raise ProofFailure(
-            "the same encoder binary produced different bytes: this is nondeterminism in our own build, "
-            "not an archive update. The accepted release is unchanged, but the build pipeline must be fixed "
-            "before its output can be trusted again.",
-            details=[drift.describe() for drift in result.drifted],
-        )
-
     return result
 
 
@@ -414,6 +434,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--reservoir", type=Path, default=DEFAULT_RESERVOIR)
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--remote", default="origin")
+    parser.add_argument("--determinism-dir", type=Path, default=None)
     parser.add_argument("--github-output", type=Path, default=None)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     return parser
@@ -438,6 +459,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             reservoir_path=args.reservoir,
             evidence_path=args.evidence,
             remote=args.remote,
+            determinism_dir=args.determinism_dir,
         )
     except ProofFailure as failure:
         for detail in failure.details:
@@ -449,14 +471,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         f"release proven: {result.artifact_count} accepted artifacts at {result.accepted_ref}@{result.accepted_commit}"
     )
+    if not result.determinism_verified:
+        print("determinism: not measured (no second build of the same inputs was supplied)")
     if result.byte_identical:
         print(f"rebuild reproduces every accepted byte; evidence identity {result.rebuilt_evidence_sha256}")
     else:
         _annotate(
-            f"the runner rebuilt {len(result.drifted)} of {result.artifact_count} artifacts with different bytes "
-            f"because its FFmpeg binary changed (accepted {result.accepted_toolchain['ffmpeg_executable_sha256']} "
-            f"rebuilt {result.rebuilt_toolchain['ffmpeg_executable_sha256']}). The accepted release is unchanged and "
-            "nothing is published from the rebuild; re-accepting the new encoding is a separate release decision.",
+            f"{len(result.drifted)} of {result.artifact_count} rebuilt artifacts differ from the accepted encoding"
+            + (
+                ", and two builds of the same pinned inputs on this runner agree byte-for-byte, so the difference "
+                "comes from the toolchain, not from our pipeline"
+                if result.determinism_verified
+                else "; this run did not build twice, so the difference is reported without attribution"
+            )
+            + ". The accepted release is unchanged and nothing is published from a rebuild; re-accepting the new "
+            "encoding is a separate release decision.",
             title="Milovi rebuild differs from the accepted encoding",
             level="warning",
         )
@@ -464,8 +493,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             _annotate(drift.describe(), title="Milovi rebuild drift", level="warning")
         print(
             f"rebuild differs from the accepted encoding on {len(result.drifted)} artifacts; "
-            f"encoder changed: {result.accepted_toolchain['ffmpeg_executable_sha256']} -> "
-            f"{result.rebuilt_toolchain['ffmpeg_executable_sha256']}"
+            f"determinism verified: {result.determinism_verified}; see {args.report}"
         )
 
     if result.identity_matches_accepted:
@@ -489,6 +517,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             handle.write(f"artifact_commit={result.accepted_commit}\n")
             handle.write(f"byte_identical={'true' if result.byte_identical else 'false'}\n")
             handle.write(f"drifted_count={len(result.drifted)}\n")
+            handle.write(f"determinism_verified={'true' if result.determinism_verified else 'false'}\n")
     return 0
 
 

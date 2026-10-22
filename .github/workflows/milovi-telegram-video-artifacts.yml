@@ -36,6 +36,8 @@ jobs:
       OUTPUT_DIR: artifacts/milovi-telegram/video
       EVIDENCE: content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
       RESERVOIR: content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json
+      DETERMINISM_DIR: artifacts/milovi-telegram/rebuild
+      DETERMINISM_EVIDENCE: artifacts/milovi-telegram/rebuild-evidence.json
 
     steps:
       - name: Check out exact pull request head
@@ -117,6 +119,15 @@ jobs:
           print(evidence["evidence_sha256"])
           PY
 
+      - name: Rebuild the same pinned inputs a second time to measure determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_video_artifacts \
+            --source-checkout .source/milovi \
+            --output-dir "$DETERMINISM_DIR" \
+            --evidence "$DETERMINISM_EVIDENCE"
+
       - name: Prove the rebuilt artifacts reproduce the accepted evidence commit
         shell: bash
         run: |
@@ -124,7 +135,8 @@ jobs:
           python -m video_channel_manager.milovi_telegram_video_proof \
             --output-dir "$OUTPUT_DIR" \
             --reservoir "$RESERVOIR" \
-            --evidence "$EVIDENCE"
+            --evidence "$EVIDENCE" \
+            --determinism-dir "$DETERMINISM_DIR"
 
       - name: Publish the rebuild proof report even when the proof fails
         if: always()
@@ -165,6 +177,8 @@ jobs:
       OUTPUT_DIR: artifacts/milovi-telegram/video
       EVIDENCE: content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
       RESERVOIR: content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json
+      DETERMINISM_DIR: artifacts/milovi-telegram/rebuild
+      DETERMINISM_EVIDENCE: artifacts/milovi-telegram/rebuild-evidence.json
 
     steps:
       - name: Check out exact current main
@@ -258,6 +272,15 @@ jobs:
           print(evidence["evidence_sha256"])
           PY
 
+      - name: Rebuild the same pinned inputs a second time to measure determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_video_artifacts \
+            --source-checkout .source/milovi \
+            --output-dir "$DETERMINISM_DIR" \
+            --evidence "$DETERMINISM_EVIDENCE"
+
       - name: Re-prove exact current main before publishing repository artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -279,6 +302,7 @@ jobs:
             --output-dir "$OUTPUT_DIR" \
             --reservoir "$RESERVOIR" \
             --evidence "$EVIDENCE" \
+            --determinism-dir "$DETERMINISM_DIR" \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Publish the rebuild proof report even when the proof fails
