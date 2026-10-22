@@ -61,6 +61,8 @@ The reservoir freezes each media idThe reservoir freezes each media id, artifact
 
 The permanent video path does not transcode at publication time and does not accept arbitrary video URLs/files. It downloads only the exact artifact named by the immutable `<id>-video.json` binding, then rechecks byte size, SHA-256 and Git blob identity before the common `send-once` call. `sendDocument` fallback is forbidden.
 
+If this lane is ever re-accepted from a new build, the new evidence should record the `dpkg` versions of `libavcodec*`, `libavformat*`, `libavutil*`, `libx264*` and `libvpx*` next to the client binary digests: the encoding is decided by those libraries, and the `ffmpeg` binary digest alone does not identify an encoder.
+
 Accepted artifact readiness is still not execution authority. A future video publication needs the same fresh exact release and human execution gates as a photo or text publication.
 
 ## Authority split
