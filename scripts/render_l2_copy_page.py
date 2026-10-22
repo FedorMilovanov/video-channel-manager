@@ -19,19 +19,26 @@ import json
 import re
 from pathlib import Path
 
+# Подпись цитаты: обычная строка «— Автор, «Труд»»; курсивная форма — только
+# ради совместимости со старыми материалами.
+ATTRIBUTION_RE = re.compile(r"^(?:\*— .+\*|— .+)$")
+
 ZWSP = "\u200b"
 AIR = f"<p>{ZWSP}</p>"
 
 
 def inline(text: str) -> str:
-    t = html.escape(text, quote=False)
-    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
-    t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", t)
-    return t
+    """Тело статьи живёт без жирного и курсива (решение оператора 2026-10-22).
+
+    Историческая разметка `**x**` / `*x*` в исходниках ещё встречается, поэтому
+    она не ломает рендер, а снимается: в HTML уходит чистый текст.
+    """
+    return html.escape(plain(text), quote=False)
 
 
 def plain(text: str) -> str:
-    return text.replace("**", "").replace("*", "")
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    return re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", text)
 
 
 def parse_blocks(md: str):
@@ -106,11 +113,11 @@ def render(md: str):
                 # L2: подпись — последняя строка блока, внутрь <blockquote>:
                 # отдельный абзац под цитатой получает блочный отступ и даёт воздух
                 attr = ""
-                if quote_lines and quote_lines[-1].startswith("*—"):
-                    attr = quote_lines.pop().strip("*").strip()
-                elif i < len(block) and block[i].startswith("*—"):
+                if quote_lines and ATTRIBUTION_RE.match(quote_lines[-1]):
+                    attr = plain(quote_lines.pop()).strip()
+                elif i < len(block) and ATTRIBUTION_RE.match(block[i].strip()):
                     # совместимость со старой формой: подпись отдельным абзацем
-                    attr = block[i].strip().strip("*").strip()
+                    attr = plain(block[i]).strip()
                     i += 1
                 inner = "<br>".join(inline(q) for q in quote_lines)
                 if attr:
@@ -121,10 +128,10 @@ def render(md: str):
                 )
                 stats["quotes"] += 1
                 continue
-            if line.startswith("*—"):
+            if ATTRIBUTION_RE.match(line.strip()):
                 flush_text(buf)
-                attr = line.strip().strip("*")
-                out.append(f"<p><i>{inline(attr)}</i></p>")
+                attr = plain(line).strip()
+                out.append(f"<p>{inline(attr)}</p>")
                 plain_blocks.append(plain(attr))
                 i += 1
                 continue
@@ -162,8 +169,7 @@ TPL = """<!DOCTYPE html>
   .article h2{font-size:17.5px;line-height:1.3;margin:18px 0 8px}
   .article p{margin:0 0 13px}
   .article blockquote{margin:0 0 4px;padding:6px 12px;border-left:3px solid var(--accent);color:#d7e2ec}
-  .article blockquote cite{font-style:italic;opacity:.85}
-  .article i{font-style:italic}
+  .article blockquote cite{font-style:normal;opacity:.85}
   .foot{color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
 </style>
 </head>

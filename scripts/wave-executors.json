@@ -981,7 +981,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "a60e2f41f12f5354d5d99da0b7a2795327655d5ff88b0ed18b939557e44ea306",
+      "sha256": "3acd063bf89ef30b1a1999b53cadb779131dc23ff8f8ce13023101e9fcd7fdaa",
       "status": "independent_tool"
     },
     {
@@ -991,7 +991,17 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "916aebddf6abbbbdadbc8d23e5c997fa27f8daabb43fd679ff3dbd721eec409c",
+      "sha256": "f29865a99eccd7678e734de98ce224eb8c835cff0e4024956de1cf3dd80bb8af",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_l2_rich_document.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "db4f78fe26ecc65da4c32ce6524c652a5109e2401e524c2b10e32e01e0387b6f",
       "status": "independent_tool"
     }
   ],

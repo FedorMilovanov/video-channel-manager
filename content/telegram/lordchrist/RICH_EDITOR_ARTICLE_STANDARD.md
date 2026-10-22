@@ -12,7 +12,7 @@ Read after `RICH_EDITORIAL_STANDARD.md` and `QUOTE_ATTRIBUTION_STANDARD.md`. Pre
 | Transport | Telegram composer, long-press → system Paste | 📎 → «Статья» → paste Markdown or rich HTML | `sendRichMessage` with `blocks` / `html` / `markdown` |
 | Paragraph air | invisible `U+2060` spacer line between paragraphs | real blocks; **no invisible spacers at all** | block structure |
 | Section markers | bold line with emoji (`🏛 Жан Кальвин`) | real heading `##` | `heading` block |
-| Quotes | blockquote entity + italic attribution below | `>` blockquote + italic attribution line | `blockquote` block with `credit` |
+| Quotes | blockquote entity + italic attribution below | `>` blockquote + plain attribution line | `blockquote` block with `credit` |
 | Hashtags | 4–6 tags, two blank lines above | **none** — a long article needs no hashtag footer | footer block |
 
 Never mix the transports. `U+2060` in an L2 article is a defect: the editor already creates paragraph gaps, and an extra invisible line becomes a stray empty block. Conversely, L2 headings or Markdown lists pasted into the ordinary composer show up as literal `#` and `**`.
@@ -25,7 +25,7 @@ Count the exact reader-facing text:
 - every line break;
 - no invisible spacers (there must be none).
 
-Limits for L2: **≤ 32 768 UTF-8 characters**, **≤ 500 blocks**, **≤ 16 levels** of nesting, **≤ 50 media**, **≤ 20 table columns**. Keep a soft target of **≤ 30 000 characters** so late edits do not cross the boundary.
+Limits for L2: **≤ 32 768 UTF-8 characters**, **≤ 500 blocks**, **≤ 16 levels** of nesting, **≤ 50 media**, **≤ 20 table columns**. Keep a soft target of **≤ 32 000 characters**: that leaves roughly 700 characters of room, so any late edit still has to be paid for by a cut somewhere else.
 
 Block estimate: paragraphs + headings + list items + quote blocks (+ attribution paragraphs) + table rows. A typical 25 000–27 000-character article uses 110–140 blocks — well inside the limit.
 
@@ -35,14 +35,13 @@ The 4096 limit and the `U+2060` rules in `DIRECT_COPY_TO_TELEGRAM.md` apply to *
 
 ## 3. Structure and headings
 
-- **H1 — title.** Exactly one, first block, ALL CAPS, one line, ≤ 120 characters, bold: `# **ЖАЛКИЕ УТЕШИТЕЛИ: 10 СОВЕТОВ…**`.
+- **H1 — title.** Exactly one, first block, ALL CAPS, one line, ≤ 120 characters, plain (no `**`): `# ЖАЛКИЕ УТЕШИТЕЛИ: 10 СОВЕТОВ…`. The heading itself already renders large; wrapping it in bold only adds `**` to the pasted source.
 - **H2 — sections.** Normal case, bold by heading rendering, ≤ 80 characters, no ALL CAPS, no clickbait. A single leading emoji marker is permitted only under the marker rule below.
 - H3 only when a section genuinely has two levels; more than two heading levels is a defect.
 - One H2 per **1 500–4 000 characters** of body. A 25 000+ character article normally has 10–16 sections.
 - A heading never ends a message or a part; two headings never stand in a row.
 - **Emoji marker rule.** In L2 an emoji is a normal part of the layout, not an exception: one marker leading an H2 line. Use it by default where a section is made of full paragraphs. Two cases take no marker: (1) a section inside a numbered ladder (`## 1. …`, `## 2. …`, `## 3. …`) — the number already marks position, and a pictogram next to it is noise; (2) a short rubric — a section under ~600 characters, meaning one or two sentences, a single item, or a brief insert — where the marker only distracts. No emoji in the H1 and no emoji in body paragraphs in any case; never more than one emoji per heading, always the first character of the line. The 600-character threshold is evaluated per section, not as an average over the article.
-- Body bold: short key phrases only (normally ≤ 7 words). Do not bold whole sentences or alternate every paragraph.
-- Italic: attribution, foreign terms, occasional secondary contrast. Not decoration.
+- **No bold and no italic in the body.** Neither `**…**` nor `*…*` appears in an L2 article: not for key phrases, not for Latin terms, not for the attribution line, not for sections of the argument. Emphasis is carried by word order and by a sentence of its own. Bold survives only as heading rendering, which the editor applies to `#` / `##` by itself.
 
 ## 4. Spacing
 
@@ -78,30 +77,31 @@ Exact Markdown shape:
 Абзац, который вводит цитату и объясняет, зачем она здесь.
 
 > «Точный текст цитаты»
-> *— Автор, «Название труда»*
+> — Автор, «Название труда»
 ```
 
 Rules:
 
-- the quoted words occupy the **opening lines** of the block; the **last line of the same block** is the attribution — italic, starting with Unicode em dash `—` and one space;
+- the quoted words occupy the opening lines of the block; the last line of the same block is the attribution — plain text, starting with Unicode em dash `—` and one space; no `*` around it;
 - the attribution is **inside the quote block, as its last line**, never a separate paragraph under it. A paragraph that follows `<blockquote>` always inherits the editor's block spacing, and that is exactly the stray gap readers complain about; inside the block the attribution sits directly under the quoted words with no gap at all. This is a transport decision, not an attribution rule: the words still belong to the author, not to the quoted text, and `QUOTE_ATTRIBUTION_STANDARD.md` governs names and titles;
 - the quoted words never carry the author, the reference or the work title;
-- Scripture uses the same shape: `> *— Иов 16:2*` as the last line;
+- Scripture uses the same shape: `> — Иов 16:2` as the last line;
 - after the quote block — ordinary paragraph break, no extra air;
 - air before the quote is the default. The only exception is a genuinely short connector that exists only to introduce the quote:
 
 ```text
 Об окончательно отпавших Иоанн говорит иначе:
 > «Цитата»
-> *— 1 Ин. 2:19*
+> — 1 Ин. 2:19
 ```
 
 The connector is one short line ending with a colon (≤ 120 characters) that has no independent argument of its own. A colon alone is not a reason to remove air; do not manufacture one-sentence lead-ins.
 
-- One quote block ≤ ~600 characters of quoted words; the attribution line does not count towards the limit. A longer passage is split by the author's own narration, not by `…`.
+- A quote block may be large. The normal range is 300–1 500 characters of quoted words; a key passage may run to 4 000 characters when the author's argument is continuous there. The attribution line does not count towards the limit. Size is decided by the argument, not by the layout: do not cut a passage that holds the proof in order to keep the block short, and do not splice two distant passages into one block — an omission inside a block is marked by `…` only where the author really skips text.
 - No nested quotes and no second level of `>`.
+- No translation note under a quote: neither «перевод мой» nor any similar mark. A Russian rendering of an English author is the channel's own translation by definition, and the credit line the reader sees in the author field carries only `— Автор, «Труд»`.
 - Ellipses mark real omissions; paraphrases never stand inside quotation marks.
-- Inline Scripture inside a running argument stays inline bold (as in the current articles). The blockquote shape is for quotations that stand as evidence on their own; do not convert every reference into a block.
+- Inline Scripture inside a running argument stays plain text inside the quotation marks — no bold, no italic. The blockquote shape is for quotations that stand as evidence on their own; do not convert every reference into a block.
 
 ### Lane split for the attribution
 
@@ -109,7 +109,7 @@ The placement of the attribution depends on the lane, and the two rules must not
 
 | Lane | Transport | Attribution |
 |---|---|---|
-| **L2** — rich editor «Статья», up to 32 768 characters | Markdown → «Статья» → paste, or HTML copy page | **inside** the quote block, last line: `> *— Автор, «Труд»*` |
+| **L2** — rich editor «Статья», up to 32 768 characters | Markdown → «Статья» → paste, or HTML copy page | **inside** the quote block, last line, plain: `> — Автор, «Труд»` |
 | **L1** — one ordinary message, up to 4 096 characters | plain rich composer | **outside** the quote block, separate paragraph: `*— Автор, «Труд»*` (`QUOTE_ATTRIBUTION_STANDARD.md`) |
 
 Why the difference: in a long article the quote is one block among hundreds, and any block boundary under it produces a visible gap the editor controls, so the attribution is pulled inside. In a short post the attribution is its own line of the layout, and the older L1 rule stands.
