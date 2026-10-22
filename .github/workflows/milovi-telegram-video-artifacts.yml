@@ -263,6 +263,24 @@ jobs:
           PY
           )"
           branch="agent/milovi-video-accepted-${evidence_sha:0:12}"
+          # The ref name is the accepted release identity, so a different digest is a new
+          # release decision, not a new artifact. Without this gate a regeneration would
+          # silently create an untracked evidence branch that no binding names and that the
+          # next hygiene pass would consider disposable.
+          accepted_branch="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          reservoir = json.loads(
+              Path("content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json").read_text(encoding="utf-8")
+          )
+          print(reservoir["artifact_ref"])
+          PY
+          )"
+          if [[ "$branch" != "$accepted_branch" ]]; then
+            echo "regenerated evidence differs from the accepted release: derived=$branch accepted=$accepted_branch" >&2
+            echo "a new digest requires a new release decision and a protected-evidence-refs.json entry" >&2
+            exit 3
+          fi
           if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
             echo "content-addressed artifact branch already exists; refusing overwrite: $branch" >&2
             exit 3

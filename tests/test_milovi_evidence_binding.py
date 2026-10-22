@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RESERVOIR = ROOT / "content" / "telegram" / "milovi-cake" / "accepted-video-reservoir-2026-08.json"
 PROTECTED = ROOT / "docs" / "operations" / "protected-evidence-refs.json"
 HYGIENE_LEDGER = ROOT / "docs" / "operations" / "branch-hygiene-2026-10-21-deletion-ledger.md"
+ARTIFACT_WORKFLOW = ROOT / ".github" / "workflows" / "milovi-telegram-video-artifacts.yml"
 
 
 def _reservoir() -> dict[str, object]:
@@ -112,3 +113,35 @@ def test_deletion_ledger_never_lists_a_protected_ref_as_deleted() -> None:
         if entry["tip_is_stable"]:
             assert entry["restore"], entry["ref"]
             assert entry["tip_commit"] in entry["restore"], entry["ref"]
+
+
+def test_artifact_workflow_can_only_reproduce_the_accepted_evidence_ref() -> None:
+    """A regenerated digest must fail the build, not spawn an untracked evidence ref.
+
+    The workflow derives its branch name from the evidence digest. Before this gate, a
+    regeneration would create `agent/milovi-video-accepted-<new12>` — a ref that no binding
+    names, that is absent from the protected inventory, and that the next hygiene pass would
+    treat as a disposable work branch. That is the same failure mode as the deletion this
+    file already guards against, one step earlier in the pipeline.
+    """
+
+    workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+
+    # The name is still derived from the digest...
+    assert 'branch="agent/milovi-video-accepted-${evidence_sha:0:12}"' in workflow
+    # ...but it must equal the accepted ref before anything is pushed.
+    assert "accepted_branch=" in workflow
+    assert 'if [[ "$branch" != "$accepted_branch" ]]' in workflow
+    assert "protected-evidence-refs.json entry" in workflow
+    assert workflow.index("accepted_branch=") < workflow.index("git push origin")
+
+
+def test_derived_artifact_ref_equals_the_accepted_binding_for_current_evidence() -> None:
+    """The 12-character derivation must actually land on the accepted ref today."""
+
+    evidence = json.loads((ROOT / str(_reservoir()["evidence_path"])).read_text(encoding="utf-8"))
+    digest = str(evidence["evidence_sha256"]).split(":", 1)[1]
+
+    derived = f"agent/milovi-video-accepted-{digest[:12]}"
+
+    assert derived == _reservoir()["artifact_ref"] == feed.VIDEO_ARTIFACT_REF
