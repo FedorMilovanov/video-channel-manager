@@ -11,121 +11,11 @@ from lordchrist_article_preflight import check  # noqa: E402
 from render_l2_copy_page import render  # noqa: E402
 
 SOURCE_NOTE = (
-    "📖 Цитаты Чарнока — из книги «Беседы о существовании и атрибутах Бога»; "
+    "Цитаты Чарнока — из книги **«Беседы о существовании и атрибутах Бога»** "
+    "(*Discourses upon the Existence and Attributes of God*); "
     "текст по изданию 1853 года, оцифровка: Project Gutenberg, eBook #53527, "
     "https://www.gutenberg.org/ebooks/53527."
 )
-
-
-def test_render_sample_article_has_cite_and_no_legacy_attribution() -> None:
-    sample_path = ROOT / "content/telegram/lordchrist/examples/ОБРАЗЕЦ-статья-L2.md"
-    md = sample_path.read_text(encoding="utf-8")
-    rich_html, _, _ = render(md)
-
-    assert "<cite>" in rich_html
-    assert rich_html.count("<cite>") >= 2
-    assert "<br><i>— " not in rich_html
-
-
-def test_preflight_numbered_section_with_emoji_fails(tmp_path: Path) -> None:
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
-        "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала.\n\n"
-        "## 🏛 1. Раздел\n\n"
-        "Текст первого раздела статьи.\n\n"
-        f"{SOURCE_NOTE}\n",
-        encoding="utf-8",
-    )
-    rep = check(doc)
-    assert any("номера уже маркируют место" in err for err in rep.errors)
-
-
-def test_preflight_short_named_section_with_emoji_fails(tmp_path: Path) -> None:
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
-        "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала.\n\n"
-        "## 🏛 Короткая рубрика\n\n"
-        "Короткая вставка всего в одно предложение.\n\n"
-        f"{SOURCE_NOTE}\n",
-        encoding="utf-8",
-    )
-    rep = check(doc)
-    assert any("короткой рубрике" in err or "короче ~600" in err for err in rep.errors)
-
-
-def test_preflight_full_named_section_with_emoji_succeeds(tmp_path: Path) -> None:
-    lead = (
-        "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала. "
-        "Он вводит тему и обещает предметное богословское рассуждение."
-    )
-    p1 = (
-        "Это первый полноценный абзац раздела, который подробно и основательно раскрывает главную мысль всей темы. "
-        "В нём содержатся необходимые богословские и исторические основания для читателя, позволяющие понять контекст "
-        "и проследить логику дальнейшего повествования без каких-либо пропусков или недосказанностей. "
-        "Каждое предложение опирается на факты и развивает аргументацию последовательно."
-    )
-    p2 = (
-        "Это второй полноценный абзац раздела, продолжающий начатое рассуждение и делающий ясный и доказательный вывод. "
-        "Вся мысль выстроена последовательно и не распадается на короткие отдельные лозунги, а образует единый связный "
-        "текст нормальной статьи, готовый к публикации в канале для внимательного чтения. "
-        "Здесь формулируется завершённый богословский тезис."
-    )
-    assert len(p1 + "\n\n" + p2) >= 600
-
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{lead}\n\n## 🏛 Именованный раздел\n\n{p1}\n\n{p2}\n\n"
-        f"{SOURCE_NOTE}\n",
-        encoding="utf-8",
-    )
-    rep = check(doc)
-    assert not rep.errors
-
-
-def test_preflight_emoji_in_body_paragraph_is_error(tmp_path: Path) -> None:
-    lead = (
-        "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала. "
-        "Он вводит тему и обещает предметное богословское рассуждение."
-    )
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
-        f"{lead}\n\n"
-        "## Именованный раздел без маркера\n\n"
-        "Обычный абзац текста, в который случайно попал эмодзи 🏛 прямо в середину текста. "
-        "Такой эмодзи в теле абзаца запрещён правилами L2.\n\n"
-        "Второй абзац текста продолжает рассуждение и развивает аргумент дальше без нарушений. "
-        "Здесь нет никаких посторонних графических элементов.\n\n"
-        f"{SOURCE_NOTE}\n",
-        encoding="utf-8",
-    )
-    rep = check(doc)
-    assert any("эмодзи в обычном абзаце" in err for err in rep.errors)
-    assert not any("эмодзи в обычном абзаце" in w for w in rep.warnings)
-
-
-def test_preflight_article_without_emoji_has_no_emoji_errors(tmp_path: Path) -> None:
-    lead = (
-        "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала. "
-        "Он вводит тему и обещает предметное богословское рассуждение."
-    )
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
-        f"{lead}\n\n"
-        "## Чистый раздел без эмодзи\n\n"
-        "Первый абзац статьи без каких-либо эмодзи раскрывает суть рассматриваемого вопроса. "
-        "Он формулирует основные положения аргумента последовательно и ясно.\n\n"
-        "Второй абзац раздела развивает начатую мысль и приводит к обоснованному заключению. "
-        "Никаких эмодзи или запрещённых символов здесь нет.\n\n"
-        f"{SOURCE_NOTE}\n",
-        encoding="utf-8",
-    )
-    rep = check(doc)
-    assert not any("эмодзи" in err.lower() for err in rep.errors)
-
 
 LEAD = (
     "Лид статьи с подробным описанием контекста и вводных мыслей для читателей канала. "
@@ -140,9 +30,88 @@ BODY = (
 
 def _article(quote: str, body: str = BODY) -> str:
     return (
-        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{body}\n\n"
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{body}\n\n"
         f"{quote}\n\n{SOURCE_NOTE}\n"
     )
+
+
+def test_render_sample_article_has_cite_and_no_legacy_attribution() -> None:
+    sample_path = ROOT / "content/telegram/lordchrist/examples/ОБРАЗЕЦ-статья-L2.md"
+    md = sample_path.read_text(encoding="utf-8")
+    rich_html, _, _ = render(md)
+
+    assert "<cite>" in rich_html
+    assert rich_html.count("<cite>") >= 2
+    assert "<br><i>— " not in rich_html
+
+
+def test_sample_article_passes_preflight() -> None:
+    sample_path = ROOT / "content/telegram/lordchrist/examples/ОБРАЗЕЦ-статья-L2.md"
+    rep = check(sample_path)
+    assert not rep.errors
+
+
+def test_series_articles_pass_preflight() -> None:
+    charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
+    articles = sorted(path for path in charnock.glob("lordchrist-rich-charnock-*.md") if "-проверка" not in path.name)
+    assert len(articles) >= 3
+    for article in articles:
+        rep = check(article)
+        assert not rep.errors, f"{article.name}: {rep.errors}"
+        assert not rep.warnings, f"{article.name}: {rep.warnings}"
+
+
+def test_preflight_emoji_marker_in_heading_fails(tmp_path: Path) -> None:
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## 🏛 Именованный раздел\n\n{BODY}\n\n{SOURCE_NOTE}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert any("эмодзи" in err for err in rep.errors)
+
+
+def test_preflight_emoji_in_body_paragraph_is_error(tmp_path: Path) -> None:
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
+        f"{LEAD}\n\n"
+        "## Именованный раздел без маркера\n\n"
+        "Обычный абзац текста, в который случайно попал эмодзи 🏛 прямо в середину текста. "
+        "Такой эмодзи в теле абзаца запрещён правилами L2.\n\n"
+        "Второй абзац текста продолжает рассуждение и развивает аргумент дальше без нарушений. "
+        "Здесь нет никаких посторонних графических элементов.\n\n"
+        f"{SOURCE_NOTE}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert any("эмодзи в тексте" in err for err in rep.errors)
+    assert not any("эмодзи в тексте" in w for w in rep.warnings)
+
+
+def test_preflight_emoji_inside_quote_is_error(tmp_path: Path) -> None:
+    quote = "> «Точный текст цитаты 🏛, достаточно длинной для отдельного блока.»\n> — Стивен Чарнок, «О бытии Бога»"
+    doc = tmp_path / "article.md"
+    doc.write_text(_article(quote), encoding="utf-8")
+    rep = check(doc)
+    assert any("эмодзи в тексте" in err for err in rep.errors)
+
+
+def test_preflight_article_without_emoji_has_no_emoji_errors(tmp_path: Path) -> None:
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n"
+        f"{LEAD}\n\n"
+        "## Чистый раздел без эмодзи\n\n"
+        "Первый абзац статьи без каких-либо эмодзи раскрывает суть рассматриваемого вопроса. "
+        "Он формулирует основные положения аргумента последовательно и ясно.\n\n"
+        "Второй абзац раздела развивает начатую мысль и приводит к обоснованному заключению. "
+        "Никаких эмодзи или запрещённых символов здесь нет.\n\n"
+        f"{SOURCE_NOTE}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert not any("эмодзи" in err.lower() for err in rep.errors)
 
 
 def test_preflight_accepts_plain_attribution_without_asterisks(tmp_path: Path) -> None:
@@ -166,16 +135,27 @@ def test_preflight_accepts_large_quote_block(tmp_path: Path) -> None:
     assert not any("цитата" in warning for warning in rep.warnings)
 
 
-def test_preflight_rejects_bold_and_italic_in_body(tmp_path: Path) -> None:
+def test_preflight_accepts_bold_and_italic_in_body(tmp_path: Path) -> None:
+    """С 22.10.2026 жирный и курсив разрешены: проверяется только целостность разметки."""
     doc = tmp_path / "article.md"
-    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё **жирный акцент**."), encoding="utf-8")
-    assert any("жирный шрифт" in err for err in check(doc).errors)
+    doc.write_text(
+        _article("Обычный абзац.", body=f"{BODY} И ещё **жирный акцент** и *курсив*."),
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert not rep.errors
 
-    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё *курсив*."), encoding="utf-8")
-    assert any("курсив" in err for err in check(doc).errors)
+
+def test_preflight_rejects_unclosed_markup(tmp_path: Path) -> None:
+    doc = tmp_path / "article.md"
+    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё **жирный акцент."), encoding="utf-8")
+    assert any("жирный не закрыт" in err for err in check(doc).errors)
+
+    doc.write_text(_article("Обычный абзац.", body=f"{BODY} И ещё *курсив."), encoding="utf-8")
+    assert any("курсив не закрыт" in err for err in check(doc).errors)
 
 
-def test_build_l2_rich_document_strips_markup_and_keeps_credit(tmp_path: Path) -> None:
+def test_build_l2_rich_document_keeps_markup_and_credit(tmp_path: Path) -> None:
     from build_l2_rich_document import build
 
     document = {
@@ -188,18 +168,42 @@ def test_build_l2_rich_document_strips_markup_and_keeps_credit(tmp_path: Path) -
     doc_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
     md_path = tmp_path / "article.md"
     md_path.write_text(
-        "# **ТЕСТ**\n\nАбзац с *курсивом* и **жирным**.\n\n> «Цитата»\n> *— Стивен Чарнок, «О бытии Бога»*\n\n"
+        "# **ТЕСТ**\n\nАбзац с *курсивом* и **жирным**.\n\n> «Цитата»\n> — Стивен Чарнок, «О бытии Бога»\n\n"
         f"{SOURCE_NOTE}\n",
         encoding="utf-8",
     )
 
     built = build(md_path, doc_path)
     heading, paragraph, quote = built["blocks"][:3]
-    assert heading["text"] == "ТЕСТ" and heading["size"] == 1
-    assert paragraph["text"] == "Абзац с курсивом и жирным."
+    assert heading["text"] == [{"type": "bold", "text": "ТЕСТ"}] and heading["size"] == 1
+    assert paragraph["text"] == [
+        "Абзац с ",
+        {"type": "italic", "text": "курсивом"},
+        " и ",
+        {"type": "bold", "text": "жирным"},
+        ".",
+    ]
     assert quote["credit"] == "— Стивен Чарнок, «О бытии Бога»"
     assert quote["blocks"][0]["text"] == "«Цитата»"
     assert json.loads(doc_path.read_text(encoding="utf-8"))["blocks"] == built["blocks"]
+
+
+def test_build_l2_rich_document_keeps_plain_text_plain(tmp_path: Path) -> None:
+    from build_l2_rich_document import build
+
+    document = {
+        "schema_name": "video-channel-manager.rich-article-document",
+        "document_id": "test",
+        "metadata": {"title": "Тест", "language": "ru"},
+        "blocks": [],
+    }
+    doc_path = tmp_path / "doc.json"
+    doc_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    md_path = tmp_path / "article.md"
+    md_path.write_text("# **ТЕСТ**\n\nОбычный абзац без всякой разметки.\n", encoding="utf-8")
+
+    built = build(md_path, doc_path)
+    assert built["blocks"][1]["text"] == "Обычный абзац без всякой разметки."
 
 
 def test_preflight_rejects_translation_note_under_quote(tmp_path: Path) -> None:
@@ -213,12 +217,12 @@ def test_preflight_rejects_translation_note_under_quote(tmp_path: Path) -> None:
 
 
 def test_preflight_rejects_italic_attribution(tmp_path: Path) -> None:
+    """Подпись цитаты в L2 — plain: курсивом она не читается как подпись."""
     quote = "> «Точный текст цитаты, достаточно длинной для отдельного блока.»\n> *— Стивен Чарнок, «О бытии Бога»*"
     doc = tmp_path / "article.md"
     doc.write_text(_article(quote), encoding="utf-8")
     rep = check(doc)
     assert any("нет подписи" in err for err in rep.errors)
-    assert any("курсив" in err for err in rep.errors)
 
 
 def test_render_puts_air_before_headings_and_around_quotes() -> None:
@@ -240,17 +244,36 @@ def test_render_puts_air_before_headings_and_around_quotes() -> None:
     assert stats["air"] > stats["headings"] + stats["quotes"]
 
 
+def test_render_keeps_bold_and_italic_as_html() -> None:
+    article = ROOT / "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.md"
+    rich_html, _, _ = render(article.read_text(encoding="utf-8"))
+
+    assert "<b>" in rich_html
+    assert "<i>" in rich_html
+    assert "**" not in rich_html
+
+
 def test_render_keeps_connector_tight_to_its_quote() -> None:
     md = "# ТЕСТ\n\nАбзац перед связкой во всю строку, чтобы блок был не коротким.\n\nОб этом он говорит иначе:\n> «Цитата»\n> — Стивен Чарнок, «О бытии Бога»\n"
     rich_html, _, _ = render(md)
     assert "иначе:</p>\n<blockquote>" in rich_html
 
 
-def test_preflight_rejects_second_emoji_in_the_source_note(tmp_path: Path) -> None:
+def test_preflight_rejects_emoji_in_the_source_note(tmp_path: Path) -> None:
     note = SOURCE_NOTE.replace("текст по изданию", "📚 текст по изданию")
     doc = tmp_path / "article.md"
     doc.write_text(
-        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
         encoding="utf-8",
     )
-    assert any("только один значок" in err for err in check(doc).errors)
+    assert any("эмодзи в тексте" in err for err in check(doc).errors)
+
+
+def test_preflight_rejects_emoji_marker_before_the_source_note(tmp_path: Path) -> None:
+    note = "📖 " + SOURCE_NOTE
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    assert any("эмодзи в тексте" in err for err in check(doc).errors)

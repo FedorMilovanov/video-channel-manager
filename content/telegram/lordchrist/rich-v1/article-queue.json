@@ -13,7 +13,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.json",
-        "git_blob_sha": "ccbc2dd5db1edc4ea2d4c2dff6bcbf892907861a"
+        "git_blob_sha": "3d1b0c2473154c78483483073609541c8d62cd2e"
       },
       "cover": {
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-01-cover.jpg",
@@ -29,7 +29,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-02.json",
-        "git_blob_sha": "3715ea4568b2e3162dc624ddeab0b68ce87f9f9a"
+        "git_blob_sha": "669e1af7136be2d8be66e8a117b12a47ce04844a"
       },
       "cover": {
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-02-cover.jpg",
@@ -41,9 +41,16 @@
       "publication_id": "lordchrist-rich-charnock-03",
       "ordinal": 3,
       "scheduled_on_moscow": "2026-10-30",
-      "status": "planned",
-      "article": null,
-      "cover": null
+      "status": "ready",
+      "article": {
+        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-03.json",
+        "git_blob_sha": "08035172c2b5c0425de1fd1348f4a390376f84ef"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-03-cover.jpg",
+        "git_blob_sha": "fe5ad9374c9fb02930a42e62dc0af9f29faa375a",
+        "media_id": "media-cover"
+      }
     },
     {
       "publication_id": "lordchrist-rich-charnock-04",
