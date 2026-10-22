@@ -49,7 +49,7 @@ L2 has two representations, and they control spacing differently.
 
 **L2-MD — Markdown source (what the agent writes).** Telegram's rich editor builds paragraph and heading blocks itself. A blank line in Markdown is a block separator, not an empty paragraph; an empty paragraph cannot be expressed in Markdown at all. Therefore the Markdown source never simulates air: it uses exactly one blank line between blocks, and the editor supplies the normal paragraph and heading gaps. No invisible characters are allowed in the source.
 
-**L2-HTML — copy page (the publication artifact).** The air **before** headings is one explicit empty block, `<p>&#160;</p>` (a no-break space, `U+00A0`), immediately before each `h2` and nowhere else. The first block of the article is the `h1` and takes no air; there is no air after a heading.
+**L2-HTML — copy page (the publication artifact).** Air is one explicit empty block, `<p>&#160;</p>` (a no-break space, `U+00A0`). It stands **before every `h2`** and **above and below every block quote** — nowhere else. The first block of the article is the `h1` and takes no air; there is no air after a heading; two consecutive blocks never get two empty blocks between them.
 
 The character matters. A zero-width space (`U+200B`) looks like the obvious choice, and it is the wrong one: the editor «Статья» treats a paragraph with no visible character as empty text and drops it on paste, so the air silently disappears and the article arrives as a solid wall of text with headings glued to the paragraph above. A no-break space survives HTML parsing, renders as exactly one blank line and no glyph. This is the only permitted invisible character in the whole pipeline, it lives in the artifact, and the reader never sees it as text.
 
@@ -63,14 +63,18 @@ Spacing matrix for the rendered artifact:
 | paragraph → H2 | **air before** — exactly one empty block (`U+00A0`) |
 | H1 → next block | no air: the title stands alone |
 | H2 → first paragraph | **no air after**; text follows immediately |
-| paragraph → block quote | air before (default) |
-| short connector → block quote | no extra air (narrow exception, §5) |
+| paragraph → block quote | **air above** — one empty block (`U+00A0`) |
+| short connector → block quote | no air: the connector exists to hold the quote tight (§5) |
+| block quote → paragraph | **air below** — one empty block (`U+00A0`) |
+| block quote → H2 | one empty block, not two: the heading's own air is that block |
+| block quote → block quote | one empty block between them |
 | quote → attribution | **same block**: attribution is the last line inside the quote, no gap possible (§5) |
-| attribution → next paragraph | ordinary paragraph gap |
 | list item → list item | ordinary paragraph gap; each item is its own block (§6) |
 | anywhere else | ordinary paragraph gap |
 
-Air **only before** headings, and exactly one block each. Air after a heading is a defect: it doubles the gap the editor already adds. Air between ordinary paragraphs is a defect too: the editor already separates them, and empty blocks there turn a long article into a ladder of gaps. A copy page that puts empty blocks anywhere except before headings fails review.
+Air appears in exactly two places: **before headings** and **around quotations** — one empty block each time, never two in a row. Air after a heading is a defect: it doubles the gap the editor already adds. Air between ordinary paragraphs is a defect too: the editor already separates them, and empty blocks there turn a long article into a ladder of gaps. A copy page that puts empty blocks anywhere else fails review.
+
+Why quotations are isolated: a quote is the only block whose boundary the reader must see without being told. Two air lines make it a figure on the page instead of a sentence that drifted out of the paragraph; in a 30 000-character article the eye needs that boundary at a glance. Headings and quotations are the article's two load-bearing structures, and air marks exactly those.
 
 A plain Markdown paste without the renderer is acceptable when headings already look right in the current client; the renderer exists to make the result deterministic across clients.
 
@@ -91,7 +95,7 @@ Rules:
 - the attribution is **inside the quote block, as its last line**, never a separate paragraph under it. A paragraph that follows `<blockquote>` always inherits the editor's block spacing, and that is exactly the stray gap readers complain about; inside the block the attribution sits directly under the quoted words with no gap at all. This is a transport decision, not an attribution rule: the words still belong to the author, not to the quoted text, and `QUOTE_ATTRIBUTION_STANDARD.md` governs names and titles;
 - the quoted words never carry the author, the reference or the work title;
 - Scripture uses the same shape: `> — Иов 16:2` as the last line;
-- after the quote block — ordinary paragraph break, no extra air;
+- the quote block is surrounded by one empty block above and one below (§4): the boundary between the author's words and the channel's commentary must be visible without being announced;
 - air before the quote is the default. The only exception is a genuinely short connector that exists only to introduce the quote:
 
 ```text
@@ -193,7 +197,7 @@ When the user asks for a paste-ready long article:
 - [ ] lane stated explicitly (L2) and the limit checked against 32 768 / 500 blocks;
 - [ ] exactly one H1, ALL CAPS, plain (no `**`), ≤ 120 characters;
 - [ ] H2 in normal case, one section per 1 500–4 000 characters; a leading emoji marker under the §3 rule (single, leading, allowed in paragraph-sized named sections, never in numbered `1. 2. 3.` sequences, never on rubrics under ~600 characters);
-- [ ] artifact: exactly one empty block before every H2, none after a heading, none between ordinary paragraphs, and that block is `U+00A0`, not `U+200B`;
+- [ ] artifact: exactly one empty block before every H2 and above/below every quote, none after a heading, none between ordinary paragraphs, never two in a row, and that block is `U+00A0`, not `U+200B`;
 - [ ] every list item is its own paragraph with `•` or `1.`, none rendered as a tight Markdown list;
 - [ ] quotes: quoted words only inside `>`; attribution on the next line, italic, `— ` prefix;
 - [ ] air before quotations by default; connector exception used only where justified;

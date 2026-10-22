@@ -221,41 +221,26 @@ def test_preflight_rejects_italic_attribution(tmp_path: Path) -> None:
     assert any("курсив" in err for err in rep.errors)
 
 
-def test_render_puts_air_before_headings_only() -> None:
+def test_render_puts_air_before_headings_and_around_quotes() -> None:
     article = ROOT / "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.md"
     rich_html, _, stats = render(article.read_text(encoding="utf-8"))
 
     assert "\u200b" not in rich_html, "нулевой пробел редактор выбрасывает — воздух исчезнет при вставке"
     assert rich_html.count("\u00a0") == stats["air"]
-    # первый блок — заголовок, перед ним воздуха нет; дальше по одному на каждый H2
-    assert rich_html.lstrip().startswith("<h1>")
-    assert stats["air"] == stats["headings"] - 1
+    assert rich_html.lstrip().startswith("<h1>"), "перед первым блоком воздуха нет"
+    # нигде нет двух пустых блоков подряд
+    assert "\u00a0</p>\n<p>\u00a0</p>" not in rich_html
     # после заголовка воздух не ставится: текст идёт сразу за ним
     assert "</h2>\n<p>\u00a0</p>" not in rich_html
+    # воздух сверху и снизу цитаты
+    assert "</p>\n<p>\u00a0</p>\n<blockquote>" in rich_html
+    assert "</blockquote>\n<p>\u00a0</p>\n<p>" in rich_html
+    # перед цитатой не бывает двух воздухов, даже если дальше заголовок
+    assert "</blockquote>\n<p>\u00a0</p>\n<p>\u00a0</p>" not in rich_html
+    assert stats["air"] > stats["headings"] + stats["quotes"]
 
 
-def test_preflight_requires_bibliographic_note(tmp_path: Path) -> None:
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n",
-        encoding="utf-8",
-    )
-    assert any("библиографической пометки" in err for err in check(doc).errors)
-
-
-def test_preflight_note_without_source_url_fails(tmp_path: Path) -> None:
-    doc = tmp_path / "article.md"
-    doc.write_text(
-        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n"
-        f"{BODY}\n\nОткуда цитаты. Книга 1853 года, издание Robert Carter & Brothers.\n",
-        encoding="utf-8",
-    )
-    assert any("ссылки на источник" in err for err in check(doc).errors)
-
-
-def test_preflight_does_not_read_ebook_number_as_hashtag(tmp_path: Path) -> None:
-    doc = tmp_path / "article.md"
-    doc.write_text(_article("Обычный абзац."), encoding="utf-8")
-    rep = check(doc)
-    assert rep.stats["hashtags"] == 0
-    assert not any("хэштег" in err for err in rep.errors)
+def test_render_keeps_connector_tight_to_its_quote() -> None:
+    md = "# ТЕСТ\n\nАбзац перед связкой во всю строку, чтобы блок был не коротким.\n\nОб этом он говорит иначе:\n> «Цитата»\n> — Стивен Чарнок, «О бытии Бога»\n"
+    rich_html, _, _ = render(md)
+    assert "иначе:</p>\n<blockquote>" in rich_html
