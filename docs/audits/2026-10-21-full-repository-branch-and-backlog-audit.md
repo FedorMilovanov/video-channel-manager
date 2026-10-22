@@ -547,3 +547,42 @@ byte-identical duplication is not a sufficient reason to delete a bound evidence
 workflow or release JSON must be declared protected, and every protected ref must be restorable.
 
 Corrected final ref count: `main` + 3 durable `state/*` refs + 2 content-addressed evidence refs.
+
+## 2026-10-22 — the class this audit kept finding: an identity that does not identify
+
+The Milovi artifact lane was red on `main` for five merges in a row, and every attempt to fix it
+failed for the same reason the original mistake was made. Written down once, because the pattern
+recurs and each instance looked reasonable on its own:
+
+1. **A lifecycle rule that did not match the refs.** `AGENTS.md` called every `agent/...` ref
+   ephemeral while a release binding lived on one of them, so the policy instructed the deletion of a
+   live evidence ref. Closed by the three ref classes and
+   `tests/test_ref_binding_inventory.py`.
+2. **A name derived from something that is not the identity.** The artifact workflow named its
+   evidence branch after the *rebuilt* digest. A rebuild legitimately produces a different digest,
+   because the evidence identity includes runner toolchain metadata, so the derivation could only ever
+   mint a ref that nothing binds — or trip a gate that could never pass. Closed by anchoring on the
+   reservoir's `artifact_commit` and fetching it by SHA.
+3. **A digest that does not identify the thing it is compared against.** The replacement gate attributed
+   a byte difference to the `ffmpeg` *client binary* digest. That digest was identical to the accepted
+   one and the bytes still differed, because the bytes are produced by `libavcodec`/`libx264`, which
+   apt updates independently. The gate therefore accused our own pipeline of nondeterminism that did
+   not exist. Closed by measuring determinism instead of inferring it: each job converts the same
+   pinned source twice and the proof requires both builds to agree.
+
+Each fix is checked by a test that would have failed before it, and the third was only visible because
+the second was moved into the pull-request job — the guard had previously first run after merge, where
+its failure could not even be read. That is the durable lesson of this audit: **a check that runs only
+after the irreversible step is not a check, and a check whose failure is not readable is not evidence.**
+
+State at the close of this pass: `main` is green on all seven workflows at `d49059a6`, `main` plus 3
+durable `state/*` refs plus 2 content-addressed evidence refs remain, and the two open issues (`#662`
+VK credential quarantine, `#621` native-video v2 canary) both require provider execution rather than
+repository work.
+
+Open release question, recorded rather than guessed: the accepted 16 MP4s were encoded on 2026-08-19
+and cannot be reproduced by today's Ubuntu FFmpeg (all sixteen differ by −414 to +4348 bytes). The
+accepted bytes are still the release and publication still verifies their blob ids, so nothing is
+broken; but if the lane is ever re-accepted from a new build, that evidence should record the
+`dpkg` versions of `libavcodec*`, `libavformat*`, `libavutil*`, `libx264*` and `libvpx*` alongside the
+client binary digests, so the toolchain identity finally covers the encoder.
