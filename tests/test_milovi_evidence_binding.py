@@ -136,6 +136,31 @@ def test_artifact_workflow_can_only_reproduce_the_accepted_evidence_ref() -> Non
     assert workflow.index("accepted_branch=") < workflow.index("git push origin")
 
 
+def test_artifact_workflow_rerun_is_verified_not_refused() -> None:
+    """An identical rebuild is not an error; drift is.
+
+    The accepted artifacts are immutable, so the workflow could not simply overwrite them.
+    It used to exit 3 whenever the ref existed, which made every later run on `main` fail
+    for a state that was in fact correct. A re-run now proves the rebuild reproduced the
+    accepted blobs byte-for-byte and succeeds, and only genuine drift stays fatal.
+    """
+
+    workflow = ARTIFACT_WORKFLOW.read_text(encoding="utf-8")
+
+    existing = workflow.index('if git ls-remote --exit-code origin "refs/heads/$branch"')
+    push = workflow.index("git push origin")
+    existing_block = workflow[existing:push]
+
+    assert "git hash-object" in existing_block
+    assert "git rev-parse" in existing_block
+    assert "artifact drift on" in existing_block
+    assert "exit 3" in existing_block  # drift stays fatal
+    assert "exit 0" in existing_block  # identical rebuild succeeds
+    # The no-op path must still surface the ref and digest for later steps.
+    assert 'echo "branch=$branch" >> "$GITHUB_OUTPUT"' in existing_block
+    assert 'echo "evidence_sha256=sha256:$evidence_sha" >> "$GITHUB_OUTPUT"' in existing_block
+
+
 def test_derived_artifact_ref_equals_the_accepted_binding_for_current_evidence() -> None:
     """The 12-character derivation must actually land on the accepted ref today."""
 
