@@ -141,8 +141,14 @@ def load_queue(path: Path = DEFAULT_QUEUE_PATH, root: Path = Path(".")) -> tuple
             scheduled_on = date.fromisoformat(str(raw.get("scheduled_on_moscow")))
         except ValueError as exc:
             raise ValueError(f"queue item {publication_id} has an invalid date") from exc
+        override_reason = raw.get("slot_override_reason")
         if scheduled_on.weekday() not in MIDDAY_WEEKDAYS:
-            raise ValueError(f"queue item {publication_id} is not scheduled on the midday slot")
+            # An off-slot date is allowed only as an explicit, documented exception,
+            # never by silently accepting any weekday.
+            if status != "ready" or not isinstance(override_reason, str) or not override_reason.strip():
+                raise ValueError(f"queue item {publication_id} is not scheduled on the midday slot")
+        elif override_reason is not None:
+            raise ValueError(f"queue item {publication_id} overrides a date that is already on the midday slot")
 
         if status == "planned":
             if raw.get("article") is not None or raw.get("cover") is not None:

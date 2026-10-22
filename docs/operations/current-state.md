@@ -175,3 +175,17 @@ This closure is evidence, not standing authority. Future protection changes requ
 7. For provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
+
+## 2026-10-22 — линия длинных статей (Чарнок), по просьбе оператора
+
+- Серия L2 «О бытии Бога»: статьи 1–2 написаны и вычитаны, файлы лежат в `content/telegram/lordchrist/rich-v1/charnock/`.
+- Полуденный слот `0 9 * * 2,5` перестал быть мёртвым: добавлена очередь `rich-v1/article-queue.json`
+  (13 статей, даты 22.10.2026 … 04.12.2026), модуль `video_channel_manager.lordchrist_rich_articles`
+  (проверка blob-идентичности статьи и обложки → выбор статьи на сегодня → rich-документ с обложкой)
+  и job `charnock-rich` в `lordchrist-telegram-poster.yml`.
+- Отправка идёт через уже зарегистрированную границу `telegram.lordchrist.rich_live.send` (multipart,
+  одна попытка, без fallback): новых точек записи к провайдеру не добавлено.
+- Ручной запуск: `workflow_dispatch` с `action=publish-article`, `publication_id=lordchrist-rich-charnock-NN`
+  и подтверждением `PUBLISH:<publication_id>`; цитатный job на такой запуск не реагирует.
+- Обложки статей вынесены из `media-registry.json` в `media/cover-registry.json`: первый реестр по контракту
+  описывает только Wikimedia-ассеты канарейки.

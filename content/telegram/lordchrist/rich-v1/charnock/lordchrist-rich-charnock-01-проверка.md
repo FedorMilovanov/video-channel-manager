@@ -154,7 +154,7 @@ sha256 `bdcaef77ef78d9cee262fefcde46634dac8dcd5f7f48b02bcf1b064188cc98c4`).
 `https://commons.wikimedia.org/wiki/File:Portrait_of_Stephen_Charnock_B.D_(4672427).jpg`.
 Сама гравюра в обложку не вставлена: сгенерированного лица нет, лицо опирается на исторический портрет.
 
-Запись в `media-registry.json`: `asset-lordchrist-charnock-01-cover`, `kind: photo`,
+Запись в `media/cover-registry.json`: `asset-lordchrist-charnock-01-cover`, `kind: photo`,
 `chosen_by: operator`, `approved: true`, `provider_upload_status: not_uploaded`, полный промт сохранён.
 Документ статьи (`media`) намеренно оставлен пустым: L2 публикуется вручную, обложка прикрепляется
 в редакторе «Статья»; привязка локального файла к документу без провайдерской загрузки ничего не значит.
@@ -188,3 +188,10 @@ sha256 `bdcaef77ef78d9cee262fefcde46634dac8dcd5f7f48b02bcf1b064188cc98c4`).
    *לית שולטאנא non potestas Domini*, продолжения цитат [24] и [46] — все на месте.
 6. **Вёрстка.** Абзац в 1014 знаков в разделе «Писание» разбит на два: стена текста в редакторе «Статья» читается
    плохо. После правок: 31 102 зн., 127 блоков, HTML пересобран, JSON перевалидирован.
+
+## Публикационная линия 2026-10-22
+
+Статья встала в очередь `rich-v1/article-queue.json` первой позицией с датой **2026-10-22** (решение оператора,
+четверг вне полуденного слота; исключение помечено полем `slot_override_reason`). Сборка rich-документа проверена:
+30 845 видимых знаков, 128 блоков, обложка привязана к `media-cover`. Обложка вынесена из `media-registry.json`
+(этот реестр — только Wikimedia-ассеты канарейки) в `media/cover-registry.json`.

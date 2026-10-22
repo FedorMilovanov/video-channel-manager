@@ -4,12 +4,12 @@
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "revision": "charnock-v1",
-  "note": "Очередь длинных статей L2: одна статья на полуденный слот (12:00 МСК, вт/пт). Публикует тот же бот, что и цитаты; обложка уходит в rich-сообщение ссылкой на файл в этом репозитории.",
+  "note": "Очередь длинных статей L2: одна статья на полуденный слот (12:00 МСК, вт/пт). Публикует тот же бот, что и цитаты; обложка уходит в rich-сообщение ссылкой на файл в этом репозитории. Первая статья выпускается 22.10.2026 по решению оператора (четверг, вне слота); остальные 12 идут строгой каденцией вт/пт: 27.10, 30.10, 03.11, 06.11, 10.11, 13.11, 17.11, 20.11, 24.11, 27.11, 01.12, 04.12.",
   "items": [
     {
       "publication_id": "lordchrist-rich-charnock-01",
       "ordinal": 1,
-      "scheduled_on_moscow": "2026-10-27",
+      "scheduled_on_moscow": "2026-10-22",
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.json",
@@ -19,12 +19,13 @@
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-01-cover.jpg",
         "git_blob_sha": "9fdfb879c4312fff1224d2d231e393f1ba91fe7b",
         "media_id": "media-cover"
-      }
+      },
+      "slot_override_reason": "Оператор попросил выпустить первую статью 22.10.2026, в день вычитки: это четверг вне полуденного слота, поэтому дата помечена как осознанное исключение."
     },
     {
       "publication_id": "lordchrist-rich-charnock-02",
       "ordinal": 2,
-      "scheduled_on_moscow": "2026-10-30",
+      "scheduled_on_moscow": "2026-10-27",
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-02.json",
@@ -39,7 +40,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-03",
       "ordinal": 3,
-      "scheduled_on_moscow": "2026-11-03",
+      "scheduled_on_moscow": "2026-10-30",
       "status": "planned",
       "article": null,
       "cover": null
@@ -47,7 +48,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-04",
       "ordinal": 4,
-      "scheduled_on_moscow": "2026-11-06",
+      "scheduled_on_moscow": "2026-11-03",
       "status": "planned",
       "article": null,
       "cover": null
@@ -55,7 +56,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-05",
       "ordinal": 5,
-      "scheduled_on_moscow": "2026-11-10",
+      "scheduled_on_moscow": "2026-11-06",
       "status": "planned",
       "article": null,
       "cover": null
@@ -63,7 +64,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-06",
       "ordinal": 6,
-      "scheduled_on_moscow": "2026-11-13",
+      "scheduled_on_moscow": "2026-11-10",
       "status": "planned",
       "article": null,
       "cover": null
@@ -71,7 +72,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-07",
       "ordinal": 7,
-      "scheduled_on_moscow": "2026-11-17",
+      "scheduled_on_moscow": "2026-11-13",
       "status": "planned",
       "article": null,
       "cover": null
@@ -79,7 +80,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-08",
       "ordinal": 8,
-      "scheduled_on_moscow": "2026-11-20",
+      "scheduled_on_moscow": "2026-11-17",
       "status": "planned",
       "article": null,
       "cover": null
@@ -87,7 +88,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-09",
       "ordinal": 9,
-      "scheduled_on_moscow": "2026-11-24",
+      "scheduled_on_moscow": "2026-11-20",
       "status": "planned",
       "article": null,
       "cover": null
@@ -95,7 +96,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-10",
       "ordinal": 10,
-      "scheduled_on_moscow": "2026-11-27",
+      "scheduled_on_moscow": "2026-11-24",
       "status": "planned",
       "article": null,
       "cover": null
@@ -103,7 +104,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-11",
       "ordinal": 11,
-      "scheduled_on_moscow": "2026-12-01",
+      "scheduled_on_moscow": "2026-11-27",
       "status": "planned",
       "article": null,
       "cover": null
@@ -111,7 +112,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-12",
       "ordinal": 12,
-      "scheduled_on_moscow": "2026-12-04",
+      "scheduled_on_moscow": "2026-12-01",
       "status": "planned",
       "article": null,
       "cover": null
@@ -119,7 +120,7 @@
     {
       "publication_id": "lordchrist-rich-charnock-13",
       "ordinal": 13,
-      "scheduled_on_moscow": "2026-12-08",
+      "scheduled_on_moscow": "2026-12-04",
       "status": "planned",
       "article": null,
       "cover": null

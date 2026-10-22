@@ -33,22 +33,35 @@ def test_queue_lists_thirteen_dated_articles_with_two_ready() -> None:
     assert sum(1 for item in items if item.is_ready) == 2
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
-    assert all(item.scheduled_on.weekday() in {1, 4} for item in items)
+    # The first article is the one documented off-slot exception (operator decision);
+    # every other date must stay on the Tuesday/Friday midday slot.
+    assert items[0].scheduled_on.weekday() not in {1, 4}
+    assert all(item.scheduled_on.weekday() in {1, 4} for item in items[1:])
+
+
+def test_off_slot_date_requires_an_explicit_documented_override() -> None:
+    queue = load_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    raw = json.loads((ROOT / DEFAULT_QUEUE_PATH).read_text(encoding="utf-8"))
+    assert raw["items"][0].get("slot_override_reason")
+    assert all("slot_override_reason" not in item for item in raw["items"][1:])
+    assert queue[0].scheduled_on.isoformat() == "2026-10-22"
 
 
 def test_due_item_selects_the_single_article_of_that_midday() -> None:
-    item = due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
-    assert item.publication_id == "lordchrist-rich-charnock-01"
+    today = due_item(_queue(), datetime(2026, 10, 22, 12, 0, tzinfo=MOSCOW))
+    assert today.publication_id == "lordchrist-rich-charnock-01"
+    next_slot = due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
+    assert next_slot.publication_id == "lordchrist-rich-charnock-02"
 
 
 def test_due_item_is_silent_on_a_day_without_an_article() -> None:
     with pytest.raises(LookupError, match="no LordChrist rich article"):
-        due_item(_queue(), datetime(2026, 10, 22, 12, 0, tzinfo=MOSCOW))
+        due_item(_queue(), datetime(2026, 10, 23, 12, 0, tzinfo=MOSCOW))
 
 
 def test_due_item_refuses_an_article_that_is_not_ready_yet() -> None:
     with pytest.raises(LookupError, match="is not ready"):
-        due_item(_queue(), datetime(2026, 11, 3, 12, 0, tzinfo=MOSCOW))
+        due_item(_queue(), datetime(2026, 11, 6, 12, 0, tzinfo=MOSCOW))
 
 
 def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path: Path) -> None:
@@ -69,6 +82,7 @@ def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path
                 "publication_id": ready.publication_id,
                 "ordinal": 1,
                 "scheduled_on_moscow": ready.scheduled_on.isoformat(),
+                "slot_override_reason": "тест: дата вне слота заявлена осознанно",
                 "status": "ready",
                 "article": {"path": "article.json", "git_blob_sha": ready.article_blob},
                 "cover": {"path": "cover.jpg", "git_blob_sha": ready.cover_blob, "media_id": "media-cover"},
@@ -128,3 +142,14 @@ def test_swap_replaces_exactly_one_cover_reference() -> None:
 def test_queue_item_rejects_a_publication_id_from_another_project() -> None:
     item = QueueItem(publication_id="svodka-article-01", ordinal=1, scheduled_on=datetime(2026, 10, 27).date(), status="planned")
     assert not item.is_ready
+
+
+def test_manual_article_dispatch_is_routed_away_from_the_quote_job() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "lordchrist-telegram-poster.yml").read_text(encoding="utf-8")
+    jobs = workflow.split("\njobs:", 1)[1]
+    publish_next = jobs.split("\n  publish-next:", 1)[1].split("\n    runs-on:", 1)[0]
+    article = jobs.split("\n  charnock-rich:", 1)[1].split("\n    runs-on:", 1)[0]
+
+    assert "inputs.action == 'publish-article'" in publish_next  # excluded from the quote lane
+    assert "inputs.action == 'publish-article'" in article
+    assert "github.event.schedule == '0 9 * * 2,5'" in article

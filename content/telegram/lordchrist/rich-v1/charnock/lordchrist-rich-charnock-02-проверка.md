@@ -1,7 +1,7 @@
 # Журнал проверки — статья 2/13, «Всеобщее согласие: ни одного народа без Бога»
 
 Документ: `content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-02.md`
-Lane: **L2** (редактор «Статья»). Дата: 2026-10-22. Слот: 30.10.2026, 12:00 MSK.
+Lane: **L2** (редактор «Статья»). Дата: 2026-10-22. Слот: 27.10.2026, 12:00 MSK.
 
 ## Источник
 
@@ -159,7 +159,7 @@ Project Gutenberg eBook #53527 — `https://www.gutenberg.org/files/53527/53527-
 Генерация 1672×941 → приведение к 1920×1080 без искажения пропорций (масштаб и центральный кроп).
 Текста, букв, цифр, логотипов и водяных знаков в кадре нет (проверено визуально).
 
-Запись в `media-registry.json`: `asset-lordchrist-charnock-02-cover`, `kind: photo`, `chosen_by: operator`,
+Запись в `media/cover-registry.json`: `asset-lordchrist-charnock-02-cover`, `kind: photo`, `chosen_by: operator`,
 `approved: true`, `provider_upload_status: not_uploaded`; промт сохранён целиком.
 `media` в документе статьи намеренно пусто: L2 публикуется вручную, обложка прикрепляется в редакторе.
 
