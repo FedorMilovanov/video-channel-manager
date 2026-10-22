@@ -31,7 +31,10 @@ from video_channel_manager.wave_engine.reconciliation import (
     TargetCoverageKind,
 )
 
-NOW = datetime(2026, 10, 22, 6, 0, tzinfo=UTC)
+# The reconciliation refuses a snapshot older than the request's `maximum_snapshot_age_seconds`, so the
+# fixture is anchored to the wall clock instead of a literal: a fixed timestamp quietly expires an hour
+# after it is written and turns these tests into a time bomb.
+NOW = datetime.now(UTC)
 CAPTURED = NOW - timedelta(minutes=5)
 PROJECT = ProjectBinding(project_key="lord-god-strength", community_id=60805374, owner_id=-60805374)
 RUNNER = CliRunner()

@@ -24,6 +24,10 @@ Operational documents are living sources of truth. They override chat history, s
   [`mutation-fault-proof-register.json`](mutation-fault-proof-register.json) — every provider mutation boundary with its
   intent/dispatch/response evidence, retry policy, and the exact test that proves each fault stage. Read before adding a
   provider write or changing one.
+- [`module-disposition.json`](module-disposition.json) — every module the production paths do not reach, with a
+  disposition: a validated entrypoint, a deliberately kept archived canary, or a named open owner decision. The
+  register is compared in both directions with a live scan (`scripts/module_disposition.py`, `tests/test_module_disposition.py`),
+  so unreachable code cannot accumulate silently and a module that becomes used must leave the list.
 - [`coverage-ratchet.json`](coverage-ratchet.json) — one coverage floor per module plus the package total,
   measured once on Python 3.11 and enforced by `scripts/coverage_ratchet.py` in CI (`tests/test_coverage_ratchet.py`
   proves the checker fails when a floor is missed). `--update` can only raise a floor; a new module below the

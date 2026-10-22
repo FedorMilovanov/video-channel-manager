@@ -993,6 +993,26 @@
       "provider_write_capable": false,
       "sha256": "916aebddf6abbbbdadbc8d23e5c997fa27f8daabb43fd679ff3dbd721eec409c",
       "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/coverage_ratchet.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": false,
+      "sha256": "576987a005d66a493438ca4235c5e13aa046134741ba4f9f7e2d02deeb9a350b",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": false,
+      "path": "scripts/module_disposition.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": false,
+      "sha256": "1e5ab68bb2075a28af80744addf64fd9ccd967d0ff834524297a0485fd6e1fdc",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",

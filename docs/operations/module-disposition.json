@@ -1,0 +1,217 @@
+{
+  "schema_name": "video-channel-manager.module-disposition",
+  "schema_version": 1,
+  "measured_at_utc": "2026-10-22T06:59:29Z",
+  "rule": "Every module in src/video_channel_manager is either reachable from a production path (an import from src/ or scripts/, a pyproject console script, or a name/path used by a workflow, script or document) or listed here with a disposition. tests/test_module_disposition.py requires the two sets to match exactly, so the list can only change by decision.",
+  "notes_are_evidence": "docs/operations/coverage-ratchet.json lists every module by path and is deliberately not evidence here.",
+  "modules": [
+    {
+      "module": "video_channel_manager.__main__",
+      "status": "package_entrypoint",
+      "evidence": "tests/test_package_entrypoint.py",
+      "note": "`python -m video_channel_manager` dispatches to cli.app.run; proven by running the module.",
+      "statements": 3
+    },
+    {
+      "module": "video_channel_manager.editorial.instagram_identity",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_instagram_identity.py"
+      ],
+      "statements": 17,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.instagram.daily_queue",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_instagram_daily_queue.py"
+      ],
+      "statements": 204,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.lordchrist_research_rollout",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_lordchrist_research_rollout.py"
+      ],
+      "statements": 95,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.milovi_telegram_activation_review",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_telegram_activation_review.py"
+      ],
+      "statements": 141,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.milovi_telegram_bootstrap",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_telegram_activation_review.py",
+        "tests/test_milovi_telegram_bootstrap.py",
+        "tests/test_milovi_telegram_operational_queue_runtime.py"
+      ],
+      "statements": 254,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.milovi_telegram_follow_on_readiness",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_telegram_follow_on_readiness.py"
+      ],
+      "statements": 153,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.clips_evidence_pipeline",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_vk_clips_evidence_pipeline.py"
+      ],
+      "statements": 77,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.milovi_canary_reconcile",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_canary_reconcile.py"
+      ],
+      "statements": 150,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.milovi_d48_youtube_fallback",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_d48_youtube_fallback.py"
+      ],
+      "statements": 169,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.milovi_d48_youtube_overlay_clean",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_d48_youtube_overlay_clean.py"
+      ],
+      "statements": 207,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.milovi_media_match_probe_stable",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_media_match_probe_stable.py"
+      ],
+      "statements": 38,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.platforms.vk.milovi_targeted_youtube_retry_stable",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_milovi_targeted_youtube_retry_stable.py"
+      ],
+      "statements": 26,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.svodka_rich_reconciliation",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_svodka_rich_reconciliation.py",
+        "tests/test_svodka_rich_successor_v3.py"
+      ],
+      "statements": 102,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.svodka_rich_successor_v4",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_svodka_rich_successor_v4.py"
+      ],
+      "statements": 254,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_custom_emoji_canary",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_custom_emoji_catalog_canary.py"
+      ],
+      "statements": 163,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_historical_batch",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_historical_batch.py"
+      ],
+      "statements": 227,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_quote_v4_render_proof",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_lordchrist_quote_v4_render_proof.py"
+      ],
+      "statements": 102,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_release_binding_cli",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_release_binding.py"
+      ],
+      "statements": 28,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_release_review_cli",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_release_review.py"
+      ],
+      "statements": 30,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_research_editorial_v3",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_research_editorial_v3.py"
+      ],
+      "statements": 152,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_research_release_cli",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_telegram_research_release_cli.py"
+      ],
+      "statements": 33,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.youtube_release_execution",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_youtube_release_execution.py"
+      ],
+      "statements": 279,
+      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    }
+  ]
+}
