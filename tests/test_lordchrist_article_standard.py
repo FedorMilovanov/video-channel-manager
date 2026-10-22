@@ -11,7 +11,7 @@ from lordchrist_article_preflight import check  # noqa: E402
 from render_l2_copy_page import render  # noqa: E402
 
 SOURCE_NOTE = (
-    "Откуда цитаты. Цитаты — из книги Стивена Чарнока «Беседы о существовании и свойствах Бога»; "
+    "📖 Цитаты Чарнока — из книги «Беседы о существовании и атрибутах Бога»; "
     "текст по изданию 1853 года, оцифровка: Project Gutenberg, eBook #53527, "
     "https://www.gutenberg.org/ebooks/53527."
 )
@@ -244,3 +244,13 @@ def test_render_keeps_connector_tight_to_its_quote() -> None:
     md = "# ТЕСТ\n\nАбзац перед связкой во всю строку, чтобы блок был не коротким.\n\nОб этом он говорит иначе:\n> «Цитата»\n> — Стивен Чарнок, «О бытии Бога»\n"
     rich_html, _, _ = render(md)
     assert "иначе:</p>\n<blockquote>" in rich_html
+
+
+def test_preflight_rejects_second_emoji_in_the_source_note(tmp_path: Path) -> None:
+    note = SOURCE_NOTE.replace("текст по изданию", "📚 текст по изданию")
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    assert any("только один значок" in err for err in check(doc).errors)

@@ -129,22 +129,28 @@ Known client behaviour, not a defect: a long quote renders collapsed behind a `C
 
 ### Bibliographic note at the end
 
-Every article ends with the source note, two short paragraphs, plain text, no heading:
+Every article ends with the source note: one paragraph, plain text, no heading. It starts straight with the substance — no «Откуда цитаты», no label of any kind — and the only decoration is one emoji at the very beginning:
 
 ```text
-Откуда цитаты. Цитаты Чарнока — из книги «Беседы о существовании и свойствах Бога» (Discourses upon the
-Existence and Attributes of God), изданной посмертно в 1682 году; взяты из первой беседы — «О существовании
-Бога», по словам псалма XIV:1. Текст — по изданию Robert Carter & Brothers, 1853 года, где оба тома
-напечатаны вместе; оно оцифровано Project Gutenberg: eBook #53527, https://www.gutenberg.org/ebooks/53527.
-
-Перевод наш, буквальный настолько, насколько позволяет русский синтаксис. По-русски книга, насколько нам
-известно, не издавалась, и сверить перевод не с чем. Слова Писания — по Синодальному переводу; нумерация
-псалмов у Чарнока еврейская, поэтому его «псалом XIV» — наш тринадцатый.
+📖 Цитаты Чарнока — из книги «Беседы о существовании и атрибутах Бога» (Discourses upon the Existence and
+Attributes of God), изданной посмертно в 1682 году; взяты из первой беседы — «О существовании Бога», по
+словам псалма XIV:1. Текст — по изданию Robert Carter & Brothers, 1853 года, где оба тома напечатаны
+вместе; оно оцифровано Project Gutenberg: eBook #53527, https://www.gutenberg.org/ebooks/53527.
 ```
 
-Why it exists: the credit line under a quote may only carry the author and the work, so everything a reader might want to check — which book, which edition, whose translation, why the psalm numbers differ — has one place to live, and it is not under 43 quotes. The note is also where the translation status belongs; that is why no «перевод мой» appears under an individual quote.
+Why it exists: the credit line under a quote may only carry the author and the work, and a reader who wants to check the source should not have to hunt through 43 quotes to find out which book he is reading. One block, once, at the end.
 
-Rules: it is the **last** block of the article, it starts with the words «Откуда цитаты.», it names the book, the edition and the source URL, and it carries no bold, no italic and no heading. `scripts/lordchrist_article_preflight.py` fails an article without it.
+Rules:
+
+- it is the **last** block of the article, after the final section;
+- it begins with the words «Цитаты Чарнока — из книги…» — the reader learns the source from the first line, without a service label;
+- exactly **one** emoji, the first character, as a marker of the note (📖 for a book source; the copyright sign if the rights are the point). This is the only place in the article where an emoji may stand in a paragraph — everywhere else it belongs to a heading;
+- it names the book, the edition and the source URL; the URL is allowed here and only here;
+- it carries no bold, no italic and no heading, and it does not talk about the translation or its literalness: that is the channel's business, not the reader's.
+
+The Russian title of the book is «Беседы о существовании и атрибутах Бога». «Атрибуты» is the term Russian theology actually uses here, so the title keeps it; do not replace it with «свойства».
+
+`scripts/lordchrist_article_preflight.py` fails an article without the note, without the URL in it, or with more than one emoji.
 
 ## 6. Lists in L2
 
@@ -205,5 +211,5 @@ When the user asks for a paste-ready long article:
 - [ ] no `U+2060`, no `U+200B`, no visible transport characters (the only invisible character allowed in the artifact is the air block's no-break space);
 - [ ] no slogan ladder; paragraphs are multi-sentence;
 - [ ] evidence rules from `RICH_EDITORIAL_STANDARD.md` satisfied;
-- [ ] the article ends with the bibliographic note: «Откуда цитаты.», book, edition, source URL, translation status, no heading, no bold, no italic;
+- [ ] the article ends with the bibliographic note: one emoji, «Цитаты Чарнока — из книги…», book, edition, source URL, no heading, no bold, no italic, no talk about the translation;
 - [ ] composer inspected after paste: typography, quote blocks, spacing.
