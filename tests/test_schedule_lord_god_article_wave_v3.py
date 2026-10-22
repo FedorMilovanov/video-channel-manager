@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
 POLICY = ROOT / "content" / "policies" / "lord-god-article-wave-v3-202608.json"
+SOURCE_CONTRACT = ROOT / "content" / "policies" / "lord-god-article-wave-v3-source-contract.json"
 
 
 def load_module() -> Any:
@@ -208,9 +210,7 @@ def test_preflight_blocks_nearby_postponed_slot() -> None:
         "id": 9,
         "date": operation["publish_date"] + 60 * 60,
         "text": "Другой пост https://gospod-bog.ru/about/",
-        "attachments": [
-            {"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 9}}
-        ],
+        "attachments": [{"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 9}}],
     }
     journal = module.fresh_journal(policy)
 
@@ -219,7 +219,7 @@ def test_preflight_blocks_nearby_postponed_slot() -> None:
         [],
         [nearby],
         journal,
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
 
     first = report["states"][0]
@@ -236,9 +236,7 @@ def test_preflight_accepts_one_exact_photo_post() -> None:
         "id": 11,
         "date": operation["publish_date"],
         "text": operation["message"],
-        "attachments": [
-            {"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 22}}
-        ],
+        "attachments": [{"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 22}}],
     }
     journal = module.fresh_journal(policy)
     journal["operations"][operation["operation_id"]] = {
@@ -251,7 +249,7 @@ def test_preflight_accepts_one_exact_photo_post() -> None:
         [],
         [post],
         journal,
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
 
     assert report["states"][0]["state"] == "already_applied"
@@ -266,9 +264,7 @@ def test_unjournaled_existing_photo_post_is_not_silently_adopted() -> None:
         "id": 12,
         "date": operation["publish_date"],
         "text": operation["message"],
-        "attachments": [
-            {"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 23}}
-        ],
+        "attachments": [{"type": "photo", "photo": {"owner_id": module.OWNER_ID, "id": 23}}],
     }
 
     report = module.preflight(
@@ -276,7 +272,7 @@ def test_unjournaled_existing_photo_post_is_not_silently_adopted() -> None:
         [],
         [post],
         module.fresh_journal(policy),
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
 
     assert report["states"][0]["state"] == "conflict"
@@ -298,7 +294,7 @@ def test_blocking_journal_stage_prevents_write() -> None:
         [],
         [],
         journal,
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
 
     assert report["states"][0]["state"] == "conflict"
@@ -339,7 +335,7 @@ def test_photo_save_explicit_rejection_is_blocking(tmp_path: Path) -> None:
         [],
         [],
         journal,
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
     assert report["states"][0]["state"] == "conflict"
     assert "photo_save_rejected" in report["states"][0]["detail"]
@@ -357,13 +353,7 @@ def test_photo_save_explicit_rejection_is_blocking(tmp_path: Path) -> None:
 
 def test_saved_photo_response_requires_exact_group_owner() -> None:
     module = load_module()
-    good = FakeClient(
-        {
-            "photos.saveWallPhoto": [
-                {"owner_id": module.OWNER_ID, "id": 55, "access_key": "k"}
-            ]
-        }
-    )
+    good = FakeClient({"photos.saveWallPhoto": [{"owner_id": module.OWNER_ID, "id": 55, "access_key": "k"}]})
     token = module.saved_photo_token(
         good,
         {"photo": "[]", "server": 1, "hash": "h"},
@@ -410,9 +400,7 @@ def test_prepare_photo_blocks_unknown_save_stage(tmp_path: Path) -> None:
     policy = load_policy()
     operation = policy["operations"][0]
     journal = module.fresh_journal(policy)
-    journal["operations"][operation["operation_id"]] = {
-        "stage": "photo_save_unknown"
-    }
+    journal["operations"][operation["operation_id"]] = {"stage": "photo_save_unknown"}
 
     with pytest.raises(RuntimeError, match="blocking journal stage"):
         module.prepare_photo_token(
@@ -538,6 +526,10 @@ def test_plan_branch_never_calls_execute_scope(
     policy_path = tmp_path / module.POLICY_PATH
     policy_path.parent.mkdir(parents=True)
     policy_path.write_text(json.dumps(policy, ensure_ascii=False), encoding="utf-8")
+    # The planner validates the source contract together with the policy, so the isolated
+    # repository needs both. Copying it here is explicit; intercepting Path.write_text from
+    # conftest made the dependency invisible in the test that depends on it.
+    shutil.copyfile(SOURCE_CONTRACT, tmp_path / module.SOURCE_CONTRACT_PATH)
 
     manifest = {
         "external_urls_checked": 30,
@@ -742,19 +734,32 @@ def test_unknown_wall_post_without_remote_effect_blocks_retry(
         [],
         [],
         journal,
-        minimum_future_seconds=-10**9,
+        minimum_future_seconds=-(10**9),
     )
     assert report["states"][0]["state"] == "conflict"
 
 
-def test_current_v3_has_no_dynamic_policy_rewrite_or_link_parser() -> None:
+def test_current_v3_is_static_and_uses_the_bounded_parsed_link_contract() -> None:
+    """Static policy, no runtime rewrite — and the link parser the v3 contract requires.
+
+    The original assertion forbade `wall.parseAttachedLink` outright. Parsed-link delivery
+    contract v3 made that call mandatory to satisfy VK's `link_photo_sizing_rule` before
+    `wall.post`, so the assertion was inverted by the contract it was protecting. It is
+    rewritten rather than xfailed: an xfail here would have hidden the day the parser
+    started being used somewhere the audit does not cover.
+    """
+
     source = implementation_source()
 
-    assert "wall.parseAttachedLink" not in source
+    # Static policy: no runtime rewrite of the policy or of the expected digest.
     assert "schedule_lord_god_article_wave.py" not in source
     assert "importlib" not in source
     assert "module.EXPECTED_SHA" not in source
     assert "explicit-wall-photo-plus-text-link" in source
+
+    # The parser is required, and it is required through one named, audited constant.
+    assert 'LINK_PARSE_METHOD = "wall.parseAttachedLink"' in source
+    assert "wall.parseAttachedLink" in source
 
 
 def test_result_rows_do_not_expose_photo_access_keys() -> None:
