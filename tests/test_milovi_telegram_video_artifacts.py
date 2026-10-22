@@ -129,7 +129,8 @@ def test_video_artifact_workflow_installs_exact_toolchain_and_preserves_main_no_
 
     proof = (ROOT / "src" / "video_channel_manager" / "milovi_telegram_video_proof.py").read_text(encoding="utf-8")
     assert '"hash-object"' in proof
-    assert "refusing to publish" in proof
+    # The proof never publishes: the only thing it does with a difference is refuse and report.
+    assert "nothing may be published from this workspace" in proof
     assert 'reservoir.get("artifact_commit")' in proof
 
 

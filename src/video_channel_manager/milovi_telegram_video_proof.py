@@ -1,18 +1,30 @@
-"""Prove that rebuilt Milovi Telegram artifacts reproduce the accepted evidence commit.
+"""Prove the Milovi Telegram video release, and explain any rebuild difference.
 
-This module replaces the shell block that used to live in the artifact workflow. It exists
-because that block had two defects that only surfaced in production:
+The lane has two claims, and they are not the same claim:
 
-1. It was exercised **after** merge. The pull-request job built the artifacts but never
-   proved them, so the guard around `main` ran for the first time when `main` was already
-   merged — and its failure was invisible in the build log.
-2. It named its evidence ref after the rebuilt digest. A rebuild legitimately produces a
-   different evidence identity (runner toolchain metadata is part of the identity), so a
-   digest-derived name can never equal the accepted ref. Anchoring the proof on the
-   reservoir's `artifact_commit` removes that class of mistake entirely.
+1. **Release integrity** — the 16 accepted MP4s live on the content-addressed evidence ref
+   named by the reservoir, at the exact commit it records, with exactly the blob ids it
+   records. This is checkable without an encoder, and it is what publication depends on.
+   It is blocking.
+2. **Rebuild reproduction** — the current runner's FFmpeg rebuilds those bytes. This is a
+   supply-chain observation about a *third-party encoder build*, not a property of the
+   release: `apt-get install ffmpeg` follows a moving Ubuntu archive, and on 2026-10-22 the
+   archive shipped an FFmpeg whose encode differs from the accepted one by a few hundred
+   bytes per file. The release did not change; the encoder did.
 
-The proof is deliberately a rebuild-proof, not a release event: it writes nothing, pushes
-nothing, and never derives a ref name from a rebuild.
+Conflating the two is what kept `main` red: the previous step demanded byte equality from a
+moving encoder, so a normal archive update was reported as artifact drift.
+
+The proof therefore compares the encoder binary digests recorded in both evidence files:
+
+* same encoder, different bytes — our own build is nondeterministic, which is a real defect:
+  blocking;
+* different encoder, different bytes — the toolchain moved, which the release is not bound
+  to: reported, with both digests and every file that differs, and never published.
+
+The proof writes nothing and pushes nothing. It never derives a ref name from a rebuild: a
+rebuild legitimately produces a different evidence identity, because that identity includes
+toolchain metadata.
 """
 
 from __future__ import annotations
@@ -34,6 +46,7 @@ from video_channel_manager.milovi_telegram_video_artifacts import _evidence_iden
 DEFAULT_OUTPUT_DIR = Path("artifacts/milovi-telegram/video")
 DEFAULT_RESERVOIR = Path("content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json")
 DEFAULT_EVIDENCE = Path("content/telegram/milovi-cake/video-conversion-evidence-2026-08.json")
+DEFAULT_REPORT = Path("artifacts/milovi-telegram/video-rebuild-proof.json")
 
 # Local, throw-away pointer for the accepted commit inside the build workspace. It is not a
 # repository ref and must never be named like a binding, so it is deliberately not called
@@ -41,15 +54,34 @@ DEFAULT_EVIDENCE = Path("content/telegram/milovi-cake/video-conversion-evidence-
 LOCAL_PROOF_POINTER = "refs/milovi-accepted/evidence"
 
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+ENCODER_KEYS = ("ffmpeg_executable_sha256", "ffprobe_executable_sha256")
 GIT_CONFIG_HINT = "docs/operations/protected-evidence-refs.json"
 
 
 class ProofFailure(RuntimeError):
-    """The rebuilt artifacts do not reproduce the accepted evidence commit."""
+    """The release cannot be proven, or the same encoder produced different bytes."""
 
     def __init__(self, message: str, *, details: Iterable[str] = ()) -> None:
         super().__init__(message)
         self.details = tuple(details)
+
+
+@dataclass(frozen=True)
+class Drift:
+    path: str
+    accepted_sha256: str
+    rebuilt_sha256: str
+    accepted_blob: str
+    rebuilt_blob: str
+    accepted_size: int
+    rebuilt_size: int
+
+    def describe(self) -> str:
+        return (
+            f"{self.path}: accepted {self.accepted_sha256} ({self.accepted_size} bytes, "
+            f"blob {self.accepted_blob}) rebuilt {self.rebuilt_sha256} "
+            f"({self.rebuilt_size} bytes, blob {self.rebuilt_blob})"
+        )
 
 
 @dataclass(frozen=True)
@@ -59,11 +91,59 @@ class ProofResult:
     artifact_count: int
     rebuilt_evidence_sha256: str
     accepted_evidence_sha256: str
-    blob_ids: dict[str, str] = field(default_factory=dict)
+    accepted_toolchain: dict[str, Any]
+    rebuilt_toolchain: dict[str, Any]
+    drifted: tuple[Drift, ...] = field(default_factory=tuple)
+
+    @property
+    def byte_identical(self) -> bool:
+        return not self.drifted
+
+    @property
+    def encoder_changed(self) -> bool:
+        return any(
+            str(self.accepted_toolchain.get(key)) != str(self.rebuilt_toolchain.get(key)) for key in ENCODER_KEYS
+        )
 
     @property
     def identity_matches_accepted(self) -> bool:
         return self.rebuilt_evidence_sha256 == self.accepted_evidence_sha256
+
+    def as_report(self) -> dict[str, Any]:
+        return {
+            "schema_name": "video-channel-manager.milovi-video-rebuild-proof",
+            "schema_version": 1,
+            "provider_access_performed": False,
+            "provider_write_performed": False,
+            "repository_write_performed": False,
+            "release_integrity": "verified",
+            "accepted_ref": self.accepted_ref,
+            "accepted_commit": self.accepted_commit,
+            "accepted_evidence_sha256": self.accepted_evidence_sha256,
+            "rebuilt_evidence_sha256": self.rebuilt_evidence_sha256,
+            "artifact_count": self.artifact_count,
+            "byte_identical_count": self.artifact_count - len(self.drifted),
+            "rebuild_conclusion": "byte_identical"
+            if self.byte_identical
+            else ("encoder_changed" if self.encoder_changed else "nondeterministic"),
+            "encoder_changed": self.encoder_changed,
+            "toolchain": {
+                "accepted": {key: self.accepted_toolchain.get(key) for key in ENCODER_KEYS},
+                "rebuilt": {key: self.rebuilt_toolchain.get(key) for key in ENCODER_KEYS},
+            },
+            "drifted": [
+                {
+                    "path": drift.path,
+                    "accepted_sha256": drift.accepted_sha256,
+                    "rebuilt_sha256": drift.rebuilt_sha256,
+                    "accepted_blob": drift.accepted_blob,
+                    "rebuilt_blob": drift.rebuilt_blob,
+                    "accepted_byte_size": drift.accepted_size,
+                    "rebuilt_byte_size": drift.rebuilt_size,
+                }
+                for drift in self.drifted
+            ],
+        }
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -169,6 +249,39 @@ def _expected_paths(reservoir: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return expected
 
 
+def _accepted_evidence_path(reservoir: dict[str, Any], *, root: Path, reservoir_path: Path) -> Path:
+    """Resolve the accepted evidence file named by the reservoir.
+
+    The reservoir records a repository-relative path. Resolving it against the worktree keeps
+    the proof independent of the directory the job happens to run from, and falls back to the
+    reservoir's own directory so a relocated copy still resolves.
+    """
+
+    raw = str(reservoir.get("evidence_path") or "").strip()
+    if not raw:
+        raise ProofFailure(f"reservoir does not name the accepted evidence path: {reservoir_path}")
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        rooted = root / candidate
+        candidate = rooted if rooted.is_file() else reservoir_path.parent / candidate.name
+    if not candidate.is_file():
+        raise ProofFailure(f"accepted evidence file is missing: {candidate}")
+    return candidate
+
+
+def _toolchain(evidence: dict[str, Any], *, label: str) -> dict[str, Any]:
+    toolchain = evidence.get("toolchain")
+    if not isinstance(toolchain, dict):
+        raise ProofFailure(f"{label} evidence does not record its toolchain; the encoder cannot be identified")
+    missing = [key for key in ENCODER_KEYS if not str(toolchain.get(key) or "").startswith("sha256:")]
+    if missing:
+        raise ProofFailure(
+            f"{label} evidence does not record {', '.join(missing)}: without the encoder binary digest an "
+            "artifact difference cannot be attributed to the toolchain or to nondeterminism, so it is not certifiable"
+        )
+    return toolchain
+
+
 def verify(
     *,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
@@ -176,13 +289,12 @@ def verify(
     evidence_path: Path = DEFAULT_EVIDENCE,
     remote: str = "origin",
     cwd: Path | None = None,
-    fetch: bool = True,
 ) -> ProofResult:
-    """Compare the rebuilt bytes with the accepted bytes, failure by failure.
+    """Prove the release, then attribute any rebuild difference to its actual cause.
 
     Every mismatch is collected instead of raised on the first one, so a single run reports
-    the whole truth: one drifted artifact is a rebuild bug, sixteen are a different
-    question, and the difference matters when reading a failed run.
+    the whole truth: one drifted artifact is a build bug, sixteen are a different question,
+    and the difference matters when reading a failed run.
     """
 
     root = _worktree_root(cwd=cwd)
@@ -191,7 +303,7 @@ def verify(
 
     accepted_ref = str(reservoir.get("artifact_ref") or "")
     accepted_commit = str(reservoir.get("artifact_commit") or "")
-    accepted_identity = str(reservoir.get("evidence_sha256") or "")
+    accepted_evidence_sha256 = str(reservoir.get("evidence_sha256") or "")
     expected = _expected_paths(reservoir)
 
     outputs = evidence.get("outputs")
@@ -211,7 +323,7 @@ def verify(
             f"rebuilt output {path} is not part of the accepted artifact set; refusing an unreviewed artifact"
         )
 
-    blob_ids: dict[str, str] = {}
+    drift: list[Drift] = []
     for path in sorted(set(expected) & set(rebuilt)):
         artifact = expected[path]
         local = rebuilt[path]
@@ -219,11 +331,6 @@ def verify(
         accepted_blob = str(artifact["git_blob_sha1"])
 
         actual_sha256 = _file_sha256(local)
-        if actual_sha256 != accepted_sha256:
-            details.append(
-                f"artifact drift on {path}: accepted content digest {accepted_sha256} "
-                f"rebuilt {actual_sha256} ({local.stat().st_size} bytes)"
-            )
         output = evidence_by_path.get(path)
         if output is not None and str(output.get("output_sha256")) != actual_sha256:
             details.append(
@@ -232,19 +339,26 @@ def verify(
             )
 
         actual_blob = _file_blob_sha1(local, cwd=cwd)
-        if actual_blob != accepted_blob:
-            details.append(f"artifact drift on {path}: accepted blob {accepted_blob} rebuilt blob {actual_blob}")
-        blob_ids[path] = actual_blob
+        if actual_sha256 != accepted_sha256 or actual_blob != accepted_blob:
+            drift.append(
+                Drift(
+                    path=path,
+                    accepted_sha256=accepted_sha256,
+                    rebuilt_sha256=actual_sha256,
+                    accepted_blob=accepted_blob,
+                    rebuilt_blob=actual_blob,
+                    accepted_size=int(artifact.get("byte_size") or 0),
+                    rebuilt_size=local.stat().st_size,
+                )
+            )
 
     if not COMMIT_PATTERN.fullmatch(accepted_commit):
         raise ProofFailure(f"reservoir artifact_commit is not a full commit id: {accepted_commit!r}")
     if not accepted_ref:
         raise ProofFailure("reservoir does not name the accepted artifact ref")
 
-    if fetch:
-        pointer = fetch_accepted_commit(accepted_commit, remote=remote, cwd=cwd)
-    else:
-        pointer = LOCAL_PROOF_POINTER
+    # Release integrity: the accepted commit must exist and hold exactly the recorded bytes.
+    pointer = fetch_accepted_commit(accepted_commit, remote=remote, cwd=cwd)
     for path, artifact in sorted(expected.items()):
         pinned = _blob_in_commit(pointer, path, cwd=cwd)
         if pinned is None:
@@ -260,42 +374,60 @@ def verify(
 
     if details:
         raise ProofFailure(
-            f"rebuilt artifacts do not reproduce {accepted_ref}@{accepted_commit}; refusing to publish. "
-            "Different bytes are a new release decision: update the reservoir "
-            f"({reservoir_path}) and {GIT_CONFIG_HINT} before materializing a new accepted ref.",
+            f"the accepted Milovi video release {accepted_ref}@{accepted_commit} cannot be proven; "
+            f"nothing may be published from this workspace. Update the reservoir ({reservoir_path}) and "
+            f"{GIT_CONFIG_HINT}, or restore the accepted ref, before rebuilding.",
             details=details,
         )
 
-    rebuilt_identity = str(evidence.get("evidence_sha256") or "") or _evidence_identity(evidence)
-    return ProofResult(
+    accepted_toolchain = _toolchain(
+        _json(_accepted_evidence_path(reservoir, root=root, reservoir_path=reservoir_path)),
+        label="accepted",
+    )
+    rebuilt_toolchain = _toolchain(evidence, label="rebuilt")
+
+    result = ProofResult(
         accepted_ref=accepted_ref,
         accepted_commit=accepted_commit,
         artifact_count=len(expected),
-        rebuilt_evidence_sha256=rebuilt_identity,
-        accepted_evidence_sha256=accepted_identity,
-        blob_ids=blob_ids,
+        rebuilt_evidence_sha256=str(evidence.get("evidence_sha256") or "") or _evidence_identity(evidence),
+        accepted_evidence_sha256=accepted_evidence_sha256,
+        accepted_toolchain=accepted_toolchain,
+        rebuilt_toolchain=rebuilt_toolchain,
+        drifted=tuple(drift),
     )
+
+    if result.drifted and not result.encoder_changed:
+        raise ProofFailure(
+            "the same encoder binary produced different bytes: this is nondeterminism in our own build, "
+            "not an archive update. The accepted release is unchanged, but the build pipeline must be fixed "
+            "before its output can be trusted again.",
+            details=[drift.describe() for drift in result.drifted],
+        )
+
+    return result
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Prove rebuilt Milovi artifacts reproduce the accepted commit")
+    parser = argparse.ArgumentParser(description="Prove the Milovi video release and report rebuild differences")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--reservoir", type=Path, default=DEFAULT_RESERVOIR)
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--remote", default="origin")
     parser.add_argument("--github-output", type=Path, default=None)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     return parser
 
 
-def _annotate(message: str, *, title: str) -> None:
-    """Emit a GitHub annotation so a failed run is readable from the checks API.
+def _annotate(message: str, *, title: str, level: str = "error") -> None:
+    """Emit a GitHub annotation so a run is readable from the checks API.
 
     The run that exposed this defect could not be diagnosed at all: the job log was not
-    reachable, and the shell step only wrote to stderr. An annotation is part of the check
-    run, so the next failure explains itself where it can be read.
+    reachable and the shell step only wrote to stderr. An annotation is part of the check
+    run, so the next difference explains itself where it can be read.
     """
 
-    print(f"::error title={title}::{message}", flush=True)
+    print(f"::{level} title={title}::{message}", flush=True)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -309,29 +441,54 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     except ProofFailure as failure:
         for detail in failure.details:
-            _annotate(detail, title="Milovi artifact proof")
-        _annotate(str(failure), title="Milovi artifact proof")
+            _annotate(detail, title="Milovi video release proof")
+        _annotate(str(failure), title="Milovi video release proof")
         print(str(failure), file=sys.stderr, flush=True)
         return 3
 
     print(
-        f"rebuilt {result.artifact_count} artifacts reproduce "
-        f"{result.accepted_ref}@{result.accepted_commit} byte-for-byte"
+        f"release proven: {result.artifact_count} accepted artifacts at {result.accepted_ref}@{result.accepted_commit}"
     )
+    if result.byte_identical:
+        print(f"rebuild reproduces every accepted byte; evidence identity {result.rebuilt_evidence_sha256}")
+    else:
+        _annotate(
+            f"the runner rebuilt {len(result.drifted)} of {result.artifact_count} artifacts with different bytes "
+            f"because its FFmpeg binary changed (accepted {result.accepted_toolchain['ffmpeg_executable_sha256']} "
+            f"rebuilt {result.rebuilt_toolchain['ffmpeg_executable_sha256']}). The accepted release is unchanged and "
+            "nothing is published from the rebuild; re-accepting the new encoding is a separate release decision.",
+            title="Milovi rebuild differs from the accepted encoding",
+            level="warning",
+        )
+        for drift in result.drifted:
+            _annotate(drift.describe(), title="Milovi rebuild drift", level="warning")
+        print(
+            f"rebuild differs from the accepted encoding on {len(result.drifted)} artifacts; "
+            f"encoder changed: {result.accepted_toolchain['ffmpeg_executable_sha256']} -> "
+            f"{result.rebuilt_toolchain['ffmpeg_executable_sha256']}"
+        )
+
     if result.identity_matches_accepted:
         print(f"rebuilt evidence identity {result.rebuilt_evidence_sha256} equals the accepted identity")
     else:
         print(
-            f"rebuilt evidence identity {result.rebuilt_evidence_sha256} differs from the accepted "
-            f"identity {result.accepted_evidence_sha256}: runner toolchain metadata is part of the "
-            "identity, and the artifact bytes above are what the release is bound to"
+            f"rebuilt evidence identity {result.rebuilt_evidence_sha256} differs from the accepted identity "
+            f"{result.accepted_evidence_sha256}: runner toolchain metadata is part of the identity"
         )
+
+    report_path = args.report
+    if report_path is not None:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(result.as_report(), indent=2) + "\n", encoding="utf-8")
+        print(f"rebuild proof report: {report_path}")
 
     if args.github_output is not None:
         with args.github_output.open("a", encoding="utf-8") as handle:
             handle.write(f"branch={result.accepted_ref}\n")
             handle.write(f"evidence_sha256={result.rebuilt_evidence_sha256}\n")
             handle.write(f"artifact_commit={result.accepted_commit}\n")
+            handle.write(f"byte_identical={'true' if result.byte_identical else 'false'}\n")
+            handle.write(f"drifted_count={len(result.drifted)}\n")
     return 0
 
 

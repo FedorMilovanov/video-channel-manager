@@ -126,6 +126,15 @@ jobs:
             --reservoir "$RESERVOIR" \
             --evidence "$EVIDENCE"
 
+      - name: Publish the rebuild proof report even when the proof fails
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: milovi-telegram-video-pr-rebuild-proof-${{ github.event.pull_request.head.sha }}
+          path: artifacts/milovi-telegram/video-rebuild-proof.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Publish exact pull-request proof bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -272,6 +281,15 @@ jobs:
             --evidence "$EVIDENCE" \
             --github-output "$GITHUB_OUTPUT"
 
+      - name: Publish the rebuild proof report even when the proof fails
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: milovi-telegram-video-rebuild-proof-${{ github.sha }}
+          path: artifacts/milovi-telegram/video-rebuild-proof.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Publish review artifact bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -286,6 +304,9 @@ jobs:
         shell: bash
         run: |
           echo "Proven accepted ref: ${{ steps.persist.outputs.branch }}"
+          echo "Proven accepted commit: ${{ steps.persist.outputs.artifact_commit }}"
+          echo "Rebuild byte-identical: ${{ steps.persist.outputs.byte_identical }}"
+          echo "Rebuild artifacts differing: ${{ steps.persist.outputs.drifted_count }}"
           echo "Evidence: ${{ steps.persist.outputs.evidence_sha256 }}"
           echo "Provider access: false"
           echo "Provider write: false"
