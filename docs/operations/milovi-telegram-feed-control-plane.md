@@ -47,7 +47,15 @@ Poll publication is not added to the Milovi permanent feed by this contract.
 
 `content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json` is the main-branch index of the exact 16 already-accepted Telegram-ready MP4s.
 
-The bytes remain on the content-addressed artifact branch `agent/milovi-video-accepted-73c578eff825` (commit `f4f5512d7b60f1b9c61c293c07620b128536df27`). `milovi-telegram-video-artifacts.yml` no longer mints refs: it rebuilds the 16 artifacts and proves each blob against that exact commit, failing on any difference. A rebuild produces a different evidence identity because runner toolchain metadata is part of it, so the ref name can never be derived from a rebuild without creating an evidence branch that nothing binds. Both jobs now run with `contents: read`. The reservoir freezes each media id, artifact path, Git blob SHA-1, byte size and SHA-256 and binds the shared conversion evidence digest:
+The bytes remain on the content-addressed artifact branch `agent/milovi-video-accepted-73c578eff825` (commit `f4f5512d7b60f1b9c61c293c07620b128536df27`). `milovi-telegram-video-artifacts.yml` never mints a ref: both jobs run `video_channel_manager.milovi_telegram_video_proof` with `contents: read`. The proof separates three claims, two of which are about us.
+
+**Release integrity is blocking.** It reads `artifact_ref` and `artifact_commit` from the reservoir, fetches that commit *by SHA*, and requires every accepted path to hold exactly the recorded blob id, with no missing and no unreviewed artifact. A rewritten or deleted ref, a stale reservoir row, or a build that does not produce the accepted set stops the job with exit 3 and a GitHub error annotation.
+
+**Determinism is blocking and measured, not inferred.** Each job converts the same pinned source commit twice, into two directories, and the proof requires both builds to agree byte-for-byte. If they do not, the pipeline is at fault and nothing is published from the workspace.
+
+**Reproduction of the accepted bytes is reported.** `apt-get install ffmpeg` follows a moving Ubuntu archive, and the encoder that decides those bytes is `libavcodec`/`libx264`, which apt updates independently of the `ffmpeg` binary the evidence fingerprints. On 2026-10-22 the archive shipped such an update: all sixteen rebuilt files differed from the accepted bytes by between −414 and +4348 bytes, while the accepted set — and therefore the release — was unchanged. Because two builds of the same inputs agreed, that difference cannot be the pipeline's fault; it is reported as a warning with both digests and a `video-rebuild-proof.json` artifact, and re-accepting a new encoding remains a separate release decision. Inferring this from the recorded encoder digest instead was tried and was wrong: identical `ffmpeg` binary digests still produced different bytes.
+
+The reservoir freezes each media idThe reservoir freezes each media id, artifact path, Git blob SHA-1, byte size and SHA-256 and binds the shared conversion evidence digest:
 
 `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`
 
