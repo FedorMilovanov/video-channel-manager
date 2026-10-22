@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 MAX_CHARS = 32_768
-SOFT_CHARS = 32_000
+SOFT_CHARS = 32_300
 MAX_BLOCKS = 500
 MAX_H1 = 120
 MAX_H2 = 80
@@ -53,7 +53,14 @@ BANNED = (
 EMOJI_RE = re.compile(
     "[\U0001f300-\U0001faff\U00002300-\U000023ff\U00002600-\U000027bf\U0001f1e6-\U0001f1ff\U00002b00-\U00002bff]"
 )
-HASHTAG_RE = re.compile(r"#[0-9A-Za-zА-Яа-яЁё_]+")
+# Хэштег — это слово: «#53527» (номер eBook) хэштегом не считается.
+HASHTAG_RE = re.compile(r"#(?=[0-9A-Za-zА-Яа-яЁё_]*[A-Za-zА-Яа-яЁё])[0-9A-Za-zА-Яа-яЁё_]+")
+
+# Библиографическая пометка в конце статьи: книга, издание, источник цитат.
+# Начинается сразу с дела, без служебной фразы-заголовка; значок книги в начале —
+# часть оформления пометки, поэтому эмодзи здесь разрешён (и только здесь).
+SERVICE_NOTE_LEAD = "Цитаты Чарнока"
+SERVICE_NOTE_URL = "gutenberg.org"
 # Подпись цитаты в L2: обычная строка «— Автор, «Труд»» без жирного и курсива
 # (решение оператора 2026-10-22). Курсивная форма здесь не принимается:
 # предфильтр проверяет новые статьи, а курсив в них запрещён целиком.
@@ -306,6 +313,21 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             "латиница и названия пишутся обычным шрифтом"
         )
 
+    # ---------- 5в. библиографическая пометка в конце ----------
+    # Читатель должен видеть, откуда взяты цитаты, не выходя из статьи.
+    note_blocks = [
+        " ".join(stripped[s0:e0]).strip()
+        for s0, e0 in spans
+        if EMOJI_RE.sub("", " ".join(stripped[s0:e0]).strip()).lstrip().startswith(SERVICE_NOTE_LEAD)
+    ]
+    if not note_blocks:
+        rep.error(
+            "нет библиографической пометки в конце: последний абзац начинается словами "
+            "«Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
+        )
+    elif SERVICE_NOTE_URL not in note_blocks[-1].casefold():
+        rep.error("в библиографической пометке нет ссылки на источник (gutenberg.org)")
+
     # ---------- 6. хэштеги ----------
     all_tags = HASHTAG_RE.findall(text)
     rep.stats["hashtags"] = len(all_tags)
@@ -335,6 +357,14 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         if HEADING_RE.match(stripped[s0]) or stripped[s0].startswith(">"):
             continue
         para = " ".join(stripped[s0:e0])
+        if para.strip() in note_blocks:
+            # в пометке об источнике значок книги в начале — часть оформления;
+            # второй значок или значок не в начале — уже дефект
+            head = EMOJI_RE.match(para.strip())
+            rest = para.strip()[head.end() :] if head else para
+            if EMOJI_RE.search(rest):
+                rep.error(f"строка {s0 + 1}: в пометке об источнике допустим только один значок — в начале")
+            continue
         if EMOJI_RE.search(para):
             rep.error(
                 f"строка {s0 + 1}: эмодзи в обычном абзаце — в тексте их не ставят; маркер живёт только в начале заголовка H2"
@@ -345,7 +375,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     for marker in BANNED:
         if marker in low:
             rep.error(f"служебный/машинный маркер в публичном тексте: «{marker}»")
-    raw_urls = re.findall(r"https?://\S+", text)
+    note_text = " ".join(note_blocks)
+    raw_urls = [url for url in re.findall(r"https?://\S+", text) if url not in note_text]
     if raw_urls:
         rep.warn(f"в тексте {len(raw_urls)} сырых URL: для L2 обычно не нужны")
 
