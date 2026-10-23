@@ -456,13 +456,14 @@ def build_telegraph_payload(
                     quote_children.extend(_rich_text_to_telegraph_children(inner.text))
                 else:
                     quote_children.append("".join(iter_text_fragments(inner)))
+            nodes.append({"tag": "blockquote", "children": quote_children})
             if block.credit is not None:
                 credit_plain = "".join(iter_text_fragments(block.credit)).strip()
                 if not credit_plain.startswith("—"):
                     credit_plain = f"— {credit_plain}"
-                quote_children.append({"tag": "br"})
-                quote_children.append({"tag": "em", "children": [credit_plain]})
-            nodes.append({"tag": "blockquote", "children": quote_children})
+                # Attribution lives OUTSIDE the blockquote: a plain em-dash line,
+                # never carrying the quote's vertical bar (reader request).
+                nodes.append({"tag": "p", "children": [{"tag": "em", "children": [credit_plain]}]})
 
     _validate_telegraph_nodes(nodes)
     compact_json = json.dumps(nodes, ensure_ascii=False, separators=(",", ":"))
@@ -500,7 +501,7 @@ def render_channel_post(spec: ChannelPostSpec, telegraph_url: str) -> RenderedCh
         plain_parts.append(para)
 
     quote_plain = f"{spec.quote_text}\n— {spec.quote_attribution}"
-    quote_html = f"<blockquote>{esc(spec.quote_text)}\n— <i>{esc(spec.quote_attribution)}</i></blockquote>"
+    quote_html = f"<blockquote>{esc(spec.quote_text)}</blockquote>\n— <i>{esc(spec.quote_attribution)}</i>"
     html_parts.append(quote_html)
     plain_parts.append(quote_plain)
 

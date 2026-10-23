@@ -136,6 +136,36 @@ def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
     }
 
 
+def test_quote_credit_is_plain_emdash_line_outside_blockquote() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    payload = build_telegraph_payload(ROOT, items[0], media_base_url=MEDIA_BASE)
+    quote_indexes = [
+        i for i, node in enumerate(payload.nodes) if isinstance(node, dict) and node.get("tag") == "blockquote"
+    ]
+    assert quote_indexes, "expected at least one quotation block"
+    charnock_credit_lines = 0
+    for idx in quote_indexes:
+        node = payload.nodes[idx]
+        assert isinstance(node, dict)
+        serialized = json.dumps(node, ensure_ascii=False)
+        assert "Стивен Чарнок" not in serialized, "credit must not live inside the blockquote"
+        # Every quotation is followed by its attribution as a separate plain
+        # paragraph, starting with an em dash and carrying no quote bar.
+        credit_node = payload.nodes[idx + 1]
+        assert isinstance(credit_node, dict) and credit_node.get("tag") == "p"
+        credit_text = json.dumps(credit_node, ensure_ascii=False)
+        if "— Стивен Чарнок" in credit_text:
+            charnock_credit_lines += 1
+    assert charnock_credit_lines >= 10
+
+    assert items[0].channel_post is not None
+    post = render_channel_post(items[0].channel_post, "https://telegra.ph/Test-Page-10-23")
+    assert "</blockquote>\n— <i>" in post.html_text
+
+    # Source footer carries the © sign (reader request)
+    assert "© Цитаты Чарнока" in payload.compact_content_json
+
+
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)
