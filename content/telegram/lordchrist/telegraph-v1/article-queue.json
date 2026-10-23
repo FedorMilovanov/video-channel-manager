@@ -63,11 +63,11 @@
       "is_canary": false,
       "status": "ready",
       "article": {
-        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-02.json",
-        "git_blob_sha": "3503bb8c46c9e30830619db9c415d25643b07fdf"
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-02.json",
+        "git_blob_sha": "96887df73fba5d2af14cf77fe325715c5d4f8e31"
       },
       "cover": {
-        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-02-cover.jpg",
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-02-cover.jpg",
         "git_blob_sha": "48e24a013539608e313680f250e7bff3fc75c04c",
         "media_id": "media-cover"
       },
@@ -109,11 +109,11 @@
       "is_canary": false,
       "status": "ready",
       "article": {
-        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-03.json",
-        "git_blob_sha": "2c294a6783616313917d01ea2b1bbfb23e75a64d"
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-03.json",
+        "git_blob_sha": "e5af6cb814cede062c49d88613d80a323929f04a"
       },
       "cover": {
-        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-03-cover.jpg",
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-03-cover.jpg",
         "git_blob_sha": "fe5ad9374c9fb02930a42e62dc0af9f29faa375a",
         "media_id": "media-cover"
       },
@@ -151,11 +151,11 @@
       "is_canary": false,
       "status": "ready",
       "article": {
-        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-04.json",
-        "git_blob_sha": "694524017c8bfb681017684741c7310ae9a558fb"
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-04.json",
+        "git_blob_sha": "e41d9dc7202ea5dc1260850a03a61658e5403997"
       },
       "cover": {
-        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-04-cover.jpg",
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-04-cover.jpg",
         "git_blob_sha": "59072f74917f5594b9a8a3ebe5c57ad246f4b384",
         "media_id": "media-cover"
       },
@@ -193,11 +193,11 @@
       "is_canary": false,
       "status": "ready",
       "article": {
-        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-05.json",
-        "git_blob_sha": "9af422c66ca18f8728aed6f9a2af01e01cf04ee2"
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-05.json",
+        "git_blob_sha": "75228eb94dd68df56c7fa49711fcb9b1e41e3242"
       },
       "cover": {
-        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-05-cover.jpg",
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-05-cover.jpg",
         "git_blob_sha": "78f3da889a68578e9d27dc4918dc9dcc2b8f548e",
         "media_id": "media-cover"
       },
@@ -235,11 +235,11 @@
       "is_canary": false,
       "status": "ready",
       "article": {
-        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-06.json",
-        "git_blob_sha": "7e68b890805cba90780818bd734e7cb5210f8949"
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-06.json",
+        "git_blob_sha": "e6ff7e6109d7287e48dea6da909a547aaf4802b7"
       },
       "cover": {
-        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-06-cover.jpg",
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-06-cover.jpg",
         "git_blob_sha": "0232c0941610eef352ba821bb9ec2ebebb5d313e",
         "media_id": "media-cover"
       },

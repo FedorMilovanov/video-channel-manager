@@ -298,15 +298,16 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
 
     # ---------- 5в. библиографическая пометка в конце ----------
     # Читатель должен видеть, откуда взяты цитаты, не выходя из статьи.
+    # Решение оператора 2026-10-24: пометка начинается со знака ©.
     note_blocks = [
-        " ".join(stripped[s0:e0]).strip()
+        block_text
         for s0, e0 in spans
-        if " ".join(stripped[s0:e0]).strip().startswith(SERVICE_NOTE_LEAD)
+        if (block_text := " ".join(stripped[s0:e0]).strip().removeprefix("© ").strip()).startswith(SERVICE_NOTE_LEAD)
     ]
     if not note_blocks:
         rep.error(
             "нет библиографической пометки в конце: последний абзац начинается словами "
-            "«Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
+            "«© Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
         )
     elif SERVICE_NOTE_URL not in note_blocks[-1].casefold():
         rep.error("в библиографической пометке нет ссылки на источник (gutenberg.org)")

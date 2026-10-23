@@ -79,6 +79,13 @@ def test_telegraph_queue_loads_all_six_verified_items() -> None:
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
+    # Every edition is Telegraph-native: article and cover live in telegraph-v1,
+    # never borrowed from the rich-v1 lane.
+    for item in items:
+        assert item.article_path is not None
+        assert item.article_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
+        assert item.cover_path is not None
+        assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
 
 
 def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
