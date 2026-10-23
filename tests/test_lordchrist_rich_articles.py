@@ -30,7 +30,10 @@ def test_queue_lists_thirteen_dated_articles_with_six_ready() -> None:
     items = _queue()
     assert len(items) == 13
     assert [item.ordinal for item in items] == list(range(1, 14))
-    assert sum(1 for item in items if item.is_ready) == 6
+    # Only article 01 (already published) stays ready; 02-06 were disarmed
+    # (superseded by their Telegraph editions, 2026-10-24) and 07-13 planned.
+    assert sum(1 for item in items if item.is_ready) == 1
+    assert sum(1 for item in items if item.status == "superseded") == 5
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
     # The first article is the one documented off-slot exception (operator decision);
@@ -50,8 +53,10 @@ def test_off_slot_date_requires_an_explicit_documented_override() -> None:
 def test_due_item_selects_the_single_article_of_that_midday() -> None:
     today = due_item(_queue(), datetime(2026, 10, 22, 12, 0, tzinfo=MOSCOW))
     assert today.publication_id == "lordchrist-rich-charnock-01"
-    next_slot = due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
-    assert next_slot.publication_id == "lordchrist-rich-charnock-02"
+    # 2026-10-27 belonged to article 02, but it is superseded (Telegraph lane):
+    # the rich scheduler must refuse it rather than publish a duplicate.
+    with pytest.raises(LookupError, match="is not ready"):
+        due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
 
 
 def test_due_item_is_silent_on_a_day_without_an_article() -> None:
