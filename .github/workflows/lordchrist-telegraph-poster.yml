@@ -96,7 +96,22 @@ jobs:
               --outcome "artifacts/outcome.json" | tee artifacts/result.json
           fi
 
-          python -c 'import json, pathlib; res = json.loads(pathlib.Path("artifacts/result.json").read_text(encoding="utf-8")); out = ["### Результат запуска Telegraph + @lordchrist\n"] + [f"- **{k}**: {v}" for k, v in res.items()] + ([f"\nГотовая ссылка Telegra.ph (киньте себе в Избранное в Telegram и нажмите ПОСМОТРЕТЬ): {res[\"telegraph_url\"]}"] if res.get("telegraph_url") else []); print("\n".join(out))' >> "$GITHUB_STEP_SUMMARY"
+          python - >> "$GITHUB_STEP_SUMMARY" <<'PYEOF'
+          import json
+          import pathlib
+
+          res = json.loads(pathlib.Path("artifacts/result.json").read_text(encoding="utf-8"))
+          lines = ["### Результат запуска Telegraph + @lordchrist", ""]
+          lines.extend(f"- **{key}**: {value}" for key, value in res.items())
+          telegraph_url = res.get("telegraph_url")
+          if telegraph_url:
+              lines.append("")
+              lines.append(
+                  "Готовая ссылка Telegra.ph (киньте себе в Избранное в Telegram "
+                  f"и нажмите ПОСМОТРЕТЬ): {telegraph_url}"
+              )
+          print("\n".join(lines))
+          PYEOF
 
       - name: Persist public ledger on state branch
         if: inputs.action != 'preview'
