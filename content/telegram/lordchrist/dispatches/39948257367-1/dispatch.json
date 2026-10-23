@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-24-bunyan-nothing-but-christ",
+  "sequence": 24,
+  "intent_id": "f737af49d3f050f09eb35a80cdc168f1",
+  "workflow_run_id": "39948257367",
+  "workflow_run_attempt": "1",
+  "github_sha": "f2132e25b334f38d359e5ef29ed6f81756d1834b",
+  "github_workflow_sha": "f2132e25b334f38d359e5ef29ed6f81756d1834b",
+  "payload_sha256": "sha256:df76094086eea93606f43f7efb7468e725b256f38cffe7142ab56b805a07e492",
+  "text": "Христос! Христос! Перед моими глазами не было ничего, кроме Христа.\n\n— Джон Беньян, «Благодать, изливающаяся на величайшего из грешников», §231\n\nБеньян описывает момент, когда отдельные дары спасения перестают заслонять Самого Дающего. Христианская надежда не сводится к списку полученных благ: прощение, праведность и жизнь имеют центр в Самом Христе, с Которым верующий соединён.\n\n#Беньян #Христос #Евангелие",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-23T11:45:11.985212Z"
+  },
+  "prepared_at_utc": "2026-10-23T11:45:13.176925Z"
+}
