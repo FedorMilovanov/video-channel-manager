@@ -26,11 +26,11 @@ def _queue():
     return load_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
 
 
-def test_queue_lists_thirteen_dated_articles_with_four_ready() -> None:
+def test_queue_lists_thirteen_dated_articles_with_five_ready() -> None:
     items = _queue()
     assert len(items) == 13
     assert [item.ordinal for item in items] == list(range(1, 14))
-    assert sum(1 for item in items if item.is_ready) == 4
+    assert sum(1 for item in items if item.is_ready) == 5
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
     # The first article is the one documented off-slot exception (operator decision);
@@ -60,8 +60,14 @@ def test_due_item_is_silent_on_a_day_without_an_article() -> None:
 
 
 def test_due_item_refuses_an_article_that_is_not_ready_yet() -> None:
+    planned = next(item for item in _queue() if not item.is_ready)
     with pytest.raises(LookupError, match="is not ready"):
-        due_item(_queue(), datetime(2026, 11, 6, 12, 0, tzinfo=MOSCOW))
+        due_item(
+            _queue(),
+            datetime(
+                planned.scheduled_on.year, planned.scheduled_on.month, planned.scheduled_on.day, 12, 0, tzinfo=MOSCOW
+            ),
+        )
 
 
 def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path: Path) -> None:

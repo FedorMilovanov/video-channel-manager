@@ -21,10 +21,10 @@ Project Gutenberg eBook #53527 — `https://www.gutenberg.org/files/53527/53527-
 - HTML-копия: **105 639** зн., заголовков: 13, цитат: 44, пунктов: 4, воздушных блоков (`U+00A0`): **86**;
 - `sha256` исходников:
   - MD: `968884a423eacf848bc38bc74b7f47afae925120d33c79a7d4af3e56a43d6df3`
-  - JSON: `f98687596c9f056393c55acd2aebc84d7bd033b3bb8aac488cde44c35b3819e7`
+  - JSON: `cbc121d01365bedaa4db7cdfdd3ce02d4d208680433c499c425a4a08c2b9956d`
   - HTML: `a1d6c010058cead416abb19dcac41b535b413c63c50c39a2244e5a5a22a90e7d`
   - Cover JPEG: `c30f5027d85208f8dad7f4bf45b09e1ec31d9c1ad184032b4e820651402acfd3`
-- git blob статьи: `6b046e3a0726a101783a7566f0c83b1a85ac08ff`; git blob обложки: `59072f74917f5594b9a8a3ebe5c57ad246f4b384`;
+- git blob статьи: `694524017c8bfb681017684741c7310ae9a558fb`; git blob обложки: `59072f74917f5594b9a8a3ebe5c57ad246f4b384`;
 - публикационный путь (`build_document` с привязанной обложкой): `document_sha256 sha256:3ed609ee3fead08664cd1d279b5d71433da3bc3d5e295a0d2e81ed63900abb05`, `render_sha256 sha256:2a8d8a252089539ce9e0cf3a4afa847401e0be65df9dbc1acef5a06ad93e27a6`, **111** блоков с обложкой, **31 740** видимых знаков, `provider_write_performed: false`.
 
 ## Таблица цитат (44)

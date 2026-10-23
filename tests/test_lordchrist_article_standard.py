@@ -297,7 +297,7 @@ def test_reviewed_articles_have_one_anchor_per_quote() -> None:
     from lordchrist_article_sources_check import check as sources_check
 
     charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
-    reviewed = [charnock / f"lordchrist-rich-charnock-{n}.md" for n in ("02", "03", "04")]
+    reviewed = [charnock / f"lordchrist-rich-charnock-{n}.md" for n in ("02", "03", "04", "05")]
     for article in reviewed:
         errors = sources_check(article, article.with_suffix(".json"), None, [])
         assert not errors, f"{article.name}: {errors}"
@@ -311,6 +311,7 @@ def test_reviewed_articles_keep_distinct_quotes() -> None:
         "lordchrist-rich-charnock-02.md",
         "lordchrist-rich-charnock-03.md",
         "lordchrist-rich-charnock-04.md",
+        "lordchrist-rich-charnock-05.md",
     ):
         article = charnock / name
         rep = check(article)
@@ -357,7 +358,7 @@ def test_reviewed_articles_have_synodal_scripture() -> None:
     if not corpus:
         return
     charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
-    for number in ("01", "02", "03", "04"):
+    for number in ("01", "02", "03", "04", "05"):
         article = charnock / f"lordchrist-rich-charnock-{number}.md"
         errors, _notes = scripture_check(article, corpus)
         assert not errors, f"{article.name}: {errors}"

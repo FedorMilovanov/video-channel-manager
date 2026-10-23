@@ -94,6 +94,28 @@
       "remote_ready": false,
       "acquisition_status": "operator_approved_local_only",
       "provider_upload_status": "not_uploaded"
+    },
+    {
+      "asset_id": "asset-lordchrist-charnock-05-cover",
+      "article_id": "lordchrist-rich-charnock-05",
+      "media_slot_id": "media-cover",
+      "kind": "photo",
+      "provenance": "AI-generated (Arena image generation, battle mode), symbolic cover; no portrait reference and no depicted person",
+      "prompt": "Wide 16:9 horizontal widescreen cinematic still life (16:9 panoramic landscape format, camera panning horizontally along a very long dark wooden workbench stretching from far left edge to far right edge, shallow height, wide cinema framing). Moody 17th-century baroque photorealism with dramatic side lighting: across the dark left and center of the long weathered oak table lie scattered loose tarnished brass cogwheels, uncoiled steel spring, tiny pins, and iron tweezers resting motionless in cold slate-blue shadow; on the right third of the long table, illuminated by a low horizontal shaft of warm golden morning sunlight streaming from the right edge, stands a completed open-frame antique brass clockwork movement gleaming in warm amber light with fine dust motes floating in the beam. Ultra-sharp metal and wood textures, rich Rembrandt chiaroscuro. Strictly no clock face, no dial, no numbers, no Roman numerals, no letters, no people, no hands, no religious symbols, no watermark, no frame or border.",
+      "reference_source": null,
+      "reference_note": "Символический кадр без людей, текста и цифр: разрозненные латунные колёса и пружина в тени на дубовом верстаке не складываются сами собой, тогда как справа в утреннем луче стоит собранный механизм — прямая визуальная формула тезисов о невозможности самотворения и необходимости разумной Первопричины.",
+      "local_path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-05-cover.jpg",
+      "chosen_by": "operator",
+      "approved": true,
+      "approved_at": "2026-10-23",
+      "generated_size": "1024x1024 (letterboxed generation) -> crop (60,241)-(1024,783) -> 1920x1080 (16:9 full-bleed, чёрные поля сверху и снизу полностью обрезаны по указанию оператора)",
+      "depicts": "Разрозненные шестерни и пружина в тени слева и собранный часовой механизм в утреннем луче справа на дубовом верстаке",
+      "caption": null,
+      "expected_mime": "image/jpeg",
+      "content_checksum": "sha256:e549ec61306efe0427217198b63ec37482342364dae96b731ed73931f00f8b25",
+      "remote_ready": false,
+      "acquisition_status": "operator_approved_local_only",
+      "provider_upload_status": "not_uploaded"
     }
   ]
 }

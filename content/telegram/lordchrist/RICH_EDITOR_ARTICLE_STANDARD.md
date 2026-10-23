@@ -278,7 +278,8 @@ Conventions of the source blocks (one convention for the whole series):
   block is written into the article's log — so that any anchor can be checked
   again by anyone, at any time, with one command;
 - the blocks of the series: `A₁` covers the beginning of Discourse I
-  (article 1), `B₁` and `B₂` cover Reason I (articles 2 and 3), `C₁` covers
-  the opening of Reason II and `First, In their production: I` (article 4):
-  `A1:52486:20700`, `B1:73582:23690`, `B2:97144:16083`, `C1:113147:13281` of
-  the normalized text of eBook #53527.
+  (article 1), `B₁` and `B₂` cover Reason I (articles 2 and 3), `C₁` and `C₂`
+  cover the opening of Reason II and the whole section `First, In their
+  production: I–IV` (articles 4 and 5):
+  `A1:52486:20700`, `B1:73582:23690`, `B2:97144:16083`, `C1:113147:13281`,
+  `C2:126428:19142` of the normalized text of eBook #53527.
