@@ -1,0 +1,75 @@
+name: Legendary Poet VK group key probe
+
+# Read-only verification of the community access key stored in the
+# THE_LEGENDARY_POET_GROUP_VK secret. Prints only safe metadata
+# (permission names, group id/name, API error codes). The token value
+# is never echoed. No provider writes are performed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      group_id:
+        description: "VK community id to check (Legendary Poet)"
+        required: true
+        default: "235216998"
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: legendary-poet-vk-group-key-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: "Probe community key (read-only)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      VK_GROUP_TOKEN: ${{ secrets.THE_LEGENDARY_POET_GROUP_VK }}
+      GROUP_ID: ${{ inputs.group_id }}
+    steps:
+      - name: "Call read-only VK methods"
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.parse, urllib.request
+
+          token = [SECURITY_DATA]"VK_GROUP_TOKEN", "")
+          group_id = os.environ.get("GROUP_ID", "").strip()
+          if not token:
+              print("RESULT: secret THE_LEGENDARY_POET_GROUP_VK is EMPTY in this context")
+              sys.exit(2)
+          print("RESULT: secret is present (value hidden)")
+
+          def call(method, **params):
+              params["access_token"] = token
+              params["v"] = "5.199"
+              url = "https://api.vk.ru/method/" + method + "?" + urllib.parse.urlencode(params)
+              req = urllib.request.Request(url, headers={"User-Agent": "vcm-group-key-probe"})
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  return json.loads(resp.read().decode("utf-8"))
+
+          # 1) Which rights does this community key have?
+          data = call("groups.getTokenPermissions")
+          if "error" in data:
+              err = data["error"]
+              print(f"getTokenPermissions: ERROR code={err.get('error_code')} msg={err.get('error_msg')}")
+              sys.exit(3)
+          resp = data.get("response", {})
+          names = [p.get("name") for p in resp.get("permissions", []) if p.get("setting")]
+          print(f"getTokenPermissions: OK mask={resp.get('mask')} enabled_permissions={names}")
+
+          # 2) Can the key read its own community?
+          data = call("groups.getById", group_id=group_id)
+          if "error" in data:
+              err = data["error"]
+              print(f"groups.getById({group_id}): ERROR code={err.get('error_code')} msg={err.get('error_msg')}")
+              sys.exit(4)
+          groups = data.get("response", {}).get("groups", data.get("response", []))
+          if groups:
+              g = groups[0]
+              print(f"groups.getById: OK id={g.get('id')} name={g.get('name')!r} screen_name={g.get('screen_name')}")
+          else:
+              print("groups.getById: OK but empty response")
+          PY
