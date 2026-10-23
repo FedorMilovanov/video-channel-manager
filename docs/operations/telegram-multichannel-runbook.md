@@ -20,11 +20,29 @@ Each channel has its own:
 
 The generic code does not use a global Telegram target. Every provider payload and target proof is bound to the selected profile SHA-256.
 
-## Current Svodka profile
+## Channel write authority (checked, not remembered)
 
-Canonical profile: `content/telegram/channels/svodka.json`.
+`provider_writes_authorized` is mutable state of one profile, so this page does not restate it.
+The answer lives in [`channel-write-authority.json`](channel-write-authority.json), derived from
+the profiles and their pinned target bindings and compared with them by
+`tests/test_channel_write_authority.py` in both directions.
 
-It binds `svodka` to `@deep_info_life`, `Europe/Moscow`, a two-publication daily limit, `state/svodka-telegram`, and the `SVODKA_TELEGRAM_*` credential/identity namespace. It currently has `provider_writes_authorized=false`.
+| Profile | Project | Target | State ref | `provider_writes_authorized` |
+| --- | --- | --- | --- | --- |
+| `content/telegram/channels/lordchrist.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `false` |
+| `content/telegram/channels/lordchrist-rich.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
+| `content/telegram/channels/milovi-cake.json` | `milovi-cake` | `@MiloviCake` | `state/milovi-cake-telegram` | `true` |
+| `content/telegram/channels/svodka.json` | `svodka` | `@deep_info_life` | `state/svodka-telegram` | `true` |
+
+The flag belongs to a profile, not to a channel: `@lordchrist` has two profiles and they
+disagree on purpose — the legacy quote queue is closed, the historical rich editorial is open.
+Read the row for the exact profile a workflow loads.
+
+A true flag is one gate among several. This page previously said Svodka was
+`provider_writes_authorized=false` while `content/telegram/channels/svodka.json` had been `true`
+since the reviewed rollout, which is precisely the kind of sentence that stops being true
+without anything failing. The table above cannot drift: it is compared with the profiles on
+every CI run.
 
 ## Content lifecycle
 

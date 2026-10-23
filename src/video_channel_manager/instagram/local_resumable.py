@@ -408,7 +408,12 @@ class InstagramResumableProviderClient(InstagramProviderClient):
         }
         if manifest.thumb_offset_ms is not None:
             data["thumb_offset"] = manifest.thumb_offset_ms
-        payload = self._request("POST", f"{self.config.account_id}/media", data=data)
+        payload = self._request(
+            "POST",
+            f"{self.config.account_id}/media",
+            data=data,
+            resource="media",
+        )
         container_id = payload.get("id")
         upload_uri = payload.get("uri")
         if not isinstance(container_id, str) or not container_id:
@@ -436,22 +441,33 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             return "ERROR", phase_failure.durable_message()
         return raw_code.upper(), status_message
 
+    def _dispatch_binary_upload(self, target: str, *, body: bytes, file_size: int) -> httpx.Response:
+        """The single binary-upload dispatch point for resumable Reels.
+
+        The upload URI is not the Graph API, so it does not go through `_request`, and that is
+        exactly how a provider write could previously escape classification. The mutation-boundary
+        scanner requires every direct HTTP verb in this package to live inside this method, and the
+        `instagram_api:POST:resumable-binary-upload` boundary in the register owns it.
+        """
+
+        return self._client.post(
+            target,
+            headers={
+                "Authorization": f"OAuth {self.config.access_token}",
+                "offset": "0",
+                "file_size": str(file_size),
+            },
+            content=body,
+            timeout=_RESUMABLE_UPLOAD_TIMEOUT,
+        )
+
     def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
         body: bytes | None = None
         try:
             body = stream.read()
-            response = self._client.post(
-                target,
-                headers={
-                    "Authorization": f"OAuth {self.config.access_token}",
-                    "offset": "0",
-                    "file_size": str(file_size),
-                },
-                content=body,
-                timeout=_RESUMABLE_UPLOAD_TIMEOUT,
-            )
+            response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
         except (httpx.RequestError, OSError) as exc:
             detail = secret_safe_exception_detail(
                 exc,

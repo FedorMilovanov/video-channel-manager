@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -25,6 +26,7 @@ BINDING_PATH = ROOT / "content/telegram/channels/svodka-target-binding.json"
 QUEUE_PATH = ROOT / "content/telegram/svodka/draft-14-posts-2026-08.json"
 CANARY_WORKFLOW = ROOT / ".github/workflows/svodka-canary.yml"
 READINESS_PATH = ROOT / "docs/operations/svodka-readiness.md"
+AUTHORITY_PATH = ROOT / "docs/operations/channel-write-authority.json"
 MAX_LAG_MINUTES = 120
 APPROVED_RELEASE_DIGEST = "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce"
 
@@ -272,11 +274,19 @@ def test_readiness_document_tracks_current_activation_state_and_explicit_recover
     readiness = READINESS_PATH.read_text(encoding="utf-8")
 
     assert "activation-armed but not yet canary-proven" in readiness
-    assert "provider_writes_authorized=true" in readiness
     assert "content/telegram/svodka/release-approval-2026-08.json" in readiness
     assert APPROVED_RELEASE_DIGEST in readiness
-    assert "14/14 `pending`" in readiness
+    # The readiness page used to restate the mutable profile flag in prose, and on 2026-10-22 it
+    # still said 14/14 `pending` after every window had expired into `skipped`. The page now cites
+    # the checked snapshot and records the recovery that actually happened; the flag itself is
+    # asserted against the profile, not against the sentence.
+    assert "channel-write-authority.json" in readiness
+    assert "14/14 `skipped`" in readiness
     assert "--recover-stale-predecessors" in readiness
     assert "There is no committed `content/telegram/svodka/approved-release-2026-08.json` file" in readiness
     assert "provider_writes_authorized=false" not in readiness
     assert "approved release: absent" not in readiness
+
+    authority = json.loads(AUTHORITY_PATH.read_text(encoding="utf-8"))
+    svodka = next(row for row in authority["channels"] if row["profile"] == "content/telegram/channels/svodka.json")
+    assert svodka["provider_writes_authorized"] is True

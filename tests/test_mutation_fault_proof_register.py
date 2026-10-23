@@ -57,6 +57,75 @@ def _pytest_functions(path: Path) -> set[str]:
     }
 
 
+def _module_string_sequences(tree: ast.Module) -> dict[str, set[str]]:
+    """Module-level tuples/lists of string literals, such as a table of parametrized resources."""
+
+    sequences: dict[str, set[str]] = {}
+    for statement in tree.body:
+        target: ast.expr | None = None
+        value: ast.expr | None = None
+        if isinstance(statement, ast.Assign) and len(statement.targets) == 1:
+            target, value = statement.targets[0], statement.value
+        elif isinstance(statement, ast.AnnAssign):
+            target, value = statement.target, statement.value
+        if not isinstance(target, ast.Name) or not isinstance(value, ast.List | ast.Tuple | ast.Set):
+            continue
+        items = {
+            str(item.value) for item in value.elts if isinstance(item, ast.Constant) and isinstance(item.value, str)
+        }
+        if len(items) == len(value.elts) and items:
+            sequences[target.id] = items
+    return sequences
+
+
+def _parametrization_ids(path: Path, function_name: str) -> set[str]:
+    """Every case id a test function's parametrize markers can produce.
+
+    A proof may name one parametrized case (`test_x[POST:media]`) instead of the whole function: a
+    table-driven stage test proves several boundaries, and citing the exact case keeps the register
+    specific. The id has to be produced by that function's own markers, so a renamed case or a
+    dropped resource breaks CI. Both `pytest.param(..., id="...")` and `ids=[...]`/an id-less table
+    of string values are resolved statically from this module's own literals.
+    """
+
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    sequences = _module_string_sequences(tree)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) or node.name != function_name:
+            continue
+        ids: set[str] = set()
+        for decorator in node.decorator_list:
+            if not isinstance(decorator, ast.Call):
+                continue
+            for keyword in decorator.keywords:
+                if keyword.arg != "ids":
+                    continue
+                if isinstance(keyword.value, ast.Constant):
+                    ids.add(str(keyword.value.value))
+                elif isinstance(keyword.value, ast.Name):
+                    ids.update(sequences.get(keyword.value.id, set()))
+            for argument in decorator.args:
+                if isinstance(argument, ast.List | ast.Tuple):
+                    declared_values: set[str] = set()
+                    all_literal = True
+                    for item in argument.elts:
+                        if isinstance(item, ast.Constant) and isinstance(item.value, str):
+                            declared_values.add(str(item.value))
+                            continue
+                        all_literal = False
+                        if not isinstance(item, ast.Call):
+                            continue
+                        for keyword in item.keywords:
+                            if keyword.arg == "id" and isinstance(keyword.value, ast.Constant):
+                                ids.add(str(keyword.value.value))
+                    if all_literal:
+                        ids.update(declared_values)
+                elif isinstance(argument, ast.Name):
+                    ids.update(sequences.get(argument.id, set()))
+        return ids
+    return set()
+
+
 def _assert_exact_test_id(test_id: str, *, powershell_test_paths: set[str]) -> None:
     if "::It::" in test_id:
         relative_path, title = test_id.split("::It::", 1)
@@ -72,7 +141,18 @@ def _assert_exact_test_id(test_id: str, *, powershell_test_paths: set[str]) -> N
     assert separator == "::" and function_name.startswith("test_")
     path = ROOT / relative_path
     assert path.is_file()
-    assert function_name in _pytest_functions(path), test_id
+
+    base_name, bracket, case_id = function_name.partition("[")
+    if bracket:
+        assert case_id.endswith("]"), test_id
+        case_id = case_id[:-1]
+        assert base_name in _pytest_functions(path), test_id
+        assert case_id in _parametrization_ids(path, base_name), {
+            "test_id": test_id,
+            "declared_ids": sorted(_parametrization_ids(path, base_name)),
+        }
+    else:
+        assert function_name in _pytest_functions(path), test_id
 
 
 def test_every_required_mutation_stage_has_an_exact_owned_fault_proof() -> None:
