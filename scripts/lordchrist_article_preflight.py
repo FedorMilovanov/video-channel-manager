@@ -72,7 +72,7 @@ NUMBERED_H2_RE = re.compile(r"^\d+[.)]")
 class Report:
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
-    stats: dict = field(default_factory=dict)
+    stats: dict[str, int | float] = field(default_factory=dict)
 
     def error(self, msg: str) -> None:
         self.errors.append(msg)
@@ -214,6 +214,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     # L2: подпись — ПОСЛЕДНЯЯ строка внутри блока цитаты (`> *— …*`).
     # Отдельный абзац под цитатой даёт блочный отступ редактора и лишний воздух.
     quotes, i = 0, 0
+    seen_quotes: dict[str, int] = {}
     while i < len(stripped):
         if stripped[i].startswith(">"):
             quotes += 1
@@ -242,6 +243,19 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
                     f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — "
                     "проверьте, что это один непрерывный пассаж, а не склейка разных мест"
                 )
+
+            # дословный дубль цитаты (правило двух прогонов, §11 стандарта):
+            # одна и та же цитата дважды в одной статье — это дефект сборки,
+            # а не приём: читатель встречает одну и ту же мысль второй раз.
+            quote_key = re.sub(r"\s+", " ", quote_text).strip()
+            if quote_key:
+                if quote_key in seen_quotes:
+                    rep.error(
+                        f"строка {start + 1}: цитата дословно повторяет цитату в строке "
+                        f"{seen_quotes[quote_key]} — дубль цитаты в статье"
+                    )
+                else:
+                    seen_quotes[quote_key] = start + 1
 
             # подпись отдельным блоком — ошибка L2: даёт разрыв под цитатой
             nxt_idx = end + 1
@@ -284,15 +298,16 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
 
     # ---------- 5в. библиографическая пометка в конце ----------
     # Читатель должен видеть, откуда взяты цитаты, не выходя из статьи.
+    # Решение оператора 2026-10-24: пометка начинается со знака ©.
     note_blocks = [
-        " ".join(stripped[s0:e0]).strip()
+        block_text
         for s0, e0 in spans
-        if " ".join(stripped[s0:e0]).strip().startswith(SERVICE_NOTE_LEAD)
+        if (block_text := " ".join(stripped[s0:e0]).strip().removeprefix("© ").strip()).startswith(SERVICE_NOTE_LEAD)
     ]
     if not note_blocks:
         rep.error(
             "нет библиографической пометки в конце: последний абзац начинается словами "
-            "«Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
+            "«© Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
         )
     elif SERVICE_NOTE_URL not in note_blocks[-1].casefold():
         rep.error("в библиографической пометке нет ссылки на источник (gutenberg.org)")

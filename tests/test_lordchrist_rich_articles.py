@@ -26,11 +26,14 @@ def _queue():
     return load_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
 
 
-def test_queue_lists_thirteen_dated_articles_with_three_ready() -> None:
+def test_queue_lists_thirteen_dated_articles_with_six_ready() -> None:
     items = _queue()
     assert len(items) == 13
     assert [item.ordinal for item in items] == list(range(1, 14))
-    assert sum(1 for item in items if item.is_ready) == 3
+    # Only article 01 (already published) stays ready; 02-06 were disarmed
+    # (superseded by their Telegraph editions, 2026-10-24) and 07-13 planned.
+    assert sum(1 for item in items if item.is_ready) == 1
+    assert sum(1 for item in items if item.status == "superseded") == 5
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
     # The first article is the one documented off-slot exception (operator decision);
@@ -50,8 +53,10 @@ def test_off_slot_date_requires_an_explicit_documented_override() -> None:
 def test_due_item_selects_the_single_article_of_that_midday() -> None:
     today = due_item(_queue(), datetime(2026, 10, 22, 12, 0, tzinfo=MOSCOW))
     assert today.publication_id == "lordchrist-rich-charnock-01"
-    next_slot = due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
-    assert next_slot.publication_id == "lordchrist-rich-charnock-02"
+    # 2026-10-27 belonged to article 02, but it is superseded (Telegraph lane):
+    # the rich scheduler must refuse it rather than publish a duplicate.
+    with pytest.raises(LookupError, match="is not ready"):
+        due_item(_queue(), datetime(2026, 10, 27, 12, 0, tzinfo=MOSCOW))
 
 
 def test_due_item_is_silent_on_a_day_without_an_article() -> None:
@@ -60,8 +65,14 @@ def test_due_item_is_silent_on_a_day_without_an_article() -> None:
 
 
 def test_due_item_refuses_an_article_that_is_not_ready_yet() -> None:
+    planned = next(item for item in _queue() if not item.is_ready)
     with pytest.raises(LookupError, match="is not ready"):
-        due_item(_queue(), datetime(2026, 11, 6, 12, 0, tzinfo=MOSCOW))
+        due_item(
+            _queue(),
+            datetime(
+                planned.scheduled_on.year, planned.scheduled_on.month, planned.scheduled_on.day, 12, 0, tzinfo=MOSCOW
+            ),
+        )
 
 
 def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path: Path) -> None:
@@ -97,14 +108,14 @@ def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path
 
 
 def test_preview_builds_a_rich_document_with_the_bound_cover() -> None:
-    item = _queue()[1]
-    document, render, article = build_document(ROOT, item, media_base_url=MEDIA_BASE)
+    for item in [entry for entry in _queue() if entry.is_ready]:
+        document, render, article = build_document(ROOT, item, media_base_url=MEDIA_BASE)
 
-    assert document.publication_id == item.publication_id
-    assert [media.media_id for media in article.media] == ["media-cover"]
-    assert render.visible_text
-    assert len(render.visible_text) > 30_000
-    assert any(getattr(block, "type", None) == "media" for block in article.blocks)
+        assert document.publication_id == item.publication_id
+        assert [media.media_id for media in article.media] == ["media-cover"]
+        assert render.visible_text
+        assert len(render.visible_text) > 30_000
+        assert any(getattr(block, "type", None) == "media" for block in article.blocks)
 
 
 def test_cover_is_placed_directly_under_the_title() -> None:

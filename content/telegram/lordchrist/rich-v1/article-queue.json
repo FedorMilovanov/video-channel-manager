@@ -4,7 +4,7 @@
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "revision": "charnock-v1",
-  "note": "Очередь длинных статей L2: одна статья на полуденный слот (12:00 МСК, вт/пт). Публикует тот же бот, что и цитаты; обложка уходит в rich-сообщение ссылкой на файл в этом репозитории. Первая статья выпускается 22.10.2026 по решению оператора (четверг, вне слота); остальные 12 идут строгой каденцией вт/пт: 27.10, 30.10, 03.11, 06.11, 10.11, 13.11, 17.11, 20.11, 24.11, 27.11, 01.12, 04.12.",
+  "note": "Очередь длинных статей L2: одна статья на полуденный слот (12:00 МСК, вт/пт). Публикует тот же бот, что и цитаты; обложка уходит в rich-сообщение ссылкой на файл в этом репозитории. Первая статья выпускается 22.10.2026 по решению оператора (четверг, вне слота); остальные 12 идут строгой каденцией вт/пт: 27.10, 30.10, 03.11, 06.11, 10.11, 13.11, 17.11, 20.11, 24.11, 27.11, 01.12, 04.12. Статьи 02–06 переведены в Telegraph (статус superseded, 2026-10-24) и из rich-расписания исключены.",
   "items": [
     {
       "publication_id": "lordchrist-rich-charnock-01",
@@ -13,7 +13,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.json",
-        "git_blob_sha": "3d1b0c2473154c78483483073609541c8d62cd2e"
+        "git_blob_sha": "0d119868906761042f8fd79792c08d75710b3f09"
       },
       "cover": {
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-01-cover.jpg",
@@ -26,55 +26,86 @@
       "publication_id": "lordchrist-rich-charnock-02",
       "ordinal": 2,
       "scheduled_on_moscow": "2026-10-27",
-      "status": "ready",
+      "status": "superseded",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-02.json",
-        "git_blob_sha": "669e1af7136be2d8be66e8a117b12a47ce04844a"
+        "git_blob_sha": "3503bb8c46c9e30830619db9c415d25643b07fdf"
       },
       "cover": {
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-02-cover.jpg",
         "git_blob_sha": "48e24a013539608e313680f250e7bff3fc75c04c",
         "media_id": "media-cover"
-      }
+      },
+      "superseded_by": "lordchrist-telegraph-charnock-02",
+      "status_note": "Разоружено 2026-10-24: издание публикуется в Telegraph-формате (lordchrist-telegraph-charnock-02); rich-автозапуск по расписанию запрещён."
     },
     {
       "publication_id": "lordchrist-rich-charnock-03",
       "ordinal": 3,
       "scheduled_on_moscow": "2026-10-30",
-      "status": "ready",
+      "status": "superseded",
       "article": {
         "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-03.json",
-        "git_blob_sha": "08035172c2b5c0425de1fd1348f4a390376f84ef"
+        "git_blob_sha": "2c294a6783616313917d01ea2b1bbfb23e75a64d"
       },
       "cover": {
         "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-03-cover.jpg",
         "git_blob_sha": "fe5ad9374c9fb02930a42e62dc0af9f29faa375a",
         "media_id": "media-cover"
-      }
+      },
+      "superseded_by": "lordchrist-telegraph-charnock-03",
+      "status_note": "Разоружено 2026-10-24: издание публикуется в Telegraph-формате (lordchrist-telegraph-charnock-03); rich-автозапуск по расписанию запрещён."
     },
     {
       "publication_id": "lordchrist-rich-charnock-04",
       "ordinal": 4,
       "scheduled_on_moscow": "2026-11-03",
-      "status": "planned",
-      "article": null,
-      "cover": null
+      "status": "superseded",
+      "article": {
+        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-04.json",
+        "git_blob_sha": "694524017c8bfb681017684741c7310ae9a558fb"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-04-cover.jpg",
+        "git_blob_sha": "59072f74917f5594b9a8a3ebe5c57ad246f4b384",
+        "media_id": "media-cover"
+      },
+      "superseded_by": "lordchrist-telegraph-charnock-04",
+      "status_note": "Разоружено 2026-10-24: издание публикуется в Telegraph-формате (lordchrist-telegraph-charnock-04); rich-автозапуск по расписанию запрещён."
     },
     {
       "publication_id": "lordchrist-rich-charnock-05",
       "ordinal": 5,
       "scheduled_on_moscow": "2026-11-06",
-      "status": "planned",
-      "article": null,
-      "cover": null
+      "status": "superseded",
+      "article": {
+        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-05.json",
+        "git_blob_sha": "9af422c66ca18f8728aed6f9a2af01e01cf04ee2"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-05-cover.jpg",
+        "git_blob_sha": "78f3da889a68578e9d27dc4918dc9dcc2b8f548e",
+        "media_id": "media-cover"
+      },
+      "superseded_by": "lordchrist-telegraph-charnock-05",
+      "status_note": "Разоружено 2026-10-24: издание публикуется в Telegraph-формате (lordchrist-telegraph-charnock-05); rich-автозапуск по расписанию запрещён."
     },
     {
       "publication_id": "lordchrist-rich-charnock-06",
       "ordinal": 6,
       "scheduled_on_moscow": "2026-11-10",
-      "status": "planned",
-      "article": null,
-      "cover": null
+      "status": "superseded",
+      "article": {
+        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-06.json",
+        "git_blob_sha": "7e68b890805cba90780818bd734e7cb5210f8949"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-06-cover.jpg",
+        "git_blob_sha": "0232c0941610eef352ba821bb9ec2ebebb5d313e",
+        "media_id": "media-cover"
+      },
+      "superseded_by": "lordchrist-telegraph-charnock-06",
+      "status_note": "Разоружено 2026-10-24: издание публикуется в Telegraph-формате (lordchrist-telegraph-charnock-06); rich-автозапуск по расписанию запрещён."
     },
     {
       "publication_id": "lordchrist-rich-charnock-07",

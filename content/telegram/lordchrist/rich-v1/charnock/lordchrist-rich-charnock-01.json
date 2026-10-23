@@ -886,12 +886,12 @@
       "type": "paragraph",
       "block_id": "p-57",
       "text": [
-        "Чарнок не выстраивает библейских цитат в ряд — он ими дышит, и потому его довод держится не на одной строке, а на целой сети. Начинается всё с самого стиха: ",
+        "Чарнок не выстраивает библейских цитат в ряд — он ими дышит, и потому его довод держится не на одной строке, а на целой сети. Начинается всё с самого стиха — ",
         {
           "type": "bold",
           "text": "Сказал безумец в сердце своём: „нет Бога“"
         },
-        ". Тот же стих повторён в Пс. 52:2 — с чуть иным продолжением: ",
+        " (Пс. 13:1). Тот же стих повторён в Пс. 52:2 — с чуть иным продолжением: ",
         {
           "type": "bold",
           "text": "Развратились они и совершили гнусные преступления"
@@ -913,7 +913,7 @@
           "type": "bold",
           "text": "говорит в сердце своём: „забыл Бог, закрыл лицо Своё, не увидит никогда“"
         },
-        ". В еврейской нумерации, которой держится Чарнок, это стихи 10:4, 10:11 и 10:13; он цитирует именно их и видит в них тот же жест: человек говорит — себе, тихо, но так, что это слышит Бог."
+        ". В еврейской нумерации, которой держится Чарнок, это стихи 10:4 и 10:11 (рядом он ссылается и на 10:13) — и видит в них тот же жест: человек говорит — себе, тихо, но так, что это слышит Бог."
       ]
     },
     {
@@ -925,12 +925,12 @@
           "type": "bold",
           "text": "Ибо, что можно знать о Боге, явно для них, потому что Бог явил им"
         },
-        "; ",
+        " (Рим. 1:19); ",
         {
           "type": "bold",
           "text": "невидимое Его, вечная сила Его и Божество, от создания мира через рассматривание творений видимы, так что они безответны"
         },
-        ". Ключевое слово здесь для Чарнока — ",
+        " (Рим. 1:20). Ключевое слово здесь для Чарнока — ",
         {
           "type": "bold",
           "text": "безответны"
@@ -967,12 +967,12 @@
           "type": "bold",
           "text": "есть ли разумеющий, ищущий Бога"
         },
-        ", и только потом — ",
+        " (Пс. 13:2), и только потом — ",
         {
           "type": "bold",
-          "text": "все уклонились, сделались равно непотребными; нет делающего добро, нет ни одного"
+          "text": "все совратились с пути, до одного негодны; нет делающего добро, нет ни одного"
         },
-        ". Взгляд идёт сверху вниз, и потому вопрос не в том, достаточно ли доказательств, а в том, что нашлось при осмотре."
+        " (Рим. 3:12). Взгляд идёт сверху вниз, и потому вопрос не в том, достаточно ли доказательств, а в том, что нашлось при осмотре."
       ]
     },
     {
@@ -1001,7 +1001,7 @@
           "type": "bold",
           "text": "не переставал свидетельствовать о Себе благодеяниями"
         },
-        " — дождём, временами плодоносными, пищей и веселием сердца. В Афинах тот же апостол говорит, что Бог сотворил всё, ",
+        " — дождём, временами плодоносными, пищей и веселием сердца (Деян. 14:16-17). В Афинах тот же апостол говорит, что Бог сотворил всё, ",
         {
           "type": "bold",
           "text": "дабы они искали Бога, не ощутят ли Его и не найдут ли, хотя Он и недалеко от каждого из нас"
@@ -1016,7 +1016,7 @@
           "type": "bold",
           "text": "Итак, мы, будучи родом Божиим, не должны думать, что Божество подобно золоту, или серебру, или камню, получившему образ от искусства и вымысла человеческого"
         },
-        ". Чарнок читает это как указание на близость и на ответственность: близость делает неведение невозможным, ответственность делает его виновным."
+        " (Деян. 17:27-29). Чарнок читает это как указание на близость и на ответственность: близость делает неведение невозможным, ответственность делает его виновным."
       ]
     },
     {
@@ -1122,294 +1122,301 @@
       "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: THIS psalm is a description of the deplorable corruption by nature of every son of Adam, since the withering of that common root. Some restrain it to the Gentiles, as a wilderness full of briers and thorns, as not concerning the Jews, the garden of God, planted by his grace, and watered by the dew of heaven. But the apostle, the best interpreter, rectifies this in extending it by name to Jews, as well as Gentiles, (Rom. iii. 9). [смещение 55617 в файле 53527-0.txt, sha256 bdcaef77…98c4, издание 1853 г.; перевод канала]"
+      "evidence": "EN: THIS psalm is a description of the deplorable corruption by nature of every son of Adam, since the withering of that common root. Some restrain it to the Gentiles, as a wilderness full of briers and thorns, as not concerning the Jews, the garden of God, planted by his grace, and watered by the dew of heaven. But the apostle, the best interpreter, rectifies this in extending it by name to Jews, as well as Gentiles, (Rom. iii. 9).  [смещение 185 в блоке A₁ (нормализованный текст источника, позиция 52 486; 617 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-03-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The psalmist first declares the corruption of the faculties of the soul, The fool hath said in his heart; secondly, the streams issuing from thence, they are corrupt, &c.: the first in atheistical principles, the other in unworthy practice; and lays all the evil, tyranny, lust, and persecutions by men, (as if the world were only for their sake) upon the neglects of God, and the atheism cherished in their hearts. [смещение 56332 в файле 53527-0.txt, sha256 bdcaef77…98c4, издание 1853 г.; перевод канала]"
+      "evidence": "EN: The psalmist first declares the corruption of the faculties of the soul, The fool hath said in his heart; secondly, the streams issuing from thence, they are corrupt, &c.: the first in atheistical principles, the other in unworthy practice; and lays all the evil, tyranny, lust, and persecutions by men, (as if the world were only for their sake) upon the neglects of God, and the atheism cherished in their hearts.  [смещение 899 в блоке A₁ (нормализованный текст источника, позиция 52 486; 1 314 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-04-b1",
+      "source_id": "src-04-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: a term in scripture signifying a wicked man, used also by the heathen philosophers to signify a vicious person  [смещение 1325 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: a term in scripture signifying a wicked man, used also by the heathen philosophers to signify a vicious person  [смещение 1325 в блоке A₁ (нормализованный текст источника, позиция 52 486; 1 435 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-05-b2",
+      "source_id": "src-05-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: so the word נבל is taken, a plant that hath lost all that juice that made it lovely and useful  [смещение 1522 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: so the word נבל is taken, a plant that hath lost all that juice that made it lovely and useful  [смещение 1522 в блоке A₁ (нормализованный текст источника, позиция 52 486; 1 616 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-06-a3",
+      "source_id": "src-06-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: So a fool is one that hath lost his wisdom, and right notion of God and divine things which were communicated to man by creation; one dead in sin, yet one not so much void of rational faculties as of grace in those faculties, not one that wants reason, but abuses his reason.  [смещение 1618 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: So a fool is one that hath lost his wisdom, and right notion of God and divine things which were communicated to man by creation; one dead in sin, yet one not so much void of rational faculties as of grace in those faculties, not one that wants reason, but abuses his reason.  [смещение 1618 в блоке A₁ (нормализованный текст источника, позиция 52 486; 1 893 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-07-b17",
+      "source_id": "src-07-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: If he were not a fool, he would not imagine a thing so contrary to the stream of the universal reason of the world  [смещение 8052 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: If he were not a fool, he would not imagine a thing so contrary to the stream of the universal reason of the world  [смещение 8052 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-08-a4",
+      "source_id": "src-08-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The thoughts of the heart are in the nature of words to God, though not to men.  [смещение 2002 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The thoughts of the heart are in the nature of words to God, though not to men.  [смещение 2002 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-09-a5",
+      "source_id": "src-09-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He doth not form a syllogism, as Calvin speaks, that there is no God: he dares not openly publish it, though he dares secretly think it.  [смещение 2256 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: He doth not form a syllogism, as Calvin speaks, that there is no God: he dares not openly publish it, though he dares secretly think it.  [смещение 2256 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-10-a6",
+      "source_id": "src-10-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He cannot raze out the thoughts of a Deity, though he endeavors to blot those characters of God in his soul.  [смещение 2393 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: He cannot raze out the thoughts of a Deity, though he endeavors to blot those characters of God in his soul.  [смещение 2393 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-11-a7",
+      "source_id": "src-11-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He hath some doubts whether there be a God or no: he wishes there were not any, and sometimes hopes there is none at all.  [смещение 2502 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: He hath some doubts whether there be a God or no: he wishes there were not any, and sometimes hopes there is none at all.  [смещение 2502 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-12-b9",
+      "source_id": "src-12-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: he tampered with his own heart to bring it to that persuasion, and smothered in himself those notices of a Deity  [смещение 2711 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: he tampered with his own heart to bring it to that persuasion, and smothered in himself those notices of a Deity  [смещение 2711 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-13-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Not that he denies the existence of a Supreme Being, that created the world, but his regarding the creatures, his government of the world, and consequently his reward of the righteous or punishments of the wicked. … Those that deny the providence of God, do in effect deny the being of God … as men who desire liberty to commit works of darkness, would not have the lights in the house dimmed, but extinguished. [смещение 58617 в файле 53527-0.txt, sha256 bdcaef77…98c4, издание 1853 г.; перевод канала]"
+      "evidence": "EN: Not that he denies the existence of a Supreme Being, that created the world, but his regarding the creatures, his government of the world, and consequently his reward of the righteous or punishments of the wicked. … Those that deny the providence of God, do in effect deny the being of God … as men who desire liberty to commit works of darkness, would not have the lights in the house dimmed, but extinguished.  [смещение 3154 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-14-b11",
+      "source_id": "src-14-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: When men deny the God of purity, they must needs be polluted in soul and body, and grow brutish in their actions.  [смещение 5343 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: When men deny the God of purity, they must needs be polluted in soul and body, and grow brutish in their actions.  [смещение 5343 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-15-b4",
+      "source_id": "src-15-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: There is a threefold denial of God, 1. Quoad existentiam; this is absolute atheism. 2. Quoad Providentiam, or his inspection into, or care of the things of the world, bounding him in the heavens. 3. Quoad naturam, in regard of one or other of the perfections due to his nature.  [смещение 3368 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: There is a threefold denial of God, 1. Quoad existentiam; this is absolute atheism. 2. Quoad Providentiam, or his inspection into, or care of the things of the world, bounding him in the heavens. 3. Quoad naturam, in regard of one or other of the perfections due to his nature.  [смещение 3368 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-16-b7",
+      "source_id": "src-16-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 16",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Of the denial of the providence of God most understand this, not excluding the absolute atheist, as Diagoras is reported to be, nor the skeptical atheist, as Protagoras, who doubted whether there were a God.  [смещение 3646 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Of the denial of the providence of God most understand this, not excluding the absolute atheist, as Diagoras is reported to be, nor the skeptical atheist, as Protagoras, who doubted whether there were a God.  [смещение 3646 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-17-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 17",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He speaks of the atheist in the singular, “the fool;” of the corruption issuing in the life in the plural; intimating that though some few may choke in their hearts the sentiments of God and his providence … yet there is something of a secret atheism in all, which is the fountain of the evil practices in their lives, not an utter disowning of the being of a God, but a denial or doubting of some of the rights of his nature. [смещение 60372 в файле 53527-0.txt, sha256 bdcaef77…98c4, издание 1853 г.; перевод канала]"
+      "evidence": "EN: He speaks of the atheist in the singular, “the fool;” of the corruption issuing in the life in the plural; intimating that though some few may choke in their hearts the sentiments of God and his providence … yet there is something of a secret atheism in all, which is the fountain of the evil practices in their lives, not an utter disowning of the being of a God, but a denial or doubting of some of the rights of his nature.  [смещение 5124 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-18-b12",
+      "source_id": "src-18-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 18",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Not one or two evil actions is the product of such a principle, but the whole scene of a man's life is corrupted and becomes execrable.  [смещение 5621 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Not one or two evil actions is the product of such a principle, but the whole scene of a man's life is corrupted and becomes execrable.  [смещение 5621 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-19-a12",
+      "source_id": "src-19-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 19",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Evil works are a dust stirred up by an atheistical breath.  [смещение 6199 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Evil works are a dust stirred up by an atheistical breath.  [смещение 6199 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-20-b15",
+      "source_id": "src-20-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 20",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He that habituates himself in some sordid lust, can scarcely be said seriously and firmly to believe that there is a God in being  [смещение 6258 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: He that habituates himself in some sordid lust, can scarcely be said seriously and firmly to believe that there is a God in being  [смещение 6258 в блоке A₁ (нормализованный текст источника, позиция 52 486; 8 166 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-21-b26",
+      "source_id": "src-21-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 21",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Certain it is, that every man that doth not love God, denies God  [смещение 12453 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Certain it is, that every man that doth not love God, denies God  [смещение 12453 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-q22-charnock",
+      "source_id": "src-22-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 22",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Practical atheism is natural to man in his corrupt state. It is against nature as constituted by God, but natural, as nature is depraved by man … III. A secret atheism, or a partial atheism, is the spring of all the wicked practices in the world: the disorders of the life spring from the ill dispositions of the heart. [смещения 63001 и 63346 в файле 53527-0.txt (сводка трёх положений), sha256 bdcaef77…98c4, издание 1853 г.; перевод канала]"
+      "evidence": "EN: Practical atheism is natural to man in his corrupt state. It is against nature as constituted by God, but natural, as nature is depraved by man … III. A secret atheism, or a partial atheism, is the spring of all the wicked practices in the world: the disorders of the life spring from the ill dispositions of the heart.  [смещение 7832 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-23-b19",
+      "source_id": "src-23-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 23",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: since in the principle of it, it seems to be so universally owned, and at the first proposal and demand, gains the assent of most men.  [смещение 8951 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: since in the principle of it, it seems to be so universally owned, and at the first proposal and demand, gains the assent of most men.  [смещение 8951 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-24-a28",
+      "source_id": "src-24-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 24",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: may it not justly be suspected, that the swarms of atheists are more numerous in our times, than history records to have been in any age, when men will not only say it in their hearts, but publish it with their lips, and boast that they have shaken off those shackles which bind other men's consciences?  [смещение 9157 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: may it not justly be suspected, that the swarms of atheists are more numerous in our times, than history records to have been in any age, when men will not only say it in their hearts, but publish it with their lips, and boast that they have shaken off those shackles which bind other men's consciences?  [смещение 9157 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-25-a17",
+      "source_id": "src-25-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 25",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: that age run from one God to many, and our age is running from one God to none at all.  [смещение 10813 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: that age run from one God to many, and our age is running from one God to none at all.  [смещение 10813 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-26-a16",
+      "source_id": "src-26-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 26",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: the light of nature shines too vigorously for the power of man totally to put it out; yet loathsome actions impair and weaken the actual thoughts and considerations of a Deity, and are like mists that darken the light of the sun, though they cannot extinguish it  [смещение 9767 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: the light of nature shines too vigorously for the power of man totally to put it out; yet loathsome actions impair and weaken the actual thoughts and considerations of a Deity, and are like mists that darken the light of the sun, though they cannot extinguish it  [смещение 9767 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-27-b24",
+      "source_id": "src-27-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 27",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The whole building totters if the foundation be out of course  [смещение 10959 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The whole building totters if the foundation be out of course  [смещение 10959 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-28-a19",
+      "source_id": "src-28-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 28",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It is as much as to say there is no God, when we know not why we believe there is, and would not consider the arguments for his existence.  [смещение 11937 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It is as much as to say there is no God, when we know not why we believe there is, and would not consider the arguments for his existence.  [смещение 11937 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-29-b25",
+      "source_id": "src-29-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 29",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: there is a root of atheism springing up sometimes in wavering thoughts and foolish imaginations, inordinate actions, and secret wishes.  [смещение 12317 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: there is a root of atheism springing up sometimes in wavering thoughts and foolish imaginations, inordinate actions, and secret wishes.  [смещение 12317 в блоке A₁ (нормализованный текст источника, позиция 52 486; 12 517 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-30-b28",
+      "source_id": "src-30-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 30",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: for those who have had a converse with God, and felt his powerful influences in the secrets of their hearts, to take a prospect of those satisfactory accounts which reason gives of that God they adore and love  [смещение 13146 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: for those who have had a converse with God, and felt his powerful influences in the secrets of their hearts, to take a prospect of those satisfactory accounts which reason gives of that God they adore and love  [смещение 13146 в блоке A₁ (нормализованный текст источника, позиция 52 486; 13 355 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-31-b29",
+      "source_id": "src-31-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 31",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: God in regard of his existence is not only the discovery of faith, but of reason.  [смещение 14200 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: God in regard of his existence is not only the discovery of faith, but of reason.  [смещение 14200 в блоке A₁ (нормализованный текст источника, позиция 52 486; 14 281 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-32-a22",
+      "source_id": "src-32-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 32",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Faith supposeth natural knowledge, as grace supposeth nature.  [смещение 14699 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Faith supposeth natural knowledge, as grace supposeth nature.  [смещение 14699 в блоке A₁ (нормализованный текст источника, позиция 52 486; 14 760 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-33-a21",
+      "source_id": "src-33-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 33",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: there is a natural as well as a revealed knowledge, and the book of the creatures is legible in declaring the being of a God, as well as the Scriptures are in declaring the nature of a God  [смещение 13894 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: There is a natural as well as a revealed knowledge, and the book of the creatures is legible in declaring the being of a God, as well as the Scriptures are in declaring the nature of a God  [смещение 13894 в блоке A₁ (нормализованный текст источника, позиция 52 486; 14 760 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-34-a24",
+      "source_id": "src-34-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 34",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The notices of God are as intelligible to us by reason, as any object in the world is visible; he is written in every letter.  [смещение 18050 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The notices of God are as intelligible to us by reason, as any object in the world is visible; he is written in every letter.  [смещение 18050 в блоке A₁ (нормализованный текст источника, позиция 52 486; 18 175 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-35-b32",
+      "source_id": "src-35-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 35",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: He that seeks to God according to the mind of God, must believe that he is such a God that will pardon sin, and justify a seeker of him  [смещение 15799 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: He that seeks to God according to the mind of God, must believe that he is such a God that will pardon sin, and justify a seeker of him  [смещение 15799 в блоке A₁ (нормализованный текст источника, позиция 52 486; 18 175 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-36-a23",
+      "source_id": "src-36-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 36",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The bare existence of a thing is not the ground of affection to it, but those qualities of it and our interest in it, which render it amiable and delightful.  [смещение 16817 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The bare existence of a thing is not the ground of affection to it, but those qualities of it and our interest in it, which render it amiable and delightful.  [смещение 16817 в блоке A₁ (нормализованный текст источника, позиция 52 486; 18 175 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-37-b33",
+      "source_id": "src-37-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 37",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Nature doth not show any way to a sinner, how to reconcile God's provoked justice with his tenderness.  [смещение 17094 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Nature doth not show any way to a sinner, how to reconcile God's provoked justice with his tenderness.  [смещение 17094 в блоке A₁ (нормализованный текст источника, позиция 52 486; 18 175 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-38-b39",
+      "source_id": "src-38-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 38",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The revelation always implies a revealer, and that which manifests it to be a revelation, manifests also the supreme Revealer of it.  [смещение 20100 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The revelation always implies a revealer, and that which manifests it to be a revelation, manifests also the supreme Revealer of it.  [смещение 20100 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 232 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-39-a26",
+      "source_id": "src-39-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 39",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: By the same light the sun manifests other things to us, it also manifests itself.  [смещение 20233 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: By the same light the sun manifests other things to us, it also manifests itself.  [смещение 20233 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 314 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-40-b40",
+      "source_id": "src-40-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 40",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: But what miracles could rationally be supposed to work upon an atheist, who is not drawn to a sense of the truth proclaimed aloud by so many wonders of the creation?  [смещение 20315 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: But what miracles could rationally be supposed to work upon an atheist, who is not drawn to a sense of the truth proclaimed aloud by so many wonders of the creation?  [смещение 20315 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 480 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-41-b18",
+      "source_id": "src-41-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 41",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: if he were not a fool, he would not strip himself of humanity, and degrade himself lower than the most despicable brute.  [смещение 8303 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: if he were not a fool, he would not strip himself of humanity, and degrade himself lower than the most despicable brute.  [смещение 8303 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 480 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-42-a15",
+      "source_id": "src-42-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 42",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: as he cannot be comprehended in his essence, he cannot be unknown in his existence; it is as easy by reason to understand that he is, as it is difficult to know what he is.  [смещение 8583 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: as he cannot be comprehended in his essence, he cannot be unknown in his existence; it is as easy by reason to understand that he is, as it is difficult to know what he is.  [смещение 8583 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 480 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-43-a31",
+      "source_id": "src-43-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 43",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It is a folly to deny or doubt of a Sovereign Being, incomprehensible in his nature, infinite in his essence and perfections, independent in his operations  [смещение 20545 в блоке A, 212 428 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It is a folly to deny or doubt of a Sovereign Being, incomprehensible in his nature, infinite in his essence and perfections, independent in his operations  [смещение 20545 в блоке A₁ (нормализованный текст источника, позиция 52 486; 20 700 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-scripture-synodal",
+      "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-23",
+      "evidence": "Сверены по корпусу RST (bibleonline/rst) и по Синодальному 1876 (OSIS): Пс. 13:1, 52:2, 9:25, 9:32, 13:2; Рим. 1:18, 1:19, 1:20, 3:12; Тит. 1:16; Деян. 14:16-17, 17:27-29; Евр. 11:6."
     }
   ],
   "media_slots": [

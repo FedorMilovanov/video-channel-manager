@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+BIBLE_DIR = Path("/tmp/bible")  # корпус Синодального перевода (bibleonline/rst)
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lordchrist_article_preflight import check  # noqa: E402
@@ -277,3 +278,87 @@ def test_preflight_rejects_emoji_marker_before_the_source_note(tmp_path: Path) -
         encoding="utf-8",
     )
     assert any("эмодзи в тексте" in err for err in check(doc).errors)
+
+
+def test_preflight_rejects_duplicate_quote(tmp_path: Path) -> None:
+    """Правило двух прогонов: одна и та же цитата дважды в статье — дефект."""
+    quote = "> «Один и тот же текст цитаты, дословно повторённый в статье.»\n> — Стивен Чарнок, «О бытии Бога»"
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{quote}\n\n{BODY}\n\n{quote}\n\n{SOURCE_NOTE}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert any("дубль цитаты" in err for err in rep.errors)
+
+
+def test_reviewed_articles_have_one_anchor_per_quote() -> None:
+    """Статьи, прошедшие два прогона: якорь на каждую цитату, source_id уникальны."""
+    from lordchrist_article_sources_check import check as sources_check
+
+    charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
+    reviewed = [charnock / f"lordchrist-rich-charnock-{n}.md" for n in ("02", "03", "04", "05")]
+    for article in reviewed:
+        errors = sources_check(article, article.with_suffix(".json"), None, [])
+        assert not errors, f"{article.name}: {errors}"
+
+
+def test_reviewed_articles_keep_distinct_quotes() -> None:
+    """Ни одна цитата статьи не повторяется дословно (детектор дублей preflight)."""
+    charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
+    for name in (
+        "lordchrist-rich-charnock-01.md",
+        "lordchrist-rich-charnock-02.md",
+        "lordchrist-rich-charnock-03.md",
+        "lordchrist-rich-charnock-04.md",
+        "lordchrist-rich-charnock-05.md",
+    ):
+        article = charnock / name
+        rep = check(article)
+        assert not any("дубль цитаты" in err for err in rep.errors)
+
+
+def test_scripture_check_rejects_a_quote_that_is_not_synodal(tmp_path: Path) -> None:
+    """Цитата Писания, не совпадающая со Синодальным переводом, — дефект."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return  # корпус Синодального перевода не положен рядом с репозиторием
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТ**\n\nСлово Божие говорит: **И сотворил Бог из земли всяких зверей земных** (Быт. 2:19).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(doc, corpus)
+    assert any("Быт. 2:19" in err for err in errors)
+
+
+def test_scripture_check_accepts_a_synodal_quote(tmp_path: Path) -> None:
+    """Дословный стих Синодального перевода — расхождений нет."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТ**\n\nСлово Божие говорит: **Господь Бог образовал из земли всех животных полевых** (Быт. 2:19).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(doc, corpus)
+    assert not errors
+
+
+def test_reviewed_articles_have_synodal_scripture() -> None:
+    """Статьи серии: цитаты Писания дословны по Синодальному переводу."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
+    for number in ("01", "02", "03", "04", "05"):
+        article = charnock / f"lordchrist-rich-charnock-{number}.md"
+        errors, _notes = scripture_check(article, corpus)
+        assert not errors, f"{article.name}: {errors}"

@@ -50,7 +50,7 @@ DEFAULT_PROFILE_PATH = Path("content/telegram/channels/lordchrist-rich.json")
 DEFAULT_BINDING_PATH = Path("content/telegram/channels/lordchrist-rich-target-binding.json")
 MOSCOW = ZoneInfo("Europe/Moscow")
 MIDDAY_WEEKDAYS = frozenset({1, 4})  # Tuesday, Friday
-STATUSES = frozenset({"ready", "planned"})
+STATUSES = frozenset({"ready", "planned", "superseded"})
 JPEG_MAGIC = b"\xff\xd8\xff"
 ATTACHMENT_NAME = "lc_cover"
 
@@ -153,6 +153,17 @@ def load_queue(path: Path = DEFAULT_QUEUE_PATH, root: Path = Path(".")) -> tuple
         if status == "planned":
             if raw.get("article") is not None or raw.get("cover") is not None:
                 raise ValueError(f"planned queue item {publication_id} must not carry published bytes")
+            items.append(QueueItem(publication_id, index, scheduled_on, status))
+            continue
+
+        if status == "superseded":
+            # Disarmed by the operator: the edition moved to another lane
+            # (Telegraph). Bytes may stay referenced for provenance, but the
+            # item is never publishable from this queue: due_item refuses it.
+            if raw.get("article") is not None:
+                _identity(raw.get("article"), field="article", root=root)
+            if raw.get("cover") is not None:
+                _identity(raw.get("cover"), field="cover", root=root)
             items.append(QueueItem(publication_id, index, scheduled_on, status))
             continue
 
