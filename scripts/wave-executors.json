@@ -981,7 +981,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "50360538c2aab0885b8b8eef75ff011ed2b6f82a1241dd6ff529aaae93ccd399",
+      "sha256": "5a583e6525a3b90712371e2d8220b8cb0b60e26f2c7ddc2eac075a4270fa72cd",
       "status": "independent_tool"
     },
     {
@@ -1002,6 +1002,26 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "b2e8a2047b0c863efbdd9564a59fd4481749a6f659866d95efb095a2d1bdba95",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_article_sources_check.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "57cd9483ee58b7834d1135679010af9e50e07b810319bcb548f760ba74e7695f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_scripture_check.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "e77571af9b8abc99c0439eab932aa077e97bad2a0ce95c9fdd40e30baefec97b",
       "status": "independent_tool"
     }
   ],

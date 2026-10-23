@@ -1,0 +1,251 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Mapping
+
+import pytest
+
+from video_channel_manager.lordchrist_telegraph_publisher import (
+    DEFAULT_QUEUE_PATH,
+    JPEG_MAGIC,
+    build_telegraph_payload,
+    ensure_telegraph_token,
+    load_telegraph_queue,
+    publish_channel_message,
+    publish_telegraph_page,
+    render_channel_post,
+    render_preview_html_page,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+MEDIA_BASE = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + "a" * 40
+
+
+class FakeTransport:
+    def __init__(self, *, trigger_content_too_big_once: bool = False) -> None:
+        self.trigger_content_too_big_once = trigger_content_too_big_once
+        self.multipart_calls: list[tuple[str, dict[str, bytes]]] = []
+        self.json_calls: list[tuple[str, dict[str, Any]]] = []
+        self._page_seq = 0
+
+    def post_multipart(self, url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
+        copied = dict(fields)
+        self.multipart_calls.append((url, copied))
+        if url.endswith("/createAccount"):
+            return {"ok": True, "result": {"access_token": "tok_auto_generated_secret"}}
+        if url.endswith("/getAccountInfo"):
+            return {"ok": True, "result": {"short_name": "lordchrist"}}
+        if "/createPage" in url or "/editPage/" in url:
+            if self.trigger_content_too_big_once:
+                self.trigger_content_too_big_once = False
+                return {"ok": False, "error": "CONTENT_TOO_BIG"}
+            self._page_seq += 1
+            slug = f"Charnock-Page-{self._page_seq}"
+            return {"ok": True, "result": {"path": slug, "url": f"https://telegra.ph/{slug}"}}
+        raise AssertionError(f"Unexpected multipart URL: {url}")
+
+    def read_json(self, url: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        return self.post_json(url, payload)
+
+    def post_json(self, url: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        copied = dict(payload)
+        self.json_calls.append((url, copied))
+        if url.endswith("/getMe"):
+            return {"ok": True, "result": {"id": 8716602202, "is_bot": True, "username": "preaching_mp3_bot"}}
+        if url.endswith("/getChat"):
+            return {"ok": True, "result": {"id": -1001295216957, "username": "lordchrist"}}
+        if url.endswith("/sendMessage"):
+            return {"ok": True, "result": {"message_id": 4421}}
+        if url.endswith("/editMessageText"):
+            return {
+                "ok": True,
+                "result": {
+                    "message_id": 4421,
+                    "link_preview_options": {"url": copied["link_preview_options"]["url"]},
+                },
+            }
+        raise AssertionError(f"Unexpected JSON URL: {url}")
+
+    def get_status(self, url: str) -> tuple[int, bytes]:
+        if url.endswith(".jpg"):
+            return 200, JPEG_MAGIC + b"\xe0\x00\x10JFIF"
+        return 200, b"<!doctype html>"
+
+
+def test_telegraph_queue_loads_all_six_verified_items() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    assert len(items) == 6
+    assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
+    assert items[0].is_canary is True
+    assert all(item.is_ready for item in items)
+
+
+def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    for item in items:
+        payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+        assert isinstance(payload.nodes[0], dict)
+        assert payload.nodes[0]["tag"] == "figure"
+        # H1 title is passed via page title, never duplicated as first heading in body
+        assert not (isinstance(payload.nodes[1], dict) and payload.nodes[1].get("tag") in {"h1", "h2"})
+        assert payload.content_utf8_bytes < 70_000
+
+        assert item.channel_post is not None
+        post = render_channel_post(item.channel_post, "https://telegra.ph/Test-Page-10-23")
+        assert "<blockquote expandable>" in post.html_text
+        assert "<blockquote>" in post.html_text
+        assert 'href="https://telegra.ph/Test-Page-10-23"' in post.html_text
+        assert 1_000 <= post.visible_char_count <= 3_950
+
+
+def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    canary = items[0]
+    payload = build_telegraph_payload(ROOT, canary, media_base_url=MEDIA_BASE)
+    fake = FakeTransport()
+
+    token = ensure_telegraph_token(fake)
+    assert token == "tok_auto_generated_secret"
+
+    url, path = publish_telegraph_page(fake, payload, access_token=token)
+    assert url == "https://telegra.ph/Charnock-Page-1"
+    assert path == "Charnock-Page-1"
+
+    assert canary.channel_post is not None
+    rendered = render_channel_post(canary.channel_post, url)
+    sent = publish_channel_message(
+        fake,
+        bot_token="123:test",
+        expected_bot_id=8716602202,
+        expected_chat_id=-1001295216957,
+        rendered_post=rendered,
+        preview_refresh_delay_seconds=0.01,
+    )
+    assert sent == {
+        "chat_id": -1001295216957,
+        "message_id": 4421,
+        "telegraph_url": "https://telegra.ph/Charnock-Page-1",
+    }
+    send_payload = next(p for u, p in fake.json_calls if u.endswith("/sendMessage"))
+    assert send_payload["link_preview_options"] == {
+        "is_disabled": False,
+        "url": "https://telegra.ph/Charnock-Page-1",
+        "prefer_large_media": True,
+        "show_above_text": False,
+    }
+
+
+def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)
+    fake = FakeTransport(trigger_content_too_big_once=True)
+
+    url, path = publish_telegraph_page(fake, payload, access_token="tok")
+    # Part 2 is created first (Page-1), then Part 1 linking to Part 2 (Page-2)
+    assert url == "https://telegra.ph/Charnock-Page-2"
+    assert path == "Charnock-Page-2"
+
+    part1_call = fake.multipart_calls[-1][1]
+    part1_json = part1_call["content"].decode("utf-8")
+    assert "https://telegra.ph/Charnock-Page-1" in part1_json
+    assert "Читать окончание главы →" in part1_json
+
+
+def test_preview_html_page_embeds_both_tabs() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    payload = build_telegraph_payload(ROOT, items[0], media_base_url=MEDIA_BASE)
+    assert items[0].channel_post is not None
+    post = render_channel_post(items[0].channel_post, "https://telegra.ph/Preview-10-23")
+    page = render_preview_html_page(payload, post, "https://example.com/cover.jpg")
+    assert "⚡ ПОСМОТРЕТЬ" in page
+    assert "tg-expandable collapsed" in page
+    assert payload.title in page
+
+
+def test_01b_has_zero_overlapping_english_spans_with_article_01() -> None:
+    j01 = json.loads(
+        (ROOT / "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.json").read_text("utf-8")
+    )
+    j01b = json.loads(
+        (ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-01b.json").read_text(
+            "utf-8"
+        )
+    )
+
+    def extract_ranges(doc: dict[str, Any]) -> list[tuple[int, int]]:
+        ranges: list[tuple[int, int]] = []
+        for s in doc["sources"]:
+            ev = s.get("evidence", "")
+            if ev.startswith("EN: "):
+                body, _, tail = ev[4:].partition("  [смещение ")
+                off = int(tail.split()[0])
+                ranges.append((off, off + len(body)))
+        return ranges
+
+    r1 = extract_ranges(j01)
+    r1b = extract_ranges(j01b)
+    assert len(r1b) == 28
+    for a1, b1 in r1:
+        for a2, b2 in r1b:
+            assert b1 <= a2 or b2 <= a1, f"Overlap found: [{a1}:{b1}] vs [{a2}:{b2}]"
+
+
+def test_channel_chat_mismatch_fails_closed() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    assert items[0].channel_post is not None
+    rendered = render_channel_post(items[0].channel_post, "https://telegra.ph/Charnock-Page-1")
+    fake = FakeTransport()
+    with pytest.raises(ValueError, match="target chat verification failed"):
+        publish_channel_message(
+            fake,
+            bot_token="123:test",
+            expected_bot_id=8716602202,
+            expected_chat_id=-1009999999999,
+            rendered_post=rendered,
+        )
+
+
+def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    payload = build_telegraph_payload(
+        ROOT,
+        items[0],
+        media_base_url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main",
+    )
+
+    class BrokenCoverTransport(FakeTransport):
+        def get_status(self, url: str) -> tuple[int, bytes]:
+            _ = url
+            return 404, b""
+
+    broken = BrokenCoverTransport()
+    with pytest.raises(RuntimeError, match="is not reachable as JPEG"):
+        publish_telegraph_page(broken, payload=payload, access_token="test-token")
+    assert broken.multipart_calls == []
+
+
+def test_live_transport_ambiguous_mutations_never_replay() -> None:
+    import httpx
+
+    from video_channel_manager.lordchrist_telegraph_publisher import HttpxLiveTransport
+    from video_channel_manager.platforms.http import HttpTransportFailure
+
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise httpx.ReadTimeout("ambiguous timeout after dispatch", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        live = HttpxLiveTransport(http_client=client)
+        with pytest.raises(HttpTransportFailure) as exc1:
+            live.post_multipart("https://api.telegra.ph/createPage", {"title": b"T"})
+        assert exc1.value.attempts == 1
+        assert calls == 1
+
+        with pytest.raises(HttpTransportFailure) as exc2:
+            live.post_json("https://api.telegram.org/botX/sendMessage", {"chat_id": 1, "text": "x"})
+        assert exc2.value.attempts == 1
+        assert calls == 2

@@ -225,7 +225,7 @@
     {
       "type": "paragraph",
       "block_id": "p-10",
-      "text": "Он имеет в виду ту же картину, о которой мы говорили в предыдущей части: в человечестве нет ничего, кроме веры в Бога, о чём спорят все и каждый, и нет ничего, кроме существования Творца, о чём не спорит почти никто."
+      "text": "Он имеет в виду ту же картину, о которой мы говорили в предыдущей части: обо всём прочем спорят все и каждый, а о существовании Творца не спорит почти никто."
     },
     {
       "type": "blockquote",
@@ -946,7 +946,7 @@
         "Вот это предложение стоит выписать отдельно: «",
         {
           "type": "bold",
-          "text": "не существование вещи возбуждает эти чувства, а отношение веши к нам"
+          "text": "не существование вещи возбуждает эти чувства, а отношение вещи к нам"
         },
         "». Страх требует не только факта, но и отношения: праведности, которая судит, и благости, от которой зависит. Чистое существование страху ничего не даёт."
       ]
@@ -958,7 +958,7 @@
         {
           "type": "paragraph",
           "block_id": "qp-45",
-          "text": "Бог благо, а потому — предмет любви, так же как и праведен, а потому — предмет страха. Язычники называли Его, ввиду Его благости и разумения, не менее «Любовь», «Мысль» или «Ум», чем любым другим именем."
+          "text": "Бог благо, а потому — предмет любви, так же как и праведен, а потому — предмет страха. Язычники называли Его, ввиду Его благости и разумения, «Любовь», «Мысль» или «Ум» не менее, чем любым другим именем."
         }
       ],
       "credit": "— Стивен Чарнок, «О бытии Бога»"
@@ -977,7 +977,7 @@
     {
       "type": "paragraph",
       "block_id": "p-51",
-      "text": "Если страх не причина, то что же им вызвано? Чарнок отвечает — и ответ его очень конкретен: страх людей пришёл задолго до того, как они стали бояться Бога."
+      "text": "Если страх не причина, то что же? Чарнок отвечает — и ответ его очень конкретен: страх людей пришёл задолго до того, как они стали бояться Бога."
     },
     {
       "type": "blockquote",
@@ -994,7 +994,7 @@
     {
       "type": "paragraph",
       "block_id": "p-52",
-      "text": "То есть страх здесь вовсе не «страх перед Богом»: это страх бедствий и надежда на помощь. Само поклонение рождается из благодарности — и это важное уточнение: язычники поклонялись не из ужаса, а из признательности за то, что им было дано."
+      "text": "То есть страх здесь вовсе не «страх перед Богом». Чарнок различает два побуждения: благодарность за то, что уже дано, и страх перед тем, что придёт, — с надеждой на избавление. Первое ведёт к поклонению как к благодарности, второе — как к страховому приёму; но ни то, ни другое не есть тот ужас перед Творцом, о котором говорит Писание. Поклонение язычников начинается не с ужаса, а с признательности за жизнь."
     },
     {
       "type": "blockquote",
@@ -1071,7 +1071,7 @@
     {
       "type": "paragraph",
       "block_id": "p-59",
-      "text": "Третий — довод о страхе — изящен, но требует одного уточнения, о котором стоит сказать прямо. Чарнок доказывает, что страх не мог быть причиной, поскольку страх требует уже существующего отношения к предмету. Из этого следует, что всеобщее согласие свидетельствует не просто о существовании кого-то, а о природе: о том, что этот кто-то праведен и милосерден. А это уже довод об атрибутах, а не о бытии. Часть согласия, которое мы наблюдаем, вполне может быть согласием в смутном чувстве сверхъестественного, в благоговении перед неведомым, — и этого достаточно, чтобы согласие было всеобщим, но недостаточно, чтобы оно было согласием о личном Боге."
+      "text": "Третий — довод о страхе — изящен, но требует одного уточнения, о котором стоит сказать прямо. Чарнок доказывает, что страх не мог быть причиной, поскольку страх требует уже существующего отношения к предмету. Из этого следует, что всеобщее согласие свидетельствует не просто о существовании кого-то, а о природе: о том, что этот кто-то праведен и милосерден. А это уже довод об атрибутах, а не о бытии. Часть согласия, которое мы наблюдаем, вполне может быть согласием в смутном ощущении сверхъестественного, в благоговении перед неведомым, — и этого достаточно, чтобы согласие было всеобщим, но недостаточно, чтобы оно было согласием о личном Боге."
     },
     {
       "type": "paragraph",
@@ -1154,7 +1154,7 @@
           "type": "bold",
           "text": "страх Господень есть начало премудрости"
         },
-        " (Прит. 1:7) понимать следует не как ужас, а как благоговение и покорность. Само Писание подтверждает оба чтения рядом: ",
+        " — понимать это следует не как ужас, а как благоговение и покорность. Само Писание подтверждает оба чтения рядом: ",
         {
           "type": "bold",
           "text": "В страхе пред Господом — надежда твердая, и сынам Своим Он прибежище"
@@ -1194,7 +1194,7 @@
         " (Быт. 2:19). Это любопытство, а не страх. И самое первое, что человек делает, нарушив запрет, — прячется: ",
         {
           "type": "bold",
-          "text": "голос Твой я услышал в раю, и убоялся, потому что я наг, и скрылся"
+          "text": "…голос Твой я услышал в раю, и убоялся, потому что я наг, и скрылся"
         },
         " (Быт. 3:10). Чарнок прав: страх приходит после, а не раньше. Он не мог быть причиной."
       ]
@@ -1294,353 +1294,353 @@
     },
     {
       "source_id": "src-02-charnock",
-      "label": "Стивен Чарнок, «О бытии Бога», цитата 1",
-      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
-      "verified_on": "2026-10-22",
-      "evidence": "EN: But if this be a tradition handed from our ancestors  [смещение 691 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
-    },
-    {
-      "source_id": "src-03-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Was it then the only tradition he left to them?  [смещение 896 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: This will more evidently appear to be natural, because, 1. This consent could not be by mere tradition. 2. Nor by any mutual intelligence of governors to keep people in awe, which are two things the atheist pleads; the first hath no strong foundation, and that other is as absurd and foolish as it is wicked and abominable. 3. Nor was it fear first introduced it  [смещение 0 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-04-charnock",
+      "source_id": "src-03-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It cannot be supposed, that the first man should acquaint his posterity  [смещение 1208 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: But if this be a tradition handed from our ancestors  [смещение 691 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-05-charnock",
+      "source_id": "src-04-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What advantage had it been to him to transmit so great a falsehood  [смещение 4206 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Was it then the only tradition he left to them?  [смещение 896 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-06-charnock",
+      "source_id": "src-05-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It cannot be supposed he should be so void of that natural affection  [смещение 4352 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It cannot be supposed, that the first man should acquaint his posterity  [смещение 1208 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-07-charnock",
+      "source_id": "src-06-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: how come men to be so uncertain in all other things  [смещение 1508 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What advantage had it been to him to transmit so great a falsehood  [смещение 4206 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-08-charnock",
+      "source_id": "src-07-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: How comes it to pass this of a God is longer lived  [смещение 1881 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It cannot be supposed he should be so void of that natural affection  [смещение 4352 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-09-charnock",
+      "source_id": "src-08-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Why did it not expire among the Americans  [смещение 2265 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: how come men to be so uncertain in all other things  [смещение 1508 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-10-charnock",
+      "source_id": "src-09-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Why were not men as negligent to transmit this of his existence  [смещение 2705 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: How comes it to pass this of a God is longer lived  [смещение 1881 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-11-charnock",
+      "source_id": "src-10-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No reason can be rendered for the security of this above the other  [смещение 2792 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Why did it not expire among the Americans  [смещение 2265 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-12-charnock",
+      "source_id": "src-11-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The characters are so deep that they cannot possibly be rased out  [смещение 3082 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Why were not men as negligent to transmit this of his existence  [смещение 2705 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-13-charnock",
+      "source_id": "src-12-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: I cannot think of above one which may be called a tradition  [смещение 3317 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No reason can be rendered for the security of this above the other  [смещение 2792 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-14-charnock",
+      "source_id": "src-13-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What ground could they have in nature, to imagine that the blood of beasts  [смещение 3482 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The characters are so deep that they cannot possibly be rased out  [смещение 3082 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-15-charnock",
+      "source_id": "src-14-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: This tradition hath been superannuated and laid aside  [смещение 3857 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: I cannot think of above one which may be called a tradition  [смещение 3317 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-16-charnock",
+      "source_id": "src-15-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Had there been no reason for it, this posterity would soon have found out  [смещение 4100 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What ground could they have in nature, to imagine that the blood of beasts  [смещение 3482 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-17-charnock",
+      "source_id": "src-16-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 16",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Neither was it by any mutual intelligence of governors  [смещение 4608 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: This tradition hath been superannuated and laid aside  [смещение 3857 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-18-charnock",
+      "source_id": "src-17-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 17",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It must be either by a joint assembly of them, or a mutual correspondence  [смещение 4899 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Had there been no reason for it, this posterity would soon have found out  [смещение 4100 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-19-charnock",
+      "source_id": "src-18-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 18",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: By what means could they assemble from such distant parts of the world  [смещение 5231 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Neither was it by any mutual intelligence of governors  [смещение 4608 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-20-charnock",
+      "source_id": "src-19-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 19",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: How could they, who were divided by such vast seas  [смещение 5611 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It must be either by a joint assembly of them, or a mutual correspondence  [смещение 4899 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-21-charnock",
+      "source_id": "src-20-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 20",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Can reason suppose so many in a joint conspiracy  [смещение 6086 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: By what means could they assemble from such distant parts of the world  [смещение 5231 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-22-charnock",
+      "source_id": "src-21-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 21",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: How came they to be so unanimous in this notion  [смещение 6318 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: How could they, who were divided by such vast seas  [смещение 5611 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-23-charnock",
+      "source_id": "src-22-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 22",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: If there were not a mutual intelligence, it cannot be conceived  [смещение 6532 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Can reason suppose so many in a joint conspiracy  [смещение 6086 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-24-charnock",
+      "source_id": "src-23-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 23",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Some heathen lawgivers have pretended a converse with their gods  [смещение 7050 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: How came they to be so unanimous in this notion  [смещение 6318 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-25-charnock",
+      "source_id": "src-24-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 24",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Politicians are so little possessed with a reverence of God  [смещение 7512 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: If there were not a mutual intelligence, it cannot be conceived  [смещение 6532 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-26-charnock",
+      "source_id": "src-25-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 25",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: An invader and oppressor of his neighbors  [смещение 7752 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Some heathen lawgivers have pretended a converse with their gods  [смещение 7050 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-27-charnock",
+      "source_id": "src-26-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 26",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: ’Tis evident politicians have often changed the worship of a nation  [смещение 8463 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Politicians are so little possessed with a reverence of God  [смещение 7512 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-28-charnock",
+      "source_id": "src-27-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 27",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: But to return to the present argument  [смещение 8668 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: An invader and oppressor of his neighbors  [смещение 7752 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-29-charnock",
+      "source_id": "src-28-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 28",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: the being of a God is owned by some nations that have scarce any form of policy among them  [смещение 8707 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: ’Tis evident politicians have often changed the worship of a nation  [смещение 8463 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-30-charnock",
+      "source_id": "src-29-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 29",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: how is it possible they should deceive themselves?  [смещение 8989 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: But to return to the present argument, the being of a God is owned by some nations that have scarce any form of policy among them  [смещение 8668 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-31-charnock",
+      "source_id": "src-30-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 30",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No man satisfying his pleasures would impose such a deceit upon himself  [смещение 9412 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: how is it possible they should deceive themselves?  [смещение 8989 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-32-charnock",
+      "source_id": "src-31-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 31",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It is unaccountable how it should endure so long a time  [смещение 9571 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No man satisfying his pleasures would impose such a deceit upon himself  [смещение 9412 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-33-charnock",
+      "source_id": "src-32-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 32",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: There is scarce a false opinion vented in the world  [смещение 10025 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It is unaccountable how it should endure so long a time  [смещение 9571 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-34-charnock",
+      "source_id": "src-33-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 33",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: it is not easy to name any imposture that hath walked so long in its disguise in the world  [смещение 10777 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: There is scarce a false opinion vented in the world  [смещение 10025 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-35-charnock",
+      "source_id": "src-34-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 34",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: No man can be imagined so wise in a kingdom  [смещение 11061 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: it is not easy to name any imposture that hath walked so long in its disguise in the world  [смещение 10777 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-36-charnock",
+      "source_id": "src-35-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 35",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: What is the reason the succeeding politicians never knew this stratagem  [смещение 11575 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: No man can be imagined so wise in a kingdom  [смещение 11061 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-37-charnock",
+      "source_id": "src-36-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 36",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: This persuasion of the existence of God, owes not itself to any imposture  [смещение 11707 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: What is the reason the succeeding politicians never knew this stratagem  [смещение 11575 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-38-charnock",
+      "source_id": "src-37-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 37",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The imposed yoke would have been cast off by multitudes  [смещение 11898 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: This persuasion of the existence of God, owes not itself to any imposture  [смещение 11707 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-39-charnock",
+      "source_id": "src-38-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 38",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It must be therefore of an ancienter date than the craft of statesmen  [смещение 12504 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The imposed yoke would have been cast off by multitudes  [смещение 11898 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-40-charnock",
+      "source_id": "src-39-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 39",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Time, which hath rectified many errors, improves this notion  [смещение 12645 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It must be therefore of an ancienter date than the craft of statesmen  [смещение 12504 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-41-charnock",
+      "source_id": "src-40-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 40",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: It must be a natural truth that shines clear  [смещение 12776 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Time, which hath rectified many errors, improves this notion  [смещение 12645 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-42-charnock",
+      "source_id": "src-41-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 41",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Nor was it fear first introduced it. Fear is the consequent of wickedness  [смещение 13001 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: It must be a natural truth that shines clear  [смещение 12776 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-43-charnock",
+      "source_id": "src-42-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 42",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: As man was not created with any inherent sin  [смещение 13076 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: Nor was it fear first introduced it. Fear is the consequent of wickedness  [смещение 13001 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-44-charnock",
+      "source_id": "src-43-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 43",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: The object of fear is before the act of fear  [смещение 13414 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: As man was not created with any inherent sin  [смещение 13076 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-45-charnock",
+      "source_id": "src-44-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 44",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: God is good, and so the object of love  [смещение 13775 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: The object of fear is before the act of fear  [смещение 13414 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-46-charnock",
+      "source_id": "src-45-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 45",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: neither was fear the first principle that made the heathens worship a God  [смещение 14057 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: God is good, and so the object of love  [смещение 13775 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-47-charnock",
+      "source_id": "src-46-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 46",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: When calamities from the hands of men  [смещение 14381 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: neither was fear the first principle that made the heathens worship a God  [смещение 14057 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-48-charnock",
+      "source_id": "src-47-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 47",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: When you hear men calling upon God in a time of affrighting thunder  [смещение 14874 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: When calamities from the hands of men  [смещение 14381 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-49-charnock",
+      "source_id": "src-48-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 48",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: whereas the Scripture saith  [смещение 15210 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: When you hear men calling upon God in a time of affrighting thunder  [смещение 14874 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
-      "source_id": "src-50-charnock",
+      "source_id": "src-49-charnock",
       "label": "Стивен Чарнок, «О бытии Бога», цитата 49",
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-10-22",
-      "evidence": "EN: Well, then, is it not a folly for an atheist to deny  [смещение 15489 в блоке B₂, 16 083 зн., eBook #53527 / издание 1853 г.; перевод канала]"
+      "evidence": "EN: whereas the Scripture saith  [смещение 15210 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-50-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 50",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-22",
+      "evidence": "EN: Well, then, is it not a folly for an atheist to deny  [смещение 15489 в блоке B₂ (нормализованный текст источника, позиция 97 144; 16 083 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
     },
     {
       "source_id": "src-scripture-synodal",
       "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
       "url": "https://github.com/bibleonline/rst",
       "verified_on": "2026-10-22",
-      "evidence": "Сверены по корпусу RST: Рим. 10:17; Деян. 17:11; Лев. 17:11; Евр. 9:22; Быт. 4:3-4,26; 10:9-10; 11:4; Прит. 1:7; 14:26; Иов 28:28; Пс. 110:10; Рим. 8:15; 1 Ин. 4:18; Быт. 2:19; 3:10."
+      "evidence": "Сверены по корпусу RST: Рим. 10:17; Деян. 17:11; Лев. 17:11; Евр. 9:22; Быт. 4:3-4,26; 10:9-10; 11:4; Прит. 14:26; Иов 28:28; Пс. 110:10; Рим. 8:15; 1 Ин. 4:18; Быт. 2:19; 3:10."
     }
   ],
   "media_slots": [
