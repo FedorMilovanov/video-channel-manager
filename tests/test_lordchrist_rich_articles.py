@@ -26,11 +26,11 @@ def _queue():
     return load_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
 
 
-def test_queue_lists_thirteen_dated_articles_with_three_ready() -> None:
+def test_queue_lists_thirteen_dated_articles_with_four_ready() -> None:
     items = _queue()
     assert len(items) == 13
     assert [item.ordinal for item in items] == list(range(1, 14))
-    assert sum(1 for item in items if item.is_ready) == 3
+    assert sum(1 for item in items if item.is_ready) == 4
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
     # The first article is the one documented off-slot exception (operator decision);
@@ -97,14 +97,14 @@ def test_queue_rejects_article_bytes_that_differ_from_the_reviewed_blob(tmp_path
 
 
 def test_preview_builds_a_rich_document_with_the_bound_cover() -> None:
-    item = _queue()[1]
-    document, render, article = build_document(ROOT, item, media_base_url=MEDIA_BASE)
+    for item in [entry for entry in _queue() if entry.is_ready]:
+        document, render, article = build_document(ROOT, item, media_base_url=MEDIA_BASE)
 
-    assert document.publication_id == item.publication_id
-    assert [media.media_id for media in article.media] == ["media-cover"]
-    assert render.visible_text
-    assert len(render.visible_text) > 30_000
-    assert any(getattr(block, "type", None) == "media" for block in article.blocks)
+        assert document.publication_id == item.publication_id
+        assert [media.media_id for media in article.media] == ["media-cover"]
+        assert render.visible_text
+        assert len(render.visible_text) > 30_000
+        assert any(getattr(block, "type", None) == "media" for block in article.blocks)
 
 
 def test_cover_is_placed_directly_under_the_title() -> None:

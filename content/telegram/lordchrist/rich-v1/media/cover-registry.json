@@ -72,6 +72,28 @@
       "remote_ready": false,
       "acquisition_status": "operator_approved_local_only",
       "provider_upload_status": "not_uploaded"
+    },
+    {
+      "asset_id": "asset-lordchrist-charnock-04-cover",
+      "article_id": "lordchrist-rich-charnock-04",
+      "media_slot_id": "media-cover",
+      "kind": "photo",
+      "provenance": "AI-generated (Arena image generation, battle mode), symbolic cover; no portrait reference and no depicted person",
+      "prompt": "Cinematic 16:9 widescreen photograph, crisp macro-to-landscape photorealism, dramatic natural chiaroscuro. Low-angle view on dark cracked volcanic basalt rock in cold deep-blue twilight just as the sun breaks the distant mountain horizon. Growing alone from a narrow fissure in the barren black stone is a single young emerald-green blade of grass bending gently under one large crystal-clear drop of dew. The first warm golden ray of sunrise skims across the dark rock and ignites the dewdrop like a glowing crystal lens reflecting the golden sky, while the rest of the rugged stone foreground remains in deep dark shadow against blurred distant mountains and warm amber horizon glow. Ultra-sharp focus on the blade of grass and glowing drop, natural light, rich contrast. Strictly no people, no insects, no text, no letters, no watermark, no frame or border.",
+      "reference_source": null,
+      "reference_note": "Символический кадр: ни портрета, ни исторической гравюры, ни изображения Христа или Бога Отца. Зелёный росток из расщелины чёрного базальта и прозрачная капля росы, вмещающая отражение гор и восходящего солнца, сводят воедино оба тезиса статьи: начало тварного бытия и присутствие всего сияния Творца в малейшей травинке и искорке.",
+      "local_path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-04-cover.jpg",
+      "chosen_by": "operator",
+      "approved": true,
+      "approved_at": "2026-10-23",
+      "generated_size": "1672x941 (generation, 16:9 без кадрирования)",
+      "depicts": "Молодой зелёный росток в расщелине чёрного базальта с каплей росы, отражающей рассветное солнце и горы",
+      "caption": null,
+      "expected_mime": "image/jpeg",
+      "content_checksum": "sha256:c30f5027d85208f8dad7f4bf45b09e1ec31d9c1ad184032b4e820651402acfd3",
+      "remote_ready": false,
+      "acquisition_status": "operator_approved_local_only",
+      "provider_upload_status": "not_uploaded"
     }
   ]
 }

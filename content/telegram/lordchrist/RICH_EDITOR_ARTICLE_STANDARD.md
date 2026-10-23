@@ -277,7 +277,8 @@ Conventions of the source blocks (one convention for the whole series):
 - the offset of an anchor is counted from the beginning of its block, and the
   block is written into the article's log — so that any anchor can be checked
   again by anyone, at any time, with one command;
-- the blocks of the series: `B₁` and `B₂` cover the second part of Discourse I
-  (articles 2 and 3), `A₁` covers the beginning of Discourse I (article 1):
-  `A1:52486:20700`, `B1:73582:23690`, `B2:97144:16083` of the normalized text
-  of eBook #53527.
+- the blocks of the series: `A₁` covers the beginning of Discourse I
+  (article 1), `B₁` and `B₂` cover Reason I (articles 2 and 3), `C₁` covers
+  the opening of Reason II and `First, In their production: I` (article 4):
+  `A1:52486:20700`, `B1:73582:23690`, `B2:97144:16083`, `C1:113147:13281` of
+  the normalized text of eBook #53527.
