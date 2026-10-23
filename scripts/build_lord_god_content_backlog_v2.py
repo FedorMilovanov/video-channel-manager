@@ -13,6 +13,9 @@ from typing import Any
 
 from video_channel_manager.telegram_historical_production import release_digest
 from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
+from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue, load_active_queue
+
+QuoteQueue = TelegramQueue | SuccessorRuntimeQueue
 
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
@@ -60,6 +63,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--video-count", type=int, default=60)
     parser.add_argument("--telegram-count", type=int, default=9)
     parser.add_argument("--quote-count", type=int, default=24)
+    parser.add_argument(
+        "--historical-text-mode",
+        choices=("excerpt", "full"),
+        default="excerpt",
+        help="excerpt keeps the historical title+lead+first paragraph; full renders the complete reviewed post",
+    )
     parser.add_argument("--max-views", type=int, default=1500)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -162,10 +171,24 @@ def select_videos(audit: dict[str, Any], *, count: int, max_views: int) -> list[
     return result
 
 
-def telegram_text(post: dict[str, Any]) -> str:
+def telegram_text(post: dict[str, Any], *, text_mode: str = "excerpt") -> str:
+    if text_mode not in {"excerpt", "full"}:
+        raise ValueError(f"unsupported historical text mode: {text_mode}")
     title = clean_title(post.get("title"))
     lead = clean_title(post.get("lead"))
     sections = post.get("sections") if isinstance(post.get("sections"), list) else []
+    if text_mode == "full":
+        parts = [part for part in (title, lead) if part]
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            heading = clean_title(section.get("heading"))
+            if heading:
+                parts.append(heading)
+            paragraphs = section.get("paragraphs")
+            if isinstance(paragraphs, list):
+                parts.extend(clean_title(paragraph) for paragraph in paragraphs if clean_title(paragraph))
+        return "\n\n".join(part for part in parts if part)
     body = ""
     for section in sections:
         paragraphs = section.get("paragraphs") if isinstance(section, dict) else None
@@ -227,6 +250,7 @@ def select_published_historical(
     ledger_path: Path,
     *,
     count: int,
+    text_mode: str = "excerpt",
 ) -> tuple[list[dict[str, Any]], str, str, str]:
     release, ledger, revision, post, release_file_sha256, ledger_file_sha256 = load_historical_evidence(
         root,
@@ -253,7 +277,7 @@ def select_published_historical(
         raise ValueError(f"published historical Telegram entry lacks exact provider evidence: {publication_id}")
     if count <= 0:
         return [], release_file_sha256, ledger_file_sha256, release_digest(release)
-    text = telegram_text(post)
+    text = telegram_text(post, text_mode=text_mode)
     if not text:
         raise ValueError(f"published historical Telegram post has no reusable text: {publication_id}")
     return (
@@ -285,10 +309,19 @@ def select_published_historical(
 def load_quote_evidence(
     queue_path: Path,
     ledger_path: Path,
-) -> tuple[TelegramQueue, TelegramLedger, str, str]:
-    raw_queue, queue_sha256 = read_json_evidence(queue_path)
+) -> tuple[list[dict[str, Any]], TelegramLedger, str, str, str]:
+    """Load either the legacy 30-post queue or a successor runtime queue.
+
+    Both queue shapes expose ``publication_id``/``title``/``text``/
+    ``payload_sha256`` posts and a ``digest`` bound to the durable ledger.
+    The successor runtime source carries only author/work, so its
+    ``source_url`` is empty and the Telegram message URL remains the
+    cross-post provenance.
+    """
+
+    _raw_queue, queue_sha256 = read_json_evidence(queue_path)
     raw_ledger, ledger_sha256 = read_json_evidence(ledger_path)
-    queue = TelegramQueue.model_validate(raw_queue)
+    queue: QuoteQueue = load_active_queue(queue_path)
     ledger = TelegramLedger.model_validate(raw_ledger)
     if ledger.queue_digest != queue.digest:
         raise ValueError("Telegram quote ledger digest differs from the immutable queue")
@@ -298,32 +331,41 @@ def load_quote_evidence(
         missing = sorted(queue_ids - ledger_ids)
         extra = sorted(ledger_ids - queue_ids)
         raise ValueError(f"Telegram quote ledger coverage mismatch: missing={missing}, extra={extra}")
+    posts: list[dict[str, Any]] = []
     for post in queue.posts:
         entry = ledger.entries[post.publication_id]
         if entry.payload_sha256 != post.payload_sha256:
             raise ValueError(f"Telegram quote payload SHA mismatch: {post.publication_id}")
-    return queue, ledger, queue_sha256, ledger_sha256
+        posts.append(
+            {
+                "publication_id": post.publication_id,
+                "title": post.title,
+                "text": post.text,
+                "source_url": str(getattr(post.source, "url", "") or ""),
+            }
+        )
+    return posts, ledger, queue_sha256, ledger_sha256, queue.digest
 
 
 def select_published_quotes(
-    queue: TelegramQueue,
+    posts: list[dict[str, Any]],
     ledger: TelegramLedger,
     *,
     count: int,
 ) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
-    for post in queue.posts:
-        entry = ledger.entries[post.publication_id]
+    for post in posts:
+        entry = ledger.entries[post["publication_id"]]
         if entry.state != "published" or entry.provider_effect != "verified":
             continue
         if entry.message_id is None or entry.message_url is None or entry.published_at_utc is None:
-            raise ValueError(f"published Telegram quote lacks verified message identity: {post.publication_id}")
+            raise ValueError(f"published Telegram quote lacks verified message identity: {post['publication_id']}")
         selected.append(
             {
-                "publication_id": post.publication_id,
-                "title": post.title,
-                "text": post.text,
-                "source_url": str(post.source.url),
+                "publication_id": post["publication_id"],
+                "title": post["title"],
+                "text": post["text"],
+                "source_url": post["source_url"],
                 "telegram_message_id": entry.message_id,
                 "telegram_message_url": entry.message_url,
                 "telegram_published_at_utc": entry.published_at_utc.isoformat(),
@@ -337,8 +379,8 @@ def select_published_quotes(
 
 
 def select_quotes(queue_path: Path, ledger_path: Path, *, count: int) -> list[dict[str, Any]]:
-    queue, ledger, _, _ = load_quote_evidence(queue_path, ledger_path)
-    return select_published_quotes(queue, ledger, count=count)
+    posts, ledger, _, _, _ = load_quote_evidence(queue_path, ledger_path)
+    return select_published_quotes(posts, ledger, count=count)
 
 
 def dt_epoch(day: date, hour: int) -> tuple[str, int]:
@@ -412,13 +454,14 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
             args.historical_release,
             args.historical_ledger,
             count=args.telegram_count,
+            text_mode=args.historical_text_mode,
         )
     )
-    quote_queue, quote_ledger, quote_queue_sha256, quote_ledger_sha256 = load_quote_evidence(
+    quote_posts, quote_ledger, quote_queue_sha256, quote_ledger_sha256, quote_queue_digest = load_quote_evidence(
         args.quote_queue,
         args.quote_ledger,
     )
-    quotes = select_published_quotes(quote_queue, quote_ledger, count=args.quote_count)
+    quotes = select_published_quotes(quote_posts, quote_ledger, count=args.quote_count)
     slots = build_slots(args.start_date, args.days, videos, historical, quotes)
     return {
         "schema_name": "video-manager.lord-god-content-backlog",
@@ -440,7 +483,8 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         "telegram_historical_ledger_sha256": historical_ledger_sha256,
         "telegram_historical_release_digest": historical_release_digest,
         "telegram_historical_evidence_policy": "published+verified+release/revision/post-bound",
-        "telegram_quote_queue_digest": quote_queue.digest,
+        "telegram_historical_text_mode": args.historical_text_mode,
+        "telegram_quote_queue_digest": quote_queue_digest,
         "telegram_quote_queue_sha256": quote_queue_sha256,
         "telegram_quote_ledger_sha256": quote_ledger_sha256,
         "telegram_quote_evidence_policy": "published+verified+payload-bound",

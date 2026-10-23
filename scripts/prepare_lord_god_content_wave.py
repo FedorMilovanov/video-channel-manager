@@ -15,6 +15,7 @@ from typing import Any
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.telegram_historical_production import release_digest
 from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
+from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue, load_active_queue
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 from video_channel_manager.wave_engine.models import (
     EvidenceArtifact,
@@ -133,7 +134,7 @@ def text_message(slot: dict[str, Any]) -> str:
 
 def verify_quote_slots(
     backlog: dict[str, Any],
-    queue: TelegramQueue,
+    queue: TelegramQueue | SuccessorRuntimeQueue,
     ledger: TelegramLedger,
 ) -> None:
     if backlog.get("telegram_quote_queue_digest") != queue.digest:
@@ -334,7 +335,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Telegram historical release SHA differs from the backlog evidence")
     if backlog.get("telegram_historical_ledger_sha256") != file_sha256(historical_ledger_copy):
         raise ValueError("Telegram historical ledger SHA differs from the backlog evidence")
-    quote_queue = TelegramQueue.model_validate(read_json(quote_queue_copy))
+    quote_queue = load_active_queue(quote_queue_copy)
     quote_ledger = TelegramLedger.model_validate(read_json(quote_ledger_copy))
     historical_release = read_json(historical_release_copy)
     historical_ledger = read_json(historical_ledger_copy)

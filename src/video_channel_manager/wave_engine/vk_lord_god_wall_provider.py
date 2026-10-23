@@ -21,11 +21,19 @@ from video_channel_manager.wave_engine.models import WaveOperation
 
 
 LORD_GOD_WALL_OPERATION_KIND = "vk.lord_god.postponed_wall"
-LORD_GOD_WALL_POLICY_VERSION = "vk-lord-god-postponed-wall-v2"
+LORD_GOD_WALL_POLICY_VERSION = "vk-lord-god-postponed-wall-v3"
 LORD_GOD_PROJECT_KEY = "lord-god-strength"
 LORD_GOD_COMMUNITY_ID = 60805374
 LORD_GOD_OWNER_ID = -60805374
-LORD_GOD_ACCOUNT_ALIAS = "legendary-poet"
+# The legacy shared credential (aliases ``legendary-poet`` / ``default``) is
+# quarantined by docs/operations/vk-credential-quarantine.md: it must never be
+# used for a provider call again. Policy v3 therefore binds every new Lord God
+# postponed-wall operation to the separately imported candidate credential for
+# the owner's own VK app 54555649. Changing the alias also changes the payload
+# and therefore the operation identity, so a v2 plan can never be replayed
+# under the new credential.
+LORD_GOD_ACCOUNT_ALIAS = "vk-own-app-54555649"
+LORD_GOD_QUARANTINED_ACCOUNT_ALIASES = frozenset({"legendary-poet", "default"})
 
 
 class LordGodWallError(RuntimeError):
@@ -110,6 +118,11 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
     if content_kind not in {"video", "text"}:
         raise LordGodWallError("content_kind must be video or text")
     account_alias = _exact_string(payload.get("account_alias"), field="account_alias")
+    if account_alias in LORD_GOD_QUARANTINED_ACCOUNT_ALIASES:
+        raise LordGodWallError(
+            "account_alias is the quarantined legacy VK credential; "
+            f"use the separately imported alias {LORD_GOD_ACCOUNT_ALIAS} (own app 54555649)"
+        )
     if account_alias != LORD_GOD_ACCOUNT_ALIAS:
         raise LordGodWallError("account_alias differs from the reviewed Lord God credential alias")
     message = _canonical_message(payload.get("message"))
@@ -342,6 +355,11 @@ class LordGodPostponedWallAdapter:
     reconciliation_replay_safe = True
 
     def __init__(self, *, account_alias: str = LORD_GOD_ACCOUNT_ALIAS) -> None:
+        if account_alias in LORD_GOD_QUARANTINED_ACCOUNT_ALIASES:
+            raise ValueError(
+                "Lord God wall provider refuses the quarantined legacy VK credential; "
+                f"use the separately imported alias {LORD_GOD_ACCOUNT_ALIAS} (own app 54555649)"
+            )
         if account_alias != LORD_GOD_ACCOUNT_ALIAS:
             raise ValueError("Lord God wall provider requires the exact local VK alias")
         settings = get_settings()
@@ -399,6 +417,7 @@ class LordGodPostponedWallAdapter:
 
 __all__ = [
     "LORD_GOD_ACCOUNT_ALIAS",
+    "LORD_GOD_QUARANTINED_ACCOUNT_ALIASES",
     "LORD_GOD_COMMUNITY_ID",
     "LORD_GOD_OWNER_ID",
     "LORD_GOD_PROJECT_KEY",
