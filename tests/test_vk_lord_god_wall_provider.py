@@ -19,8 +19,10 @@ from video_channel_manager.wave_engine.models import (
     WaveOperationSpec,
 )
 from video_channel_manager.wave_engine.vk_lord_god_wall_provider import (
+    LORD_GOD_ACCOUNT_ALIAS,
     LORD_GOD_WALL_OPERATION_KIND,
     LORD_GOD_WALL_POLICY_VERSION,
+    LordGodPostponedWallAdapter,
     LordGodWallError,
     LordGodWallWriter,
     parse_lord_god_wall_operation,
@@ -56,7 +58,7 @@ def text_payload() -> dict[str, Any]:
     message = "Умерщвляй грех — иначе грех будет умерщвлять тебя."
     return {
         "content_kind": "text",
-        "account_alias": "legendary-poet",
+        "account_alias": LORD_GOD_ACCOUNT_ALIAS,
         "message": message,
         "message_sha256": sha(message),
         "publish_date": 2_000_000_000,
@@ -70,7 +72,7 @@ def video_payload() -> dict[str, Any]:
     description = "Точное описание"
     return {
         "content_kind": "video",
-        "account_alias": "legendary-poet",
+        "account_alias": LORD_GOD_ACCOUNT_ALIAS,
         "message": message,
         "message_sha256": sha(message),
         "publish_date": 2_000_000_100,
@@ -106,6 +108,19 @@ def test_parse_text_operation_is_bound_to_lord_god_project() -> None:
     assert wall.source_id == "lordchrist-bunyan-cross-burden"
     assert wall.video_remote_id is None
     assert wall.message_sha256 == sha(wall.message)
+
+
+@pytest.mark.parametrize("quarantined_alias", ["legendary-poet", "default"])
+def test_parse_rejects_quarantined_legacy_credential(quarantined_alias: str) -> None:
+    payload = text_payload()
+    payload["account_alias"] = quarantined_alias
+    with pytest.raises(LordGodWallError, match="quarantined legacy VK credential"):
+        parse_lord_god_wall_operation(operation(payload))
+
+
+def test_adapter_refuses_quarantined_legacy_credential_before_settings() -> None:
+    with pytest.raises(ValueError, match="quarantined legacy VK credential"):
+        LordGodPostponedWallAdapter(account_alias="legendary-poet")
 
 
 def test_verify_video_checks_exact_title_description_and_playability() -> None:

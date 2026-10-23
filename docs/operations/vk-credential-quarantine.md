@@ -59,6 +59,11 @@ until it is re-verified against that issue record.
    place, so the quarantine boundary stays provable.
 3. Validate the new credential with one intentional validation sequence (user identity + scopes).
 4. Only then restore a guarded provider path, one method at a time, with the staged probes below.
+5. Rebuild the Lord God postponed-content wave from a fresh wall audit under policy
+   `vk-lord-god-postponed-wall-v3`: the adapter binds alias `vk-own-app-54555649` and rejects the
+   quarantined aliases (`legendary-poet`, `default`) before any provider call, so a legacy v2 plan
+   can never be replayed under the new credential. The exact end-to-end sequence lives in
+   [`lord-god-vk-daily-postponed-runbook.md`](lord-god-vk-daily-postponed-runbook.md).
 
 ## Staged probes after the quarantine is lifted
 
