@@ -1,10 +1,11 @@
 # Господь Бог — Сила Моя: ежедневные отложенные посты ВКонтакте
 
-Статус: **provider-inert до шага 1**. Этот ранбук — самый быстрый поддерживаемый путь
-заполнить стену сообщества отложенными постами примерно на два месяца. Он не создаёт
-второй VK-клиент и не воскрешает исторические исполнители: единственный писатель —
-`video-manager wave` с адаптером `vk.lord_god.postponed_wall` (policy
-`vk-lord-god-postponed-wall-v3`).
+Статус: **GitHub Actions, ручной двухэтапный запуск**. Поддерживаемый путь —
+workflow [`.github/workflows/lord-god-vk-postponed-wave.yml`](../../.github/workflows/lord-god-vk-postponed-wave.yml):
+сначала `action=prepare`, затем отдельным запуском `action=apply`. Единственный
+писатель в VK — `video-manager wave` с адаптером `vk.lord_god.postponed_wall`
+(policy `vk-lord-god-postponed-wall-v3`). Расписания (`schedule`) у workflow нет:
+один успешный apply передаёт VK всю отложенную волну, дальше посты публикует сам VK.
 
 ## Точная цель
 
@@ -15,7 +16,9 @@
 | `owner_id` | `-60805374` |
 | Публичная ссылка | https://vk.ru/the_lord_god_is_my_strength |
 | VK Видео | https://vkvideo.ru/@the_lord_god_is_my_strength |
-| Credential alias | `vk-own-app-54555649` (только он; см. шаг 1) |
+| Credential alias | `vk-own-app-54555649` (только он) |
+| GitHub Environment | `lord-god-vk-production` |
+| Environment secret | `VK_OWN_APP_54555649_TOKEN` |
 | Владеющий issue восстановления | #662 |
 
 ## Каденция на ~60 дней
@@ -26,146 +29,151 @@
 | Тип поста | Когда | Источник |
 | --- | --- | --- |
 | Видео из VK Видео (реклама видео вложением) | каждый день, 19:00 | свежий read-only аудит стены: только `unposted`, длительность ≥ 120 с, просмотры ≤ 1500, ротация по спикерам (МакАртур, Спраул, Лоусон, Вошер, Бики, Сперджен, Коломийцев) |
-| Цитаты богословов | пн/ср/пт, 12:00 | только Telegram-посты со статусом `published` + `provider_effect=verified` в durable ledger (очередь depth-v3 либо legacy verified-30) |
-| Историческая статья | вт, 13:00 | только опубликованный+верифицированный исторический пост; `--historical-text-mode full` даёт полный текст (3–5 тыс. знаков, лимит стены 15 000), `excerpt` — заголовок+лид+первый абзац |
+| Цитаты богословов | пн/ср/пт, 12:00 | только Telegram-посты со статусом `published` + `provider_effect=verified` в durable ledger очереди depth-v3 |
+| Историческая статья | вт, 13:00 | только опубликованный+верифицированный исторический пост; `--historical-text-mode full` даёт полный текст (лимит стены 15 000) |
 
-При текущих durable данных (state-ref на 2026-10-23) это даёт: 60 видео +
-24 опубликованные карточки depth-v3 (Telegram-сообщения `1534`–`1581`) +
-1 полная историческая статья (Сперджен, Down-Grade, Telegram `1516`). Тексты, ещё не опубликованные в Telegram,
-в отбор **не попадают** (#654): они становятся eligible только после
-`published+verified` записи в соответствующем ledger, и волна пересобирается.
+При durable данных state-ref на 2026-10-23 расчётная волна: до 60 видео,
+24 опубликованные карточки depth-v3 (Telegram-сообщения `1534`–`1581`) и
+1 полная историческая статья (Сперджен, Down-Grade, Telegram `1516`). Фактическое
+число операций всегда берётся из свежего аудита и summary конкретного prepare:
+если подходящих видео меньше, план будет меньше. Тексты, ещё не опубликованные
+в Telegram, в отбор **не попадают** (#654): они становятся eligible только после
+`published+verified` записи в ledger, и волна пересобирается.
 
-## Шаг 1 — единственное ручное действие: своя авторизация VK (один раз)
+## Одноразовая настройка
+
+### 1. Собственная авторизация VK приложения 54555649
 
 Старый общий токен (алиасы `legendary-poet` / `default`, сторонний
 `client_id=2685278`) находится в карантине (#662,
 [`vk-credential-quarantine.md`](vk-credential-quarantine.md)): его нельзя
-«проверить ещё раз», ротировать алиасом или обходить ожиданием. Policy v3 в коде
-прямо отклоняет этот алиас до любого provider-вызова.
+переносить в GitHub, «проверять ещё раз», ротировать алиасом или обходить
+ожиданием. Policy v3 отклоняет этот алиас до любого provider-вызова.
 
-1. Откройте согласие собственного приложения `54555649` со scopes
-   `video,wall,groups,offline` (implicit flow, redirect на `blank.html`) и
-   скопируйте итоговый redirect URL целиком.
-2. Импортируйте его **отдельным** алиасом, не затирая старый:
+Под аккаунтом — администратором сообщества откройте согласие собственного
+приложения `54555649` со scopes `video,wall,groups,offline` (implicit flow,
+redirect на `blank.html`), например:
 
-```powershell
-video-manager vk login --account vk-own-app-54555649
-video-manager vk token-capabilities --account vk-own-app-54555649 --sync-local
+```text
+https://oauth.vk.com/authorize?client_id=54555649&scope=video,wall,groups,offline&redirect_uri=https://oauth.vk.com/blank.html&response_type=token&display=page
 ```
 
-`token-capabilities` должен показать `video,wall,groups`. Дальше — по одному
-зонду на метод, ровно как в карантинном ранбуке; упавший зонд останавливает
-восстановление, второй попытки в тот же заход нет:
+После согласия адресная строка будет содержать фрагмент
+`#access_token=...&expires_in=0&user_id=...`. Значение `access_token` — секрет:
+не присылайте его в чат, не кладите в Git, issue, workflow inputs или артефакты.
 
-```powershell
-video-manager vk flood-reset --account vk-own-app-54555649 --method groups.getById --confirm-code 9
-video-manager vk community-probe --account vk-own-app-54555649 --community 60805374
-video-manager vk flood-reset --account vk-own-app-54555649 --method wall.get --confirm-code 9
-video-manager vk wall-probe --account vk-own-app-54555649 --community 60805374
+### 2. GitHub Environment и секрет
+
+Один раз в репозитории:
+
+1. `Settings → Environments → New environment`, имя ровно
+   `lord-god-vk-production`.
+2. В `Deployment branches and tags` выберите `Selected branches` и разрешите
+   только `main`.
+3. Включите `Required reviewers` и укажите оператора, который утверждает
+   production-запуски.
+4. В `Environment secrets` добавьте `VK_OWN_APP_54555649_TOKEN` и вставьте
+   только новый токен приложения `54555649` из шага 1.
+
+Workflow доступен для ручного запуска только после merge в `main`. Оба job —
+и `prepare`, и `apply` — ссылаются на этот Environment, поэтому GitHub запросит
+approval перед каждым из них; секрет при этом остаётся внутри runner и не
+попадает в логи, Git или артефакты.
+
+## Этап 1 — prepare (без provider-записи)
+
+В GitHub: `Actions → Lord God VK postponed wave → Run workflow`, ветка `main`:
+
+- `action=prepare`;
+- `start_date` можно оставить пустым — workflow возьмёт ближайший будущий
+  понедельник по Europe/Moscow; либо укажите будущий понедельник `YYYY-MM-DD`.
+
+Утвердите Environment deployment. Workflow выполнит строго по порядку:
+
+1. импортирует секрет в ephemeral `VCM_DATA_DIR` алиасом `vk-own-app-54555649`;
+2. проверит `token-capabilities`: известные scopes обязаны быть ровно
+   `video,wall,groups`;
+3. сделает по одному read-probe `community-probe` (`groups.getById`) и
+   `wall-probe` (`wall.get`) для сообщества `60805374`;
+4. read-only checkout `state/lordchrist-telegram`, локально материализует
+   очереди successor/depth-v2/depth-v3 и эффективный depth-v3 ledger
+   (в state-ref ничего не пишет);
+5. построит свежий аудит стены и найдёт созданный bundle
+   `vk-wall-content-audit-*` (timestamp не угадывается);
+6. соберёт backlog `--days 60 --video-count 60 --telegram-count 1
+   --quote-count 24 --historical-text-mode full --max-views 1500`;
+7. соберёт неизменяемый provider-inert handoff
+   (`00-backlog.json` … `08-apply-intent.json`, `manifest.json`) и проверит
+   manifest, SHA файлов, source/plan/intent и будущие `publish_date`.
+
+Артефакты prepare: `lord-god-vk-audit-<run_id>-1` (90 дней) и
+`lord-god-vk-handoff` (30 дней). В summary prepare возьмите значения для apply:
+
+- ID этого prepare-run;
+- `operation_count`;
+- `plan_self_digest`;
+- `operation_set_digest`;
+- готовую строку подтверждения формата
+  `APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>`.
+
+Prepare не вызывает `wall.post` и не запускает `wave apply`. Если probes падают
+(в том числе code 9), волна останавливается: workflow не делает `flood-reset`,
+вторых проб и автоматических повторов; issue #662 остаётся открытым до успешных
+проб новым токеном.
+
+## Этап 2 — apply (одна provider-запись)
+
+Запускайте apply отдельным dispatch и как можно скорее после prepare: если
+первый `publish_date` окажется не позже `now + 5 минут`, workflow откажется
+применять план и потребуется новый prepare.
+
+`Actions → Lord God VK postponed wave → Run workflow`, ветка `main`:
+
+- `action=apply`;
+- `prepare_run_id` — ID успешного prepare-run;
+- `plan_self_digest` — точное значение из prepare summary;
+- `operation_set_digest` — точное значение из prepare summary;
+- `confirm` — точная строка
+  `APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>`.
+
+Утвердите Environment deployment. Workflow скачает `lord-god-vk-handoff`
+именно из указанного prepare-run в тот же repository-relative каталог
+`operator-output/lord-god-vk/handoff`, сверит manifest и SHA всех файлов,
+`source.verify_artifacts`, `intent.assert_matches`, оба digest, включённый
+`enable_provider_writes` и будущие даты; затем повторит token gates
+(capabilities и по одному probe) и ровно один раз выполнит:
+
+```text
+video-manager wave apply --source .../06-source.json --plan .../07-plan.json \
+  --intent .../08-apply-intent.json --repository-root . \
+  --journal-directory operator-output/lord-god-vk/apply-journal \
+  --vk-account vk-own-app-54555649 --enable-provider-writes
 ```
 
-## Шаг 2 — свежий read-only аудит стены (один проход)
+## После apply: стоп-правила
 
-```powershell
-python scripts/build_vk_wall_content_audit.py `
-  --account vk-own-app-54555649 `
-  --community 60805374 `
-  --output-dir data\handoffs
-```
-
-Нужны из пакета: `00-videos.json` и `03-wall-content-audit.json`. Исторический
-аудит и старый кандидат на 83 операции (`2327edc3…`) — не авторитет свежести и
-не применяются.
-
-## Шаг 3 — выгрузить durable Telegram-свидетельства (только чтение state-ref)
-
-`state/lordchrist-telegram` — durable state, не источник кода; файлы читаются
-через `git show`, рабочее дерево не переключается:
-
-```powershell
-git fetch origin state/lordchrist-telegram
-New-Item -ItemType Directory -Force operator-output\lord-god-vk\state, operator-output\lord-god-vk\runtime | Out-Null
-git show origin/state/lordchrist-telegram:content/telegram/lordchrist/publication-ledger.json > operator-output\lord-god-vk\state\predecessor-ledger.json
-git show origin/state/lordchrist-telegram:content/telegram/lordchrist/successor-publication-ledger.json > operator-output\lord-god-vk\state\source-v1-ledger.json
-git show origin/state/lordchrist-telegram:content/telegram/lordchrist/successor-depth-v2-publication-ledger.json > operator-output\lord-god-vk\state\depth-v2-ledger.json
-git show origin/state/lordchrist-telegram:content/telegram/lordchrist/successor-depth-v3-publication-ledger.json > operator-output\lord-god-vk\state\depth-v3-ledger.json
-git show origin/state/lordchrist-telegram:content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json > operator-output\lord-god-vk\state\historical-ledger.json
-```
-
-Материализовать очередь depth-v3 тем же кодом, что и Telegram-воркфлоу:
-
-```powershell
-python -m video_channel_manager.telegram_quote_depth resolve `
-  --predecessor-queue content\telegram\lordchrist\verified-30-posts.json `
-  --predecessor-ledger operator-output\lord-god-vk\state\predecessor-ledger.json `
-  --candidate content\telegram\lordchrist\successor-quotes-v1.json `
-  --translation-ledger content\telegram\lordchrist\successor-translation-ledger-v1.json `
-  --integrity-amendments content\telegram\lordchrist\successor-integrity-amendments-v1.json `
-  --source-v1-runtime-queue operator-output\lord-god-vk\runtime\source-v1-queue.json `
-  --source-v1-ledger operator-output\lord-god-vk\state\source-v1-ledger.json `
-  --depth-v2-runtime-queue operator-output\lord-god-vk\runtime\depth-v2-queue.json `
-  --depth-v2-ledger operator-output\lord-god-vk\state\depth-v2-ledger.json `
-  --runtime-queue operator-output\lord-god-vk\runtime\depth-v3-queue.json `
-  --depth-ledger operator-output\lord-god-vk\state\depth-v3-ledger.json `
-  --output operator-output\lord-god-vk\runtime\selection.json
-```
-
-## Шаг 4 — собрать очередь на 60 дней и provider-inert handoff
-
-`--start-date` — ближайший понедельник после аудита; все даты обязаны оставаться
-в будущем на момент apply.
-
-```powershell
-python scripts/build_lord_god_content_backlog_v2.py data\handoffs\<audit-dir>\03-wall-content-audit.json `
-  --repository-root . `
-  --historical-release content\telegram\lordchrist\historical-editorial\v1\production-release-spurgeon-v3-media-canary.json `
-  --historical-ledger operator-output\lord-god-vk\state\historical-ledger.json `
-  --quote-queue operator-output\lord-god-vk\runtime\depth-v3-queue.json `
-  --quote-ledger operator-output\lord-god-vk\state\depth-v3-ledger.json `
-  --start-date <YYYY-MM-DD> --days 60 --video-count 60 --quote-count 24 --telegram-count 1 `
-  --historical-text-mode full `
-  --output operator-output\lord-god-vk\backlog.json
-
-python scripts/prepare_lord_god_content_wave.py `
-  --repository-root . `
-  --backlog operator-output\lord-god-vk\backlog.json `
-  --videos data\handoffs\<audit-dir>\00-videos.json `
-  --quote-queue operator-output\lord-god-vk\runtime\depth-v3-queue.json `
-  --quote-ledger operator-output\lord-god-vk\state\depth-v3-ledger.json `
-  --historical-release content\telegram\lordchrist\historical-editorial\v1\production-release-spurgeon-v3-media-canary.json `
-  --historical-ledger operator-output\lord-god-vk\state\historical-ledger.json `
-  --output-dir operator-output\lord-god-vk\handoff-review
-
-video-manager wave preview operator-output\lord-god-vk\handoff-review\07-plan.json
-```
-
-Проверить в preview: проект `lord-god-strength`, сообщество `60805374`,
-число операций и digest плана. Затем пересобрать тот же handoff в новый каталог
-с `--enable-provider-writes` (только флаг intent; provider-вызовов prepare не
-делает) и убедиться, что digest плана не изменился.
-
-## Шаг 5 — один apply, без повторов
-
-```powershell
-video-manager wave apply `
-  --source operator-output\lord-god-vk\handoff-apply\06-source.json `
-  --plan operator-output\lord-god-vk\handoff-apply\07-plan.json `
-  --intent operator-output\lord-god-vk\handoff-apply\08-apply-intent.json `
-  --repository-root . `
-  --journal-directory operator-output\lord-god-vk\journal-001 `
-  --vk-account vk-own-app-54555649 `
-  --enable-provider-writes
-```
-
-Правила остановки: один писатель на сообщество; `unknown` исход не повторяется —
-только `video-manager wave reconcile` по точному плану/результату; код 9 по
-любому методу останавливает волну, TTL не предполагается.
+- **Не запускайте apply второй раз** для того же handoff, если шаг apply уже
+  стартовал или исход неизвестен. Re-run того же workflow запрещён условием
+  `github.run_attempt == 1`, но и новый dispatch с тем же подтверждением при
+  неизвестном исходе запрещён процедурой.
+- Итоговый артефакт: `lord-god-vk-apply-<apply_run_id>-1` — `result.json`,
+  `preflight-summary.json`, журналы операций и, если есть,
+  `token_capabilities_flood_state.json`. Токен и token store в артефакты не
+  загружаются.
+- Исход `unknown` не повторяется вслепую: только `video-manager wave reconcile`
+  по точному плану и загруженному результату/журналу из apply-артефакта.
+- Code 9 на любом методе останавливает волну; TTL и «подождать и повторить»
+  политикой не предполагаются.
+- Если apply упал **до** шага `Apply the reviewed postponed-post wave exactly
+  once` (проверки digest, токена или probes), provider-запись ещё не начиналась:
+  исправьте причину и используйте новый dispatch с тем же точным подтверждением
+  либо, при истёкших датах, новый prepare.
 
 ## Приём новых постов от оператора
 
 Посты, присланные текстом в чат, не вставляются в уже собранный план. Порядок:
 текст сверяется с первоисточником и дубликатами, публикуется/фиксируется в
-Telegram либо оформляется отдельным reviewed text-слотом в backlog JSON
-(`kind: telegram_quote|telegram_editorial` с точным `publication_id`, текстом и
-`source_url`), после чего шаги 4–5 повторяются с новой датой старта для ещё не
-запланированного хвоста. Уже запланированные слоты не переиспользуются.
+Telegram либо оформляется отдельным reviewed text-слотом в backlog, после чего
+prepare повторяется с новой датой старта для ещё не запланированного хвоста.
+Уже запланированные слоты не переиспользуются; в VK по-прежнему идут только
+посты со статусом `published` + `provider_effect=verified`.

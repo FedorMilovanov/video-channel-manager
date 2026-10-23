@@ -1,0 +1,736 @@
+name: Lord God VK postponed wave
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Stage to run: provider-inert prepare or one guarded apply"
+        required: true
+        default: prepare
+        type: choice
+        options:
+          - prepare
+          - apply
+      start_date:
+        description: "Prepare only: Monday (YYYY-MM-DD, Europe/Moscow); blank means the next Monday"
+        required: false
+        default: ""
+        type: string
+      prepare_run_id:
+        description: "Apply only: numeric GitHub run ID of the successful prepare run"
+        required: false
+        default: ""
+        type: string
+      plan_self_digest:
+        description: "Apply only: exact plan_self_digest from the prepare summary"
+        required: false
+        default: ""
+        type: string
+      operation_set_digest:
+        description: "Apply only: exact operation_set_digest from the prepare summary"
+        required: false
+        default: ""
+        type: string
+      confirm:
+        description: "Apply only: APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lord-god-vk-postponed-wave
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PYTHONPATH: src
+  VCM_DATA_DIR: .vcm-vk-data
+  VCM_VK_SHARED_ENV_FILE: .vcm-no-shared-vk.env
+  VK_ACCOUNT: vk-own-app-54555649
+  VK_COMMUNITY_ID: "60805374"
+  STATE_BRANCH: state/lordchrist-telegram
+  STATE_DIR: .state/lordchrist
+  WORK_DIR: operator-output/lord-god-vk
+  AUDIT_OUTPUT_DIR: operator-output/lord-god-vk/audit
+  BACKLOG_PATH: operator-output/lord-god-vk/backlog.json
+  BACKLOG_MARKDOWN_PATH: operator-output/lord-god-vk/backlog.md
+  HANDOFF_DIR: operator-output/lord-god-vk/handoff
+  HANDOFF_ARTIFACT_NAME: lord-god-vk-handoff
+  APPLY_JOURNAL_DIR: operator-output/lord-god-vk/apply-journal
+  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
+  SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger.json
+  SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments.json
+  SOURCE_V1_RUNTIME_QUEUE_PATH: .runtime/lord-god-source-v1-runtime-queue.json
+  SOURCE_V1_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
+  DEPTH_V2_RUNTIME_QUEUE_PATH: .runtime/lord-god-depth-v2-runtime-queue.json
+  DEPTH_V2_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lord-god-depth-v3-runtime-queue.json
+  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v3-publication-ledger.json
+  DEPTH_RESTORE_PATH: content/telegram/lordchrist/successor-depth-restore-v1.json
+  LOCAL_DEPTH_LEDGER_PATH: .runtime/lord-god-depth-v3-publication-ledger.json
+  ACTIVE_SELECTION_PATH: .runtime/lord-god-active-selection.json
+  HISTORICAL_RELEASE_PATH: content/telegram/lordchrist/historical-editorial/v1/production-release-spurgeon-v3-media-canary.json
+  HISTORICAL_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json
+
+jobs:
+  prepare:
+    name: Prepare provider-inert VK wave
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1 &&
+      inputs.action == 'prepare'
+    environment: lord-god-vk-production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out reviewed code from main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install full project runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip check
+
+      - name: Resolve a future Monday start date
+        shell: bash
+        env:
+          REQUESTED_START_DATE: ${{ inputs.start_date }}
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import os
+          from datetime import date, timedelta
+          from zoneinfo import ZoneInfo
+
+          requested = os.environ["REQUESTED_START_DATE"].strip()
+          today = date.today() if False else None
+          # Europe/Moscow has a fixed UTC+03:00 offset for the dates used here;
+          # ZoneInfo keeps the workflow correct if the runner image carries tzdata.
+          from datetime import datetime
+
+          today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+          if requested:
+              try:
+                  start = date.fromisoformat(requested)
+              except ValueError as exc:
+                  raise SystemExit("start_date must use YYYY-MM-DD") from exc
+              if start.weekday() != 0:
+                  raise SystemExit("start_date must be a Monday in Europe/Moscow")
+              if start <= today:
+                  raise SystemExit("start_date must be in the future in Europe/Moscow")
+          else:
+              days_until_monday = (7 - today.weekday()) % 7 or 7
+              start = today + timedelta(days=days_until_monday)
+          print(f"START_DATE={start.isoformat()}")
+          print(f"MOSCOW_TODAY={today.isoformat()}")
+          PY
+
+      - name: Check out durable Telegram state read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare ephemeral operator directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$VCM_DATA_DIR" .runtime "$AUDIT_OUTPUT_DIR" "$WORK_DIR"
+          if [[ -e "$HANDOFF_DIR" ]]; then
+            echo "Immutable handoff directory already exists in this runner." >&2
+            exit 2
+          fi
+
+      - name: Import the Environment VK token into ephemeral storage
+        shell: bash
+        env:
+          VCM_VK_ACCESS_TOKEN: ${{ secrets.VK_OWN_APP_54555649_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VCM_VK_ACCESS_TOKEN" ]]; then
+            echo "Environment secret VK_OWN_APP_54555649_TOKEN is missing or empty." >&2
+            exit 2
+          fi
+          video-manager vk login --account "$VK_ACCOUNT"
+
+      - name: Require video, wall and groups token capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          capabilities_file="$RUNNER_TEMP/vk-capabilities.txt"
+          video-manager vk token-capabilities --account "$VK_ACCOUNT" | tee "$capabilities_file"
+          CAPABILITIES_FILE="$capabilities_file" python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          text = Path(os.environ["CAPABILITIES_FILE"]).read_text(encoding="utf-8")
+          match = re.search(r"known-scopes=([^.\s]+)", text)
+          if match is None:
+              raise SystemExit("token-capabilities output did not contain known-scopes")
+          scopes = tuple(scope for scope in match.group(1).split(",") if scope)
+          if scopes != ("video", "wall", "groups"):
+              raise SystemExit(f"VK token must have exactly video,wall,groups scopes; got {scopes!r}")
+          PY
+
+      - name: Probe the bound VK community once
+        shell: bash
+        run: |
+          set -euo pipefail
+          video-manager vk community-probe --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID"
+
+      - name: Probe the bound VK wall once
+        shell: bash
+        run: |
+          set -euo pipefail
+          video-manager vk wall-probe --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID"
+
+      - name: Resolve successor, depth-v2 and depth-v3 queues locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_depth resolve \
+            --predecessor-queue "$PREDECESSOR_QUEUE_PATH" \
+            --predecessor-ledger "$PREDECESSOR_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --source-v1-runtime-queue "$SOURCE_V1_RUNTIME_QUEUE_PATH" \
+            --source-v1-ledger "$SOURCE_V1_LEDGER_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
+            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --depth-ledger "$DEPTH_LEDGER_PATH" \
+            --output "$ACTIVE_SELECTION_PATH"
+
+      - name: Bind the effective depth-v3 ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+          from pathlib import Path
+
+          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          if selection["active_release"] != "depth-v3":
+              raise SystemExit(f"Lord God VK prepare expected depth-v3, got {selection['active_release']}")
+          if selection["needs_ledger_initialization"]:
+              print("EFFECTIVE_DEPTH_LEDGER_PATH=" + os.environ["LOCAL_DEPTH_LEDGER_PATH"])
+          else:
+              print("EFFECTIVE_DEPTH_LEDGER_PATH=" + os.environ["DEPTH_LEDGER_PATH"])
+          PY
+
+      - name: Materialize a missing depth-v3 ledger locally only
+        if: env.EFFECTIVE_DEPTH_LEDGER_PATH == env.LOCAL_DEPTH_LEDGER_PATH
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -e "$DEPTH_LEDGER_PATH" ]]; then
+            echo "Depth-v3 ledger unexpectedly exists in the read-only state snapshot." >&2
+            exit 3
+          fi
+          if [[ ! -e "$DEPTH_V2_LEDGER_PATH" ]]; then
+            echo "Depth-v3 local materialization requires the durable depth-v2 ledger." >&2
+            exit 4
+          fi
+          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
+            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
+            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
+            --restore "$DEPTH_RESTORE_PATH" \
+            --ledger "$LOCAL_DEPTH_LEDGER_PATH" \
+            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
+
+      - name: Build a fresh read-only VK wall audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_vk_wall_content_audit.py \
+            --account "$VK_ACCOUNT" \
+            --community "$VK_COMMUNITY_ID" \
+            --output-dir "$AUDIT_OUTPUT_DIR"
+
+      - name: Locate the fresh audit bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import os
+          from pathlib import Path
+
+          output_dir = Path(os.environ["AUDIT_OUTPUT_DIR"])
+          bundles = sorted(path for path in output_dir.glob("vk-wall-content-audit-*") if path.is_dir())
+          if len(bundles) != 1:
+              raise SystemExit(f"expected exactly one fresh VK audit bundle, found {len(bundles)}")
+          bundle = bundles[0]
+          audit_json = bundle / "03-wall-content-audit.json"
+          videos_json = bundle / "00-videos.json"
+          audit_zip = output_dir / f"{bundle.name}.zip"
+          for path in (audit_json, videos_json, audit_zip):
+              if not path.is_file():
+                  raise SystemExit(f"fresh VK audit is missing {path.name}")
+          print(f"AUDIT_BUNDLE_DIR={bundle.as_posix()}")
+          print(f"AUDIT_JSON={audit_json.as_posix()}")
+          print(f"AUDIT_VIDEOS_JSON={videos_json.as_posix()}")
+          print(f"AUDIT_ZIP_PATH={audit_zip.as_posix()}")
+          PY
+
+      - name: Build the provider-inert 60-day backlog
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lord_god_content_backlog_v2.py "$AUDIT_JSON" \
+            --repository-root . \
+            --historical-release "$HISTORICAL_RELEASE_PATH" \
+            --historical-ledger "$HISTORICAL_LEDGER_PATH" \
+            --quote-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --quote-ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --start-date "$START_DATE" \
+            --days 60 \
+            --video-count 60 \
+            --telegram-count 1 \
+            --quote-count 24 \
+            --historical-text-mode full \
+            --max-views 1500 \
+            --output "$BACKLOG_PATH"
+
+      - name: Prepare the immutable provider-inert handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/prepare_lord_god_content_wave.py \
+            --repository-root . \
+            --backlog "$BACKLOG_PATH" \
+            --videos "$AUDIT_VIDEOS_JSON" \
+            --quote-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --quote-ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --historical-release "$HISTORICAL_RELEASE_PATH" \
+            --historical-ledger "$HISTORICAL_LEDGER_PATH" \
+            --output-dir "$HANDOFF_DIR" \
+            --enable-provider-writes
+
+      - name: Verify handoff and publish apply values
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          from pathlib import Path
+
+          from video_channel_manager.wave_engine.models import WaveApplyIntent, WavePlan, WaveSourceEvidence
+
+          root = Path(".").resolve()
+          handoff = Path(os.environ["HANDOFF_DIR"])
+          manifest = json.loads((handoff / "manifest.json").read_text(encoding="utf-8"))
+          if manifest.get("schema_name") != "video-manager.lord-god-content-wave-handoff":
+              raise SystemExit("unexpected Lord God handoff manifest schema")
+          if manifest.get("schema_version") != 1:
+              raise SystemExit("unexpected Lord God handoff manifest version")
+          if manifest.get("project") != {
+              "project_key": "lord-god-strength",
+              "community_id": 60805374,
+              "owner_id": -60805374,
+          }:
+              raise SystemExit("handoff project binding differs from lord-god-strength")
+          if manifest.get("policy_version") != "vk-lord-god-postponed-wall-v3":
+              raise SystemExit("handoff policy differs from vk-lord-god-postponed-wall-v3")
+          if manifest.get("enable_provider_writes") is not True:
+              raise SystemExit("handoff was not prepared for the guarded provider-write apply")
+
+          source = WaveSourceEvidence.model_validate(
+              json.loads((handoff / "06-source.json").read_text(encoding="utf-8"))
+          )
+          plan = WavePlan.model_validate(json.loads((handoff / "07-plan.json").read_text(encoding="utf-8")))
+          intent = WaveApplyIntent.model_validate(
+              json.loads((handoff / "08-apply-intent.json").read_text(encoding="utf-8"))
+          )
+          source.verify_artifacts(root)
+          intent.assert_matches(plan, source)
+          if not plan.operations:
+              raise SystemExit("handoff contains no operations")
+          if manifest.get("operation_count") != len(plan.operations):
+              raise SystemExit("manifest operation_count differs from the plan")
+          if manifest.get("operation_set_digest") != plan.operation_set_digest:
+              raise SystemExit("manifest operation_set_digest differs from the plan")
+          if manifest.get("source_self_digest") != source.self_digest:
+              raise SystemExit("manifest source_self_digest differs from source evidence")
+          if manifest.get("plan_self_digest") != plan.self_digest:
+              raise SystemExit("manifest plan_self_digest differs from the plan")
+          if manifest.get("apply_intent_self_digest") != intent.self_digest:
+              raise SystemExit("manifest apply_intent_self_digest differs from the intent")
+          if intent.source_path != (handoff / "06-source.json").as_posix():
+              raise SystemExit("intent source_path differs from the downloaded handoff layout")
+          if intent.plan_path != (handoff / "07-plan.json").as_posix():
+              raise SystemExit("intent plan_path differs from the downloaded handoff layout")
+
+          expected_files = {
+              "00-backlog.json",
+              "01-videos.json",
+              "02-telegram-quote-queue.json",
+              "03-telegram-quote-ledger.json",
+              "04-telegram-historical-release.json",
+              "05-telegram-historical-ledger.json",
+              "06-source.json",
+              "07-plan.json",
+              "08-apply-intent.json",
+          }
+          files = manifest.get("files")
+          if not isinstance(files, dict) or set(files) != expected_files:
+              raise SystemExit("manifest files map differs from the immutable handoff file set")
+          for name, expected_sha in files.items():
+              actual_sha = hashlib.sha256((handoff / name).read_bytes()).hexdigest()
+              if actual_sha != expected_sha:
+                  raise SystemExit(f"manifest SHA differs for {name}")
+
+          minimum_publish_date = int(time.time()) + 300
+          for operation in plan.operations:
+              if operation.payload.get("account_alias") != "vk-own-app-54555649":
+                  raise SystemExit("plan operation account differs from vk-own-app-54555649")
+              publish_date = operation.payload.get("publish_date")
+              if not isinstance(publish_date, int) or publish_date <= minimum_publish_date:
+                  raise SystemExit("plan contains a postponed publish_date that is not safely in the future")
+
+          run_id = os.environ["GITHUB_RUN_ID"]
+          plan_digest = plan.self_digest
+          operation_digest = plan.operation_set_digest
+          confirm = f"APPLY-LORD-GOD-VK:{run_id}:{plan_digest}:{operation_digest}"
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as env_file:
+              print(f"PREPARE_RUN_ID={run_id}", file=env_file)
+              print(f"PLAN_SELF_DIGEST={plan_digest}", file=env_file)
+              print(f"OPERATION_SET_DIGEST={operation_digest}", file=env_file)
+              print(f"OPERATION_COUNT={len(plan.operations)}", file=env_file)
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              print("## Lord God VK prepare complete", file=summary)
+              print("", file=summary)
+              print("No VK provider write was performed. Use a separate `apply` dispatch only after reviewing this handoff.", file=summary)
+              print("", file=summary)
+              print(f"- Prepare run ID: `{run_id}`", file=summary)
+              print(f"- Start date (Europe/Moscow): `{os.environ['START_DATE']}`", file=summary)
+              print(f"- Operation count: `{len(plan.operations)}`", file=summary)
+              print(f"- Source self-digest: `{source.self_digest}`", file=summary)
+              print(f"- Plan self-digest: `{plan_digest}`", file=summary)
+              print(f"- Operation set digest: `{operation_digest}`", file=summary)
+              print(f"- Apply intent self-digest: `{intent.self_digest}`", file=summary)
+              print(f"- Exact apply confirmation: `{confirm}`", file=summary)
+          PY
+
+      - name: Upload fresh VK audit evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lord-god-vk-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.AUDIT_BUNDLE_DIR }}
+            ${{ env.AUDIT_ZIP_PATH }}
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: false
+
+      - name: Upload provider-inert handoff
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.HANDOFF_ARTIFACT_NAME }}
+          path: |
+            ${{ env.HANDOFF_DIR }}/00-backlog.json
+            ${{ env.HANDOFF_DIR }}/01-videos.json
+            ${{ env.HANDOFF_DIR }}/02-telegram-quote-queue.json
+            ${{ env.HANDOFF_DIR }}/03-telegram-quote-ledger.json
+            ${{ env.HANDOFF_DIR }}/04-telegram-historical-release.json
+            ${{ env.HANDOFF_DIR }}/05-telegram-historical-ledger.json
+            ${{ env.HANDOFF_DIR }}/06-source.json
+            ${{ env.HANDOFF_DIR }}/07-plan.json
+            ${{ env.HANDOFF_DIR }}/08-apply-intent.json
+            ${{ env.HANDOFF_DIR }}/manifest.json
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: false
+
+  apply:
+    name: Apply reviewed VK wave once
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1 &&
+      inputs.action == 'apply'
+    environment: lord-god-vk-production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out reviewed code from main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install full project runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip check
+
+      - name: Validate exact apply confirmation before downloading the handoff
+        shell: bash
+        env:
+          REQUESTED_PREPARE_RUN_ID: ${{ inputs.prepare_run_id }}
+          REQUESTED_PLAN_SELF_DIGEST: ${{ inputs.plan_self_digest }}
+          REQUESTED_OPERATION_SET_DIGEST: ${{ inputs.operation_set_digest }}
+          REQUESTED_CONFIRM: ${{ inputs.confirm }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import os
+          import re
+
+          prepare_run_id = os.environ["REQUESTED_PREPARE_RUN_ID"].strip()
+          plan_digest = os.environ["REQUESTED_PLAN_SELF_DIGEST"].strip()
+          operation_digest = os.environ["REQUESTED_OPERATION_SET_DIGEST"].strip()
+          confirm = os.environ["REQUESTED_CONFIRM"].strip()
+          if not re.fullmatch(r"[0-9]+", prepare_run_id):
+              raise SystemExit("prepare_run_id must be a numeric GitHub run ID")
+          if prepare_run_id == os.environ["CURRENT_RUN_ID"]:
+              raise SystemExit("apply must be a separate run from prepare")
+          if not re.fullmatch(r"[0-9a-f]{64}", plan_digest):
+              raise SystemExit("plan_self_digest must be an exact 64-character lowercase hex digest")
+          if not re.fullmatch(r"[0-9a-f]{64}", operation_digest):
+              raise SystemExit("operation_set_digest must be an exact 64-character lowercase hex digest")
+          expected = f"APPLY-LORD-GOD-VK:{prepare_run_id}:{plan_digest}:{operation_digest}"
+          if confirm != expected:
+              raise SystemExit("confirm must exactly match APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>")
+          print(f"CONFIRMED_PREPARE_RUN_ID={prepare_run_id}")
+          print(f"CONFIRMED_PLAN_SELF_DIGEST={plan_digest}")
+          print(f"CONFIRMED_OPERATION_SET_DIGEST={operation_digest}")
+          PY
+
+      - name: Download the immutable prepare handoff
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ env.HANDOFF_ARTIFACT_NAME }}
+          path: ${{ env.HANDOFF_DIR }}
+          run-id: ${{ inputs.prepare_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify downloaded handoff against exact operator confirmation
+        shell: bash
+        env:
+          EXPECTED_PLAN_SELF_DIGEST: ${{ inputs.plan_self_digest }}
+          EXPECTED_OPERATION_SET_DIGEST: ${{ inputs.operation_set_digest }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          from pathlib import Path
+
+          from video_channel_manager.wave_engine.models import WaveApplyIntent, WavePlan, WaveSourceEvidence
+
+          root = Path(".").resolve()
+          handoff = Path(os.environ["HANDOFF_DIR"])
+          manifest_path = handoff / "manifest.json"
+          if not manifest_path.is_file():
+              raise SystemExit("downloaded artifact does not contain the Lord God handoff manifest")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          if manifest.get("schema_name") != "video-manager.lord-god-content-wave-handoff":
+              raise SystemExit("unexpected Lord God handoff manifest schema")
+          if manifest.get("schema_version") != 1:
+              raise SystemExit("unexpected Lord God handoff manifest version")
+          if manifest.get("project") != {
+              "project_key": "lord-god-strength",
+              "community_id": 60805374,
+              "owner_id": -60805374,
+          }:
+              raise SystemExit("handoff project binding differs from lord-god-strength")
+          if manifest.get("policy_version") != "vk-lord-god-postponed-wall-v3":
+              raise SystemExit("handoff policy differs from vk-lord-god-postponed-wall-v3")
+          if manifest.get("enable_provider_writes") is not True:
+              raise SystemExit("downloaded handoff does not authorize the guarded apply intent")
+
+          source = WaveSourceEvidence.model_validate(
+              json.loads((handoff / "06-source.json").read_text(encoding="utf-8"))
+          )
+          plan = WavePlan.model_validate(json.loads((handoff / "07-plan.json").read_text(encoding="utf-8")))
+          intent = WaveApplyIntent.model_validate(
+              json.loads((handoff / "08-apply-intent.json").read_text(encoding="utf-8"))
+          )
+          source.verify_artifacts(root)
+          intent.assert_matches(plan, source)
+          if not plan.operations:
+              raise SystemExit("downloaded handoff contains no operations")
+          expected_plan_digest = os.environ["EXPECTED_PLAN_SELF_DIGEST"].strip()
+          expected_operation_digest = os.environ["EXPECTED_OPERATION_SET_DIGEST"].strip()
+          if plan.self_digest != expected_plan_digest:
+              raise SystemExit("downloaded plan_self_digest differs from the confirmed value")
+          if plan.operation_set_digest != expected_operation_digest:
+              raise SystemExit("downloaded operation_set_digest differs from the confirmed value")
+          if manifest.get("operation_count") != len(plan.operations):
+              raise SystemExit("manifest operation_count differs from the plan")
+          if manifest.get("operation_set_digest") != plan.operation_set_digest:
+              raise SystemExit("manifest operation_set_digest differs from the plan")
+          if manifest.get("source_self_digest") != source.self_digest:
+              raise SystemExit("manifest source_self_digest differs from source evidence")
+          if manifest.get("plan_self_digest") != plan.self_digest:
+              raise SystemExit("manifest plan_self_digest differs from the plan")
+          if manifest.get("apply_intent_self_digest") != intent.self_digest:
+              raise SystemExit("manifest apply_intent_self_digest differs from the intent")
+          if intent.source_path != (handoff / "06-source.json").as_posix():
+              raise SystemExit("intent source_path differs from the downloaded handoff layout")
+          if intent.plan_path != (handoff / "07-plan.json").as_posix():
+              raise SystemExit("intent plan_path differs from the downloaded handoff layout")
+
+          expected_files = {
+              "00-backlog.json",
+              "01-videos.json",
+              "02-telegram-quote-queue.json",
+              "03-telegram-quote-ledger.json",
+              "04-telegram-historical-release.json",
+              "05-telegram-historical-ledger.json",
+              "06-source.json",
+              "07-plan.json",
+              "08-apply-intent.json",
+          }
+          files = manifest.get("files")
+          if not isinstance(files, dict) or set(files) != expected_files:
+              raise SystemExit("manifest files map differs from the immutable handoff file set")
+          for name, expected_sha in files.items():
+              actual_sha = hashlib.sha256((handoff / name).read_bytes()).hexdigest()
+              if actual_sha != expected_sha:
+                  raise SystemExit(f"manifest SHA differs for {name}")
+
+          minimum_publish_date = int(time.time()) + 300
+          for operation in plan.operations:
+              if operation.payload.get("account_alias") != "vk-own-app-54555649":
+                  raise SystemExit("plan operation account differs from vk-own-app-54555649")
+              publish_date = operation.payload.get("publish_date")
+              if not isinstance(publish_date, int) or publish_date <= minimum_publish_date:
+                  raise SystemExit("plan contains a postponed publish_date that is not safely in the future")
+          PY
+
+      - name: Prepare ephemeral VK data directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$VCM_DATA_DIR" "$WORK_DIR"
+          if [[ -e "$APPLY_JOURNAL_DIR/result.json" || -e "$APPLY_JOURNAL_DIR/preflight-summary.json" ]]; then
+            echo "Apply journal already exists in this runner." >&2
+            exit 2
+          fi
+
+      - name: Import the Environment VK token into ephemeral storage
+        shell: bash
+        env:
+          VCM_VK_ACCESS_TOKEN: ${{ secrets.VK_OWN_APP_54555649_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VCM_VK_ACCESS_TOKEN" ]]; then
+            echo "Environment secret VK_OWN_APP_54555649_TOKEN is missing or empty." >&2
+            exit 2
+          fi
+          video-manager vk login --account "$VK_ACCOUNT"
+
+      - name: Require video, wall and groups token capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          capabilities_file="$RUNNER_TEMP/vk-capabilities.txt"
+          video-manager vk token-capabilities --account "$VK_ACCOUNT" | tee "$capabilities_file"
+          CAPABILITIES_FILE="$capabilities_file" python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          text = Path(os.environ["CAPABILITIES_FILE"]).read_text(encoding="utf-8")
+          match = re.search(r"known-scopes=([^.\s]+)", text)
+          if match is None:
+              raise SystemExit("token-capabilities output did not contain known-scopes")
+          scopes = tuple(scope for scope in match.group(1).split(",") if scope)
+          if scopes != ("video", "wall", "groups"):
+              raise SystemExit(f"VK token must have exactly video,wall,groups scopes; got {scopes!r}")
+          PY
+
+      - name: Probe the bound VK community once
+        shell: bash
+        run: |
+          set -euo pipefail
+          video-manager vk community-probe --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID"
+
+      - name: Probe the bound VK wall once
+        shell: bash
+        run: |
+          set -euo pipefail
+          video-manager vk wall-probe --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID"
+
+      - name: Apply the reviewed postponed-post wave exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          video-manager wave apply \
+            --source "$HANDOFF_DIR/06-source.json" \
+            --plan "$HANDOFF_DIR/07-plan.json" \
+            --intent "$HANDOFF_DIR/08-apply-intent.json" \
+            --repository-root . \
+            --journal-directory "$APPLY_JOURNAL_DIR" \
+            --vk-account "$VK_ACCOUNT" \
+            --enable-provider-writes
+
+      - name: Summarize the apply journal
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Lord God VK apply finished"
+            echo ""
+            echo "- Prepare run ID: \`${CONFIRMED_PREPARE_RUN_ID}\`"
+            echo "- Apply run ID: \`${GITHUB_RUN_ID}\`"
+            echo "- Plan self-digest: \`${CONFIRMED_PLAN_SELF_DIGEST}\`"
+            echo "- Operation set digest: \`${CONFIRMED_OPERATION_SET_DIGEST}\`"
+            echo "- Journal artifact: \`lord-god-vk-apply-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\`"
+            echo ""
+            echo "Do not dispatch this handoff again. If any operation is \`unknown\`, use Wave reconcile against the uploaded journal."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload apply journal and provider flood state
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lord-god-vk-apply-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.APPLY_JOURNAL_DIR }}/result.json
+            ${{ env.APPLY_JOURNAL_DIR }}/preflight-summary.json
+            ${{ env.APPLY_JOURNAL_DIR }}/operations/*.json
+            ${{ env.VCM_DATA_DIR }}/vk/token_capabilities_flood_state.json
+          if-no-files-found: warn
+          retention-days: 90
+          overwrite: false
