@@ -86,9 +86,16 @@
       "publication_id": "lordchrist-rich-charnock-06",
       "ordinal": 6,
       "scheduled_on_moscow": "2026-11-10",
-      "status": "planned",
-      "article": null,
-      "cover": null
+      "status": "ready",
+      "article": {
+        "path": "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-06.json",
+        "git_blob_sha": "7e68b890805cba90780818bd734e7cb5210f8949"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-06-cover.jpg",
+        "git_blob_sha": "0232c0941610eef352ba821bb9ec2ebebb5d313e",
+        "media_id": "media-cover"
+      }
     },
     {
       "publication_id": "lordchrist-rich-charnock-07",

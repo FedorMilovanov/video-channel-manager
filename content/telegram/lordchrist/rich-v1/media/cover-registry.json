@@ -116,6 +116,28 @@
       "remote_ready": false,
       "acquisition_status": "operator_approved_local_only",
       "provider_upload_status": "not_uploaded"
+    },
+    {
+      "asset_id": "asset-lordchrist-charnock-06-cover",
+      "article_id": "lordchrist-rich-charnock-06",
+      "media_slot_id": "media-cover",
+      "kind": "photo",
+      "provenance": "AI-generated (Arena image generation, battle mode), symbolic cover; no portrait reference and no depicted person",
+      "prompt": "Cinematic 16:9 widescreen photograph, crisp macro-to-medium photorealism, dramatic golden chiaroscuro. Low diagonal close view stretching across the full horizontal width of a handcrafted antique lute carved from rich warm honey-amber flamed maple and dark ebony, resting horizontally in deep velvet darkness. Six taut golden strings run horizontally across the entire 16:9 frame from left to right over an intricately carved wooden sound-hole rosette; one string subtly vibrates as a brilliant warm beam of golden sunlight strikes across the strings, sending thousands of glowing golden dust motes shimmering in delicate harmonic waves into the dark air above the instrument. Ultra-sharp focus on wood grain, carved rosette, and glowing golden strings against deep dark shadow. Strictly no people, no hands, no sheet music, no text, no letters, no numbers, no watermark, no frame or border.",
+      "reference_source": null,
+      "reference_note": "Символический кадр без людей, рук, текста и религиозных знаков: лютня в луче света с волной золотых пылинок над натянутыми струнами — визуальный образ центрального сравнения Афанасия Великого и Чарнока о мироздании как благозвучном инструменте Незримого Музыканта.",
+      "local_path": "content/telegram/lordchrist/rich-v1/media/lordchrist-rich-charnock-06-cover.jpg",
+      "chosen_by": "operator",
+      "approved": true,
+      "approved_at": "2026-10-23",
+      "generated_size": "1672x941 (generation, 16:9 без кадрирования)",
+      "depicts": "Резная лютня из тёплого волнистого клёна и чёрного дерева с шестью натянутыми золотыми струнами и звучащей волной золотых пылинок в луче света",
+      "caption": null,
+      "expected_mime": "image/jpeg",
+      "content_checksum": "sha256:38a777a6d5f0752e69646eee9609250c3bfa21fafc3b5282be6f59a1f14ccc67",
+      "remote_ready": false,
+      "acquisition_status": "operator_approved_local_only",
+      "provider_upload_status": "not_uploaded"
     }
   ]
 }

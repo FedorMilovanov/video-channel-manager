@@ -26,11 +26,11 @@ def _queue():
     return load_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
 
 
-def test_queue_lists_thirteen_dated_articles_with_five_ready() -> None:
+def test_queue_lists_thirteen_dated_articles_with_six_ready() -> None:
     items = _queue()
     assert len(items) == 13
     assert [item.ordinal for item in items] == list(range(1, 14))
-    assert sum(1 for item in items if item.is_ready) == 5
+    assert sum(1 for item in items if item.is_ready) == 6
     assert items[0].publication_id == "lordchrist-rich-charnock-01"
     assert items[-1].publication_id == "lordchrist-rich-charnock-13"
     # The first article is the one documented off-slot exception (operator decision);
