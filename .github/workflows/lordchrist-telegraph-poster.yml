@@ -22,6 +22,13 @@ on:
         required: false
         default: ""
         type: string
+  schedule:
+    # GitHub cron fires in UTC. 09:00 UTC = 12:00 Moscow — the midday article
+    # slot, Tuesday and Friday (2 articles per week). The publisher resolves
+    # the due article from telegraph-v1/article-queue.json in Europe/Moscow
+    # and refuses duplicates via the state-branch ledger. Do NOT add a
+    # `timezone:` key: the expression is already the UTC form of 12:00 MSK.
+    - cron: "0 9 * * 2,5"
 
 permissions:
   actions: read
@@ -62,14 +69,30 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Run Telegraph publisher (${{ inputs.action }})
+      - name: Resolve scheduled article (schedule only)
+        if: github.event_name == 'schedule'
+        id: resolve
+        shell: bash
+        env:
+          PYTHONPATH: src
+          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_telegraph_publisher due \
+            --ledger "$LEDGER_PATH" > due.json
+          cat due.json
+          publication_id="$(python -c 'import json; print(json.load(open("due.json")).get("due") or "")')"
+          echo "publication_id=${publication_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Run Telegraph publisher
+        if: github.event_name != 'schedule' || steps.resolve.outputs.publication_id != ''
         id: run
         shell: bash
         env:
           PYTHONPATH: src
-          ACTION: ${{ inputs.action }}
-          PUBLICATION_ID: ${{ inputs.publication_id }}
-          CONFIRMATION: ${{ inputs.confirm }}
+          ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          CONFIRMATION: ${{ github.event_name == 'schedule' && format('PUBLISH:{0}', steps.resolve.outputs.publication_id) || inputs.confirm }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}

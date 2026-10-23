@@ -173,6 +173,58 @@ def test_quote_credit_is_plain_emdash_line_outside_blockquote() -> None:
     assert "© Цитаты Чарнока" in payload.compact_content_json
 
 
+def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from video_channel_manager.lordchrist_telegraph_publisher import due_item, main
+
+    moscow = ZoneInfo("Europe/Moscow")
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+
+    due, reason = due_item(items, {}, datetime(2026, 10, 27, 12, 0, tzinfo=moscow))
+    assert due is not None and due.publication_id == "lordchrist-telegraph-charnock-02"
+    assert reason == "due"
+
+    due, reason = due_item(items, {}, datetime(2026, 10, 28, 12, 0, tzinfo=moscow))
+    assert due is None and reason == "no_article_scheduled_today"
+
+    published = {"lordchrist-telegraph-charnock-02": {"telegram_message_id": 777}}
+    due, reason = due_item(items, published, datetime(2026, 10, 27, 12, 0, tzinfo=moscow))
+    assert due is None and reason == "already_published"
+
+    # CLI surface used by the scheduled workflow
+    import io
+    from contextlib import redirect_stdout
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "due",
+                "--repo-root",
+                str(ROOT),
+                "--ledger",
+                "state/nonexistent-ledger.json",
+                "--now",
+                "2026-10-30T12:00:00+03:00",
+            ]
+        )
+    assert rc == 0
+    out = json.loads(buf.getvalue())
+    assert out["due"] == "lordchrist-telegraph-charnock-03"
+
+
+def test_telegraph_workflow_has_midday_tue_fri_cron_without_timezone() -> None:
+    workflow = (ROOT / ".github/workflows/lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
+    assert '- cron: "0 9 * * 2,5"' in workflow  # 09:00 UTC = 12:00 Europe/Moscow
+    schedule_block = workflow.split("permissions:", 1)[0]
+    functional = [ln for ln in schedule_block.splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
+    assert not any("timezone:" in ln for ln in functional)
+    assert "lordchrist_telegraph_publisher due" in workflow
+    assert "steps.resolve.outputs.publication_id" in workflow
+
+
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)

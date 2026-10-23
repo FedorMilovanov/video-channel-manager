@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -861,6 +862,39 @@ def publish_channel_message(
     }
 
 
+MOSCOW = ZoneInfo("Europe/Moscow")
+
+
+def due_item(
+    items: Sequence[TelegraphQueueItem],
+    ledger_entries: Mapping[str, Any],
+    now: datetime | None = None,
+) -> tuple[TelegraphQueueItem | None, str]:
+    """Return the single scheduled article due today in Moscow, or (None, reason).
+
+    Scheduling contract: at most one article per day; the canary (01b) is
+    manual-only; an article already recorded in the ledger with a Telegram
+    message id is never published twice; a due article that is not ready
+    fails closed (LookupError) instead of silently skipping the slot.
+    """
+
+    today = (now or datetime.now(tz=MOSCOW)).astimezone(MOSCOW).date()
+    matches = [item for item in items if item.scheduled_on == today]
+    if not matches:
+        return None, "no_article_scheduled_today"
+    if len(matches) > 1:
+        raise ValueError(f"more than one Telegraph article is scheduled for {today.isoformat()}")
+    item = matches[0]
+    if item.is_canary:
+        return None, "canary_is_manual_only"
+    entry = ledger_entries.get(item.publication_id) or {}
+    if isinstance(entry, Mapping) and entry.get("telegram_message_id"):
+        return None, "already_published"
+    if not item.is_ready:
+        raise LookupError(f"Telegraph article {item.publication_id} is not ready ({item.status})")
+    return item, "due"
+
+
 def _find_item(items: Sequence[TelegraphQueueItem], publication_id: str) -> TelegraphQueueItem:
     for item in items:
         if item.publication_id == publication_id:
@@ -871,6 +905,12 @@ def _find_item(items: Sequence[TelegraphQueueItem], publication_id: str) -> Tele
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m video_channel_manager.lordchrist_telegraph_publisher")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p_due = sub.add_parser("due", help="Resolve the article scheduled for today (Europe/Moscow)")
+    p_due.add_argument("--repo-root", type=Path, default=Path("."))
+    p_due.add_argument("--queue", type=Path, default=DEFAULT_QUEUE_PATH)
+    p_due.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER_PATH)
+    p_due.add_argument("--now", help="ISO datetime override (testing)")
 
     p_init = sub.add_parser("init-account", help="Create a persistent Telegraph account locally and print secret value")
     p_init.add_argument("--short-name", default=DEFAULT_SHORT_NAME)
@@ -893,6 +933,29 @@ def main(argv: Sequence[str] | None = None) -> int:
             p.add_argument("--outcome", type=Path)
 
     args = parser.parse_args(argv)
+
+    if args.command == "due":
+        due_items = load_telegraph_queue(args.repo_root / args.queue, args.repo_root)
+        due_ledger_path = args.ledger if args.ledger.is_absolute() else (args.repo_root / args.ledger)
+        due_ledger = load_ledger(due_ledger_path)
+        due_now = datetime.fromisoformat(args.now) if args.now else None
+        try:
+            due, reason = due_item(due_items, due_ledger.get("entries") or {}, due_now)
+        except LookupError as exc:
+            # A due-but-unready article must fail the scheduled run loudly.
+            print(json.dumps({"due": None, "blocked": True, "reason": str(exc)}, ensure_ascii=False))
+            return 2
+        print(
+            json.dumps(
+                {
+                    "due": due.publication_id if due else None,
+                    "scheduled_on_moscow": due.scheduled_on.isoformat() if due and due.scheduled_on else None,
+                    "reason": reason,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
 
     if args.command == "init-account":
         transport = HttpxLiveTransport()
