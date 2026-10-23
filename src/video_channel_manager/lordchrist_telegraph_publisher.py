@@ -653,6 +653,8 @@ def load_ledger(path: Path) -> dict[str, Any]:
             "entries": {},
         }
     data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"Ожидался JSON-объект в ledger: {path}")
     if not isinstance(data.get("entries"), dict):
         data["entries"] = {}
     return data
