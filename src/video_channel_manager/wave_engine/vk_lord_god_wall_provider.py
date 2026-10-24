@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
+from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.platforms.vk.wall import VkWallRecoveryRequired, VkWallWriter
@@ -177,6 +178,44 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
 
 
 class LordGodWallWriter(VkWallWriter):
+    """Wall writer bound to the Lord God community access key.
+
+    The credential is a community key (``token_type == "community"``), not a
+    user token: it carries community permissions (``wall`` …) and can never
+    hold the user ``video`` scope the base writer demands before every call.
+    For community tokens the verified community permission set is therefore
+    authoritative — ``wall`` gates wall reads/writes, while video operations
+    still fail deterministically because ``video`` is not in that set.
+    """
+
+    def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
+        token = self.token_store.load_token(self.account_alias)
+        if token.token_type != "community":
+            return super().assert_token_scopes(*required_scopes)
+        if token.is_expired():
+            raise VkWriteError(
+                "VK community access key is expired. Import a fresh community key with verified permissions.",
+                method="token",
+                code=5,
+                attempts=0,
+            )
+        missing = [scope for scope in required_scopes if scope not in token.scopes]
+        if missing:
+            raise VkWriteError(
+                "Stored VK community key does not verify required permission(s): " + ", ".join(missing),
+                method="token",
+                code=7,
+                attempts=0,
+            )
+        return token
+
+    def _token_value(self) -> str:
+        token = self.token_store.load_token(self.account_alias)
+        if token.token_type != "community":
+            return super()._token_value()
+        self.assert_token_scopes()
+        return token.access_token
+
     def verify_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
         if wall.content_kind != "video" or wall.video_owner_id is None or wall.video_id is None:
             raise LordGodWallError("verify_video requires a video operation")
