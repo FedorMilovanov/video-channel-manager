@@ -26,6 +26,9 @@ def test_group_key_probe_is_manual_dispatch_only_and_pinned() -> None:
     assert "pull_request:" not in text
     assert 'default: "235216998"' in text
     assert "permissions:\n  contents: read" in text
+    # The community key lives in this GitHub Environment; without the
+    # declaration the secret resolves to empty in the job.
+    assert "environment: the_legendary_poet_API" in text
 
 
 def test_group_key_probe_env_expressions_are_quoted_yaml_scalars() -> None:
