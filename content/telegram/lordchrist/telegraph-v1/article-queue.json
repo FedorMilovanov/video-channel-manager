@@ -64,7 +64,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-02.json",
-        "git_blob_sha": "96887df73fba5d2af14cf77fe325715c5d4f8e31"
+        "git_blob_sha": "534e401c865ce8cbbec1a6f41d75327f91c3ea35"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-02-cover.jpg",
@@ -110,7 +110,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-03.json",
-        "git_blob_sha": "e5af6cb814cede062c49d88613d80a323929f04a"
+        "git_blob_sha": "55e1a5c204ef11300dee2f32861dd8a2b7e86dde"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-03-cover.jpg",
@@ -152,7 +152,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-04.json",
-        "git_blob_sha": "e41d9dc7202ea5dc1260850a03a61658e5403997"
+        "git_blob_sha": "de0cb104a3354ea3eedb52c1beaec88518954a75"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-04-cover.jpg",
@@ -271,6 +271,56 @@
           }
         ],
         "cta_prefix": "Полная шестая глава цикла в книжном ридере:",
+        "cta_link_label": "Читать главу целиком"
+      }
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-07",
+      "ordinal": 7,
+      "scheduled_on_moscow": "2026-11-13",
+      "is_canary": false,
+      "status": "ready",
+      "article": {
+        "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-07.json",
+        "git_blob_sha": "4154419166c41772de5c567d92ab1c1943cef494"
+      },
+      "cover": {
+        "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-07-cover.jpg",
+        "git_blob_sha": "c250cc904fee51fe00471620a638973543980936",
+        "media_id": "media-cover"
+      },
+      "channel_post": {
+        "headline": "КТО ЗАВОДИТ ЧАСЫ МИРА: ПОРЯДОК, КОТОРЫЙ НЕ СЛОЖИЛСЯ САМ",
+        "lead_paragraphs": [
+          "Солнце не опаздывало ни разу за пять тысяч лет, зерно не ошибается формой, а виноград и дичок на одной почве дают разный вкус.",
+          "В седьмой главе цикла Стивен Чарнок завершает второй довод от творения — регулярность, постоянство и разнообразие мира — и спрашивает, можно ли всё это честно назвать случаем или просто «природой»."
+        ],
+        "quote_text": "С таким же успехом можно представить лютню, звучащую своими струнами без руки художника; город, хорошо управляемый без градоправителя; войско, держащее свои позиции без полководца, — как вообразить столь точный порядок без Упорядочивающего.",
+        "quote_attribution": "Стивен Чарнок, «О бытии Бога»",
+        "expandable_header": "Главные узлы главы (нажмите, чтобы развернуть):",
+        "expandable_points": [
+          {
+            "lead": "Регулярность.",
+            "body": "Солнце и луна не сбиваются с дорог, сок поднимается по корню в назначенный срок, и один закон писан для Индии и Европы."
+          },
+          {
+            "lead": "Постоянство.",
+            "body": "Люди меняют законы и нравы, тварь не меняет ничего: её устав держится, как завет, которого она не заключала."
+          },
+          {
+            "lead": "Разнообразие.",
+            "body": "У винограда и дичка одна почва и одно солнце — а вкус разный: различие при равенстве условий требует Причины."
+          },
+          {
+            "lead": "Не случаем.",
+            "body": "Единообразие не бывает рождением случая: части часов не сходятся сами в порядок и движение."
+          },
+          {
+            "lead": "Не «природой» вообще.",
+            "body": "Если природа разумна — это Бог под другим именем; если нет — она ничего не объясняет."
+          }
+        ],
+        "cta_prefix": "Полная глава с 22 новыми цитатами Чарнока и стихами Писания — в книжном режиме:",
         "cta_link_label": "Читать главу целиком"
       }
     }

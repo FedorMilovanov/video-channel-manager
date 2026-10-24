@@ -9,6 +9,7 @@ import pytest
 from video_channel_manager.lordchrist_telegraph_publisher import (
     DEFAULT_QUEUE_PATH,
     JPEG_MAGIC,
+    _apply_telegraph_layout_rules,
     build_telegraph_payload,
     ensure_telegraph_token,
     load_telegraph_queue,
@@ -73,9 +74,9 @@ class FakeTransport:
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_six_verified_items() -> None:
+def test_telegraph_queue_loads_all_seven_verified_items() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 6
+    assert len(items) == 7
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
@@ -223,6 +224,86 @@ def test_telegraph_workflow_has_midday_tue_fri_cron_without_timezone() -> None:
     assert not any("timezone:" in ln for ln in functional)
     assert "lordchrist_telegraph_publisher due" in workflow
     assert "steps.resolve.outputs.publication_id" in workflow
+
+
+def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    item02 = next(i for i in items if i.publication_id.endswith("-02"))
+    payload = build_telegraph_payload(ROOT, item02, media_base_url=MEDIA_BASE)
+    nodes = payload.nodes
+
+    blockquotes = [n for n in nodes if isinstance(n, dict) and n.get("tag") == "blockquote"]
+    doc = json.loads((ROOT / item02.article_path).read_text(encoding="utf-8"))  # type: ignore[arg-type]
+    raw_quotes = sum(1 for b in doc["blocks"] if b["type"] == "blockquote")
+    # Article 02 clusters are merged editorially in the article itself, so the
+    # publisher receives no back-to-back quotes and must not invent merges.
+    assert len(blockquotes) == raw_quotes, "article-level merged quotes must pass through unchanged"
+
+    # exactly one credit line per merged quote group
+    def _is_credit(n: object) -> bool:
+        if not isinstance(n, dict) or n.get("tag") != "p":
+            return False
+        ch = n.get("children")
+        return (
+            isinstance(ch, list)
+            and len(ch) == 1
+            and isinstance(ch[0], dict)
+            and ch[0].get("tag") == "em"
+            and "Стивен Чарнок" in json.dumps(ch[0], ensure_ascii=False)
+        )
+
+    credits = [n for n in nodes if _is_credit(n)]
+    assert len(credits) == len(blockquotes) - 1  # minus the Scripture epigraph
+    assert "(беседа I)" in json.dumps(credits[0], ensure_ascii=False)
+    # Scripture epigraph credit stays bare — no chapter tag
+    assert "— Мал. 1:11" in payload.compact_content_json
+    assert "Мал. 1:11 (беседа" not in payload.compact_content_json
+
+    # Heading air: a spacer precedes headings after prose, but never doubles
+    # up right after a quotation block (credit paragraph).
+    for pos, node in enumerate(nodes):
+        if isinstance(node, dict) and node.get("tag") in {"h3", "h4"} and pos >= 2:
+            prev = nodes[pos - 1]
+            before_prev = nodes[pos - 2]
+            is_spacer = isinstance(prev, dict) and prev.get("tag") == "p" and prev.get("children") == [{"tag": "br"}]
+            if is_spacer:
+                is_credit = (
+                    isinstance(before_prev, dict)
+                    and before_prev.get("tag") == "p"
+                    and isinstance(before_prev.get("children"), list)
+                    and len(before_prev["children"]) == 1
+                    and isinstance(before_prev["children"][0], dict)
+                    and before_prev["children"][0].get("tag") == "em"
+                )
+                assert not is_credit, "no double air after a quote"
+
+    # Channel digest: blank line between points, bold leads preserved
+    assert item02.channel_post is not None
+    post = render_channel_post(item02.channel_post, "https://telegra.ph/Test-Page-10-23")
+    digest = post.html_text.split("<blockquote expandable>", 1)[1]
+    assert "\n\n• <b>" in digest
+
+
+def test_layout_rules_merge_back_to_back_quotes_with_trailing_ellipsis() -> None:
+    credit = {"tag": "p", "children": [{"tag": "em", "children": ["— Стивен Чарнок, «О бытии Бога»"]}]}
+    nodes: list[dict[str, Any] | str] = [
+        {"tag": "blockquote", "children": ["Первый фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "blockquote", "children": ["Второй фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "p", "children": ["Авторский абзац."]},
+    ]
+    out = _apply_telegraph_layout_rules(nodes)
+    quotes = [n for n in out if isinstance(n, dict) and n.get("tag") == "blockquote"]
+    assert len(quotes) == 1, "back-to-back quotes must merge into one block"
+    merged_children = quotes[0].get("children") or []
+    assert " …" in json.dumps(merged_children, ensure_ascii=False), "fragments join with a trailing ellipsis"
+    credit_texts = [
+        n["children"][0]["children"][0]
+        for n in out
+        if isinstance(n, dict) and n.get("tag") == "p" and n.get("children") and isinstance(n["children"][0], dict)
+    ]
+    assert credit_texts == ["— Стивен Чарнок, «О бытии Бога» (беседа I)"], "one credit, chapter tag appended"
 
 
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:

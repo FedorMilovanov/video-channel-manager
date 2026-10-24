@@ -214,6 +214,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     # L2: подпись — ПОСЛЕДНЯЯ строка внутри блока цитаты (`> *— …*`).
     # Отдельный абзац под цитатой даёт блочный отступ редактора и лишний воздух.
     quotes, i = 0, 0
+    quote_lengths: list[int] = []
     seen_quotes: dict[str, int] = {}
     while i < len(stripped):
         if stripped[i].startswith(">"):
@@ -270,6 +271,7 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             if ">" in quote_text:
                 rep.error(f"строка {start + 1}: вложенная цитата (второй уровень `>`) запрещена")
 
+            quote_lengths.append(len(quote_text))
             # воздух перед цитатой: короткая связка в том же блоке — исключение
             connector_in_block = start > 0 and stripped[start - 1].strip() and not stripped[start - 1].startswith(">")
             has_blank_before = start > 0 and not stripped[start - 1].strip()
@@ -285,6 +287,18 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         else:
             i += 1
     rep.stats["quotes"] = quotes
+
+    # «Мелкоцитатосып» (решение оператора 2026-10-24): статья, у которой больше
+    # половины цитат — обрывки короче 250 знаков, читается крошкой, а не мясом.
+    # Норма: цитата 400–1200 знаков; соседние фрагменты одного пассажа склеиваются
+    # в одну большую цитату, мелкие остаются только как афоризм-удар.
+    if len(quote_lengths) >= 20:
+        small = sum(1 for length in quote_lengths if length < 250)
+        if small / len(quote_lengths) > 0.55:
+            rep.warn(
+                f"мелкоцитатосып: {small} из {len(quote_lengths)} цитат короче 250 знаков — "
+                "укрупните: склейте соседние фрагменты одного пассажа в цитаты по 400–1200 знаков"
+            )
 
     # ---------- 5б. жирный и курсив ----------
     # Решение оператора 2026-10-22: в больших статьях жирный и курсив нужны —
