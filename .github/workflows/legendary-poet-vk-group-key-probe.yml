@@ -1,7 +1,8 @@
 name: Legendary Poet VK group key probe
 
 # Read-only verification of the community access key stored in the
-# THE_LEGENDARY_POET_GROUP_VK secret. Prints only safe metadata
+# THE_LEGENDARY_POET_GROUP_VK secret (GitHub Environment
+# `the_legendary_poet_API`). Prints only safe metadata
 # (permission names, group id/name, API error codes). The token value
 # is never echoed. No provider writes are performed.
 
@@ -24,6 +25,7 @@ concurrency:
 jobs:
   probe:
     name: "Probe community key (read-only)"
+    environment: the_legendary_poet_API
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
