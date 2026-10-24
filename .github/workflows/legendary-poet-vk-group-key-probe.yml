@@ -1,16 +1,27 @@
-name: Legendary Poet VK group key probe
+name: VK community key probe
 
-# Read-only verification of the community access key stored in the
-# THE_LEGENDARY_POET_GROUP_VK secret (GitHub Environment
-# `the_legendary_poet_API`). Prints only safe metadata
-# (permission names, group id/name, API error codes). The token value
-# is never echoed. No provider writes are performed.
+# Read-only verification of a VK community access key stored as a GitHub
+# Environment secret. Targets:
+#   - legendary-poet: secret THE_LEGENDARY_POET_GROUP_VK in Environment
+#     `the_legendary_poet_API`, community 235216998.
+#   - lord-god: secret LORD_SECRET in Environment `The_Lord_God_VK`,
+#     community 60805374.
+# Prints only safe metadata (permission names, group id/name, API error
+# codes). The token value is never echoed. No provider writes are performed.
 
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: "Which community key to probe"
+        required: true
+        default: "legendary-poet"
+        type: choice
+        options:
+          - legendary-poet
+          - lord-god
       group_id:
-        description: "VK community id to check (Legendary Poet)"
+        description: "VK community id (legendary-poet target; lord-god is fixed to 60805374)"
         required: true
         default: "235216998"
         type: string
@@ -25,12 +36,13 @@ concurrency:
 jobs:
   probe:
     name: "Probe community key (read-only)"
-    environment: the_legendary_poet_API
+    environment: ${{ inputs.target == 'lord-god' && 'The_Lord_God_VK' || 'the_legendary_poet_API' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
-      VK_GROUP_TOKEN: "${{ secrets.THE_LEGENDARY_POET_GROUP_VK }}"
-      GROUP_ID: "${{ inputs.group_id }}"
+      VK_GROUP_TOKEN: "${{ inputs.target == 'lord-god' && secrets.LORD_SECRET || secrets.THE_LEGENDARY_POET_GROUP_VK }}"
+      GROUP_ID: "${{ inputs.target == 'lord-god' && '60805374' || inputs.group_id }}"
+      TARGET: "${{ inputs.target }}"
     steps:
       - name: "Check out repository"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,8 +54,10 @@ jobs:
 
           token = os.environ.get("VK_GROUP_TOKEN", "")
           group_id = os.environ.get("GROUP_ID", "").strip()
+          target = os.environ.get("TARGET", "")
+          print(f"RESULT: target={target}")
           if not token:
-              print("RESULT: secret THE_LEGENDARY_POET_GROUP_VK is EMPTY in this context")
+              print("RESULT: group key secret is EMPTY in this context")
               sys.exit(2)
           print("RESULT: secret is present (value hidden)")
 
