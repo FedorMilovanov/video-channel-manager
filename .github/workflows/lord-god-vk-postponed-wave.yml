@@ -397,12 +397,12 @@ jobs:
           if manifest.get("enable_provider_writes") is not True:
               raise SystemExit("handoff was not prepared for the guarded provider-write apply")
 
-          source = WaveSourceEvidence.model_validate(
-              json.loads((handoff / "06-source.json").read_text(encoding="utf-8"))
+          source = WaveSourceEvidence.model_validate_json(
+              (handoff / "06-source.json").read_text(encoding="utf-8"), strict=True
           )
-          plan = WavePlan.model_validate(json.loads((handoff / "07-plan.json").read_text(encoding="utf-8")))
-          intent = WaveApplyIntent.model_validate(
-              json.loads((handoff / "08-apply-intent.json").read_text(encoding="utf-8"))
+          plan = WavePlan.model_validate_json((handoff / "07-plan.json").read_text(encoding="utf-8"), strict=True)
+          intent = WaveApplyIntent.model_validate_json(
+              (handoff / "08-apply-intent.json").read_text(encoding="utf-8"), strict=True
           )
           source.verify_artifacts(root)
           intent.assert_matches(plan, source)
@@ -614,12 +614,12 @@ jobs:
           if manifest.get("enable_provider_writes") is not True:
               raise SystemExit("downloaded handoff does not authorize the guarded apply intent")
 
-          source = WaveSourceEvidence.model_validate(
-              json.loads((handoff / "06-source.json").read_text(encoding="utf-8"))
+          source = WaveSourceEvidence.model_validate_json(
+              (handoff / "06-source.json").read_text(encoding="utf-8"), strict=True
           )
-          plan = WavePlan.model_validate(json.loads((handoff / "07-plan.json").read_text(encoding="utf-8")))
-          intent = WaveApplyIntent.model_validate(
-              json.loads((handoff / "08-apply-intent.json").read_text(encoding="utf-8"))
+          plan = WavePlan.model_validate_json((handoff / "07-plan.json").read_text(encoding="utf-8"), strict=True)
+          intent = WaveApplyIntent.model_validate_json(
+              (handoff / "08-apply-intent.json").read_text(encoding="utf-8"), strict=True
           )
           source.verify_artifacts(root)
           intent.assert_matches(plan, source)
