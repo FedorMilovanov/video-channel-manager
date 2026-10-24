@@ -922,8 +922,18 @@ def publish_channel_message(
     msg = sent["result"]
     msg_id = int(msg["message_id"])
 
-    # If Telegram's Instant View crawler hadn't attached link preview on initial send, refresh once after warm delay
-    if not msg.get("link_preview_options") and preview_refresh_delay_seconds > 0:
+    # Telegram decides the rendered preview size when its crawler attaches the
+    # preview; a just-created page can first come back with a small preview
+    # (readers then have to expand it by hand). The returned message echoes the
+    # link preview options Telegram actually applied, so refresh the post with
+    # an edit until large media is confirmed or the attempts run out.
+    attempts = 0
+    while (
+        not (msg.get("link_preview_options") or {}).get("prefer_large_media")
+        and attempts < 2
+        and preview_refresh_delay_seconds > 0
+    ):
+        attempts += 1
         time.sleep(preview_refresh_delay_seconds)
         refreshed = transport.post_json(
             f"{base}/editMessageText",
@@ -942,6 +952,7 @@ def publish_channel_message(
         "chat_id": expected_chat_id,
         "message_id": msg_id,
         "telegraph_url": rendered_post.telegraph_url,
+        "link_preview_large_media": bool((msg.get("link_preview_options") or {}).get("prefer_large_media")),
     }
 
 
@@ -1157,6 +1168,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     entry_record["telegram_chat_id"] = tg_result["chat_id"]
     entry_record["telegram_message_id"] = tg_result["message_id"]
+    entry_record["telegram_link_preview_large_media"] = tg_result["link_preview_large_media"]
     entry_record["telegram_published_at_utc"] = datetime.now(UTC).isoformat()
     ledger["entries"][item.publication_id] = entry_record
     save_ledger(ledger_path, ledger)

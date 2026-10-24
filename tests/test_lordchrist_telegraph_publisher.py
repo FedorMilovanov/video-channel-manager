@@ -63,7 +63,10 @@ class FakeTransport:
                 "ok": True,
                 "result": {
                     "message_id": 4421,
-                    "link_preview_options": {"url": copied["link_preview_options"]["url"]},
+                    "link_preview_options": {
+                        "url": copied["link_preview_options"]["url"],
+                        "prefer_large_media": True,
+                    },
                 },
             }
         raise AssertionError(f"Unexpected JSON URL: {url}")
@@ -74,9 +77,9 @@ class FakeTransport:
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_ten_verified_items() -> None:
+def test_telegraph_queue_loads_all_eleven_verified_items() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 10
+    assert len(items) == 11
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
@@ -134,7 +137,13 @@ def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
         "chat_id": -1001295216957,
         "message_id": 4421,
         "telegraph_url": "https://telegra.ph/Charnock-Page-1",
+        "link_preview_large_media": True,
     }
+    # The initial send came back without a confirmed large-media preview, so
+    # exactly one refresh edit must follow to force the enlarged preview.
+    edit_calls = [p for u, p in fake.json_calls if u.endswith("/editMessageText")]
+    assert len(edit_calls) == 1
+    assert edit_calls[0]["link_preview_options"]["prefer_large_media"] is True
     send_payload = next(p for u, p in fake.json_calls if u.endswith("/sendMessage"))
     assert send_payload["link_preview_options"] == {
         "is_disabled": False,
