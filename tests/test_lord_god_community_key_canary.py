@@ -93,3 +93,17 @@ def test_canary_workflow_is_manual_main_only_environment_gated() -> None:
     assert "--confirm CANARY-LORD-GOD-COMMUNITY-KEY" in text
     assert "community-key-login" in text
     assert "community-key-capabilities" in text
+
+
+def test_canary_workflow_resolves_publish_date_without_unbound_shell_vars() -> None:
+    # Regression (canary run #1): the date step appended PUBLISH_DATE to
+    # $GITHUB_ENV and then echoed $PUBLISH_DATE_HUMAN in the same step;
+    # $GITHUB_ENV only applies to later steps, so `set -u` killed the job
+    # before any VK call. Python must print the date itself and append to
+    # $GITHUB_ENV from inside the heredoc.
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'os.environ["GITHUB_ENV"]' in text
+    assert "PUBLISH_DATE_HUMAN" not in text
+    assert 'echo "Canary publish date:' not in text
+    assert 'print(f"Canary publish date:' in text

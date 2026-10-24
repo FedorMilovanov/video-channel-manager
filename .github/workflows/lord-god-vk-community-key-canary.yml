@@ -74,16 +74,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY' >> "$GITHUB_ENV"
+          python - <<'PY'
+          import os
           from datetime import datetime, time, timedelta
           from zoneinfo import ZoneInfo
 
           tz = ZoneInfo("Europe/Moscow")
           target = datetime.combine(datetime.now(tz).date() + timedelta(days=1), time(12, 0), tzinfo=tz)
-          print(f"PUBLISH_DATE={int(target.timestamp())}")
-          print(f"PUBLISH_DATE_HUMAN={target.isoformat()}")
+          epoch = int(target.timestamp())
+          print(f"Canary publish date: {target.isoformat()} ({epoch})")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"PUBLISH_DATE={epoch}\n")
           PY
-          echo "Canary publish date: $PUBLISH_DATE_HUMAN ($PUBLISH_DATE)"
 
       - name: "Import the community key into ephemeral storage"
         shell: bash
