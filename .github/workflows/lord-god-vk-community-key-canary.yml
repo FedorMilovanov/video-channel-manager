@@ -1,0 +1,129 @@
+name: Lord God VK community key canary
+
+# One postponed text post through the reviewed Lord God wall adapter
+# (policy vk-lord-god-postponed-wall-v4) using the community access key of
+# community 60805374 from the GitHub Environment `The_Lord_God_VK`.
+# Manual dispatch only; requires the exact confirmation string. Proves the
+# community key can create a postponed post before the full wave is applied.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type CANARY-LORD-GOD-COMMUNITY-KEY to run the one-post canary"
+        required: true
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lord-god-vk-community-key-canary
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+  VCM_DATA_DIR: .vcm-vk-data
+  VCM_VK_SHARED_ENV_FILE: .vcm-no-shared-vk.env
+  VK_ACCOUNT: vk-lord-god-community-key
+  VK_COMMUNITY_ID: "60805374"
+
+jobs:
+  canary:
+    name: "One postponed text post via community key"
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1
+    environment: The_Lord_God_VK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: "Check out reviewed code from main"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: "Set up Python"
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: "Install project runtime"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip check
+
+      - name: "Validate exact canary confirmation"
+        shell: bash
+        env:
+          REQUESTED_CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [[ "$REQUESTED_CONFIRM" != "CANARY-LORD-GOD-COMMUNITY-KEY" ]]; then
+            echo "confirm must be exactly CANARY-LORD-GOD-COMMUNITY-KEY" >&2
+            exit 2
+          fi
+
+      - name: "Resolve tomorrow 12:00 Europe/Moscow as publish date"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          from datetime import datetime, time, timedelta
+          from zoneinfo import ZoneInfo
+
+          tz = ZoneInfo("Europe/Moscow")
+          target = datetime.combine(datetime.now(tz).date() + timedelta(days=1), time(12, 0), tzinfo=tz)
+          print(f"PUBLISH_DATE={int(target.timestamp())}")
+          print(f"PUBLISH_DATE_HUMAN={target.isoformat()}")
+          PY
+          echo "Canary publish date: $PUBLISH_DATE_HUMAN ($PUBLISH_DATE)"
+
+      - name: "Import the community key into ephemeral storage"
+        shell: bash
+        env:
+          VCM_VK_ACCESS_TOKEN: ${{ secrets.LORD_SECRET }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VCM_VK_ACCESS_TOKEN" ]]; then
+            echo "Environment secret LORD_SECRET is missing or empty." >&2
+            exit 2
+          fi
+          video-manager vk community-key-login --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID"
+
+      - name: "Require the community key wall capability"
+        shell: bash
+        run: |
+          set -euo pipefail
+          capabilities_file="$RUNNER_TEMP/vk-capabilities.txt"
+          video-manager vk community-key-capabilities --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID" | tee "$capabilities_file"
+          CAPABILITIES_FILE="$capabilities_file" python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          text = Path(os.environ["CAPABILITIES_FILE"]).read_text(encoding="utf-8")
+          match = re.search(r"enabled=([A-Za-z,]+)", text)
+          if match is None:
+              raise SystemExit("community-key-capabilities output did not contain enabled permissions")
+          permissions = tuple(name for name in match.group(1).split(",") if name)
+          if "wall" not in permissions:
+              raise SystemExit(f"VK community key must include the wall permission; got {permissions!r}")
+          if "community=60805374" not in text:
+              raise SystemExit("community-key-capabilities output is not bound to community 60805374")
+          PY
+
+      - name: "Schedule the single canary postponed post"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/canary_lord_god_community_key.py \
+            --publish-date "$PUBLISH_DATE" \
+            --account "$VK_ACCOUNT" \
+            --confirm CANARY-LORD-GOD-COMMUNITY-KEY

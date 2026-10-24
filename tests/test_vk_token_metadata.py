@@ -158,3 +158,59 @@ def test_vk_login_persists_provider_verified_permission_metadata(
     assert token.user_id == 42
     assert token.permission_mask == _FULL_MASK
     assert token.scopes == ["video", "wall", "groups"]
+
+
+def test_vk_client_reads_community_token_permissions(tmp_path: Path) -> None:
+    store = VkTokenStore(tmp_path)
+    store.save_token("community-key", VkAccessToken(access_token="secret"))
+    payload = {
+        "response": {
+            "mask": 134623237,
+            "permissions": [
+                {"name": "photos", "setting": 1},
+                {"name": "wall", "setting": 1},
+                {"name": "manage", "setting": 1},
+                {"name": "video", "setting": 0},
+            ],
+        }
+    }
+
+    client = VkApiClient(
+        token_store=store,
+        account_alias="community-key",
+        http_client=httpx.Client(transport=httpx.MockTransport(lambda _request: httpx.Response(200, json=payload))),
+        api_base_url="https://example.test/method",
+    )
+
+    mask, enabled = client.get_community_token_permissions()
+
+    assert mask == 134623237
+    assert enabled == ("photos", "wall", "manage")
+
+
+def test_vk_client_rejects_invalid_community_token_permissions(tmp_path: Path) -> None:
+    store = VkTokenStore(tmp_path)
+    store.save_token("community-key", VkAccessToken(access_token="secret"))
+    payload = {"response": {"mask": "134623237", "permissions": []}}
+
+    client = VkApiClient(
+        token_store=store,
+        account_alias="community-key",
+        http_client=httpx.Client(transport=httpx.MockTransport(lambda _request: httpx.Response(200, json=payload))),
+        api_base_url="https://example.test/method",
+    )
+
+    with pytest.raises(VkApiError, match="invalid permission set"):
+        client.get_community_token_permissions()
+
+
+def test_community_key_commands_reject_non_positive_community_before_any_lookup() -> None:
+    import typer
+
+    from video_channel_manager.cli.vk import community_key_capabilities, community_key_login
+
+    for community in (0, -60805374):
+        with pytest.raises(typer.BadParameter, match="community"):
+            community_key_login(community=community, account="vk-lord-god-community-key")
+        with pytest.raises(typer.BadParameter, match="community"):
+            community_key_capabilities(community=community, account="vk-lord-god-community-key")
