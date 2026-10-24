@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "entries": {
+    "lordchrist-telegraph-charnock-01b": {
+      "publication_id": "lordchrist-telegraph-charnock-01b",
+      "title": "Подсвечник в тине и жертва Авеля: почему Каин верил в бытие Бога — и всё равно погиб",
+      "telegraph_url": "https://telegra.ph/Podsvechnik-v-tine-i-zhertva-Avelya-pochemu-Kain-veril-v-bytie-Boga--i-vsyo-ravno-pogib-10-24",
+      "telegraph_path": "Podsvechnik-v-tine-i-zhertva-Avelya-pochemu-Kain-veril-v-bytie-Boga--i-vsyo-ravno-pogib-10-24",
+      "article_sha256": "sha256:3e890fd8c50e35eff2c996387f7cbf375986d79ce5fa528803545fe6de9ded84",
+      "cover_sha256": "sha256:7725f5004a8b3fc8533c63eb286b4fcc95ebced8c530687b2155eaa87991e12a",
+      "telegraph_updated_at_utc": "2026-10-24T10:03:36.414485+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1582,
+      "telegram_published_at_utc": "2026-10-24T10:03:37.381397+00:00"
+    }
+  }
+}
