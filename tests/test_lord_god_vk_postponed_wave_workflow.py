@@ -207,3 +207,19 @@ def test_prepare_supports_the_community_key_text_only_lane() -> None:
     assert "AUDIT_JSON" not in text_only_step
     handoff_step = prepare.split("Prepare the immutable provider-inert text-only handoff", 1)[1].split("- name:", 1)[0]
     assert "--videos" not in handoff_step
+
+
+def test_workflow_repository_file_paths_exist() -> None:
+    # Regression (prepare run failure): env pointed at
+    # successor-translation-ledger.json / successor-integrity-amendments.json
+    # while the committed files carry the -v1 suffix. Every committed-content
+    # path referenced by the workflow env must exist in the repository;
+    # state-checkout paths (.state/...) and runtime dirs are excluded.
+    import re
+
+    text = _workflow_text()
+    referenced = sorted(set(re.findall(r"(?m)^  [A-Z0-9_]+: (content/\S+)$", text)))
+
+    assert referenced, "expected the workflow to reference committed content files"
+    for relative in referenced:
+        assert (ROOT / relative).is_file(), f"workflow references missing repository file: {relative}"
