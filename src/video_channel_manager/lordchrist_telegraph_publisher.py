@@ -466,6 +466,7 @@ def build_telegraph_payload(
                 # never carrying the quote's vertical bar (reader request).
                 nodes.append({"tag": "p", "children": [{"tag": "em", "children": [credit_plain]}]})
 
+    nodes = _apply_telegraph_layout_rules(nodes)
     _validate_telegraph_nodes(nodes)
     compact_json = json.dumps(nodes, ensure_ascii=False, separators=(",", ":"))
     utf8_len = len(compact_json.encode("utf-8"))
@@ -487,6 +488,84 @@ def build_telegraph_payload(
         article_sha256=_sha256_bytes(art_bytes),
         cover_sha256=_sha256_bytes(cov_bytes),
     )
+
+
+def _is_credit_node(node: Any) -> bool:
+    """A credit paragraph is the em-dash attribution line after a quote."""
+    if not isinstance(node, dict) or node.get("tag") != "p":
+        return False
+    children = node.get("children") or []
+    if len(children) != 1 or not isinstance(children[0], dict) or children[0].get("tag") != "em":
+        return False
+    inner = children[0].get("children") or []
+    return bool(inner) and isinstance(inner[0], str) and inner[0].strip().startswith("—")
+
+
+def _apply_telegraph_layout_rules(nodes: list[dict[str, Any] | str]) -> list[dict[str, Any] | str]:
+    """Operator layout rules for Telegraph pages (2026-10-24).
+
+    1. Quotations that stand back-to-back merge into ONE blockquote; the
+       fragments are joined by a trailing ellipsis on the previous fragment
+       (never an ellipsis on its own line) and the credit is printed once.
+    2. A Charnock credit carries the compact lowercase tag ``(беседа I)``;
+       Scripture credits stay bare. The tag is appended here so article
+       sources keep their reviewed form.
+    3. A heading gets an air spacer before it, except when the previous
+       block is a quotation (quote + credit already carry their own gap,
+       a second spacer would read as a double void).
+    """
+
+    def with_chapter_tag(credit: dict[str, Any]) -> dict[str, Any]:
+        em = credit["children"][0]
+        text = str(em["children"][0])
+        if "Чарнок" in text and "(беседа" not in text:
+            em["children"][0] = f"{text} (беседа I)"
+        return credit
+
+    merged: list[dict[str, Any] | str] = []
+    idx = 0
+    while idx < len(nodes):
+        node = nodes[idx]
+        if isinstance(node, dict) and node.get("tag") == "blockquote":
+            children: list[Any] = list(node.get("children") or [])
+            credit: dict[str, Any] | None = None
+            if idx + 1 < len(nodes) and _is_credit_node(nodes[idx + 1]):
+                credit = nodes[idx + 1]  # type: ignore[assignment]
+                idx += 1
+            while idx + 1 < len(nodes) and isinstance(nodes[idx + 1], dict) and nodes[idx + 1].get("tag") == "blockquote":  # type: ignore[union-attr]
+                nxt = nodes[idx + 1]
+                children = [*children, " …", {"tag": "br"}, {"tag": "br"}, *(nxt.get("children") or [])]  # type: ignore[union-attr]
+                idx += 1
+                if idx + 1 < len(nodes) and _is_credit_node(nodes[idx + 1]):
+                    credit = nodes[idx + 1]  # type: ignore[assignment]
+                    idx += 1
+            merged.append({"tag": "blockquote", "children": children})
+            if credit is not None:
+                merged.append(with_chapter_tag(credit))
+            idx += 1
+            continue
+        merged.append(node)
+        idx += 1
+
+    out: list[dict[str, Any] | str] = []
+    prev_was_quote = False
+    for node in merged:
+        if isinstance(node, dict) and node.get("tag") in {"h3", "h4"}:
+            if out and not prev_was_quote:
+                out.append({"tag": "p", "children": [{"tag": "br"}]})
+            out.append(node)
+            prev_was_quote = False
+            continue
+        out.append(node)
+        if isinstance(node, dict) and node.get("tag") == "blockquote":
+            prev_was_quote = True
+        elif _is_credit_node(node):
+            prev_was_quote = True
+        elif isinstance(node, dict) and node.get("tag") == "figure":
+            prev_was_quote = False
+        else:
+            prev_was_quote = False
+    return out
 
 
 def render_channel_post(spec: ChannelPostSpec, telegraph_url: str) -> RenderedChannelPost:
@@ -512,8 +591,10 @@ def render_channel_post(spec: ChannelPostSpec, telegraph_url: str) -> RenderedCh
         exp_html_lines.append(f"• <b>{esc(pt.lead)}</b> {esc(pt.body)}")
         exp_plain_lines.append(f"• {pt.lead} {pt.body}")
 
-    html_parts.append(f"<blockquote expandable>{chr(10).join(exp_html_lines)}</blockquote>")
-    plain_parts.append("\n".join(exp_plain_lines))
+    # Air between digest points: a blank line between items, never a solid
+    # wall of text (operator rule 2026-10-24); every lead stays bold.
+    html_parts.append(f"<blockquote expandable>{(chr(10) * 2).join(exp_html_lines)}</blockquote>")
+    plain_parts.append("\n\n".join(exp_plain_lines))
 
     cta_plain = f"{spec.cta_prefix}\n{spec.cta_link_label} →"
     cta_html = f'{esc(spec.cta_prefix)}\n<a href="{esc(telegraph_url, quote=True)}">{esc(spec.cta_link_label)} →</a>'
