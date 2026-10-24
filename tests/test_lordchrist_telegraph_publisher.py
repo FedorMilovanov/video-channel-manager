@@ -74,9 +74,9 @@ class FakeTransport:
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_nine_verified_items() -> None:
+def test_telegraph_queue_loads_all_ten_verified_items() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 9
+    assert len(items) == 10
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
