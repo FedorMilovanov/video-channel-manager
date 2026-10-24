@@ -1,0 +1,658 @@
+{
+  "schema_name": "video-channel-manager.rich-article-document",
+  "schema_version": 1,
+  "document_id": "lordchrist-telegraph-charnock-12",
+  "project_key": "lordchrist",
+  "metadata": {
+    "title": "Нельзя доказать, что Бога нет: шесть ответов сомневающемуся",
+    "language": "ru",
+    "summary": "Двенадцатая статья цикла по первой беседе Стивена Чарнока «О бытии Бога»: плач о распространении атеизма и шесть рассуждений для сомневающегося — почему нельзя доказать, что Бога нет (слепец и огонь, невидимые душа и воздух, сова и солнце), как всё творение свидетельствует против отрицания, почему страх возвращается в бедствии и что на самом деле стоит на ставке атеиста.",
+    "author": "Господь Бог",
+    "tags": [
+      "Чарнок",
+      "бытие Бога",
+      "атеизм",
+      "сомнение",
+      "ставка",
+      "совесть"
+    ],
+    "created_at": "2026-10-24",
+    "updated_at": "2026-10-24"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "block_id": "h-1",
+      "text": [
+        {
+          "type": "bold",
+          "text": "НЕЛЬЗЯ ДОКАЗАТЬ, ЧТО БОГА НЕТ: ШЕСТЬ ОТВЕТОВ СОМНЕВАЮЩЕМУСЯ"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-1",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-1",
+          "text": "Единый имеющий бессмертие, Который обитает в неприступном свете, Которого никто из человеков не видел и видеть не может. Ему честь и держава вечная! Аминь."
+        }
+      ],
+      "credit": "— 1 Тим. 6:16"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-2",
+      "text": [
+        "Беседа подходит к концу, и тон Чарнока меняется: от разбора доводов он переходит к плачу и к пастырскому разговору с сомневающимся. Эта глава — не о том, почему атеизм ложен (это уже показано), а о том, ",
+        {
+          "type": "bold",
+          "text": "как он возможен и что сказать человеку"
+        },
+        ", которого он коснулся."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-2",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-2",
+          "text": [
+            "Как плачевно, что в наши времена эта глупость атеизма так распространена! Что находятся такие чудовища в человеческой природе — среди успехов разума и сияния Евангелия, — которые не только делают Писание предметом своих насмешек, но издеваются над судами и провидениями Божиими в мире и завидуют своему Творцу в бытии, ",
+            {
+              "type": "bold",
+              "text": "без чьей благости у них не было бы и собственного"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-3",
+      "text": [
+        "Первый его тезис звучит почти дерзко для современного уха: полного внутреннего атеизма, по Чарноку, не существует. Есть атеизм уст и атеизм жизни — но сердце, отрицая одного Бога, тотчас ставит на Его место другое."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-3",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-3",
+          "text": [
+            "Я сомневаюсь, было ли когда-нибудь или может ли быть в мире непрерывное и внутреннее отрицание бытия Божия; что люди (если только не предположить совесть совершенно мёртвой) могут дойти до такой степени нечестия: ибо прежде чем заглушить в себе эти чувства — что бы они ни утверждали, — они должны стать совершенными чужаками для общих понятий разума и ",
+            {
+              "type": "bold",
+              "text": "лишить себя собственной человечности"
+            },
+            ". Кто дерзает отрицать Бога устами, тот всё же ставит что-нибудь другое Богом в своём сердце."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-4",
+      "text": [
+        "Плач усиливается сравнением: язычники унизили Бога образами, атеист хочет Его уничтожить. Даже ад, говорит Чарнок, в этом пункте исправляет человека: там отрицать уже нельзя. И даже дьявол, радующийся злу, знает о Боге больше атеиста."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-4",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-4",
+          "text": [
+            "Земля этим становится хуже ада. Атеизм — убеждение, которое нигде больше не находит себе опоры. Дьявол, радующийся их злобе, знает, что они в заблуждении; ибо он ",
+            {
+              "type": "bold",
+              "text": "«верует — и трепещет от этой веры»"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-2",
+      "text": "Нельзя доказать, что Бога нет",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-5",
+      "text": [
+        "Дальше Чарнок даёт шесть рассуждений для ума, охваченного сомнением. Первое — о самой форме отрицания: доказать отсутствие Бога нельзя тем же способом, каким требуют доказать Его присутствие. Скрытость Бога для него — не слабость довода, а следствие бесконечности."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-5",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-5",
+          "text": [
+            "Совершенно невозможно доказать, что Бога нет. Какое бы средство ни избрал отрицающий, оно обернётся доказательством Его существования и проявлением Его совершенства, а не аргументом против Него. Он не был бы Богом, если бы мог уместиться в узкую мерку человеческого понимания; Он не был бы бесконечен, если бы был постижим или ограничен нашим зрением. ",
+            {
+              "type": "bold",
+              "text": "Как мала должна быть вещь, видимая телесным глазом или охватываемая слабым умом!"
+            },
+            " Если бы Бог был видим или постижим, Он был бы ограничен."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-6",
+      "text": [
+        "Требование «покажите мне Бога» Чарнок разбирает на простых подобиях. Мы не видим жизни, души и воздуха — и не сомневаемся в них, потому что видим их действия. Причина познаётся по следствию: это правило, по которому живёт всё остальное знание."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-6",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-6",
+          "text": [
+            "Будет ли достаточным доказательством слово слепца, что в комнате нет огня, потому что он его не видит, — хотя и чувствует его теплоту? ",
+            {
+              "type": "bold",
+              "text": "Знания действия достаточно, чтобы заключить о существовании причины."
+            },
+            " Кто когда-нибудь видел собственную жизнь? Достаточно ли отрицать, что человек живёт, потому что он не созерцает своей жизни, а знает о ней только по своему движению? Он никогда не видел собственной души, но знает, что она у него есть, — по своей мыслительной способности. Воздух даёт себя чувствовать в своих действиях, хотя никогда не был виден глазом."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-7",
+      "text": [
+        "Если бы Бог явился в собственной славе, проблема не исчезла бы: конечный глаз не вмещает бесконечного света. Мы и тогда видели бы Его по лучам — как теперь видим по творениям, только ближе."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-7",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-7",
+          "text": [
+            "Если бы Он явился в славе, мы так же мало могли бы созерцать Его в величественной славе, как сова — солнце в его сиянии: мы по-прежнему видели бы Его только в Его действиях, ",
+            {
+              "type": "bold",
+              "text": "как видим солнце по его лучам"
+            },
+            ". Если бы Он явил новое чудо, мы по-прежнему видели бы Его лишь по делам Его; так мы видим Его в творениях, каждое из которых было бы таким же великим чудом для того, кто взглянул на них впервые."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-8",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-8",
+          "text": [
+            "Нет ничего яснее для глаза, чем свет, и ничего труднее для понимания, чем его природа: ",
+            {
+              "type": "bold",
+              "text": "как свет — первый предмет, очевидный для глаза, так Бог — первый предмет, очевидный для разума"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-8",
+      "text": [
+        "Последнее возражение раздела — самое жизненное: праведный и нечестивый умирают одинаково, значит, Бога нет. Чарнок отвечает: одинаковость здешней участи — не опровержение, а ",
+        {
+          "type": "bold",
+          "text": "обещание другого суда"
+        },
+        ". Вопрос переносится, а не снимается."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-9",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-9",
+          "text": "Никто не может уверить себя по какому-либо доброму основанию, что Бога нет: ибо одинаковость событий для праведного и нечестивого, для приносящего жертву и не приносящего жертвы (Еккл. 9:2), — это довод в пользу суда, отложенного в другое состояние, — суда, который совести каждого человека предписывает ему, — когда правосудие Божие прославится в ином мире так же, как в этом прославляется Его долготерпение."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-3",
+      "text": "Всё творение — против сомневающегося",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-9",
+      "text": [
+        "Второе рассуждение — о цене сомнения. Сомневающийся ставит себя против всего состава мира: каждое творение для Чарнока — не фон, а свидетель на другой стороне. Поэтому атеизм требует не просто мнения, а войны с собственным устройством."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-10",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-10",
+          "text": [
+            "Кто сомневается в этом, тот делает себя мишенью, против которой сражаются все творения. Все звёзды сражались против Сисары за Израиля: ",
+            {
+              "type": "bold",
+              "text": "все звёзды на небе и прах на земле сражаются за Бога против атеиста"
+            },
+            ". У него столько доводов против него, сколько творений во всём объёме неба и земли. Он должен вырвать собственную совесть, бежать от собственных мыслей, измениться в природу камня, у которого нет ни разума, ни чувства, — прежде чем сможет освободиться от тех доводов, которые утверждают бытие Божие."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-4",
+      "text": "Страх, который возвращается",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-10",
+      "text": [
+        "Третье рассуждение — из опыта: отрицание редко переживает бедствие. Чарнок не утверждает, что каждый атеист в буре взывает к Богу; он говорит о запахе, который нельзя выветрить из сосуда: рождённое с человеком возвращается, когда умолкают удовольствие и компания."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-11",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-11",
+          "text": [
+            "Те, кто был так дерзок, чтобы отрицать, что Бог есть, иногда сильно боялись, что они в заблуждении; и каковы бы ни были их чувства в ослепляющем благополучии, в бурные бедствия в них бывали другие движения: подобно мореплавателям Ионы, они готовы были взывать о помощи к Тому, Кого в своих удовольствиях ",
+            {
+              "type": "bold",
+              "text": "презирали признать даже в бытии"
+            },
+            ". Мысли о Божестве не могут быть так угашены, чтобы не ожить и не нахлынуть на человека, по крайней мере под острым бедствием."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-12",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-12",
+          "text": [
+            "Человек не может не сохранить запаха того, что рождено с ним; как сосуд, сначала напитанный крепким соком, ",
+            {
+              "type": "bold",
+              "text": "сохранит его запах, какие бы напитки потом в него ни наливали"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-5",
+      "text": "Зачем отрицают: мотив и ставка",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-11",
+      "text": [
+        "Четвёртое рассуждение — самое неудобное. Чарнок спрашивает не «какие у атеиста аргументы», а «",
+        {
+          "type": "bold",
+          "text": "что ему даёт"
+        },
+        " его мнение». Свободу от совести, отвечает он, — то есть отрицание здесь не вывод, а разрешение. И труд этот странно неэкономен: чтобы не верить, нужно больше усилия, чем чтобы верить."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-13",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-13",
+          "text": [
+            "Ради чего такие люди ломают себе ум, составляя понятия, что Бога нет? Не ради ли того, чтобы потворствовать какой-нибудь порочной привычке, овладевшей их душой, которая, как они знают, ",
+            {
+              "type": "bold",
+              "text": "«не может быть угодна тому святому Богу»"
+            },
+            ", понятие о Котором они хотят стереть? Страхи Божии — действие вины; и потому люди хотели бы износить представления о Божестве, чтобы зверствовать без контроля. Они хотели бы верить, что Бога нет, — чтобы не быть людьми, а зверями. Нужно больше труда и суровости души, чтобы стряхнуть с себя представления о Боге, чем чтобы веровать, что Он есть, и постоянно держаться Его."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-12",
+      "text": [
+        "Пятое рассуждение — знаменитая ставка, за полтора века до того, как её припишут Паскалю в привычной форме. Чарнок считает не истинность, а риск: что я теряю при каждом исходе. Кто исповедует Бога, не теряет ничего, кроме похотей; кто отрицает, ставит на кон всё."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-14",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-14",
+          "text": [
+            "Если Бог есть, и я боюсь Его и повинуюсь Ему, — я приобретаю счастливую вечность; а если Бога нет, я не теряю ничего, кроме своих гнусных похотей, тем, что твёрдо верую, что Он есть. Если же я в конце обманусь и обрету Бога, — могу ли я думать, что буду награждён Им за то, что отрёкся от Него? Не иду ли я на отчаянный риск потерять Его благоволение, Его царство и бесконечное блаженство ради бесконечной муки? ",
+            {
+              "type": "bold",
+              "text": "Исповедуя Бога, я не рискую никакой потерей; отрицая же Его, я иду на самый отчаянный риск, если Он есть."
+            }
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-13",
+      "text": [
+        "Шестое рассуждение замыкает главу вопросом о добросовестности поиска: всё ли сделал сомневающийся, чтобы узнать? Не найти Бога там, где всё о Нём напоминает, — для Чарнока следствие не темноты предмета, а нежелания света."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-15",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-15",
+          "text": [
+            "Могут ли такие сказать, что употребили все усилия, чтобы наставить себя в этом, и не встретили удовлетворения? Не встретить удовлетворения в том, о чём всё нам напоминает и в чём всё помогает, — плод крайней небрежности, тупости и ",
+            {
+              "type": "bold",
+              "text": "желания остаться неудовлетворённым"
+            },
+            ", а также судебного действия Бога против них."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-6",
+      "text": "Где Чарнок спорит с нашим ухом",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-14",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-первых, ставка не доказывает истинности."
+        },
+        " Чарнок и не выдаёт её за доказательство: это довод благоразумия для уже колеблющегося. Но современное ухо вправе спросить: верить «на всякий случай» — это вера или страховка? И о каком Боге ставка, если религий много? Честный ответ: Чарнок обращается к человеку, который уже не сомневается, есть ли высший Судия вообще, а колеблется между страхом и похотью; для выбора между религиями у него другие беседы, и ставка там не работает."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-15",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-вторых, довод от мотива — не опровержение."
+        },
+        " Даже если отрицание удобно, из удобства не следует ложность: это генетическая ошибка, и Чарнок как логик её здесь допускает. Сила его четвёртого рассуждения — не в доказательстве, а в диагностике: оно предлагает человеку проверить не аргументы, а себя. Справедливости ради, та же проверка обоюдна: и веру тоже можно держать из удобства, и Чарнок в других местах это знает."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-16",
+      "text": [
+        {
+          "type": "bold",
+          "text": "В-третьих, буря не всех обращает."
+        },
+        " Опыт веков дал и обратные примеры: люди умирали в отрицании спокойно. Чарнок сказал бы, что говорит о совести, а не о статистике; но его третье рассуждение как раз опытное, и потому уязвимо для встречного опыта. Прочнее оно звучит как укор современности, а не как закон природы: мысль о Боге возвращается не к каждому, но общество, вычеркнувшее её из языка, обнаруживает её отсутствие в час бедствия острее."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-7",
+      "text": "Писание, на котором он стоит",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-17",
+      "text": [
+        "Эпиграф главы — слово о Боге, Которого никто не видел: ",
+        {
+          "type": "bold",
+          "text": "единый имеющий бессмертие, Который обитает в неприступном свете, Которого никто из человеков не видел и видеть не может. Ему честь и держава вечная! Аминь"
+        },
+        " (1 Тим. 6:16). О том же свете — псалом: ",
+        {
+          "type": "bold",
+          "text": "Ты одеваешься светом, как ризою, простираешь небеса, как шатер"
+        },
+        " (Пс. 103:2). И о мраке, который у Бога — покров, а не отсутствие: ",
+        {
+          "type": "bold",
+          "text": "И мрак сделал покровом Своим, сению вокруг Себя мрак вод, облаков воздушных"
+        },
+        " (Пс. 17:12). Одинаковая участь праведного и нечестивого — у Екклесиаста: ",
+        {
+          "type": "bold",
+          "text": "Всему и всем — одно: одна участь праведнику и нечестивому, доброму и злому, чистому и нечистому, приносящему жертву и не приносящему жертвы"
+        },
+        " (Еккл. 9:2). А звёзды, сражающиеся за Бога, — из песни Деворы: ",
+        {
+          "type": "bold",
+          "text": "С неба сражались, звезды с путей своих сражались с Сисарою"
+        },
+        " (Суд. 5:20)."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-8",
+      "text": "Что это меняет",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-18",
+      "text": [
+        "Глава оставляет нас не с новым доказательством, а с вопросом о честности сомнения. Сомнение, которое ищет, у Чарнока почтенно — он сам всю беседу отвечает сомневающимся. Непочтенно сомнение, которое ",
+        {
+          "type": "bold",
+          "text": "нашло в отрицании удобство"
+        },
+        " и перестало искать."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-19",
+      "text": [
+        "И беседа ещё не окончена. Всё, что было сказано о мире, человеке, совести и истории, Чарнок соберёт в последнем слове — о том, что делать с этим знанием утвердившемуся. Это — последняя, тринадцатая глава цикла."
+      ]
+    }
+  ],
+  "media": [],
+  "sources": [
+    {
+      "source_id": "src-01-1tim6-16",
+      "label": "Первое послание к Тимофею 6:16 — эпиграф статьи",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-24",
+      "evidence": "Синодальный перевод: «единый имеющий бессмертие, Который обитает в неприступном свете, Которого никто из человеков не видел и видеть не может. Ему честь и держава вечная! Аминь» (сверено по корпусу bibleonline/rst, parsed66)."
+    },
+    {
+      "source_id": "src-02-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: How lamentable is it, that in our times this folly of atheism should be so rife! That there should be found such monsters in human nature, in the midst of the improvements of reason, and shinings of the gospel, who not only make the Scripture the matter of their jeers, but scoff at the judgments and providences of God in the world, and envy their Creator a being, without whose goodness they had none themselves; [смещение 8 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-03-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: I question whether there ever was, or can be in the world, an uninterrupted and internal denial of the being of God, or that men (unless we can suppose conscience utterly dead) can arrive to such a degree of impiety; for before they can stifle such sentiments in them (whatsoever they may assert), they must be utter strangers to the common conceptions of reason, and despoil themselves of their own humanity. He that dares to deny a God with his lips, yet sets up something or other as a God in his heart. [смещение 1249 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-04-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Earth is hereby become worse than hell. Atheism is a persuasion which finds no footing anywhere else. Hell, that receives such persons, in this point reforms them: they can never deny or doubt of his being, while they feel his strokes. The devil, that rejoices at their wickedness, knows them to be in an error; for he “believes, and trembles at the belief. [смещение 2559 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-05-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: It is utterly impossible to demonstrate there is no God. He can choose no medium, but will fall in as a proof for his existence, and a manifestation of his excellency, rather than against it. The pretences of the atheist are so ridiculous, that they are not worth the mentioning. They never saw God, and therefore know not how to believe such a being; they cannot comprehend him. He would not be a God, if he could fall within the narrow model of a human understanding; he would not be infinite, if he were comprehensible, or to be terminated by our sight. How small a thing must that be which is seen by a bodily eye, or grasped by a weak mind! [смещение 3969 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-06-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Shall it be a sufficient demonstration from a blind man, that there is no fire in the room, because he sees it not, though he feel the warmth of it? The knowledge of the effect is sufficient to conclude the existence of the cause. Who ever saw his own life? Is it sufficient to deny a man lives, because he beholds not his life, and only knows it by his motion? He never saw his own soul, but knows he hath one by his thinking power. The air renders itself sensible to men in its operations, yet was never seen by the eye. [смещение 4675 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-07-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: we can as little behold him in his majestic glory, as an owl can behold the sun in its brightness: we should still but see him in his effects, as we do the sun by his beams. [смещение 5364 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-08-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Nothing more clear to the eye than light, and nothing more difficult to the understanding than the nature of it: as light is the first object obvious to the eye, so is God the first object obvious to the understanding. [смещение 6112 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-09-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: No man can assure himself by any good reason there is none; for as for the likeness of events to him that is righteous, and him that is wicked; to him that sacrificeth, and to him that sacrificeth not (Eccles. ix. 2): it is an argument for a reserve of judgment in another state, which every man’s conscience dictates to him, when the justice of God shall be glorified in another world, as much as his patience is in this. [смещение 6455 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-10-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Whosoever doubts of it, makes himself a mark, against which all the creatures fight. All the stars fought against Sisera for Israel: all the stars in heaven, and the dust on earth, fight for God against the atheist. He hath as many arguments against him as there are creatures in the whole compass of heaven and earth. He is most unreasonable, that denies or doubts of that whose image and shadow he sees round about him; he may sooner deny the sun that warms him, the moon that in night walks in her brightness, deny the fruits he enjoys from the earth, yea, and deny that he doth exist. He must tear his own conscience, fly from his own thoughts, be changed into the nature of a stone, which hath neither reason nor sense, before he can disengage himself from those arguments which evince the being of a God. [смещение 6881 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-11-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: those that have been so bold as to deny that there was a God, have sometimes been much afraid they have been in an error, and have at least suspected there was a God, when some sudden prodigy hath presented itself to them, and roused their fears; and whatsoever sentiments they might have in their blinding prosperity, they have had other kind of motions in them in their stormy afflictions, and, like Jonah’s mariners, have been ready to cry to him for help, whom they disdained to own so much as in being, while they swam in their pleasures. [смещение 8231 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-12-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: A man cannot but keep a scent of what was born with him; as a vessel that hath been seasoned first with a strong juice will preserve the scent of it, whatsoever liquors are afterwards put into it. [смещение 9110 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-13-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: What is it for which such men rack their wits, to form notions that there is no God? Is it not that they would indulge some vicious habit, which hath gained the possession of their soul, which they know “cannot be favored by that holy God,” whose notion they would raze out? Is it not for some brutish affection, as degenerative of human nature, as derogatory to the glory of God; a lust as unmanly as sinful? … They would fain believe there were no God, that they might not be men, but beasts. How great a folly is it to take so much pains in vain, for a slavery and torment; to cast off that which they call a yoke, for that which really is one! There is more pains and toughness of soul requisite to shake off the apprehensions of God, than to believe that he is, and cleave constantly to him. [смещение 9310 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-14-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: If there be a God, and I fear and obey him, I gain a happy eternity; but if there be no God, I lose nothing but my sordid lusts, by firmly believing there is one. If I be deceived at last, and find a God, can I think to be rewarded by him, for disowning him? Do not I run a desperate hazard to lose his favor, his kingdom, and endless felicity for an endless torment? By confessing a God I venture no loss; but by denying him, I run the most desperate hazard, if there be one. [смещение 11174 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-15-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Can such say they have used their utmost endeavors to instruct themselves in this, and can meet with no satisfaction? Were it an abstruse truth it might not be wondered at; but not to meet with satisfaction in this which everything minds us of, and helpeth, is the fruit of an extreme negligence, stupidity, and a willingness to be unsatisfied, and a judicial process of God against them. [смещение 12345 в блоке H1 (нормализованный текст источника, позиция 236 451; 13 821 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-scripture-synodal",
+      "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-24",
+      "evidence": "1 Тим. 6:16; Пс. 103:2; Пс. 17:12; Еккл. 9:2; Суд. 5:20 — дословно по корпусу bibleonline/rst (parsed66); нумерация псалмов синодальная (у Чарнока по английской Библии: Ps. civ. 2 и Ps. xviii. 11)."
+    }
+  ],
+  "media_slots": [
+    {
+      "slot_id": "media-cover",
+      "placement": {
+        "after": "h-1"
+      },
+      "depicts": "Сова в силуэте на сухой ветви, отвернувшаяся от огромного сияющего солнечного диска; перья обведены светом, резкий контраст тени и нестерпимого света — образ совы и солнца из самой статьи (кадр выбран оператором из трёх баттлов: сова и солнце, руки слепца у огня, путник на распутье; приведён к 16:9)",
+      "purpose": "Дать статье узнаваемую обложку серии и задать визуальный образ ставки и сомнения до чтения.",
+      "preferred_source_type": "AI-generated cover, battle mode, operator-approved",
+      "copyright_provenance": "Arena image generation, battle mode; chosen by the operator from three battles."
+    }
+  ],
+  "revision": "charnock-12-v1"
+}
