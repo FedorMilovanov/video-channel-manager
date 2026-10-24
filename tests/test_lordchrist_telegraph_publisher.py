@@ -236,6 +236,7 @@ def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
     raw_quotes = sum(1 for b in doc["blocks"] if b["type"] == "blockquote")
     assert len(blockquotes) < raw_quotes, "back-to-back quotes must merge into bigger blocks"
     assert " …" in payload.compact_content_json, "merged fragments join with a trailing ellipsis"
+
     # exactly one credit line per merged quote group
     def _is_credit(n: object) -> bool:
         if not isinstance(n, dict) or n.get("tag") != "p":
@@ -262,11 +263,7 @@ def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
         if isinstance(node, dict) and node.get("tag") in {"h3", "h4"} and pos >= 2:
             prev = nodes[pos - 1]
             before_prev = nodes[pos - 2]
-            is_spacer = (
-                isinstance(prev, dict)
-                and prev.get("tag") == "p"
-                and prev.get("children") == [{"tag": "br"}]
-            )
+            is_spacer = isinstance(prev, dict) and prev.get("tag") == "p" and prev.get("children") == [{"tag": "br"}]
             if is_spacer:
                 is_credit = (
                     isinstance(before_prev, dict)

@@ -532,9 +532,11 @@ def _apply_telegraph_layout_rules(nodes: list[dict[str, Any] | str]) -> list[dic
             if idx + 1 < len(nodes) and _is_credit_node(nodes[idx + 1]):
                 credit = nodes[idx + 1]  # type: ignore[assignment]
                 idx += 1
-            while idx + 1 < len(nodes) and isinstance(nodes[idx + 1], dict) and nodes[idx + 1].get("tag") == "blockquote":  # type: ignore[union-attr]
+            while idx + 1 < len(nodes):
                 nxt = nodes[idx + 1]
-                children = [*children, " …", {"tag": "br"}, {"tag": "br"}, *(nxt.get("children") or [])]  # type: ignore[union-attr]
+                if not (isinstance(nxt, dict) and nxt.get("tag") == "blockquote"):
+                    break
+                children = [*children, " …", {"tag": "br"}, {"tag": "br"}, *(nxt.get("children") or [])]
                 idx += 1
                 if idx + 1 < len(nodes) and _is_credit_node(nodes[idx + 1]):
                     credit = nodes[idx + 1]  # type: ignore[assignment]
