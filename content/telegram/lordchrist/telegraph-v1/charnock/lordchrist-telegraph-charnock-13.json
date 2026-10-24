@@ -1,0 +1,719 @@
+{
+  "schema_name": "video-channel-manager.rich-article-document",
+  "schema_version": 1,
+  "document_id": "lordchrist-telegraph-charnock-13",
+  "project_key": "lordchrist",
+  "metadata": {
+    "title": "Утвердиться и поклониться: чем заканчивается беседа о бытии Бога",
+    "language": "ru",
+    "summary": "Тринадцатая, заключительная статья цикла по первой беседе Стивена Чарнока «О бытии Бога»: употребление третье и четвёртое. Что рушится без твёрдой веры (поклонение, устроение жизни, утешение, вера в Писание), две книги одного Автора — природа и Писание, знание Бога из опыта и финальное различие: атеист по существу и атеист по чести.",
+    "author": "Господь Бог",
+    "tags": [
+      "Чарнок",
+      "бытие Бога",
+      "поклонение",
+      "вера",
+      "опыт",
+      "практический атеизм"
+    ],
+    "created_at": "2026-10-25",
+    "updated_at": "2026-10-25"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "block_id": "h-1",
+      "text": [
+        {
+          "type": "bold",
+          "text": "УТВЕРДИТЬСЯ И ПОКЛОНИТЬСЯ: ЧЕМ ЗАКАНЧИВАЕТСЯ БЕСЕДА О БЫТИИ БОГА"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-1",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-1",
+          "text": "Я предрек и спас, и возвестил; а иного нет у вас, и вы — свидетели Мои, говорит Господь, что Я Бог."
+        }
+      ],
+      "credit": "— Ис. 43:12"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-2",
+      "text": [
+        "Беседа о бытии Бога заканчивается не новым доказательством, а призывом. Чарнок уже показал мир, человека, совесть, историю и цену отрицания; последнее слово — о том, ",
+        {
+          "type": "bold",
+          "text": "что делать с уже полученным знанием"
+        },
+        ": утвердиться в нём, изучать Бога в двух Его книгах и ответить Ему поклонением."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-2",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-2",
+          "text": [
+            "Если глупость атеиста — отрицать бытие Божие или сомневаться в нём, то ",
+            {
+              "type": "bold",
+              "text": "наша мудрость — быть твёрдо утверждёнными в этой истине, что Бог есть"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-3",
+      "text": [
+        "Утверждение для Чарнока — не настроение, а духовная дисциплина. Внушения сомнения он советует не разбирать в бесконечных спорах с собой, а встречать оружием всей системы: природа против них, совесть против порчи, а против сатаны — его собственная вера."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-3",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-3",
+          "text": [
+            "Нам никогда не следует быть без оружия в век, когда атеизм является с открытым лицом, без прикрас. Молча подавляйте такие внушения, давайте им отставку; противопоставьте им всю систему природы сражаться против них, ",
+            {
+              "type": "bold",
+              "text": "как звёзды сражались против Сисары"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-4",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-4",
+          "text": [
+            "Скорее решайтесь верить, что вас самих нет, чем что Бога нет; а если предположите, что такие внушения иногда от сатаны, возразите ему, что вы знаете: он верует противоположному тому, что внушает. Утвердите в себе это начало твёрдо: ",
+            {
+              "type": "bold",
+              "text": "«да взираем на Невидимого»"
+            },
+            ", как Моисей."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-4",
+      "text": [
+        "И сразу — существенное уточнение: Бог этой беседы не безразличный наблюдатель. Утвердиться предлагается не в голой идее первопричины, а в Правителе, Который помнит труд любви и воздаёт. Бытие и управление в мысли о Боге разделять нельзя."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-5",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-5",
+          "text": [
+            "Он не Бог, беззаботный о наших действиях, небрегущий наложить наказание и даровать награды: ",
+            {
+              "type": "bold",
+              "text": "«Он не забывает труда любви нашей»"
+            },
+            " и непорочности путей наших. Он не был бы Богом, если бы не был Правителем; а наказания и награды так же существенны для управления, как фундамент для здания."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-2",
+      "text": "Что рушится без утверждённой веры",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-5",
+      "text": [
+        "Дальше Чарнок перечисляет четыре вещи, которые не стоят без твёрдого «Бог есть». Первая — поклонение: оно не бывает устойчивым при колеблющемся знании. Барометр сердца неумолимо показывает давление веры."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-6",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-6",
+          "text": "Без этой истины, утверждённой в нас, мы никогда не сможем воздать Ему поклонение, должное Его имени. Когда знание о чём-либо колеблется и неопределённо, наши действия в отношении этого небрежны. Мы не чтим того, что, по нашему мнению, не касается нас много."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-7",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-7",
+          "text": [
+            "Религия в сердце — как вода в барометре, которая поднимается или падает по силе или слабости этой веры. ",
+            {
+              "type": "bold",
+              "text": "Как может человек поклоняться тому, чего, по его вере, нет, или в чём он сомневается?"
+            }
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-6",
+      "text": [
+        "Вторая — устроение жизни. Авраам боялся места, где нет страха Божия, не из богословия, а из опыта: где Бога не признают, там человек не защищён. Для Чарнока нравственный порядок — не надстройка над верой, а её плод."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-8",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-8",
+          "text": [
+            "Без укоренения в этом мы не можем устроить нашу жизнь. Вся наша низость, тупость, вялость, блуждания и суета происходят от ",
+            {
+              "type": "bold",
+              "text": "колебания и неутверждённости в этом начале"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-7",
+      "text": [
+        "Третья — утешение. Вопрос Чарнока почти груб в своей прямоте: кто захотел бы жить в бурном мире без Бога? Утешение здесь не психологический приём, а следствие верности Творца: страдание можно вверить Тому, Кто не меняется."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-9",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-9",
+          "text": "Без этого мы не можем иметь никакого утешения в нашей жизни. Кто захотел бы жить в бурном мире, лишённом Бога? Его верность как Творца есть основание вверить Ему наши души и заботы в наших невинных страданиях. Насколько мы слабы в признании Бога, настолько лишаем себя довольства при виде Его бесконечных совершенств."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-8",
+      "text": [
+        "Четвёртая — само Писание. Порядок у Чарнока твёрдый: сначала Автор, потом книга. Моисей начинает с Творца, Павел в Афинах — тоже; «так говорит Господь» звучит только для того, кто уже знает, что Господь есть."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-10",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-10",
+          "text": [
+            "Писание будет лёгкой вещью для того, у кого слабые чувства о Боге. ",
+            {
+              "type": "bold",
+              "text": "Вера в Бога по необходимости должна предшествовать вере во всякое откровение"
+            },
+            "; последняя не может иметь места без первой как фундамента. Мы должны твёрдо верить в бытие Бога, в Котором состоит наше счастье, прежде чем сможем верить во всякое средство, которое ведёт нас к Нему."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-11",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-11",
+          "text": [
+            "Всё было бы напрасно, что так часто повторяется: ",
+            {
+              "type": "bold",
+              "text": "«Так говорит Господь»"
+            },
+            ", — если мы не верим, что есть Господь, Который это говорит. Не было бы ни страха от Его владычества в Его заповедях, ни утешительного вкуса Его благости в Его обетованиях. Власть всего зависит от бытия Открывающего."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-3",
+      "text": "Две книги одного Автора",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-9",
+      "text": [
+        "Отсюда — двойная практика, которой Чарнок заканчивает рациональную часть беседы. Первая: изучать Бога в творениях. Книга природы не отменена книгой искупления; храм мира не закрыт от того, что открыт храм Писания."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-12",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-12",
+          "text": [
+            "Изучайте Бога в творениях так же, как в Писаниях. Главное употребление творений — признавать в них Бога; они сотворены быть свидетелями Его Самого в Его благости и вестниками Его славы. ",
+            {
+              "type": "bold",
+              "text": "Мир есть священный храм"
+            },
+            "; человек введён созерцать его и с похвалой взирать на славу Божию в произведениях Его искусства."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-10",
+      "text": [
+        "И ничто в этом храме не слишком мало. Чарнок сознательно спускается от звёзд к мухе и кусту в поле: слава Божия, как золотые опилки, слишком драгоценна, чтобы теряться там, где она упала."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-13",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-13",
+          "text": [
+            "Нет ничего в мире столь низкого и презренного, что не несло бы в себе наставления для человека и не вводило глубже понятие о Боге. Каждое растение в поле, каждая муха в воздухе, каждый член в теле говорит человеку: ",
+            {
+              "type": "bold",
+              "text": "«Рассмотри меня: Бог не возгнушался явиться во мне»"
+            },
+            "; Он открыл во мне Своё бытие и часть Своего искусства, как и в высшем."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-14",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-14",
+          "text": "Природа не противна Писанию, и Писание не противно природе; разве только мы подумаем, что Бог противен Самому Себе, — Он, Который есть Автор обоих."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-11",
+      "text": [
+        "Вторая практика — проверять Бога в собственном опыте. После всех доказательств Чарнок вдруг меняет регистр: есть знание вкусом, которое не выводится из доводов, но и не опровергается ими. Мёд не доказывают — его пробуют."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-15",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-15",
+          "text": [
+            "Многие не умеют доказать разумом, что мёд сладок, но знают это чувством; и если весь разум мира будет приведён против этого, ",
+            {
+              "type": "bold",
+              "text": "их нельзя будет разуверить в том, что они вкушают"
+            },
+            ". Опыт сладости путей христианства — могущественное предохранение от атеизма."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-16",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-16",
+          "text": [
+            "Не находили ли многие иногда невидимую руку, поднимающую их, когда они были подавлены; некоторое неожиданное провидение, вступающееся для их облегчения, — и легко замечали, что это ",
+            {
+              "type": "bold",
+              "text": "не могло быть делом случая"
+            },
+            " и часто не было намерением орудий, которыми Он пользовался? Тайные прикосновения Бога к сердцу и внутреннее общение с Ним — большее свидетельство существования верховного и бесконечно благого Существа, чем вся природа."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-4",
+      "text": "Поклонение: ответ, без которого знание мертво",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-12",
+      "text": [
+        "Итоговая часть беседы — о поклонении. Логика её беспощадна: если знание о Боге не переходит в честь, оно отрицает само себя на практике. Чарнок вводит различие, которым заканчивается вся беседа и которое стоит выучить наизусть."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-17",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-17",
+          "text": "Отказать Ему в поклонении — такая же глупость, как отказать Ему в бытии. Кто отрекается от всякого почитания своего Творца, тот завидует Ему в бытии, которого не может у Него отнять. Поклонение есть Его право — как Автора нашего бытия и Источника нашего счастья."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-18",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-18",
+          "text": [
+            "Кто отрицает Его бытие — атеист по отношению к Его существу; ",
+            {
+              "type": "bold",
+              "text": "кто отрицает Его поклонение — атеист по отношению к Его чести"
+            },
+            ". Хотя мы можем исповедовать Его бытие, мы отрицаем это исповедание пренебрежением поклонением."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-13",
+      "text": [
+        "Последнее, чего он требует, — не обряд, а память. Мысли — первое, что разумное творение отдаёт своему Автору; луч солнца, коснувшись земли, отражается обратно. Бог, о Котором не думают, для человека функционально не существует — при всём правильном исповедании."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-19",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-19",
+          "text": [
+            "Наши умы — луч от Бога; и потому, как лучи солнца, коснувшись земли, должны отражаться обратно к Богу, так и активность наших душ должна обращаться к Нему. Что за утешение может быть в бытии Бога без мысли о Нём с благоговением и радостью? ",
+            {
+              "type": "bold",
+              "text": "Забытый Бог для нас — всё равно что нет Бога."
+            }
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-5",
+      "text": "Где Чарнок спорит с нашим ухом",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-14",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-первых, опыт — свидетель небезупречный."
+        },
+        " Вкус мёда знает каждый, но вкусы расходятся: свой «нельзя разуверить» есть у человека любой веры и неверия. Чарнок отвечает различением: он говорит не о вкусе вообще, а о соответствии опыта слову — «вы свидетели Мои, что Я Бог» произносится после «Я предрек и спас». Опыт у него проверяется Писанием, а не заменяет его; но современному уху стоит честно признать: как самостоятельное доказательство вкус не работает, он работает как подтверждение для уже стоящего внутри."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-15",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-вторых, порядок «сначала Бог, потом Писание» режет в обе стороны."
+        },
+        " Православный читатель привык к обратному движению: именно Писание и Церковь рождают веру в Бога. Чарнок, пуританин, спорил бы осторожно: он говорит о порядке основания, а не обращения, — и сам признаёт, что откровение представляет Бога «в более превосходной манере». Но его схема уязвима там, где естественное богопознание современного человека почти атрофировано: начинать приходится всё же с книги и храма, а не с мухи в поле."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-16",
+      "text": [
+        {
+          "type": "bold",
+          "text": "В-третьих, «практический атеизм» — диагноз, а не ярлык."
+        },
+        " Называть непоклоняющегося атеистом «по чести» — сильная пастырская риторика XVII века; в наши дни она легко превращается в осуждение немощных, у которых вера есть, а сил на жизнь по ней нет. Сам Чарнок различает: он говорит о пренебрежении как принципе, а не о падениях. Читать это место стоит как зеркало, а не как молоток."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-6",
+      "text": "Писание, на котором он стоит",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-17",
+      "text": [
+        "Эпиграф главы — слово Бога, призывающего свидетелей: ",
+        {
+          "type": "bold",
+          "text": "Я предрек и спас, и возвестил; а иного нет у вас, и вы — свидетели Мои, говорит Господь, что Я Бог"
+        },
+        " (Ис. 43:12). Страх Божий как защита человека — у Авраама в Гераре: ",
+        {
+          "type": "bold",
+          "text": "я подумал, что нет на месте сем страха Божия, и убьют меня за жену мою"
+        },
+        " (Быт. 20:11). Слава Творца в псалме творения: ",
+        {
+          "type": "bold",
+          "text": "Да будет Господу слава вовеки; да веселится Господь о делах Своих!"
+        },
+        " (Пс. 103:31). А чёрная метка нечестивого — у Давида: ",
+        {
+          "type": "bold",
+          "text": "В надмении своем нечестивый пренебрегает Господа: «не взыщет»; во всех помыслах его: «нет Бога!»"
+        },
+        " (Пс. 9:25)."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-7",
+      "text": "Что это меняет",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-18",
+      "text": [
+        "Тринадцать глав назад беседа началась с глупца, сказавшего в сердце «нет Бога». Она заканчивается зеркальным вопросом к сказавшему «Бог есть»: ",
+        {
+          "type": "bold",
+          "text": "есть ли Бог в его мыслях, в его поклонении, в его опыте"
+        },
+        "? Доказательства привели к порогу; дальше знание становится жизнью или остаётся сведениями."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-19",
+      "text": [
+        "На этом первая беседа Чарнока завершена — и завершён наш цикл. Дальше у него — вторая беседа, о практическом атеизме: не о том, кто отрицает Бога устами, а о том, кто живёт так, как если бы Его не было. Это уже другая книга и другой разговор."
+      ]
+    }
+  ],
+  "media": [],
+  "sources": [
+    {
+      "source_id": "src-01-isa43-12",
+      "label": "Книга пророка Исаии 43:12 — эпиграф статьи",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-25",
+      "evidence": "Синодальный перевод: «Я предрек и спас, и возвестил; а иного нет у вас, и вы — свидетели Мои, говорит Господь, что Я Бог» (сверено по корпусу bibleonline/rst, parsed66)."
+    },
+    {
+      "source_id": "src-02-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: If it be the atheist’s folly to deny or doubt of the being of God, it is our wisdom to be firmly settled in this truth, that God is. [смещение 9 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-03-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: We should never be without our arms in an age wherein atheism appears barefaced without a disguise. You may meet with suggestions to it, though the devil formerly never attempted to demolish this notion in the world, but was willing to keep it up, so the worship due to God might run in his own channel, and was necessitated to preserve it, without which he could not have erected that idolatry, which … But we must not lay all upon Satan; the corruption of our own hearts ministers matter to such sparks. It is not said Satan hath suggested to the fool, but “the fool hath said in his heart,” there is no God. But let them come from what principle soever, silence them quickly, give them their dismiss; oppose the whole scheme of nature to fight against them, as the stars did against Sisera. [смещение 142 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-04-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Resolve sooner to believe that yourselves are not, than that God is not; and if you suppose they at any time come from Satan, object to him that you know he believes the contrary to what he suggests. Settle this principle firmly in you, “let us behold Him that is invisible,” as Moses did; [смещение 1308 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-05-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: He is not a God careless of our actions, negligent to inflict punishment, and bestow rewards, “he forgets not the labor of our love,” nor the integrity of our ways; he were not a God, if he were not a governor; and punishments and rewards are as essential to government, as a foundation to a building. [смещение 1771 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-06-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Without this truth fixed in us, we can never give him the worship due to his name. When the knowledge of anything is fluctuating and uncertain, our actions about it are careless. [смещение 2239 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-07-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Religion in the heart is as water in a weather‑glass, which riseth or falls according to the strength or weakness of this belief. How can any man worship that which he believes not to be, or doubts of? [смещение 2850 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-08-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Without being rooted in this, we cannot order our lives. All our baseness, stupidity, dulness, wanderings, vanity, spring from a wavering and unsettledness in this principle. [смещение 3443 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-09-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Without it we cannot have any comfort of our lives. Who would willingly live in a stormy world, void of a God? If we waver in this principle, to whom should we make our complaints in our afflictions? Where should we meet with supports? How could we satisfy ourselves with the hopes of a future happiness? There is a sweetness in the meditation of his existence, and that he is a Creator. Thoughts of other things have a bitterness mixed with them: houses, lands, children, now are, shortly they will not be; but God is, that made the world: his faithfulness as he is a Creator, is a ground to deposit our souls and concerns in our innocent sufferings. [смещение 4174 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-10-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: The Scripture will be a slight thing to one that hath weak sentiments of God. The belief of a God must necessarily precede the belief of any revelation; the latter cannot take place without the former as a foundation. [смещение 5040 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-11-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: All would be in vain that is so often repeated, “Thus saith the Lord,” if we do not believe there is a Lord that speaks it. There could be no awe from his sovereignty in his commands, nor any comfortable taste of his goodness in his promises. The more we are strengthened in this principle, the more credit we shall be able to give to divine revelation, to rest in his promise, and to reverence his precept; the authority of all depends upon the being of the Revealer. [смещение 5697 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-12-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Study God in the creatures as well as in the Scriptures. The primary use of the creatures, is to acknowledge God in them; they were made to be witnesses of himself in his goodness, and heralds of his glory, which glory of God as Creator “shall endure forever” (Psalm civ. 31): that whole psalm is a lecture of creation and providence. The world is a sacred temple; man is introduced to contemplate it, and behold with praise the glory of God in the pieces of his art. [смещение 6245 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-13-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: nothing so vile and base in the world, but carries in it an instruction for man, and drives in further the notion of a God. As he said of his cottage, Enter here, Sunt hic etiam Dii, God disdains not this place: so the least creature speaks to man, every shrub in the field, every fly in the air, every limb in a body; Consider me, God disdains not to appear in me; [смещение 7190 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-14-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Nature is not contrary to Scripture, nor Scripture to nature; unless we should think God contrary to himself who is the Author of both. [смещение 8155 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-15-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Many a man knows not how to prove honey to be sweet by his reason, but by his sense; and if all the reason in the world be brought against it, he will not be reasoned out of what he tastes. [смещение 8695 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-16-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 16",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Have not many found sometimes an invisible hand raising them up when they were dejected; some unexpected providence stepping in for their relief; and easily perceived that it could not be a work of chance, [смещение 9142 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-17-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 17",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: To deny him a worship is as great a folly, as to deny his being. He that renounceth all homage to his Creator, envies him the being which he cannot deprive him of. [смещение 10375 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-18-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 18",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: He that denies his being, is an atheist to his essence: he that denies his worship, is an atheist to his honor. [смещение 12168 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-19-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 19",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-25",
+      "evidence": "EN: Our minds are a beam from God; and, therefore, as the beams of the sun, when they touch the earth, should reflect back upon God. [смещение 12791 в блоке I1 (нормализованный текст источника, позиция 250 272; 13 367 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-scripture-synodal",
+      "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-25",
+      "evidence": "Ис. 43:12; Быт. 20:11; Пс. 103:31; Пс. 9:25 — дословно по корпусу bibleonline/rst (parsed66); нумерация псалмов синодальная (у Чарнока по английской Библии: Ps. civ. 31 и Ps. x. 4)."
+    }
+  ],
+  "media_slots": [
+    {
+      "slot_id": "media-cover",
+      "placement": {
+        "after": "h-1"
+      },
+      "depicts": "Деревянная ложка-медовуха, поднимающая густой золотистый мёд над натуральными сотами; нити янтарного мёда светятся в тёплой контровой подсветке — образ вкуса из самой статьи о знании Бога из опыта (кадр выбран оператором из трёх баттлов: храм в лесу, мёд, книга с ростком; приведён к 16:9)",
+      "purpose": "Дать статье узнаваемую обложку серии и задать визуальный образ поклонения и памяти о Боге до чтения.",
+      "preferred_source_type": "AI-generated cover, battle mode, operator-approved",
+      "copyright_provenance": "Arena image generation, battle mode; chosen by the operator from three battles."
+    }
+  ],
+  "revision": "charnock-13-v1"
+}
