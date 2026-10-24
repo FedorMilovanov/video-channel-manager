@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-25-watson-sin-ungod",
+  "sequence": 25,
+  "intent_id": "33f6643e088c56149f6c8cd8cf439c26",
+  "workflow_run_id": "40088701073",
+  "workflow_run_attempt": "1",
+  "github_sha": "53ce6686537f87d86fedae5896cba05411789599",
+  "github_workflow_sha": "53ce6686537f87d86fedae5896cba05411789599",
+  "payload_sha256": "sha256:2d484ff85a13b1bf88136a1157ee3b26a67c2b0bd2dacf85077be411888ef228",
+  "text": "Грех не только сверг бы Бога с престола, но и лишил бы Его Божества. Если бы грешник мог, Бог перестал бы быть Богом.\n\n— Томас Уотсон, «Система богословия», о грехе\n\nУотсон вскрывает внутреннюю логику греха: грешник не просто нарушает отдельное правило, а практически требует мира, в котором Божья воля перестала быть верховной. Именно поэтому грех нельзя измерять только видимым ущербом конкретного поступка.\n\n#Уотсон #Грех #Святость",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-24T11:08:54.137899Z"
+  },
+  "prepared_at_utc": "2026-10-24T11:08:55.202096Z"
+}
