@@ -27,8 +27,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
-      VK_GROUP_TOKEN: [SECURITY_DATA] secrets.THE_LEGENDARY_POET_GROUP_VK }}
-      GROUP_ID: ${{ inputs.group_id }}
+      VK_GROUP_TOKEN: "${{ secrets.THE_LEGENDARY_POET_GROUP_VK }}"
+      GROUP_ID: "${{ inputs.group_id }}"
     steps:
       - name: "Check out repository"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,7 +38,7 @@ jobs:
           python3 - <<'PY'
           import json, os, sys, urllib.parse, urllib.request
 
-          token = [SECURITY_DATA]"VK_GROUP_TOKEN", "")
+          token = os.environ.get("VK_GROUP_TOKEN", "")
           group_id = os.environ.get("GROUP_ID", "").strip()
           if not token:
               print("RESULT: secret THE_LEGENDARY_POET_GROUP_VK is EMPTY in this context")
