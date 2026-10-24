@@ -11,6 +11,14 @@ on:
         options:
           - prepare
           - apply
+      lane:
+        description: "Prepare only: text-only (community key, no wall/video audit) or full (needs a user-token audit)"
+        required: false
+        default: text-only
+        type: choice
+        options:
+          - text-only
+          - full
       start_date:
         description: "Prepare only: Monday (YYYY-MM-DD, Europe/Moscow); blank means the next Monday"
         required: false
@@ -253,6 +261,7 @@ jobs:
             --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
 
       - name: Build a fresh read-only VK wall audit
+        if: inputs.lane == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -262,6 +271,7 @@ jobs:
             --output-dir "$AUDIT_OUTPUT_DIR"
 
       - name: Locate the fresh audit bundle
+        if: inputs.lane == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -286,7 +296,27 @@ jobs:
           print(f"AUDIT_ZIP_PATH={audit_zip.as_posix()}")
           PY
 
+      - name: Build the provider-inert 60-day text-only backlog
+        if: inputs.lane == 'text-only'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lord_god_content_backlog_v2.py --text-only \
+            --repository-root . \
+            --historical-release "$HISTORICAL_RELEASE_PATH" \
+            --historical-ledger "$HISTORICAL_LEDGER_PATH" \
+            --quote-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --quote-ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --start-date "$START_DATE" \
+            --days 60 \
+            --video-count 0 \
+            --telegram-count 1 \
+            --quote-count 24 \
+            --historical-text-mode full \
+            --output "$BACKLOG_PATH"
+
       - name: Build the provider-inert 60-day backlog
+        if: inputs.lane == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -305,7 +335,23 @@ jobs:
             --max-views 1500 \
             --output "$BACKLOG_PATH"
 
+      - name: Prepare the immutable provider-inert text-only handoff
+        if: inputs.lane == 'text-only'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/prepare_lord_god_content_wave.py \
+            --repository-root . \
+            --backlog "$BACKLOG_PATH" \
+            --quote-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --quote-ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
+            --historical-release "$HISTORICAL_RELEASE_PATH" \
+            --historical-ledger "$HISTORICAL_LEDGER_PATH" \
+            --output-dir "$HANDOFF_DIR" \
+            --enable-provider-writes
+
       - name: Prepare the immutable provider-inert handoff
+        if: inputs.lane == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -429,6 +475,7 @@ jobs:
           PY
 
       - name: Upload fresh VK audit evidence
+        if: inputs.lane == 'full'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lord-god-vk-audit-${{ github.run_id }}-${{ github.run_attempt }}

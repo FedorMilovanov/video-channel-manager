@@ -40,6 +40,16 @@ workflow [`.github/workflows/lord-god-vk-postponed-wave.yml`](../../.github/work
 в Telegram, в отбор **не попадают** (#654): они становятся eligible только после
 `published+verified` записи в ledger, и волна пересобирается.
 
+**Полоса `text-only` (текущий режим ключа сообщества).** Ключ сообщества не
+может читать `wall.get`/`video.get` (VK error 27 для group auth), поэтому
+prepare с `lane=text-only` не строит аудит и не включает видео-слоты: волна
+состоит из цитат (пн/ср/пт 12:00) и исторической статьи (вт 13:00) — до
+25 операций. Дедупликация вместо снапшотов стены опирается на журнал волны и
+Telegram-ledger'ы; поэтому перед apply оператор обязан открыть в VK вкладку
+«Отложенные» сообщества и убедиться, что там нет уже запланированных копий
+этих текстов (кроме ожидаемых). Видео-слоты вернутся только с пользовательским
+read-путём (`lane=full`).
+
 ## Одноразовая настройка
 
 ### 1. Ключ доступа сообщества «Господь Бог»
@@ -85,6 +95,8 @@ approval перед каждым из них; секрет при этом ос�
 В GitHub: `Actions → Lord God VK postponed wave → Run workflow`, ветка `main`:
 
 - `action=prepare`;
+- `lane=text-only` (по умолчанию) — текстовые посты ключом сообщества;
+  `lane=full` требует пользовательского аудита и сейчас не используется;
 - `start_date` можно оставить пустым — workflow возьмёт ближайший будущий
   понедельник по Europe/Moscow; либо укажите будущий понедельник `YYYY-MM-DD`.
 
@@ -98,10 +110,12 @@ approval перед каждым из них; секрет при этом ос�
 4. read-only checkout `state/lordchrist-telegram`, локально материализует
    очереди successor/depth-v2/depth-v3 и эффективный depth-v3 ledger
    (в state-ref ничего не пишет);
-5. построит свежий аудит стены и найдёт созданный bundle
-   `vk-wall-content-audit-*` (timestamp не угадывается);
-6. соберёт backlog `--days 60 --video-count 60 --telegram-count 1
-   --quote-count 24 --historical-text-mode full --max-views 1500`;
+5. при `lane=full` построит свежий аудит стены и найдёт созданный bundle
+   `vk-wall-content-audit-*` (timestamp не угадывается); при `lane=text-only`
+   (по умолчанию) этот шаг пропускается — аудит ключом сообщества недоступен;
+6. соберёт backlog: `lane=text-only` — `--text-only --video-count 0`,
+   `lane=full` — `--video-count 60 --max-views 1500`; в обоих случаях
+   `--days 60 --telegram-count 1 --quote-count 24 --historical-text-mode full`;
 7. соберёт неизменяемый provider-inert handoff
    (`00-backlog.json` … `08-apply-intent.json`, `manifest.json`) и проверит
    manifest, SHA файлов, source/plan/intent и будущие `publish_date`.
