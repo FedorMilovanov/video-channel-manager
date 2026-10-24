@@ -40,7 +40,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository-root", type=Path, default=Path("."))
     parser.add_argument("--backlog", type=Path, required=True)
-    parser.add_argument("--videos", type=Path, required=True)
+    parser.add_argument(
+        "--videos",
+        type=Path,
+        default=None,
+        help="audit videos JSON; omit only for a text-only backlog (empty video evidence is recorded)",
+    )
     parser.add_argument("--quote-queue", type=Path, required=True)
     parser.add_argument("--quote-ledger", type=Path, required=True)
     parser.add_argument("--historical-release", type=Path, required=True)
@@ -317,7 +322,10 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     historical_release_copy = output_dir / "04-telegram-historical-release.json"
     historical_ledger_copy = output_dir / "05-telegram-historical-ledger.json"
     shutil.copy2(args.backlog.resolve(), backlog_copy)
-    shutil.copy2(args.videos.resolve(), videos_copy)
+    if args.videos is not None:
+        shutil.copy2(args.videos.resolve(), videos_copy)
+    else:
+        videos_copy.write_text("[]\n", encoding="utf-8")
     shutil.copy2(args.quote_queue.resolve(), quote_queue_copy)
     shutil.copy2(args.quote_ledger.resolve(), quote_ledger_copy)
     shutil.copy2(args.historical_release.resolve(), historical_release_copy)

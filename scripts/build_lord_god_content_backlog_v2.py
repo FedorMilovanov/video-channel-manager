@@ -52,7 +52,14 @@ PRIORITY_MARKERS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("audit", type=Path, help="03-wall-content-audit.json")
+    parser.add_argument("audit", type=Path, nargs="?", default=None, help="03-wall-content-audit.json")
+    parser.add_argument(
+        "--text-only",
+        action="store_true",
+        help="build the text lane (quotes + historical) without a wall/video audit; "
+        "required when the credential is a community access key, because wall.get/video.get "
+        "are unavailable under group authorization (VK error 27)",
+    )
     parser.add_argument("--repository-root", type=Path, default=Path("."))
     parser.add_argument("--historical-release", type=Path, required=True)
     parser.add_argument("--historical-ledger", type=Path, required=True)
@@ -444,10 +451,20 @@ def build_slots(
 
 
 def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
-    audit = read_json(args.audit)
-    if audit.get("community_id") != COMMUNITY_ID:
-        raise ValueError("audit community does not match lord-god-strength")
-    videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
+    if args.text_only:
+        if args.audit is not None:
+            raise ValueError("--text-only does not accept an audit file")
+        if args.video_count != 0:
+            raise ValueError("--text-only requires --video-count 0")
+        audit: dict[str, Any] | None = None
+        videos: list[dict[str, Any]] = []
+    else:
+        if args.audit is None:
+            raise ValueError("an audit file is required unless --text-only is used")
+        audit = read_json(args.audit)
+        if audit.get("community_id") != COMMUNITY_ID:
+            raise ValueError("audit community does not match lord-god-strength")
+        videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
     historical, historical_release_sha256, historical_ledger_sha256, historical_release_digest = (
         select_published_historical(
             args.repository_root.resolve(),
@@ -470,9 +487,17 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         "community_id": COMMUNITY_ID,
         "owner_id": OWNER_ID,
         "mode": "provider-inert",
-        "source_audit_sha256": audit.get("audit_sha256"),
-        "source_audit_status": audit.get("status"),
-        "source_audit_summary": audit.get("summary"),
+        "content_lane": "text-only" if args.text_only else "full",
+        "source_audit_sha256": audit.get("audit_sha256") if audit is not None else None,
+        "source_audit_status": audit.get("status") if audit is not None else "unavailable_community_key_text_lane",
+        "source_audit_summary": audit.get("summary")
+        if audit is not None
+        else {
+            "lane": "text-only",
+            "reason": "wall.get/video.get are unavailable under group authorization (VK error 27); "
+            "deduplication relies on the wave journal and Telegram ledgers, and the operator "
+            "must confirm the VK postponed queue before apply",
+        },
         "start_date": args.start_date.isoformat(),
         "days": args.days,
         "live_revalidation_required": True,

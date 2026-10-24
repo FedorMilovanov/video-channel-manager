@@ -190,3 +190,20 @@ def test_lord_god_runbook_describes_the_github_prepare_apply_path() -> None:
         "Посты, присланные текстом",
     ):
         assert phrase in text
+
+
+def test_prepare_supports_the_community_key_text_only_lane() -> None:
+    prepare, _apply = _job_sections()
+    text = _workflow_text()
+
+    assert "lane:" in text
+    assert "default: text-only" in text
+    assert prepare.count("if: inputs.lane == 'full'") >= 3
+    assert "if: inputs.lane == 'text-only'" in prepare
+    assert "--text-only" in prepare
+    assert "--video-count 0" in prepare
+    # The text-only handoff must not reference audit artifacts at all.
+    text_only_step = prepare.split("Build the provider-inert 60-day text-only backlog", 1)[1].split("- name:", 1)[0]
+    assert "AUDIT_JSON" not in text_only_step
+    handoff_step = prepare.split("Prepare the immutable provider-inert text-only handoff", 1)[1].split("- name:", 1)[0]
+    assert "--videos" not in handoff_step
