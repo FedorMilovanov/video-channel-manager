@@ -9,6 +9,7 @@ import pytest
 from video_channel_manager.lordchrist_telegraph_publisher import (
     DEFAULT_QUEUE_PATH,
     JPEG_MAGIC,
+    _apply_telegraph_layout_rules,
     build_telegraph_payload,
     ensure_telegraph_token,
     load_telegraph_queue,
@@ -234,8 +235,9 @@ def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
     blockquotes = [n for n in nodes if isinstance(n, dict) and n.get("tag") == "blockquote"]
     doc = json.loads((ROOT / item02.article_path).read_text(encoding="utf-8"))  # type: ignore[arg-type]
     raw_quotes = sum(1 for b in doc["blocks"] if b["type"] == "blockquote")
-    assert len(blockquotes) < raw_quotes, "back-to-back quotes must merge into bigger blocks"
-    assert " …" in payload.compact_content_json, "merged fragments join with a trailing ellipsis"
+    # Article 02 clusters are merged editorially in the article itself, so the
+    # publisher receives no back-to-back quotes and must not invent merges.
+    assert len(blockquotes) == raw_quotes, "article-level merged quotes must pass through unchanged"
 
     # exactly one credit line per merged quote group
     def _is_credit(n: object) -> bool:
@@ -280,6 +282,28 @@ def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
     post = render_channel_post(item02.channel_post, "https://telegra.ph/Test-Page-10-23")
     digest = post.html_text.split("<blockquote expandable>", 1)[1]
     assert "\n\n• <b>" in digest
+
+
+def test_layout_rules_merge_back_to_back_quotes_with_trailing_ellipsis() -> None:
+    credit = {"tag": "p", "children": [{"tag": "em", "children": ["— Стивен Чарнок, «О бытии Бога»"]}]}
+    nodes: list[dict[str, Any] | str] = [
+        {"tag": "blockquote", "children": ["Первый фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "blockquote", "children": ["Второй фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "p", "children": ["Авторский абзац."]},
+    ]
+    out = _apply_telegraph_layout_rules(nodes)
+    quotes = [n for n in out if isinstance(n, dict) and n.get("tag") == "blockquote"]
+    assert len(quotes) == 1, "back-to-back quotes must merge into one block"
+    merged_children = quotes[0].get("children") or []
+    assert " …" in json.dumps(merged_children, ensure_ascii=False), "fragments join with a trailing ellipsis"
+    credit_texts = [
+        n["children"][0]["children"][0]
+        for n in out
+        if isinstance(n, dict) and n.get("tag") == "p" and n.get("children") and isinstance(n["children"][0], dict)
+    ]
+    assert credit_texts == ["— Стивен Чарнок, «О бытии Бога» (беседа I)"], "one credit, chapter tag appended"
 
 
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
