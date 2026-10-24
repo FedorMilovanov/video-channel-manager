@@ -209,6 +209,22 @@ def test_prepare_supports_the_community_key_text_only_lane() -> None:
     assert "--videos" not in handoff_step
 
 
+def test_workflow_verifies_handoff_models_via_strict_json_loading() -> None:
+    # Regression (prepare run failure): the verify snippets loaded
+    # 06-source.json via WaveSourceEvidence.model_validate(json.loads(...)),
+    # which strict pydantic rejects because JSON arrays are lists while the
+    # models declare tuple fields (artifacts, operations). The engine loads
+    # the same files with model_validate_json(..., strict=True); both
+    # workflow verify stages must do the same.
+    text = _workflow_text()
+
+    assert "model_validate(json.loads" not in text
+    assert text.count("WaveSourceEvidence.model_validate_json(") == 2
+    assert text.count("WavePlan.model_validate_json(") == 2
+    assert text.count("WaveApplyIntent.model_validate_json(") == 2
+    assert text.count("strict=True") >= 6
+
+
 def test_workflow_repository_file_paths_exist() -> None:
     # Regression (prepare run failure): env pointed at
     # successor-translation-ledger.json / successor-integrity-amendments.json
