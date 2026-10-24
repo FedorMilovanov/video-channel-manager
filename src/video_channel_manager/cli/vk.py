@@ -267,6 +267,7 @@ def community_key_login(
                 raise VkConfigurationError("VK community key does not belong to the requested community")
         token.permission_mask = mask
         token.scopes = list(enabled_permissions)
+        token.token_type = "community"
         store.save_token(account, token)
     except typer.Exit:
         raise

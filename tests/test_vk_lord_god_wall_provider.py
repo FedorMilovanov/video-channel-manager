@@ -347,3 +347,101 @@ def test_video_open_wall_circuit_fails_before_video_read_or_wall_snapshot() -> N
     assert writer.checked == ["wall.get"]
     assert writer.video_reads == 0
     assert writer.snapshots == 0
+
+
+def test_community_key_writer_uses_wall_permission_without_user_video_scope(tmp_path) -> None:
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(
+            access_token="community-secret",
+            token_type="community",
+            scopes=["photos", "docs", "messages", "wall", "manage", "stories", "market"],
+            permission_mask=134623237,
+        ),
+    )
+    writer = LordGodWallWriter(token_store=store, account_alias=LORD_GOD_ACCOUNT_ALIAS)
+
+    assert writer._token_value() == "community-secret"
+    assert writer.assert_token_scopes("wall").access_token == "community-secret"
+    with pytest.raises(VkWriteError, match="community key does not verify"):
+        writer.assert_token_scopes("video")
+
+
+def test_user_token_writer_still_requires_video_scope(tmp_path) -> None:
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(access_token="user-secret", token_type="user", scopes=["wall", "groups"]),
+    )
+    writer = LordGodWallWriter(token_store=store, account_alias=LORD_GOD_ACCOUNT_ALIAS)
+
+    with pytest.raises(VkWriteError, match="does not verify required permission"):
+        writer._token_value()
+
+
+def test_community_key_schedule_text_end_to_end_with_mocked_vk(tmp_path) -> None:
+    import urllib.parse
+
+    import httpx
+
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(
+            access_token="community-secret",
+            token_type="community",
+            scopes=["photos", "docs", "messages", "wall", "manage", "stories", "market"],
+            permission_mask=134623237,
+        ),
+    )
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+    state = {"posted": False, "calls": []}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        method = request.url.path.rsplit("/", 1)[-1]
+        form = urllib.parse.parse_qs(request.content.decode("utf-8"))
+        state["calls"].append((method, form))
+        if method == "wall.get":
+            items = []
+            if form.get("filter") == ["postponed"] and state["posted"]:
+                items = [
+                    {
+                        "id": 777,
+                        "owner_id": -60805374,
+                        "date": wall.publish_date,
+                        "text": wall.message,
+                        "attachments": [],
+                    }
+                ]
+            return httpx.Response(200, json={"response": {"count": len(items), "items": items}})
+        if method == "wall.post":
+            assert form.get("owner_id") == ["-60805374"]
+            assert form.get("publish_date") == [str(wall.publish_date)]
+            assert form.get("guid") == [wall.guid]
+            state["posted"] = True
+            return httpx.Response(200, json={"response": {"post_id": 777}})
+        raise AssertionError(f"unexpected VK method: {method}")
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    result = writer.schedule_text(wall)
+
+    assert result["status"] == "scheduled"
+    assert result["remote_id"] == "-60805374_777"
+    assert result["surface"] == "postponed"
+    assert [call[0] for call in state["calls"]].count("wall.post") == 1
