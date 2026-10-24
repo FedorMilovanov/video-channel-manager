@@ -11,7 +11,12 @@ from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.platforms.vk.wall import VkWallRecoveryRequired, VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import VkWallDeltaStatus, VkWallSurface, compare_wall_snapshots
+from video_channel_manager.platforms.vk.wall_safety import (
+    VkWallDeltaStatus,
+    VkWallPostFingerprint,
+    VkWallSurface,
+    compare_wall_snapshots,
+)
 from video_channel_manager.platforms.vk.writer import VkWriteError
 from video_channel_manager.wave_engine.engine import (
     KnownProviderRejectionError,
@@ -216,6 +221,74 @@ class LordGodWallWriter(VkWallWriter):
         self.assert_token_scopes()
         return token.access_token
 
+    def credential_token_type(self) -> str:
+        return self.token_store.load_token(self.account_alias).token_type
+
+    def is_community_key(self) -> bool:
+        try:
+            return self.credential_token_type() == "community"
+        except (AttributeError, OSError, ValueError):
+            return False
+
+    def schedule_text_with_community_key(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        """Schedule one text post with the community access key.
+
+        VK rejects ``wall.get`` under group authorization (error 27), so the
+        snapshot-based preflight/postflight of the user-token path is
+        impossible with this credential. This mode therefore performs exactly
+        one ``wall.post`` (idempotency rests on the deterministic ``guid``
+        plus the wave journal) and then attempts a non-gating readback via
+        ``wall.getById``; the readback outcome is reported, never hidden.
+        """
+
+        if self.credential_token_type() != "community":
+            raise LordGodWallError("community-key scheduling requires a community access key token")
+        self.assert_token_scopes("wall")
+        self.assert_method_circuit_closed("wall.post")
+        try:
+            response = self._call(
+                "wall.post",
+                params={
+                    "owner_id": LORD_GOD_OWNER_ID,
+                    "from_group": True,
+                    "message": wall.message,
+                    "publish_date": wall.publish_date,
+                    "guid": wall.guid,
+                },
+            )
+        except VkWriteError:
+            raise
+        except Exception as exc:
+            raise UnknownProviderOutcomeError(f"{type(exc).__name__}: {exc}") from exc
+        post_id = response.get("post_id") if isinstance(response, dict) else response
+        if type(post_id) is not int or post_id <= 0:
+            raise RuntimeError(f"wall.post returned no positive post ID: {response!r}")
+
+        readback: dict[str, Any]
+        try:
+            item = self.read_post(community_id=LORD_GOD_COMMUNITY_ID, post_id=post_id)
+        except VkWriteError as exc:
+            readback = {"status": "unavailable", "code": exc.code, "method": exc.method or "wall.getById"}
+        else:
+            if item is None:
+                readback = {"status": "not_visible"}
+            else:
+                fingerprint = VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
+                matches = (
+                    fingerprint.publish_date == wall.publish_date
+                    and fingerprint.text_sha256 == wall.message_sha256
+                    and not fingerprint.attachments
+                )
+                readback = {"status": "verified" if matches else "mismatch"}
+        return {
+            "status": "scheduled_community_key",
+            "remote_id": f"{LORD_GOD_OWNER_ID}_{post_id}",
+            "publish_date": wall.publish_date,
+            "surface": VkWallSurface.POSTPONED.value,
+            "readback": readback,
+            "source_id": wall.source_id,
+        }
+
     def verify_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
         if wall.content_kind != "video" or wall.video_owner_id is None or wall.video_id is None:
             raise LordGodWallError("verify_video requires a video operation")
@@ -269,6 +342,8 @@ class LordGodWallWriter(VkWallWriter):
         return None
 
     def schedule_text(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        if self.is_community_key():
+            return self.schedule_text_with_community_key(wall)
         self.assert_method_circuit_closed("wall.get")
         self.assert_method_circuit_closed("wall.post")
         before = self.capture_wall_snapshot(
@@ -429,6 +504,11 @@ class LordGodPostponedWallAdapter:
                 community_id=LORD_GOD_COMMUNITY_ID,
                 operation=f"lord-god-postponed-wall:{wall.source_id}",
             ):
+                if self.writer.is_community_key() and wall.content_kind == "video":
+                    raise OperationRejectedError(
+                        "the community access key cannot verify or schedule video operations; "
+                        "video slots require a user-token credential"
+                    )
                 if wall.content_kind == "video":
                     return self.writer.schedule_video(wall)
                 return self.writer.schedule_text(wall)

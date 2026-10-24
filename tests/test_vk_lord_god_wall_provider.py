@@ -411,9 +411,9 @@ def test_community_key_schedule_text_end_to_end_with_mocked_vk(tmp_path) -> None
         method = request.url.path.rsplit("/", 1)[-1]
         form = urllib.parse.parse_qs(request.content.decode("utf-8"))
         state["calls"].append((method, form))
-        if method == "wall.get":
+        if method == "wall.getById":
             items = []
-            if form.get("filter") == ["postponed"] and state["posted"]:
+            if state["posted"]:
                 items = [
                     {
                         "id": 777,
@@ -441,7 +441,113 @@ def test_community_key_schedule_text_end_to_end_with_mocked_vk(tmp_path) -> None
 
     result = writer.schedule_text(wall)
 
-    assert result["status"] == "scheduled"
+    assert result["status"] == "scheduled_community_key"
     assert result["remote_id"] == "-60805374_777"
     assert result["surface"] == "postponed"
-    assert [call[0] for call in state["calls"]].count("wall.post") == 1
+    assert result["readback"] == {"status": "verified"}
+    methods = [call[0] for call in state["calls"]]
+    assert methods.count("wall.post") == 1
+    assert "wall.get" not in methods
+
+
+def test_community_key_schedule_survives_unavailable_readback(tmp_path) -> None:
+    import httpx
+
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(
+            access_token="community-secret",
+            token_type="community",
+            scopes=["wall", "manage"],
+            permission_mask=134623237,
+        ),
+    )
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        method = request.url.path.rsplit("/", 1)[-1]
+        calls.append(method)
+        if method == "wall.post":
+            return httpx.Response(200, json={"response": {"post_id": 888}})
+        if method == "wall.getById":
+            return httpx.Response(
+                200,
+                json={"error": {"error_code": 27, "error_msg": "Group authorization failed"}},
+            )
+        raise AssertionError(f"unexpected VK method: {method}")
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    result = writer.schedule_text(wall)
+
+    assert result["status"] == "scheduled_community_key"
+    assert result["remote_id"] == "-60805374_888"
+    assert result["readback"]["status"] == "unavailable"
+    assert result["readback"]["code"] == 27
+    assert "wall.get" not in calls
+
+
+def test_community_key_wrong_credential_kind_blocks_before_dispatch(tmp_path) -> None:
+    import httpx
+
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(access_token="user-secret", token_type="user", scopes=["video", "wall", "groups"]),
+    )
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        return httpx.Response(200, json={"response": {"post_id": 1}})
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    with pytest.raises(LordGodWallError, match="community access key"):
+        writer.schedule_text_with_community_key(wall)
+    assert calls == []
+
+
+def test_community_key_lost_response_is_unknown_after_one_dispatch() -> None:
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def credential_token_type(self) -> str:
+            return "community"
+
+        def assert_token_scopes(self, *required_scopes: str):  # type: ignore[override]
+            return None
+
+        def assert_method_circuit_closed(self, method: str) -> None:
+            return None
+
+        def _call(self, method: str, *, params: dict[str, Any] | None = None, **_: Any) -> object:
+            self.calls += 1
+            raise RuntimeError("lost provider response")
+
+    writer = FakeWriter()
+    with pytest.raises(UnknownProviderOutcomeError, match="lost provider response"):
+        writer.schedule_text_with_community_key(wall)
+    assert writer.calls == 1

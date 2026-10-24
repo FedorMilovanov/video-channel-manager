@@ -628,6 +628,39 @@
       ]
     },
     {
+      "boundary_id": "vk.wall.lord_god.text.post.community_key",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_wrong_credential_kind_blocks_before_dispatch",
+          "claim": "a non-community credential stops the community-key path before any wall.post dispatch"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_lost_response_is_unknown_after_one_dispatch",
+          "claim": "lost wall.post response becomes unknown after exactly one provider dispatch"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_schedule_survives_unavailable_readback",
+          "claim": "wall.getById error 27 after a successful wall.post is reported as unavailable readback with no replay"
+        },
+        {
+          "stages": [
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_schedule_text_end_to_end_with_mocked_vk",
+          "claim": "success records the exact verified readback identity for the single created postponed post"
+        }
+      ]
+    },
+    {
       "boundary_id": "telegraph.lordchrist.page.publish",
       "proofs": [
         {
