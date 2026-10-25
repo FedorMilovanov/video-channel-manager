@@ -464,6 +464,7 @@ def apply(
     else:
         adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
+            repository_root=repository_root,
         )
     journal_existed_before = journal_directory.exists()
     try:
@@ -556,6 +557,7 @@ def reconcile(
     else:
         adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
+            repository_root=repository_root,
         )
     try:
         reconciliation = WaveEngine().reconcile(

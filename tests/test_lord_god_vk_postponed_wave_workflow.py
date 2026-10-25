@@ -210,6 +210,26 @@ def test_prepare_supports_the_community_key_text_only_lane() -> None:
     assert "--videos" not in handoff_step
 
 
+def test_prepare_supports_the_charnock_series_lane_with_covers() -> None:
+    text = _workflow_text()
+    prepare, _apply = _job_sections()
+
+    for phrase in (
+        "- charnock",
+        "CHARNOCK_POSTS_PATH: operator-output/lord-god-vk/charnock-posts.json",
+        "CHARNOCK_QUEUE_PATH: content/telegram/lordchrist/telegraph-v1/article-queue.json",
+        "Build the provider-inert Charnock VK post series",
+        "python scripts/build_lord_god_charnock_vk_posts.py",
+        "Prepare the immutable provider-inert Charnock handoff",
+        "python scripts/prepare_lord_god_article_wave.py",
+        '--start-date "$START_DATE"',
+        "REQUIRE_PHOTOS: ${{ inputs.lane == 'charnock' && '1' || '0' }}",
+        "photos permission for cover posts",
+    ):
+        assert phrase in prepare, phrase
+    assert text.count("if: inputs.lane == 'charnock'") == 2
+
+
 def test_workflow_verifies_handoff_models_via_strict_json_loading() -> None:
     # Regression (prepare run failure): the verify snippets loaded
     # 06-source.json via WaveSourceEvidence.model_validate(json.loads(...)),

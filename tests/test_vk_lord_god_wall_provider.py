@@ -527,6 +527,161 @@ def test_community_key_wrong_credential_kind_blocks_before_dispatch(tmp_path) ->
     assert calls == []
 
 
+def _photo_payload(jpeg: bytes) -> dict[str, Any]:
+    payload = text_payload()
+    payload["photo_path"] = "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-07-cover.jpg"
+    payload["photo_sha256"] = "sha256:" + hashlib.sha256(jpeg).hexdigest()
+    return payload
+
+
+def _community_store(tmp_path, scopes: list[str]):
+    from video_channel_manager.platforms.vk.models import VkAccessToken
+    from video_channel_manager.platforms.vk.store import VkTokenStore
+
+    store = VkTokenStore(tmp_path)
+    store.save_token(
+        LORD_GOD_ACCOUNT_ALIAS,
+        VkAccessToken(
+            access_token="community-secret",
+            token_type="community",
+            scopes=scopes,
+            permission_mask=134623237,
+        ),
+    )
+    return store
+
+
+def test_parse_text_operation_accepts_bound_cover_photo() -> None:
+    jpeg = b"\xff\xd8cover-bytes"
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(jpeg)))
+    assert wall.photo_path is not None and wall.photo_path.endswith("charnock-07-cover.jpg")
+    assert wall.photo_sha256 == "sha256:" + hashlib.sha256(jpeg).hexdigest()
+
+    broken = _photo_payload(jpeg)
+    del broken["photo_sha256"]
+    with pytest.raises(LordGodWallError, match="must be supplied together"):
+        parse_lord_god_wall_operation(operation(broken))
+
+
+def test_community_key_photo_post_uploads_cover_then_posts_once(tmp_path) -> None:
+    import urllib.parse
+
+    import httpx
+
+    jpeg = b"\xff\xd8fake-jpeg-bytes"
+    store = _community_store(tmp_path, ["photos", "docs", "messages", "wall", "manage"])
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(jpeg)))
+    calls: list[str] = []
+    state = {"posted": False}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        method = request.url.path.rsplit("/", 1)[-1]
+        calls.append(method)
+        if method == "photos.getWallUploadServer":
+            return httpx.Response(200, json={"response": {"upload_url": "https://example.test/upload-photo"}})
+        if method == "upload-photo":
+            assert b"fake-jpeg-bytes" in request.content
+            return httpx.Response(200, json={"photo": "raw-photo", "server": 7, "hash": "hash-1"})
+        if method == "photos.saveWallPhoto":
+            form = urllib.parse.parse_qs(request.content.decode("utf-8"))
+            assert form.get("group_id") == ["60805374"]
+            assert form.get("photo") == ["raw-photo"]
+            return httpx.Response(200, json={"response": [{"id": 555, "owner_id": -60805374}]})
+        if method == "wall.post":
+            form = urllib.parse.parse_qs(request.content.decode("utf-8"))
+            assert form.get("attachments") == ["photo-60805374_555"]
+            state["posted"] = True
+            return httpx.Response(200, json={"response": {"post_id": 999}})
+        if method == "wall.getById":
+            items = []
+            if state["posted"]:
+                items = [
+                    {
+                        "id": 999,
+                        "owner_id": -60805374,
+                        "date": wall.publish_date,
+                        "text": wall.message,
+                        "attachments": [{"type": "photo", "photo": {"id": 555, "owner_id": -60805374}}],
+                    }
+                ]
+            return httpx.Response(200, json={"response": {"count": len(items), "items": items}})
+        raise AssertionError(f"unexpected VK method: {method}")
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    result = writer.schedule_text(wall, photo_jpeg=jpeg)
+
+    assert result["status"] == "scheduled_community_key"
+    assert result["photo_attachment"] == "photo-60805374_555"
+    assert result["readback"] == {"status": "verified"}
+    assert calls == [
+        "photos.getWallUploadServer",
+        "upload-photo",
+        "photos.saveWallPhoto",
+        "wall.post",
+        "wall.getById",
+    ]
+
+
+def test_community_key_photo_sha_mismatch_stops_before_any_call(tmp_path) -> None:
+    import httpx
+
+    store = _community_store(tmp_path, ["photos", "wall"])
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(b"expected-bytes")))
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        return httpx.Response(200, json={"response": {}})
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    with pytest.raises(LordGodWallError, match="cover photo bytes differ"):
+        writer.schedule_text(wall, photo_jpeg=b"tampered-bytes")
+    assert calls == []
+
+
+def test_community_key_photo_save_failure_stops_before_wall_post(tmp_path) -> None:
+    import httpx
+
+    jpeg = b"\xff\xd8fake-jpeg-bytes"
+    store = _community_store(tmp_path, ["photos", "wall"])
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(jpeg)))
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        method = request.url.path.rsplit("/", 1)[-1]
+        calls.append(method)
+        if method == "photos.getWallUploadServer":
+            return httpx.Response(200, json={"response": {"upload_url": "https://example.test/upload-photo"}})
+        if method == "upload-photo":
+            return httpx.Response(200, json={"photo": "raw-photo", "server": 7, "hash": "hash-1"})
+        if method == "photos.saveWallPhoto":
+            return httpx.Response(200, json={"error": {"error_code": 27, "error_msg": "Group authorization failed"}})
+        raise AssertionError(f"unexpected VK method: {method}")
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    with pytest.raises(VkWriteError):
+        writer.schedule_text(wall, photo_jpeg=jpeg)
+    assert "wall.post" not in calls
+
+
 def test_community_key_lost_response_is_unknown_after_one_dispatch() -> None:
     wall = parse_lord_god_wall_operation(operation(text_payload()))
 
