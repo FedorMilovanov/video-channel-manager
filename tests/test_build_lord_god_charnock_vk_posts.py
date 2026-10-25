@@ -31,13 +31,14 @@ def _build(tmp_path: Path) -> dict:
     return json.loads(output.read_text(encoding="utf-8"))
 
 
-def test_charnock_series_splits_all_thirteen_articles_into_vk_sized_parts(tmp_path: Path) -> None:
+def test_charnock_series_splits_all_fourteen_articles_into_vk_sized_parts(tmp_path: Path) -> None:
     payload = _build(tmp_path)
 
     assert payload["schema_name"] == "video-manager.lord-god-charnock-vk-posts"
-    assert len(payload["articles"]) == 13
+    # 13 cycle articles + the Sunday historical special (history-01).
+    assert len(payload["articles"]) == 14
     posts = payload["posts"]
-    assert len(posts) == 30
+    assert len(posts) == 32
     for article in payload["articles"]:
         parts = [post for post in posts if post["article_publication_id"] == article["publication_id"]]
         assert len(parts) == article["parts"]

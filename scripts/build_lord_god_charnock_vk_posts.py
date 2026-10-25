@@ -152,10 +152,15 @@ def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
         footer_reserve = max(len(LINKS_FOOTER), len(CONTINUES_FOOTER)) + 8
         chunks = chunk_blocks(blocks, max_chars - header_reserve - footer_reserve)
         total = len(chunks)
-        ordinal_text = publication_id.rsplit("-", 1)[-1]
-        cover_rel = (
-            f"content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-{ordinal_text}-cover.jpg"
-        )
+        # The queue is the source of truth for cover paths; publication ids
+        # are not guaranteed to end with the numeric cycle suffix (e.g. the
+        # Sunday historical special "...-history-01").
+        cover_rel = str((item.get("cover") or {}).get("path") or "")
+        if not cover_rel:
+            ordinal_text = publication_id.rsplit("-", 1)[-1]
+            cover_rel = (
+                f"content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-{ordinal_text}-cover.jpg"
+            )
         cover_path = root / cover_rel
         if not cover_path.is_file():
             raise ValueError(f"article cover is missing: {cover_rel}")
