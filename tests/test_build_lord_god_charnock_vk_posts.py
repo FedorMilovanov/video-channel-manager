@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 SPLITTER = ROOT / "scripts" / "build_lord_god_charnock_vk_posts.py"
@@ -117,3 +119,71 @@ def _assert_handoff(output_dir: Path) -> None:
     # the prepared plan is strictly text-only.
     photo_ops = [op for op in plan.operations if "photo_path" in op.payload]
     assert photo_ops == []
+
+
+def test_charnock_prepare_resume_skips_scheduled_posts_and_occupied_slots(tmp_path: Path) -> None:
+    posts_path = tmp_path / "posts.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SPLITTER),
+            "--repository-root",
+            str(ROOT),
+            "--article-queue",
+            str(QUEUE),
+            "--output",
+            str(posts_path),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    total = len(json.loads(posts_path.read_text(encoding="utf-8"))["posts"])
+
+    # The prepare script only writes handoffs inside the repository root.
+    import shutil
+
+    output_dir = ROOT / "operator-output" / f"test-charnock-resume-{tmp_path.name}"
+    shutil.rmtree(output_dir, ignore_errors=True)
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PREPARE),
+            "--repository-root",
+            str(ROOT),
+            "--posts",
+            str(posts_path),
+            "--article-queue",
+            str(QUEUE),
+            "--start-date",
+            "2026-10-27",
+            "--skip-posts",
+            "1",
+            "--occupied-date",
+            "2026-10-27",
+            "--output-dir",
+            str(output_dir),
+            "--enable-provider-writes",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    from video_channel_manager.wave_engine.models import WavePlan
+
+    plan = WavePlan.model_validate_json((output_dir / "07-plan.json").read_text(encoding="utf-8"), strict=True)
+    assert len(plan.operations) == total - 1
+    first = plan.operations[0]
+    # The resumed series starts at part 2, and the occupied Tuesday slot
+    # (2026-10-27 13:00 Europe/Moscow) is skipped for Wednesday.
+    assert first.payload["source_id"].endswith("part-2")
+    moscow = ZoneInfo("Europe/Moscow")
+    epochs = [op.payload["publish_date"] for op in plan.operations]
+    assert datetime.fromtimestamp(epochs[0], tz=moscow) == datetime(2026, 10, 28, 13, 0, tzinfo=moscow)
+    assert all(datetime.fromtimestamp(e, tz=moscow).date().isoformat() != "2026-10-27" for e in epochs)
+    shutil.rmtree(output_dir, ignore_errors=True)

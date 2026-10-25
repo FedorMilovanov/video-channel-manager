@@ -224,6 +224,10 @@ def test_prepare_supports_the_charnock_series_lane_with_covers() -> None:
         "python scripts/prepare_lord_god_article_wave.py",
         '--start-date "$START_DATE"',
         "if: inputs.lane != 'charnock'",
+        "skip_posts:",
+        "occupied_dates:",
+        '--skip-posts "$SKIP_POSTS"',
+        'OCCUPIED_ARGS+=(--occupied-date "$occupied_day")',
     ):
         assert phrase in prepare, phrase
     assert text.count("if: inputs.lane == 'charnock'") == 2
