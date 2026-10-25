@@ -385,6 +385,47 @@ def test_channel_chat_mismatch_fails_closed() -> None:
         )
 
 
+def test_scheduled_channel_post_quotes_are_verbatim_article_excerpts() -> None:
+    import re
+
+    def normalize(text: str) -> str:
+        text = text.replace("**", "").replace("*", "").casefold()
+        return re.sub(r"[^0-9a-zа-яё]+", " ", text).strip()
+
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    for item in items:
+        if item.is_canary:
+            continue  # 01b is already published; its post must not be rewritten retroactively.
+        assert item.article_path is not None and item.channel_post is not None
+        markdown = (ROOT / item.article_path.with_suffix(".md")).read_text(encoding="utf-8")
+        assert normalize(item.channel_post.quote_text) in normalize(markdown), item.publication_id
+
+
+def test_publish_confirmation_fails_before_any_network_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    import video_channel_manager.lordchrist_telegraph_publisher as publisher
+
+    def forbidden_transport() -> object:
+        raise AssertionError("network transport must not be created after a bad confirmation")
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", forbidden_transport)
+    with pytest.raises(ValueError, match="Confirmation mismatch"):
+        publisher.main(
+            [
+                "publish",
+                "--repo-root",
+                str(ROOT),
+                "--publication-id",
+                "lordchrist-telegraph-charnock-02",
+                "--media-base-url",
+                MEDIA_BASE,
+                "--ledger",
+                "state/nonexistent-ledger.json",
+                "--confirm",
+                "PUBLISH:wrong",
+            ]
+        )
+
+
 def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(

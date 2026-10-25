@@ -1110,6 +1110,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"(message_id={existing['telegram_message_id']}, url={existing.get('telegraph_url')})"
         )
 
+    if args.command == "publish":
+        # The confirmation gate must close before any external mutation:
+        # creating/editing the Telegraph page is itself a public side effect,
+        # so a mistyped confirmation must never reach the network.
+        expected_confirm = f"PUBLISH:{item.publication_id}"
+        if args.confirm != expected_confirm:
+            raise ValueError(f"Confirmation mismatch: expected {expected_confirm!r}")
+
     transport = HttpxLiveTransport()
     explicit_token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip() or None
     token = ensure_telegraph_token(transport, explicit_token=explicit_token)
@@ -1147,10 +1155,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 0
-
-    expected_confirm = f"PUBLISH:{item.publication_id}"
-    if args.confirm != expected_confirm:
-        raise ValueError(f"Confirmation mismatch: expected {expected_confirm!r}")
 
     profile = load_channel_profile(args.repo_root / args.profile)
     binding = load_target_binding(args.repo_root / args.binding, profile=profile)
