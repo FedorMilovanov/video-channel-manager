@@ -55,7 +55,7 @@ read-путём (`lane=full`).
 (`content/telegram/lordchrist/telegraph-v1/charnock/`), режет каждую по
 разделам на посты ≤ 15 000 знаков (`build_lord_god_charnock_vk_posts.py`) и
 раскладывает части по будням в 13:00 МСК (`prepare_lord_god_article_wave.py`).
-Первая часть каждой статьи несёт обложку: при apply провайдер загружает её
+Каждая часть статьи несёт обложку: при apply провайдер загружает её
 ключом сообщества (`photos.getWallUploadServer` → upload →
 `photos.saveWallPhoto`) и прикрепляет к `wall.post`; для этой полосы
 prepare дополнительно требует право `photos` у ключа. Apply — тот же, что и

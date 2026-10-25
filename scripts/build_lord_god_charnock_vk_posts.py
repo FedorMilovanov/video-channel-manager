@@ -4,9 +4,9 @@
 The Telegraph cycle ``lordchrist-telegraph-charnock-*`` holds thirteen
 articles of roughly 20-58k characters. A VK wall post is limited to 15,000
 characters, so each article is converted to canonical VK plain text and
-split at section boundaries into sequential parts. The first part of every
-article carries the article cover (uploaded at apply time by the Lord God
-wall provider); the output is provider-inert and deterministic.
+split at section boundaries into sequential parts. Every part carries
+the article cover (uploaded at apply time by the Lord God wall provider);
+the output is provider-inert and deterministic.
 """
 
 from __future__ import annotations
@@ -49,18 +49,18 @@ def strip_emphasis(text: str) -> str:
     return text
 
 
-def md_to_blocks(markdown: str) -> tuple[str, list[str]]:
-    """Convert one article markdown into (title, ordered plain-text blocks)."""
+def md_to_blocks(markdown: str) -> tuple[str, list[tuple[str, bool]]]:
+    """Convert markdown into (title, ordered (block, is_heading) blocks)."""
 
     title = ""
-    blocks: list[str] = []
+    blocks: list[tuple[str, bool]] = []
     current: list[str] = []
 
     def flush() -> None:
         if current:
             block = canonical_vk_text(strip_emphasis(" ".join(current)))
             if block:
-                blocks.append(block)
+                blocks.append((block, False))
             current.clear()
 
     for raw_line in markdown.splitlines():
@@ -74,7 +74,7 @@ def md_to_blocks(markdown: str) -> tuple[str, list[str]]:
             flush()
             heading = canonical_vk_text(strip_emphasis(line[3:].strip()))
             if heading:
-                blocks.append(heading)
+                blocks.append((heading, True))
             continue
         if not line:
             flush()
@@ -106,21 +106,32 @@ def split_oversize(block: str, limit: int) -> list[str]:
     return pieces
 
 
-def chunk_blocks(blocks: list[str], limit: int) -> list[list[str]]:
+def chunk_blocks(blocks: list[tuple[str, bool]], limit: int) -> list[list[str]]:
     chunks: list[list[str]] = []
-    current: list[str] = []
+    current: list[tuple[str, bool]] = []
     size = 0
-    for block in blocks:
+
+    def flush() -> None:
+        nonlocal current, size
+        # A section heading must open a part, never close one: move a
+        # trailing heading into the next chunk.
+        trailing: list[tuple[str, bool]] = []
+        while current and current[-1][1]:
+            trailing.insert(0, current.pop())
+        if current:
+            chunks.append([text for text, _ in current])
+        current, size = trailing, sum(len(text) + 2 for text, _ in trailing)
+
+    for block, is_heading in blocks:
         for piece in split_oversize(block, limit):
             piece_size = len(piece) + (2 if current else 0)
             if current and size + piece_size > limit:
-                chunks.append(current)
-                current, size = [], 0
-                piece_size = len(piece)
-            current.append(piece)
+                flush()
+                piece_size = len(piece) + (2 if current else 0)
+            current.append((piece, is_heading))
             size += piece_size
     if current:
-        chunks.append(current)
+        chunks.append([text for text, _ in current])
     return chunks
 
 
@@ -176,8 +187,8 @@ def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
                     "parts_total": total,
                     "message": message,
                     "message_sha256": sha256_text(message),
-                    "cover_path": cover_rel if index == 1 else None,
-                    "cover_sha256": cover_sha if index == 1 else None,
+                    "cover_path": cover_rel,
+                    "cover_sha256": cover_sha,
                 }
             )
     return {

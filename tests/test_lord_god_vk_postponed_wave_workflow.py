@@ -225,9 +225,12 @@ def test_prepare_supports_the_charnock_series_lane_with_covers() -> None:
         '--start-date "$START_DATE"',
         "REQUIRE_PHOTOS: ${{ inputs.lane == 'charnock' && '1' || '0' }}",
         "photos permission for cover posts",
+        "if: inputs.lane != 'charnock'",
     ):
         assert phrase in prepare, phrase
     assert text.count("if: inputs.lane == 'charnock'") == 2
+    # The Charnock lane is independent of the Telegram depth queues.
+    assert text.count("if: inputs.lane != 'charnock'") == 3
 
 
 def test_workflow_verifies_handoff_models_via_strict_json_loading() -> None:

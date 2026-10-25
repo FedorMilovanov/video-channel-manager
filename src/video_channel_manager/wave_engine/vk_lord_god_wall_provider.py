@@ -297,7 +297,7 @@ class LordGodWallWriter(VkWallWriter):
         photo = photos[0]
         owner_id = photo.get("owner_id")
         photo_id = photo.get("id")
-        if type(owner_id) is not int or owner_id == 0 or type(photo_id) is not int or photo_id <= 0:
+        if type(owner_id) is not int or owner_id != LORD_GOD_OWNER_ID or type(photo_id) is not int or photo_id <= 0:
             raise LordGodWallError("photos.saveWallPhoto returned an invalid photo identity")
         token = f"photo{owner_id}_{photo_id}"
         access_key = str(photo.get("access_key") or "").strip()
@@ -374,7 +374,10 @@ class LordGodWallWriter(VkWallWriter):
             else:
                 fingerprint = VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
                 if photo_token is not None:
-                    attachment_matches = fingerprint.attachments == (photo_token,)
+                    # Wall readbacks canonicalize attachments without the
+                    # access key, so compare against the bare photo token.
+                    bare_token = "_".join(photo_token.split("_")[:2])
+                    attachment_matches = fingerprint.attachments == (bare_token,)
                 else:
                     attachment_matches = not fingerprint.attachments
                 matches = (
@@ -422,6 +425,13 @@ class LordGodWallWriter(VkWallWriter):
                 continue
             if wall.content_kind == "video":
                 if post.attachments != (expected_attachment,):
+                    continue
+            elif wall.photo_path is not None:
+                # The saved photo identity is minted during apply, so the
+                # operation cannot name an exact token in advance. A photo
+                # text post matches when it carries exactly one photo
+                # attachment; the token itself is bound by the journal.
+                if len(post.attachments) != 1 or not post.attachments[0].startswith("photo"):
                     continue
             elif post.attachments:
                 continue

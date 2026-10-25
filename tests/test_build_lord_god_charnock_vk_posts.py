@@ -42,9 +42,8 @@ def test_charnock_series_splits_all_thirteen_articles_into_vk_sized_parts(tmp_pa
         parts = [post for post in posts if post["article_publication_id"] == article["publication_id"]]
         assert len(parts) == article["parts"]
         assert [post["part"] for post in parts] == list(range(1, len(parts) + 1))
-        # Exactly the first part of each article carries the cover photo.
-        assert parts[0]["cover_path"] == article["cover_path"]
-        assert all(post["cover_path"] is None for post in parts[1:])
+        # Every part carries the article cover photo.
+        assert all(post["cover_path"] == article["cover_path"] for post in parts)
     for post in posts:
         assert 0 < len(post["message"]) <= 15_000
         assert post["message"].startswith("📖 Стивен Чарнок. «О бытии Бога»")
@@ -114,4 +113,4 @@ def _assert_handoff(output_dir: Path) -> None:
     assert publish_dates == sorted(publish_dates)
     assert len(set(publish_dates)) == len(publish_dates)
     photo_ops = [op for op in plan.operations if "photo_path" in op.payload]
-    assert len(photo_ops) == 13
+    assert len(photo_ops) == len(plan.operations)
