@@ -443,7 +443,7 @@
         "headline": "СУДЬЯ, КОТОРОГО НЕЛЬЗЯ ВЫКЛЮЧИТЬ: СОВЕСТЬ И ЖАЖДА БЕСКОНЕЧНОГО",
         "lead_paragraphs": [
           "Совесть не спрашивает разрешения: она судит во сне и наяву, пугает за то, что никто не видел, и не смывается ни временем, ни молчанием.",
-          "В десятой главе цикла Стивен Чарнок ведёт четвёртый поддовод внутри третьего довода: совесть как заместитель Божий в груди человека — и жажду бесконечного блага, которую не может утолить ни одно творение."
+          "В десятой главе цикла Стивен Чарнок продолжает третий довод — собственную природу человека: совесть как заместитель Божий в груди человека — и жажду бесконечного блага, которую не может утолить ни одно творение."
         ],
         "quote_text": "Как внезапно совесть начинает действовать при появлении страдания: пробуждается от сна, как вооружённый человек, и бросается человеку в лицо, прежде чем он опомнится!",
         "quote_attribution": "Стивен Чарнок, «О бытии Бога»",
@@ -482,7 +482,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-11.json",
-        "git_blob_sha": "d6e02970f8eb9cb4790231e1968f3a25303e06bc"
+        "git_blob_sha": "4d39fe769979fb9601cbc63a7e95a1b331ee2a18"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-11-cover.jpg",
@@ -532,7 +532,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-12.json",
-        "git_blob_sha": "a33039e30a91fdcf9b7fb66500bee02fa728b6bc"
+        "git_blob_sha": "53331cc0b06d6cb277ece8e367053ac801440e33"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-12-cover.jpg",
