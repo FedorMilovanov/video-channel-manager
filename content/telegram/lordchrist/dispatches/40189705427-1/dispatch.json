@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-26-chrysostom-word-unchanged",
+  "sequence": 26,
+  "intent_id": "bf6255b64a415690327e4180ebd9ae9c",
+  "workflow_run_id": "40189705427",
+  "workflow_run_attempt": "1",
+  "github_sha": "9e2576d91fac587372f53ae6ff8b3ae25c111b15",
+  "github_workflow_sha": "9e2576d91fac587372f53ae6ff8b3ae25c111b15",
+  "payload_sha256": "sha256:396b4ce220ec1279b4bd51cb7a2695ef77b142e5be1755a0bda508dd7cbe30cd",
+  "text": "Слово, Которое было Богом, не превратилось в человека с утратой Божества, и Его сущность не изменилась, но Он явился как человек.\n\n— Иоанн Златоуст, Беседа 7 на Послание к Филиппийцам\n\nЗлатоуст защищает полноту Божества Христа в воплощении: Сын не перестал быть тем, кем вечно был, когда принял человеческую природу. Христианское учение исповедует не превращение Бога в человека с утратой Божества, а одного Христа — истинного Бога и истинного человека.\n\n#Златоуст #Христос #Воплощение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-25T11:38:44.972478Z"
+  },
+  "prepared_at_utc": "2026-10-25T11:38:46.253137Z"
+}
