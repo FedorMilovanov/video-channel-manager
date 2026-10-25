@@ -3,7 +3,9 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import urlsplit
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
@@ -58,6 +60,8 @@ class LordGodWallOperation:
     publish_date: int
     guid: str
     source_id: str
+    photo_path: str | None = None
+    photo_sha256: str | None = None
     video_owner_id: int | None = None
     video_id: int | None = None
     expected_video_title: str | None = None
@@ -77,6 +81,10 @@ class LordGodWallOperation:
 
 def _sha256_text(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _sha256_text_bytes(value: bytes) -> str:
+    return "sha256:" + hashlib.sha256(value).hexdigest()
 
 
 def _exact_string(value: object, *, field: str) -> str:
@@ -145,6 +153,15 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
     source_id = _exact_string(payload.get("source_id"), field="source_id")
 
     if content_kind == "text":
+        photo_path = payload.get("photo_path")
+        photo_sha256 = payload.get("photo_sha256")
+        if (photo_path is None) != (photo_sha256 is None):
+            raise LordGodWallError("photo_path and photo_sha256 must be supplied together")
+        if photo_path is not None:
+            photo_path = _exact_string(photo_path, field="photo_path")
+            if photo_path.startswith(("/", ".")) or ".." in Path(photo_path).parts or not photo_path.endswith(".jpg"):
+                raise LordGodWallError("photo_path must be a repository-relative .jpg path")
+            photo_sha256 = _sha256_value(photo_sha256, field="photo_sha256")
         return LordGodWallOperation(
             content_kind=content_kind,
             account_alias=account_alias,
@@ -153,6 +170,8 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
             publish_date=publish_date,
             guid=guid,
             source_id=source_id,
+            photo_path=photo_path,
+            photo_sha256=photo_sha256,
         )
 
     video_owner_id = payload.get("video_owner_id")
@@ -230,7 +249,76 @@ class LordGodWallWriter(VkWallWriter):
         except (AttributeError, OSError, ValueError):
             return False
 
-    def schedule_text_with_community_key(self, wall: LordGodWallOperation) -> dict[str, Any]:
+    def _wall_upload_url(self) -> str:
+        server = self._call(
+            "photos.getWallUploadServer",
+            params={"group_id": LORD_GOD_COMMUNITY_ID},
+            retry_transient=True,
+        )
+        upload_url = str(server.get("upload_url") or "").strip() if isinstance(server, dict) else ""
+        parsed = urlsplit(upload_url)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+            raise LordGodWallError("photos.getWallUploadServer returned no usable HTTPS URL")
+        return upload_url
+
+    def _upload_wall_photo(self, *, upload_url: str, jpeg: bytes, file_name: str) -> dict[str, Any]:
+        try:
+            response = self._http_client.post(
+                upload_url,
+                files={"photo": (file_name, jpeg, "image/jpeg")},
+            )
+            response.raise_for_status()
+            payload = response.json()
+        except Exception as exc:
+            raise LordGodWallError(f"wall photo upload failed before save: {type(exc).__name__}: {exc}") from exc
+        if not isinstance(payload, dict):
+            raise LordGodWallError("VK upload server returned a non-object response")
+        if not isinstance(payload.get("photo"), str) or not str(payload["photo"]).strip():
+            raise LordGodWallError("VK upload response has no photo value")
+        if not isinstance(payload.get("hash"), str) or not str(payload["hash"]).strip():
+            raise LordGodWallError("VK upload response has no hash value")
+        if type(payload.get("server")) is not int:
+            raise LordGodWallError("VK upload response server is not an exact integer")
+        return payload
+
+    def _save_wall_photo(self, upload: dict[str, Any]) -> str:
+        response = self._call(
+            "photos.saveWallPhoto",
+            params={
+                "group_id": LORD_GOD_COMMUNITY_ID,
+                "photo": str(upload["photo"]),
+                "server": int(upload["server"]),
+                "hash": str(upload["hash"]),
+            },
+        )
+        photos = [item for item in response if isinstance(item, dict)] if isinstance(response, list) else []
+        if len(photos) != 1:
+            raise LordGodWallError(f"photos.saveWallPhoto returned {len(photos)} photos")
+        photo = photos[0]
+        owner_id = photo.get("owner_id")
+        photo_id = photo.get("id")
+        if type(owner_id) is not int or owner_id == 0 or type(photo_id) is not int or photo_id <= 0:
+            raise LordGodWallError("photos.saveWallPhoto returned an invalid photo identity")
+        token = f"photo{owner_id}_{photo_id}"
+        access_key = str(photo.get("access_key") or "").strip()
+        if access_key:
+            token += f"_{access_key}"
+        return token
+
+    def _upload_text_photo(self, wall: LordGodWallOperation, jpeg: bytes) -> str:
+        if wall.photo_sha256 != _sha256_text_bytes(jpeg):
+            raise LordGodWallError("cover photo bytes differ from the reviewed photo_sha256")
+        self.assert_token_scopes("wall", "photos")
+        upload = self._upload_wall_photo(
+            upload_url=self._wall_upload_url(),
+            jpeg=jpeg,
+            file_name=Path(wall.photo_path or "cover.jpg").name,
+        )
+        return self._save_wall_photo(upload)
+
+    def schedule_text_with_community_key(
+        self, wall: LordGodWallOperation, *, photo_jpeg: bytes | None = None
+    ) -> dict[str, Any]:
         """Schedule one text post with the community access key.
 
         VK rejects ``wall.get`` under group authorization (error 27), so the
@@ -245,16 +333,27 @@ class LordGodWallWriter(VkWallWriter):
             raise LordGodWallError("community-key scheduling requires a community access key token")
         self.assert_token_scopes("wall")
         self.assert_method_circuit_closed("wall.post")
+        photo_token: str | None = None
+        if wall.photo_path is not None:
+            if photo_jpeg is None:
+                raise LordGodWallError("photo operation requires the reviewed cover bytes")
+            # Photo upload/save happens strictly before wall.post dispatch:
+            # any failure here is a pre-dispatch rejection, never an unknown
+            # wall outcome.
+            photo_token = self._upload_text_photo(wall, photo_jpeg)
+        post_params: dict[str, Any] = {
+            "owner_id": LORD_GOD_OWNER_ID,
+            "from_group": True,
+            "message": wall.message,
+            "publish_date": wall.publish_date,
+            "guid": wall.guid,
+        }
+        if photo_token is not None:
+            post_params["attachments"] = photo_token
         try:
             response = self._call(
                 "wall.post",
-                params={
-                    "owner_id": LORD_GOD_OWNER_ID,
-                    "from_group": True,
-                    "message": wall.message,
-                    "publish_date": wall.publish_date,
-                    "guid": wall.guid,
-                },
+                params=post_params,
             )
         except VkWriteError:
             raise
@@ -274,13 +373,17 @@ class LordGodWallWriter(VkWallWriter):
                 readback = {"status": "not_visible"}
             else:
                 fingerprint = VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
+                if photo_token is not None:
+                    attachment_matches = fingerprint.attachments == (photo_token,)
+                else:
+                    attachment_matches = not fingerprint.attachments
                 matches = (
                     fingerprint.publish_date == wall.publish_date
                     and fingerprint.text_sha256 == wall.message_sha256
-                    and not fingerprint.attachments
+                    and attachment_matches
                 )
                 readback = {"status": "verified" if matches else "mismatch"}
-        return {
+        result: dict[str, Any] = {
             "status": "scheduled_community_key",
             "remote_id": f"{LORD_GOD_OWNER_ID}_{post_id}",
             "publish_date": wall.publish_date,
@@ -288,6 +391,9 @@ class LordGodWallWriter(VkWallWriter):
             "readback": readback,
             "source_id": wall.source_id,
         }
+        if photo_token is not None:
+            result["photo_attachment"] = photo_token
+        return result
 
     def verify_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
         if wall.content_kind != "video" or wall.video_owner_id is None or wall.video_id is None:
@@ -341,9 +447,11 @@ class LordGodWallWriter(VkWallWriter):
             raise LordGodWallError("postponed schedule slot is already occupied")
         return None
 
-    def schedule_text(self, wall: LordGodWallOperation) -> dict[str, Any]:
+    def schedule_text(self, wall: LordGodWallOperation, *, photo_jpeg: bytes | None = None) -> dict[str, Any]:
         if self.is_community_key():
-            return self.schedule_text_with_community_key(wall)
+            return self.schedule_text_with_community_key(wall, photo_jpeg=photo_jpeg)
+        if wall.photo_path is not None:
+            raise LordGodWallError("photo attachments are supported only on the community-key path")
         self.assert_method_circuit_closed("wall.get")
         self.assert_method_circuit_closed("wall.post")
         before = self.capture_wall_snapshot(
@@ -471,7 +579,7 @@ class LordGodWallWriter(VkWallWriter):
 class LordGodPostponedWallAdapter:
     reconciliation_replay_safe = True
 
-    def __init__(self, *, account_alias: str = LORD_GOD_ACCOUNT_ALIAS) -> None:
+    def __init__(self, *, account_alias: str = LORD_GOD_ACCOUNT_ALIAS, repository_root: Path | None = None) -> None:
         if account_alias in LORD_GOD_QUARANTINED_ACCOUNT_ALIASES:
             raise ValueError(
                 "Lord God wall provider refuses the quarantined legacy VK credential; "
@@ -481,6 +589,7 @@ class LordGodPostponedWallAdapter:
             raise ValueError("Lord God wall provider requires the exact local VK alias")
         settings = get_settings()
         self.settings = settings
+        self.repository_root = (repository_root or Path(".")).resolve()
         self.account_alias = account_alias
         self.writer = LordGodWallWriter(
             token_store=VkTokenStore(settings.data_dir),
@@ -511,7 +620,20 @@ class LordGodPostponedWallAdapter:
                     )
                 if wall.content_kind == "video":
                     return self.writer.schedule_video(wall)
-                return self.writer.schedule_text(wall)
+                photo_jpeg: bytes | None = None
+                if wall.photo_path is not None:
+                    photo_file = (self.repository_root / wall.photo_path).resolve()
+                    try:
+                        photo_file.relative_to(self.repository_root)
+                    except ValueError as exc:
+                        raise OperationRejectedError("cover photo path escapes the repository root") from exc
+                    try:
+                        photo_jpeg = photo_file.read_bytes()
+                    except OSError as exc:
+                        raise OperationRejectedError(f"cover photo is unreadable: {wall.photo_path}") from exc
+                    if _sha256_text_bytes(photo_jpeg) != wall.photo_sha256:
+                        raise OperationRejectedError("cover photo bytes differ from the reviewed photo_sha256")
+                return self.writer.schedule_text(wall, photo_jpeg=photo_jpeg)
         except UnknownProviderOutcomeError:
             raise
         except VkWallRecoveryRequired as exc:

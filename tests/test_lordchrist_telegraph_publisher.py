@@ -73,9 +73,11 @@ class FakeTransport:
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_six_verified_items() -> None:
+def test_telegraph_queue_loads_all_thirteen_verified_items() -> None:
+    # The Charnock cycle is complete: articles 07-13 joined the queue from
+    # the series branch (PR #727 content snapshot).
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 6
+    assert len(items) == 13
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)

@@ -12,12 +12,13 @@ on:
           - prepare
           - apply
       lane:
-        description: "Prepare only: text-only (community key, no wall/video audit) or full (needs a user-token audit)"
+        description: "Prepare only: text-only (quotes+history), charnock (13-article series with covers) or full (needs a user-token audit)"
         required: false
         default: text-only
         type: choice
         options:
           - text-only
+          - charnock
           - full
       start_date:
         description: "Prepare only: Monday (YYYY-MM-DD, Europe/Moscow); blank means the next Monday"
@@ -65,6 +66,8 @@ env:
   WORK_DIR: operator-output/lord-god-vk
   AUDIT_OUTPUT_DIR: operator-output/lord-god-vk/audit
   BACKLOG_PATH: operator-output/lord-god-vk/backlog.json
+  CHARNOCK_POSTS_PATH: operator-output/lord-god-vk/charnock-posts.json
+  CHARNOCK_QUEUE_PATH: content/telegram/lordchrist/telegraph-v1/article-queue.json
   BACKLOG_MARKDOWN_PATH: operator-output/lord-god-vk/backlog.md
   HANDOFF_DIR: operator-output/lord-god-vk/handoff
   HANDOFF_ARTIFACT_NAME: lord-god-vk-handoff
@@ -183,11 +186,13 @@ jobs:
 
       - name: Require the community key wall capability
         shell: bash
+        env:
+          REQUIRE_PHOTOS: ${{ inputs.lane == 'charnock' && '1' || '0' }}
         run: |
           set -euo pipefail
           capabilities_file="$RUNNER_TEMP/vk-capabilities.txt"
           video-manager vk community-key-capabilities --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID" | tee "$capabilities_file"
-          CAPABILITIES_FILE="$capabilities_file" python - <<'PY'
+          CAPABILITIES_FILE="$capabilities_file" REQUIRE_PHOTOS="$REQUIRE_PHOTOS" python - <<'PY'
           import os
           import re
           from pathlib import Path
@@ -199,6 +204,8 @@ jobs:
           permissions = tuple(name for name in match.group(1).split(",") if name)
           if "wall" not in permissions:
               raise SystemExit(f"VK community key must include the wall permission; got {permissions!r}")
+          if os.environ.get("REQUIRE_PHOTOS") == "1" and "photos" not in permissions:
+              raise SystemExit(f"VK community key must include the photos permission for cover posts; got {permissions!r}")
           if "community=60805374" not in text:
               raise SystemExit("community-key-capabilities output is not bound to community 60805374")
           PY
@@ -347,6 +354,29 @@ jobs:
             --quote-ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \
             --historical-release "$HISTORICAL_RELEASE_PATH" \
             --historical-ledger "$HISTORICAL_LEDGER_PATH" \
+            --output-dir "$HANDOFF_DIR" \
+            --enable-provider-writes
+
+      - name: Build the provider-inert Charnock VK post series
+        if: inputs.lane == 'charnock'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lord_god_charnock_vk_posts.py \
+            --repository-root . \
+            --article-queue "$CHARNOCK_QUEUE_PATH" \
+            --output "$CHARNOCK_POSTS_PATH"
+
+      - name: Prepare the immutable provider-inert Charnock handoff
+        if: inputs.lane == 'charnock'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/prepare_lord_god_article_wave.py \
+            --repository-root . \
+            --posts "$CHARNOCK_POSTS_PATH" \
+            --article-queue "$CHARNOCK_QUEUE_PATH" \
+            --start-date "$START_DATE" \
             --output-dir "$HANDOFF_DIR" \
             --enable-provider-writes
 
