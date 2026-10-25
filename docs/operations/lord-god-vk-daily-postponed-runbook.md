@@ -162,8 +162,15 @@ Prepare не вызывает `wall.post` и не запускает `wave apply
 video-manager wave apply --source .../06-source.json --plan .../07-plan.json \
   --intent .../08-apply-intent.json --repository-root . \
   --journal-directory operator-output/lord-god-vk/apply-journal \
-  --vk-account vk-lord-god-community-key --enable-provider-writes
+  --vk-account vk-lord-god-community-key \
+  --ci-operator-confirmation WAVE-CI-APPLY:<plan_self_digest>:<operation_set_digest> \
+  --enable-provider-writes
 ```
+
+Движок волны запрещает ambiguous-мутации в CI по умолчанию; исключение —
+только точный токен `WAVE-CI-APPLY:<plan_self_digest>:<operation_set_digest>`,
+который workflow выводит из подтверждённых оператором digest'ов. Без него
+(или с чужим digest) apply отклоняется до создания журнала и до provider-вызовов.
 
 ## После apply: стоп-правила
 

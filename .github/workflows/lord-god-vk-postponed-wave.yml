@@ -729,6 +729,7 @@ jobs:
             --repository-root . \
             --journal-directory "$APPLY_JOURNAL_DIR" \
             --vk-account "$VK_ACCOUNT" \
+            --ci-operator-confirmation "WAVE-CI-APPLY:${CONFIRMED_PLAN_SELF_DIGEST}:${CONFIRMED_OPERATION_SET_DIGEST}" \
             --enable-provider-writes
 
       - name: Summarize the apply journal

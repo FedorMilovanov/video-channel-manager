@@ -409,6 +409,7 @@ def apply(
     journal_directory: Annotated[Path | None, typer.Option("--journal-directory")] = None,
     vk_account: Annotated[str, typer.Option("--vk-account")] = VK_ARTICLE_ACCOUNT_ALIAS,
     enable_provider_writes: Annotated[bool, typer.Option("--enable-provider-writes")] = False,
+    ci_operator_confirmation: Annotated[str, typer.Option("--ci-operator-confirmation")] = "",
 ) -> None:
     source, plan, intent = _validated_apply_documents(
         source_path=source_path,
@@ -476,6 +477,7 @@ def apply(
             plan_file_path=plan_path,
             journal_directory=journal_directory,
             provider_writes_enabled=enable_provider_writes,
+            ci_operator_confirmation=ci_operator_confirmation or None,
         )
     except (OSError, ValueError) as exc:
         if not journal_existed_before and journal_directory.exists():
