@@ -186,6 +186,25 @@ def test_quote_credit_is_plain_emdash_line_outside_blockquote() -> None:
     assert "© Цитаты Чарнока" in payload.compact_content_json
 
 
+def test_history_special_is_manual_only() -> None:
+    """The historical Sunday special (history-01) carries no schedule date:
+    `due` must never select it on any day, so the Tue/Fri cycle is untouched."""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from video_channel_manager.lordchrist_telegraph_publisher import due_item
+
+    moscow = ZoneInfo("Europe/Moscow")
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    special = next(i for i in items if i.publication_id == "lordchrist-telegraph-charnock-history-01")
+    assert special.scheduled_on is None
+    assert special.is_canary is False
+    start = datetime(2026, 10, 26, 12, 0, tzinfo=moscow)
+    for offset in range(21):
+        due, _reason = due_item(items, {}, start + timedelta(days=offset))
+        assert due is None or due.publication_id != special.publication_id
+
+
 def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
     from datetime import datetime
     from zoneinfo import ZoneInfo
