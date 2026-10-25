@@ -78,6 +78,8 @@ class FakeTransport:
 
 
 def test_telegraph_queue_loads_all_thirteen_verified_items() -> None:
+    # The Charnock cycle is complete: articles 07-13 joined the queue from
+    # the series branch (PR #727 content snapshot).
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     assert len(items) == 13
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"

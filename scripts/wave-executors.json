@@ -155,6 +155,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/build_lord_god_charnock_vk_posts.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "ee3e3c60f280bd43f7aa4397290ab1c3158b658f72d8cf42e63e74c0c16b81cb",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/build_lord_god_content_backlog_v2.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
@@ -583,6 +593,16 @@
       "provider_write_capable": true,
       "sha256": "d2b3537dcbe4c3cf014e075efc1df115a435e00db9346e258ea8a25e718e39ea",
       "status": "compatibility_adapter"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/prepare_lord_god_article_wave.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "d50f8520b42e8da30c5df949156242447d74d28b83d2c9c007ceb598c85f06d3",
+      "status": "independent_tool"
     },
     {
       "callers": [],
