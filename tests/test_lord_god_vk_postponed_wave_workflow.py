@@ -155,6 +155,7 @@ def test_apply_stage_downloads_verifies_and_applies_the_exact_handoff_once() -> 
         "downloaded operation_set_digest differs from the confirmed value",
         "source.verify_artifacts(root)",
         "intent.assert_matches(plan, source)",
+        '--ci-operator-confirmation "WAVE-CI-APPLY:${CONFIRMED_PLAN_SELF_DIGEST}:${CONFIRMED_OPERATION_SET_DIGEST}"',
         '--source "$HANDOFF_DIR/06-source.json"',
         '--plan "$HANDOFF_DIR/07-plan.json"',
         '--intent "$HANDOFF_DIR/08-apply-intent.json"',
