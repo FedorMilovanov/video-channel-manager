@@ -505,3 +505,37 @@ def test_prepare_rejects_historical_ledger_digest_drift(tmp_path: Path) -> None:
                 enable_provider_writes=False,
             )
         )
+
+
+def _backlog_args(**overrides: object) -> SimpleNamespace:
+    base: dict[str, object] = {
+        "audit": None,
+        "text_only": False,
+        "video_count": 60,
+        "max_views": 1500,
+        "repository_root": Path("."),
+        "historical_release": Path("release.json"),
+        "historical_ledger": Path("ledger.json"),
+        "quote_queue": Path("queue.json"),
+        "quote_ledger": Path("quote-ledger.json"),
+        "start_date": date(2026, 11, 2),
+        "days": 60,
+        "telegram_count": 1,
+        "quote_count": 24,
+        "historical_text_mode": "full",
+        "output": Path("backlog.json"),
+    }
+    base.update(overrides)
+    return SimpleNamespace(**base)
+
+
+def test_text_only_backlog_rejects_audit_and_video_count() -> None:
+    with pytest.raises(ValueError, match="does not accept an audit"):
+        module.build_backlog(_backlog_args(text_only=True, audit=Path("audit.json"), video_count=0))
+    with pytest.raises(ValueError, match="requires --video-count 0"):
+        module.build_backlog(_backlog_args(text_only=True, video_count=60))
+
+
+def test_full_backlog_requires_audit_file() -> None:
+    with pytest.raises(ValueError, match="audit file is required"):
+        module.build_backlog(_backlog_args())

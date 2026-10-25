@@ -704,6 +704,35 @@
       ]
     },
     {
+      "boundary_id": "vk.wall.lord_god.text.post.community_key",
+      "risk": "P0",
+      "provider": "VK",
+      "language": "python",
+      "source_file": "src/video_channel_manager/wave_engine/vk_lord_god_wall_provider.py",
+      "module": "video_channel_manager.wave_engine.vk_lord_god_wall_provider",
+      "callable": "LordGodWallWriter.schedule_text_with_community_key",
+      "scanner_marker": "vk_api:wall.post",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact lord-god-strength Wave operation, project/community/owner binding, canonical message digest, source publication id, publish_date and deterministic guid; credential verified as the community access key of 60805374 with the wall permission",
+      "dispatch_evidence": "one postponed attachment-free wall.post after durable Wave dispatch_started journal; wall.get preflight is impossible under group authorization (VK error 27), so idempotency rests on the deterministic guid plus the journal",
+      "response_evidence": "positive post_id is provisional; explicit provider rejection remains known while any ambiguous failure after mutation start becomes unknown_requires_reconciliation",
+      "postflight_evidence": "non-gating wall.getById readback is reported as verified/not_visible/mismatch/unavailable; absence of readback never replays the mutation",
+      "reconciliation_identity": "Wave operation id, Lord God project binding, source publication id, exact message digest, publish_date, deterministic guid and recorded remote post_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "during_postflight",
+        "before_final_commit"
+      ],
+      "owning_tests": [
+        "tests/test_vk_lord_god_wall_provider.py",
+        "tests/test_wave_engine_contract.py"
+      ]
+    },
+    {
       "boundary_id": "telegraph.lordchrist.page.publish",
       "risk": "P1",
       "provider": "Telegraph",

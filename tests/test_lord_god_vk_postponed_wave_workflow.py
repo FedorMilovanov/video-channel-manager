@@ -45,7 +45,7 @@ def test_lord_god_workflow_is_manual_main_only_and_environment_gated() -> None:
     assert "schedule:" not in text
     assert "push:" not in text
     assert "pull_request:" not in text
-    assert text.count("environment: lord-god-vk-production") == 2
+    assert text.count("environment: The_Lord_God_VK") == 2
     assert text.count("github.ref == 'refs/heads/main'") == 2
     assert text.count("github.run_attempt == 1") == 2
     assert "group: lord-god-vk-postponed-wave" in text
@@ -56,9 +56,9 @@ def test_lord_god_workflow_is_manual_main_only_and_environment_gated() -> None:
 
     # The VK token exists only as an Environment secret reference in the two
     # import steps. It is never a workflow input, artifact path or repository file.
-    assert text.count("secrets.VK_OWN_APP_54555649_TOKEN") == 2
-    assert text.count("VCM_VK_ACCESS_TOKEN: ${{ secrets.VK_OWN_APP_54555649_TOKEN }}") == 2
-    assert "VK_OWN_APP_54555649_TOKEN:" not in text
+    assert text.count("secrets.LORD_SECRET") == 2
+    assert text.count("VCM_VK_ACCESS_TOKEN: ${{ secrets.LORD_SECRET }}") == 2
+    assert "VK_OWN_APP_54555649_TOKEN" not in text
     assert "vk_tokens.json" not in text
     assert "${{ env.VCM_DATA_DIR }}\n" not in text
 
@@ -71,18 +71,17 @@ def test_prepare_stage_is_provider_inert_and_builds_the_reviewed_handoff() -> No
     assert "ref: state/lordchrist-telegram" in prepare
     assert "persist-credentials: false" in prepare
 
-    login = prepare.index('video-manager vk login --account "$VK_ACCOUNT"')
-    capabilities = prepare.index('video-manager vk token-capabilities --account "$VK_ACCOUNT"')
-    community_probe = prepare.index('video-manager vk community-probe --account "$VK_ACCOUNT"')
-    wall_probe = prepare.index('video-manager vk wall-probe --account "$VK_ACCOUNT"')
+    login = prepare.index('video-manager vk community-key-login --account "$VK_ACCOUNT"')
+    capabilities = prepare.index('video-manager vk community-key-capabilities --account "$VK_ACCOUNT"')
     audit = prepare.index("python scripts/build_vk_wall_content_audit.py")
     backlog = prepare.index("python scripts/build_lord_god_content_backlog_v2.py")
     handoff = prepare.index("python scripts/prepare_lord_god_content_wave.py")
 
-    assert login < capabilities < community_probe < wall_probe < audit < backlog < handoff
-    assert prepare.count('video-manager vk community-probe --account "$VK_ACCOUNT"') == 1
-    assert prepare.count('video-manager vk wall-probe --account "$VK_ACCOUNT"') == 1
-    assert 'scopes != ("video", "wall", "groups")' in prepare
+    assert login < capabilities < audit < backlog < handoff
+    assert "video-manager vk community-probe" not in prepare
+    assert "video-manager vk wall-probe" not in prepare
+    assert "video-manager vk token-capabilities" not in prepare
+    assert '"wall" not in permissions' in prepare
     assert "start_date must be a Monday in Europe/Moscow" in prepare
     assert "start_date must be in the future in Europe/Moscow" in prepare
 
@@ -131,15 +130,14 @@ def test_apply_stage_downloads_verifies_and_applies_the_exact_handoff_once() -> 
     confirmation = apply.index("Validate exact apply confirmation before downloading the handoff")
     download = apply.index("Download the immutable prepare handoff")
     verify = apply.index("Verify downloaded handoff against exact operator confirmation")
-    login = apply.index('video-manager vk login --account "$VK_ACCOUNT"')
-    capabilities = apply.index('video-manager vk token-capabilities --account "$VK_ACCOUNT"')
-    community_probe = apply.index('video-manager vk community-probe --account "$VK_ACCOUNT"')
-    wall_probe = apply.index('video-manager vk wall-probe --account "$VK_ACCOUNT"')
+    login = apply.index('video-manager vk community-key-login --account "$VK_ACCOUNT"')
+    capabilities = apply.index('video-manager vk community-key-capabilities --account "$VK_ACCOUNT"')
     wave_apply = apply.index("video-manager wave apply")
 
-    assert confirmation < download < verify < login < capabilities < community_probe < wall_probe < wave_apply
-    assert apply.count('video-manager vk community-probe --account "$VK_ACCOUNT"') == 1
-    assert apply.count('video-manager vk wall-probe --account "$VK_ACCOUNT"') == 1
+    assert confirmation < download < verify < login < capabilities < wave_apply
+    assert "video-manager vk community-probe" not in apply
+    assert "video-manager vk wall-probe" not in apply
+    assert "video-manager vk token-capabilities" not in apply
 
     for phrase in (
         "REQUESTED_PREPARE_RUN_ID: ${{ inputs.prepare_run_id }}",
@@ -180,9 +178,9 @@ def test_lord_god_runbook_describes_the_github_prepare_apply_path() -> None:
     for phrase in (
         "lord-god-vk-postponed-wave.yml",
         "GitHub Environment",
-        "lord-god-vk-production",
-        "VK_OWN_APP_54555649_TOKEN",
-        "video,wall,groups,offline",
+        "The_Lord_God_VK",
+        "LORD_SECRET",
+        "community-key-login",
         "action=prepare",
         "action=apply",
         "APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>",
@@ -192,3 +190,52 @@ def test_lord_god_runbook_describes_the_github_prepare_apply_path() -> None:
         "Посты, присланные текстом",
     ):
         assert phrase in text
+
+
+def test_prepare_supports_the_community_key_text_only_lane() -> None:
+    prepare, _apply = _job_sections()
+    text = _workflow_text()
+
+    assert "lane:" in text
+    assert "default: text-only" in text
+    assert prepare.count("if: inputs.lane == 'full'") >= 3
+    assert "if: inputs.lane == 'text-only'" in prepare
+    assert "--text-only" in prepare
+    assert "--video-count 0" in prepare
+    # The text-only handoff must not reference audit artifacts at all.
+    text_only_step = prepare.split("Build the provider-inert 60-day text-only backlog", 1)[1].split("- name:", 1)[0]
+    assert "AUDIT_JSON" not in text_only_step
+    handoff_step = prepare.split("Prepare the immutable provider-inert text-only handoff", 1)[1].split("- name:", 1)[0]
+    assert "--videos" not in handoff_step
+
+
+def test_workflow_verifies_handoff_models_via_strict_json_loading() -> None:
+    # Regression (prepare run failure): the verify snippets loaded
+    # 06-source.json via WaveSourceEvidence.model_validate(json.loads(...)),
+    # which strict pydantic rejects because JSON arrays are lists while the
+    # models declare tuple fields (artifacts, operations). The engine loads
+    # the same files with model_validate_json(..., strict=True); both
+    # workflow verify stages must do the same.
+    text = _workflow_text()
+
+    assert "model_validate(json.loads" not in text
+    assert text.count("WaveSourceEvidence.model_validate_json(") == 2
+    assert text.count("WavePlan.model_validate_json(") == 2
+    assert text.count("WaveApplyIntent.model_validate_json(") == 2
+    assert text.count("strict=True") >= 6
+
+
+def test_workflow_repository_file_paths_exist() -> None:
+    # Regression (prepare run failure): env pointed at
+    # successor-translation-ledger.json / successor-integrity-amendments.json
+    # while the committed files carry the -v1 suffix. Every committed-content
+    # path referenced by the workflow env must exist in the repository;
+    # state-checkout paths (.state/...) and runtime dirs are excluded.
+    import re
+
+    text = _workflow_text()
+    referenced = sorted(set(re.findall(r"(?m)^  [A-Z0-9_]+: (content/\S+)$", text)))
+
+    assert referenced, "expected the workflow to reference committed content files"
+    for relative in referenced:
+        assert (ROOT / relative).is_file(), f"workflow references missing repository file: {relative}"

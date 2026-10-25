@@ -54,30 +54,32 @@ until it is re-verified against that issue record.
 
 ## Only supported resume condition
 
-1. Complete OAuth consent for the owner's own app `54555649` with scopes `video,wall,groups,offline`.
-2. Import the resulting candidate token **separately** from the legacy token; never overwrite it in
-   place, so the quarantine boundary stays provable.
-3. Validate the new credential with one intentional validation sequence (user identity + scopes).
-4. Only then restore a guarded provider path, one method at a time, with the staged probes below.
-5. Rebuild the Lord God postponed-content wave from a fresh wall audit under policy
-   `vk-lord-god-postponed-wall-v3`: the adapter binds alias `vk-own-app-54555649` and rejects the
-   quarantined aliases (`legendary-poet`, `default`) before any provider call, so a legacy v2 plan
-   can never be replayed under the new credential. The exact end-to-end sequence lives in
+The supported credential is the **community access key of community 60805374**
+(created in the community's `Работа с API → Ключи доступа` settings with the
+`wall` permission). On 2026-10-24 it was verified read-only
+(`groups.getTokenPermissions` shows `wall`; `groups.getById` binds community
+`60805374`) with zero provider writes. Resume sequence:
+
+1. Import the community key **separately** from the legacy token; never
+   overwrite the quarantined credential in place, so the quarantine boundary
+   stays provable.
+2. Validate it with the single read gate below (exactly
+   `groups.getTokenPermissions` + `groups.getById`).
+3. Only then restore the guarded provider path and rebuild the Lord God
+   postponed-content wave from a fresh wall audit under policy
+   `vk-lord-god-postponed-wall-v4`: the adapter binds alias
+   `vk-lord-god-community-key` and rejects the quarantined aliases
+   (`legendary-poet`, `default`) before any provider call, so a legacy plan
+   can never be replayed under the new credential. The exact end-to-end
+   sequence lives in
    [`lord-god-vk-daily-postponed-runbook.md`](lord-god-vk-daily-postponed-runbook.md).
 
-## Staged probes after the quarantine is lifted
-
-These commands apply **only** to a newly consented credential, never to the quarantined legacy token:
-
 ```
-vk flood-reset --account vk-own-app-54555649 --method groups.getById --confirm-code 9
-vk community-probe --account vk-own-app-54555649 --community 60805374
-vk flood-reset --account vk-own-app-54555649 --method wall.get --confirm-code 9
-vk wall-probe --account vk-own-app-54555649 --community 60805374
+vk community-key-login --account vk-lord-god-community-key --community 60805374
+vk community-key-capabilities --account vk-lord-god-community-key --community 60805374
 ```
 
-Exactly one probe per method; a failed probe reopens only that method's circuit and stops the
-recovery. `tests/test_operator_runbook_commands.py` parses documented `vk` invocations against the
+`tests/test_operator_runbook_commands.py` parses documented `vk` invocations against the
 real CLI, so a renamed option fails in CI rather than during an incident.
 
 ## Related

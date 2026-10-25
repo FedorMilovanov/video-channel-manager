@@ -7,8 +7,8 @@ Operational documents are living sources of truth. They override chat history, s
 - [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, IDs, routes, and no-mixing rules.
 - [`current-state.md`](current-state.md) — concise current operational interpretation and permanent safety boundaries.
 - [`vk-credential-quarantine.md`](vk-credential-quarantine.md) — the quarantined `legendary-poet` VK credential, why the
-  quarantine is a policy decision rather than a code-9 rule, and the only supported resume condition (OAuth consent
-  for the owner's own app `54555649`). Read before any VK recovery attempt.
+  quarantine is a policy decision rather than a code-9 rule, and the only supported resume condition (the
+  community access key of community `60805374` with the `wall` permission). Read before any VK recovery attempt.
 - [`lord-god-vk-daily-postponed-runbook.md`](lord-god-vk-daily-postponed-runbook.md) — the fastest supported
   path to ~60 days of daily postponed wall posts for `lord-god-strength` (VK videos, verified theologian
   quotes, full historical articles) after the quarantine resume condition is met.

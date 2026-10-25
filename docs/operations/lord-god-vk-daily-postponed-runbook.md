@@ -4,7 +4,7 @@
 workflow [`.github/workflows/lord-god-vk-postponed-wave.yml`](../../.github/workflows/lord-god-vk-postponed-wave.yml):
 сначала `action=prepare`, затем отдельным запуском `action=apply`. Единственный
 писатель в VK — `video-manager wave` с адаптером `vk.lord_god.postponed_wall`
-(policy `vk-lord-god-postponed-wall-v3`). Расписания (`schedule`) у workflow нет:
+(policy `vk-lord-god-postponed-wall-v4`). Расписания (`schedule`) у workflow нет:
 один успешный apply передаёт VK всю отложенную волну, дальше посты публикует сам VK.
 
 ## Точная цель
@@ -16,9 +16,9 @@ workflow [`.github/workflows/lord-god-vk-postponed-wave.yml`](../../.github/work
 | `owner_id` | `-60805374` |
 | Публичная ссылка | https://vk.ru/the_lord_god_is_my_strength |
 | VK Видео | https://vkvideo.ru/@the_lord_god_is_my_strength |
-| Credential alias | `vk-own-app-54555649` (только он) |
-| GitHub Environment | `lord-god-vk-production` |
-| Environment secret | `VK_OWN_APP_54555649_TOKEN` |
+| Credential alias | `vk-lord-god-community-key` (только он) |
+| GitHub Environment | `The_Lord_God_VK` |
+| Environment secret | `LORD_SECRET` (ключ доступа сообщества с правом `wall`) |
 | Владеющий issue восстановления | #662 |
 
 ## Каденция на ~60 дней
@@ -40,40 +40,50 @@ workflow [`.github/workflows/lord-god-vk-postponed-wave.yml`](../../.github/work
 в Telegram, в отбор **не попадают** (#654): они становятся eligible только после
 `published+verified` записи в ledger, и волна пересобирается.
 
+**Полоса `text-only` (текущий режим ключа сообщества).** Ключ сообщества не
+может читать `wall.get`/`video.get` (VK error 27 для group auth), поэтому
+prepare с `lane=text-only` не строит аудит и не включает видео-слоты: волна
+состоит из цитат (пн/ср/пт 12:00) и исторической статьи (вт 13:00) — до
+25 операций. Дедупликация вместо снапшотов стены опирается на журнал волны и
+Telegram-ledger'ы; поэтому перед apply оператор обязан открыть в VK вкладку
+«Отложенные» сообщества и убедиться, что там нет уже запланированных копий
+этих текстов (кроме ожидаемых). Видео-слоты вернутся только с пользовательским
+read-путём (`lane=full`).
+
 ## Одноразовая настройка
 
-### 1. Собственная авторизация VK приложения 54555649
+### 1. Ключ доступа сообщества «Господь Бог»
 
 Старый общий токен (алиасы `legendary-poet` / `default`, сторонний
 `client_id=2685278`) находится в карантине (#662,
 [`vk-credential-quarantine.md`](vk-credential-quarantine.md)): его нельзя
 переносить в GitHub, «проверять ещё раз», ротировать алиасом или обходить
-ожиданием. Policy v3 отклоняет этот алиас до любого provider-вызова.
+ожиданием. Policy v4 отклоняет этот алиас до любого provider-вызова.
 
-Под аккаунтом — администратором сообщества откройте согласие собственного
-приложения `54555649` со scopes `video,wall,groups,offline` (implicit flow,
-redirect на `blank.html`), например:
+Поддерживаемый credential — **ключ доступа самого сообщества** 60805374:
+в интерфейсе VK откройте сообщество → `Управление → Дополнительно →
+Работа с API → Ключи доступа → Создать ключ` и включите право **«Стена»**
+(фактически выданный ключ также несёт `photos, docs, messages, manage,
+stories, market`). Значение ключа — секрет: не присылайте его в чат, не
+кладите в Git, issue, workflow inputs или артефакты.
 
-```text
-https://oauth.vk.com/authorize?client_id=54555649&scope=video,wall,groups,offline&redirect_uri=https://oauth.vk.com/blank.html&response_type=token&display=page
-```
-
-После согласия адресная строка будет содержать фрагмент
-`#access_token=...&expires_in=0&user_id=...`. Значение `access_token` — секрет:
-не присылайте его в чат, не кладите в Git, issue, workflow inputs или артефакты.
+24.10.2026 ключ проверен read-only пробником (workflow
+`legendary-poet-vk-group-key-probe.yml`, target `lord-god`):
+`groups.getTokenPermissions` вернул `wall` в списке прав, а
+`groups.getById` подтвердил сообщество `60805374`
+(`the_lord_god_is_my_strength`). Provider writes при проверке: 0.
 
 ### 2. GitHub Environment и секрет
 
 Один раз в репозитории:
 
-1. `Settings → Environments → New environment`, имя ровно
-   `lord-god-vk-production`.
+1. `Settings → Environments`, имя ровно `The_Lord_God_VK`.
 2. В `Deployment branches and tags` выберите `Selected branches` и разрешите
    только `main`.
 3. Включите `Required reviewers` и укажите оператора, который утверждает
    production-запуски.
-4. В `Environment secrets` добавьте `VK_OWN_APP_54555649_TOKEN` и вставьте
-   только новый токен приложения `54555649` из шага 1.
+4. В `Environment secrets` добавьте `LORD_SECRET` и вставьте только ключ
+   сообщества из шага 1.
 
 Workflow доступен для ручного запуска только после merge в `main`. Оба job —
 и `prepare`, и `apply` — ссылаются на этот Environment, поэтому GitHub запросит
@@ -85,23 +95,27 @@ approval перед каждым из них; секрет при этом ос�
 В GitHub: `Actions → Lord God VK postponed wave → Run workflow`, ветка `main`:
 
 - `action=prepare`;
+- `lane=text-only` (по умолчанию) — текстовые посты ключом сообщества;
+  `lane=full` требует пользовательского аудита и сейчас не используется;
 - `start_date` можно оставить пустым — workflow возьмёт ближайший будущий
   понедельник по Europe/Moscow; либо укажите будущий понедельник `YYYY-MM-DD`.
 
 Утвердите Environment deployment. Workflow выполнит строго по порядку:
 
-1. импортирует секрет в ephemeral `VCM_DATA_DIR` алиасом `vk-own-app-54555649`;
-2. проверит `token-capabilities`: известные scopes обязаны быть ровно
-   `video,wall,groups`;
-3. сделает по одному read-probe `community-probe` (`groups.getById`) и
-   `wall-probe` (`wall.get`) для сообщества `60805374`;
+1. импортирует секрет в ephemeral `VCM_DATA_DIR` алиасом
+   `vk-lord-god-community-key` (`community-key-login` сам валидирует ключ);
+2. проверит `community-key-capabilities`: ровно два read-вызова
+   (`groups.getTokenPermissions` и `groups.getById`), право `wall` обязательно,
+   сообщество обязано быть `60805374`;
 4. read-only checkout `state/lordchrist-telegram`, локально материализует
    очереди successor/depth-v2/depth-v3 и эффективный depth-v3 ledger
    (в state-ref ничего не пишет);
-5. построит свежий аудит стены и найдёт созданный bundle
-   `vk-wall-content-audit-*` (timestamp не угадывается);
-6. соберёт backlog `--days 60 --video-count 60 --telegram-count 1
-   --quote-count 24 --historical-text-mode full --max-views 1500`;
+5. при `lane=full` построит свежий аудит стены и найдёт созданный bundle
+   `vk-wall-content-audit-*` (timestamp не угадывается); при `lane=text-only`
+   (по умолчанию) этот шаг пропускается — аудит ключом сообщества недоступен;
+6. соберёт backlog: `lane=text-only` — `--text-only --video-count 0`,
+   `lane=full` — `--video-count 60 --max-views 1500`; в обоих случаях
+   `--days 60 --telegram-count 1 --quote-count 24 --historical-text-mode full`;
 7. соберёт неизменяемый provider-inert handoff
    (`00-backlog.json` … `08-apply-intent.json`, `manifest.json`) и проверит
    manifest, SHA файлов, source/plan/intent и будущие `publish_date`.
@@ -116,10 +130,10 @@ approval перед каждым из них; секрет при этом ос�
 - готовую строку подтверждения формата
   `APPLY-LORD-GOD-VK:<prepare_run_id>:<plan_self_digest>:<operation_set_digest>`.
 
-Prepare не вызывает `wall.post` и не запускает `wave apply`. Если probes падают
-(в том числе code 9), волна останавливается: workflow не делает `flood-reset`,
-вторых проб и автоматических повторов; issue #662 остаётся открытым до успешных
-проб новым токеном.
+Prepare не вызывает `wall.post` и не запускает `wave apply`. Если проверка
+ключа падает, волна останавливается: workflow не делает автоматических
+повторов; сначала чинится сам ключ (права/значение в настройках сообщества)
+или секрет в Environment.
 
 ## Этап 2 — apply (одна provider-запись)
 
@@ -140,14 +154,15 @@ Prepare не вызывает `wall.post` и не запускает `wave apply
 именно из указанного prepare-run в тот же repository-relative каталог
 `operator-output/lord-god-vk/handoff`, сверит manifest и SHA всех файлов,
 `source.verify_artifacts`, `intent.assert_matches`, оба digest, включённый
-`enable_provider_writes` и будущие даты; затем повторит token gates
-(capabilities и по одному probe) и ровно один раз выполнит:
+`enable_provider_writes` и будущие даты; затем повторит проверку ключа
+сообщества (`community-key-login` + `community-key-capabilities`) и ровно
+один раз выполнит:
 
 ```text
 video-manager wave apply --source .../06-source.json --plan .../07-plan.json \
   --intent .../08-apply-intent.json --repository-root . \
   --journal-directory operator-output/lord-god-vk/apply-journal \
-  --vk-account vk-own-app-54555649 --enable-provider-writes
+  --vk-account vk-lord-god-community-key --enable-provider-writes
 ```
 
 ## После apply: стоп-правила

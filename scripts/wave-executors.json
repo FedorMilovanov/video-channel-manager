@@ -145,6 +145,26 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/build_l2_rich_document.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "b2e8a2047b0c863efbdd9564a59fd4481749a6f659866d95efb095a2d1bdba95",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_lord_god_content_backlog_v2.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "b366d0060bb2bce2881c80a02f0d90568a3b6872b6588bd41137a0a06a71fa5b",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/build_vk_catalog_plan.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
@@ -260,6 +280,16 @@
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
       "sha256": "2783b44425d5c613e3dbfe9b8c19ec838ed52a458e522f2ad41e7258680eb217",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/canary_lord_god_community_key.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "571ae1ca8ee1a30d47d2f763474ea6bd3e44fffd085c55aa10ab38799774e20d",
       "status": "independent_tool"
     },
     {
@@ -502,6 +532,36 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/lordchrist_article_preflight.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "a638d5953bd63dccfb745875093861b2abe650f1e721bd7cf918c50d3e0f6f38",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_article_sources_check.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "57cd9483ee58b7834d1135679010af9e50e07b810319bcb548f760ba74e7695f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_scripture_check.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "e77571af9b8abc99c0439eab932aa077e97bad2a0ce95c9fdd40e30baefec97b",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/prefetch_youtube_for_vk.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
@@ -523,6 +583,16 @@
       "provider_write_capable": true,
       "sha256": "d2b3537dcbe4c3cf014e075efc1df115a435e00db9346e258ea8a25e718e39ea",
       "status": "compatibility_adapter"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/prepare_lord_god_content_wave.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "53f0957eab9c9b81cf0a70d492be8703cbb8edd2de50d9bbb4befbd8e607b606",
+      "status": "independent_tool"
     },
     {
       "callers": [],
@@ -583,6 +653,16 @@
       "provider_write_capable": true,
       "sha256": "ee8c6852228eecc3d01366f457be6562b824b106c2e6575c10c01e859cfe5414",
       "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/render_l2_copy_page.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "649d3f33a5ff62b1d9e04ba333aa5ae839159c1f9e69769e186ae27ecf8fad5d",
+      "status": "independent_tool"
     },
     {
       "callers": [],
@@ -953,76 +1033,6 @@
       "provider_write_capable": true,
       "sha256": "25af1aeb488f7b6d9c964100d8b7905f6473f141f3ac5b5e38b4887d700b3cd8",
       "status": "retired"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/build_lord_god_content_backlog_v2.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "25e90335aec3618a8c84a18a603bff67496db2b648420912dbe4022e2f313b9b",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/prepare_lord_god_content_wave.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "fb95eb6bec232dc04150dc190f894661f4744d5b09555eaed2000a0190f6f4a7",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/lordchrist_article_preflight.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "a638d5953bd63dccfb745875093861b2abe650f1e721bd7cf918c50d3e0f6f38",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/render_l2_copy_page.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "649d3f33a5ff62b1d9e04ba333aa5ae839159c1f9e69769e186ae27ecf8fad5d",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/build_l2_rich_document.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "b2e8a2047b0c863efbdd9564a59fd4481749a6f659866d95efb095a2d1bdba95",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/lordchrist_article_sources_check.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "57cd9483ee58b7834d1135679010af9e50e07b810319bcb548f760ba74e7695f",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/lordchrist_scripture_check.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "e77571af9b8abc99c0439eab932aa077e97bad2a0ce95c9fdd40e30baefec97b",
-      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",
