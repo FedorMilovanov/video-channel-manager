@@ -113,5 +113,7 @@ def _assert_handoff(output_dir: Path) -> None:
     publish_dates = [op.payload["publish_date"] for op in plan.operations]
     assert publish_dates == sorted(publish_dates)
     assert len(set(publish_dates)) == len(publish_dates)
+    # Covers cannot be uploaded with the community key (VK error 27), so
+    # the prepared plan is strictly text-only.
     photo_ops = [op for op in plan.operations if "photo_path" in op.payload]
-    assert len(photo_ops) == len(plan.operations)
+    assert photo_ops == []

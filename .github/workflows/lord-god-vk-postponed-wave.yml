@@ -186,13 +186,11 @@ jobs:
 
       - name: Require the community key wall capability
         shell: bash
-        env:
-          REQUIRE_PHOTOS: ${{ inputs.lane == 'charnock' && '1' || '0' }}
         run: |
           set -euo pipefail
           capabilities_file="$RUNNER_TEMP/vk-capabilities.txt"
           video-manager vk community-key-capabilities --account "$VK_ACCOUNT" --community "$VK_COMMUNITY_ID" | tee "$capabilities_file"
-          CAPABILITIES_FILE="$capabilities_file" REQUIRE_PHOTOS="$REQUIRE_PHOTOS" python - <<'PY'
+          CAPABILITIES_FILE="$capabilities_file" python - <<'PY'
           import os
           import re
           from pathlib import Path
@@ -204,8 +202,6 @@ jobs:
           permissions = tuple(name for name in match.group(1).split(",") if name)
           if "wall" not in permissions:
               raise SystemExit(f"VK community key must include the wall permission; got {permissions!r}")
-          if os.environ.get("REQUIRE_PHOTOS") == "1" and "photos" not in permissions:
-              raise SystemExit(f"VK community key must include the photos permission for cover posts; got {permissions!r}")
           if "community=60805374" not in text:
               raise SystemExit("community-key-capabilities output is not bound to community 60805374")
           PY

@@ -5,8 +5,11 @@ Consumes the provider-inert post list built by
 ``build_lord_god_charnock_vk_posts.py`` and emits the same handoff layout
 as ``prepare_lord_god_content_wave.py`` (00-08 + manifest), so the guarded
 GitHub Actions prepare/apply stages verify and apply it unchanged. Posts
-run Monday-Friday at 13:00 Europe/Moscow from ``--start-date``; every part
-carries the article cover photo.
+run Monday-Friday at 13:00 Europe/Moscow from ``--start-date``. Posts are
+text-only: the community access key cannot upload wall photos
+(``photos.getWallUploadServer`` is unavailable with group auth, VK
+error 27, live-proven in apply run 40197033579); covers remain bound as
+source evidence only.
 """
 
 from __future__ import annotations
@@ -144,9 +147,9 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             "guid": deterministic_guid("charnock", post["source_id"], publish_date, post["message_sha256"]),
             "source_id": post["source_id"],
         }
-        if post.get("cover_path"):
-            payload["photo_path"] = post["cover_path"]
-            payload["photo_sha256"] = post["cover_sha256"]
+        # Covers are recorded as evidence but are NOT attached: the
+        # community access key cannot upload wall photos (VK error 27 on
+        # photos.getWallUploadServer, live-proven in apply 40197033579).
         schedule.append({"source_id": post["source_id"], "publish_date": publish_date})
         specs.append(
             WaveOperationSpec(

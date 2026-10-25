@@ -223,8 +223,6 @@ def test_prepare_supports_the_charnock_series_lane_with_covers() -> None:
         "Prepare the immutable provider-inert Charnock handoff",
         "python scripts/prepare_lord_god_article_wave.py",
         '--start-date "$START_DATE"',
-        "REQUIRE_PHOTOS: ${{ inputs.lane == 'charnock' && '1' || '0' }}",
-        "photos permission for cover posts",
         "if: inputs.lane != 'charnock'",
     ):
         assert phrase in prepare, phrase
