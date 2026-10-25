@@ -9,6 +9,7 @@ import pytest
 from video_channel_manager.lordchrist_telegraph_publisher import (
     DEFAULT_QUEUE_PATH,
     JPEG_MAGIC,
+    _apply_telegraph_layout_rules,
     build_telegraph_payload,
     ensure_telegraph_token,
     load_telegraph_queue,
@@ -62,7 +63,10 @@ class FakeTransport:
                 "ok": True,
                 "result": {
                     "message_id": 4421,
-                    "link_preview_options": {"url": copied["link_preview_options"]["url"]},
+                    "link_preview_options": {
+                        "url": copied["link_preview_options"]["url"],
+                        "prefer_large_media": True,
+                    },
                 },
             }
         raise AssertionError(f"Unexpected JSON URL: {url}")
@@ -135,7 +139,13 @@ def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
         "chat_id": -1001295216957,
         "message_id": 4421,
         "telegraph_url": "https://telegra.ph/Charnock-Page-1",
+        "link_preview_large_media": True,
     }
+    # The initial send came back without a confirmed large-media preview, so
+    # exactly one refresh edit must follow to force the enlarged preview.
+    edit_calls = [p for u, p in fake.json_calls if u.endswith("/editMessageText")]
+    assert len(edit_calls) == 1
+    assert edit_calls[0]["link_preview_options"]["prefer_large_media"] is True
     send_payload = next(p for u, p in fake.json_calls if u.endswith("/sendMessage"))
     assert send_payload["link_preview_options"] == {
         "is_disabled": False,
@@ -227,6 +237,86 @@ def test_telegraph_workflow_has_midday_tue_fri_cron_without_timezone() -> None:
     assert "steps.resolve.outputs.publication_id" in workflow
 
 
+def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    item02 = next(i for i in items if i.publication_id.endswith("-02"))
+    payload = build_telegraph_payload(ROOT, item02, media_base_url=MEDIA_BASE)
+    nodes = payload.nodes
+
+    blockquotes = [n for n in nodes if isinstance(n, dict) and n.get("tag") == "blockquote"]
+    doc = json.loads((ROOT / item02.article_path).read_text(encoding="utf-8"))  # type: ignore[arg-type]
+    raw_quotes = sum(1 for b in doc["blocks"] if b["type"] == "blockquote")
+    # Article 02 clusters are merged editorially in the article itself, so the
+    # publisher receives no back-to-back quotes and must not invent merges.
+    assert len(blockquotes) == raw_quotes, "article-level merged quotes must pass through unchanged"
+
+    # exactly one credit line per merged quote group
+    def _is_credit(n: object) -> bool:
+        if not isinstance(n, dict) or n.get("tag") != "p":
+            return False
+        ch = n.get("children")
+        return (
+            isinstance(ch, list)
+            and len(ch) == 1
+            and isinstance(ch[0], dict)
+            and ch[0].get("tag") == "em"
+            and "Стивен Чарнок" in json.dumps(ch[0], ensure_ascii=False)
+        )
+
+    credits = [n for n in nodes if _is_credit(n)]
+    assert len(credits) == len(blockquotes) - 1  # minus the Scripture epigraph
+    assert "(беседа I)" in json.dumps(credits[0], ensure_ascii=False)
+    # Scripture epigraph credit stays bare — no chapter tag
+    assert "— Мал. 1:11" in payload.compact_content_json
+    assert "Мал. 1:11 (беседа" not in payload.compact_content_json
+
+    # Heading air: a spacer precedes headings after prose, but never doubles
+    # up right after a quotation block (credit paragraph).
+    for pos, node in enumerate(nodes):
+        if isinstance(node, dict) and node.get("tag") in {"h3", "h4"} and pos >= 2:
+            prev = nodes[pos - 1]
+            before_prev = nodes[pos - 2]
+            is_spacer = isinstance(prev, dict) and prev.get("tag") == "p" and prev.get("children") == [{"tag": "br"}]
+            if is_spacer:
+                is_credit = (
+                    isinstance(before_prev, dict)
+                    and before_prev.get("tag") == "p"
+                    and isinstance(before_prev.get("children"), list)
+                    and len(before_prev["children"]) == 1
+                    and isinstance(before_prev["children"][0], dict)
+                    and before_prev["children"][0].get("tag") == "em"
+                )
+                assert not is_credit, "no double air after a quote"
+
+    # Channel digest: blank line between points, bold leads preserved
+    assert item02.channel_post is not None
+    post = render_channel_post(item02.channel_post, "https://telegra.ph/Test-Page-10-23")
+    digest = post.html_text.split("<blockquote expandable>", 1)[1]
+    assert "\n\n• <b>" in digest
+
+
+def test_layout_rules_merge_back_to_back_quotes_with_trailing_ellipsis() -> None:
+    credit = {"tag": "p", "children": [{"tag": "em", "children": ["— Стивен Чарнок, «О бытии Бога»"]}]}
+    nodes: list[dict[str, Any] | str] = [
+        {"tag": "blockquote", "children": ["Первый фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "blockquote", "children": ["Второй фрагмент."]},
+        json.loads(json.dumps(credit)),
+        {"tag": "p", "children": ["Авторский абзац."]},
+    ]
+    out = _apply_telegraph_layout_rules(nodes)
+    quotes = [n for n in out if isinstance(n, dict) and n.get("tag") == "blockquote"]
+    assert len(quotes) == 1, "back-to-back quotes must merge into one block"
+    merged_children = quotes[0].get("children") or []
+    assert " …" in json.dumps(merged_children, ensure_ascii=False), "fragments join with a trailing ellipsis"
+    credit_texts = [
+        n["children"][0]["children"][0]
+        for n in out
+        if isinstance(n, dict) and n.get("tag") == "p" and n.get("children") and isinstance(n["children"][0], dict)
+    ]
+    assert credit_texts == ["— Стивен Чарнок, «О бытии Бога» (беседа I)"], "one credit, chapter tag appended"
+
+
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)
@@ -294,6 +384,47 @@ def test_channel_chat_mismatch_fails_closed() -> None:
             expected_bot_id=8716602202,
             expected_chat_id=-1009999999999,
             rendered_post=rendered,
+        )
+
+
+def test_scheduled_channel_post_quotes_are_verbatim_article_excerpts() -> None:
+    import re
+
+    def normalize(text: str) -> str:
+        text = text.replace("**", "").replace("*", "").casefold()
+        return re.sub(r"[^0-9a-zа-яё]+", " ", text).strip()
+
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    for item in items:
+        if item.is_canary:
+            continue  # 01b is already published; its post must not be rewritten retroactively.
+        assert item.article_path is not None and item.channel_post is not None
+        markdown = (ROOT / item.article_path.with_suffix(".md")).read_text(encoding="utf-8")
+        assert normalize(item.channel_post.quote_text) in normalize(markdown), item.publication_id
+
+
+def test_publish_confirmation_fails_before_any_network_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    import video_channel_manager.lordchrist_telegraph_publisher as publisher
+
+    def forbidden_transport() -> object:
+        raise AssertionError("network transport must not be created after a bad confirmation")
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", forbidden_transport)
+    with pytest.raises(ValueError, match="Confirmation mismatch"):
+        publisher.main(
+            [
+                "publish",
+                "--repo-root",
+                str(ROOT),
+                "--publication-id",
+                "lordchrist-telegraph-charnock-02",
+                "--media-base-url",
+                MEDIA_BASE,
+                "--ledger",
+                "state/nonexistent-ledger.json",
+                "--confirm",
+                "PUBLISH:wrong",
+            ]
         )
 
 

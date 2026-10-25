@@ -11,6 +11,7 @@
 3. `QUOTE_ATTRIBUTION_STANDARD.md` — цитаты, подписи и точное правило воздуха перед цитатами;
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing (lane L1);
 5. `RICH_EDITOR_ARTICLE_STANDARD.md` — длинные статьи в редакторе «Статья» (lane L2, до 32 768): заголовки, списки, цитаты, воздух;
+5а. `TELEGRAPH_ARTICLE_STANDARD.md` — двухслойные Telegraph-выпуски (lane L3): пост канала с раскрывающимся конспектом + лонгрид Telegra.ph, формат цитат и подписей, запрет «мелкоцитатосыпа»;
 6. `MANUAL_RICH_COPY.md` — диагностика потери форматирования и `tools/telegram-rich-copy/index.html` для ручной rich-copy;
 7. только затем task-specific research/evidence.
 
