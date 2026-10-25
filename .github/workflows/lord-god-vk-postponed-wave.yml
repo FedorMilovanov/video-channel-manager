@@ -211,6 +211,7 @@ jobs:
           PY
 
       - name: Resolve successor, depth-v2 and depth-v3 queues locally
+        if: inputs.lane != 'charnock'
         shell: bash
         run: |
           set -euo pipefail
@@ -229,6 +230,7 @@ jobs:
             --output "$ACTIVE_SELECTION_PATH"
 
       - name: Bind the effective depth-v3 ledger
+        if: inputs.lane != 'charnock'
         shell: bash
         run: |
           set -euo pipefail
@@ -247,7 +249,7 @@ jobs:
           PY
 
       - name: Materialize a missing depth-v3 ledger locally only
-        if: env.EFFECTIVE_DEPTH_LEDGER_PATH == env.LOCAL_DEPTH_LEDGER_PATH
+        if: inputs.lane != 'charnock' && env.EFFECTIVE_DEPTH_LEDGER_PATH == env.LOCAL_DEPTH_LEDGER_PATH
         shell: bash
         run: |
           set -euo pipefail

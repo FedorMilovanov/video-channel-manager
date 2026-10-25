@@ -5,8 +5,8 @@ Consumes the provider-inert post list built by
 ``build_lord_god_charnock_vk_posts.py`` and emits the same handoff layout
 as ``prepare_lord_god_content_wave.py`` (00-08 + manifest), so the guarded
 GitHub Actions prepare/apply stages verify and apply it unchanged. Posts
-run Monday-Friday at 13:00 Europe/Moscow from ``--start-date``; the first
-part of each article carries its cover photo.
+run Monday-Friday at 13:00 Europe/Moscow from ``--start-date``; every part
+carries the article cover photo.
 """
 
 from __future__ import annotations

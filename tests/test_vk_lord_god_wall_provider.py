@@ -682,6 +682,62 @@ def test_community_key_photo_save_failure_stops_before_wall_post(tmp_path) -> No
     assert "wall.post" not in calls
 
 
+def test_community_key_photo_save_wrong_owner_stops_before_wall_post(tmp_path) -> None:
+    import httpx
+
+    jpeg = b"\xff\xd8fake-jpeg-bytes"
+    store = _community_store(tmp_path, ["photos", "wall"])
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(jpeg)))
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        method = request.url.path.rsplit("/", 1)[-1]
+        calls.append(method)
+        if method == "photos.getWallUploadServer":
+            return httpx.Response(200, json={"response": {"upload_url": "https://example.test/upload-photo"}})
+        if method == "upload-photo":
+            return httpx.Response(200, json={"photo": "raw-photo", "server": 7, "hash": "hash-1"})
+        if method == "photos.saveWallPhoto":
+            return httpx.Response(200, json={"response": [{"id": 555, "owner_id": 1}]})
+        raise AssertionError(f"unexpected VK method: {method}")
+
+    writer = LordGodWallWriter(
+        token_store=store,
+        account_alias=LORD_GOD_ACCOUNT_ALIAS,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+
+    with pytest.raises(LordGodWallError, match="invalid photo identity"):
+        writer.schedule_text(wall, photo_jpeg=jpeg)
+    assert "wall.post" not in calls
+
+
+def test_photo_text_post_is_reconcilable_by_exact_text_date_and_one_photo() -> None:
+    jpeg = b"\xff\xd8fake-jpeg-bytes"
+    wall = parse_lord_god_wall_operation(operation(_photo_payload(jpeg)))
+    created = VkWallPostFingerprint(
+        owner_id=-60805374,
+        post_id=13002,
+        surface=VkWallSurface.POSTPONED,
+        publish_date=wall.publish_date,
+        text_sha256=wall.message_sha256,
+        attachments=("photo-60805374_555",),
+    )
+
+    class FakeWriter(_CircuitClosedWriter):
+        def __init__(self) -> None:
+            pass
+
+        def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int = 10_000) -> VkWallSnapshot:
+            assert community_id == 60805374
+            return snapshot(created)
+
+    result = FakeWriter().reconcile_exact(wall)
+    assert result["status"] == "reconciled_exact_post"
+    assert result["remote_id"] == "-60805374_13002"
+
+
 def test_community_key_lost_response_is_unknown_after_one_dispatch() -> None:
     wall = parse_lord_god_wall_operation(operation(text_payload()))
 
