@@ -1,0 +1,107 @@
+{
+  "document_id": "lordchrist-telegraph-charnock-history-01",
+  "project_key": "lordchrist",
+  "metadata": {
+    "title": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
+    "language": "ru",
+    "summary": "Исторический воскресный выпуск вне цикла бесед: биография Стивена Чарнока (1628–1680), устройство его богословского ума по беседам о бытии и атрибутах Бога, честный разбор эпохи быстрых ответов (эффект Google, чтение с экрана, генеративные модели) и практика тренировки глубокой богословской мысли сегодня.",
+    "author": "Господь Бог",
+    "tags": [
+      "Чарнок",
+      "биография",
+      "глубина мысли",
+      "внимание",
+      "богословие",
+      "история"
+    ],
+    "created_at": "2026-10-26",
+    "updated_at": "2026-10-26"
+  },
+  "verified_on": "2026-10-26",
+  "epigraph_source": {
+    "source_id": "src-01-ps89-2",
+    "label": "Книга Псалмов 89:2 — эпиграф статьи",
+    "url": "https://github.com/bibleonline/rst",
+    "verified_on": "2026-10-26",
+    "evidence": "Синодальный перевод: «Прежде нежели родились горы, и Ты образовал землю и вселенную, и от века и до века Ты — Бог» (сверено по корпусу bibleonline/rst, parsed66; нумерация псалмов синодальная, у Чарнока Ps. xc)."
+  },
+  "scripture_source": {
+    "source_id": "src-scripture-synodal",
+    "label": "Синодальный перевод: стихи в тексте статьи",
+    "url": "https://github.com/bibleonline/rst",
+    "verified_on": "2026-10-26",
+    "evidence": "Пс. 89:2; Рим. 1:28; Откр. 4:8; Пс. 5:2 — дословно по корпусу bibleonline/rst (parsed66); нумерация псалмов синодальная (у Чарнока по английской Библии: Ps. v. 1 = Пс. 5:2)."
+  },
+  "quotes": [
+    {
+      "discourse": "беседа I",
+      "start": "The existence of God is the foundation of all religion.",
+      "end": "devote our affections to him"
+    },
+    {
+      "discourse": "беседа II",
+      "start": "Practical atheism is natural to man in his corrupt state.",
+      "end": "spring from the ill dispositions of the heart"
+    },
+    {
+      "discourse": "беседа II",
+      "start": "Whosoever thinks the notion of a Deity unfit",
+      "end": "sapless and useless thing"
+    },
+    {
+      "discourse": "беседа II",
+      "start": "Men in their travels are frequently thinking",
+      "end": "flitting thoughts of a durable and eternal good"
+    },
+    {
+      "discourse": "беседа V",
+      "start": "Eternity is a perpetual duration, which hath neither beginning nor end",
+      "end": "perfect possession of life without any variation"
+    },
+    {
+      "discourse": "беседа V",
+      "start": "A man is not the same at night that he was in the morning",
+      "end": "in the same infiniteness as ever"
+    },
+    {
+      "discourse": "беседа V",
+      "start": "God is always vigorous and flourishing",
+      "end": "and never putrefies"
+    },
+    {
+      "discourse": "беседа V",
+      "start": "Often meditate on the eternity of God",
+      "end": "which was, and is, and is to come"
+    },
+    {
+      "discourse": "беседа V",
+      "start": "since nothing but God is eternal, nothing but God is worth the loving",
+      "end": "by a dissolution"
+    },
+    {
+      "discourse": "беседа VIII",
+      "start": "He knows what angels know, what man knows",
+      "end": "viewing and piercing all things"
+    },
+    {
+      "discourse": "беседа VIII",
+      "start": "Prayer is an eternal work; words are but the garment of prayer",
+      "end": "he considers the meditation of the frame of the heart"
+    },
+    {
+      "discourse": "беседа IX",
+      "start": "He is counted a wise man that lays hold of the fittest opportunities",
+      "end": "miss of the due season of bringing about his own purposes"
+    },
+    {
+      "discourse": "беседа IX",
+      "start": "As his will wills all things, and his power effects all things",
+      "end": "agreeable to so excellent a Being"
+    },
+    {
+      "discourse": "беседа VI",
+      "start": "He wants nothing; he loses nothing",
+      "end": "equal to itself in all its dimensions"
+    }
+  ]
+}

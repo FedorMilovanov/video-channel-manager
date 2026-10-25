@@ -179,7 +179,13 @@ def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
         )
         for index, chunk in enumerate(chunks, start=1):
             body = "\n\n".join(chunk)
-            header = f"📖 Стивен Чарнок. «О бытии Бога»\n{title}\nЧасть {index} из {total}"
+            # Special (non-cycle) items such as the biographical history-01
+            # are not discourses from «О бытии Бога»; do not label them so.
+            if "-history-" in publication_id:
+                header_top = "📖 Стивен Чарнок. Биографический очерк"
+            else:
+                header_top = "📖 Стивен Чарнок. «О бытии Бога»"
+            header = f"{header_top}\n{title}\nЧасть {index} из {total}"
             footer = LINKS_FOOTER if index == total else CONTINUES_FOOTER
             message = canonical_vk_text(f"{header}\n\n{body}{footer}")
             if len(message) > 15_000:

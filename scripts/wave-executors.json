@@ -159,7 +159,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "817110db25a0e471f22d1b23d093c78bf1831269f026440cfa928ab6ea59f411",
+      "sha256": "ef5857620d6ab965417c1570075d01d657ad354beb9828566c4036d0b91c4c0c",
       "status": "independent_tool"
     },
     {
@@ -170,6 +170,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "b366d0060bb2bce2881c80a02f0d90568a3b6872b6588bd41137a0a06a71fa5b",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_lordchrist_telegraph_article.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": false,
+      "sha256": "529da6d0a17b36b509eec9afe76b40a515e501ab3286611f8cb893b9751e4cbb",
       "status": "independent_tool"
     },
     {

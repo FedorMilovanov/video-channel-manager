@@ -36,5 +36,8 @@
 
 ## Публикационная механика
 
+- **Опубликовано 25.10.2026** (воскресенье) ручным запуском оператора: Telegraph-страница создана, пост с обложкой и расширенным превью вышел в @lordchrist. Повторный `publish` того же ID заблокирован ledger на state-ветке.
+- Сборка JSON воспроизводима: `scripts/build_lordchrist_telegraph_article.py --md …-history-01.md --spec …-history-01.quotes.json --source <53527-0.txt> --out …-history-01.json --blocks-out <файл>` даёт байт-идентичный JSON (проверено 25.10.2026); `--block`-аргументы чекера лежат в выводе сборщика.
+
 - Пост канала: заголовок + 2 подводки + открытая дословная цитата статьи + раскрывающийся конспект (5 пунктов, жирные вводы, воздух между пунктами) + CTA; расширенное превью `prefer_large_media` обеспечивает паблишер.
 - Публикация: после мержа PR — вручную через воркфлоу *Lordchrist Telegraph publisher*: action=`publish`, publication_id=`lordchrist-telegraph-charnock-history-01`, confirm=`PUBLISH:lordchrist-telegraph-charnock-history-01`. `due` этот выпуск не подхватит (дата не назначена) — расписание статей 02–13 не сдвигается.
