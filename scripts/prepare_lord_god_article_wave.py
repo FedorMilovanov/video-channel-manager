@@ -54,6 +54,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-date", type=date.fromisoformat, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--enable-provider-writes", action="store_true")
+    parser.add_argument(
+        "--skip-posts",
+        type=int,
+        default=0,
+        help="Resume support: drop this many already-scheduled leading posts (see the failed apply journal).",
+    )
+    parser.add_argument(
+        "--occupied-date",
+        action="append",
+        type=date.fromisoformat,
+        default=[],
+        help="YYYY-MM-DD slots already taken on the wall at 13:00 (repeatable); the community key "
+        "cannot read the wall, so occupied slots are declared by the operator.",
+    )
     return parser.parse_args()
 
 
@@ -66,11 +80,12 @@ def deterministic_guid(*parts: object) -> str:
     return "vcm-lgw-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:28]
 
 
-def schedule_dates(start: date, count: int) -> list[int]:
+def schedule_dates(start: date, count: int, *, occupied: set[date] | None = None) -> list[int]:
     epochs: list[int] = []
     cursor = start
+    skip = occupied or set()
     while len(epochs) < count:
-        if cursor.weekday() < 5:
+        if cursor.weekday() < 5 and cursor not in skip:
             moment = datetime.combine(cursor, PUBLISH_TIME, tzinfo=MOSCOW)
             epochs.append(int(moment.timestamp()))
         cursor += timedelta(days=1)
@@ -91,6 +106,10 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     posts = posts_payload.get("posts")
     if not isinstance(posts, list) or not posts:
         raise ValueError("Charnock VK posts list is empty")
+    if args.skip_posts < 0 or args.skip_posts >= len(posts):
+        raise ValueError("--skip-posts must leave at least one post to schedule")
+    if args.skip_posts:
+        posts = posts[args.skip_posts :]
 
     backlog_copy = output_dir / "00-backlog.json"
     videos_copy = output_dir / "01-videos.json"
@@ -129,7 +148,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     write_json_atomic(covers_copy, {"covers": covers})
     write_json_atomic(sources_copy, {"articles": sources})
 
-    epochs = schedule_dates(args.start_date, len(posts))
+    epochs = schedule_dates(args.start_date, len(posts), occupied=set(args.occupied_date))
     schedule: list[dict[str, Any]] = []
     specs: list[WaveOperationSpec] = []
     for post, publish_date in zip(posts, epochs, strict=True):

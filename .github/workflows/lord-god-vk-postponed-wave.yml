@@ -25,6 +25,16 @@ on:
         required: false
         default: ""
         type: string
+      skip_posts:
+        description: "Prepare charnock resume only: drop this many already-scheduled leading posts (0 = fresh series)"
+        required: false
+        default: "0"
+        type: string
+      occupied_dates:
+        description: "Prepare charnock only: comma-separated YYYY-MM-DD dates whose 13:00 slot is already taken on the wall"
+        required: false
+        default: ""
+        type: string
       prepare_run_id:
         description: "Apply only: numeric GitHub run ID of the successful prepare run"
         required: false
@@ -368,13 +378,27 @@ jobs:
       - name: Prepare the immutable provider-inert Charnock handoff
         if: inputs.lane == 'charnock'
         shell: bash
+        env:
+          SKIP_POSTS: ${{ inputs.skip_posts }}
+          OCCUPIED_DATES: ${{ inputs.occupied_dates }}
         run: |
           set -euo pipefail
+          [[ "$SKIP_POSTS" =~ ^[0-9]+$ ]] || { echo "skip_posts must be a non-negative integer"; exit 2; }
+          OCCUPIED_ARGS=()
+          if [[ -n "${OCCUPIED_DATES// /}" ]]; then
+            IFS=',' read -ra OCCUPIED_LIST <<< "$OCCUPIED_DATES"
+            for occupied_day in "${OCCUPIED_LIST[@]}"; do
+              [[ "$occupied_day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "occupied_dates entries must be YYYY-MM-DD"; exit 2; }
+              OCCUPIED_ARGS+=(--occupied-date "$occupied_day")
+            done
+          fi
           python scripts/prepare_lord_god_article_wave.py \
             --repository-root . \
             --posts "$CHARNOCK_POSTS_PATH" \
             --article-queue "$CHARNOCK_QUEUE_PATH" \
             --start-date "$START_DATE" \
+            --skip-posts "$SKIP_POSTS" \
+            "${OCCUPIED_ARGS[@]}" \
             --output-dir "$HANDOFF_DIR" \
             --enable-provider-writes
 
