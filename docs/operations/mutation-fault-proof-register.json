@@ -628,32 +628,6 @@
       ]
     },
     {
-      "boundary_id": "vk.wall.lord_god.photo.save",
-      "proofs": [
-        {
-          "stages": [
-            "before_dispatch"
-          ],
-          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_photo_sha_mismatch_stops_before_any_call",
-          "claim": "cover bytes that differ from the reviewed photo_sha256 stop before any provider call"
-        },
-        {
-          "stages": [
-            "after_dispatch_before_response"
-          ],
-          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_photo_save_failure_stops_before_wall_post",
-          "claim": "a photos.saveWallPhoto rejection aborts the operation before the wall.post dispatch"
-        },
-        {
-          "stages": [
-            "during_postflight"
-          ],
-          "test_id": "tests/test_vk_lord_god_wall_provider.py::test_community_key_photo_post_uploads_cover_then_posts_once",
-          "claim": "success is reported only after the exact photo attachment, text and date verify in the postponed readback"
-        }
-      ]
-    },
-    {
       "boundary_id": "vk.wall.lord_god.text.post.community_key",
       "proofs": [
         {

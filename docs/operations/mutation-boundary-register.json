@@ -704,34 +704,6 @@
       ]
     },
     {
-      "boundary_id": "vk.wall.lord_god.photo.save",
-      "risk": "P0",
-      "provider": "VK",
-      "language": "python",
-      "source_file": "src/video_channel_manager/wave_engine/vk_lord_god_wall_provider.py",
-      "module": "video_channel_manager.wave_engine.vk_lord_god_wall_provider",
-      "callable": "LordGodWallWriter._save_wall_photo",
-      "scanner_marker": "vk_api:photos.saveWallPhoto",
-      "mutation_class": "ambiguous_mutation",
-      "intent_evidence": "exact lord-god-strength Wave text operation with repository-relative cover path and photo_sha256, project/community/owner binding, canonical message digest, publish_date and deterministic guid",
-      "dispatch_evidence": "one photos.getWallUploadServer, one validated JPEG upload POST and one photos.saveWallPhoto strictly before the single wall.post dispatch",
-      "response_evidence": "exact saved photo owner_id/photo_id retained as the wall.post attachment token; any failure before wall.post is a pre-dispatch rejection",
-      "postflight_evidence": "non-gating wall.getById readback reports verified only when text digest, publish_date and the exact photo attachment match",
-      "reconciliation_identity": "Wave operation id, Lord God project binding, exact message digest, publish_date, deterministic guid and saved photo identity",
-      "retry_policy": "never_replay",
-      "unknown_status": "unknown_requires_reconciliation",
-      "attempt_limit": 1,
-      "required_fault_stages": [
-        "before_dispatch",
-        "after_dispatch_before_response",
-        "during_postflight"
-      ],
-      "owning_tests": [
-        "tests/test_vk_lord_god_wall_provider.py",
-        "tests/test_wave_engine_contract.py"
-      ]
-    },
-    {
       "boundary_id": "vk.wall.lord_god.text.post.community_key",
       "risk": "P0",
       "provider": "VK",

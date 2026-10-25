@@ -5,7 +5,8 @@ The Telegraph cycle ``lordchrist-telegraph-charnock-*`` holds thirteen
 articles of roughly 20-58k characters. A VK wall post is limited to 15,000
 characters, so each article is converted to canonical VK plain text and
 split at section boundaries into sequential parts. Every part carries
-the article cover (uploaded at apply time by the Lord God wall provider);
+the article cover path/digest as evidence (the community key cannot
+upload wall photos, so prepare emits text-only operations);
 the output is provider-inert and deterministic.
 """
 
