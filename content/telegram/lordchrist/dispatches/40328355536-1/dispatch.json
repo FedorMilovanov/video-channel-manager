@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-28-charnock-decrees-promises",
+  "sequence": 28,
+  "intent_id": "63538f271ca4f6cbfe8e02fd0db502e9",
+  "workflow_run_id": "40328355536",
+  "workflow_run_attempt": "1",
+  "github_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "github_workflow_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "payload_sha256": "sha256:262cb5cac364254902517cbd5026b702dad78f6c5b30fc53709b00db03db5fa8",
+  "text": "Всё, что Бог постановил, неизменно; всё, что Бог обещал, будет исполнено.\n\n— Стивен Чарнок, «О неизменности Бога»\n\nЧарнок различает человеческую переменчивость и Божью верность. Мы не знаем скрытых Божьих постановлений, но можем крепко держаться Его открытых обещаний: уверенность строится не на контроле обстоятельств, а на характере Того, Кто обещает и не лжёт.\n\n#Чарнок #СуверенностьБога #Обетования",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-26T13:11:19.002049Z"
+  },
+  "prepared_at_utc": "2026-10-26T13:11:20.198810Z"
+}
