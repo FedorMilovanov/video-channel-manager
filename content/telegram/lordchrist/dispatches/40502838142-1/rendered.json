@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-depth-v2-29-ryle-cost-nothing",
+  "source_payload_sha256": "sha256:773e86cdaf19b6a1528b8e645329541b6ce59ca29d26fe07c540d6a17e87a8a3",
+  "presentation_policy_id": "lordchrist-quote-v5",
+  "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
+  "provider_payload_sha256": "sha256:73cab058868c765efb8ad365c60e2943e841b285a70f091cad249f5cd3540399",
+  "parse_mode": "HTML",
+  "text": "Религия, которая ничего нам не стоит, ничего и не стоит.\n— Дж. К. Райл, «Святость», «Цена»\n\nРайл говорит не о покупке спасения делами, а о цене ученичества. Бесплатная благодать не создаёт христианство без креста: тот, кто следует Христу, неизбежно сталкивается с самоотречением, борьбой с грехом и необходимостью предпочитать Христа удобству.\n\n#Райл #Ученичество #Святость",
+  "html_text": "<blockquote>Религия, которая ничего нам не стоит, ничего и не стоит.</blockquote>\n<i>— Дж. К. Райл, «Святость», «Цена»</i>\n\nРайл говорит не о покупке спасения делами, а о цене ученичества. Бесплатная благодать не создаёт христианство без креста: тот, кто следует Христу, неизбежно сталкивается с самоотречением, борьбой с грехом и необходимостью предпочитать Христа удобству.\n\n#Райл #Ученичество #Святость",
+  "expected_entities": [
+    {
+      "type": "blockquote",
+      "offset": 0,
+      "length": 56
+    },
+    {
+      "type": "italic",
+      "offset": 57,
+      "length": 33
+    }
+  ],
+  "link_preview_disabled": true
+}

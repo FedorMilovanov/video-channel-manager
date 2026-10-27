@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-29-ryle-cost-nothing",
+  "sequence": 29,
+  "intent_id": "33211d32c22b23c6706a9edef1307278",
+  "workflow_run_id": "40502838142",
+  "workflow_run_attempt": "1",
+  "github_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "github_workflow_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "payload_sha256": "sha256:773e86cdaf19b6a1528b8e645329541b6ce59ca29d26fe07c540d6a17e87a8a3",
+  "text": "Религия, которая ничего нам не стоит, ничего и не стоит.\n\n— Дж. К. Райл, «Святость», «Цена»\n\nРайл говорит не о покупке спасения делами, а о цене ученичества. Бесплатная благодать не создаёт христианство без креста: тот, кто следует Христу, неизбежно сталкивается с самоотречением, борьбой с грехом и необходимостью предпочитать Христа удобству.\n\n#Райл #Ученичество #Святость",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-27T12:19:41.808270Z"
+  },
+  "prepared_at_utc": "2026-10-27T12:19:42.910588Z"
+}
