@@ -27,6 +27,19 @@
       "telegram_message_id": 1585,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-10-25T13:03:16.582728+00:00"
+    },
+    "lordchrist-telegraph-charnock-02": {
+      "publication_id": "lordchrist-telegraph-charnock-02",
+      "title": "Всеобщее согласие: ни одного народа без Бога",
+      "telegraph_url": "https://telegra.ph/Vseobshchee-soglasie-ni-odnogo-naroda-bez-Boga-10-27",
+      "telegraph_path": "Vseobshchee-soglasie-ni-odnogo-naroda-bez-Boga-10-27",
+      "article_sha256": "sha256:de8ed676fa1c9e80eb509a9e8112f291e162e5dc21cdad5eaaaee89fe17b6b16",
+      "cover_sha256": "sha256:4da16ac32267eb65bd77abf6c55a669eb181d65e9b05f5c7c81312c0e1048983",
+      "telegraph_updated_at_utc": "2026-10-27T15:02:08.207680+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1589,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-10-27T15:02:08.837827+00:00"
     }
   }
 }
