@@ -49,9 +49,9 @@
   "max_verified_per_slot": 1,
   "max_verified_per_day": 2,
   "backfill_policy": "none",
-  "queue_digest": "sha256:8efb5304beb0c147ad994719e6c9ac1ad5d04d967b127bb9532ff4feeb524ddf",
+  "queue_digest": "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e",
   "successor_queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
-  "presentation_policy_id": "lordchrist-quote-v5",
-  "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
-  "activation_note": "Reader-facing quote-v5 rework authorized on 2026-10-17; schedule re-pointed to 10:00 / 21:00 Moscow on 2026-10-28. The depth-v3 restore queue was replaced by the v4 strict-schema 30-post classical Puritan/Spurgeon queue. Slots: morning 10:00 daily and evening 21:00 Tue/Fri/Sun carry the quote lane; midday 12:00 Tue/Fri carries the rich_article lane for the L2 Charnock series and is published manually from its copy page, so no bot run may spend it on a quote. Crons are the UTC translations of the Moscow times. Immutable history, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced; exhaustion and low stock are reported explicitly."
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "activation_note": "Quote-v5 rework authorized 2026-10-17; slots re-pointed to 10:00/21:00 Moscow on 2026-10-28. Live queue: v4 strict-schema 30-post Puritan/Spurgeon queue, authorized by committed quote-v4-runtime-activation.json (queue_digest must match this schedule). Ledger cutover archives the predecessor ledger on the state branch before initializing the v4 ledger; the predecessor remainder is retired, never auto-activated (successor binding inert). Quotes re-verified against recorded primary-source excerpts on 2026-10-28 (sequences 13/14/27 retranslated, anchors made byte-exact). Morning 10:00 daily and evening 21:00 Tue/Fri/Sun carry quotes; midday 12:00 Tue/Fri is the manual rich-article lane. Crons are UTC translations of Moscow times. Per-slot/day quotas, exact target/current-main gates and no backfill remain enforced."
 }

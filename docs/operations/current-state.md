@@ -59,7 +59,7 @@ The authoritative production schedule remains schema v3:
 - `evening`: 21:00 `Europe/Moscow`, Tuesday / Friday / Sunday;
 - one verified publication maximum per slot and two maximum per eligible day;
 - morning has a 660-minute same-day lease ending at the 21:00 editorial boundary;
-- evening has a 160-minute lease that cannot cross the Moscow calendar-day boundary;
+- evening has a 180-minute lease that cannot cross the Moscow calendar-day boundary;
 - `backfill_policy=none`;
 - scheduled workflow reruns are forbidden;
 - a same-day manual publication closes scheduled slots for that Moscow date.

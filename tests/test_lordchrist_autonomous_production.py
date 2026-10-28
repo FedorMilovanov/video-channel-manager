@@ -14,10 +14,10 @@ from video_channel_manager.telegram_schedule import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
-POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v5.json"
-ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/successor-depth-runtime-activation-v5.json"
+POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy.json"
+ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/quote-v4-runtime-activation.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
-EXPECTED_DIGEST = "sha256:8efb5304beb0c147ad994719e6c9ac1ad5d04d967b127bb9532ff4feeb524ddf"
+EXPECTED_DIGEST = "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e"
 EXPECTED_SUCCESSOR_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
@@ -41,8 +41,8 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     # bind the identical reviewed presentation policy.
     assert config.enabled is activation["provider_writes_authorized"]
     assert config.presentation_policy_sha256 == activation["presentation_policy_sha256"]
-    assert activation["required_published_prefix"] == 17
-    assert activation["required_pending_suffix"] == 43
+    assert activation["release_id"] == "lordchrist-puritan-spurgeon-v4"
+    assert activation["queue_digest"] == config.queue_digest == EXPECTED_DIGEST
     note = config.activation_note.casefold()
     assert "v4" in note or "depth-v3" in note
     assert "10:00" in note
@@ -170,7 +170,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Discard stale v4 ledger before durable initialization")
+    gate_end = workflow.index("      - name: Archive predecessor ledger before durable v4 initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -207,7 +207,7 @@ def test_v4_ledger_durable_initialization_is_execution_gated_and_after_current_m
     target_start = workflow.index("      - name: Validate read-only target configuration")
     preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    discard_start = workflow.index("      - name: Discard stale v4 ledger before durable initialization")
+    discard_start = workflow.index("      - name: Archive predecessor ledger before durable v4 initialization")
     writer_start = workflow.index("      - name: Enable state writer for one-time v4 ledger initialization")
     durable_start = workflow.index("      - name: Persist initialized v4 ledger to state branch")
     publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
@@ -232,16 +232,24 @@ def test_v4_ledger_durable_initialization_is_execution_gated_and_after_current_m
     durable_step = workflow[durable_start:publication_writer_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
     assert "steps.intent.outputs.do_publish == 'true'" in durable_step
-    assert "INITIALIZE_STRICT_TELEGRAM_LEDGER" in durable_step
+    assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" in durable_step
     assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
     assert "remote-v4-ledger.json" in durable_step
     # The v4 ledger must not exist before initialization (we just discarded any
     # stale file); otherwise a previously-sealed ledger would silently rebind.
     assert "refusing ambiguous initialization" in durable_step
 
+    # History is never deleted: the predecessor ledger is archived under a
+    # digest-named path inside the state snapshot and committed together with
+    # the fresh v4 ledger.
+    archive_step = workflow[discard_start:writer_start]
+    assert 'mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"' in archive_step
+    assert "publication-ledger-archive-${old_digest}.json" in archive_step
+    assert 'git -C "$STATE_DIR" add -- "$LEDGER_ARCHIVE_RELATIVE_PATH"' in durable_step
+
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality
-    assert "INITIALIZE_STRICT_TELEGRAM_LEDGER" not in before_quality
+    assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" not in before_quality
 
 
 def test_midday_slot_is_the_tuesday_friday_rich_article_lane() -> None:
