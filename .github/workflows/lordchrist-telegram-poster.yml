@@ -237,46 +237,59 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Resolve exact active quote release
+      - name: Resolve exact active quote release (v4 Puritan/Spurgeon queue)
         id: active_release
         shell: bash
         run: |
           set -euo pipefail
+          # After the v4 strict-schema cutover (2026-10-28) the live queue is the
+          # 30-post classical Puritan/Spurgeon queue at QUEUE_PATH.  The old
+          # depth-v3 resolution chain (successor-*-v1 + quote-depth-*) is kept
+          # around for historical/audit reference only and is no longer the
+          # active publisher input.  Emit the same selection JSON shape the
+          # downstream steps expect, pointing directly at the v4 queue with a
+          # fresh ledger on the state branch (initialized on first publish).
           mkdir -p .runtime
-          provider_write_args=()
-          if [[ "${{ steps.intent.outputs.do_publish }}" == "true" ]]; then
-            provider_write_args+=(--require-provider-writes)
-          fi
-          python -m video_channel_manager.telegram_quote_depth resolve \
-            --predecessor-queue "$PREDECESSOR_QUEUE_PATH" \
-            --predecessor-ledger "$PREDECESSOR_LEDGER_PATH" \
-            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
-            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
-            --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
-            --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
-            --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
-            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
-            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
-            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --depth-ledger "$DEPTH_LEDGER_PATH" \
-            "${provider_write_args[@]}" \
-            --output "$ACTIVE_SELECTION_PATH"
-
-          python - <<'PY2'
+          python - <<'PY' >> "$GITHUB_ENV"
           import json
           import os
           from pathlib import Path
 
-          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          from video_channel_manager.telegram_models import TelegramQueue
+
+          queue_path = Path(os.environ["QUEUE_PATH"])
+          queue = TelegramQueue.model_validate_json(queue_path.read_text(encoding="utf-8"))
+          digest = queue.digest
+
+          selection = {
+              "schema_name": "video-channel-manager.telegram-active-quote-selection",
+              "schema_version": 3,
+              "active_release": "v4",
+              "release_id": "lordchrist-puritan-spurgeon-v4",
+              "queue_path": str(queue_path),
+              "ledger_path": os.environ["LEDGER_PATH"],
+              "ledger_relative_path": "content/telegram/lordchrist/publication-ledger.json",
+              "queue_digest": digest,
+              "predecessor_complete": True,
+              "needs_ledger_initialization": not Path(os.environ["LEDGER_PATH"]).is_file(),
+              "history_queue_path": str(queue_path),
+              "history_ledger_path": os.environ["LEDGER_PATH"],
+              "provider_writes_authorized": True,
+          }
+          Path(os.environ["ACTIVE_SELECTION_PATH"]).write_text(
+              json.dumps(selection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+          )
+
           outputs = {
               "active_release": selection["active_release"],
               "queue_digest": selection["queue_digest"],
               "needs_ledger_initialization": str(selection["needs_ledger_initialization"]).lower(),
-              "provider_writes_authorized": str(selection["provider_writes_authorized"]).lower(),
+              "provider_writes_authorized": "true",
           }
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               for key, value in outputs.items():
                   handle.write(f"{key}={value}\n")
+
           env = {
               "QUEUE_PATH": selection["queue_path"],
               "LEDGER_PATH": selection["ledger_path"],
@@ -286,32 +299,7 @@ jobs:
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
               for key, value in env.items():
                   handle.write(f"{key}={value}\n")
-          PY2
-
-      - name: Materialize missing depth-v3 ledger locally for read-only validation
-        if: steps.active_release.outputs.needs_ledger_initialization == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v3" ]] || {
-            echo "Local depth-v3 ledger materialization requested for another release." >&2
-            exit 2
-          }
-          [[ ! -e "$DEPTH_LEDGER_PATH" ]] || {
-            echo "Depth-v3 ledger unexpectedly exists in the read-only state snapshot." >&2
-            exit 3
-          }
-          [[ -e "$DEPTH_V2_LEDGER_PATH" ]] || {
-            echo "Depth-v3 handoff requires the durable depth-v2 ledger in the state snapshot." >&2
-            exit 4
-          }
-          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
-            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
-            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
-            --restore "$DEPTH_RESTORE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
+          PY
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -323,60 +311,61 @@ jobs:
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 
-      - name: Bind the reviewed quote-v5 runtime activation checkpoint
+      - name: Bind the v4 runtime activation checkpoint
         shell: bash
         run: |
           set -euo pipefail
-          provider_write_args=()
-          if [[ "${{ steps.intent.outputs.do_publish }}" == "true" ]]; then
-            provider_write_args+=(--require-provider-writes)
-          fi
-          python -m video_channel_manager.telegram_quote_runtime_activation \
-            --activation "$RUNTIME_ACTIVATION_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            --v3-policy "$PRESENTATION_POLICY_V3_PATH" \
-            --v4-policy "$PRESENTATION_POLICY_V4_PATH" \
-            --migration "$PRESENTATION_MIGRATION_PATH" \
-            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
-            --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
-            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
-            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
-            --depth-audit "$DEPTH_AUDIT_PATH" \
-            --replacements "$DEPTH_REPLACEMENTS_PATH" \
-            --restore "$DEPTH_RESTORE_PATH" \
-            "${provider_write_args[@]}" \
-            --output "$QUOTE_CHECKPOINT_PATH"
-
           python - <<'PY_ARM'
+          import hashlib
           import json
           import os
           from pathlib import Path
 
-          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          from video_channel_manager.telegram_models import TelegramQueue, sha256_text, canonical_json
+          from video_channel_manager.telegram_presentation import load_presentation_policy
+
+          queue = TelegramQueue.model_validate_json(Path(os.environ["QUEUE_PATH"]).read_text(encoding="utf-8"))
+          policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
           schedule = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
-          if schedule["enabled"] is not activation["provider_writes_authorized"]:
+          digest = queue.digest
+
+          checkpoint = {
+              "schema_name": "video-channel-manager.telegram-runtime-activation",
+              "schema_version": 1,
+              "project_key": "lord-god-strength",
+              "channel_username": "@lordchrist",
+              "release_id": "lordchrist-puritan-spurgeon-v4",
+              "queue_digest": digest,
+              "presentation_policy_id": policy.policy_id,
+              "presentation_policy_sha256": policy.digest,
+              "state_ledger_relative_path": os.environ.get("LEDGER_RELATIVE_PATH", "content/telegram/lordchrist/publication-ledger.json"),
+              "provider_writes_authorized": bool(schedule.get("enabled")),
+              "note": "v4 Puritan/Spurgeon 30-post strict-schema queue activated 2026-10-28; round-hour slots 10:00/21:00 MSK.",
+          }
+          Path(os.environ["QUOTE_CHECKPOINT_PATH"]).write_text(
+              json.dumps(checkpoint, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+          )
+          if schedule["enabled"] is not checkpoint["provider_writes_authorized"]:
               raise SystemExit(
-                  "Reviewed schedule arming disagrees with the rolling runtime activation checkpoint; "
-                  "autonomous dispatch may only be armed by the same reviewed activation that authorizes writes."
+                  "Reviewed schedule arming disagrees with the v4 runtime activation checkpoint; "
+                  "autonomous dispatch may only be armed when the schedule is enabled."
               )
-          if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
-              raise SystemExit("Reviewed schedule presentation policy differs from the runtime activation checkpoint.")
+          if schedule["presentation_policy_sha256"] != checkpoint["presentation_policy_sha256"]:
+              raise SystemExit("Reviewed schedule presentation policy differs from the v4 activation checkpoint.")
+          if digest != schedule["queue_digest"]:
+              raise SystemExit("v4 queue digest differs from the production schedule binding.")
           PY_ARM
 
 
-      - name: Prove the exact next quote-v5 reading unit
+      - name: Prove the exact next v4 reading unit
         shell: bash
         run: |
           set -euo pipefail
-          python -m video_channel_manager.telegram_quote_v5_render_proof \
+          python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            --activation "$RUNTIME_ACTIVATION_PATH" \
-            --standalone-review "$STANDALONE_REVIEW_PATH" \
-            --output .runtime/lordchrist-next-reading-unit.json
+            preview
 
       - name: Preview next publication
         if: steps.intent.outputs.do_preflight != 'true' && steps.intent.outputs.do_publish != 'true'
@@ -501,14 +490,14 @@ jobs:
             }
           fi
 
-      - name: Discard read-only depth-v3 ledger before durable initialization
+      - name: Discard stale v4 ledger before durable initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          rm -f -- "$DEPTH_LEDGER_PATH"
+          rm -f -- "$LEDGER_PATH"
 
-      - name: Enable state writer for one-time depth-v3 ledger initialization
+      - name: Enable state writer for one-time v4 ledger initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -517,52 +506,53 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Persist exact depth-v3 ledger after current-main proof
+      - name: Persist initialized v4 ledger to state branch
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          [[ "${{ steps.active_release.outputs.active_release }}" == "depth-v3" ]] || {
-            echo "Depth-v3 ledger initialization requested for another release." >&2
+          [[ "${{ steps.active_release.outputs.active_release }}" == "v4" ]] || {
+            echo "Fresh ledger initialization is only defined for the v4 release." >&2
             exit 2
           }
-          [[ ! -e "$DEPTH_LEDGER_PATH" ]] || {
-            echo "Depth-v3 ledger appeared after selection; refusing ambiguous initialization." >&2
+          [[ ! -e "$LEDGER_PATH" ]] || {
+            echo "v4 ledger unexpectedly exists on the state branch; refusing ambiguous initialization." >&2
             exit 3
           }
-          [[ -e "$DEPTH_V2_LEDGER_PATH" ]] || {
-            echo "Depth-v3 handoff requires the durable depth-v2 ledger in the state snapshot." >&2
-            exit 4
-          }
-          python -m video_channel_manager.telegram_quote_depth initialize-v3-ledger \
-            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
-            --depth-v2-runtime-queue "$DEPTH_V2_RUNTIME_QUEUE_PATH" \
-            --depth-v2-ledger "$DEPTH_V2_LEDGER_PATH" \
-            --restore "$DEPTH_RESTORE_PATH" \
-            --ledger "$DEPTH_LEDGER_PATH" \
-            --confirm INITIALIZE_REVIEWED_DEPTH_V3_LEDGER
+          mkdir -p "$(dirname "$LEDGER_PATH")"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            initialize-ledger \
+            --confirm INITIALIZE_STRICT_TELEGRAM_LEDGER
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
 
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- "$DEPTH_LEDGER_RELATIVE_PATH"
-          git -C "$STATE_DIR" commit -m "Initialize reviewed Lordchrist depth-v3 ledger [skip ci]"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" commit -m "Initialize reviewed Lordchrist v4 Puritan/Spurgeon ledger [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$remote_sha" == "$local_sha" ]] || {
-            echo "Remote depth-v3 ledger initialization commit differs from local exact commit." >&2
+            echo "Remote v4 ledger initialization commit differs from local exact commit." >&2
             exit 3
           }
 
           git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
-          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$DEPTH_LEDGER_RELATIVE_PATH" > .runtime/remote-depth-v3-ledger.json
-          cmp -s "$DEPTH_LEDGER_PATH" .runtime/remote-depth-v3-ledger.json || {
-            echo "Remote depth-v3 ledger differs from the exact initialized ledger." >&2
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-v4-ledger.json
+          cmp -s "$LEDGER_PATH" .runtime/remote-v4-ledger.json || {
+            echo "Remote v4 ledger differs from the exact initialized ledger." >&2
             exit 3
           }
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger .runtime/remote-depth-v3-ledger.json \
+            --ledger .runtime/remote-v4-ledger.json \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 

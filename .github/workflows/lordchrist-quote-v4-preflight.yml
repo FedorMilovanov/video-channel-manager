@@ -248,9 +248,9 @@ jobs:
           activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
           schedule = json.loads(Path(os.environ["PRODUCTION_SCHEDULE_PATH"]).read_text(encoding="utf-8"))
           digest = selection["queue_digest"]
-          if not (digest == activation["queue_digest"] == schedule["successor_queue_digest"]):
+          if not (digest == activation["queue_digest"] == schedule["queue_digest"]):
               raise SystemExit(
-                  "Resolved depth-v3 queue digest differs from the rolling activation checkpoint "
+                  "Resolved v4 queue digest differs from the runtime activation checkpoint "
                   "and the reviewed production schedule binding."
               )
           # Effect guard: autonomous dispatch may only be armed by the same reviewed
