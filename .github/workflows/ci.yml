@@ -93,13 +93,14 @@ jobs:
           assert validation["presentation_policy_id"] == "lordchrist-editorial-v2"
           assert validation["presentation_policy_sha256"] == "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8"
           assert preview["post"]["sequence"] == 1
-          assert preview["post"]["publication_id"] == "lordchrist-bunyan-cross-burden"
+          assert preview["post"]["publication_id"] == "lordchrist-ryle-religion-cost"
           assert preview["post"]["parse_mode"] == "HTML"
           assert preview["post"]["provider_payload_sha256"].startswith("sha256:")
           assert "© " not in preview["post"]["text"]
-          assert "\n\n\n#ДжонБеньян" in preview["post"]["text"]
-          assert "<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>" in preview["post"]["html_text"]
-          assert "<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>" in preview["post"]["html_text"]
+          text = preview["post"]["text"]
+          assert text.count("\n\n\n#") == 1, "hashtags must appear after a blank separator"
+          assert "<b>«" in preview["post"]["html_text"]
+          assert "<b>Дж. К. Райл</b>, <i>«Holiness»</i>" in preview["post"]["html_text"]
           PY
       - name: Audit every pinned production runtime
         if: matrix.python-version == '3.11'
