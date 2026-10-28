@@ -34,7 +34,7 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.js
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 CI_PATH = REPOSITORY_ROOT / ".github/workflows/ci.yml"
 RUNTIME_REQUIREMENTS = REPOSITORY_ROOT / "requirements/telegram-publisher.txt"
-EXPECTED_QUEUE_DIGEST = "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e"
+EXPECTED_QUEUE_DIGEST = "sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb"
 GITHUB_SHA = "a" * 40
 WORKFLOW_SHA = "b" * 40
 
@@ -116,7 +116,9 @@ def test_repository_queue_is_exactly_thirty_primary_public_domain_passages() -> 
     assert all(post.source.copyright_status == "public_domain" for post in queue.posts)
     assert all(post.source.selection_policy == "contiguous_complete_no_omissions" for post in queue.posts)
     assert all(post.source.verification_status == "accepted" for post in queue.posts)
-    assert all(post.source.verified_on == date(2026, 10, 28) for post in queue.posts)
+    # Verified 2026-10-28 against recorded excerpts; sequences 27-30 re-verified
+    # 2026-10-29 against the full original books (27 tightened, 28-30 replaced).
+    assert all(post.source.verified_on in {date(2026, 10, 28), date(2026, 10, 29)} for post in queue.posts)
     assert max(len(post.text) for post in queue.posts) <= 4096
 
 

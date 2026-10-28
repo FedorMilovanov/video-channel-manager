@@ -9,7 +9,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/editorial-portfolio-v1.json"
 QUOTE_QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 RESEARCH_QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
-EXPECTED_QUOTE_DIGEST = "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e"
+EXPECTED_QUOTE_DIGEST = "sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb"
 
 
 def portfolio() -> dict[str, object]:

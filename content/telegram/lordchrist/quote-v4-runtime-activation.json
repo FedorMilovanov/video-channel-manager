@@ -4,10 +4,10 @@
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "release_id": "lordchrist-puritan-spurgeon-v4",
-  "queue_digest": "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e",
+  "queue_digest": "sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
   "state_ledger_relative_path": "content/telegram/lordchrist/publication-ledger.json",
   "provider_writes_authorized": true,
-  "note": "Reviewed authorization for the v4 Puritan/Spurgeon 30-post queue (PR #744 content, re-verified 2026-10-28). Autonomous dispatch may only be armed when the production schedule is enabled and both this artifact and the schedule bind the exact same queue_digest and presentation policy. This file is the independent reviewed authorization: the publisher and the read-only preflight must read it, never fabricate it at runtime. Presentation: the canonical editorial-v2 policy (presentation-policy.json) renders this queue format (quotation + attribution + hashtags, no editorial context); the quote-v5 card policy expects generated runtime cards and must not be pointed at the raw queue."
+  "note": "Reviewed authorization for the v4 Puritan/Spurgeon 30-post queue (PR #744 content, re-verified 2026-10-28 against recorded excerpts and 2026-10-29 against the full original books; sequences 27-30 corrected to strict verbatim sources). Autonomous dispatch may only be armed when the production schedule is enabled and both this artifact and the schedule bind the exact same queue_digest and presentation policy. This file is the independent reviewed authorization: the publisher and the read-only preflight must read it, never fabricate it at runtime. Presentation: the canonical editorial-v2 policy (presentation-policy.json) renders this queue format (quotation + attribution + hashtags, no editorial context); the quote-v5 card policy expects generated runtime cards and must not be pointed at the raw queue."
 }
