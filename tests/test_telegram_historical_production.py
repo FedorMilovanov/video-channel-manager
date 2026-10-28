@@ -288,9 +288,9 @@ def test_historical_lane_is_routed_through_existing_single_writer_workflow() -> 
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert "group: lordchrist-telegram-publisher" in workflow
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
-    assert '- cron: "17 6 * * *"' in workflow
+    assert '- cron: "0 7 * * *"' in workflow
     assert '- cron: "17 16 * * 1,3,6"' in workflow
-    assert '- cron: "17 18 * * 2,5,0"' in workflow
+    assert '- cron: "0 18 * * 2,5,0"' in workflow
     assert "historical-rich:" in workflow
     assert "telegram_historical_production prepare" in workflow
     assert "telegram_historical_production send" in workflow

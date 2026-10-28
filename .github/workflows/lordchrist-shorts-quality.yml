@@ -86,7 +86,7 @@ jobs:
           assert policy["automated_youtube_download_allowed"] is False
           assert policy["telegram_provider_mutation_allowed"] is False
           assert policy["telegram_stories_enabled"] is False
-          assert policy["slot_local_time"] == "17:17"
+          assert policy["slot_local_time"] == "16:00"
           assert policy["min_gap_from_editorial_hours"] == 4
           baseline = json.loads(
               Path("content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json").read_text(

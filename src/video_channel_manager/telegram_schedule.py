@@ -61,8 +61,8 @@ class ProductionSchedule(BaseModel):
     enabled: bool
     not_before_moscow_date: date
     timezone: Literal["Europe/Moscow"]
-    primary_time: Literal["09:17"]
-    catchup_time: Literal["21:17"]
+    primary_time: Literal["10:00"]
+    catchup_time: Literal["21:00"]
     slots: dict[ScheduledSlot, PublicationSlotConfig]
     max_verified_per_slot: Literal[1]
     max_verified_per_day: Literal[2]
@@ -91,22 +91,21 @@ class ProductionSchedule(BaseModel):
             raise ValueError("midday slot must remain bound to 12:00 Moscow")
         # GitHub schedule cron always fires in UTC. The slot times are Europe/
         # Moscow local editorial boundaries, so the cron expressions must be the
-        # UTC translation of those exact local times: 06:17 UTC = 09:17 Moscow,
-        # 09:00 UTC = 12:00 Moscow and 18:17 UTC = 21:17 Moscow. The previous
-        # "17 9 * * *" / "17 21 * * *" expressions fired at 12:17 and 00:17
-        # Moscow, silently outside the documented slots.
-        if self.slots["morning"].cron != "17 6 * * *":
-            raise ValueError("morning slot cron must fire at 06:17 UTC (09:17 Moscow)")
+        # UTC translation of those exact local times: 07:00 UTC = 10:00 Moscow,
+        # 09:00 UTC = 12:00 Moscow and 18:00 UTC = 21:00 Moscow. The previous
+        # ":17" offsets were legacy round-off; publishing now uses round hours.
+        if self.slots["morning"].cron != "0 7 * * *":
+            raise ValueError("morning slot cron must fire at 07:00 UTC (10:00 Moscow)")
         if self.slots["midday"].cron != "0 9 * * 2,5":
             raise ValueError("midday slot cron must fire at 09:00 UTC (12:00 Moscow)")
-        if self.slots["evening"].cron != "17 18 * * 2,5,0":
-            raise ValueError("evening slot cron must fire at 18:17 UTC (21:17 Moscow)")
-        if self.slots["morning"].max_lateness_minutes != 720:
-            raise ValueError("morning slot must remain valid only until the 21:17 editorial boundary")
+        if self.slots["evening"].cron != "0 18 * * 2,5,0":
+            raise ValueError("evening slot cron must fire at 18:00 UTC (21:00 Moscow)")
+        if self.slots["morning"].max_lateness_minutes != 660:
+            raise ValueError("morning slot lease must expire at 21:00 Moscow, before the evening slot")
         if self.slots["midday"].max_lateness_minutes != 240:
             raise ValueError("midday slot lease must expire at 16:00 Moscow, before the 19:17 rich boundary")
-        if self.slots["evening"].max_lateness_minutes != 160:
-            raise ValueError("evening slot must expire before the Moscow calendar day ends")
+        if self.slots["evening"].max_lateness_minutes != 180:
+            raise ValueError("evening slot lease must expire at 00:00 Moscow, at the end of the calendar day")
         if self.queue_digest == self.successor_queue_digest:
             raise ValueError("predecessor and successor queue digests must be distinct")
         return self

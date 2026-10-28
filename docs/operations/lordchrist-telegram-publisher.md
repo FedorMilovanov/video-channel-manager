@@ -44,8 +44,8 @@ Production schedule включён в version control и не требует о�
 enabled: true
 not_before_moscow_date: 2026-08-08
 timezone: Europe/Moscow
-primary: 09:17
-catch-up: 21:17
+primary: 10:00
+catch-up: 21:00
 daily_verified_limit: 1
 ```
 
@@ -191,7 +191,7 @@ already published/verified on current Europe/Moscow date
 => no second dispatch that date
 ```
 
-Поэтому 21:17 — только catch-up. Если 09:17 успешно опубликовал пост, вечерний run не может отправить следующий.
+Поэтому 21:00 — только catch-up. Если 10:00 успешно опубликовал пост, вечерний run не может отправить следующий.
 
 Scheduled workflow re-run (`GITHUB_RUN_ATTEMPT > 1`) запрещён. После infrastructure failure не использовать blind rerun; дождаться следующего normal schedule либо провести отдельную exact-bound manual operation только после проверки durable state.
 
@@ -223,7 +223,7 @@ requirements/telegram-publisher.txt
 
 ## GitHub schedule caveat
 
-GitHub `schedule` работает только на default branch и использует latest default-branch commit. GitHub может задерживать scheduled events при высокой Actions-нагрузке и в редких случаях drop queued jobs; поэтому используются два разнесённых окна `09:17` и `21:17`, а не одна попытка в начале часа.
+GitHub `schedule` работает только на default branch и использует latest default-branch commit. GitHub может задерживать scheduled events при высокой Actions-нагрузке и в редких случаях drop queued jobs; поэтому используются два разнесённых окна `10:00` и `21:00`, а не одна попытка в начале часа.
 
 В публичном репозитории schedule может быть автоматически отключён после 60 дней repository inactivity. Для текущей 30-дневной кампании это не ожидаемый фактор, но правило нужно учитывать при будущих длительных паузах.
 

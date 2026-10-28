@@ -1,0 +1,13 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-presentation-migration",
+  "schema_version": 1,
+  "release_id": "lordchrist-successor-depth-v2",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "published_boundary": 15,
+  "from_policy_id": "lordchrist-quote-v3",
+  "from_policy_sha256": "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f",
+  "to_policy_id": "lordchrist-quote-v4",
+  "to_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
+  "provider_writes_authorized": false,
+  "reason": "Preserve published sequences 1-15 exactly while migrating only pending 16-60 to quote-v4. V4 exposes the reviewed title immediately before the quotation as visible context and keeps the source on the next line without blank air. Provider writes remain disabled until source verification, CI, state-boundary validation and exact preflight all pass."
+}
