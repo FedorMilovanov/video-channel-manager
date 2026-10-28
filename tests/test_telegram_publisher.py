@@ -34,7 +34,7 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.js
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 CI_PATH = REPOSITORY_ROOT / ".github/workflows/ci.yml"
 RUNTIME_REQUIREMENTS = REPOSITORY_ROOT / "requirements/telegram-publisher.txt"
-EXPECTED_QUEUE_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
+EXPECTED_QUEUE_DIGEST = "sha256:8efb5304beb0c147ad994719e6c9ac1ad5d04d967b127bb9532ff4feeb524ddf"
 GITHUB_SHA = "a" * 40
 WORKFLOW_SHA = "b" * 40
 
@@ -116,7 +116,7 @@ def test_repository_queue_is_exactly_thirty_primary_public_domain_passages() -> 
     assert all(post.source.copyright_status == "public_domain" for post in queue.posts)
     assert all(post.source.selection_policy == "contiguous_complete_no_omissions" for post in queue.posts)
     assert all(post.source.verification_status == "accepted" for post in queue.posts)
-    assert all(post.source.verified_on == date(2026, 8, 6) for post in queue.posts)
+    assert all(post.source.verified_on == date(2026, 10, 28) for post in queue.posts)
     assert max(len(post.text) for post in queue.posts) <= 4096
 
 
@@ -132,10 +132,17 @@ def test_every_repository_post_has_two_or_three_dense_quote_paragraphs() -> None
 
 
 def test_queue_rejects_reserve_editorial_composite_and_secondary_material() -> None:
+    # Inject each forbidden marker at the start of the first quote paragraph.
+    first_text_orig = str(queue_payload()["posts"][0]["text"])  # type: ignore[index]
+    import re
+
+    m = re.search(r"\S+", first_text_orig)
+    assert m is not None
+    first_word = m.group(0)
     for forbidden in ("Резерв", "Контекст редактора", "Пересказ", "Синтез", "GraceGems"):
         payload = queue_payload()
         first = payload["posts"][0]  # type: ignore[index]
-        first["text"] = str(first["text"]).replace("И увидел", f"{forbidden}: И увидел", 1)  # type: ignore[index]
+        first["text"] = str(first["text"]).replace(first_word, f"{forbidden}: {first_word}", 1)  # type: ignore[index]
         with pytest.raises(ValidationError):
             TelegramQueue.model_validate(payload)
 
@@ -155,7 +162,7 @@ def test_queue_digest_covers_source_proof_and_translation_payload() -> None:
 
     changed_text = queue_payload()
     changed_text["posts"][0]["text"] = str(changed_text["posts"][0]["text"]).replace(  # type: ignore[index]
-        "едва Христианин", "как только Христианин", 1
+        "грехов", "ГРЕХОВ", 1
     )
     assert TelegramQueue.model_validate(changed_text).digest != original.digest
 

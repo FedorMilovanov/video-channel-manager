@@ -12,4 +12,4 @@ Key conclusions implemented in the companion branch/PR:
 - no Telegram provider write is performed by this audit/PR;
 - next strict item remains `lordchrist-bunyan-fire-grace` until a verified scheduled send occurs.
 
-The 2026-08-07 21:17 window is intentionally before `not_before_moscow_date=2026-08-08` and therefore cannot authorize a provider mutation.
+The 2026-08-07 21:00 window is intentionally before `not_before_moscow_date=2026-08-08` and therefore cannot authorize a provider mutation.

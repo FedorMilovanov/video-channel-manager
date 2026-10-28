@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-release",
+  "schema_version": 2,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v2",
+  "owning_issue": 667,
+  "source_v1_queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "audit_git_blob_sha1": "283e8d3db6993626d67f7b825eb6142b28bac7a7",
+  "replacements_git_blob_sha1": "4504deb7cec152d986c4b79edefcb12250ef6c5c",
+  "transition_identity": "after_v1_exactly_14_published_46_pending",
+  "normalized_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "audit_history_locked_count": 10,
+  "handoff_published_prefix": 14,
+  "future_post_count": 46,
+  "future_keep_count": 27,
+  "future_replace_count": 19,
+  "replacement_pool_count": 21,
+  "superseded_replacement_count": 2,
+  "release_state": "staged_provider_inert",
+  "provider_writes_authorized": false
+}

@@ -27,7 +27,7 @@ from video_channel_manager.telegram_state import initialize_ledger, load_queue, 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content/telegram/lordchrist"
 CHANNEL_PROFILE = ROOT / "content/telegram/channels/lordchrist.json"
-PREDECESSOR_QUEUE = CONTENT / "verified-30-posts.json"
+PREDECESSOR_QUEUE = CONTENT / "archived-old-queues" / "verified-30-posts.json"
 CANDIDATE = CONTENT / "successor-quotes-v1.json"
 TRANSLATION = CONTENT / "successor-translation-ledger-v1.json"
 AMENDMENTS = CONTENT / "successor-integrity-amendments-v1.json"
@@ -69,16 +69,16 @@ def test_delayed_morning_schedule_remains_same_day_eligible() -> None:
     # used to green-skip under the old two-hour window.
     decision = decide_scheduled_slot(
         schedule,
-        event_schedule="17 6 * * *",
+        event_schedule="0 7 * * *",
         now=datetime(2026, 9, 9, 11, 19, tzinfo=UTC),
     )
     assert decision.active is True
     assert decision.slot == "morning"
 
-    # The same morning event is not allowed to spill across the 21:17 boundary.
+    # The same morning event is not allowed to spill across the 21:00 boundary.
     expired = decide_scheduled_slot(
         schedule,
-        event_schedule="17 6 * * *",
+        event_schedule="0 7 * * *",
         now=datetime(2026, 9, 9, 18, 17, tzinfo=UTC),
     )
     assert expired.active is False
@@ -89,16 +89,16 @@ def test_evening_schedule_expires_before_moscow_midnight() -> None:
     schedule = load_production_schedule(SCHEDULE).model_copy(update={"enabled": True})
     active = decide_scheduled_slot(
         schedule,
-        event_schedule="17 18 * * 2,5,0",
-        now=datetime(2026, 9, 8, 20, 56, tzinfo=UTC),  # 23:56 Moscow, Tuesday
+        event_schedule="0 18 * * 2,5,0",
+        now=datetime(2026, 9, 8, 20, 59, tzinfo=UTC),  # 23:59 MSK Tue, still in lease
     )
     assert active.active is True
     assert active.slot == "evening"
 
     expired = decide_scheduled_slot(
         schedule,
-        event_schedule="17 18 * * 2,5,0",
-        now=datetime(2026, 9, 8, 20, 57, tzinfo=UTC),
+        event_schedule="0 18 * * 2,5,0",
+        now=datetime(2026, 9, 8, 21, 0, tzinfo=UTC),  # 00:00 MSK Wed; lease ended at midnight
     )
     assert expired.active is False
 

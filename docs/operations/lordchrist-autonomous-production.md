@@ -12,8 +12,8 @@ The production config is bound to the approved queue digest and requires a daily
 
 ## Schedule
 
-- primary window: **09:17 Europe/Moscow**
-- catch-up window: **21:17 Europe/Moscow**
+- primary window: **10:00 Europe/Moscow**
+- catch-up window: **21:00 Europe/Moscow**
 - maximum verified publications: **1 per Moscow calendar date**
 
 GitHub-hosted runners execute the publication workflow. A home computer, PowerShell session, or local Telegram process is not required for text publication.
@@ -34,6 +34,6 @@ Manual `publish` remains separately guarded by `LORDCHRIST_POSTING_ENABLED=true`
 
 ## Expected first autonomous publication
 
-The first eligible production window is **2026-08-08 09:17 Europe/Moscow**. The expected strict-next queue entry is `lordchrist-bunyan-fire-grace`, unless the durable ledger changes before that window.
+The first eligible production window is **2026-08-08 10:00 Europe/Moscow**. The expected strict-next queue entry is `lordchrist-bunyan-fire-grace`, unless the durable ledger changes before that window.
 
-The 21:17 window is a catch-up window only: if a publication is already verified on that Moscow date, the global daily guard must produce no provider send.
+The 21:00 window is a catch-up window only: if a publication is already verified on that Moscow date, the global daily guard must produce no provider send.

@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-pending-content-findings",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v2",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "published_boundary": 15,
+  "reviewed_on": "2026-10-04",
+  "method": "Editorial language review of the sealed pending suffix 16..60 during the quote-v4 hardening pass. Each finding is bound to the exact sealed quotation digest it was raised against, records the reviewed correction that the source fragment supports, and is deliberately not applied: the depth-v2 release is sealed by the candidate, translation-ledger, audit and replacement digests, and the durable depth-v2 publication ledger binds every pending card payload hash, so applying it requires a new reviewed release identity plus a durable-state rebind rather than a silent edit.",
+  "entries": [
+    {
+      "sequence": 44,
+      "publication_id": "lordchrist-successor-depth-v2-44-macarthur-repentance-not-merit",
+      "quotation_sha256": "sha256:63bdeb8681f0d9a3f87d9645d41fdeb3b4d1a7c187575057e2a162e17494b23f",
+      "kind": "translation_grammar",
+      "severity": "editorial_language",
+      "finding": "The sealed Russian translation drops the copula dash and keeps the accusative complement: 'Покаяние не более заслуживающее спасение дело, чем вера. Это внутренний ответ.' The sentence is faithful to the source fragment but reads as a word-for-word calque; a native reader expects 'Покаяние заслуживает спасения не более, чем вера.' and 'Это внутренний отклик.'",
+      "proposed_quotation_ru": "Покаяние заслуживает спасения не более, чем вера. Это внутренний отклик.",
+      "source_fragment": "Repentance is no more a meritorious work than its counterpart, faith. It is an inward response.",
+      "origin": "reviewed_sealed_translation",
+      "not_applied_because": "The visible quotation is the sealed reviewed translation. Applying the correction changes the card payload hash, and the durable depth-v2 ledger binds that hash for every pending sequence, so the correction belongs to a new reviewed release identity that also re-binds the durable state.",
+      "requires_reseal_of": [
+        "successor-release-v2",
+        "successor-depth-release-v1",
+        "successor-depth-runtime-activation-v4",
+        "durable-depth-v2-ledger-binding"
+      ]
+    }
+  ]
+}

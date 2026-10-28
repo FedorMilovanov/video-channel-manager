@@ -56,7 +56,7 @@ The release seals these mappings as `recurring_publication_ids` and `recurring_s
 
 A recurring event before editorial approval returns `canary_not_verified`. A late event outside the 120-minute freshness window returns `slot_expired_no_backfill`. A verified exact slot is not replayed.
 
-The existing quote slots remain unchanged: 09:17 daily and 21:17 Tuesday/Friday/Sunday. Both tracks continue to share the single `lordchrist-telegram-publisher` concurrency namespace.
+The existing quote slots remain unchanged: 10:00 daily and 21:00 Tuesday/Friday/Sunday. Both tracks continue to share the single `lordchrist-telegram-publisher` concurrency namespace.
 
 ## Durable state
 

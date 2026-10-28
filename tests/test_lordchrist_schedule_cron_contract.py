@@ -164,8 +164,8 @@ def test_timezone_key_would_break_publication_at_the_shifted_fire_time() -> None
     morning = schedule.slots["morning"]
     evening = schedule.slots["evening"]
 
-    # A timezone key would fire the morning cron at 06:17 Moscow, i.e. three
-    # hours earlier in UTC than the configured 09:17 boundary.
+    # A timezone key would fire the morning cron at 07:00 Moscow, i.e. three
+    # hours earlier in UTC than the configured 10:00 boundary.
     shifted_morning = _utc_fire_time(morning.cron, day=_eligible_day(morning.cron)) - timedelta(hours=3)
     morning_decision = decide_scheduled_slot(schedule, event_schedule=morning.cron, now=shifted_morning)
     assert morning_decision.active is False

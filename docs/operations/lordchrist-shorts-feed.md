@@ -31,9 +31,9 @@ The target presentation is one native Telegram `sendVideo` item per day rather t
 Provider-inert default cadence:
 
 - one Short per day;
-- `17:17 Europe/Moscow`;
+- `16:00 Europe/Moscow`;
 - oldest confirmed Short first;
-- at least four hours from both existing quote/editorial slots (`09:17` primary and `21:17` catch-up).
+- at least four hours from both existing quote/editorial slots (`10:00` primary and `21:00` catch-up).
 
 The Shorts policy is frozen in `content/telegram/lordchrist/shorts-feed-policy.json`. `validate-policy` also reads the canonical `content/telegram/lordchrist/production-schedule.json`; policy validation fails if the required gap is no longer true.
 
@@ -258,7 +258,7 @@ If reviewed historical candidates are included, add:
 --candidate-approval operator-output/lordchrist-shorts-candidate-approval.json
 ```
 
-The result is the existing generic `telegram-release-queue` with `GenericVideoPayload` items, one item per day at 17:17 Moscow time. The release ID is content-addressed from the exact snapshot, selected ordered publication IDs, accepted media digests, profile, cadence and start date.
+The result is the existing generic `telegram-release-queue` with `GenericVideoPayload` items, one item per day at 16:00 Moscow time. The release ID is content-addressed from the exact snapshot, selected ordered publication IDs, accepted media digests, profile, cadence and start date.
 
 By construction:
 
