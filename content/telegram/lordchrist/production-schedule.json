@@ -49,9 +49,11 @@
   "max_verified_per_slot": 1,
   "max_verified_per_day": 2,
   "backfill_policy": "none",
-  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
-  "successor_queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "queue_digest": "sha256:48d271c4bb8c4a7ccadc2c96cb0c275b1421d5e7553c2930cb1eeee86e284d97",
+  "successor_queue_digest": "sha256:48d271c4bb8c4a7ccadc2c96cb0c275b1421d5e7553c2930cb1eeee86e284d97",
   "presentation_policy_id": "lordchrist-quote-v5",
   "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
-  "activation_note": "Reader-facing quote-v5 rework authorized on 2026-10-17 under issue #694. The depth-v3 restore queue was activated at 17 published and 43 pristine pending with sequence 18 first; live progress is read from the state ref, not this note (22 published / 38 pending on 2026-10-21, next sequence 23). Quotes open with the quotation and the reviewed source line, no leading title. Slots: morning 09:17 daily and evening 21:17 Tue/Fri/Sun carry the quote lane; midday 12:00 Tue/Fri carries the rich_article lane for the L2 Charnock series and is published manually from its copy page, so no bot run may spend it on a quote. Crons are the UTC translations of the Moscow times. Immutable history, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced; exhaustion and low stock are reported explicitly."
+  "activation_note": "Reader-facing quote-v5 rework authorized on 2026-10-17 under issue #694. The depth-v3 restore queue was activated at 17 published and 43 pristine pending with sequence 18 first; live progress is read from the state ref, not this note (22 published / 38 pending on 2026-10-21, next sequence 23). Quotes open with the quotation and the reviewed source line, no leading title. Slots: morning 09:17 daily and evening 21:17 Tue/Fri/Sun carry the quote lane; midday 12:00 Tue/Fri carries the rich_article lane for the L2 Charnock series and is published manually from its copy page, so no bot run may spend it on a quote. Crons are the UTC translations of the Moscow times. Immutable history, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced; exhaustion and low stock are reported explicitly.",
+  "queue_path": "content/telegram/lordchrist/verified-30-posts.json",
+  "queue_schema_version": 3
 }

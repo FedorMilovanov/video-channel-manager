@@ -1,0 +1,14 @@
+{
+  "schema_name": "video-channel-manager.telegram-presentation-policy",
+  "schema_version": 4,
+  "policy_id": "lordchrist-quote-v4",
+  "parse_mode": "HTML",
+  "title_style": "bold",
+  "title_to_quote_separator": "\n",
+  "quote_style": "blockquote",
+  "attribution_style": "italic",
+  "attribution_prefix": "— ",
+  "quote_to_attribution_separator": "\n",
+  "block_separator": "\n\n",
+  "link_preview_disabled": true
+}
