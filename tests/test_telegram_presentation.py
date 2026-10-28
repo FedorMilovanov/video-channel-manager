@@ -155,6 +155,7 @@ def test_renderer_html_escapes_source_characters_without_changing_plain_text() -
     first = payload["posts"][0]  # type: ignore[index]
     original = str(first["text"])  # type: ignore[index]
     import re as _re
+
     _qm = _re.search(r"«[^»]+»", original)
     assert _qm is not None
     marker = _qm.group(0)
@@ -172,6 +173,7 @@ def test_renderer_uses_telegram_utf16_entity_offsets() -> None:
     first = payload["posts"][0]  # type: ignore[index]
     original = str(first["text"])  # type: ignore[index]
     import re as _re2
+
     _qm2 = _re2.search(r"«[^»]+»", original)
     assert _qm2 is not None
     old_quote = _qm2.group(0)

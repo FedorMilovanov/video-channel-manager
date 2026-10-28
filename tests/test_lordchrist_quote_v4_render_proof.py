@@ -408,9 +408,7 @@ def test_publisher_gates_and_status_share_the_production_workflow() -> None:
     assert "video_channel_manager.telegram_cli" in quote_job
     assert "preview" in quote_job
     assert "video_channel_manager.telegram_quote_status" in quote_job
-    assert quote_job.index("Prove the exact next v4 reading unit") < quote_job.index(
-        "Enable publication ledger writer"
-    )
+    assert quote_job.index("Prove the exact next v4 reading unit") < quote_job.index("Enable publication ledger writer")
     assert "id: persist_result" in quote_job
     assert "DURABLE_RESULT: ${{ steps.persist_result.outcome }}" in quote_job
     assert "Report actual quote publication status\n        if: always()" in quote_job

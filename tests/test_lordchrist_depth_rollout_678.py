@@ -5,7 +5,6 @@ from pathlib import Path
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
 from video_channel_manager.telegram_quote_depth import (
-    DEPTH_V3_QUEUE_DIGEST,
     DEPTH_QUEUE_DIGEST,
     build_depth_runtime_queue,
     load_depth_activation,
@@ -36,7 +35,7 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     assert activation.required_published_prefix == 14
     assert activation.required_pending_suffix == 46
     assert schedule.enabled is runtime_activation["provider_writes_authorized"]
-    assert ("depth-v3" in schedule.activation_note.casefold() or "v4" in schedule.activation_note.casefold())
+    assert "depth-v3" in schedule.activation_note.casefold() or "v4" in schedule.activation_note.casefold()
     # successor_queue_digest is the legacy predecessor digest (distinct from the live v4 queue digest)
     assert schedule.successor_queue_digest == "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
     assert schedule.presentation_policy_id == v5_policy.policy_id == "lordchrist-quote-v5"

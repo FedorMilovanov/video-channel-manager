@@ -135,6 +135,7 @@ def test_queue_rejects_reserve_editorial_composite_and_secondary_material() -> N
     # Inject each forbidden marker at the start of the first quote paragraph.
     first_text_orig = str(queue_payload()["posts"][0]["text"])  # type: ignore[index]
     import re
+
     m = re.search(r"\S+", first_text_orig)
     assert m is not None
     first_word = m.group(0)
