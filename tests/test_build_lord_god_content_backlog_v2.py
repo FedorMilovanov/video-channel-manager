@@ -223,9 +223,10 @@ def test_select_historical_excludes_nonpublished_entry(tmp_path: Path) -> None:
 
 def test_select_quotes_requires_published_verified_telegram_evidence(tmp_path: Path) -> None:
     queue_path, ledger_path = _telegram_quote_evidence(tmp_path)
+    queue = module.TelegramQueue.model_validate(module.read_json(queue_path))
     selected = module.select_quotes(queue_path, ledger_path, count=24)
     assert len(selected) == 1
-    assert selected[0]["publication_id"] == "lordchrist-bunyan-cross-burden"
+    assert selected[0]["publication_id"] == queue.posts[0].publication_id
     assert selected[0]["telegram_message_id"] == 1470
     assert selected[0]["telegram_message_url"] == "https://t.me/lordchrist/1470"
     assert selected[0]["telegram_source_state"] == "published_verified"

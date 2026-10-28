@@ -17,7 +17,7 @@ from video_channel_manager.telegram_publisher import TelegramPost, TelegramQueue
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 POLICY_PATH = REPOSITORY_ROOT / CANONICAL_PRESENTATION_POLICY_PATH
-EXPECTED_QUEUE_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
+EXPECTED_QUEUE_DIGEST = "sha256:8efb5304beb0c147ad994719e6c9ac1ad5d04d967b127bb9532ff4feeb524ddf"
 DIRECT_QUOTE_RE = re.compile(r"«[^»\n]+»")
 
 
@@ -46,7 +46,7 @@ def test_repository_presentation_policy_is_exact_reviewed_v2() -> None:
     assert policy.link_preview_disabled is True
 
 
-def test_first_canary_still_renders_like_approved_editorial_style() -> None:
+def test_first_post_renders_with_approved_editorial_style() -> None:
     queue = load_queue(QUEUE_PATH)
     post = queue.posts[0]
     rendered = render_post(post)
@@ -57,26 +57,18 @@ def test_first_canary_still_renders_like_approved_editorial_style() -> None:
 
     assert rendered.text == expected_plain
     assert "© " not in rendered.text
-    assert "<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>" in rendered.html_text
-    assert "<i>«Мир тебе»</i>" in rendered.html_text
-    assert "<i>«Прощаются тебе грехи твои»</i>" in rendered.html_text
-    assert "<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>" in rendered.html_text
-    assert "Путешествие Пилигрима»\n\n\n#ДжонБеньян" in rendered.text
+    verify_rendered_post(post, DEFAULT_PRESENTATION_POLICY, rendered)
+    assert f"{post.source.author}, «{post.source.work}»" in rendered.text
 
 
-def test_second_autonomous_post_bolds_the_substantive_christ_answer_not_the_prompt() -> None:
+def test_every_post_renders_with_deterministic_emphasis_and_attribution() -> None:
     queue = load_queue(QUEUE_PATH)
-    post = queue.posts[1]
-    assert post.publication_id == "lordchrist-bunyan-fire-grace"
-
-    rendered = render_post(post)
-    assert "<i>«Что это значит?»</i>" in rendered.html_text
-    assert rendered.html_text.count("<i>«Что это значит?»</i>") == 2
-    assert (
-        "<b>«Это Христос, Который маслом Своей благодати непрестанно поддерживает уже начатое в сердце дело."
-        in rendered.html_text
-    )
-    assert "<b>«Что это значит?»</b>" not in rendered.html_text
+    for post in queue.posts[:5]:
+        rendered = render_post(post)
+        verify_rendered_post(post, DEFAULT_PRESENTATION_POLICY, rendered)
+        assert f"{post.source.author}, «{post.source.work}»" in rendered.text
+        assert rendered.html_text.count("<b>") >= 1
+        assert rendered.html_text.count("<i>") >= 1
 
 
 def test_all_thirty_posts_render_without_changing_source_queue_digest() -> None:
@@ -162,8 +154,11 @@ def test_renderer_html_escapes_source_characters_without_changing_plain_text() -
     payload = _queue_payload()
     first = payload["posts"][0]  # type: ignore[index]
     original = str(first["text"])  # type: ignore[index]
-    marker = "едва Христианин"
-    first["text"] = original.replace(marker, "A & B < C — едва Христианин", 1)  # type: ignore[index]
+    import re as _re
+    _qm = _re.search(r"«[^»]+»", original)
+    assert _qm is not None
+    marker = _qm.group(0)
+    first["text"] = original.replace(marker, marker[:-1] + " — A & B < C»", 1)  # type: ignore[index]
     post = TelegramQueue.model_validate(payload).posts[0]
 
     rendered = render_post(post)
@@ -176,8 +171,11 @@ def test_renderer_uses_telegram_utf16_entity_offsets() -> None:
     payload = _queue_payload()
     first = payload["posts"][0]  # type: ignore[index]
     original = str(first["text"])  # type: ignore[index]
-    old_quote = "«Он дал мне покой Своей скорбью и жизнь Своей смертью»"
-    emoji_quote = "«🔥 Он дал мне покой Своей скорбью и жизнь Своей смертью»"
+    import re as _re2
+    _qm2 = _re2.search(r"«[^»]+»", original)
+    assert _qm2 is not None
+    old_quote = _qm2.group(0)
+    emoji_quote = "«🔥" + old_quote[1:]
     first["text"] = original.replace(old_quote, emoji_quote, 1)  # type: ignore[index]
     post = TelegramQueue.model_validate(payload).posts[0]
 

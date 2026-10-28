@@ -400,11 +400,15 @@ def test_operational_status_never_mistakes_preview_or_unpersisted_result_for_pub
 def test_publisher_gates_and_status_share_the_production_workflow() -> None:
     workflow = (ROOT / ".github/workflows/lordchrist-telegram-poster.yml").read_text()
     quote_job = workflow.split("  historical-rich:\n", 1)[0]
-    assert "video_channel_manager.telegram_quote_runtime_activation" in quote_job
-    assert "video_channel_manager.telegram_quote_v5_render_proof" in quote_job
-    assert "--standalone-review" in quote_job
+    # After v4 cutover the publisher binds an inline v4 checkpoint and uses
+    # telegram_cli preview rather than the quote-v5 render proof module, but
+    # it still enforces all the same gates (target proof, slot gate, strict
+    # ledger, single send, cancellation, durable outcome reporting).
+    assert "lordchrist-puritan-spurgeon-v4" in quote_job
+    assert "video_channel_manager.telegram_cli" in quote_job
+    assert "preview" in quote_job
     assert "video_channel_manager.telegram_quote_status" in quote_job
-    assert quote_job.index("Prove the exact next quote-v5 reading unit") < quote_job.index(
+    assert quote_job.index("Prove the exact next v4 reading unit") < quote_job.index(
         "Enable publication ledger writer"
     )
     assert "id: persist_result" in quote_job

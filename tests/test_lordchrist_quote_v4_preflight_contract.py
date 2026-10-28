@@ -41,7 +41,7 @@ def test_quote_v4_preflight_binds_the_exact_approved_queue_digest_before_provide
     assert digest_step < live_preflight
     assert 'selection["queue_digest"]' in workflow
     assert 'activation["queue_digest"]' in workflow
-    assert 'schedule["successor_queue_digest"]' in workflow
+    assert 'schedule["queue_digest"]' in workflow
 
 
 def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
@@ -202,7 +202,7 @@ def test_quote_v4_preflight_binds_schedule_arming_to_the_reviewed_activation() -
     assert 'if schedule["enabled"] is not activation["provider_writes_authorized"]:' in workflow
     assert "read-only preflight must not proceed on an unreviewed arming state" in workflow
     assert 'if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:' in workflow
-    assert 'digest == activation["queue_digest"] == schedule["successor_queue_digest"]' in workflow
+    assert 'digest == activation["queue_digest"] == schedule["queue_digest"]' in workflow
 
 
 def test_quote_v4_preflight_inertness_is_proven_by_the_run_not_by_an_authorization_flag() -> None:
