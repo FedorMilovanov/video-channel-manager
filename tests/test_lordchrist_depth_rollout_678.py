@@ -34,13 +34,19 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     v5_policy = load_presentation_policy(CONTENT / "presentation-policy-v5.json")
     assert activation.required_published_prefix == 14
     assert activation.required_pending_suffix == 46
-    assert schedule.enabled is runtime_activation["provider_writes_authorized"]
     assert "depth-v3" in schedule.activation_note.casefold() or "v4" in schedule.activation_note.casefold()
     # successor_queue_digest is the legacy predecessor digest (distinct from the live v4 queue digest)
     assert schedule.successor_queue_digest == "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    assert schedule.presentation_policy_id == v5_policy.policy_id == "lordchrist-quote-v5"
-    assert schedule.presentation_policy_sha256 == v5_policy.digest
+    # The sealed v5 activation artifact keeps its own quote-v5 binding as history.
     assert runtime_activation["presentation_policy_sha256"] == v5_policy.digest
+    # The live production identity is the committed v4 activation artifact plus
+    # the canonical editorial-v2 policy that renders the raw queue format.
+    v4_activation = json.loads((CONTENT / "quote-v4-runtime-activation.json").read_text(encoding="utf-8"))
+    v2_policy = load_presentation_policy(CONTENT / "presentation-policy.json")
+    assert schedule.enabled is v4_activation["provider_writes_authorized"]
+    assert schedule.queue_digest == v4_activation["queue_digest"]
+    assert schedule.presentation_policy_id == v2_policy.policy_id == "lordchrist-editorial-v2"
+    assert schedule.presentation_policy_sha256 == v2_policy.digest == v4_activation["presentation_policy_sha256"]
 
 
 def test_depth_v2_runtime_is_release_scoped_and_starts_future_work_at_sequence_15() -> None:
@@ -65,7 +71,7 @@ def test_production_workflow_resolves_directly_from_v4_queue() -> None:
     # After the v4 cutover, the publisher resolves directly from the strict-schema
     # 30-post queue rather than running the depth-v3 successor-resolution pipeline.
     assert "video_channel_manager.telegram_quote_depth resolve" not in publish_next
-    assert "INITIALIZE_STRICT_TELEGRAM_LEDGER" in publish_next
+    assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" in publish_next
     assert "INITIALIZE_REVIEWED_DEPTH_V3_LEDGER" not in publish_next
     assert "verified-30-posts.json" in publish_next
     assert "lordchrist-puritan-spurgeon-v4" in publish_next

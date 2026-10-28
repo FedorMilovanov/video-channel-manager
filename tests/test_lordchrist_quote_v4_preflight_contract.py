@@ -22,15 +22,15 @@ def test_quote_v4_preflight_binds_the_exact_predecessor_effect_track() -> None:
 
     workflow = _workflow()
 
-    assert "LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json" in workflow
+    assert (
+        "LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/archived-old-queues/verified-30-posts.json"
+        in workflow
+    )
     assert (
         "LORDCHRIST_PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json"
         in workflow
     )
-    assert (
-        "the immutable predecessor\n  # track even while the active queue is a generated successor runtime artifact"
-        in workflow
-    )
+    assert "Cross-track no-blind-replay barrier bindings" in workflow
 
 
 def test_quote_v4_preflight_binds_the_exact_approved_queue_digest_before_provider_access() -> None:
@@ -48,18 +48,11 @@ def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
     workflow = _workflow()
 
     ordered = [
-        "Resolve exact depth-v3 restore release without provider authorization",
-        "Bind the durable ledger used by the read-only validation",
-        "Materialize missing depth-v3 ledger locally for read-only validation",
+        "Resolve exact v4 quote release (read-only)",
+        "Materialize missing v4 ledger locally for read-only validation",
         "Bind the exact reviewed queue digest for the read-only preflight",
-        "Validate rolling v5 checkpoint and evidence",
-        "Validate the reviewed standalone ledger for exact future suffix 18 through 60",
-        "Validate reviewed pending content findings",
-        "Validate reviewed source coverage with safe canonicalization",
-        "Classify live source retrieval read-only (report only, never invalidating)",
-        "Re-run standalone quality gate for exact future suffix 18 through 60",
-        "Validate queue and ledger through quote-v5 renderer",
-        "Prove quote-v5 reading unit for the exact next pending publication",
+        "Validate queue and strict ledger (v4)",
+        "Prove the v4 reading unit for the exact next pending publication",
         "Prove exact Telegram target configuration",
         "Read-only live bot and channel identity preflight",
         "Assert preflight remained provider-inert",
@@ -108,13 +101,13 @@ def test_quote_v4_preflight_is_provider_inert_and_never_writes_state() -> None:
     assert "git push" not in workflow
     assert "sendMessage" not in workflow
     assert (
-        'telegram_cli \\\n            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \\\n            --ledger "$EFFECTIVE_DEPTH_LEDGER_PATH" \\\n            --presentation-policy "$V5_POLICY_PATH" \\\n            preflight'
+        'telegram_cli \\\n            --queue "$QUEUE_PATH" \\\n            --ledger "$EFFECTIVE_LEDGER_PATH" \\\n            --presentation-policy "$PRESENTATION_POLICY_PATH" \\\n            preflight'
         in workflow
     )
-    # The depth-v3 ledger is only durable after the guarded publisher first runs;
+    # The v4 ledger is only durable after the guarded publisher first runs;
     # read-only validation materializes the exact artifact locally instead.
-    assert "initialize-v3-ledger" in workflow
-    assert "INITIALIZE_REVIEWED_DEPTH_V3_LEDGER" in workflow
+    assert "initialize-ledger" in workflow
+    assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" in workflow
     assert 'if selection["needs_ledger_initialization"]:' in workflow
     assert 'if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"])' in workflow
     assert 'if target_proof["chat_username"] != "lordchrist"' in workflow
@@ -140,46 +133,40 @@ def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout()
     assert 'if selection["provider_writes_authorized"] is not False' not in workflow
     preflight_pins = assert_actions_pinned(workflow, source="lordchrist-quote-v4-preflight.yml")
     assert any(pin.action == "actions/upload-artifact" for pin in preflight_pins)
-    assert ".runtime/lordchrist-quote-v5-target-proof.json" in workflow
+    assert ".runtime/lordchrist-quote-v4-target-proof.json" in workflow
     assert '"read-only Telegram target proof",' in workflow
     assert '"provider inertness"' in workflow
 
 
-def test_quote_v4_preflight_validates_the_reviewed_standalone_ledger_and_source_classes() -> None:
-    """Quote-v4 acceptance is evidenced by a reviewed ledger, not heuristics alone."""
+def test_quote_v4_preflight_validates_queue_ledger_and_next_unit() -> None:
+    """v4 acceptance runs the strict CLI over the live queue and proves the
+    exact next pending unit from the strict ledger, in order."""
 
     workflow = _workflow()
 
-    assert "STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v2.json" in workflow
-    assert "python -m video_channel_manager.telegram_quote_standalone_review" in workflow
-    assert '"$STANDALONE_REVIEW_PATH" \\' in workflow
-    assert "python -m video_channel_manager.telegram_quote_source_audit" in workflow
-    assert '--source-web-audit "$SOURCE_WEB_AUDIT_PATH"' in workflow
-    assert '--standalone-review "$STANDALONE_REVIEW_PATH"' in workflow
-    assert "SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json" in workflow
+    validate_step = workflow.index("Validate queue and strict ledger (v4)")
+    proof_step = workflow.index("Prove the v4 reading unit for the exact next pending publication")
+    assert validate_step < proof_step
+    assert '--ledger "$EFFECTIVE_LEDGER_PATH"' in workflow
+    assert "TelegramLedger.model_validate_json" in workflow
+    assert '"next_publication_id"' in workflow
 
 
-def test_quote_v4_preflight_reprobes_source_retrieval_read_only_without_invalidating_quotes() -> None:
-    workflow = _workflow()
-
-    probe_step = workflow.index("Classify live source retrieval read-only")
-    renderer_step = workflow.index("Validate queue and ledger through quote-v5 renderer")
-    assert probe_step < renderer_step
-    assert "python -m video_channel_manager.telegram_quote_source_probe" in workflow
-    assert '--out "$SOURCE_PROBE_REPORT_PATH" || true' in workflow
-    assert "retrieval classes never mark a quotation invalid" in workflow
-    assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
-
-
-def test_quote_v4_preflight_enforces_the_reviewed_pending_content_findings_record() -> None:
-    """Open language findings on sealed cards stay explicit and cannot rot silently."""
+def test_quote_v4_preflight_has_no_retired_depth_machinery() -> None:
+    """The depth-v3/successor pipeline no longer publishes; the read-only
+    preflight must not resolve, materialize or audit it ever again."""
 
     workflow = _workflow()
 
-    assert "CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v2.json" in workflow
-    assert "python -m video_channel_manager.telegram_quote_content_findings" in workflow
-    assert '"$CONTENT_FINDINGS_PATH" \\' in workflow
-    assert '--queue "$DEPTH_RUNTIME_QUEUE_PATH" \\' in workflow
+    for retired in (
+        "telegram_quote_depth",
+        "depth-v3",
+        "DEPTH_RUNTIME_QUEUE_PATH",
+        "telegram_quote_v5_render_proof",
+        "quote-standalone-review",
+        "suffix 18 through 60",
+    ):
+        assert retired not in workflow, retired
 
 
 def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() -> None:
@@ -187,11 +174,10 @@ def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() ->
 
     workflow = _workflow()
 
-    assert '"reviewed pending evidence"' in workflow
-    assert "reviewed standalone entries" in workflow
-    assert "open content finding(s) recorded against the sealed suffix" in workflow
-    assert "reviewed canonical equivalents" in workflow
-    assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
+    assert '"reviewed v4 activation"' in workflow
+    assert '"state boundary"' in workflow
+    assert "pristine pending; " in workflow
+    assert ".runtime/lordchrist-quote-v4-render-proof.json" in workflow
 
 
 def test_quote_v4_preflight_binds_schedule_arming_to_the_reviewed_activation() -> None:
@@ -249,4 +235,4 @@ def test_quote_v4_preflight_owns_no_provider_write_entrypoint_at_all() -> None:
     # which reads getMe/getChat and never sends.
     assert "            preflight \\" in workflow
     assert "--mode manual" in workflow
-    assert workflow.count("video_channel_manager.telegram_cli") == 2
+    assert workflow.count("video_channel_manager.telegram_cli") == 4

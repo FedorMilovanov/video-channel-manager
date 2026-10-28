@@ -53,10 +53,10 @@ env:
   PYTHONPATH: src
   PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
-  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v5.json
+  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
   PRESENTATION_POLICY_V3_PATH: content/telegram/lordchrist/presentation-policy-v3.json
   PRESENTATION_POLICY_V4_PATH: content/telegram/lordchrist/presentation-policy-v4.json
-  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v5.json
+  QUOTE_V4_ACTIVATION_PATH: content/telegram/lordchrist/quote-v4-runtime-activation.json
   PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v2.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
   SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
@@ -261,6 +261,14 @@ jobs:
           queue = TelegramQueue.model_validate_json(queue_path.read_text(encoding="utf-8"))
           digest = queue.digest
 
+          # The write authorization comes from the committed, reviewed v4
+          # activation artifact on main — never from this workflow itself.
+          activation = json.loads(Path(os.environ["QUOTE_V4_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          if activation.get("release_id") != "lordchrist-puritan-spurgeon-v4":
+              raise SystemExit("v4 activation artifact names an unexpected release")
+          if activation.get("queue_digest") != digest:
+              raise SystemExit("v4 activation artifact does not bind the exact live queue digest")
+
           # Initialization is needed when (a) no ledger exists yet on the state
           # branch, or (b) the existing ledger is bound to a previous release
           # (different queue digest). In case (b) the v4 cutover discards the
@@ -285,11 +293,12 @@ jobs:
               "ledger_path": os.environ["LEDGER_PATH"],
               "ledger_relative_path": "content/telegram/lordchrist/publication-ledger.json",
               "queue_digest": digest,
-              "predecessor_complete": True,
+              "predecessor_complete": False,
+              "predecessor_disposition": "superseded_by_v4_cutover_2026-10-28; unpublished remainder retired, never auto-activated",
               "needs_ledger_initialization": needs_init,
               "history_queue_path": str(queue_path),
               "history_ledger_path": os.environ["LEDGER_PATH"],
-              "provider_writes_authorized": True,
+              "provider_writes_authorized": bool(activation.get("provider_writes_authorized")),
           }
           Path(os.environ["ACTIVE_SELECTION_PATH"]).write_text(
               json.dumps(selection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -299,7 +308,7 @@ jobs:
               "active_release": selection["active_release"],
               "queue_digest": selection["queue_digest"],
               "needs_ledger_initialization": str(selection["needs_ledger_initialization"]).lower(),
-              "provider_writes_authorized": "true",
+              "provider_writes_authorized": str(selection["provider_writes_authorized"]).lower(),
           }
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               for key, value in outputs.items():
@@ -326,51 +335,40 @@ jobs:
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 
-      - name: Bind the v4 runtime activation checkpoint
+      - name: Bind the reviewed v4 runtime activation checkpoint
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY_ARM'
-          import hashlib
           import json
           import os
           from pathlib import Path
 
-          from video_channel_manager.telegram_models import TelegramQueue, sha256_text, canonical_json
+          from video_channel_manager.telegram_models import TelegramQueue
           from video_channel_manager.telegram_presentation import load_presentation_policy
 
           queue = TelegramQueue.model_validate_json(Path(os.environ["QUEUE_PATH"]).read_text(encoding="utf-8"))
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
           schedule = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
-          digest = queue.digest
-
-          checkpoint = {
-              "schema_name": "video-channel-manager.telegram-runtime-activation",
-              "schema_version": 1,
-              "project_key": "lord-god-strength",
-              "channel_username": "@lordchrist",
-              "release_id": "lordchrist-puritan-spurgeon-v4",
-              "queue_digest": digest,
-              "presentation_policy_id": policy.policy_id,
-              "presentation_policy_sha256": policy.digest,
-              "state_ledger_relative_path": os.environ.get("LEDGER_RELATIVE_PATH", "content/telegram/lordchrist/publication-ledger.json"),
-              "provider_writes_authorized": bool(schedule.get("enabled")),
-              "note": "v4 Puritan/Spurgeon 30-post strict-schema queue activated 2026-10-28; round-hour slots 10:00/21:00 MSK.",
-          }
+          # The checkpoint is the committed, reviewed activation artifact
+          # itself; this step only verifies that schedule, queue and policy
+          # still agree with it exactly.
+          activation = json.loads(Path(os.environ["QUOTE_V4_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
           Path(os.environ["QUOTE_CHECKPOINT_PATH"]).write_text(
-              json.dumps(checkpoint, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+              json.dumps(activation, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
           )
-          if schedule["enabled"] is not checkpoint["provider_writes_authorized"]:
+          if schedule["enabled"] is not activation["provider_writes_authorized"]:
               raise SystemExit(
-                  "Reviewed schedule arming disagrees with the v4 runtime activation checkpoint; "
-                  "autonomous dispatch may only be armed when the schedule is enabled."
+                  "Reviewed schedule arming disagrees with the reviewed v4 activation artifact; "
+                  "autonomous dispatch may only be armed by the same reviewed activation that authorizes writes."
               )
-          if schedule["presentation_policy_sha256"] != checkpoint["presentation_policy_sha256"]:
-              raise SystemExit("Reviewed schedule presentation policy differs from the v4 activation checkpoint.")
-          if digest != schedule["queue_digest"]:
-              raise SystemExit("v4 queue digest differs from the production schedule binding.")
+          if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
+              raise SystemExit("Reviewed schedule presentation policy differs from the v4 activation artifact.")
+          if policy.digest != activation["presentation_policy_sha256"] or policy.policy_id != activation["presentation_policy_id"]:
+              raise SystemExit("Live presentation policy differs from the v4 activation artifact.")
+          if queue.digest != schedule["queue_digest"] or queue.digest != activation["queue_digest"]:
+              raise SystemExit("v4 queue digest differs from the production schedule or activation binding.")
           PY_ARM
-
 
       - name: Prove the exact next v4 reading unit
         shell: bash
@@ -505,12 +503,21 @@ jobs:
             }
           fi
 
-      - name: Discard stale v4 ledger before durable initialization
+      - name: Archive predecessor ledger before durable v4 initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          rm -f -- "$LEDGER_PATH"
+          # Never delete publication history: the predecessor ledger is moved
+          # to a digest-named archive path inside the state snapshot and is
+          # committed to the state branch together with the fresh v4 ledger.
+          if [[ -e "$LEDGER_PATH" ]]; then
+            old_digest="$(python -c 'import json,os; print(json.load(open(os.environ["LEDGER_PATH"])).get("queue_digest", "unknown").removeprefix("sha256:")[:12])')"
+            archive_relative="$(dirname "$LEDGER_RELATIVE_PATH")/publication-ledger-archive-${old_digest}.json"
+            mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"
+            echo "LEDGER_ARCHIVE_RELATIVE_PATH=$archive_relative" >> "$GITHUB_ENV"
+            echo "Archived predecessor ledger to $archive_relative"
+          fi
 
       - name: Enable state writer for one-time v4 ledger initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
@@ -540,7 +547,7 @@ jobs:
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             initialize-ledger \
-            --confirm INITIALIZE_STRICT_TELEGRAM_LEDGER
+            --confirm INITIALIZE_NEW_LORDCHRIST_LEDGER
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
@@ -550,6 +557,9 @@ jobs:
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          if [[ -n "${LEDGER_ARCHIVE_RELATIVE_PATH:-}" ]]; then
+            git -C "$STATE_DIR" add -- "$LEDGER_ARCHIVE_RELATIVE_PATH"
+          fi
           git -C "$STATE_DIR" commit -m "Initialize reviewed Lordchrist v4 Puritan/Spurgeon ledger [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
