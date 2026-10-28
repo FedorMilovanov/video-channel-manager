@@ -34,7 +34,7 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.js
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 CI_PATH = REPOSITORY_ROOT / ".github/workflows/ci.yml"
 RUNTIME_REQUIREMENTS = REPOSITORY_ROOT / "requirements/telegram-publisher.txt"
-EXPECTED_QUEUE_DIGEST = "sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb"
+EXPECTED_QUEUE_DIGEST = "sha256:43d1b07013bf6f9ffc578265f74ebc0c35d693066838fc9367fd5e839763cc11"
 GITHUB_SHA = "a" * 40
 WORKFLOW_SHA = "b" * 40
 

@@ -1,13 +1,13 @@
 Source: Томас Уотсон, "The Art of Divine Contentment", раздел о природе духовного довольства
 URL: https://ccel.org/ccel/watson/contentment/contentment.iv.html
-Fetched: 2026-10-28
+Fetched: 2026-10-29
 
 Verbatim (contiguous excerpt):
-
-Care is a spiritual canker that doth waste and dispirit; we may sooner by our care add a furlong to our grief than a cubit to our comfort. God doth threaten it as a curse, they shall eat their bread with carefulness. (Ez. 12:1) Better fast than eat of that bread. Be careful for nothing.
 
 Holy contentment is a divine thing, a fruit of the Spirit (Gal. 5:22). Nature may produce an outward calm, a stoic apathy; but a meek, quiet, submissive frame of heart under every condition, every loss, every trial, is a fruit from above. It is no dead insensibility, no dull uncomplaining patience; it is a lively, sweet submission to the will of God.
 
 Contentment is an intrinsical thing; it is not without, but within the heart. The Christian carries a heaven in his own bosom. Outwardly he may be in straits, but within he has that melody which the world hears not; he may be stripped of comforts, but not of consolation. Contentment is no gift of fortune, but of faith. And so the apostles saying, I have learned in whatsoever state I am, therewith to be content, is a speech worthy to be engraven upon our hearts.
 
 -- end excerpt --
+
+[Trim note 2026-10-29: the opening "Care is a spiritual canker" paragraph already appears in post 21's excerpt (36-watson-divine-contentment-en.txt); it was removed here so the two Watson posts do not repeat the same passage. The remaining text is contiguous in the same chapter.]

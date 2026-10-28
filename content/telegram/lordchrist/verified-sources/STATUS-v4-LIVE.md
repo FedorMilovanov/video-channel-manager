@@ -18,4 +18,12 @@ Every post was re-checked sentence-by-sentence against the **complete original b
 - Sequence 27 (Bunyan): tightened — two paraphrased join sentences and the appended Revelation 21:4 tail were replaced with Bunyan's contiguous verbatim sentences; retranslated.
 - **Sequences 28 (Kuyper), 29 (Bavinck), 30 (Whitefield): the previously recorded "verbatim" excerpts were synthesized paraphrases — not one sentence occurs in the books.** Replaced with contiguous verbatim passages from the full originals (Kuyper, *To Be Near Unto God*, Meditation I; Bavinck, *Philosophy of Revelation*, Lecture I; Whitefield, *The Extent and Reasonableness of Self-Denial*, sermon opening, Franklin 1740 / Evans N03789) and retranslated in full.
 
-New queue digest: `sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb` (activation + schedule rebound).
+New queue digest after the first pass: `sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb`, superseded the same day by the second-pass digest below.
+
+## Second pass: multi-source re-verification + editorial audit (2026-10-29)
+
+Every post was re-checked against a **second, independently generated source** (CCEL ThML text dump, EEBO/Evans TCP first editions, deeproots Murray text, ochorus CCEL mirror) in addition to the Ecumenical-Christian-Library CCEL mirror — 60+ source documents consulted across both passes. One new defect found and fixed: **sequence 8 (Baxter)** — the recorded final paragraph ("Oh, what a thing is it, to have the charge of immortal souls…") does not occur in *The Reformed Pastor*; replaced with Baxter's contiguous continuation of the same Dedicatory Epistle ("Nor must we be silent while men are hastened by you to perdition…") and retranslated. Second-source sentence coverage: seq 28/29 = 100%, seq 27/30/25/21/22 ≥ 92%, seq 10/11 ≈ 89%; the residue is edition differences (EEBO spelling, Outler translation, punctuation).
+
+Editorial audit of all 30 Russian texts (logic completeness, no dangling references, no duplicates, no banalities): fixed Gurnall transliteration (Герналл → Гурналл), a typo in seq 15, a calque in seq 21, a case error in seq 23, a word form in seq 24, the duplicated Watson paragraph shared by seq 21/22 (removed from 22), and seq 1's tautological title. Sequence 22 now opens at "Holy contentment is a divine thing".
+
+New queue digest: `sha256:43d1b07013bf6f9ffc578265f74ebc0c35d693066838fc9367fd5e839763cc11` (activation + schedule rebound).

@@ -4,7 +4,7 @@
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "release_id": "lordchrist-puritan-spurgeon-v4",
-  "queue_digest": "sha256:50fee0e0a5208495d36646bb9fb741c9769fe446679a7da2e1c5fc425d2ddefb",
+  "queue_digest": "sha256:43d1b07013bf6f9ffc578265f74ebc0c35d693066838fc9367fd5e839763cc11",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
   "state_ledger_relative_path": "content/telegram/lordchrist/publication-ledger.json",
