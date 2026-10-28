@@ -49,7 +49,7 @@
   "max_verified_per_slot": 1,
   "max_verified_per_day": 2,
   "backfill_policy": "none",
-  "queue_digest": "sha256:48d271c4bb8c4a7ccadc2c96cb0c275b1421d5e7553c2930cb1eeee86e284d97",
+  "queue_digest": "sha256:8efb5304beb0c147ad994719e6c9ac1ad5d04d967b127bb9532ff4feeb524ddf",
   "successor_queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "presentation_policy_id": "lordchrist-quote-v5",
   "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",

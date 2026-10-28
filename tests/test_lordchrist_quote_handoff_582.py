@@ -27,7 +27,7 @@ from video_channel_manager.telegram_state import initialize_ledger, load_queue, 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content/telegram/lordchrist"
 CHANNEL_PROFILE = ROOT / "content/telegram/channels/lordchrist.json"
-PREDECESSOR_QUEUE = CONTENT / "verified-30-posts.json"
+PREDECESSOR_QUEUE = CONTENT / "archived-old-queues" / "verified-30-posts.json"
 CANDIDATE = CONTENT / "successor-quotes-v1.json"
 TRANSLATION = CONTENT / "successor-translation-ledger-v1.json"
 AMENDMENTS = CONTENT / "successor-integrity-amendments-v1.json"
