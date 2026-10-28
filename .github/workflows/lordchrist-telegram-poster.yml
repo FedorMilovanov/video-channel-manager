@@ -261,6 +261,21 @@ jobs:
           queue = TelegramQueue.model_validate_json(queue_path.read_text(encoding="utf-8"))
           digest = queue.digest
 
+          # Initialization is needed when (a) no ledger exists yet on the state
+          # branch, or (b) the existing ledger is bound to a previous release
+          # (different queue digest). In case (b) the v4 cutover discards the
+          # stale ledger in a later step and re-initializes a fresh one on the
+          # first guarded publish.
+          needs_init = True
+          ledger_path = Path(os.environ["LEDGER_PATH"])
+          if ledger_path.is_file():
+              try:
+                  existing = json.loads(ledger_path.read_text(encoding="utf-8"))
+                  if existing.get("queue_digest") == digest:
+                      needs_init = False
+              except (OSError, json.JSONDecodeError):
+                  needs_init = True
+
           selection = {
               "schema_name": "video-channel-manager.telegram-active-quote-selection",
               "schema_version": 3,
@@ -271,7 +286,7 @@ jobs:
               "ledger_relative_path": "content/telegram/lordchrist/publication-ledger.json",
               "queue_digest": digest,
               "predecessor_complete": True,
-              "needs_ledger_initialization": not Path(os.environ["LEDGER_PATH"]).is_file(),
+              "needs_ledger_initialization": needs_init,
               "history_queue_path": str(queue_path),
               "history_ledger_path": os.environ["LEDGER_PATH"],
               "provider_writes_authorized": True,
