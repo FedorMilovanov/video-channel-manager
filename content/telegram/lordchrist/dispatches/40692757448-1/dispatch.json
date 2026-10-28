@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "publication_id": "lordchrist-successor-depth-v2-30-bunyan-christ-is-all",
+  "sequence": 30,
+  "intent_id": "9c44757b17a0125103f13206932215e2",
+  "workflow_run_id": "40692757448",
+  "workflow_run_attempt": "1",
+  "github_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "github_workflow_sha": "f5fd4fd922bdbe50c2f4f37e93e72d220ced8a83",
+  "payload_sha256": "sha256:63ba64a335596c33750674218bf00b63a227b0bc4be49d8b2eecf1eeeb387222",
+  "text": "Теперь Христос был всем: всей моей мудростью, всей моей праведностью, всем моим освящением и всем моим искуплением.\n\n— Джон Беньян, «Благодать, изливающаяся на величайшего из грешников», §232\n\nБеньян здесь созвучен 1 Кор. 1:30: мудрость, праведность, освящение и искупление не существуют для верующего отдельно от Христа. Это удерживает и оправдание, и освящение от превращения в автономный духовный проект человека.\n\n#Беньян #Христос #Спасение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-28T13:02:05.516916Z"
+  },
+  "prepared_at_utc": "2026-10-28T13:02:06.568531Z"
+}
