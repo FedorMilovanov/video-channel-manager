@@ -17,7 +17,7 @@ from video_channel_manager.telegram_publisher import TelegramPost, TelegramQueue
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 POLICY_PATH = REPOSITORY_ROOT / CANONICAL_PRESENTATION_POLICY_PATH
-EXPECTED_QUEUE_DIGEST = "sha256:d4edea36199912825b77edc111c5c1bbf173761efc823b23cc3e30fe04e46e3e"
+EXPECTED_QUEUE_DIGEST = "sha256:a3e5bd757b49996f5db27d46427ce3e6909ce1cf8146d41f6bd316081a2065dd"
 DIRECT_QUOTE_RE = re.compile(r"«[^»\n]+»")
 
 

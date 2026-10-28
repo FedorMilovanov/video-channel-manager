@@ -1,13 +1,11 @@
 Source: Джордж Уайтфилд, "Selected Sermons (Sermon 29)", «The Extent and Reasonableness of Self-Denial» (Лк. 9:23)
 URL: https://ccel.org/ccel/whitefield/sermons/sermons.xxxi.html
-Fetched: 2026-10-28
+Fetched: 2026-10-29
 
 Verbatim (contiguous excerpt):
 
-If any man will come after me, let him deny himself, and take up his cross daily, and follow me (Luke 9:23). These words of our Lord are not optional counsel for those who want to be extra holy; they are the universal law of his kingdom, binding upon every soul that names the name of Christ. There is no discipleship without self-denial, for such was the Master himself: he denied himself, took upon him the form of a servant, and became obedient unto death, even the death of the cross.
-
-Self-denial does not mean bodily mortification for its own sake, nor sourness, nor quitting all lawful comforts, nor flight from the world into a wilderness. It means the dethronement of self as our rule and end: putting away our own righteousness, our own will, our own glory, our own lusts, and the lusts of the world, that we might live unto him who died for us and rose again. It is ceasing to be lord over ourselves and owning Christ as sole Lord.
-
-Take up thy cross daily. Not a heroic feat once done, but constancy in the ordinary round -- in small temptations, in household vexations, in being overlooked, in labour, in prayer, in forgiving injuries, in faithfulness to duty. He that does not carry his cross in the common days will not stand in the day of great trial. And while you bear it, remember: you do not bear it alone; Christ bears you with your cross, and he that called you is able to keep that which you have committed unto him against that day.
+And he said unto them all, If any man will come after me, let him deny himself. Whoever reads the Gospel with a single eye, and sincere intention, will find that our blessed Lord took all opportunities of reminding his disciples that his kingdom was not of this world; that his doctrine was a doctrine of the cross; and that their professing themselves to be his followers would call them to a constant state of voluntary self-suffering and self-denial. The words of the text afford us one instance among many, of our Saviour's behaviour in this matter: for having in the preceding verses revealed himself to Peter, and the other apostles, to be the Christ of God; lest they should be too much elated with such a peculiar discovery of his Deity, or think that their relation to so great a Personage would be attended with nothing but pomp and grandeur, He tells them, in the verse, that the Son of Man was to suffer many things in this world, though He was to be crowned with eternal glory and honour in the next: and that if any of them or their posterity would share in the same honour, they must bear a part with him in his self-denial and sufferings. For He said unto them all, If any man will come after me, let him deny himself.
 
 -- end excerpt --
+
+[Integrity note 2026-10-29: the previously recorded text was a synthesized paraphrase and has been replaced with the sermon's verbatim opening, verified word-for-word against the first edition text (Sermons on Various Subjects, Philadelphia: B. Franklin, 1740, Sermon V; Evans TCP N03789) of the same sermon printed in CCEL Selected Sermons as Sermon 29. Display capitalization of the 1740 print is modernized and TCP line-break word splits rejoined; the wording is otherwise untouched.]
