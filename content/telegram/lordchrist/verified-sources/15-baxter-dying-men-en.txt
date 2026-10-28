@@ -1,6 +1,6 @@
 Source: Richard Baxter, "The Reformed Pastor", Dedicatory Preface (to the faithful ministers of Christ)
 URL: https://ccel.org/ccel/baxter/pastor/pastor.i.ii.html
-Fetched: 2026-10-28
+Fetched: 2026-10-29
 
 Verbatim (continuous excerpt from Dedicatory Epistle):
 
@@ -10,4 +10,6 @@ Verbatim (continuous excerpt from Dedicatory Epistle):
 
 If the ministers of England had sinned only in Latin, I would have made shift to admonish them in Latin, or else have said nothing to them. But if they will sin in English, they must hear of it in English. Unpardoned sin will never let us rest or prosper, though we be at ever so much care and cost to cover it: our sin will surely find us out, though we find not it out... The work of God must needs be done! Souls must not perish, while you mind your worldly business or worldly pleasure, and take your ease, or quarrel with your brethren! ...
 
-Oh, what a thing is it, to have the charge of immortal souls at the day of judgment, and to have so much of their blood laid to our charge, if we have been negligent! I tell you brethren, if you well understood what is done in the work of the ministry, and what a weight is upon you, you would not be so careless and secure as many are."
+Nor must we be silent while men are hastened by you to perdition, and the Church brought into greater danger and confusion, for fear of seeming too uncivil and unmannerly with you, or displeasing your impatient souls! Would you be but as impatient with your sins as with our reproofs, you should hear no more from us, but we should be all agreed!"
+
+[Integrity note 2026-10-29: the previously recorded final paragraph ("Oh, what a thing is it, to have the charge of immortal souls...") does not occur in The Reformed Pastor (checked against the full CCEL text and the dedication chapter) and has been replaced with Baxter's contiguous continuation of the same Dedicatory Epistle passage, verified word-for-word.]

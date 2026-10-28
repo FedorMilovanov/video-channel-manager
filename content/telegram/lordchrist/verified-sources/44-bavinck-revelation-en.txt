@@ -1,13 +1,11 @@
-Source: Герман Бавинк, "Philosophy of Revelation (Stone Lectures 1908–09)", Лекции в Принстонской духовной семинарии, вступление
+Source: Герман Бавинк, "Philosophy of Revelation (Stone Lectures 1908-09)", Лекция I: The Idea of a Philosophy of Revelation
 URL: https://ccel.org/ccel/bavinck/revelation/revelation.i.html
-Fetched: 2026-10-28
+Fetched: 2026-10-29
 
 Verbatim (contiguous excerpt):
 
-Religion is not a human invention; it is rooted in revelation. Man does not climb up to God by the powers of his own reason or feeling; God comes down to man in his self-revelation. Herein lies the distinction of Christianity from every other religion, and the ground of its certainty: we know God, not because we have guessed him by our own inferences, but because he has made himself known to us.
-
-Revelation contradicts neither science, nor culture, nor reason; on the contrary, it is the condition of their true flourishing. For if the world, man, and history have not their origin and end in the will of God; if all is a chance concatenation of forces, then science finds no unity in knowledge, culture no stable foundation, man no meaning for his existence.
-
-A philosophy of revelation does not put reason in the place of faith nor rob reason of its rights; it acknowledges that reason itself lives by the light that proceeds from God, and that all truth, wherever it appears, ultimately traces back to that Word that was in the beginning, that was with God, and that was God.
+Belief in such a special revelation is the starting-point and the foundation-stone of Christian theology. As science never precedes life, but always follows it and flows from it, so the science of the knowledge of God rests on the reality of his revelation. If God does not exist, or if he has not revealed himself, and hence is unknowable, then all religion is an illusion and all theology a phantasm. But, built on the basis of revelation, theology undertakes a glorious task,--the task of unfolding the science of the revelation of God and of our knowledge concerning him. It engages in this task when seeking to ascertain by means of exegesis the content of revelation, when endeavoring to reduce to unity of thought this ascertained content, when striving to maintain its truth whether by way of aggression or defence, or to commend it to the consciences of men.
 
 -- end excerpt --
+
+[Integrity note 2026-10-29: the previously recorded text was a synthesized paraphrase (no sentence of it occurs in the book) and has been replaced with a contiguous verbatim passage from Lecture I of the full CCEL text of The Philosophy of Revelation (Longmans, Green, 1909), verified word-for-word.]

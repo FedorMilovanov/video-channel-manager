@@ -1,13 +1,13 @@
 Source: Джон Баньян, "The Pilgrims Progress", о входе в Небесный Город
 URL: https://ccel.org/ccel/bunyan/pilgrim
-Fetched: 2026-10-28
+Fetched: 2026-10-29
 
 Verbatim (contiguous excerpt):
 
-Now I saw in my dream, that by this time the Pilgrims were got over the Enchanted Ground, and entering into the country of Beulah, whose air was very sweet and pleasant, the way lying directly through it, they solaced themselves there for a season. Yea, here they heard continually the singing of birds, and saw every day the flowers appear in the earth, and heard the voice of the turtle in the land... Within sight of the city they had also the gates of the Celestial City in view.
+Now I saw in my dream, that by this time the Pilgrims were got over the Enchanted Ground, and entering into the country of Beulah, whose air was very sweet and pleasant, the way lying directly through it, they solaced themselves there for a season. Yea, here they heard continually the singing of birds, and saw every day the flowers appear in the earth, and heard the voice of the turtle in the land. ... Here also they had the city itself in view; and they thought they heard all the bells therein to ring, to welcome them thereto.
 
-Now when they were come up to the gate, there was written over it in letters of gold, Blessed are they that do his commandments, that they may have right to the tree of life, and may enter in through the gates into the city... The men that met them at the gate said, Enter ye, blessed of my Father, inherit the kingdom prepared for you from the foundation of the world.
-
-And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away.
+Now when they were come up to the gate, there was written over it, in letters of gold, Blessed are they that do his commandments, that they may have right to the tree of life, and may enter in through the gates into the city. ... Then I heard in my dream, that all the bells in the city rang again for joy, and that it was said unto them, Enter ye into the joy of your Lord.
 
 -- end excerpt --
+
+[Integrity note 2026-10-29: re-verified sentence-by-sentence against the full CCEL text of The Pilgrim's Progress. Two paraphrased join sentences and the appended Revelation 21:4 quotation (not present in this scene) were removed; the excerpt now contains only Bunyan's contiguous sentences, with marked elisions only.]
