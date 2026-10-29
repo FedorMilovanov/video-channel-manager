@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
@@ -75,6 +75,186 @@ class LordchristQuizSpec(BaseModel):
         if any(not reference.strip() for reference in self.scripture_references):
             raise ValueError("quiz scripture references must be non-empty")
         return self
+
+
+def series_spec_path(series_id: str) -> Path:
+    return QUIZ_DIR / f"{series_id}.json"
+
+
+def series_runtime_path(series_id: str) -> Path:
+    return QUIZ_DIR / f"{series_id}-runtime.json"
+
+
+def series_ledger_relative_path(series_id: str) -> str:
+    return f"{STATE_LEDGER_PREFIX}/{series_id}-ledger.json"
+
+
+class LordchristQuizSeriesSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.lordchrist-quiz-series-spec"]
+    schema_version: Literal[1]
+    series_id: str = Field(pattern=r"^lordchrist-quiz-series-\d{2}$")
+    title: str = Field(min_length=3, max_length=120)
+    items: tuple[LordchristQuizSpec, ...] = Field(min_length=10, max_length=10)
+
+    @model_validator(mode="after")
+    def validate_series(self) -> "LordchristQuizSeriesSpec":
+        ids = [item.publication_id for item in self.items]
+        if len(set(ids)) != len(ids):
+            raise ValueError("quiz series publication_id values must be unique")
+        if any(item.layout != "v2" for item in self.items):
+            raise ValueError("quiz series items must use the clean layout v2")
+        for previous, current in zip(self.items, self.items[1:], strict=False):
+            if current.scheduled_at - previous.scheduled_at != timedelta(days=2):
+                raise ValueError("quiz series items must be scheduled exactly two days apart")
+        return self
+
+
+def load_quiz_series(path: Path) -> LordchristQuizSeriesSpec:
+    try:
+        return LordchristQuizSeriesSpec.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid lordchrist quiz series spec {path}: {exc}") from exc
+
+
+def build_series_candidate(
+    profile: TelegramChannelProfile,
+    series: LordchristQuizSeriesSpec,
+    binding: TelegramTargetBinding,
+) -> GenericReleaseQueue:
+    if binding.project_key != profile.project_key or binding.profile_sha256 != profile.digest:
+        raise ValueError("quiz target binding differs from the selected channel profile")
+    if binding.channel_username.casefold() != profile.channel_username.casefold():
+        raise ValueError("quiz target binding channel differs from the selected channel profile")
+    items = []
+    for sequence, spec in enumerate(series.items, start=1):
+        payload = render_poll_payload(
+            profile,
+            publication_id=spec.publication_id,
+            question=spec.question,
+            options=spec.options,
+            poll_type="quiz",
+            correct_option_ids=(spec.correct_option_index,),
+            explanation=spec.explanation,
+            description=build_poll_description(spec),
+        )
+        items.append(
+            GenericReleaseItem(
+                sequence=sequence,
+                publication_id=spec.publication_id,
+                scheduled_at=spec.scheduled_at,
+                source_sha256=spec_source_sha256(spec),
+                payload=payload,
+            )
+        )
+    return GenericReleaseQueue(
+        schema_name="video-channel-manager.telegram-release-queue",
+        schema_version=1,
+        release_id=f"{series.series_id}-v1",
+        project_key=profile.project_key,
+        channel_username=profile.channel_username,
+        profile_sha256=profile.digest,
+        timezone=profile.timezone,
+        daily_verified_limit=profile.daily_verified_limit,
+        target_binding_sha256=binding.digest,
+        chat_id=binding.chat_id,
+        bot_id=binding.bot_id,
+        bot_username=binding.bot_username,
+        release_authorized=False,
+        items=tuple(items),
+    )
+
+
+def build_series_runtime(
+    profile: TelegramChannelProfile,
+    series: LordchristQuizSeriesSpec,
+    binding: TelegramTargetBinding,
+    *,
+    reviewed_by: str,
+    reviewed_at: datetime,
+) -> GenericReleaseQueue:
+    candidate = build_series_candidate(profile, series, binding)
+    return authorize_release_candidate(
+        candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
+        reviewed_by=reviewed_by,
+        reviewed_at=reviewed_at,
+    )
+
+
+def _load_series_bundle(series_id: str) -> tuple[LordchristQuizSeriesSpec, GenericReleaseQueue]:
+    series = load_quiz_series(series_spec_path(series_id))
+    if series.series_id != series_id:
+        raise ValueError("quiz series_id differs from the requested series")
+    return series, load_quiz_release(series_runtime_path(series_id))
+
+
+def validate_series(
+    series_id: str,
+    *,
+    require_release_authorized: bool = False,
+    require_execution_authorized: bool = False,
+) -> dict[str, object]:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    series, release = _load_series_bundle(series_id)
+    candidate = build_series_candidate(profile, series, binding)
+    if len(release.items) != len(candidate.items):
+        raise ValueError("quiz series runtime item count differs from the reviewed series spec")
+    for actual, expected in zip(release.items, candidate.items, strict=True):
+        if actual.publication_id != expected.publication_id or actual.source_sha256 != expected.source_sha256:
+            raise ValueError("quiz series runtime item differs from the reviewed series spec")
+        if actual.payload.model_dump(mode="json") != expected.payload.model_dump(mode="json"):
+            raise ValueError("quiz series runtime payload differs from the payload rebuilt from the spec")
+    if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
+        raise ValueError("quiz series runtime release is not bound to the exact profile and target binding")
+    if (release.chat_id, release.bot_id, release.bot_username) != (
+        binding.chat_id,
+        binding.bot_id,
+        binding.bot_username,
+    ):
+        raise ValueError("quiz series runtime release target fields differ from the target binding")
+    if require_release_authorized or require_execution_authorized:
+        if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
+            raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and not profile.provider_writes_authorized:
+        raise ValueError("quiz channel profile is write-disabled")
+    return {
+        "series_id": series_id,
+        "release_id": release.release_id,
+        "release_authorized": release.release_authorized,
+        "items": len(release.items),
+        "first_scheduled_at": release.items[0].scheduled_at.isoformat(),
+        "last_scheduled_at": release.items[-1].scheduled_at.isoformat(),
+        "profile_sha256": release.profile_sha256,
+    }
+
+
+def series_state_init(series_id: str, state_checkout: Path) -> Path:
+    _, release = _load_series_bundle(series_id)
+    ledger_path = state_checkout / series_ledger_relative_path(series_id)
+    if ledger_path.exists():
+        load_ledger(ledger_path, release)
+        return ledger_path
+    ledger: GenericPublicationLedger = initialize_ledger(release)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(ledger.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    return ledger_path
+
+
+def series_state_check(series_id: str, state_checkout: Path) -> dict[str, int]:
+    _, release = _load_series_bundle(series_id)
+    ledger_path = state_checkout / series_ledger_relative_path(series_id)
+    if not ledger_path.exists():
+        raise ValueError("quiz series publication ledger is not initialized")
+    ledger = load_ledger(ledger_path, release)
+    counts: dict[str, int] = {}
+    for entry in ledger.entries.values():
+        counts[entry.state] = counts.get(entry.state, 0) + 1
+    return counts
 
 
 def spec_path(publication_id: str) -> Path:
@@ -323,6 +503,25 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--state-checkout", type=Path, required=True)
     check.add_argument("--require-publishable", action="store_true")
 
+    build_series = sub.add_parser("build-series-runtime")
+    build_series.add_argument("--series-id", required=True)
+    build_series.add_argument("--reviewed-by", required=True)
+    build_series.add_argument("--reviewed-at", required=True)
+    build_series.add_argument("--output", type=Path)
+
+    validate_series_cmd = sub.add_parser("validate-series")
+    validate_series_cmd.add_argument("--series-id", required=True)
+    validate_series_cmd.add_argument("--require-release-authorized", action="store_true")
+    validate_series_cmd.add_argument("--require-execution-authorized", action="store_true")
+
+    series_init = sub.add_parser("series-state-init")
+    series_init.add_argument("--series-id", required=True)
+    series_init.add_argument("--state-checkout", type=Path, required=True)
+
+    series_check = sub.add_parser("series-state-check")
+    series_check.add_argument("--series-id", required=True)
+    series_check.add_argument("--state-checkout", type=Path, required=True)
+
     args = parser.parse_args(argv)
     if args.command == "build-runtime":
         profile = load_channel_profile(PROFILE_PATH)
@@ -345,6 +544,27 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "state-check":
         state_check(args.publication_id, args.state_checkout, require_publishable=args.require_publishable)
         print("quiz state is initialized and publishable")
+    elif args.command == "build-series-runtime":
+        profile = load_channel_profile(PROFILE_PATH)
+        binding = load_target_binding(BINDING_PATH, profile)
+        series = load_quiz_series(series_spec_path(args.series_id))
+        reviewed_at = datetime.fromisoformat(args.reviewed_at)
+        runtime = build_series_runtime(profile, series, binding, reviewed_by=args.reviewed_by, reviewed_at=reviewed_at)
+        output = args.output or series_runtime_path(args.series_id)
+        output.write_text(runtime.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"runtime": str(output), "candidate_sha256": runtime.reviewed_candidate_sha256}))
+    elif args.command == "validate-series":
+        result = validate_series(
+            args.series_id,
+            require_release_authorized=args.require_release_authorized,
+            require_execution_authorized=args.require_execution_authorized,
+        )
+        print(json.dumps(result, ensure_ascii=False))
+    elif args.command == "series-state-init":
+        print(series_state_init(args.series_id, args.state_checkout))
+    elif args.command == "series-state-check":
+        counts = series_state_check(args.series_id, args.state_checkout)
+        print(json.dumps({"series_id": args.series_id, "ledger_states": counts}, ensure_ascii=False))
     return 0
 
 

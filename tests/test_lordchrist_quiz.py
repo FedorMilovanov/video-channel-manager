@@ -123,6 +123,81 @@ def test_state_init_reinitializes_only_a_provably_untouched_stale_ledger(tmp_pat
         state_init(PUBLICATION_ID, other)
 
 
+SERIES_ID = "lordchrist-quiz-series-01"
+SERIES_WORKFLOW = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+EXPECTED_SERIES_ANSWERS = {
+    "lordchrist-quiz-s01-esther": "Есфирь",
+    "lordchrist-quiz-s01-belshazzar": "Валтасар",
+    "lordchrist-quiz-s01-jael": "Иаиль",
+    "lordchrist-quiz-s01-moriah": "Мориа",
+    "lordchrist-quiz-s01-uzzah": "Оза",
+    "lordchrist-quiz-s01-stephen": "Стефан",
+    "lordchrist-quiz-s01-hezekiah": "Езекия",
+    "lordchrist-quiz-s01-elisha-bones": "Елисей",
+    "lordchrist-quiz-s01-cain-city": "Каин",
+    "lordchrist-quiz-s01-eutychus": "Евтих",
+}
+
+
+def test_quiz_series_spec_is_ten_clean_teaching_quizzes() -> None:
+    from datetime import timedelta
+
+    from video_channel_manager.lordchrist_quiz import build_poll_description, load_quiz_series, series_spec_path
+
+    series = load_quiz_series(series_spec_path(SERIES_ID))
+    assert len(series.items) == 10
+    assert {item.publication_id: item.options[item.correct_option_index] for item in series.items} == (
+        EXPECTED_SERIES_ANSWERS
+    )
+    first = series.items[0].scheduled_at
+    assert (first.hour, first.minute) == (13, 0)  # daytime publication, Moscow
+    for previous, current in zip(series.items, series.items[1:], strict=False):
+        assert current.scheduled_at - previous.scheduled_at == timedelta(days=2)
+    for item in series.items:
+        assert item.layout == "v2"
+        assert item.hashtags == ""
+        assert build_poll_description(item) is None  # nothing shown before voting
+        assert len(item.explanation) <= 200
+        assert any(reference in item.explanation for reference in item.scripture_references)
+
+
+def test_quiz_series_runtime_is_the_authorized_build() -> None:
+    from video_channel_manager.lordchrist_quiz import (
+        build_series_candidate,
+        load_quiz_series,
+        series_runtime_path,
+        series_spec_path,
+    )
+    from video_channel_manager.telegram_channel_profile import load_channel_profile
+    from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue
+    from video_channel_manager.telegram_target_binding import load_target_binding
+
+    profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
+    binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
+    series = load_quiz_series(series_spec_path(SERIES_ID))
+    release = GenericReleaseQueue.model_validate_json(series_runtime_path(SERIES_ID).read_text(encoding="utf-8"))
+
+    candidate = build_series_candidate(profile, series, binding)
+    assert release.release_authorized is True
+    assert release.reviewed_candidate_sha256 == candidate.candidate_digest()
+    assert [item.publication_id for item in release.items] == [item.publication_id for item in series.items]
+    assert all(item.payload.description is None for item in release.items)
+    assert all(item.payload.poll_type == "quiz" for item in release.items)
+
+
+def test_quiz_series_workflow_publishes_the_due_quiz_every_two_days() -> None:
+    workflow = SERIES_WORKFLOW.read_text(encoding="utf-8")
+    assert 'cron: "0 10 * * *"' in workflow  # 13:00 Moscow, daily tick
+    assert workflow.count("queue: max") == 1
+    assert workflow.count("group: lordchrist-telegram-publisher") == 1
+    assert "INITIALIZE:@lordchrist:$SERIES_ID" in workflow
+    assert "PUBLISH:@lordchrist:$SERIES_ID" in workflow
+    assert "validate-series" in workflow
+    assert "telegram_multichannel_cli skip-expired" in workflow
+    assert "telegram_publication_freshness next" in workflow
+    assert "secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN" in workflow
+
+
 def test_quiz_workflow_is_main_only_exact_and_schedule_free() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "schedule:" not in workflow
