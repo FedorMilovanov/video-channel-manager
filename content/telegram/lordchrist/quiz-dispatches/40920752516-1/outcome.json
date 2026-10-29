@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "lordchrist-quiz-city-of-palms",
+  "provider_payload_sha256": "sha256:ae5922204d661d09e5696d16b63088a3b47cfb38538e7a130d5ab184bc6ed7ca",
+  "provider_effect": "verified",
+  "retryable": false,
+  "error": null,
+  "receipt": {
+    "schema_name": "video-channel-manager.telegram-generic-send-receipt",
+    "schema_version": 1,
+    "project_key": "lord-god-strength",
+    "publication_id": "lordchrist-quiz-city-of-palms",
+    "provider_payload_sha256": "sha256:ae5922204d661d09e5696d16b63088a3b47cfb38538e7a130d5ab184bc6ed7ca",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "message_id": 1591,
+    "message_url": "https://t.me/lordchrist/1591",
+    "verified_at_utc": "2026-10-29T17:23:13.209293Z",
+    "provider_effect": "verified"
+  }
+}
