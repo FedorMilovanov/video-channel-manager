@@ -70,6 +70,11 @@ def test_trial_quiz_runtime_is_the_authorized_build_of_the_spec() -> None:
 def test_quiz_workflow_is_main_only_exact_and_schedule_free() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "schedule:" not in workflow
+    # GitHub rejects duplicate YAML keys at startup even though permissive
+    # parsers accept them; the concurrency block must define each key once.
+    assert workflow.count("queue: max") == 1
+    assert workflow.count("group: lordchrist-telegram-publisher") == 1
+    assert workflow.count("cancel-in-progress: false") == 1
     assert "if: github.ref == 'refs/heads/main'" in workflow
     assert "INITIALIZE:@lordchrist:$PUBLICATION_ID" in workflow
     assert "PUBLISH:@lordchrist:$PUBLICATION_ID" in workflow
