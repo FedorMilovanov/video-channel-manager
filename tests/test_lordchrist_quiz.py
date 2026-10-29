@@ -76,6 +76,7 @@ def test_quiz_workflow_is_main_only_exact_and_schedule_free() -> None:
     assert "video_channel_manager.lordchrist_quiz validate" in workflow
     assert "video_channel_manager.telegram_multichannel_cli send-once" in workflow
     assert "secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN" in workflow
-    assert json.loads((QUIZ_DIR / f"{PUBLICATION_ID}-runtime.json").read_text(encoding="utf-8"))[
-        "release_authorized"
-    ] is True
+    assert (
+        json.loads((QUIZ_DIR / f"{PUBLICATION_ID}-runtime.json").read_text(encoding="utf-8"))["release_authorized"]
+        is True
+    )

@@ -290,9 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         binding = load_target_binding(BINDING_PATH, profile)
         spec = load_quiz_spec(spec_path(args.publication_id))
         reviewed_at = datetime.fromisoformat(args.reviewed_at)
-        runtime = build_quiz_runtime(
-            profile, spec, binding, reviewed_by=args.reviewed_by, reviewed_at=reviewed_at
-        )
+        runtime = build_quiz_runtime(profile, spec, binding, reviewed_by=args.reviewed_by, reviewed_at=reviewed_at)
         output = args.output or runtime_path(args.publication_id)
         output.write_text(runtime.model_dump_json(indent=2) + "\n", encoding="utf-8")
         print(json.dumps({"runtime": str(output), "candidate_sha256": runtime.reviewed_candidate_sha256}))
