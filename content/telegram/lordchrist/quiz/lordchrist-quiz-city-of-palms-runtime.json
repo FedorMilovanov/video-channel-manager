@@ -12,16 +12,16 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:cbadc8d50c35ea1068a3d19aa0d10abfb7acce92fd57a6629bcd9d0903af0d2e",
+  "reviewed_candidate_sha256": "sha256:d206f5fdadaa464654a7892071ee75ab387678c2391810e5fc6f95f3f7df5186",
   "reviewed_publication_id": null,
   "reviewed_by": "Fedor Milovanov (repository review)",
-  "reviewed_at": "2026-10-29T12:00:00+03:00",
+  "reviewed_at": "2026-10-29T20:05:00+03:00",
   "items": [
     {
       "sequence": 1,
       "publication_id": "lordchrist-quiz-city-of-palms",
-      "scheduled_at": "2026-10-30T12:00:00+03:00",
-      "source_sha256": "sha256:abdce2332fa9787abc6e76554d4d94f8aaa157e760326da55aca5de2c98819b4",
+      "scheduled_at": "2026-10-29T20:05:00+03:00",
+      "source_sha256": "sha256:689402ce85dca235cb2d5abc65219cb1af1ed19786ccd3656a78711ceeb87c8e",
       "payload": {
         "schema_name": "video-channel-manager.telegram-generic-poll-payload",
         "schema_version": 4,

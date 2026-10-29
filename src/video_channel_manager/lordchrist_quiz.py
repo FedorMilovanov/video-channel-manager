@@ -236,12 +236,35 @@ def validate_quiz(
     }
 
 
+def _ledger_is_untouched(ledger: GenericPublicationLedger) -> bool:
+    """True only when the ledger proves no provider effect ever happened."""
+    return bool(ledger.entries) and all(
+        entry.state == "pending"
+        and entry.provider_effect == "impossible"
+        and entry.intent_id is None
+        and entry.message_id is None
+        for entry in ledger.entries.values()
+    )
+
+
 def state_init(publication_id: str, state_checkout: Path) -> Path:
     _, release = _load_bundle(publication_id)
     ledger_path = state_checkout / ledger_relative_path(publication_id)
     if ledger_path.exists():
-        load_ledger(ledger_path, release)
-        return ledger_path
+        try:
+            load_ledger(ledger_path, release)
+            return ledger_path
+        except ValueError:
+            # A reviewed release correction (e.g. moving the scheduled time
+            # before any dispatch) invalidates the initialized ledger digest.
+            # Re-initialization is safe only when the stale ledger proves
+            # that nothing was ever dispatched or published.
+            existing = GenericPublicationLedger.model_validate_json(ledger_path.read_text(encoding="utf-8"))
+            if not _ledger_is_untouched(existing):
+                raise ValueError(
+                    "quiz publication ledger belongs to a different release and is not "
+                    "provably untouched; refusing to re-initialize state"
+                ) from None
     ledger: GenericPublicationLedger = initialize_ledger(release)
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     ledger_path.write_text(ledger.model_dump_json(indent=2) + "\n", encoding="utf-8")

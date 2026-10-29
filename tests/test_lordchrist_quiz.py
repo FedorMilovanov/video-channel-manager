@@ -67,6 +67,38 @@ def test_trial_quiz_runtime_is_the_authorized_build_of_the_spec() -> None:
     assert payload.explanation == spec.explanation
 
 
+def _write_stale_ledger(state_checkout: Path, *, published: bool) -> Path:
+    from video_channel_manager.lordchrist_quiz import ledger_relative_path, state_init
+
+    target = state_checkout / ledger_relative_path(PUBLICATION_ID)
+    assert state_init(PUBLICATION_ID, state_checkout) == target
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    payload["release_digest"] = "sha256:" + "0" * 64  # bound to a superseded release
+    if published:
+        # A touched (no longer pending) entry must block re-initialization.
+        payload["entries"][PUBLICATION_ID]["state"] = "skipped"
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return target
+
+
+def test_state_init_reinitializes_only_a_provably_untouched_stale_ledger(tmp_path: Path) -> None:
+    import pytest
+
+    from video_channel_manager.lordchrist_quiz import load_quiz_release, runtime_path, state_init
+    from video_channel_manager.telegram_multichannel_state import load_ledger
+
+    target = _write_stale_ledger(tmp_path, published=False)
+    release = load_quiz_release(runtime_path(PUBLICATION_ID))
+    assert state_init(PUBLICATION_ID, tmp_path) == target
+    ledger = load_ledger(target, release)  # now bound to the current release
+    assert ledger.release_digest == release.digest
+
+    other = tmp_path / "published-case"
+    _write_stale_ledger(other, published=True)
+    with pytest.raises(ValueError, match="provably untouched"):
+        state_init(PUBLICATION_ID, other)
+
+
 def test_quiz_workflow_is_main_only_exact_and_schedule_free() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "schedule:" not in workflow
