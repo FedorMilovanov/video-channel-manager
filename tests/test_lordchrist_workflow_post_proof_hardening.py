@@ -10,7 +10,8 @@ RICH_CANARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-canary.yml"
 RICH_CONTROLLER_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-controller.yml"
 RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-EXPECTED_LOCK_PARTICIPANTS = {WORKFLOW, RECOVERY_WORKFLOW, APPROVAL_WORKFLOW}
+QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
+EXPECTED_LOCK_PARTICIPANTS = {WORKFLOW, RECOVERY_WORKFLOW, APPROVAL_WORKFLOW, QUIZ_WORKFLOW}
 
 
 def workflow_text() -> str:

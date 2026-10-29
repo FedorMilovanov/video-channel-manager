@@ -1,0 +1,53 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "lordchrist-quiz-city-of-palms-v1",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 1,
+  "target_binding_sha256": "sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:cbadc8d50c35ea1068a3d19aa0d10abfb7acce92fd57a6629bcd9d0903af0d2e",
+  "reviewed_publication_id": null,
+  "reviewed_by": "Fedor Milovanov (repository review)",
+  "reviewed_at": "2026-10-29T12:00:00+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-quiz-city-of-palms",
+      "scheduled_at": "2026-10-30T12:00:00+03:00",
+      "source_sha256": "sha256:abdce2332fa9787abc6e76554d4d94f8aaa157e760326da55aca5de2c98819b4",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-city-of-palms",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:ae5922204d661d09e5696d16b63088a3b47cfb38538e7a130d5ab184bc6ed7ca",
+        "question": "Какой город назван в Библии «городом пальм»?",
+        "options": [
+          "Вифлеем",
+          "Иерихон",
+          "Хеврон",
+          "Дамаск"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "«Равнину долины Иерихона, город Пальм» показал Господь Моисею с горы Нево (Втор. 34:3). То же название — в Суд. 1:16 и 2 Пар. 28:15. А Вифлеем назван «городом Давидовым» (Лк. 2:4).",
+        "description": "🧠 Викторина по Библии\n\nОтвет и объяснение — сразу после голосования.\n\n📖 Втор. 34:3, Суд. 1:16, 2 Пар. 28:15, Лк. 2:4\n\n#Викторина #Библия #Знание_Писания",
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    }
+  ]
+}
