@@ -29,6 +29,30 @@ def test_trial_quiz_spec_is_factually_bound() -> None:
     assert len(build_poll_description(spec)) <= 1024
 
 
+def test_clean_layout_v2_hides_everything_until_after_voting() -> None:
+    from video_channel_manager.lordchrist_quiz import (
+        build_poll_description,
+        build_quiz_candidate,
+        load_quiz_spec,
+    )
+    from video_channel_manager.telegram_channel_profile import load_channel_profile
+    from video_channel_manager.telegram_target_binding import load_target_binding
+
+    spec = load_quiz_spec(QUIZ_DIR / "lordchrist-quiz-book-without-gods-name.json")
+    assert spec.layout == "v2"
+    assert spec.options[spec.correct_option_index] == "Есфирь"
+    # Nothing before voting: no intro block, no hashtags, no reference hints.
+    assert build_poll_description(spec) is None
+
+    profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
+    binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
+    payload = build_quiz_candidate(profile, spec, binding).items[0].payload
+    assert payload.description is None
+    # Scripture references arrive only with the post-vote explanation.
+    assert payload.explanation is not None and "Есф. 4:14" in payload.explanation
+    assert len(payload.explanation) <= 200
+
+
 def test_trial_quiz_runtime_is_the_authorized_build_of_the_spec() -> None:
     from video_channel_manager.lordchrist_quiz import (
         build_quiz_candidate,

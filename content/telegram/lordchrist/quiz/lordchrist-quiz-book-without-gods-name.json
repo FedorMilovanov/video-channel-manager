@@ -1,0 +1,21 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quiz-spec",
+  "schema_version": 1,
+  "publication_id": "lordchrist-quiz-book-without-gods-name",
+  "title": "Викторина: книга, где не названо имя Бога",
+  "layout": "v2",
+  "question": "В какой книге Библии ни разу не упомянуто имя Бога?",
+  "options": [
+    "Руфь",
+    "Есфирь",
+    "Неемия",
+    "Иона"
+  ],
+  "correct_option_index": 1,
+  "explanation": "Есфирь. Имя Бога в этой книге не встречается ни разу — и при этом Его промысел виден во всём ходе событий (Есф. 4:14).",
+  "scripture_references": [
+    "Есф. 4:14"
+  ],
+  "scheduled_at": "2026-11-02T12:00:00+03:00",
+  "hashtags": ""
+}

@@ -52,12 +52,20 @@ class LordchristQuizSpec(BaseModel):
     explanation: str = Field(min_length=10, max_length=200)
     scripture_references: tuple[str, ...] = Field(min_length=1, max_length=8)
     scheduled_at: datetime
-    hashtags: str = Field(min_length=2, max_length=120)
+    hashtags: str = Field(default="", max_length=120)
+    layout: Literal["v1", "v2"] = "v1"
 
     @model_validator(mode="after")
     def validate_quiz(self) -> "LordchristQuizSpec":
         if self.scheduled_at.tzinfo is None:
             raise ValueError("quiz scheduled_at must be timezone-aware")
+        if self.layout == "v1" and not self.hashtags.strip():
+            raise ValueError("layout v1 quiz specs require hashtags")
+        if self.layout == "v2" and not any(reference in self.explanation for reference in self.scripture_references):
+            raise ValueError(
+                "layout v2 quiz specs must cite at least one scripture reference in the "
+                "post-vote explanation (references are never shown before voting)"
+            )
         if any(not option.strip() or len(option) > 100 for option in self.options):
             raise ValueError("quiz options must contain 1..100 visible characters")
         if len({option.casefold() for option in self.options}) != len(self.options):
@@ -96,11 +104,19 @@ def load_quiz_release(path: Path) -> GenericReleaseQueue:
 
 
 def spec_source_sha256(spec: LordchristQuizSpec) -> str:
-    canonical = json.dumps(spec.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    # exclude_defaults keeps the digest of already-published v1 specs stable
+    # when new optional spec fields (e.g. layout) are introduced.
+    canonical = json.dumps(
+        spec.model_dump(mode="json", exclude_defaults=True), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def build_poll_description(spec: LordchristQuizSpec) -> str:
+def build_poll_description(spec: LordchristQuizSpec) -> str | None:
+    if spec.layout == "v2":
+        # Clean format: nothing before voting — no intro, no hashtags, and no
+        # scripture references that would hint at the answer in advance.
+        return None
     description = (
         "🧠 Викторина по Библии\n\n"
         "Ответ и объяснение — сразу после голосования.\n\n"
