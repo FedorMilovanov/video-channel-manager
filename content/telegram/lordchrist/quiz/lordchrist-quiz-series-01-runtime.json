@@ -1,0 +1,341 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "lordchrist-quiz-series-01-v1",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 1,
+  "target_binding_sha256": "sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:dbdc459a9939329881b8702620415d2d643af10d8008eabe41a3cfd5c5e12b76",
+  "reviewed_publication_id": null,
+  "reviewed_by": "Fedor Milovanov (repository review)",
+  "reviewed_at": "2026-10-29T21:00:00+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-quiz-s01-esther",
+      "scheduled_at": "2026-10-31T13:00:00+03:00",
+      "source_sha256": "sha256:4fde27a481757843b5a8c6d07e22b8f9523627b362067f1b1276dacb02369169",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-esther",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:ac4f1133f7e5659414eed0596e27aac315d029c440f2ed108d8f4783065b755d",
+        "question": "В какой книге Библии ни разу не упомянуто имя Бога?",
+        "options": [
+          "Руфь",
+          "Есфирь",
+          "Неемия",
+          "Иона"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Есфирь. Имя Бога в книге не встречается ни разу, но Его рука видна во всём: избавление приходит точно в срок (Есф. 4:14). Бог действует и тогда, когда не назван.",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-quiz-s01-belshazzar",
+      "scheduled_at": "2026-11-02T13:00:00+03:00",
+      "source_sha256": "sha256:2727f3d3125d6bcdd50d6217b133ff99f3856906f19f8b0c1ce758dc28d384f3",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-belshazzar",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:6b80c57a14b0a1c9a2253f711403a0653819a0854fa111c1b30d3eec9b92ccc1",
+        "question": "Какой царь на пиру увидел пальцы руки, пишущей на стене?",
+        "options": [
+          "Навуходоносор",
+          "Дарий",
+          "Валтасар",
+          "Кир"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Валтасар. Пируя из священных сосудов храма, он увидел пишущую руку: «Мене, текел, упарсин» — царство сочтено, взвешено и разделено. В ту же ночь Валтасар был убит (Дан. 5).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-quiz-s01-jael",
+      "scheduled_at": "2026-11-04T13:00:00+03:00",
+      "source_sha256": "sha256:4678b6db4a070b7b2fe8613a3c5559446e8e9bfddfebb67f46f21917ebbc0b5e",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-jael",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:3ac2618f5fba26c0f15e5be82eb6fa58feb9729eb9e84950dbd34cacd1347dea",
+        "question": "Кто убил военачальника Сисару, вбив ему в висок шатёрный кол?",
+        "options": [
+          "Девора",
+          "Мариамь",
+          "Иаиль",
+          "Авигея"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Иаиль, жена Хевера Кенеянина. Она укрыла Сисару в шатре и, когда он уснул, вбила кол ему в висок (Суд. 4:21). Военачальника, угнетавшего Израиль, поразила женщина.",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-quiz-s01-moriah",
+      "scheduled_at": "2026-11-06T13:00:00+03:00",
+      "source_sha256": "sha256:9f31f27c255f301aa8fb9f40d9c262d021010fef2c5ba509bf0bdbdf65a2a505",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-moriah",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:53a659edc8bffa5cccc493d096a4b0bcc9df6e581e4cb64a7203111fd3d2b154",
+        "question": "На какой горе Авраам должен был принести в жертву Исаака?",
+        "options": [
+          "Синай",
+          "Кармил",
+          "Мориа",
+          "Сион"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Гора Мориа. Здесь Авраам был готов принести Исаака (Быт. 22:2), а спустя столетия Соломон построит на этой же горе храм (2 Пар. 3:1). Жертва и храм — одна гора.",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 5,
+      "publication_id": "lordchrist-quiz-s01-uzzah",
+      "scheduled_at": "2026-11-08T13:00:00+03:00",
+      "source_sha256": "sha256:eaada833836bc688e812ed15855ba6a12e180957ce2706d9c8b91dd44a65f12c",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-uzzah",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:e6b2930378a662d7017b9e002ecc6f910a4b163d59b9cd2bbecfdde22373b84a",
+        "question": "Кто умер, простёрши руку к ковчегу завета, чтобы поддержать его?",
+        "options": [
+          "Надав",
+          "Корей",
+          "Аарон",
+          "Оза"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          3
+        ],
+        "explanation": "Оза. Когда волы споткнулись, он простёр руку, чтобы поддержать ковчег, — и умер на месте (2 Цар. 6:6-7). К святыне Бога нельзя прикасаться своевольно, даже из лучших побуждений.",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 6,
+      "publication_id": "lordchrist-quiz-s01-stephen",
+      "scheduled_at": "2026-11-10T13:00:00+03:00",
+      "source_sha256": "sha256:4a2dfd8b6f520e4fae2e76ceb677f10a94af0301d18ab4b00d28d34195805a8c",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-stephen",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:73e1a1bfda778a1528b1c2da1e15811cb3d42416ed2f8f574005aee2a315a6f5",
+        "question": "Кто стал первым мучеником за Христа?",
+        "options": [
+          "Иаков",
+          "Варнава",
+          "Стефан",
+          "Сила"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Стефан. Побиваемый камнями, первый мученик Церкви молился словами Христа: «Господи! не вмени им греха сего» (Деян. 7:59-60). У его ног сторожили одежды Савл.",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 7,
+      "publication_id": "lordchrist-quiz-s01-hezekiah",
+      "scheduled_at": "2026-11-12T13:00:00+03:00",
+      "source_sha256": "sha256:fbba0acd3006565da5c675d261571eb547d9c63c854eb5f60306026dfa3a5cec",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-hezekiah",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:5e7bb2bbcab541a3233970ca8c69f5dce9baee7045eb792873cc7e16f0fbc27a",
+        "question": "Какому царю Бог прибавил пятнадцать лет жизни после его молитвы?",
+        "options": [
+          "Ахаз",
+          "Езекия",
+          "Манассия",
+          "Иосия"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Езекия. Смертельно больному царю Исаия возвестил смерть, но слёзы и молитва изменили приговор: Бог прибавил Езекии 15 лет жизни (Ис. 38:1-5; 4 Цар. 20:6).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 8,
+      "publication_id": "lordchrist-quiz-s01-elisha-bones",
+      "scheduled_at": "2026-11-14T13:00:00+03:00",
+      "source_sha256": "sha256:4d8e875e315be71d7584a697238192f98d6e026c7ea4cdeaeb3467537c11f981",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-elisha-bones",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:4646ee2979e4684373915d4058ac28692ac4573418652eb034fa26639a06c750",
+        "question": "Кости какого пророка воскресили умершего, брошенного в его гроб?",
+        "options": [
+          "Илия",
+          "Елисей",
+          "Исаия",
+          "Иеремия"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Елисей. Спустя время после его смерти мертвеца, брошенного в гроб пророка при набеге моавитян, коснулись кости Елисея — и он ожил и встал на ноги (4 Цар. 13:21).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 9,
+      "publication_id": "lordchrist-quiz-s01-cain-city",
+      "scheduled_at": "2026-11-16T13:00:00+03:00",
+      "source_sha256": "sha256:8a29d6da2d28b64332bbb8d0f5d682b1f46a77596395ac5fec5f44e7dbe253fe",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-cain-city",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:d93e06673a311868584534ad6ff1379b34daa59672418394e3abffe399f3c408",
+        "question": "Кто построил первый город, упомянутый в Библии?",
+        "options": [
+          "Ной",
+          "Нимрод",
+          "Каин",
+          "Ламех"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Каин. Первый город Библии построил первый убийца: уйдя «от лица Господня», он основал город и назвал его Енох — именем своего сына (Быт. 4:16-17).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 10,
+      "publication_id": "lordchrist-quiz-s01-eutychus",
+      "scheduled_at": "2026-11-18T13:00:00+03:00",
+      "source_sha256": "sha256:4a53571211e71f6a9936d415ab7ce4b5849c58172840c1f6876f0795b4630a39",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s01-eutychus",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:1b187157402819a141866cbb806b1be017e2d07d22cc01db2e7e781c8b66176e",
+        "question": "Кто упал из окна, уснув во время долгой проповеди Павла, и был воскрешён?",
+        "options": [
+          "Трофим",
+          "Онисим",
+          "Евтих",
+          "Тихик"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Евтих. Павел беседовал до полуночи, а юноша, уснув на окне третьего этажа, упал и был поднят мёртвым. Павел обнял его — и он ожил (Деян. 20:9-12).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    }
+  ]
+}
