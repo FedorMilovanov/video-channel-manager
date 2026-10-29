@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-publication-ledger",
+  "schema_version": 1,
+  "release_digest": "sha256:7143def6c0e28bdc3e3e2cc979a4a2c2f385d6d2040e498eb70545c5bf8f198d",
+  "release_id": "lordchrist-quiz-city-of-palms-v1",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+  "entries": {
+    "lordchrist-quiz-city-of-palms": {
+      "publication_id": "lordchrist-quiz-city-of-palms",
+      "provider_payload_sha256": "sha256:ae5922204d661d09e5696d16b63088a3b47cfb38538e7a130d5ab184bc6ed7ca",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "dispatch_mode": null,
+      "workflow_run_id": null,
+      "workflow_run_attempt": null,
+      "github_sha": null,
+      "github_workflow_sha": null,
+      "attempted_at_utc": null,
+      "published_at_utc": null,
+      "message_id": null,
+      "message_url": null,
+      "actual_chat_id": null,
+      "actual_chat_username": null,
+      "bot_id": null,
+      "bot_username": null,
+      "last_error": null
+    }
+  }
+}
