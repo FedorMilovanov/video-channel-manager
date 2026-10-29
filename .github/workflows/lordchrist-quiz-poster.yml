@@ -30,7 +30,6 @@ concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
   queue: max
-  queue: max
 
 jobs:
   exact-control-plane:
