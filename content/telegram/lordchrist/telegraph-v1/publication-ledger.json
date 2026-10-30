@@ -40,6 +40,19 @@
       "telegram_message_id": 1589,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-10-27T15:02:08.837827+00:00"
+    },
+    "lordchrist-telegraph-charnock-03": {
+      "publication_id": "lordchrist-telegraph-charnock-03",
+      "title": "Три возражения атеиста: предание, заговор правителей, страх",
+      "telegraph_url": "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah-10-30",
+      "telegraph_path": "Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah-10-30",
+      "article_sha256": "sha256:9e719a3ff869d255d537bee1a1d90d02e6a4369503a14691d4c8bb628f4799d5",
+      "cover_sha256": "sha256:87276cffa9f9a51982c264e16e0de2b997c2464a171c8f005be517d33b81dcd3",
+      "telegraph_updated_at_utc": "2026-10-30T15:27:10.006198+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1592,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-10-30T15:27:10.905768+00:00"
     }
   }
 }
