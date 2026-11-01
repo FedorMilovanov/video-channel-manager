@@ -77,12 +77,15 @@ class FakeTransport:
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_fourteen_verified_items() -> None:
-    # The Charnock cycle is complete: articles 07-13 joined the queue from
-    # the series branch (PR #727 content snapshot); item 14 is the Sunday
-    # historical special on Charnock's life and mind (manual publish only).
+def test_telegraph_queue_loads_fourteen_charnock_items_and_one_manual_history_item() -> None:
+    # The fourteen Charnock publications remain intact. The separate Reformation
+    # history item is appended as manual-only (no scheduled date), not as part
+    # of the recurring Charnock series.
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 14
+    assert len(items) == 15
+    assert items[-1].publication_id == "lordchrist-telegraph-history-reformation-1517-01"
+    assert items[-1].scheduled_on is None
+    assert items[-1].is_canary is False
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
@@ -111,6 +114,27 @@ def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> No
         assert "<blockquote>" in post.html_text
         assert 'href="https://telegra.ph/Test-Page-10-23"' in post.html_text
         assert 1_000 <= post.visible_char_count <= 3_950
+
+
+def test_reformation_history_article_keeps_cover_and_four_inline_photos() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    item = items[-1]
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+    figures = [node for node in payload.nodes if isinstance(node, dict) and node.get("tag") == "figure"]
+    assert len(figures) == 5
+    assert figures[0]["children"][1] == {
+        "tag": "figcaption",
+        "children": ["Художественная реконструкция, а не историческая фотография."],
+    }
+    inline_sources = [figure["children"][0]["attrs"]["src"] for figure in figures[1:]]
+    assert [source.rsplit("/", 1)[-1] for source in inline_sources] == [
+        "lordchrist-reformation-1517-inline-01-wittenberg-door.jpg",
+        "lordchrist-reformation-1517-inline-02-worms-monument.jpg",
+        "lordchrist-reformation-1517-inline-03-zwingli-monument.jpg",
+        "lordchrist-reformation-1517-inline-04-geneva-wall.jpg",
+    ]
+    assert all(figure["children"][1]["tag"] == "figcaption" for figure in figures[1:])
+    assert all(source.startswith(MEDIA_BASE + "/content/") for source in inline_sources)
 
 
 def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:

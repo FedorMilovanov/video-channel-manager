@@ -1,10 +1,11 @@
 """LordChrist two-layer Telegraph + Instant View channel publisher.
 
-Publishes each long Charnock article in two coordinated layers:
+Publishes each ready long-form editorial in two coordinated layers, including
+Charnock-series articles and standalone manual history editions:
 
-1. Full book-grade longread (30 000+ chars, cover image first node, ``h3``/``h4``
-   sections, ``strong``/``em`` emphasis, ``blockquote`` quotations with italic
-   attribution) published via the official ``https://api.telegra.ph`` API using
+1. Full book-grade longread (cover image first node, inline photos and captions,
+   ``h3``/``h4`` sections, ``strong``/``em`` emphasis, ``blockquote`` quotations
+   with italic attribution) published via the official ``https://api.telegra.ph`` API using
    raw UTF-8 ``multipart/form-data`` so Cyrillic payloads stay under the 64 KB
    API ceiling without percent-encoding bloat.
 2. Compact channel post in ``@lordchrist`` via ``sendMessage`` (HTML mode) with:
@@ -47,6 +48,7 @@ from video_channel_manager.telegram_rich_models import (
     RichArticleDocument,
     RichBlockFooter,
     RichBlockHeading,
+    RichBlockMedia,
     RichBlockParagraph,
     RichBlockQuote,
     RichTextBold,
@@ -139,6 +141,7 @@ class TelegraphQueueItem:
     article_blob: str | None = None
     cover_path: Path | None = None
     cover_blob: str | None = None
+    cover_caption: str | None = None
     channel_post: ChannelPostSpec | None = None
 
     @property
@@ -338,6 +341,10 @@ def load_telegraph_queue(queue_path: Path, repo_root: Path) -> list[TelegraphQue
 
         art_ref = entry.get("article") or {}
         cov_ref = entry.get("cover") or {}
+        cover_caption_raw = cov_ref.get("caption")
+        cover_caption = str(cover_caption_raw).strip() if cover_caption_raw is not None else None
+        if cover_caption_raw is not None and not cover_caption:
+            raise ValueError(f"{pub_id}: cover.caption cannot be empty")
         post_raw = entry.get("channel_post") or {}
 
         art_path = Path(str(art_ref["path"]))
@@ -371,6 +378,7 @@ def load_telegraph_queue(queue_path: Path, repo_root: Path) -> list[TelegraphQue
                 article_blob=expected_art_blob,
                 cover_path=cov_path,
                 cover_blob=expected_cov_blob,
+                cover_caption=cover_caption,
                 channel_post=post_spec,
             )
         )
@@ -436,7 +444,10 @@ def build_telegraph_payload(
     article = RichArticleDocument.model_validate(json.loads(art_bytes.decode("utf-8")))
 
     cover_url = f"{media_base_url.rstrip('/')}/{item.cover_path.as_posix()}"
-    nodes: list[dict[str, Any] | str] = [{"tag": "figure", "children": [{"tag": "img", "attrs": {"src": cover_url}}]}]
+    cover_children: list[dict[str, Any] | str] = [{"tag": "img", "attrs": {"src": cover_url}}]
+    if item.cover_caption is not None:
+        cover_children.append({"tag": "figcaption", "children": [item.cover_caption]})
+    nodes: list[dict[str, Any] | str] = [{"tag": "figure", "children": cover_children}]
 
     for block in article.blocks:
         if isinstance(block, RichBlockHeading):
@@ -465,6 +476,35 @@ def build_telegraph_payload(
                 # Attribution lives OUTSIDE the blockquote: a plain em-dash line,
                 # never carrying the quote's vertical bar (reader request).
                 nodes.append({"tag": "p", "children": [{"tag": "em", "children": [credit_plain]}]})
+        elif isinstance(block, RichBlockMedia):
+            media_item = next((entry for entry in article.media if entry.media_id == block.media_id), None)
+            if media_item is None or media_item.kind != "photo":
+                raise ValueError(f"{item.publication_id}: Telegraph inline media must resolve to a photo")
+            media_ref = media_item.uri
+            if media_ref.startswith("https://"):
+                media_url = media_ref
+            else:
+                media_path = Path(media_ref)
+                if media_path.is_absolute() or ".." in media_path.parts:
+                    raise ValueError(f"{item.publication_id}: unsafe inline media path {media_ref!r}")
+                local_media_path = (repo_root / media_path).resolve()
+                if not local_media_path.is_relative_to(repo_root.resolve()):
+                    raise ValueError(f"{item.publication_id}: inline media path escapes repository")
+                inline_bytes = local_media_path.read_bytes()
+                if not inline_bytes.startswith(JPEG_MAGIC):
+                    raise ValueError(f"{item.publication_id}: inline media is not a JPEG: {media_ref}")
+                media_url = f"{media_base_url.rstrip('/')}/{media_path.as_posix()}"
+            figure_children: list[dict[str, Any] | str] = [
+                {"tag": "img", "attrs": {"src": media_url}},
+            ]
+            if block.caption is not None:
+                caption_children = _rich_text_to_telegraph_children(block.caption.text)
+                if block.caption.credit is not None:
+                    caption_children.extend(
+                        [" — ", {"tag": "em", "children": _rich_text_to_telegraph_children(block.caption.credit)}]
+                    )
+                figure_children.append({"tag": "figcaption", "children": caption_children})
+            nodes.append({"tag": "figure", "children": figure_children})
 
     nodes = _apply_telegraph_layout_rules(nodes)
     _validate_telegraph_nodes(nodes)

@@ -2,12 +2,14 @@
 """Split the Lord God Charnock longreads into VK-sized postponed wall posts.
 
 The Telegraph cycle ``lordchrist-telegraph-charnock-*`` holds thirteen
-articles of roughly 20-58k characters. A VK wall post is limited to 15,000
-characters, so each article is converted to canonical VK plain text and
-split at section boundaries into sequential parts. Every part carries
-the article cover path/digest as evidence (the community key cannot
-upload wall photos, so prepare emits text-only operations);
-the output is provider-inert and deterministic.
+cycle articles plus Charnock-specific historical specials. The shared
+Telegraph transport queue may also contain unrelated manual history editions;
+this splitter deliberately excludes those. A VK wall post is limited to
+15,000 characters, so each selected Charnock article is converted to canonical
+VK plain text and split at section boundaries into sequential parts. Every part
+carries the article cover path/digest as evidence (the community key cannot
+upload wall photos, so prepare emits text-only operations); the output is
+provider-inert and deterministic.
 """
 
 from __future__ import annotations
@@ -138,9 +140,18 @@ def chunk_blocks(blocks: list[tuple[str, bool]], limit: int) -> list[list[str]]:
 
 def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
     queue = json.loads(queue_path.read_text(encoding="utf-8-sig"))
-    items = [item for item in queue.get("items", []) if item.get("status") == "ready"]
+    # This splitter is deliberately scoped to the Charnock series and its
+    # Charnock history specials. Other manually published history editions
+    # may share the Telegraph transport queue, but must never be relabeled or
+    # emitted as Charnock VK posts.
+    items = [
+        item
+        for item in queue.get("items", [])
+        if item.get("status") == "ready"
+        and str(item.get("publication_id", "")).startswith("lordchrist-telegraph-charnock-")
+    ]
     if not items:
-        raise ValueError("article queue has no ready items")
+        raise ValueError("article queue has no ready Charnock items")
     posts: list[dict[str, Any]] = []
     articles: list[dict[str, Any]] = []
     for item in items:
