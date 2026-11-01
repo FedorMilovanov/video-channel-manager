@@ -10,7 +10,7 @@
     "lordchrist-quiz-s01-esther": {
       "publication_id": "lordchrist-quiz-s01-esther",
       "provider_payload_sha256": "sha256:ac4f1133f7e5659414eed0596e27aac315d029c440f2ed108d8f4783065b755d",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -26,7 +26,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-10-31T16:00:00+00:00 before dispatch"
     },
     "lordchrist-quiz-s01-belshazzar": {
       "publication_id": "lordchrist-quiz-s01-belshazzar",
