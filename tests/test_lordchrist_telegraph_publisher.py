@@ -37,7 +37,10 @@ class FakeTransport:
             return {"ok": True, "result": {"access_token": "tok_auto_generated_secret"}}
         if url.endswith("/getAccountInfo"):
             return {"ok": True, "result": {"short_name": "lordchrist"}}
-        if "/createPage" in url or "/editPage/" in url:
+        if "/editPage/" in url:
+            slug = url.rsplit("/", 1)[-1]
+            return {"ok": True, "result": {"path": slug, "url": f"https://telegra.ph/{slug}"}}
+        if "/createPage" in url:
             if self.trigger_content_too_big_once:
                 self.trigger_content_too_big_once = False
                 return {"ok": False, "error": "CONTENT_TOO_BIG"}
@@ -135,6 +138,61 @@ def test_reformation_history_article_keeps_cover_and_four_inline_photos() -> Non
     ]
     assert all(figure["children"][1]["tag"] == "figcaption" for figure in figures[1:])
     assert all(source.startswith(MEDIA_BASE + "/content/") for source in inline_sources)
+
+
+def test_edit_telegraph_only_updates_the_requested_page_without_creating_another() -> None:
+    item = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)[-1]
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+    transport = FakeTransport()
+    existing_path = "REFORMACIYA-OBNOVLENIE-CERKVI-RASKOLY-I-MIFY-11-01"
+
+    url, path = publish_telegraph_page(
+        transport,
+        payload,
+        access_token="test-account-token",
+        existing_path=existing_path,
+    )
+
+    assert url == f"https://telegra.ph/{existing_path}"
+    assert path == existing_path
+    assert len(transport.multipart_calls) == 1
+    assert transport.multipart_calls[0][0].endswith(f"/editPage/{existing_path}")
+    assert transport.json_calls == []  # editing the page never posts to Telegram
+
+
+def test_edit_telegraph_only_requires_exact_confirmation_before_network(tmp_path: Path) -> None:
+    from video_channel_manager.lordchrist_telegraph_publisher import main
+
+    with pytest.raises(ValueError, match="Edit confirmation mismatch"):
+        main(
+            [
+                "edit-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--ledger",
+                str(tmp_path / "ledger.json"),
+                "--publication-id",
+                "lordchrist-telegraph-history-reformation-1517-01",
+                "--existing-path",
+                "REFORMACIYA-OBNOVLENIE-CERKVI-RASKOLY-I-MIFY-11-01",
+                "--media-base-url",
+                MEDIA_BASE,
+                "--confirm",
+                "wrong-confirmation",
+            ]
+        )
+
+
+def test_edit_telegraph_page_rejects_unsafe_path_segments() -> None:
+    item = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)[-1]
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+    with pytest.raises(ValueError, match="single safe path segment"):
+        publish_telegraph_page(
+            FakeTransport(),
+            payload,
+            access_token="test-account-token",
+            existing_path="../other-page",
+        )
 
 
 def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:

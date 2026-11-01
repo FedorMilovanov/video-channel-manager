@@ -16,6 +16,9 @@ Charnock-series articles and standalone manual history editions:
      showing the ``16:9`` cover and the ``⚡ ПОСМОТРЕТЬ`` button while keeping
      full Telegram Stories repost support.
 
+A separately confirmed ``edit-telegraph-only`` operation can update an existing
+page path in place and records its URL without sending a Telegram message.
+
 Security note (public repository invariant):
 ``FedorMilovanov/video-channel-manager`` is public, so ``access_token`` and
 ``auth_url`` are NEVER persisted into git state files or workflow logs. Only
@@ -29,6 +32,7 @@ import hashlib
 import html
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -77,6 +81,7 @@ DEFAULT_BINDING_PATH = Path("content/telegram/channels/lordchrist-rich-target-bi
 DEFAULT_LEDGER_PATH = Path("content/telegram/lordchrist/telegraph-v1/publication-ledger.json")
 
 JPEG_MAGIC = b"\xff\xd8\xff"
+TELEGRAPH_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 MAX_TELEGRAPH_CONTENT_UTF8_BYTES = 120_000
 SINGLE_PAGE_SOFT_UTF8_BYTES = 58_000
 MAX_TELEGRAM_POST_VISIBLE_CHARS = 3_950
@@ -855,6 +860,8 @@ def publish_telegraph_page(
     existing_path: str | None = None,
     telegraph_api_base: str = DEFAULT_TELEGRAPH_API_BASE,
 ) -> tuple[str, str]:
+    if existing_path is not None and not TELEGRAPH_PATH_PATTERN.fullmatch(existing_path):
+        raise ValueError("existing Telegraph page path must be a single safe path segment")
     status_code, head_bytes = transport.get_status(payload.cover_url)
     if status_code != 200 or not head_bytes.startswith(JPEG_MAGIC):
         raise RuntimeError(
@@ -1051,7 +1058,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_init.add_argument("--author-name", default=DEFAULT_AUTHOR_NAME)
     p_init.add_argument("--author-url", default=DEFAULT_AUTHOR_URL)
 
-    for name in ("preview", "publish-telegraph-only", "publish"):
+    for name in ("preview", "publish-telegraph-only", "edit-telegraph-only", "publish"):
         p = sub.add_parser(name)
         p.add_argument("--repo-root", type=Path, default=Path("."))
         p.add_argument("--queue", type=Path, default=DEFAULT_QUEUE_PATH)
@@ -1060,6 +1067,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         p.add_argument("--media-base-url", required=True)
         if name == "preview":
             p.add_argument("--html-out", type=Path)
+        if name == "edit-telegraph-only":
+            p.add_argument("--existing-path", required=True)
+            p.add_argument("--confirm", required=True)
         if name == "publish":
             p.add_argument("--profile", type=Path, default=DEFAULT_PROFILE_PATH)
             p.add_argument("--binding", type=Path, default=DEFAULT_BINDING_PATH)
@@ -1144,6 +1154,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     ledger = load_ledger(ledger_path)
     existing = ledger["entries"].get(item.publication_id) or {}
 
+    if args.command == "edit-telegraph-only":
+        if not TELEGRAPH_PATH_PATTERN.fullmatch(args.existing_path):
+            raise ValueError("existing Telegraph page path must be a single safe path segment")
+        expected_edit_confirm = f"EDIT:{item.publication_id}:{args.existing_path}"
+        if args.confirm != expected_edit_confirm:
+            raise ValueError(f"Edit confirmation mismatch: expected {expected_edit_confirm!r}")
+
     if args.command == "publish" and existing.get("telegram_message_id"):
         raise RuntimeError(
             f"{item.publication_id} was already published to @lordchrist "
@@ -1160,13 +1177,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     transport = HttpxLiveTransport()
     explicit_token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip() or None
+    if args.command == "edit-telegraph-only" and not explicit_token:
+        raise ValueError("editing an existing Telegraph page requires the configured account access token")
     token = ensure_telegraph_token(transport, explicit_token=explicit_token)
 
+    existing_path = (
+        args.existing_path
+        if args.command == "edit-telegraph-only"
+        else (existing.get("telegraph_path") if explicit_token else None)
+    )
     telegraph_url, telegraph_path = publish_telegraph_page(
         transport,
         payload,
         access_token=token,
-        existing_path=existing.get("telegraph_path") if explicit_token else None,
+        existing_path=existing_path,
     )
 
     entry_record: dict[str, Any] = {
@@ -1180,15 +1204,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         "telegraph_updated_at_utc": datetime.now(UTC).isoformat(),
     }
 
-    if args.command == "publish-telegraph-only":
+    if args.command in {"publish-telegraph-only", "edit-telegraph-only"}:
         ledger["entries"][item.publication_id] = entry_record
         save_ledger(ledger_path, ledger)
+        mode = "telegraph_edit_only" if args.command == "edit-telegraph-only" else "telegraph_only"
         print(
             json.dumps(
                 {
-                    "mode": "telegraph_only",
+                    "mode": mode,
                     "publication_id": item.publication_id,
                     "telegraph_url": telegraph_url,
+                    "telegraph_path": telegraph_path,
                     "telegraph_utf8_bytes": payload.content_utf8_bytes,
                 },
                 ensure_ascii=False,

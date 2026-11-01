@@ -4,21 +4,27 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Offline preview, publish Telegraph page only (test link privately), or publish full post to @lordchrist
+        description: Offline preview, publish a new Telegraph page, edit an existing Telegraph page only, or publish a full post to @lordchrist
         required: true
         default: publish-telegraph-only
         type: choice
         options:
           - preview
           - publish-telegraph-only
+          - edit-telegraph-only
           - publish
       publication_id:
         description: Exact publication_id from content/telegram/lordchrist/telegraph-v1/article-queue.json
         required: true
         default: lordchrist-telegraph-charnock-01b
         type: string
+      existing_page_path:
+        description: Existing Telegra.ph page path, required only for edit-telegraph-only (not the full URL)
+        required: false
+        default: ""
+        type: string
       confirm:
-        description: Required ONLY for action=publish — type PUBLISH:<publication_id>
+        description: For publish, type PUBLISH:<publication_id>; for edit-telegraph-only, type EDIT:<publication_id>:<existing_page_path>
         required: false
         default: ""
         type: string
@@ -92,6 +98,7 @@ jobs:
           PYTHONPATH: src
           ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
           PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          EXISTING_PAGE_PATH: ${{ inputs.existing_page_path }}
           CONFIRMATION: ${{ github.event_name == 'schedule' && format('PUBLISH:{0}', steps.resolve.outputs.publication_id) || inputs.confirm }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
@@ -110,6 +117,13 @@ jobs:
               --publication-id "$PUBLICATION_ID" \
               --media-base-url "$MEDIA_BASE_URL" \
               --ledger "$LEDGER_PATH" | tee artifacts/result.json
+          elif [[ "$ACTION" == "edit-telegraph-only" ]]; then
+            python -m video_channel_manager.lordchrist_telegraph_publisher edit-telegraph-only \
+              --publication-id "$PUBLICATION_ID" \
+              --existing-path "$EXISTING_PAGE_PATH" \
+              --media-base-url "$MEDIA_BASE_URL" \
+              --ledger "$LEDGER_PATH" \
+              --confirm "$CONFIRMATION" | tee artifacts/result.json
           elif [[ "$ACTION" == "publish" ]]; then
             python -m video_channel_manager.lordchrist_telegraph_publisher publish \
               --publication-id "$PUBLICATION_ID" \
