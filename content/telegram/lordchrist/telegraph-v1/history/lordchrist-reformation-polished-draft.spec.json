@@ -1,0 +1,109 @@
+{
+  "document_id": "lordchrist-telegraph-history-reformation-1517-01",
+  "project_key": "lordchrist",
+  "verified_on": "2026-11-02",
+  "cover_uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-cover.jpg",
+  "metadata": {
+    "title": "РЕФОРМАЦИЯ: ЕВАНГЕЛИЕ, ПИСАНИЕ И СПОРЫ XVI ВЕКА",
+    "language": "ru",
+    "summary": "История Реформации — от спора Лютера об индульгенциях до Виттенберга, Вормса, Цюриха и Женевы; с разбором источников, расколов и границ исторических свидетельств.",
+    "author": "Господь Бог",
+    "tags": [
+      "Реформация",
+      "история церкви",
+      "Мартин Лютер",
+      "Ульрих Цвингли",
+      "Женева"
+    ],
+    "created_at": "2026-11-02",
+    "updated_at": "2026-11-02"
+  },
+  "media": [
+    {
+      "media_id": "photo-01",
+      "kind": "photo",
+      "uri": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-01-wittenberg-door.jpg",
+      "alt_text": "Двери Замковой церкви в Виттенберге",
+      "source_evidence": "Фотография пользовательского вложения; подпись статьи указывает, что нынешние бронзовые створки установлены в 1858 году и не являются дверью 1517 года. Источник фотографии и лицензия в приложенных материалах не указаны.",
+      "markdown_uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-01-wittenberg-door.jpg",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-01-wittenberg-door.jpg"
+    },
+    {
+      "media_id": "photo-02",
+      "kind": "photo",
+      "uri": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-02-worms-monument.jpg",
+      "alt_text": "Памятник Реформации в Вормсе",
+      "source_evidence": "Фотография пользовательского вложения; подпись статьи датирует открытие памятника 1868 годом и характеризует его как памятник позднейшей памяти о Реформации. Источник фотографии и лицензия в приложенных материалах не указаны.",
+      "markdown_uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-02-worms-monument.jpg",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-02-worms-monument.jpg"
+    },
+    {
+      "media_id": "photo-03",
+      "kind": "photo",
+      "uri": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-03-zwingli-monument.jpg",
+      "alt_text": "Памятник Цвингли в Цюрихе",
+      "source_evidence": "Фотография пользовательского вложения; подпись статьи указывает автора памятника (Генрих Наттер), 1885 год открытия и оговаривает, что это не прижизненное изображение Цвингли. Источник фотографии и лицензия в приложенных материалах не указаны.",
+      "markdown_uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-03-zwingli-monument.jpg",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-03-zwingli-monument.jpg"
+    },
+    {
+      "media_id": "photo-04",
+      "kind": "photo",
+      "uri": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-04-geneva-wall.jpg",
+      "alt_text": "Стена Реформации в Женеве",
+      "source_evidence": "Фотография пользовательского вложения; подпись статьи датирует создание Стены 1909–1917 годами и описывает её как памятник памяти о Реформации начала XX века. Источник фотографии и лицензия в приложенных материалах не указаны.",
+      "markdown_uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-04-geneva-wall.jpg",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-04-geneva-wall.jpg"
+    }
+  ],
+  "quote_anchors": [
+    {
+      "block_id": "q-1",
+      "source_url": "https://els.org/beliefs/augsburgconfession/",
+      "label": "Аугсбургское исповедание, статья IV",
+      "exact_anchor": "Homines non possint iustificari coram Deo propriis viribus, meritis aut operibus, sed gratis iustificentur propter Christum per fidem.",
+      "source_language": "Latin",
+      "translation_status": "Русский текст — редакционный перевод; формулировка сопоставлена с опубликованным текстом статьи IV."
+    },
+    {
+      "block_id": "q-2",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/luther-95-theses/",
+      "label": "Мартин Лютер, «95 тезисов», тезис 43",
+      "exact_anchor": "Docendi sunt Christiani, quod qui dat pauperi aut mutuatur egenti, melius facit quam si venias emerit.",
+      "source_language": "Latin",
+      "translation_status": "Русский текст — редакционный перевод с латинского оригинала."
+    },
+    {
+      "block_id": "q-3",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/luther-95-theses/",
+      "label": "Мартин Лютер, «95 тезисов», тезис 62",
+      "exact_anchor": "Verus thesaurus ecclesiae est sacrosanctum evangelium gloriae et gratiae Dei.",
+      "source_language": "Latin",
+      "translation_status": "Русский текст — редакционный перевод с латинского оригинала."
+    },
+    {
+      "block_id": "q-4",
+      "source_url": "https://germanhistorydocs.org/en/from-the-reformations-to-the-thirty-years-war-1500-1648/luther-and-emperor-charles-v-at-the-diet-of-worms-1521",
+      "label": "Мартин Лютер, ответ на рейхстаге в Вормсе, 1521",
+      "exact_anchor": "my conscience is captive to the Word of God. I cannot and will not recant",
+      "source_language": "English translation",
+      "translation_status": "Русский текст — редакционный перевод опубликованного английского изложения; статья отдельно оговаривает, что это не дословная стенограмма заседания."
+    },
+    {
+      "block_id": "q-5",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/ratherren/",
+      "label": "Мартин Лютер, «К городским советникам всех городов немецкой земли», 1524",
+      "source_locator": "В обращении 1524 года к городским советам: пассаж, где Лютер сопоставляет расходы на борьбу с турками с затратами на воспитание мальчика как христианина.",
+      "source_language": "German",
+      "translation_status": "Редакционный перевод с немецкого; в исходной редакционной записи не сохранена точная транскрипция этой строки, поэтому указан локатор отрывка, а не вымышленная дословная цитата."
+    },
+    {
+      "block_id": "q-6",
+      "source_url": "https://digi.ub.uni-heidelberg.de/diglit/luther1525k",
+      "label": "Мартин Лютер, «Против разбойничьих и убийственных шаек крестьян», 1525",
+      "exact_anchor": "Man soll sie zerschmeißen, würgen und stechen, heimlich oder öffentlich, wer da kann, wie man einen tollen Hund erschlagen muß.",
+      "source_language": "German",
+      "translation_status": "Русский текст — редакционный перевод немецкого оригинала; в статье прямо сказано, что исторический контекст не смягчает призыва."
+    }
+  ]
+}
