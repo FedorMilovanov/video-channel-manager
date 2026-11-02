@@ -31,7 +31,7 @@
     "lordchrist-quiz-s01-belshazzar": {
       "publication_id": "lordchrist-quiz-s01-belshazzar",
       "provider_payload_sha256": "sha256:6b80c57a14b0a1c9a2253f711403a0653819a0854fa111c1b30d3eec9b92ccc1",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -47,7 +47,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-11-02T16:00:00+00:00 before dispatch"
     },
     "lordchrist-quiz-s01-jael": {
       "publication_id": "lordchrist-quiz-s01-jael",
