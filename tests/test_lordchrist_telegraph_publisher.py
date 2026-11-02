@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 import pytest
 
+from video_channel_manager import lordchrist_telegraph_publisher as publisher
 from video_channel_manager.lordchrist_telegraph_publisher import (
     DEFAULT_QUEUE_PATH,
     JPEG_MAGIC,
@@ -28,6 +29,8 @@ class FakeTransport:
         self.trigger_content_too_big_once = trigger_content_too_big_once
         self.multipart_calls: list[tuple[str, dict[str, bytes]]] = []
         self.json_calls: list[tuple[str, dict[str, Any]]] = []
+        self.status_calls: list[str] = []
+        self.status_overrides: dict[str, tuple[int, bytes]] = {}
         self._page_seq = 0
 
     def post_multipart(self, url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
@@ -72,17 +75,22 @@ class FakeTransport:
         raise AssertionError(f"Unexpected JSON URL: {url}")
 
     def get_status(self, url: str) -> tuple[int, bytes]:
+        self.status_calls.append(url)
+        if url in self.status_overrides:
+            return self.status_overrides[url]
         if url.endswith(".jpg"):
             return 200, JPEG_MAGIC + b"\xe0\x00\x10JFIF"
         return 200, b"<!doctype html>"
 
 
-def test_telegraph_queue_loads_all_fourteen_verified_items() -> None:
+def test_telegraph_queue_loads_all_fifteen_verified_items() -> None:
     # The Charnock cycle is complete: articles 07-13 joined the queue from
-    # the series branch (PR #727 content snapshot); item 14 is the Sunday
-    # historical special on Charnock's life and mind (manual publish only).
+    # the series branch (PR #727 content snapshot); items 14-15 are manual
+    # historical specials (the Reformation page is Telegraph-only).
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 14
+    assert len(items) == 15
+    assert [item.ordinal for item in items] == list(range(1, 16))
+    assert items[-1].publication_id == "lordchrist-telegraph-charnock-history-02"
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
@@ -111,6 +119,73 @@ def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> No
         assert "<blockquote>" in post.html_text
         assert 'href="https://telegra.ph/Test-Page-10-23"' in post.html_text
         assert 1_000 <= post.visible_char_count <= 3_950
+
+
+def test_inline_images_are_rendered_and_preflighted_before_any_publish_mutation() -> None:
+    items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
+    item = next(i for i in items if i.publication_id == "lordchrist-telegraph-charnock-history-02")
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+
+    assert len(payload.inline_media_urls) == 4
+    assert all(url.startswith("https://") for url in payload.inline_media_urls)
+    image_nodes = [
+        node
+        for node in payload.nodes
+        if isinstance(node, dict)
+        and node.get("tag") == "figure"
+        and any(isinstance(child, dict) and child.get("tag") == "img" for child in node.get("children", []))
+    ]
+    assert len(image_nodes) == 5  # cover plus four inline documentary images
+
+    fake = FakeTransport()
+    publish_telegraph_page(fake, payload, access_token="safe-test-token")
+    assert fake.status_calls[:-1] == [payload.cover_url, *payload.inline_media_urls]
+    assert fake.status_calls[-1] == "https://telegra.ph/Charnock-Page-1"
+    assert len(fake.multipart_calls) == 1
+
+    unavailable = FakeTransport()
+    unavailable.status_overrides[payload.inline_media_urls[0]] = (404, b"")
+    with pytest.raises(RuntimeError, match="inline media URL .*not reachable as JPEG"):
+        publish_telegraph_page(unavailable, payload, access_token="safe-test-token")
+    assert unavailable.multipart_calls == [], "failed media preflight must precede Telegraph page creation"
+
+
+def test_telegraph_only_command_records_page_without_sending_telegram(tmp_path: Path, monkeypatch, capsys) -> None:
+    transport = FakeTransport()
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: transport)
+    monkeypatch.setattr(
+        publisher,
+        "publish_channel_message",
+        lambda *args, **kwargs: pytest.fail("Telegraph-only mode must not send a Telegram message"),
+    )
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    ledger_path = tmp_path / "ledger.json"
+
+    result = publisher.main(
+        [
+            "publish-telegraph-only",
+            "--repo-root",
+            str(ROOT),
+            "--queue",
+            DEFAULT_QUEUE_PATH.as_posix(),
+            "--ledger",
+            str(ledger_path),
+            "--publication-id",
+            "lordchrist-telegraph-charnock-history-02",
+            "--media-base-url",
+            MEDIA_BASE,
+        ]
+    )
+
+    assert result == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["mode"] == "telegraph_only"
+    assert output["publication_id"] == "lordchrist-telegraph-charnock-history-02"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    entry = ledger["entries"][output["publication_id"]]
+    assert entry["telegraph_url"] == output["telegraph_url"]
+    assert "telegram_message_id" not in entry
+    assert not any(url.endswith("/sendMessage") for url, _payload in transport.json_calls)
 
 
 def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
@@ -186,9 +261,8 @@ def test_quote_credit_is_plain_emdash_line_outside_blockquote() -> None:
     assert "© Цитаты Чарнока" in payload.compact_content_json
 
 
-def test_history_special_is_manual_only() -> None:
-    """The historical Sunday special (history-01) carries no schedule date:
-    `due` must never select it on any day, so the Tue/Fri cycle is untouched."""
+def test_history_specials_are_manual_only() -> None:
+    """Historical specials have no schedule date, so `due` never selects them."""
     from datetime import datetime, timedelta
     from zoneinfo import ZoneInfo
 
@@ -196,13 +270,17 @@ def test_history_special_is_manual_only() -> None:
 
     moscow = ZoneInfo("Europe/Moscow")
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    special = next(i for i in items if i.publication_id == "lordchrist-telegraph-charnock-history-01")
-    assert special.scheduled_on is None
-    assert special.is_canary is False
+    special_ids = {
+        "lordchrist-telegraph-charnock-history-01",
+        "lordchrist-telegraph-charnock-history-02",
+    }
+    specials = [item for item in items if item.publication_id in special_ids]
+    assert {item.publication_id for item in specials} == special_ids
+    assert all(item.scheduled_on is None and item.is_canary is False for item in specials)
     start = datetime(2026, 10, 26, 12, 0, tzinfo=moscow)
     for offset in range(21):
         due, _reason = due_item(items, {}, start + timedelta(days=offset))
-        assert due is None or due.publication_id != special.publication_id
+        assert due is None or due.publication_id not in special_ids
 
 
 def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:

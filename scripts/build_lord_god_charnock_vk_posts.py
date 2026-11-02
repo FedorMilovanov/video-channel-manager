@@ -138,7 +138,14 @@ def chunk_blocks(blocks: list[tuple[str, bool]], limit: int) -> list[list[str]]:
 
 def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
     queue = json.loads(queue_path.read_text(encoding="utf-8-sig"))
-    items = [item for item in queue.get("items", []) if item.get("status") == "ready"]
+    # Some manual history editions are intentionally Telegraph-only. Respect
+    # their explicit channel-distribution boundary; absent fields preserve the
+    # historical default for the existing Charnock series.
+    items = [
+        item
+        for item in queue.get("items", [])
+        if item.get("status") == "ready" and item.get("vk_distribution", True) is True
+    ]
     if not items:
         raise ValueError("article queue has no ready items")
     posts: list[dict[str, Any]] = []

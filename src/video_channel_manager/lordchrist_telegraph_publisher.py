@@ -47,8 +47,10 @@ from video_channel_manager.telegram_rich_models import (
     RichArticleDocument,
     RichBlockFooter,
     RichBlockHeading,
+    RichBlockMedia,
     RichBlockParagraph,
     RichBlockQuote,
+    RichMediaItem,
     RichTextBold,
     RichTextCode,
     RichTextContent,
@@ -159,6 +161,7 @@ class TelegraphPayload:
     author_url: str
     cover_url: str
     nodes: list[dict[str, Any] | str]
+    inline_media_urls: tuple[str, ...]
     compact_content_json: str
     content_utf8_bytes: int
     article_sha256: str
@@ -413,6 +416,11 @@ def _validate_telegraph_nodes(nodes: Sequence[dict[str, Any] | str]) -> None:
         tag = node.get("tag")
         if tag not in ALLOWED_TELEGRAPH_TAGS:
             raise ValueError(f"Unsupported Telegraph tag: {tag!r}")
+        if tag == "img":
+            attrs = node.get("attrs") or {}
+            image_src = str(attrs.get("src") or "")
+            if not image_src.startswith("https://"):
+                raise ValueError(f"Telegraph image source must use HTTPS: {image_src!r}")
         children = node.get("children")
         if isinstance(children, list):
             _validate_telegraph_nodes(children)
@@ -437,6 +445,8 @@ def build_telegraph_payload(
 
     cover_url = f"{media_base_url.rstrip('/')}/{item.cover_path.as_posix()}"
     nodes: list[dict[str, Any] | str] = [{"tag": "figure", "children": [{"tag": "img", "attrs": {"src": cover_url}}]}]
+    media_by_id: dict[str, RichMediaItem] = {media.media_id: media for media in article.media}
+    inline_media_urls: list[str] = []
 
     for block in article.blocks:
         if isinstance(block, RichBlockHeading):
@@ -446,6 +456,29 @@ def build_telegraph_payload(
             tag = "h3" if block.size == 2 else "h4"
             plain = "".join(iter_text_fragments(block.text))
             nodes.append({"tag": tag, "children": [plain]})
+        elif isinstance(block, RichBlockMedia):
+            media = media_by_id.get(block.media_id)
+            if media is None:
+                raise ValueError(f"{item.publication_id}: missing media-library item {block.media_id!r}")
+            if media.kind != "photo":
+                raise ValueError(f"{item.publication_id}: Telegraph inline media only supports photos")
+            if media.uri.startswith("https://"):
+                image_url = media.uri
+            else:
+                relative_uri = Path(media.uri)
+                if relative_uri.is_absolute() or ".." in relative_uri.parts:
+                    raise ValueError(f"{item.publication_id}: unsafe relative media URI {media.uri!r}")
+                image_url = f"{media_base_url.rstrip('/')}/{relative_uri.as_posix()}"
+            if not image_url.startswith("https://"):
+                raise ValueError(f"{item.publication_id}: media URL must use HTTPS")
+            figure_children: list[dict[str, Any] | str] = [{"tag": "img", "attrs": {"src": image_url}}]
+            if block.caption is not None:
+                caption_children = _rich_text_to_telegraph_children(block.caption.text)
+                if block.caption.credit is not None:
+                    caption_children.extend([" — ", *_rich_text_to_telegraph_children(block.caption.credit)])
+                figure_children.append({"tag": "figcaption", "children": caption_children})
+            nodes.append({"tag": "figure", "children": figure_children})
+            inline_media_urls.append(image_url)
         elif isinstance(block, (RichBlockParagraph, RichBlockFooter)):
             nodes.append({"tag": "p", "children": _rich_text_to_telegraph_children(block.text)})
         elif isinstance(block, RichBlockQuote):
@@ -483,6 +516,7 @@ def build_telegraph_payload(
         author_url=author_url,
         cover_url=cover_url,
         nodes=nodes,
+        inline_media_urls=tuple(inline_media_urls),
         compact_content_json=compact_json,
         content_utf8_bytes=utf8_len,
         article_sha256=_sha256_bytes(art_bytes),
@@ -820,6 +854,12 @@ def publish_telegraph_page(
         raise RuntimeError(
             f"{payload.publication_id}: public cover URL {payload.cover_url} is not reachable as JPEG (HTTP {status_code})"
         )
+    for image_url in payload.inline_media_urls:
+        image_status, image_bytes = transport.get_status(image_url)
+        if image_status != 200 or not image_bytes.startswith(JPEG_MAGIC):
+            raise RuntimeError(
+                f"{payload.publication_id}: inline media URL {image_url} is not reachable as JPEG (HTTP {image_status})"
+            )
 
     def _call_page(
         title: str, nodes: Sequence[dict[str, Any] | str], path_override: str | None = None

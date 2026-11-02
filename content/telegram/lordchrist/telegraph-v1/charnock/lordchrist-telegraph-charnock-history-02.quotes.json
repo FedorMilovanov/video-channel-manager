@@ -1,0 +1,105 @@
+{
+  "document_id": "lordchrist-telegraph-charnock-history-02",
+  "project_key": "lord-god-strength",
+  "verified_on": "2026-11-02",
+  "metadata": {
+    "title": "Реформация: Евангелие, Писание и споры XVI века",
+    "language": "ru",
+    "summary": "Русский исторический очерк о Реформации: Лютер и индульгенции, Вормс, переводы Библии и образование, Цвингли, Цюрих, Марбург и Женева, а также политическое принуждение и трудные страницы реформаторской эпохи.",
+    "author": "Господь Бог",
+    "tags": [
+      "Реформация",
+      "Мартин Лютер",
+      "Цвингли",
+      "Женева",
+      "история церкви",
+      "богословие"
+    ],
+    "created_at": "2026-11-02",
+    "updated_at": "2026-11-02"
+  },
+  "quote_anchors": [
+    {
+      "block_id": "q-1",
+      "source_url": "https://els.org/beliefs/augsburgconfession/",
+      "label": "Аугсбургское исповедание, статья IV «Об оправдании»",
+      "source_language": "English published text",
+      "exact_anchor": "We teach that men cannot be justified before God by their own strength, merits or works, but are freely justified for Christ’s sake through faith",
+      "translation_status": "Редакционный перевод с английского текста, опубликованного по ссылке"
+    },
+    {
+      "block_id": "q-2",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/luther-95-theses/",
+      "label": "Мартин Лютер, «95 тезисов» (1517), тезис 43",
+      "source_language": "Latin original",
+      "exact_anchor": "Docendi sunt christiani, quod dans pauperi aut mutuans egenti melius facit quam si venias redimeret.",
+      "translation_status": "Редакционный перевод с латинского текста"
+    },
+    {
+      "block_id": "q-3",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/luther-95-theses/",
+      "label": "Мартин Лютер, «95 тезисов» (1517), тезис 62",
+      "source_language": "Latin original",
+      "exact_anchor": "Verus thesaurus ecclesie est sacrosanctum euangelium glorie et gratie dei.",
+      "translation_status": "Редакционный перевод с латинского текста"
+    },
+    {
+      "block_id": "q-4",
+      "source_url": "https://germanhistorydocs.org/en/from-the-reformations-to-the-thirty-years-war-1500-1648/luther-and-emperor-charles-v-at-the-diet-of-worms-1521",
+      "label": "Мартин Лютер, ответ на рейхстаге в Вормсе, 1521",
+      "source_language": "Published English translation",
+      "exact_anchor": "my conscience is captive to the Word of God. Therefore I cannot and will not recant",
+      "translation_status": "Редакционный перевод опубликованного английского перевода; сама публикация предупреждает, что документ не является стенограммой"
+    },
+    {
+      "block_id": "q-5",
+      "source_url": "https://editions.mml.ox.ac.uk/editions/ratherren/",
+      "label": "Мартин Лютер, «К городским советникам всех городов немецкой земли» (1524)",
+      "source_language": "Early New High German transcription",
+      "exact_anchor": "So doch hie billich were/ das/ wo man eynen gulden gebe widder die tuͤrcken zu ſtreytten/ wenn sie vns gleich auff dem halſe legen/ hie hundert guͤlden geben wuͤrden/ ob man gleich nuͤr eynen knaben kund damit auff erzihen das eyn rechter Chriſten man wuͤrde.",
+      "translation_status": "Редакционный перевод с транскрипции немецкого текста XVI века"
+    },
+    {
+      "block_id": "q-6",
+      "source_url": "https://glaubensstimme.de/doku.php?id=autoren%3Al%3Aluther%3Aw%3Awider_die_raeuberischen_und_moerderischen_rotten",
+      "label": "Немецкая транскрипция трактата Лютера 1525 года; сверена с экземпляром Гейдельбергского университета",
+      "source_language": "German transcription, normalized spelling",
+      "exact_anchor": "würgen und stechen, heimlich oder öffentlich",
+      "translation_status": "Редакционный перевод с немецкого; отрывок сопоставлен с оцифрованным экземпляром 1525 года в библиотеке Гейдельбергского университета"
+    }
+  ],
+  "media": [
+    {
+      "media_id": "reformation-wittenberg-door",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-01-wittenberg-door.jpg",
+      "alt_text": "Двери Замковой церкви в Виттенберге",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-01-wittenberg-door.jpg",
+      "source_evidence": "Существовавший в проекте иллюстративный файл; его содержимое и адрес подтверждены по GitHub API на исходном коммите 93516c16b3ed30b92b6bdaace8544b4b3c9ad174."
+    },
+    {
+      "media_id": "reformation-worms-monument",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-02-worms-monument.jpg",
+      "alt_text": "Памятник Реформации в Вормсе",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-02-worms-monument.jpg",
+      "source_evidence": "Существовавший в проекте иллюстративный файл; его содержимое и адрес подтверждены по GitHub API на исходном коммите 93516c16b3ed30b92b6bdaace8544b4b3c9ad174."
+    },
+    {
+      "media_id": "reformation-zwingli-monument",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-03-zwingli-monument.jpg",
+      "alt_text": "Памятник Цвингли в Цюрихе",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-03-zwingli-monument.jpg",
+      "source_evidence": "Существовавший в проекте иллюстративный файл; его содержимое и адрес подтверждены по GitHub API на исходном коммите 93516c16b3ed30b92b6bdaace8544b4b3c9ad174."
+    },
+    {
+      "media_id": "reformation-geneva-wall",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-04-geneva-wall.jpg",
+      "alt_text": "Стена Реформации в Женеве",
+      "source_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/93516c16b3ed30b92b6bdaace8544b4b3c9ad174/content/telegram/lordchrist/telegraph-v1/media/lordchrist-reformation-1517-inline-04-geneva-wall.jpg",
+      "source_evidence": "Существовавший в проекте иллюстративный файл; его содержимое и адрес подтверждены по GitHub API на исходном коммите 93516c16b3ed30b92b6bdaace8544b4b3c9ad174."
+    }
+  ]
+}
