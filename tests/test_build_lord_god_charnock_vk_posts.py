@@ -37,8 +37,9 @@ def test_charnock_series_splits_all_fourteen_articles_into_vk_sized_parts(tmp_pa
     payload = _build(tmp_path)
 
     assert payload["schema_name"] == "video-manager.lord-god-charnock-vk-posts"
-    # 13 cycle articles + the Sunday historical special (history-01).
+    # 13 cycle articles + history-01; Telegraph-only history-02 is excluded.
     assert len(payload["articles"]) == 14
+    assert all("reformation" not in article["publication_id"] for article in payload["articles"])
     posts = payload["posts"]
     assert len(posts) == 32
     for article in payload["articles"]:

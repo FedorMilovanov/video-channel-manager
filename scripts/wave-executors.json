@@ -159,7 +159,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "ef5857620d6ab965417c1570075d01d657ad354beb9828566c4036d0b91c4c0c",
+      "sha256": "2b60f18951003559c0569f91ddf2aff1b9705aa701268289a18b624346dcea6d",
       "status": "independent_tool"
     },
     {
@@ -170,6 +170,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "b366d0060bb2bce2881c80a02f0d90568a3b6872b6588bd41137a0a06a71fa5b",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_lordchrist_telegraph_history_article.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "31ed5b3137aee06e9f5aea8bba6801f2888819cee088b7469ac4c995585ea6a0",
       "status": "independent_tool"
     },
     {
