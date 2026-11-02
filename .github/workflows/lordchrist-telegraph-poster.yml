@@ -23,6 +23,11 @@ on:
         required: false
         default: ""
         type: string
+      page_revision:
+        description: Optional new-page URL marker (e.g. 03); keeps the visible article title unchanged
+        required: false
+        default: ""
+        type: string
       confirm:
         description: For publish, type PUBLISH:<publication_id>; for edit-telegraph-only, type EDIT:<publication_id>:<existing_page_path>
         required: false
@@ -99,6 +104,7 @@ jobs:
           ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
           PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
           EXISTING_PAGE_PATH: ${{ inputs.existing_page_path }}
+          PAGE_REVISION: ${{ inputs.page_revision }}
           CONFIRMATION: ${{ github.event_name == 'schedule' && format('PUBLISH:{0}', steps.resolve.outputs.publication_id) || inputs.confirm }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
@@ -116,7 +122,8 @@ jobs:
             python -m video_channel_manager.lordchrist_telegraph_publisher publish-telegraph-only \
               --publication-id "$PUBLICATION_ID" \
               --media-base-url "$MEDIA_BASE_URL" \
-              --ledger "$LEDGER_PATH" | tee artifacts/result.json
+              --ledger "$LEDGER_PATH" \
+              --page-revision "$PAGE_REVISION" | tee artifacts/result.json
           elif [[ "$ACTION" == "edit-telegraph-only" ]]; then
             python -m video_channel_manager.lordchrist_telegraph_publisher edit-telegraph-only \
               --publication-id "$PUBLICATION_ID" \

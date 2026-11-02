@@ -858,10 +858,13 @@ def publish_telegraph_page(
     *,
     access_token: str,
     existing_path: str | None = None,
+    page_revision: str | None = None,
     telegraph_api_base: str = DEFAULT_TELEGRAPH_API_BASE,
 ) -> tuple[str, str]:
     if existing_path is not None and not TELEGRAPH_PATH_PATTERN.fullmatch(existing_path):
         raise ValueError("existing Telegraph page path must be a single safe path segment")
+    if page_revision is not None and not re.fullmatch(r"[A-Za-z0-9]{1,8}", page_revision):
+        raise ValueError("page_revision must be 1–8 ASCII letters or digits")
     status_code, head_bytes = transport.get_status(payload.cover_url)
     if status_code != 200 or not head_bytes.startswith(JPEG_MAGIC):
         raise RuntimeError(
@@ -883,10 +886,17 @@ def publish_telegraph_page(
         method = f"editPage/{path_override.lstrip('/')}" if path_override else "createPage"
         return transport.post_multipart(f"{telegraph_api_base.rstrip('/')}/{method}", fields)
 
-    resp = _call_page(payload.title, payload.nodes, existing_path if access_token else None)
+    # Telegraph has no caller-selected path parameter on createPage. A unique
+    # title marker lets operators request a distinct URL; immediately editing
+    # the newly created page restores the reader-facing title without changing
+    # the generated path.
+    create_title = f"{payload.title} {page_revision}" if page_revision else payload.title
+    create_path = existing_path if access_token and page_revision is None else None
+    page_nodes = payload.nodes
+    resp = _call_page(create_title, page_nodes, create_path)
     if not resp.get("ok") and str(resp.get("error") or "") == "CONTENT_TOO_BIG":
         part1_nodes, part2_nodes = _split_nodes_at_middle_heading(payload.nodes)
-        resp2 = _call_page(f"{payload.title} (окончание)", part2_nodes)
+        resp2 = _call_page(f"{create_title} (окончание)", part2_nodes)
         if not resp2.get("ok") or not isinstance(resp2.get("result"), dict):
             raise RuntimeError(f"Telegraph createPage part 2 failed: {resp2}")
         part2_url = str(resp2["result"].get("url") or "").strip()
@@ -911,7 +921,8 @@ def publish_telegraph_page(
                 ],
             },
         ]
-        resp = _call_page(payload.title, part1_with_link, existing_path if access_token else None)
+        page_nodes = part1_with_link
+        resp = _call_page(create_title, page_nodes, create_path)
 
     if not resp.get("ok") or not isinstance(resp.get("result"), dict):
         raise RuntimeError(f"Telegraph page publish failed: {resp}")
@@ -921,6 +932,18 @@ def publish_telegraph_page(
     page_path = str(result.get("path") or "").strip()
     if not url.startswith("https://telegra.ph/") or not page_path:
         raise RuntimeError(f"Telegraph returned invalid page result: {result}")
+
+    if page_revision is not None:
+        restored = _call_page(payload.title, page_nodes, page_path)
+        if not restored.get("ok") or not isinstance(restored.get("result"), dict):
+            raise RuntimeError(f"Telegraph page title restore failed: {restored}")
+        result = restored["result"]
+        restored_url = str(result.get("url") or "").strip()
+        restored_path = str(result.get("path") or "").strip()
+        if restored_url != url or restored_path != page_path:
+            raise RuntimeError(
+                f"Telegraph changed the page path while restoring the title: {restored}"
+            )
 
     page_status, _ = transport.get_status(url)
     if page_status != 200:
@@ -1067,6 +1090,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         p.add_argument("--media-base-url", required=True)
         if name == "preview":
             p.add_argument("--html-out", type=Path)
+        if name == "publish-telegraph-only":
+            p.add_argument("--page-revision", default="", help="URL-only revision marker; e.g. 03")
         if name == "edit-telegraph-only":
             p.add_argument("--existing-path", required=True)
             p.add_argument("--confirm", required=True)
@@ -1181,17 +1206,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise ValueError("editing an existing Telegraph page requires the configured account access token")
     token = ensure_telegraph_token(transport, explicit_token=explicit_token)
 
+    page_revision = getattr(args, "page_revision", "").strip() or None
     existing_path = (
         args.existing_path
         if args.command == "edit-telegraph-only"
-        else (existing.get("telegraph_path") if explicit_token else None)
+        else (existing.get("telegraph_path") if explicit_token and page_revision is None else None)
     )
     telegraph_url, telegraph_path = publish_telegraph_page(
         transport,
         payload,
         access_token=token,
         existing_path=existing_path,
+        page_revision=page_revision,
     )
+    if page_revision and existing.get("telegraph_path") == telegraph_path:
+        raise RuntimeError(
+            f"Telegraph did not return a distinct page for revision {page_revision}: {telegraph_url}"
+        )
 
     entry_record: dict[str, Any] = {
         **existing,
@@ -1199,6 +1230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "title": payload.title,
         "telegraph_url": telegraph_url,
         "telegraph_path": telegraph_path,
+        "telegraph_revision": page_revision,
         "article_sha256": payload.article_sha256,
         "cover_sha256": payload.cover_sha256,
         "telegraph_updated_at_utc": datetime.now(UTC).isoformat(),
@@ -1215,6 +1247,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "publication_id": item.publication_id,
                     "telegraph_url": telegraph_url,
                     "telegraph_path": telegraph_path,
+                    "telegraph_revision": page_revision,
                     "telegraph_utf8_bytes": payload.content_utf8_bytes,
                 },
                 ensure_ascii=False,

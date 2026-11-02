@@ -45,7 +45,12 @@ class FakeTransport:
                 self.trigger_content_too_big_once = False
                 return {"ok": False, "error": "CONTENT_TOO_BIG"}
             self._page_seq += 1
-            slug = f"Charnock-Page-{self._page_seq}"
+            title = copied["title"].decode("utf-8")
+            slug = (
+                f"Reformation-03-{self._page_seq}"
+                if title.endswith(" 03")
+                else f"Charnock-Page-{self._page_seq}"
+            )
             return {"ok": True, "result": {"path": slug, "url": f"https://telegra.ph/{slug}"}}
         raise AssertionError(f"Unexpected multipart URL: {url}")
 
@@ -158,6 +163,42 @@ def test_edit_telegraph_only_updates_the_requested_page_without_creating_another
     assert len(transport.multipart_calls) == 1
     assert transport.multipart_calls[0][0].endswith(f"/editPage/{existing_path}")
     assert transport.json_calls == []  # editing the page never posts to Telegram
+
+
+def test_publish_telegraph_only_revision_creates_distinct_url_and_restores_visible_title() -> None:
+    item = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)[-1]
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+    transport = FakeTransport()
+    old_path = "REFORMACIYA-OBNOVLENIE-CERKVI-RASKOLY-I-MIFY-11-01-2"
+
+    url, path = publish_telegraph_page(
+        transport,
+        payload,
+        access_token="test-account-token",
+        existing_path=old_path,
+        page_revision="03",
+    )
+
+    assert url == "https://telegra.ph/Reformation-03-1"
+    assert path == "Reformation-03-1"
+    assert path != old_path
+    assert transport.multipart_calls[0][0].endswith("/createPage")
+    assert transport.multipart_calls[1][0].endswith(f"/editPage/{path}")
+    assert transport.multipart_calls[0][1]["title"].decode("utf-8") == f"{payload.title} 03"
+    assert transport.multipart_calls[1][1]["title"].decode("utf-8") == payload.title
+    assert transport.json_calls == []
+
+
+def test_page_revision_rejects_unsafe_marker() -> None:
+    item = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)[-1]
+    payload = build_telegraph_payload(ROOT, item, media_base_url=MEDIA_BASE)
+    with pytest.raises(ValueError, match="page_revision"):
+        publish_telegraph_page(
+            FakeTransport(),
+            payload,
+            access_token="test-account-token",
+            page_revision="03/02",
+        )
 
 
 def test_edit_telegraph_only_requires_exact_confirmation_before_network(tmp_path: Path) -> None:
