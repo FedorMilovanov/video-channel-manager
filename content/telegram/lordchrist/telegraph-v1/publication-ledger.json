@@ -67,6 +67,19 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-01T20:58:19.900887+00:00",
       "telegraph_revision": "04"
+    },
+    "lordchrist-telegraph-charnock-04": {
+      "publication_id": "lordchrist-telegraph-charnock-04",
+      "title": "Мир как зеркало: как творение свидетельствует о Творце",
+      "telegraph_url": "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce-11-03",
+      "telegraph_path": "Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce-11-03",
+      "article_sha256": "sha256:0adea8268e3f805f1dadd39490c9a7124e3855ea55a023599b1430995ab05f84",
+      "cover_sha256": "sha256:c30f5027d85208f8dad7f4bf45b09e1ec31d9c1ad184032b4e820651402acfd3",
+      "telegraph_updated_at_utc": "2026-11-03T16:44:02.320659+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1594,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-03T16:44:03.114188+00:00"
     }
   }
 }
