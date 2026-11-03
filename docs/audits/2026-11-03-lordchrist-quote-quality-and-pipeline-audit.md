@@ -108,7 +108,7 @@ Three independently checked URL corrections have HTTP-200 status and both origin
 
 Complete 30-entry evidence: [2026-11-04-lordchrist-30-source-url-and-anchor-scan.json](2026-11-04-lordchrist-30-source-url-and-anchor-scan.json).
 
-## Five continuous-source Russian quotation candidates, 2026-11-04
+## Ten continuous-source Russian quotation candidates, 2026-11-04
 
 A separate [five-candidate evidence packet](2026-11-04-lordchrist-contiguous-quote-redrafts.json) now contains first-pass Russian redrafts of **#12 Spurgeon, #15 Matthew Henry, #18–19 J. C. Ryle and #22 Thomas Watson**. The precise English opening and closing anchors for each were independently retrieved in forward order from its original source page (HTTP 200). The selected source spans contain 196–272 English words; the Russian redrafts contain 138–192 words each across 2–4 complete paragraphs.
 
@@ -119,3 +119,13 @@ A separate [five-candidate evidence packet](2026-11-04-lordchrist-contiguous-quo
 - **#22 Watson:** translate the actual Chapter VI nature-of-contentment passage instead of merely repointing the old unsupported Russian card.
 
 **Important limitation:** Exact English anchor matches and plausible passage lengths do NOT constitute a full word-by-word bilingual accuracy certification or legal permission. These are **source-grounded editorial drafts**, not an approved release. Source URLs, observed anchor matching, source SHA-256 and draft SHA-256 are recorded per card. Complete line-by-line review, translation/copyright clearance, independent editorial approval and a new versioned release digest remain necessary before runtime use. The existing approved queue and protected state have NOT been changed.
+
+### Second batch of contiguous-source options (still editorial drafts)
+
+- **#6 Augustine**: translates the complete opening prayer in Confessions I.1 from the ancient **Latin original** with independent comparison to **Edward Bouverie Pusey (1838)**, which Project Gutenberg identifies as public domain in the USA (ebook 3296). This avoids relying on the previously linked **Albert Outler (1955)** English version; territorial rights/provenance should still be reviewed.
+- **#8 Baxter**: a single continuous address urging ministers to practice personal instruction of immortal souls; no concatenation of separated dedication excerpts.
+- **#10 Charnock**: a coherent, source-matched treatment of 1 John 1:5-7 and fellowship with God instead of mixing unrelated sections or an incorrect work title.
+- **#14 Edwards**: one continuous exposition of the proposition about God's sovereign preserving will and the first proof, without collecting separated sermon sections into a purportedly unbroken quotation.
+- **#21 Watson**: a continuous passage on anxious care and divine providence, correcting the misspelling and removing abrupt referents from the previous selection.
+
+**Status:** all ten are still **drafts** with no release ID, no production authorization, no verified rights for every jurisdiction, and no claim that the entire Russian translation is word-by-word certified. Source opening and closing anchor checks were completed for all ten on HTTP-200 pages; however this is just one verification layer. No publisher was called and existing signed source cards/ledgers remain unchanged.

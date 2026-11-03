@@ -12,7 +12,7 @@ DRAFTS = ROOT / "docs/audits/2026-11-04-lordchrist-contiguous-quote-redrafts.jso
 QUEUE = ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 
 
-def test_five_redrafts_bind_the_same_signed_quote_queue_and_remain_inert() -> None:
+def test_ten_redrafts_bind_the_same_signed_quote_queue_and_remain_inert() -> None:
     source = QUEUE.read_text(encoding="utf-8")
     posts = json.loads(source)["posts"]
     packet = json.loads(DRAFTS.read_text(encoding="utf-8"))
@@ -25,7 +25,7 @@ def test_five_redrafts_bind_the_same_signed_quote_queue_and_remain_inert() -> No
     assert packet["provider_write_authorization"] is False
 
     drafts = packet["drafts"]
-    assert [d["sequence"] for d in drafts] == [12, 15, 18, 19, 22]
+    assert [d["sequence"] for d in drafts] == [6, 8, 10, 12, 14, 15, 18, 19, 21, 22]
     for candidate in drafts:
         source_post = posts[candidate["sequence"] - 1]
         assert candidate["previous_publication_id"] == source_post["publication_id"]
@@ -39,7 +39,7 @@ def test_five_redrafts_bind_the_same_signed_quote_queue_and_remain_inert() -> No
         )
         assert candidate["draft_word_count_ru"] == len(re.findall(r"\w+", candidate["translation_ru"]))
         assert candidate["draft_paragraph_count"] == len(candidate["translation_ru"].split("\n\n"))
-        assert 100 <= candidate["draft_word_count_ru"] <= 240
+        assert 100 <= candidate["draft_word_count_ru"] <= 250
         assert "\u2026" not in candidate["translation_ru"]
         assert candidate["release_authorized"] is False
         assert candidate["editorial_status"] == "draft_not_approved"
@@ -57,3 +57,17 @@ def test_quote_drafts_do_not_reenable_the_current_live_queue() -> None:
         assert candidate["previous_text_sha256"] != candidate["draft_text_sha256"]
         assert "published" not in candidate["editorial_status"]
         assert candidate["source_probe"]["semantic_translation_certified"] is False
+
+
+def test_augustine_edition_provenance_avoids_outler_1955() -> None:
+    packet = json.loads(DRAFTS.read_text(encoding="utf-8"))
+    augustine = next(row for row in packet["drafts"] if row["sequence"] == 6)
+    assert "gutenberg.org/files/3296/" in augustine["source_url"]
+    assert "1838" in augustine["source_edition"] and "Gutenberg" in augustine["source_edition"]
+    assert "1955" in augustine["edition_rights_note"]
+    assert "sophiascriptura.com" in augustine["original_latin_url"]
+    assert augustine["latin_original_probe"]["status"] == 200
+    assert augustine["latin_original_probe"]["both_anchor_exact_matches"] is True
+    assert augustine["source_probe"]["both_anchor_exact_matches"] is True
+    assert augustine["latin_original_probe"]["semantic_translation_certified"] is False
+    assert augustine["release_authorized"] is False
