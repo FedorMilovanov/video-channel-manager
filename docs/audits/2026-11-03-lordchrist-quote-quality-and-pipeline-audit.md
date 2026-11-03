@@ -107,3 +107,15 @@ New confirmed source error: **#15 Matthew Henry** joins material on Psalm 119:45
 Three independently checked URL corrections have HTTP-200 status and both original English anchors: **#27** [Bunyan complete text](https://ccel.org/ccel/bunyan/pilgrim.all.html), **#28** [Kuyper Meditation 1](https://www.ccel.org/ccel/kuyper/near.ii.html), **#29** [Bavinck Lecture I](https://ccel.org/ccel/bavinck/revelation/revelation.ii.html). All four source-link edits are **proposals**; no signed content or released digest changed.
 
 Complete 30-entry evidence: [2026-11-04-lordchrist-30-source-url-and-anchor-scan.json](2026-11-04-lordchrist-30-source-url-and-anchor-scan.json).
+
+## Five continuous-source Russian quotation candidates, 2026-11-04
+
+A separate [five-candidate evidence packet](2026-11-04-lordchrist-contiguous-quote-redrafts.json) now contains first-pass Russian redrafts of **#12 Spurgeon, #15 Matthew Henry, #18–19 J. C. Ryle and #22 Thomas Watson**. The precise English opening and closing anchors for each were independently retrieved in forward order from its original source page (HTTP 200). The selected source spans contain 196–272 English words; the Russian redrafts contain 138–192 words each across 2–4 complete paragraphs.
+
+- **#12 Spurgeon:** reconstruct the opening of the Acts 24:15 sermon as one source span, replacing the current abridged extract with the wrong biblical verse label.
+- **#15 Henry:** select only Psalm 119:45–48 commentary, not the previously stitched distant commentary on Psalm 119:167–168.
+- **#18 Ryle:** restore the source's explicit qualification *Christian*; the older Russian quote changed the subject's scope.
+- **#19 Ryle:** introduce Apostle Paul as the source author does and select the complete introduction followed by the downward-looking section, without skipping backward-looking middle material.
+- **#22 Watson:** translate the actual Chapter VI nature-of-contentment passage instead of merely repointing the old unsupported Russian card.
+
+**Important limitation:** Exact English anchor matches and plausible passage lengths do NOT constitute a full word-by-word bilingual accuracy certification or legal permission. These are **source-grounded editorial drafts**, not an approved release. Source URLs, observed anchor matching, source SHA-256 and draft SHA-256 are recorded per card. Complete line-by-line review, translation/copyright clearance, independent editorial approval and a new versioned release digest remain necessary before runtime use. The existing approved queue and protected state have NOT been changed.
