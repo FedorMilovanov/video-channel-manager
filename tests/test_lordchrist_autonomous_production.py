@@ -198,36 +198,58 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
 def test_v4_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    # After the v4 cutover the publisher reads directly from the strict-schema
-    # 30-post queue; local ledger materialization (the old depth-v3 step) is no
-    # longer needed because the ledger is initialized on the state branch in
-    # one protected block that lives after the current-main CI proof.
+    resolve_start = workflow.index("      - name: Resolve exact active quote release")
+    local_start = workflow.index("      - name: Materialize reviewed v4 ledger locally for read-only validation")
     validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
     quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
     target_start = workflow.index("      - name: Validate read-only target configuration")
     preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    discard_start = workflow.index("      - name: Archive predecessor ledger before durable v4 initialization")
     writer_start = workflow.index("      - name: Enable state writer for one-time v4 ledger initialization")
+    archive_start = workflow.index("      - name: Archive predecessor ledger before durable v4 initialization")
     durable_start = workflow.index("      - name: Persist initialized v4 ledger to state branch")
     publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
 
+    # Temporary state permits preview/target proof before any durable mutation.
+    # Archive work must happen only after checkout with write credentials.
     assert (
-        validate_start
+        resolve_start
+        < local_start
+        < validate_start
         < quality_start
         < target_start
         < preflight_start
         < gate_start
-        < discard_start
         < writer_start
+        < archive_start
         < durable_start
         < publication_writer_start
     )
 
-    writer_step = workflow[writer_start:durable_start]
+    local_step = workflow[local_start:validate_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in local_step
+    assert '"$EFFECTIVE_LEDGER_PATH"' in local_step
+    assert "initialize-ledger" in local_step
+    assert 'EFFECTIVE_LEDGER_PATH": (' in workflow[resolve_start:local_start]
+    assert 'echo "STATE_READ_ONLY_SHA=$(git -C "$STATE_DIR" rev-parse HEAD)"' in workflow[resolve_start:local_start]
+
+    # Read-only validation and target preflight use a local ledger when needed.
+    before_gate = workflow[validate_start:gate_start]
+    assert before_gate.count('--ledger "$EFFECTIVE_LEDGER_PATH"') == 4
+    assert "persist-credentials: true" not in workflow[:quality_start]
+
+    writer_step = workflow[writer_start:archive_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in writer_step
     assert "steps.intent.outputs.do_publish == 'true'" in writer_step
     assert "persist-credentials: true" in writer_step
+
+    archive_step = workflow[archive_start:durable_start]
+    assert '"$STATE_READ_ONLY_SHA"' in archive_step
+    assert "remote_state_sha" in archive_step
+    assert '--queue "$PREDECESSOR_QUEUE_PATH"' in archive_step
+    assert 'mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"' in archive_step
+    assert "publication-ledger-archive-" in archive_step
+    assert "refusing overwrite or ambiguous cutover" in archive_step
 
     durable_step = workflow[durable_start:publication_writer_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
@@ -235,21 +257,8 @@ def test_v4_ledger_durable_initialization_is_execution_gated_and_after_current_m
     assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" in durable_step
     assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
     assert "remote-v4-ledger.json" in durable_step
-    # The v4 ledger must not exist before initialization (we just discarded any
-    # stale file); otherwise a previously-sealed ledger would silently rebind.
     assert "refusing ambiguous initialization" in durable_step
-
-    # History is never deleted: the predecessor ledger is archived under a
-    # digest-named path inside the state snapshot and committed together with
-    # the fresh v4 ledger.
-    archive_step = workflow[discard_start:writer_start]
-    assert 'mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"' in archive_step
-    assert "publication-ledger-archive-${old_digest}.json" in archive_step
     assert 'git -C "$STATE_DIR" add -- "$LEDGER_ARCHIVE_RELATIVE_PATH"' in durable_step
-
-    before_quality = workflow[:quality_start]
-    assert "persist-credentials: true" not in before_quality
-    assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" not in before_quality
 
 
 def test_midday_slot_is_the_tuesday_friday_rich_article_lane() -> None:

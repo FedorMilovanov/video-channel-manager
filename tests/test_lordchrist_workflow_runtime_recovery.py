@@ -12,9 +12,9 @@ QUIZ = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
 
 def test_quote_v4_preflight_exports_digest_to_following_steps() -> None:
     workflow = PREFLIGHT.read_text(encoding="utf-8")
-    step = workflow.split(
-        "      - name: Bind the exact reviewed queue digest for the read-only preflight", 1
-    )[1].split("      - name: Validate queue and strict ledger (v4)", 1)[0]
+    step = workflow.split("      - name: Bind the exact reviewed queue digest for the read-only preflight", 1)[1].split(
+        "      - name: Validate queue and strict ledger (v4)", 1
+    )[0]
 
     assert 'digest = selection["queue_digest"]' in step
     assert 'digest == activation["queue_digest"] == schedule["queue_digest"]' in step

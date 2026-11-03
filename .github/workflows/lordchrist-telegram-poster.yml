@@ -51,7 +51,7 @@ concurrency:
 
 env:
   PYTHONPATH: src
-  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/archived-old-queues/verified-30-posts.json
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
   PRESENTATION_POLICY_V3_PATH: content/telegram/lordchrist/presentation-policy-v3.json
@@ -88,7 +88,7 @@ env:
   SUCCESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
   LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
   LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
-  LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/archived-old-queues/verified-30-posts.json
   LORDCHRIST_PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   DISPATCH_PATH: .runtime/lordchrist-dispatch.json
   RENDERED_PATH: .runtime/lordchrist-rendered.json
@@ -317,6 +317,11 @@ jobs:
           env = {
               "QUEUE_PATH": selection["queue_path"],
               "LEDGER_PATH": selection["ledger_path"],
+              "EFFECTIVE_LEDGER_PATH": (
+                  ".runtime/lordchrist-v4-validation-ledger.json"
+                  if needs_init
+                  else selection["ledger_path"]
+              ),
               "LEDGER_RELATIVE_PATH": selection["ledger_relative_path"],
               "LORDCHRIST_APPROVED_QUEUE_DIGEST": selection["queue_digest"],
           }
@@ -324,6 +329,27 @@ jobs:
               for key, value in env.items():
                   handle.write(f"{key}={value}\n")
           PY
+          echo "STATE_READ_ONLY_SHA=$(git -C "$STATE_DIR" rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Materialize reviewed v4 ledger locally for read-only validation
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EFFECTIVE_LEDGER_PATH" == ".runtime/lordchrist-v4-validation-ledger.json" ]] || {
+            echo "Unrecognized local v4 validation ledger path." >&2
+            exit 2
+          }
+          [[ ! -e "$EFFECTIVE_LEDGER_PATH" ]] || {
+            echo "Local v4 validation ledger unexpectedly exists." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$EFFECTIVE_LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            initialize-ledger \
+            --confirm INITIALIZE_NEW_LORDCHRIST_LEDGER
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -331,7 +357,7 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
+            --ledger "$EFFECTIVE_LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 
@@ -376,7 +402,7 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
+            --ledger "$EFFECTIVE_LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preview
 
@@ -388,7 +414,7 @@ jobs:
           echo "Execution skipped: ${{ steps.intent.outputs.reason }}"
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
+            --ledger "$EFFECTIVE_LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preview
 
@@ -438,7 +464,7 @@ jobs:
           mkdir -p .runtime
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
+            --ledger "$EFFECTIVE_LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preflight \
             --mode "${{ steps.intent.outputs.mode }}" \
@@ -503,22 +529,6 @@ jobs:
             }
           fi
 
-      - name: Archive predecessor ledger before durable v4 initialization
-        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Never delete publication history: the predecessor ledger is moved
-          # to a digest-named archive path inside the state snapshot and is
-          # committed to the state branch together with the fresh v4 ledger.
-          if [[ -e "$LEDGER_PATH" ]]; then
-            old_digest="$(python -c 'import json,os; print(json.load(open(os.environ["LEDGER_PATH"])).get("queue_digest", "unknown").removeprefix("sha256:")[:12])')"
-            archive_relative="$(dirname "$LEDGER_RELATIVE_PATH")/publication-ledger-archive-${old_digest}.json"
-            mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"
-            echo "LEDGER_ARCHIVE_RELATIVE_PATH=$archive_relative" >> "$GITHUB_ENV"
-            echo "Archived predecessor ledger to $archive_relative"
-          fi
-
       - name: Enable state writer for one-time v4 ledger initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -527,6 +537,47 @@ jobs:
           path: .state/lordchrist
           fetch-depth: 0
           persist-credentials: true
+
+      - name: Archive predecessor ledger before durable v4 initialization
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The writable checkout must already be in place. Reprove the exact
+          # read-only state SHA before archiving any accepted provider history.
+          [[ -n "${STATE_READ_ONLY_SHA:-}" ]] || {
+            echo "Missing read-only state checkout SHA." >&2
+            exit 3
+          }
+          [[ "$(git -C "$STATE_DIR" rev-parse HEAD)" == "$STATE_READ_ONLY_SHA" ]] || {
+            echo "State changed between read-only preflight and writable checkout." >&2
+            exit 3
+          }
+          remote_state_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_state_sha" == "$STATE_READ_ONLY_SHA" ]] || {
+            echo "Durable LordChrist state advanced after read-only preflight; refusing cutover." >&2
+            exit 3
+          }
+          [[ -f "$LEDGER_PATH" ]] || {
+            echo "Missing reviewed predecessor ledger; refusing to create v4 state without preserved history." >&2
+            exit 3
+          }
+          # Check the exact historical queue against the original durable ledger
+          # before moving the ledger to its reviewed digest-named archive.
+          python -m video_channel_manager.telegram_cli \
+            --queue "$PREDECESSOR_QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
+          old_digest="$(python -c 'import json,os; print(json.load(open(os.environ["LEDGER_PATH"])).get("queue_digest", "unknown").removeprefix("sha256:")[:12])')"
+          archive_relative="$(dirname "$LEDGER_RELATIVE_PATH")/publication-ledger-archive-${old_digest}.json"
+          [[ ! -e "$STATE_DIR/$archive_relative" ]] || {
+            echo "Exact predecessor archive already exists; refusing overwrite or ambiguous cutover." >&2
+            exit 3
+          }
+          mv -- "$LEDGER_PATH" "$STATE_DIR/$archive_relative"
+          echo "LEDGER_ARCHIVE_RELATIVE_PATH=$archive_relative" >> "$GITHUB_ENV"
+          echo "Archived predecessor ledger to $archive_relative"
 
       - name: Persist initialized v4 ledger to state branch
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
