@@ -76,3 +76,24 @@ Count: critical=8, major=9, review=2, screened=11. All 30 entries still require 
 5. Resolve scheduled workflow nondelivery without assuming that a green skipped job means a post was published. The separate preflight concurrency bug is in PR #763. Production incident: issue #762.
 
 See the matching 30-entry JSON register for exact text SHA-256 identity and review status. The register is **NOT** wired to the publisher and cannot authorize a send.
+
+## Full 160-card research library inventory (not an active pipeline)
+
+- Parsed all Markdown headings 1..160 with no missing or duplicated card numbers (107 in the original file, 53 in the extension). Every card has at least one URL and an English quotation-anchor note. That is structural completeness, NOT verification of its attribution.
+- **28 cards** point to Goodreads as their first research URL: this is an aggregation page, not a controlled original-text witness. They require a precise edition/sermon/chapter anchor prior to promoting even one to a release.
+- **12 cards** point to modern editorial/publisher websites gty.org (6) or desiringgod.org (6), where substantial text and translation rights must be independently reviewed. Quotation accuracy and copyright status cannot be inferred from a public URL.
+- **Card #59** has only 165 characters of quote text. A short aphorism is not an adequate replacement for a coherent full-context excerpt under the current editorial rule.
+- **29 cards** link first to GraceGems; a transcription can be useful evidence, but still needs the exact author, work, location and a contiguous source check. It is not synonymous with a publisher-authorized modern translation.
+- No high-overlap match of five-word shingles above 45 percent was found between the 160 library cards and the 30 current v4 quoted payloads in a read-only lexical comparison; this is not proof that ideas or smaller snippets never repeat.
+
+First-link Goodreads card IDs: 17, 21, 22, 23, 24, 26, 28, 29, 32, 57, 58, 67, 71, 72, 75, 76, 77, 79, 80, 83, 85, 86, 92, 96, 102, 105, 107, 141.
+
+Machine-readable coverage for all 160 including exact text hashes, first source URLs, source-domain indicators and conservative release holds: [2026-11-03-lordchrist-160-library-source-inventory.json](2026-11-03-lordchrist-160-library-source-inventory.json).
+
+The research library must remain **provider-inert**. A card may enter a future queue only after the full-text/original-edition and licensing review plus a fresh separate release digest and approval.
+
+## Exact proposed corrections, NOT an authorized release
+
+Nine source-bound edits are prepared for items 4 (chapter and Russian grammar), 5 (Russian agreement), 10 (work attribution), 12 (sermon biblical reference), 15 (nested Russian quotes), 18 (Christian qualifier) and 21 (Russian misspelling). This is a **change proposal**, not a corrected 30-card edition: sequences 6, 8, 11, 13, 14, 19, 27 and others still require a source-grounded editorial rewrite; none of the nine edits may be silently promoted.
+
+Exact before/after fields with the original source URL: [2026-11-03-lordchrist-quote-exact-editorial-proposals.json](2026-11-03-lordchrist-quote-exact-editorial-proposals.json).
