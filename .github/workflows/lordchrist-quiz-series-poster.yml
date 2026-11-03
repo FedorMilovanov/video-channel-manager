@@ -211,6 +211,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p "$(dirname "$FRESHNESS_PATH")"
           set +e
           python -m video_channel_manager.telegram_publication_freshness next \
             --release "${{ steps.gate.outputs.release_path }}" \
