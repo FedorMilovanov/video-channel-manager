@@ -38,14 +38,14 @@ Every card claims contiguous_complete_no_omissions. Eight cards (5, 7, 8, 11, 12
 | 12 | lordchrist-spurgeon-resurrection-of-the-dead | critical | Spurgeon original sermon is Acts 24:15, not 1 Cor 15; multiple excerpt joins contradict no-omission label. |
 | 13 | lordchrist-bunyan-grace-abounding | major | Four ellipses and inaccurate introductory Bunyan paragraph range; requires original paragraph collation. |
 | 14 | lordchrist-edwards-sinners-in-hands | critical | Six ellipses joining disjoint Edwards sermon arguments; not one continuous quotation. |
-| 15 | lordchrist-matthew-henry-heart-work | major | Doubled opening quotation marks when the entry begins with Scripture. |
+| 15 | lordchrist-matthew-henry-heart-work | critical | Confirmed noncontiguous: first source anchor in Psalm 119:45-48, final source anchor in Psalm 119:167-168; more than 26,000 source words intervene in the CCEL page. The 211-word Russian quotation splices distant passages while metadata claims an uninterrupted source. Double opening guillemets also require correction. |
 | 16 | lordchrist-ryle-sanctification-three-necessaries | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 | 17 | lordchrist-ryle-nature-of-sin | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 | 18 | lordchrist-ryle-christian-is-a-soldier | critical | Ryle said every CHRISTIAN man and woman; Russian has every man and woman, altering theological scope. |
 | 19 | lordchrist-ryle-assurance | critical | Unintroduced he is Paul; omitted backward-looking section between downward and forward paragraphs. |
 | 20 | lordchrist-ryle-practical-holiness | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 | 21 | lordchrist-watson-divine-contentment | critical | Russian text contains peetsya instead of pechetsya; opening these words lacks its Phil 4:11 referent. |
-| 22 | lordchrist-watson-contentment-nature | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
+| 22 | lordchrist-watson-contentment-nature | critical | Attribution and translation integrity failure: original URL is Watson Chapter I; the relevant nature-of-contentment discussion is Chapter VI, but the stored English start and end anchors are absent even there. Russian wording and Galatians 5:22 claim require retranslation from one verified original span, not only a link correction. |
 | 23 | lordchrist-flavel-keeping-the-heart | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 | 24 | lordchrist-whitefield-almost-christian | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 | 25 | lordchrist-whitefield-method-of-grace-peace | review | Awkward double comparative construction; literary fidelity and syntax need copyediting. |
@@ -55,7 +55,7 @@ Every card claims contiguous_complete_no_omissions. Eight cards (5, 7, 8, 11, 12
 | 29 | lordchrist-bavinck-revelation | major | Opening such special revelation leaves its antecedent outside the quotation. |
 | 30 | lordchrist-whitefield-self-denial | screened | No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory. |
 
-Count: critical=8, major=9, review=2, screened=11. All 30 entries still require full original-language collation.
+Count: critical=10, major=8, review=2, screened=10. All 30 entries still require full original-language collation.
 
 ## Independently inspected source pages
 
@@ -94,6 +94,16 @@ The research library must remain **provider-inert**. A card may enter a future q
 
 ## Exact proposed corrections, NOT an authorized release
 
-Nine source-bound edits are prepared for items 4 (chapter and Russian grammar), 5 (Russian agreement), 10 (work attribution), 12 (sermon biblical reference), 15 (nested Russian quotes), 18 (Christian qualifier) and 21 (Russian misspelling). This is a **change proposal**, not a corrected 30-card edition: sequences 6, 8, 11, 13, 14, 19, 27 and others still require a source-grounded editorial rewrite; none of the nine edits may be silently promoted.
+Thirteen field-level, source-bound edit proposals now cover eleven items: #4 (chapter and grammar), #5 (Russian agreement), #10 (work title), #12 (sermon verse), #15 (nested quotations), #18 (the Christian qualifier), #21 (Russian typo), plus exact source-page corrections for #22, #27, #28, and #29. A corrected source URL is not proof of a correct text. This is a **change proposal**, not a corrected 30-card edition: sequences 6, 8, 11, 13, 14, 19, 27 and others still require a source-grounded editorial rewrite; none of the thirteen edits may be silently promoted.
 
 Exact before/after fields with the original source URL: [2026-11-03-lordchrist-quote-exact-editorial-proposals.json](2026-11-03-lordchrist-quote-exact-editorial-proposals.json).
+
+## Source-anchor and URL audit extension, 2026-11-04
+
+All 29 distinct original URLs returned HTTP 200; **200 does not mean the intended excerpt is on the page**. Both English start/end anchors were found in order on the original URL for 26 of the 30 entries. Entries **22, 27, 28, 29** were unresolved on the URL stored in the queue. For **13** entries (1, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 25, 26), the original English interval between the two anchors exceeds the Russian quote length by more than 2.3 times. This is a *screening flag*, not conclusive proof of omitted source sentences. Full line-by-line collation remains mandatory.
+
+New confirmed source error: **#15 Matthew Henry** joins material on Psalm 119:45-48 and Psalm 119:167-168, more than 26,000 English words apart; cannot be described as one continuous quotation ([CCEL Psalm 119](https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html)). **#22 Thomas Watson** points to Chapter I when the theme belongs to [Chapter VI](https://ccel.org/ccel/watson/contentment/contentment.ix.html), but the exact quoted English anchor is absent even in Chapter VI. Rebuild the quotation rather than merely changing its URL.
+
+Three independently checked URL corrections have HTTP-200 status and both original English anchors: **#27** [Bunyan complete text](https://ccel.org/ccel/bunyan/pilgrim.all.html), **#28** [Kuyper Meditation 1](https://www.ccel.org/ccel/kuyper/near.ii.html), **#29** [Bavinck Lecture I](https://ccel.org/ccel/bavinck/revelation/revelation.ii.html). All four source-link edits are **proposals**; no signed content or released digest changed.
+
+Complete 30-entry evidence: [2026-11-04-lordchrist-30-source-url-and-anchor-scan.json](2026-11-04-lordchrist-30-source-url-and-anchor-scan.json).

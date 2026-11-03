@@ -23,8 +23,8 @@ def test_every_exact_proposed_edit_matches_sealed_source_without_authorizing_rel
     assert payload["bound_queue_text_sha256"] == "sha256:" + hashlib.sha256(queue_raw.encode("utf-8")).hexdigest()
 
     edits = payload["edits"]
-    assert len(edits) == 9
-    assert {edit["sequence"] for edit in edits} == {4, 5, 10, 12, 15, 18, 21}
+    assert len(edits) == 13
+    assert {edit["sequence"] for edit in edits} == {4, 5, 10, 12, 15, 18, 21, 22, 27, 28, 29}
     for edit in edits:
         post = queue["posts"][edit["sequence"] - 1]
         assert edit["publication_id"] == post["publication_id"]

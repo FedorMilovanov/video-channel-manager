@@ -64,7 +64,7 @@ def test_audit_static_findings_match_bytes_and_are_not_approvals() -> None:
         risk.update([entry["preliminary_risk"]])
         assert entry["finding"]
     assert flags == {"quoted_ellipsis": 8, "double_guillemet": 2, "guillemet_mismatch": 1}
-    assert risk == {"critical": 8, "major": 9, "review": 2, "screened": 11}
+    assert risk == {"critical": 10, "major": 8, "review": 2, "screened": 10}
 
 
 def test_source_selection_policy_was_not_silently_waived() -> None:

@@ -88,6 +88,46 @@
       "proposed_after": "кто не печётся о своих",
       "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
       "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 22,
+      "publication_id": "lordchrist-watson-contentment-nature",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "proposed_after": "https://ccel.org/ccel/watson/contentment/contentment.ix.html",
+      "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Exact page proposal; current quote still requires full retranslation"
+    },
+    {
+      "sequence": 27,
+      "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/bunyan/pilgrim",
+      "proposed_after": "https://ccel.org/ccel/bunyan/pilgrim.all.html",
+      "source_url": "https://ccel.org/ccel/bunyan/pilgrim",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
+    },
+    {
+      "sequence": 28,
+      "publication_id": "lordchrist-kuyper-near-unto-god",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/kuyper/near",
+      "proposed_after": "https://www.ccel.org/ccel/kuyper/near.ii.html",
+      "source_url": "https://ccel.org/ccel/kuyper/near",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
+    },
+    {
+      "sequence": 29,
+      "publication_id": "lordchrist-bavinck-revelation",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/bavinck/revelation/revelation.i.html",
+      "proposed_after": "https://ccel.org/ccel/bavinck/revelation/revelation.ii.html",
+      "source_url": "https://ccel.org/ccel/bavinck/revelation/revelation.i.html",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
     }
   ]
 }

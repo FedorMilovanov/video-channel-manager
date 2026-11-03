@@ -203,12 +203,12 @@
       "source_work": "Commentary on the Whole Bible (Пс. 119:45–48)",
       "source_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
       "source_text_sha256": "sha256:29df86009758cbfc111738dfba8a6840e0ac2045bd4dc45084ceda2f05852b60",
-      "preliminary_risk": "major",
+      "preliminary_risk": "critical",
       "source_collation": "pending_full_source_collation",
       "static_flags": [
         "double_guillemet"
       ],
-      "finding": "Doubled opening quotation marks when the entry begins with Scripture."
+      "finding": "Confirmed noncontiguous: first source anchor in Psalm 119:45-48, final source anchor in Psalm 119:167-168; more than 26,000 source words intervene in the CCEL page. The 211-word Russian quotation splices distant passages while metadata claims an uninterrupted source. Double opening guillemets also require correction."
     },
     {
       "sequence": 16,
@@ -289,10 +289,10 @@
       "source_work": "The Art of Divine Contentment",
       "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
       "source_text_sha256": "sha256:66e5861d5491500b5bb4d1acb92b4f3efb3dde16f823f56ed7f73f7b2fc97a7a",
-      "preliminary_risk": "screened",
+      "preliminary_risk": "critical",
       "source_collation": "pending_full_source_collation",
       "static_flags": [],
-      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+      "finding": "Attribution and translation integrity failure: original URL is Watson Chapter I; the relevant nature-of-contentment discussion is Chapter VI, but the stored English start and end anchors are absent even there. Russian wording and Galatians 5:22 claim require retranslation from one verified original span, not only a link correction."
     },
     {
       "sequence": 23,
