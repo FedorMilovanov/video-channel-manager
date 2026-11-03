@@ -22,6 +22,10 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 
 For any task that researches, drafts, edits, formats, or hands off Telegram content for `@lordchrist` / «Господь Бог — Сила Моя», read `content/telegram/lordchrist/AGENTS.md` before using any old draft or example. That local contract routes to the current rich-editorial, quotation, and Android copy/paste standards and defines their precedence. Research drafts are evidence inputs, not presentation authority.
 
+### @legendary-poet YouTube metadata routing
+
+For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
+
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
 ## Adaptive reasoning contract
