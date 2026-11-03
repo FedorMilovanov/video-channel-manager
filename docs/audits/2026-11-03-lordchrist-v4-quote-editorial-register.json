@@ -1,0 +1,396 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-v4-quote-editorial-review",
+  "schema_version": 1,
+  "review_date": "2026-11-03",
+  "code_base_sha": "e3caf0c967cedff43c93cb9dbe21a5aa14db5102",
+  "queue_path": "content/telegram/lordchrist/verified-30-posts.json",
+  "queue_text_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72",
+  "queue_digest": "sha256:a3e5bd757b49996f5db27d46427ce3e6909ce1cf8146d41f6bd316081a2065dd",
+  "editorial_review_status": "blocked_pending_full_collation",
+  "provider_write_authorization": false,
+  "full_text_verification_complete": false,
+  "entries": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-ryle-religion-cost",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.v.html",
+      "source_text_sha256": "sha256:6a2b0b26a8d97411dfd6c98a0051464870827e44aca935df57af1ee780150e98",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-spurgeon-salvation-all-of-grace",
+      "author": "Чарльз Г. Сперджен",
+      "source_work": "Salvation — All of Grace (MTP 18:1064)",
+      "source_url": "https://www.spurgeon.org/sermons/salvation-all-of-grace",
+      "source_text_sha256": "sha256:4cc35248e057ae7995265cb33e9bd53f5f93b1137f0094a0757c23e862667707",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-spurgeon-divine-sovereignty",
+      "author": "Чарльз Г. Сперджен",
+      "source_work": "Divine Sovereignty",
+      "source_url": "https://www.spurgeon.org/sermons/divine-sovereignty",
+      "source_text_sha256": "sha256:ffc9f0b1de32479b8d43aeea128363244ae7534faaab664b038820fe4ab4040b",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-owen-mortification-daily",
+      "author": "Джон Оуэн",
+      "source_work": "Of the Mortification of Sin in Believers",
+      "source_url": "https://ccel.org/ccel/owen/mort/mort.i.v.html",
+      "source_text_sha256": "sha256:03b0a5a3587be0f0f5f51f2673a426d670dd3b8a95cc002ca3c1fff3ae255c14",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Original source chapter is II, but metadata says I; Russian syntax around Colossians needs copyediting."
+    },
+    {
+      "sequence": 5,
+      "publication_id": "lordchrist-calvin-knowledge-of-god-and-self",
+      "author": "Жан Кальвин",
+      "source_work": "Institutes of the Christian Religion (кн. I, гл. 1)",
+      "source_url": "https://ccel.org/ccel/calvin/institutes/institutes.iii.ii.html",
+      "source_text_sha256": "sha256:ed93c94c2a37ce0d5d31864437a1d89f307daf2399a2b317388bfeb74489ba49",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Russian case error in the phrase about the goods of God; an ellipsis requires source collation."
+    },
+    {
+      "sequence": 6,
+      "publication_id": "lordchrist-augustine-restless-heart",
+      "author": "Блаженный Августин",
+      "source_work": "Confessions (Исповедь)",
+      "source_url": "https://www.ccel.org/ccel/augustine/confessions/confessions.iv.html",
+      "source_text_sha256": "sha256:ee086a51e1fdd913564a69275422fb5362c3c0909be2123dae0eb4a71f369202",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "guillemet_mismatch"
+      ],
+      "finding": "Unbalanced Russian guillemet; linked CCEL English translation is the Outler 1955 edition with unsettled derivative translation rights."
+    },
+    {
+      "sequence": 7,
+      "publication_id": "lordchrist-gurnall-cold-prayer",
+      "author": "Уильям Гарнелл",
+      "source_work": "The Christian in Complete Armour",
+      "source_url": "https://ccel.org/ccel/gurnall/armour/files/gurnal07b.htm",
+      "source_text_sha256": "sha256:00f06d452db29ba77c2a70545bce03732b4faf208383fb6c0668f665839e5ab0",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Marked ellipsis and mechanical Russian phrasing; collate Gurnall context."
+    },
+    {
+      "sequence": 8,
+      "publication_id": "lordchrist-baxter-dying-men-and-immortal-souls",
+      "author": "Ричард Бакстер",
+      "source_work": "The Reformed Pastor",
+      "source_url": "https://ccel.org/ccel/baxter/pastor/pastor.i.ii.html",
+      "source_text_sha256": "sha256:d704f480ee5aa2b1665e3e8da0278956f5da6d1063eb8b4fd704c660614ca40f",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Source dedication assembled across intervening passages and described as an uninterrupted excerpt."
+    },
+    {
+      "sequence": 9,
+      "publication_id": "lordchrist-calvin-prayer-opens-treasures",
+      "author": "Жан Кальвин",
+      "source_work": "Institutes (кн. III, о молитве)",
+      "source_url": "https://ccel.org/ccel/calvin/prayer/prayer.iii.ii.html",
+      "source_text_sha256": "sha256:0ad0e9c508714dae4d4ff662a3a3fc34fbb70065d11d84635c94160793c0d4e2",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 10,
+      "publication_id": "lordchrist-charnock-god-is-light",
+      "author": "Стивен Чарнок",
+      "source_work": "A Discourse upon the Purity and Cleansing from Sin",
+      "source_url": "https://ccel.org/ccel/charnock/cleansing.ii.html",
+      "source_text_sha256": "sha256:5d6cd7f70841d79a7a4cf3eeade37599aa8d409cc2124bfab5f9685aba1e487c",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "double_guillemet"
+      ],
+      "finding": "Doubled opening quotation marks; displayed Charnock work title differs from the linked CCEL document title."
+    },
+    {
+      "sequence": 11,
+      "publication_id": "lordchrist-murray-kept-by-power",
+      "author": "Эндрю Мюррей",
+      "source_work": "Absolute Surrender",
+      "source_url": "https://ccel.org/ccel/murray/surrender/surrender.ix.html",
+      "source_text_sha256": "sha256:bd757a1732dcc4accf287fd6e7ff1df91de713afda8b18d41488c538e5deecaa",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Four ellipses in abridged Scripture/excerpt contradict the unqualified no-omission label."
+    },
+    {
+      "sequence": 12,
+      "publication_id": "lordchrist-spurgeon-resurrection-of-the-dead",
+      "author": "Чарльз Г. Сперджен",
+      "source_work": "The Resurrection of the Dead",
+      "source_url": "https://www.spurgeon.org/sermons/the-resurrection-of-the-dead",
+      "source_text_sha256": "sha256:96c197ddec6da7f9eef3297dff13c86c87ed46b6fa9d04d841ab03f597c0e246",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Spurgeon original sermon is Acts 24:15, not 1 Cor 15; multiple excerpt joins contradict no-omission label."
+    },
+    {
+      "sequence": 13,
+      "publication_id": "lordchrist-bunyan-grace-abounding",
+      "author": "Джон Баньян",
+      "source_work": "Grace Abounding to the Chief of Sinners",
+      "source_url": "https://ccel.org/ccel/bunyan/grace.iv.html",
+      "source_text_sha256": "sha256:c7bc6973d288395e6a647214104c33404fcff0769640dfb44a0ae9ee787be0c9",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Four ellipses and inaccurate introductory Bunyan paragraph range; requires original paragraph collation."
+    },
+    {
+      "sequence": 14,
+      "publication_id": "lordchrist-edwards-sinners-in-hands",
+      "author": "Джонатан Эдвардс",
+      "source_work": "Sinners in the Hands of an Angry God",
+      "source_url": "https://ccel.org/ccel/edwards/sermons/sinners.html",
+      "source_text_sha256": "sha256:e347e75b546a146def6530d8e0bda1b6fccb86ac43e8dcd54a24dcd5433eba9f",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Six ellipses joining disjoint Edwards sermon arguments; not one continuous quotation."
+    },
+    {
+      "sequence": 15,
+      "publication_id": "lordchrist-matthew-henry-heart-work",
+      "author": "Мэтью Генри",
+      "source_work": "Commentary on the Whole Bible (Пс. 119:45–48)",
+      "source_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
+      "source_text_sha256": "sha256:29df86009758cbfc111738dfba8a6840e0ac2045bd4dc45084ceda2f05852b60",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "double_guillemet"
+      ],
+      "finding": "Doubled opening quotation marks when the entry begins with Scripture."
+    },
+    {
+      "sequence": 16,
+      "publication_id": "lordchrist-ryle-sanctification-three-necessaries",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.ii.html",
+      "source_text_sha256": "sha256:0615d5642db8768b529e599d4bbc623da78109515f03ef2a2264a3c3b5bdfffc",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 17,
+      "publication_id": "lordchrist-ryle-nature-of-sin",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.i.html",
+      "source_text_sha256": "sha256:2d65ed8651d433819b95ed4c408310ec5efcadab31b9a440604bb539f3d9ad73",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 18,
+      "publication_id": "lordchrist-ryle-christian-is-a-soldier",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iv.html",
+      "source_text_sha256": "sha256:aea696c4457e5b629ee4e4b60f47f0bf1095cf8d97d6f661e2b28a670b4f98fe",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Ryle said every CHRISTIAN man and woman; Russian has every man and woman, altering theological scope."
+    },
+    {
+      "sequence": 19,
+      "publication_id": "lordchrist-ryle-assurance",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.vi.html",
+      "source_text_sha256": "sha256:b3422ed1e6f171bba81e12db462e786fe3373840c5ddada5c8b4dfa3819500fe",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Unintroduced he is Paul; omitted backward-looking section between downward and forward paragraphs."
+    },
+    {
+      "sequence": 20,
+      "publication_id": "lordchrist-ryle-practical-holiness",
+      "author": "Дж. К. Райл",
+      "source_work": "Holiness",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iii.html",
+      "source_text_sha256": "sha256:743c5434a57174e6c945cd05455490be00b19c9ea7d6fc42aea059a879539795",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 21,
+      "publication_id": "lordchrist-watson-divine-contentment",
+      "author": "Томас Уотсон",
+      "source_work": "The Art of Divine Contentment",
+      "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "source_text_sha256": "sha256:531b1fbf3ef7d755bdd7cbc70f02ba2088d824d4e2266e269cead859d5afcbc8",
+      "preliminary_risk": "critical",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Russian text contains peetsya instead of pechetsya; opening these words lacks its Phil 4:11 referent."
+    },
+    {
+      "sequence": 22,
+      "publication_id": "lordchrist-watson-contentment-nature",
+      "author": "Томас Уотсон",
+      "source_work": "The Art of Divine Contentment",
+      "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "source_text_sha256": "sha256:66e5861d5491500b5bb4d1acb92b4f3efb3dde16f823f56ed7f73f7b2fc97a7a",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 23,
+      "publication_id": "lordchrist-flavel-keeping-the-heart",
+      "author": "Джон Флавел",
+      "source_work": "Saint Indeed: Keeping the Heart",
+      "source_url": "https://ccel.org/ccel/flavel/saintindeed/saintindeed.iv.html",
+      "source_text_sha256": "sha256:d28c098c309893fc1e967c53f32f4d1dafaebe716f4e70dab22e2c6024fc4983",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 24,
+      "publication_id": "lordchrist-whitefield-almost-christian",
+      "author": "Джордж Уайтфилд",
+      "source_work": "Selected Sermons (Sermon 43)",
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.xlv.html",
+      "source_text_sha256": "sha256:0a595c9029e48d641857d9a728ab6e3092207c5ef2935e8fb2d7e1a810035a46",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    },
+    {
+      "sequence": 25,
+      "publication_id": "lordchrist-whitefield-method-of-grace-peace",
+      "author": "Джордж Уайтфилд",
+      "source_work": "Selected Sermons (Sermon 58)",
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.lx.html",
+      "source_text_sha256": "sha256:4271004a0e62f1864f9b9997e1a7e3ce30b56eeb870ef3e01be20c64b64c2a69",
+      "preliminary_risk": "review",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Awkward double comparative construction; literary fidelity and syntax need copyediting."
+    },
+    {
+      "sequence": 26,
+      "publication_id": "lordchrist-bunyan-preaching-call",
+      "author": "Джон Баньян",
+      "source_work": "Grace Abounding to the Chief of Sinners",
+      "source_url": "https://ccel.org/ccel/bunyan/grace/grace.v.html",
+      "source_text_sha256": "sha256:d9e25466cc5d28336f1c62389c806b7068b37d9bbb78950483d6caf924c3e9a0",
+      "preliminary_risk": "review",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Redundant weakness/weaknesses expression; translation needs idiomatic review."
+    },
+    {
+      "sequence": 27,
+      "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
+      "author": "Джон Баньян",
+      "source_work": "The Pilgrims Progress",
+      "source_url": "https://ccel.org/ccel/bunyan/pilgrim",
+      "source_text_sha256": "sha256:1e616f8d059561a0f50722defb857202b9fa72207fdb98fdfdd65f73718aafeb",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [
+        "quoted_ellipsis"
+      ],
+      "finding": "Two ellipses and a book landing URL instead of the exact Pilgrims Progress text chapter."
+    },
+    {
+      "sequence": 28,
+      "publication_id": "lordchrist-kuyper-near-unto-god",
+      "author": "Абрахам Кёйпер",
+      "source_work": "To Be Near Unto God",
+      "source_url": "https://ccel.org/ccel/kuyper/near",
+      "source_text_sha256": "sha256:1fa212316b5d6ed5178896f49f71d92f263a5c228649787551f42b64c153c2de",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "CCEL URL names only the Kuyper work landing page; pin the exact first meditation."
+    },
+    {
+      "sequence": 29,
+      "publication_id": "lordchrist-bavinck-revelation",
+      "author": "Герман Бавинк",
+      "source_work": "Philosophy of Revelation (Stone Lectures 1908–09)",
+      "source_url": "https://ccel.org/ccel/bavinck/revelation/revelation.i.html",
+      "source_text_sha256": "sha256:ba188d65082813d83a0545a31ae8169e7f7b6c2bca036807d5801ccc3ffc1c49",
+      "preliminary_risk": "major",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "Opening such special revelation leaves its antecedent outside the quotation."
+    },
+    {
+      "sequence": 30,
+      "publication_id": "lordchrist-whitefield-self-denial",
+      "author": "Джордж Уайтфилд",
+      "source_work": "Selected Sermons (Sermon 29)",
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.xxxi.html",
+      "source_text_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
+      "preliminary_risk": "screened",
+      "source_collation": "pending_full_source_collation",
+      "static_flags": [],
+      "finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory."
+    }
+  ]
+}
