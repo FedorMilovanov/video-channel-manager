@@ -1,6 +1,6 @@
 # Video Channel Manager
 
-[English README](README_EN.md) · Русская документация — ниже.
+[English README](README_EN.md) · [Кейс проекта](CASE_STUDY.md) · [Авторство и права](OWNER.md) · Русская документация — ниже.
 
 **Video Channel Manager** — safety-first инструмент для аудита, редакционной проверки, организации и синхронизации видеоканалов YouTube, VK и локального медиархива.
 

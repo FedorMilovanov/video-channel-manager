@@ -1,6 +1,6 @@
 # Video Channel Manager
 
-**[Русский README](README.md)** · **[Architecture](docs/architecture.md)** · **[Agent contract](AGENTS.md)** · **[Security](SECURITY.md)**
+**[Русский README](README.md)** · **[Architecture](docs/architecture.md)** · **[Evidence-based case study](CASE_STUDY.md)** · **[Ownership and rights](OWNER.md)** · **[Agent contract](AGENTS.md)** · **[Security](SECURITY.md)**
 
 Video Channel Manager is a **safety-first, locally operated platform for inventorying, auditing, editorially reviewing, and coordinating YouTube, VK, and local video assets**. It is a platform-neutral modular monolith, not a one-off YouTube-to-VK copying script. The project is maintained by Fedor Milovanov, with deterministic execution boundaries and external AI used for editorial review rather than unrestricted provider writes.
 
