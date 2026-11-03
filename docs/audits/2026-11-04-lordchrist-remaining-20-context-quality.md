@@ -64,3 +64,16 @@ Sequences: **2, 3, 4, 9, 20, 23, 24, 28, 29, 30**. The prior Russian wording was
 5. Under exact-current-main CI and a read-only protected-state proof, make at most one separately authorized guarded provider send and confirm a durable Telegram postcondition. Never replay old depth-v3 publications blindly.
 
 Evidence files: [remaining source scan](2026-11-04-lordchrist-remaining-20-source-audit.json), [ten contiguous redrafts](2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json), [all thirty editorial identities](2026-11-04-lordchrist-30-quote-editorial-candidate-index.json).
+
+## Focused second-pass review of the ten provisionally retained quotations
+
+A separate [six-field exact proposal register](2026-11-04-lordchrist-retained-quote-field-proposals.json) now captures distinct, original-text-bound adjustments that are **not duplicated** in the prior 13-edit proposal register. All six are nonexecuting proposals:
+
+- **#3 Spurgeon:** English closing anchor should say *his throne*, not *the throne*. Original Russian theological statement is largely faithful; the incorrect source locator is the specific confirmed defect.
+- **#9 Calvin:** the source states *our only safety* when calling upon God; the Russian wording currently uses *our only salvation*. The proposed correction preserves that doctrinal distinction rather than silently strengthening the original claim.
+- **#20 Ryle:** the Russian excerpt omits the author's immediately following caveat that his account is only a poor and imperfect outline. Restore the caveat when claiming uninterrupted translation.
+- **#23 Flavel:** the existing Russian quotation faithfully includes the author's concluding lament, but the recorded English end-anchor stops just *before* that lament. Extend the source anchor; do not discard an otherwise coherent original passage.
+- **#24 Whitefield:** a bracketed modern CCEL annotation inside a historical simile spoils the literal original end-anchor; replace the locator with the final verified clause rather than attempting to reproduce the later editorial gloss as authorial speech.
+- **#30 Whitefield:** the original introduction has *sincere intentions* (plural), not singular; fix the exact first English anchor. The Russian candidate also includes Luke 9:23 as an opening verse, which should be grounded in the original sermon heading in final editorial collation.
+
+Earlier proposals already cover **#4 Owen grammar/chapter** and **#28/#29 corrected direct URLs**; they are intentionally not cloned here. The **#29 Bavinck contextual demonstrative** remains a separate substantive review item, not something a URL replacement can solve. These findings do not confer publishing approval or alter the sealed v4 queue.

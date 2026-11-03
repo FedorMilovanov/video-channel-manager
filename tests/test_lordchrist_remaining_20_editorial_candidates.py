@@ -182,3 +182,36 @@ def test_all_thirty_candidate_identities_exist_but_are_not_a_release() -> None:
         28,
         29,
     }
+
+
+def test_retained_quote_field_proposals_are_exact_and_nonpublishing() -> None:
+    path = AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json"
+    packet = _json(path)
+    posts = _json(QUEUE)["posts"]
+    assert packet["schema_name"] == "video-channel-manager.lordchrist-retain-quote-exact-field-review"
+    assert packet["schema_version"] == 1
+    assert packet["original_queue_sha256"] == _sha(QUEUE.read_text(encoding="utf-8"))
+    assert packet["editorial_approval"] is False
+    assert packet["provider_write_authorization"] is False
+    assert packet["status"] == "proposed_only_pending_full_editorial_signoff"
+    assert [item["sequence"] for item in packet["edits"]] == [3, 9, 20, 23, 24, 30]
+    for edit in packet["edits"]:
+        source = posts[edit["sequence"] - 1]
+        assert edit["original_publication_id"] == source["publication_id"]
+        assert edit["original_source_url"] == source["source"]["url"]
+        assert edit["original_full_post_sha256"] == _sha(source["text"])
+        assert edit["status"] == "proposed_only_not_approved"
+        actual = source
+        for part in edit["field"].split("."):
+            actual = actual[part]
+        assert actual.count(edit["exact_before"]) == 1
+        assert edit["proposed_after"] != edit["exact_before"]
+        assert edit["rationale"]
+
+
+def test_old_existing_editorial_corrections_are_not_duplicated() -> None:
+    earlier = _json(AUDITS / "2026-11-03-lordchrist-quote-exact-editorial-proposals.json")
+    current = _json(AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json")
+    old_fields = {(p["sequence"], p["field"]) for p in earlier["edits"]}
+    new_fields = {(p["sequence"], p["field"]) for p in current["edits"]}
+    assert not old_fields.intersection(new_fields)
