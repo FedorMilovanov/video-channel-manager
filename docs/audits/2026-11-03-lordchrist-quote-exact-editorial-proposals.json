@@ -1,0 +1,133 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quote-proposed-source-edits",
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "bound_queue_text_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72",
+  "is_new_release": false,
+  "approval": false,
+  "provider_write_authorization": false,
+  "note": "Surgical, source-supported or unambiguous copy-edit proposals only; other critical findings remain open. No approved queue files are changed.",
+  "edits": [
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-owen-mortification-daily",
+      "field": "source.location",
+      "exact_before": "глава I (по Колоссянам 3:5)",
+      "proposed_after": "глава II (по Колоссянам 3:5)",
+      "source_url": "https://ccel.org/ccel/owen/mort/mort.i.v.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-owen-mortification-daily",
+      "field": "text",
+      "exact_before": "Так говорит апостол в Колоссянам 3:5",
+      "proposed_after": "Так говорит апостол в Послании к Колоссянам 3:5",
+      "source_url": "https://ccel.org/ccel/owen/mort/mort.i.v.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 5,
+      "publication_id": "lordchrist-calvin-knowledge-of-god-and-self",
+      "field": "text",
+      "exact_before": "созерцать блага Божий",
+      "proposed_after": "созерцать блага Божии",
+      "source_url": "https://ccel.org/ccel/calvin/institutes/institutes.iii.ii.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 10,
+      "publication_id": "lordchrist-charnock-god-is-light",
+      "field": "source.work",
+      "exact_before": "A Discourse upon the Purity and Cleansing from Sin",
+      "proposed_after": "Discourse on the Cleansing Virtue of Christ's Blood",
+      "source_url": "https://ccel.org/ccel/charnock/cleansing.ii.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 10,
+      "publication_id": "lordchrist-charnock-god-is-light",
+      "field": "text",
+      "exact_before": "A Discourse upon the Purity and Cleansing from Sin",
+      "proposed_after": "Discourse on the Cleansing Virtue of Christ's Blood",
+      "source_url": "https://ccel.org/ccel/charnock/cleansing.ii.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 12,
+      "publication_id": "lordchrist-spurgeon-resurrection-of-the-dead",
+      "field": "source.location",
+      "exact_before": "проповедь о 1 Кор. 15 и о телесном воскресении",
+      "proposed_after": "проповедь по Деян. 24:15 о воскресении праведных и неправедных",
+      "source_url": "https://www.spurgeon.org/sermons/the-resurrection-of-the-dead",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 15,
+      "publication_id": "lordchrist-matthew-henry-heart-work",
+      "field": "text",
+      "exact_before": "««Буду ходить свободно»",
+      "proposed_after": "«„Буду ходить свободно“",
+      "source_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 18,
+      "publication_id": "lordchrist-ryle-christian-is-a-soldier",
+      "field": "text",
+      "exact_before": "но каждого мужчины и женщины, рождённых в мир",
+      "proposed_after": "но каждого христианина и каждой христианки, рождённых в мир",
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iv.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 21,
+      "publication_id": "lordchrist-watson-divine-contentment",
+      "field": "text",
+      "exact_before": "кто не пеётся о своих",
+      "proposed_after": "кто не печётся о своих",
+      "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "status": "proposed_only_requires_full_source_review"
+    },
+    {
+      "sequence": 22,
+      "publication_id": "lordchrist-watson-contentment-nature",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "proposed_after": "https://ccel.org/ccel/watson/contentment/contentment.ix.html",
+      "source_url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Exact page proposal; current quote still requires full retranslation"
+    },
+    {
+      "sequence": 27,
+      "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/bunyan/pilgrim",
+      "proposed_after": "https://ccel.org/ccel/bunyan/pilgrim.all.html",
+      "source_url": "https://ccel.org/ccel/bunyan/pilgrim",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
+    },
+    {
+      "sequence": 28,
+      "publication_id": "lordchrist-kuyper-near-unto-god",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/kuyper/near",
+      "proposed_after": "https://www.ccel.org/ccel/kuyper/near.ii.html",
+      "source_url": "https://ccel.org/ccel/kuyper/near",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
+    },
+    {
+      "sequence": 29,
+      "publication_id": "lordchrist-bavinck-revelation",
+      "field": "source.url",
+      "exact_before": "https://ccel.org/ccel/bavinck/revelation/revelation.i.html",
+      "proposed_after": "https://ccel.org/ccel/bavinck/revelation/revelation.ii.html",
+      "source_url": "https://ccel.org/ccel/bavinck/revelation/revelation.i.html",
+      "status": "proposed_only_requires_full_source_review",
+      "qualification": "Source-page change only; source-text continuity and translation must be independently approved"
+    }
+  ]
+}
