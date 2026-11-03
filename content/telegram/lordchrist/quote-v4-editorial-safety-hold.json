@@ -1,0 +1,15 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quote-editorial-safety-hold",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-puritan-spurgeon-v4",
+  "queue_digest": "sha256:a3e5bd757b49996f5db27d46427ce3e6909ce1cf8146d41f6bd316081a2065dd",
+  "approved_queue_file_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72",
+  "status": "blocked_pending_full_source_collation",
+  "created_on": "2026-11-03",
+  "reason": "New evidence found uncorrected quote-v4 source-fidelity, context, attribution, typography and rights issues (PR #764), despite previous editorial acceptance. Block ALL provider mutation for this exact queue until a separate versioned fully reviewed and explicitly reauthorized release is installed.",
+  "audit_pr": 764,
+  "tracking_issue": 762,
+  "removal_policy": "Only a separate approved, tested release change may remove or retire this file; do not alter the signed previous activation, rewrite the queue, or disable guard tests to circumvent this hold."
+}

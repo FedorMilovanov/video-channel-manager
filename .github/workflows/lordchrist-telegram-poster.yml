@@ -529,6 +529,16 @@ jobs:
             }
           fi
 
+      - name: Enforce exact quote-v4 editorial quality hold before any state or provider write
+        if: steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_quote_quality_hold \
+            --hold content/telegram/lordchrist/quote-v4-editorial-safety-hold.json \
+            --activation "$QUOTE_V4_ACTIVATION_PATH" \
+            --queue "$QUEUE_PATH"
+
       - name: Enable state writer for one-time v4 ledger initialization
         if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
