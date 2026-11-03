@@ -40,7 +40,7 @@ jobs:
       PROFILE_PATH: content/telegram/channels/lordchrist-rich.json
       STATE_BRANCH: state/lordchrist-telegram
       STATE_DIR: .state/lordchrist
-      SERIES_ID: lordchrist-quiz-series-01
+      SERIES_ID: lordchrist-quiz-series-02
       TARGET_PROOF_PATH: .runtime/lordchrist-quiz-series-target-proof.json
       ENVELOPE_PATH: .runtime/lordchrist-quiz-series-dispatch.json
       OUTCOME_PATH: .runtime/lordchrist-quiz-series-outcome.json
