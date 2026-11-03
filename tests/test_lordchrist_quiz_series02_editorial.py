@@ -9,7 +9,6 @@ import json
 from datetime import timedelta
 from pathlib import Path
 
-import pytest
 
 from video_channel_manager.lordchrist_quiz import (
     build_poll_description,
@@ -81,28 +80,32 @@ def test_series02_textual_review_shape_and_distinct_answers() -> None:
     )
 
 
-def test_series02_runtime_matches_spec_but_remains_unapproved() -> None:
+def test_series02_runtime_matches_user_approved_exact_candidate() -> None:
     profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
     binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
     series = load_quiz_series(series_spec_path(SERIES_ID))
     candidate = build_series_candidate(profile, series, binding)
     committed = GenericReleaseQueue.model_validate_json(series_runtime_path(SERIES_ID).read_text(encoding="utf-8"))
-    assert candidate.model_dump(mode="json") == committed.model_dump(mode="json")
     assert committed.project_key == "lord-god-strength"
     assert committed.channel_username == "@lordchrist"
-    assert not committed.release_authorized
-    assert committed.reviewed_candidate_sha256 is None
-    assert committed.reviewed_by is None
+    assert committed.release_authorized is True
+    assert committed.reviewed_candidate_sha256 == candidate.candidate_digest()
+    assert committed.reviewed_candidate_sha256 == (
+        "sha256:e8bb34452127f7ef7baa9343b9b338428931717ec329446a4d90d9ef0a777a15"
+    )
+    assert committed.reviewed_by == "Fedor Milovanov (user editorial approval, 2026-11-03)"
+    assert committed.reviewed_at is not None
     assert len(committed.items) == 10
+    assert all(
+        (actual.publication_id, actual.source_sha256, actual.payload.model_dump(mode="json"))
+        == (expected.publication_id, expected.source_sha256, expected.payload.model_dump(mode="json"))
+        for actual, expected in zip(committed.items, candidate.items, strict=True)
+    )
     assert all(item.payload.description is None for item in committed.items)
     assert all(item.payload.poll_type == "quiz" for item in committed.items)
     assert all(item.payload.explanation is not None for item in committed.items)
-    assert validate_series(SERIES_ID)["release_authorized"] is False
-
-    with pytest.raises(ValueError, match="not authorized"):
-        validate_series(SERIES_ID, require_release_authorized=True)
-    with pytest.raises(ValueError, match="not authorized"):
-        validate_series(SERIES_ID, require_execution_authorized=True)
+    assert validate_series(SERIES_ID, require_release_authorized=True)["release_authorized"] is True
+    assert validate_series(SERIES_ID, require_execution_authorized=True)["release_authorized"] is True
 
 
 def test_workflow_targets_only_new_series_without_implicit_authorization() -> None:
@@ -122,5 +125,6 @@ def test_immutable_prior_series_is_not_repurposed_as_series02() -> None:
     assert old["release_id"] == "lordchrist-quiz-series-01-v1"
     assert old["release_authorized"] is True  # Historical approval is never inherited.
     assert new["release_id"] == "lordchrist-quiz-series-02-v1"
-    assert new["release_authorized"] is False
+    assert new["release_authorized"] is True
+    assert new["reviewed_candidate_sha256"] != old["reviewed_candidate_sha256"]
     assert not {item["publication_id"] for item in old["items"]} & {item["publication_id"] for item in new["items"]}

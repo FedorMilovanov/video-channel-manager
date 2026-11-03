@@ -11,11 +11,11 @@
   "chat_id": -1001295216957,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "release_authorized": false,
-  "reviewed_candidate_sha256": null,
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:e8bb34452127f7ef7baa9343b9b338428931717ec329446a4d90d9ef0a777a15",
   "reviewed_publication_id": null,
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "reviewed_by": "Fedor Milovanov (user editorial approval, 2026-11-03)",
+  "reviewed_at": "2026-11-03T20:18:26.100827+03:00",
   "items": [
     {
       "sequence": 1,
