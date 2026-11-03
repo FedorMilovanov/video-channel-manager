@@ -9,8 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "lord-god-vk-postponed-wave.yml"
 RUNBOOK = ROOT / "docs" / "operations" / "lord-god-vk-daily-postponed-runbook.md"
 
-DOWNLOAD_ARTIFACT_PIN = "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0"
-
 
 def _workflow_text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
@@ -35,7 +33,9 @@ def test_lord_god_workflow_actions_are_pinned_and_download_artifact_is_reviewed(
         "actions/upload-artifact",
     }
     assert MINIMUM_RELEASES["actions/download-artifact"] == (7, 0, 0)
-    assert DOWNLOAD_ARTIFACT_PIN in text
+    # Pinned SHA + reviewed minimum are enforced by assert_actions_pinned.
+    # A patch/major action upgrade must not force updating a second exact-SHA fixture.
+    assert sum(pin.action == "actions/download-artifact" for pin in pins) == 1
 
 
 def test_lord_god_workflow_is_manual_main_only_and_environment_gated() -> None:
@@ -121,7 +121,14 @@ def test_apply_stage_downloads_verifies_and_applies_the_exact_handoff_once() -> 
     _prepare, apply = _job_sections()
 
     assert text.count("video-manager wave apply") == 1
-    assert DOWNLOAD_ARTIFACT_PIN in apply
+    # Require exactly one fully pinned, sufficiently new download action
+    # in the apply job, independent of which reviewed release is installed.
+    download_pins = [
+        pin
+        for pin in assert_actions_pinned(apply, source="lord-god-vk-postponed-wave.yml apply")
+        if pin.action == "actions/download-artifact"
+    ]
+    assert len(download_pins) == 1
     assert "name: ${{ env.HANDOFF_ARTIFACT_NAME }}" in apply
     assert "path: ${{ env.HANDOFF_DIR }}" in apply
     assert "run-id: ${{ inputs.prepare_run_id }}" in apply
