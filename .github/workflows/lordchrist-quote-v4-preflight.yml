@@ -26,7 +26,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: lordchrist-quote-v4-read-only-preflight
+  # An unrelated pull_request synchronization must never cancel the current-main
+  # read-only proof. Keep cancellation scoped to the same event and PR/ref.
+  group: lordchrist-quote-v4-read-only-preflight-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:

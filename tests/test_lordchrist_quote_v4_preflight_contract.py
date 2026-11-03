@@ -236,3 +236,39 @@ def test_quote_v4_preflight_owns_no_provider_write_entrypoint_at_all() -> None:
     assert "            preflight \\" in workflow
     assert "--mode manual" in workflow
     assert workflow.count("video_channel_manager.telegram_cli") == 4
+
+
+def test_read_only_preflight_concurrency_keeps_main_proof_isolated_from_pr_sync() -> None:
+    """PR synchronize (even if its job is skipped) cannot cancel main's CI proof.
+
+    The global concurrency key used to let an unrelated PR synchronize cancel
+    the current-main workflow_run preflight. That happened on 2026-11-03:
+    run 41702826882 was cancelled as skipped PR run 41703361664 was created.
+    Retain supersession within one event/ref, but isolate distinct PR numbers
+    and production workflow_run from all pull_request events.
+    """
+
+    workflow = _workflow()
+    section = workflow.split("\nconcurrency:\n", 1)[1].split("\nenv:\n", 1)[0]
+    lines = [line.strip() for line in section.splitlines() if line.strip()]
+    prefix = "group: lordchrist-quote-v4-read-only-preflight-"
+    groups = [line.removeprefix(prefix) for line in lines if line.startswith(prefix)]
+    assert groups == ["${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}"]
+    assert "cancel-in-progress: true" in lines
+
+    template = groups[0]
+
+    def key(event_name: str, *, ref: str, pull_request_number: int | None = None) -> str:
+        return template.replace("${{ github.event_name }}", event_name).replace(
+            "${{ github.event.pull_request.number || github.ref }}", str(pull_request_number or ref)
+        )
+
+    main_ci = key("workflow_run", ref="refs/heads/main")
+    same_main_ci = key("workflow_run", ref="refs/heads/main")
+    skipped_pr = key("pull_request", ref="refs/pull/761/merge", pull_request_number=761)
+    other_pr = key("pull_request", ref="refs/pull/716/merge", pull_request_number=716)
+    manual = key("workflow_dispatch", ref="refs/heads/main")
+
+    assert main_ci == same_main_ci
+    assert len({main_ci, skipped_pr, other_pr, manual}) == 4
+    assert key("pull_request", ref="refs/pull/761/merge", pull_request_number=761) == skipped_pr
