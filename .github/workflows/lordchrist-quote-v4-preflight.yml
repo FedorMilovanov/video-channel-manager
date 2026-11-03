@@ -246,7 +246,8 @@ jobs:
               )
           if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
               raise SystemExit("Reviewed schedule presentation policy differs from the v4 activation artifact.")
-          print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}\n")
           PY
 
       - name: Validate queue and strict ledger (v4)
