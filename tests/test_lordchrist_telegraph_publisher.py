@@ -526,6 +526,49 @@ def test_publish_confirmation_fails_before_any_network_transport(monkeypatch: py
         )
 
 
+def test_telegraph_only_rejects_existing_public_page_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Revision requires a separately reviewed operation; never overwrite a live URL."""
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            "lordchrist-telegraph-charnock-01b": {
+                "publication_id": "lordchrist-telegraph-charnock-01b",
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original, ensure_ascii=False), encoding="utf-8")
+
+    def forbidden_network() -> object:
+        raise AssertionError("public provider must never be contacted before existing-link guard")
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", forbidden_network)
+    with pytest.raises(RuntimeError, match="already has a Telegraph page"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                "lordchrist-telegraph-charnock-01b",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
 def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(
