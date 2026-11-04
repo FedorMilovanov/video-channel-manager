@@ -6,6 +6,10 @@ A top-level channel comment must add something that is not already obvious from 
 
 It is not a second description, an advertising dump, a generic engagement prompt, or a place for unsupported claims.
 
+## Manual pinned comments for The Legendary Poet packages
+
+When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a specific two-choice question and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification.
+
 ## Project identity
 
 Every record belongs to exactly one project:
