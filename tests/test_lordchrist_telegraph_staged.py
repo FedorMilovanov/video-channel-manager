@@ -213,6 +213,10 @@ def test_telegraph_workflow_persists_each_claim_before_provider_mutation() -> No
     offsets = [text.index(name) for name in ordered]
     assert offsets == sorted(offsets)
     assert text.count('git -C "$state_dir" push origin HEAD:state/lordchrist-telegram') == 4
+    assert text.count("  queue: max") == 1
+    assert text.count("STATE_BRANCH: state/lordchrist-telegram") == 1
+    assert "          - publish-telegraph-only" not in text
+    assert "      revision_confirm:" not in text
     assert "GITHUB_RUN_ATTEMPT" in text
     assert "LORDCHRIST_TELEGRAPH_POSTING_ENABLED" in text
     assert "inputs.confirm" in text
