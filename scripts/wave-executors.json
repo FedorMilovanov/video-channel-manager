@@ -175,11 +175,11 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/build_lordchrist_telegraph_history_article.py",
+      "path": "scripts/build_lordchrist_quote_editorial_preview.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "31ed5b3137aee06e9f5aea8bba6801f2888819cee088b7469ac4c995585ea6a0",
+      "sha256": "3a5c40da6edc8386fd4b0d7c3060938a2438e76570fa6c55bbb901be0427afe5",
       "status": "independent_tool"
     },
     {
@@ -190,6 +190,16 @@
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
       "sha256": "529da6d0a17b36b509eec9afe76b40a515e501ab3286611f8cb893b9751e4cbb",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_lordchrist_telegraph_history_article.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "31ed5b3137aee06e9f5aea8bba6801f2888819cee088b7469ac4c995585ea6a0",
       "status": "independent_tool"
     },
     {
