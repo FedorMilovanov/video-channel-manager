@@ -102,6 +102,28 @@ def _state(args: argparse.Namespace) -> dict[str, Any]:
     return json.loads(args.ledger.read_text(encoding="utf-8"))["entries"][PUB_ID]
 
 
+@pytest.mark.parametrize(
+    "corruption",
+    [
+        {"schema_name": "another-project-ledger"},
+        {"schema_version": 2},
+        {"project_key": "unrelated-project"},
+        {"entries": []},
+        {"entries": {"incorrect-entry": None}},
+    ],
+)
+def test_staged_release_rejects_invalid_durable_ledger_before_any_provider_call(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch, corruption: dict[str, Any]
+) -> None:
+    raw = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    raw.update(corruption)
+    execution.ledger.write_text(json.dumps(raw), encoding="utf-8")
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Invalid ledger must not reach provider"))
+    with pytest.raises(RuntimeError, match="ledger schema, project or entry integrity mismatch"):
+        staged.execute(execution)
+    assert json.loads(execution.ledger.read_text(encoding="utf-8")) == raw
+
+
 def test_staged_complete_release_requires_both_persisted_claims(
     execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
