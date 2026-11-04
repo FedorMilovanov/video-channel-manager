@@ -1144,6 +1144,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     ledger = load_ledger(ledger_path)
     existing = ledger["entries"].get(item.publication_id) or {}
 
+    # A previously issued public page is an immutable historical provider
+    # identity unless an explicitly reviewed revision operation proves edit
+    # ownership and records the transition. The ordinary Telegraph-only
+    # command must never silently create another page or rewrite the ledger
+    # link still used by an existing Telegram message.
+    if args.command == "publish-telegraph-only" and existing.get("telegraph_url"):
+        raise RuntimeError(
+            f"{item.publication_id} already has a Telegraph page "
+            f"({existing['telegraph_url']}); refuse to overwrite its public link. "
+            "Use a separately reviewed revision workflow with an exact new page URL "
+            "and a verified update to the original Telegram message."
+        )
+
     if args.command == "publish" and existing.get("telegram_message_id"):
         raise RuntimeError(
             f"{item.publication_id} was already published to @lordchrist "
