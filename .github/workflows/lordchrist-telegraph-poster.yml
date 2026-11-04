@@ -6,7 +6,7 @@ on:
       action:
         description: Offline preview, publish Telegraph page only (test link privately), or publish full post to @lordchrist
         required: true
-        default: publish-telegraph-only
+        default: preview
         type: choice
         options:
           - preview
@@ -109,6 +109,14 @@ jobs:
             echo "Provider-free preview: no release authority is created."
             exit 0
           fi
+          [[ "$ACTION" == "publish" ]] || {
+            echo "Telegraph-only direct mutation is retired; use a reviewed staged release." >&2
+            exit 3
+          }
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
+            echo "Rerunning a provider-capable workflow attempt is forbidden." >&2
+            exit 3
+          }
 
           [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
             echo "Public Telegraph mutation requires current main, not a PR or stale branch." >&2
@@ -155,81 +163,188 @@ jobs:
           print(f"Release-bound Telegraph article confirmed: {publication_id} / {actual}")
           PY
 
-      - name: Run Telegraph publisher
-        if: github.event_name != 'schedule' || steps.resolve.outputs.publication_id != ''
-        id: run
+      - name: Run Telegraph publisher (provider-free preview)
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'preview'
         shell: bash
         env:
           PYTHONPATH: src
-          ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
-          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
-          CONFIRMATION: ${{ github.event_name == 'schedule' && format('PUBLISH:{0}', steps.resolve.outputs.publication_id) || inputs.confirm }}
-          REVISION_CONFIRM: ${{ inputs.revision_confirm }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
-          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
-          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
-          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          if [[ "$ACTION" == "preview" ]]; then
-            python -m video_channel_manager.lordchrist_telegraph_publisher preview \
-              --publication-id "$PUBLICATION_ID" \
-              --media-base-url "$MEDIA_BASE_URL" \
-              --html-out "artifacts/${PUBLICATION_ID}-preview.html" | tee artifacts/result.json
-          elif [[ "$ACTION" == "publish-telegraph-only" ]]; then
-            python -m video_channel_manager.lordchrist_telegraph_publisher publish-telegraph-only \
-              --publication-id "$PUBLICATION_ID" \
-              --revision-confirm "$REVISION_CONFIRM" \
-              --media-base-url "$MEDIA_BASE_URL" \
-              --ledger "$LEDGER_PATH" | tee artifacts/result.json
-          elif [[ "$ACTION" == "publish" ]]; then
-            python -m video_channel_manager.lordchrist_telegraph_publisher publish \
-              --publication-id "$PUBLICATION_ID" \
-              --media-base-url "$MEDIA_BASE_URL" \
-              --ledger "$LEDGER_PATH" \
-              --confirm "$CONFIRMATION" \
-              --outcome "artifacts/outcome.json" | tee artifacts/result.json
-          fi
+          python -m video_channel_manager.lordchrist_telegraph_publisher preview \
+            --publication-id "$PUBLICATION_ID" \
+            --media-base-url "$MEDIA_BASE_URL" \
+            --html-out "artifacts/${PUBLICATION_ID}-preview.html" > artifacts/preview.json
+          cat artifacts/preview.json
 
-          python - >> "$GITHUB_STEP_SUMMARY" <<'PYEOF'
-          import json
-          import pathlib
-
-          res = json.loads(pathlib.Path("artifacts/result.json").read_text(encoding="utf-8"))
-          lines = ["### Результат запуска Telegraph + @lordchrist", ""]
-          lines.extend(f"- **{key}**: {value}" for key, value in res.items())
-          telegraph_url = res.get("telegraph_url")
-          if telegraph_url:
-              lines.append("")
-              lines.append(
-                  "Готовая ссылка Telegra.ph (киньте себе в Избранное в Telegram "
-                  f"и нажмите ПОСМОТРЕТЬ): {telegraph_url}"
-              )
-          print("\n".join(lines))
-          PYEOF
-
-      - name: Persist public ledger on state branch
-        if: inputs.action != 'preview'
+      - name: Prepare exact durable Telegraph dispatch claim
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
         env:
-          ACTION: ${{ inputs.action }}
-          PUBLICATION_ID: ${{ inputs.publication_id }}
+          PYTHONPATH: src
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
+          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
+            echo "Workflow rerun must not replay previously claimed external effects." >&2
+            exit 3
+          }
+          mkdir -p artifacts
+          python -m video_channel_manager.lordchrist_telegraph_staged prepare-page \
+            --publication-id "$PUBLICATION_ID" \
+            --media-base-url "$MEDIA_BASE_URL" \
+            --ledger "$LEDGER_PATH" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" > artifacts/claim-page.json
+
+      - name: Persist and verify claimed Telegraph intent before public mutation
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -d .state/lordchrist/.git || -f .state/lordchrist/.git ]]; then
-            cd .state/lordchrist
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
-            if ! git diff --cached --quiet; then
-              git commit -m "chore(lordchrist): record Telegraph ${ACTION} for ${PUBLICATION_ID}"
-              git push origin HEAD:state/lordchrist-telegram
-            fi
-          fi
+          state_dir=.state/lordchrist
+          [[ -e "$state_dir/.git" ]] || {
+            echo "No writable durable state checkout; public release refused." >&2
+            exit 3
+          }
+          git -C "$state_dir" config user.name "lordchrist-telegraph[bot]"
+          git -C "$state_dir" config user.email "lordchrist-telegraph@users.noreply.github.com"
+          git -C "$state_dir" add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C "$state_dir" diff --cached --quiet && exit 3
+          git -C "$state_dir" commit -m "Claim irreversible Telegraph page dispatch for run $GITHUB_RUN_ID/1"
+          local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+          git -C "$state_dir" push origin HEAD:state/lordchrist-telegram
+          remote_sha="$(git -C "$state_dir" ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
 
-      - name: Upload preview / outcome artifacts
+      - name: Send exactly one claimed Telegraph page
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
+          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          local_sha="$(git -C .state/lordchrist rev-parse HEAD)"
+          remote_sha="$(git -C .state/lordchrist ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+          python -m video_channel_manager.lordchrist_telegraph_staged send-page \
+            --publication-id "$PUBLICATION_ID" --media-base-url "$MEDIA_BASE_URL" \
+            --ledger "$LEDGER_PATH" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" > artifacts/page-receipt.json
+
+      - name: Persist and verify Telegraph receipt before Telegram preparation
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_dir=.state/lordchrist
+          git -C "$state_dir" add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C "$state_dir" diff --cached --quiet && exit 3
+          git -C "$state_dir" commit -m "Record verified Telegraph page receipt for run $GITHUB_RUN_ID/1"
+          local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+          git -C "$state_dir" push origin HEAD:state/lordchrist-telegram
+          remote_sha="$(git -C "$state_dir" ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
+      - name: Prepare durable Telegram dispatch claim
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        env:
+          PYTHONPATH: src
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
+          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_telegraph_staged prepare-telegram \
+            --publication-id "$PUBLICATION_ID" --media-base-url "$MEDIA_BASE_URL" \
+            --ledger "$LEDGER_PATH" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" > artifacts/claim-telegram.json
+
+      - name: Persist and verify Telegram dispatch claim before public mutation
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_dir=.state/lordchrist
+          git -C "$state_dir" add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C "$state_dir" diff --cached --quiet && exit 3
+          git -C "$state_dir" commit -m "Claim irreversible Telegram send for run $GITHUB_RUN_ID/1"
+          local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+          git -C "$state_dir" push origin HEAD:state/lordchrist-telegram
+          remote_sha="$(git -C "$state_dir" ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
+      - name: Send exactly one claimed Telegram post
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
+          LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          local_sha="$(git -C .state/lordchrist rev-parse HEAD)"
+          remote_sha="$(git -C .state/lordchrist ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+          python -m video_channel_manager.lordchrist_telegraph_staged send-telegram \
+            --publication-id "$PUBLICATION_ID" --media-base-url "$MEDIA_BASE_URL" \
+            --ledger "$LEDGER_PATH" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" > artifacts/telegram-receipt.json
+
+      - name: Persist verified terminal Telegram receipt
+        if: >-
+          (github.event_name == 'schedule' && steps.resolve.outputs.publication_id != '') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'publish')
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_dir=.state/lordchrist
+          git -C "$state_dir" add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C "$state_dir" diff --cached --quiet && exit 3
+          git -C "$state_dir" commit -m "Verify terminal Telegram receipt for run $GITHUB_RUN_ID/1"
+          local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+          git -C "$state_dir" push origin HEAD:state/lordchrist-telegram
+          remote_sha="$(git -C "$state_dir" ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
+      - name: Upload preview / receipt artifacts
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: lordchrist-telegraph-${{ inputs.publication_id }}
+          name: lordchrist-telegraph-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/
+          if-no-files-found: warn
