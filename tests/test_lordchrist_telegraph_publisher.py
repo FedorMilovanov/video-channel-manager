@@ -313,6 +313,22 @@ def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
     due, reason = due_item(items, published, datetime(2026, 10, 27, 12, 0, tzinfo=moscow))
     assert due is None and reason == "already_published"
 
+    # An earlier run may have sent the page/message before losing its provider
+    # response. Never treat a nonterminal ledger entry as a fresh due article.
+    for partial in (
+        {"state": "page_dispatch_claimed"},
+        {"state": "page_published", "telegraph_url": "https://telegra.ph/existing-page"},
+        {"state": "telegram_dispatch_claimed", "telegraph_url": "https://telegra.ph/existing-page"},
+        {"telegraph_url": "https://telegra.ph/legacy-partial"},
+        {},
+    ):
+        with pytest.raises(LookupError, match="operator reconciliation required"):
+            due_item(
+                items,
+                {"lordchrist-telegraph-charnock-02": partial},
+                datetime(2026, 10, 27, 12, 0, tzinfo=moscow),
+            )
+
     # CLI surface used by the scheduled workflow
     import io
     from contextlib import redirect_stdout
