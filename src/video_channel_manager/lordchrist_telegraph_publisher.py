@@ -848,6 +848,7 @@ def publish_telegraph_page(
     access_token: str,
     existing_path: str | None = None,
     telegraph_api_base: str = DEFAULT_TELEGRAPH_API_BASE,
+    allow_split: bool = True,
 ) -> tuple[str, str]:
     status_code, head_bytes = transport.get_status(payload.cover_url)
     if status_code != 200 or not head_bytes.startswith(JPEG_MAGIC):
@@ -878,6 +879,16 @@ def publish_telegraph_page(
 
     resp = _call_page(payload.title, payload.nodes, existing_path if access_token else None)
     if not resp.get("ok") and str(resp.get("error") or "") == "CONTENT_TOO_BIG":
+        if not allow_split:
+            raise RuntimeError(
+                f"{payload.publication_id}: CONTENT_TOO_BIG; staged one-shot release refuses "
+                "a second createPage without its own separately persisted dispatch intent"
+            )
+        if existing_path:
+            raise RuntimeError(
+                f"{payload.publication_id}: existing Telegraph page is too large to revise in place; "
+                "refuse createPage split to preserve its original public identity"
+            )
         part1_nodes, part2_nodes = _split_nodes_at_middle_heading(payload.nodes)
         resp2 = _call_page(f"{payload.title} (окончание)", part2_nodes)
         if not resp2.get("ok") or not isinstance(resp2.get("result"), dict):
@@ -1021,9 +1032,16 @@ def due_item(
     item = matches[0]
     if item.is_canary:
         return None, "canary_is_manual_only"
-    entry = ledger_entries.get(item.publication_id) or {}
-    if isinstance(entry, Mapping) and entry.get("telegram_message_id"):
-        return None, "already_published"
+    entry = ledger_entries.get(item.publication_id)
+    if entry is not None:
+        if not isinstance(entry, Mapping):
+            raise LookupError(f"Telegraph article {item.publication_id} has invalid durable ledger entry")
+        if entry.get("telegram_message_id"):
+            return None, "already_published"
+        raise LookupError(
+            f"Telegraph article {item.publication_id} has an existing incomplete publication intent "
+            f"(state={entry.get('state', 'legacy_partial')!r}); operator reconciliation required, no replay"
+        )
     if not item.is_ready:
         raise LookupError(f"Telegraph article {item.publication_id} is not ready ({item.status})")
     return item, "due"
@@ -1060,6 +1078,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         p.add_argument("--media-base-url", required=True)
         if name == "preview":
             p.add_argument("--html-out", type=Path)
+        if name == "publish-telegraph-only":
+            p.add_argument(
+                "--revision-confirm",
+                default="",
+                help="Only for an existing public page: REVISE:<publication_id>; requires original Telegraph account token",
+            )
         if name == "publish":
             p.add_argument("--profile", type=Path, default=DEFAULT_PROFILE_PATH)
             p.add_argument("--binding", type=Path, default=DEFAULT_BINDING_PATH)
@@ -1144,10 +1168,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     ledger = load_ledger(ledger_path)
     existing = ledger["entries"].get(item.publication_id) or {}
 
+    # Previously published Telegraph identity is immutable by default:
+    # allow an in-place correction only with a per-ID explicit confirmation,
+    # retained original page path and the original author's API credential.
+    # Never let this route fall through to createPage or change the public URL.
+    is_revision = args.command == "publish-telegraph-only" and bool(existing.get("telegraph_url"))
+    if args.command == "publish-telegraph-only" and not is_revision:
+        raise RuntimeError(
+            "New Telegraph pages require durable staged page dispatch and receipt; "
+            "direct publish-telegraph-only is retired"
+        )
+    if is_revision:
+        expected_revision = f"REVISE:{item.publication_id}"
+        if args.revision_confirm != expected_revision:
+            raise RuntimeError(
+                f"{item.publication_id} already has a Telegraph page "
+                f"({existing['telegraph_url']}); refuse a new public URL. "
+                f"In-place edits require --revision-confirm {expected_revision!r}."
+            )
+        if not existing.get("telegraph_path"):
+            raise RuntimeError(f"{item.publication_id} cannot revise without the original Telegraph page path")
+        if not os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip():
+            raise RuntimeError(
+                f"{item.publication_id} cannot revise without the original Telegraph account access token"
+            )
+
     if args.command == "publish" and existing.get("telegram_message_id"):
         raise RuntimeError(
             f"{item.publication_id} was already published to @lordchrist "
             f"(message_id={existing['telegram_message_id']}, url={existing.get('telegraph_url')})"
+        )
+    if args.command == "publish" and existing.get("telegraph_url"):
+        raise RuntimeError(
+            f"{item.publication_id} already has a Telegraph page without a verified Telegram receipt "
+            f"({existing['telegraph_url']}); refuse ordinary publish replay. "
+            "A separately reviewed recovery operation must reconcile the existing provider effect."
         )
 
     if args.command == "publish":
@@ -1157,6 +1212,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_confirm = f"PUBLISH:{item.publication_id}"
         if args.confirm != expected_confirm:
             raise ValueError(f"Confirmation mismatch: expected {expected_confirm!r}")
+        raise RuntimeError(
+            "Monolithic publish is retired: use durable staged page and Telegram dispatch "
+            "with independently verified state-branch receipts"
+        )
 
     transport = HttpxLiveTransport()
     explicit_token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip() or None
@@ -1168,6 +1227,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         access_token=token,
         existing_path=existing.get("telegraph_path") if explicit_token else None,
     )
+    if is_revision and (telegraph_url != existing["telegraph_url"] or telegraph_path != existing["telegraph_path"]):
+        raise RuntimeError(
+            f"{item.publication_id} returned a different Telegraph URL during an in-place revision; "
+            "do not rewrite the ledger or the original Telegram message"
+        )
 
     entry_record: dict[str, Any] = {
         **existing,
@@ -1181,6 +1245,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
 
     if args.command == "publish-telegraph-only":
+        if is_revision:
+            entry_record["last_in_place_revision_at_utc"] = datetime.now(UTC).isoformat()
         ledger["entries"][item.publication_id] = entry_record
         save_ledger(ledger_path, ledger)
         print(

@@ -103,6 +103,30 @@ def test_telegraph_queue_loads_all_fifteen_verified_items() -> None:
         assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
 
 
+def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_revision() -> None:
+    """A reviewed GitHub source is not itself a publicly corrected Telegraph page."""
+    import hashlib
+
+    path = ROOT / "docs/audits/2026-11-04-charnock-publication-link-replacement-map.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    queue = {entry.publication_id: entry for entry in load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)}
+    assert len(manifest["targets"]) == 5
+    for entry in manifest["targets"]:
+        publication_id = entry["publication_id"]
+        old_url = entry["previous_telegraph_url"]
+        assert old_url.startswith("https://telegra.ph/")
+        assert entry["previous_public_page_still_uncorrected"] is True
+        assert entry["replacement_telegraph_url"] is None
+        assert entry["replacement_telegram_message_url"] is None
+        assert entry["provider_writes_authorized"] is False
+        item = queue[publication_id]
+        assert item.article_path is not None
+        assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
+        content = (ROOT / item.article_path).read_bytes()
+        blob = hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
+        assert entry["corrected_document_git_blob_sha"] == blob
+
+
 def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     for item in items:
@@ -150,42 +174,28 @@ def test_inline_images_are_rendered_and_preflighted_before_any_publish_mutation(
     assert unavailable.multipart_calls == [], "failed media preflight must precede Telegraph page creation"
 
 
-def test_telegraph_only_command_records_page_without_sending_telegram(tmp_path: Path, monkeypatch, capsys) -> None:
-    transport = FakeTransport()
-    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: transport)
-    monkeypatch.setattr(
-        publisher,
-        "publish_channel_message",
-        lambda *args, **kwargs: pytest.fail("Telegraph-only mode must not send a Telegram message"),
-    )
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+def test_telegraph_only_new_page_rejected_before_any_network(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    publication_id = "lordchrist-telegraph-charnock-history-02"
     ledger_path = tmp_path / "ledger.json"
-
-    result = publisher.main(
-        [
-            "publish-telegraph-only",
-            "--repo-root",
-            str(ROOT),
-            "--queue",
-            DEFAULT_QUEUE_PATH.as_posix(),
-            "--ledger",
-            str(ledger_path),
-            "--publication-id",
-            "lordchrist-telegraph-charnock-history-02",
-            "--media-base-url",
-            MEDIA_BASE,
-        ]
-    )
-
-    assert result == 0
-    output = json.loads(capsys.readouterr().out)
-    assert output["mode"] == "telegraph_only"
-    assert output["publication_id"] == "lordchrist-telegraph-charnock-history-02"
-    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
-    entry = ledger["entries"][output["publication_id"]]
-    assert entry["telegraph_url"] == output["telegraph_url"]
-    assert "telegram_message_id" not in entry
-    assert not any(url.endswith("/sendMessage") for url, _payload in transport.json_calls)
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("No provider access allowed"))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    with pytest.raises(RuntimeError, match="direct publish-telegraph-only is retired"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert not ledger_path.exists()
 
 
 def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
@@ -302,6 +312,22 @@ def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
     published = {"lordchrist-telegraph-charnock-02": {"telegram_message_id": 777}}
     due, reason = due_item(items, published, datetime(2026, 10, 27, 12, 0, tzinfo=moscow))
     assert due is None and reason == "already_published"
+
+    # An earlier run may have sent the page/message before losing its provider
+    # response. Never treat a nonterminal ledger entry as a fresh due article.
+    for partial in (
+        {"state": "page_dispatch_claimed"},
+        {"state": "page_published", "telegraph_url": "https://telegra.ph/existing-page"},
+        {"state": "telegram_dispatch_claimed", "telegraph_url": "https://telegra.ph/existing-page"},
+        {"telegraph_url": "https://telegra.ph/legacy-partial"},
+        {},
+    ):
+        with pytest.raises(LookupError, match="operator reconciliation required"):
+            due_item(
+                items,
+                {"lordchrist-telegraph-charnock-02": partial},
+                datetime(2026, 10, 27, 12, 0, tzinfo=moscow),
+            )
 
     # CLI surface used by the scheduled workflow
     import io
@@ -526,6 +552,343 @@ def test_publish_confirmation_fails_before_any_network_transport(monkeypatch: py
         )
 
 
+def test_telegraph_only_rejects_existing_public_page_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Revision requires a separately reviewed operation; never overwrite a live URL."""
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            "lordchrist-telegraph-charnock-01b": {
+                "publication_id": "lordchrist-telegraph-charnock-01b",
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original, ensure_ascii=False), encoding="utf-8")
+
+    def forbidden_network() -> object:
+        raise AssertionError("public provider must never be contacted before existing-link guard")
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", forbidden_network)
+    with pytest.raises(RuntimeError, match="already has a Telegraph page"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                "lordchrist-telegraph-charnock-01b",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
+def test_in_place_revision_requires_original_account_token_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    monkeypatch.delenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", raising=False)
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("network must not be contacted"))
+    with pytest.raises(RuntimeError, match="original Telegraph account access token"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
+def test_in_place_revision_edits_original_page_without_creating_new_url_or_telegram_post(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original_path = "Original-Charnock-Page-10-24"
+    original_url = f"https://telegra.ph/{original_path}"
+    record = {
+        "publication_id": publication_id,
+        "telegraph_url": original_url,
+        "telegraph_path": original_path,
+        "telegram_message_id": 1582,
+        "telegram_chat_id": -1001295216957,
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+                "schema_version": 1,
+                "project_key": "lord-god-strength",
+                "entries": {publication_id: record},
+            }
+        ),
+        encoding="utf-8",
+    )
+    fake = FakeTransport()
+
+    def multipart(url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
+        if "/editPage/" in url:
+            fake.multipart_calls.append((url, dict(fields)))
+            return {"ok": True, "result": {"url": original_url, "path": original_path}}
+        return FakeTransport.post_multipart(fake, url, fields)
+
+    fake.post_multipart = multipart  # type: ignore[method-assign]
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: fake)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-original-author-token")
+    assert (
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+        == 0
+    )
+    output = json.loads(capsys.readouterr().out)
+    saved = json.loads(ledger_path.read_text(encoding="utf-8"))["entries"][publication_id]
+    assert output["telegraph_url"] == original_url
+    assert saved["telegraph_url"] == original_url
+    assert saved["telegram_message_id"] == 1582
+    assert saved["last_in_place_revision_at_utc"]
+    assert any("/editPage/" + original_path in url for url, _ in fake.multipart_calls)
+    assert not any("/createPage" in url for url, _ in fake.multipart_calls)
+    assert not any(url.endswith("/sendMessage") for url, _ in fake.json_calls)
+
+
+def test_in_place_revision_refuses_missing_original_page_path_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "owner-token")
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("network must not be contacted"))
+    with pytest.raises(RuntimeError, match="original Telegraph page path"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
+def test_in_place_revision_refuses_changed_url_and_leaves_ledger_intact(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original_path = "Original-Charnock-Page-10-24"
+    record = {
+        "publication_id": publication_id,
+        "telegraph_url": f"https://telegra.ph/{original_path}",
+        "telegraph_path": original_path,
+        "telegram_message_id": 1582,
+    }
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {publication_id: record},
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    fake = FakeTransport()
+
+    def multipart(url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
+        if "/editPage/" in url:
+            fake.multipart_calls.append((url, dict(fields)))
+            return {
+                "ok": True,
+                "result": {"url": "https://telegra.ph/Changed-Page-10-24", "path": "Changed-Page-10-24"},
+            }
+        return FakeTransport.post_multipart(fake, url, fields)
+
+    fake.post_multipart = multipart  # type: ignore[method-assign]
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: fake)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "owner-token")
+    with pytest.raises(RuntimeError, match="different Telegraph URL"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+    assert not any("/createPage" in url for url, _ in fake.multipart_calls)
+
+
+def test_in_place_revision_content_too_big_does_not_create_extra_page(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    fake = FakeTransport(trigger_content_too_big_once=True)
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: fake)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "original-author-token")
+
+    with pytest.raises(RuntimeError, match="refuse createPage split"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+    assert [url for url, _ in fake.multipart_calls if "/editPage/" in url] == [
+        "https://api.telegra.ph/editPage/Original-Charnock-Page-10-24"
+    ]
+    assert not any("/createPage" in url for url, _ in fake.multipart_calls)
+    assert fake.json_calls == []
+
+
+def test_publish_partial_record_never_replays_provider_side_effect(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("network must not be contacted"))
+    with pytest.raises(RuntimeError, match="without a verified Telegram receipt"):
+        publisher.main(
+            [
+                "publish",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--confirm",
+                f"PUBLISH:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
 def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(
@@ -569,3 +932,21 @@ def test_live_transport_ambiguous_mutations_never_replay() -> None:
             live.post_json("https://api.telegram.org/botX/sendMessage", {"chat_id": 1, "text": "x"})
         assert exc2.value.attempts == 1
         assert calls == 2
+
+
+def test_telegraph_workflow_fail_closed_release_gate_precedes_provider_send() -> None:
+    workflow = (ROOT / ".github/workflows/lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
+    release_gate = workflow.index("      - name: Require approved exact Telegraph bytes and current-main CI")
+    send_step = workflow.index("      - name: Run Telegraph publisher")
+    assert release_gate < send_step
+    preflight = workflow[release_gate:send_step]
+    assert '[[ "$ACTION" == "preview" ]]' in preflight
+    assert '[[ "$GITHUB_REF" == "refs/heads/main" ]]' in preflight
+    assert '[[ "$current_main" == "$GITHUB_SHA" ]]' in preflight
+    assert "telegram_github_quality_gate --workflow ci.yml" in preflight
+    assert "LORDCHRIST_TELEGRAPH_POSTING_ENABLED" in preflight
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID" in preflight
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA" in preflight
+    assert 'article["git_blob_sha"] != approved_sha' in preflight
+    assert "hashlib.sha1" in preflight
+    assert "article_path.is_relative_to(root)" in preflight
