@@ -40,7 +40,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: lordchrist-telegraph-publisher
+  group: lordchrist-telegram-publisher
   cancel-in-progress: false
 
 jobs:
