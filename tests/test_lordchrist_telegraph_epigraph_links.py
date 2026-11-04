@@ -85,3 +85,7 @@ def test_long_charnock_quote_05_translates_english_psalm_100_3_to_synodal_99_3()
     assert "(Пс. 100:3)" not in markdown
     assert "кетив" in markdown
     assert "кере" in markdown
+    # Gutenberg #53527 is a Baker reprint transcription, not a facsimile of 1853.
+    assert "Baker Books (1996)" in markdown
+    assert "Robert Carter & Brothers (1853)" in markdown
+    assert "Baker Books (1996)" in str(document["blocks"][-1]["text"])
