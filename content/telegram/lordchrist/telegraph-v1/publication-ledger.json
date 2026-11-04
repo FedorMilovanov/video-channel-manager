@@ -83,15 +83,18 @@
     },
     "lordchrist-telegraph-charnock-05": {
       "publication_id": "lordchrist-telegraph-charnock-05",
-      "state": "page_dispatch_claimed",
-      "provider_effect": "unknown_until_reconciled",
+      "state": "page_published",
+      "provider_effect": "verified",
       "run_id": "41903410357",
       "run_attempt": 1,
       "github_sha": "3632b4d893c727ac1d0593576a33f64f6750b3b9",
       "title": "Никто не сотворил себя: от тварной немощи к вечной Первопричине",
       "article_sha256": "sha256:5a086aff8f26489ca4ac452c52f36b1536a4328b44d56c099c519d57e3379fc7",
       "cover_sha256": "sha256:e549ec61306efe0427217198b63ec37482342364dae96b731ed73931f00f8b25",
-      "page_intent_at_utc": "2026-11-04T20:06:51.008177+00:00"
+      "page_intent_at_utc": "2026-11-04T20:06:51.008177+00:00",
+      "telegraph_url": "https://telegra.ph/Nikto-ne-sotvoril-sebya-ot-tvarnoj-nemoshchi-k-vechnoj-Pervoprichine-11-04",
+      "telegraph_path": "Nikto-ne-sotvoril-sebya-ot-tvarnoj-nemoshchi-k-vechnoj-Pervoprichine-11-04",
+      "telegraph_updated_at_utc": "2026-11-04T20:06:57.407811+00:00"
     }
   }
 }
