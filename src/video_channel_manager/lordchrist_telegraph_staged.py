@@ -24,7 +24,6 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
     _find_item,
     build_telegraph_payload,
     ensure_telegraph_token,
-    load_ledger,
     load_telegraph_queue,
     publish_channel_message,
     publish_telegraph_page,
@@ -71,7 +70,17 @@ def _ledger(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     path = args.ledger if args.ledger.is_absolute() else args.repo_root / args.ledger
     if not path.is_file():
         raise RuntimeError("Durable state ledger must exist; refuse an implicit new ledger")
-    return path, load_ledger(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(data, dict)
+        or data.get("schema_name") != "video-channel-manager.lordchrist-telegraph-ledger"
+        or data.get("schema_version") != 1
+        or data.get("project_key") != "lord-god-strength"
+        or not isinstance(data.get("entries"), dict)
+        or any(not isinstance(key, str) or not isinstance(value, dict) for key, value in data["entries"].items())
+    ):
+        raise RuntimeError("Durable Telegraph ledger schema, project or entry integrity mismatch")
+    return path, data
 
 
 def _checked_entry(args: argparse.Namespace, ledger: dict[str, Any], expected: str) -> dict[str, Any]:
