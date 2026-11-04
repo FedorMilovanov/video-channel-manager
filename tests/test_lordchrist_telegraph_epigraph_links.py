@@ -43,7 +43,7 @@ def test_all_fourteen_epigraph_links_identify_the_exact_synodal_book_and_chapter
         path = ROOT / item["article"]["path"]
         assert path.name == f"lordchrist-telegraph-charnock-{suffix}.json"
         raw = path.read_bytes()
-        git_blob = hashlib.sha1(f"blob {len(raw)}\\0".encode("ascii") + raw).hexdigest()
+        git_blob = hashlib.sha1(f"blob {len(raw)}\0".encode("ascii") + raw).hexdigest()
         assert item["article"]["git_blob_sha"] == git_blob, publication_id
 
         document = json.loads(raw)
