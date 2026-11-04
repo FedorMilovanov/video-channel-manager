@@ -930,3 +930,21 @@ def test_live_transport_ambiguous_mutations_never_replay() -> None:
             live.post_json("https://api.telegram.org/botX/sendMessage", {"chat_id": 1, "text": "x"})
         assert exc2.value.attempts == 1
         assert calls == 2
+
+
+def test_telegraph_workflow_fail_closed_release_gate_precedes_provider_send() -> None:
+    workflow = (ROOT / ".github/workflows/lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
+    release_gate = workflow.index("      - name: Require approved exact Telegraph bytes and current-main CI")
+    send_step = workflow.index("      - name: Run Telegraph publisher")
+    assert release_gate < send_step
+    preflight = workflow[release_gate:send_step]
+    assert '[[ "$ACTION" == "preview" ]]' in preflight
+    assert '[[ "$GITHUB_REF" == "refs/heads/main" ]]' in preflight
+    assert '[[ "$current_main" == "$GITHUB_SHA" ]]' in preflight
+    assert "telegram_github_quality_gate --workflow ci.yml" in preflight
+    assert "LORDCHRIST_TELEGRAPH_POSTING_ENABLED" in preflight
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID" in preflight
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA" in preflight
+    assert 'article["git_blob_sha"] != approved_sha' in preflight
+    assert "hashlib.sha1" in preflight
+    assert "article_path.is_relative_to(root)" in preflight
