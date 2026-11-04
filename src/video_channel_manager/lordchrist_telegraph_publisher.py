@@ -1194,9 +1194,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         access_token=token,
         existing_path=existing.get("telegraph_path") if explicit_token else None,
     )
-    if is_revision and (
-        telegraph_url != existing["telegraph_url"] or telegraph_path != existing["telegraph_path"]
-    ):
+    if is_revision and (telegraph_url != existing["telegraph_url"] or telegraph_path != existing["telegraph_path"]):
         raise RuntimeError(
             f"{item.publication_id} returned a different Telegraph URL during an in-place revision; "
             "do not rewrite the ledger or the original Telegram message"
