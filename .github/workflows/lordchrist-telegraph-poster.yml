@@ -89,6 +89,72 @@ jobs:
           publication_id="$(python -c 'import json; print(json.load(open("due.json")).get("due") or "")')"
           echo "publication_id=${publication_id}" >> "$GITHUB_OUTPUT"
 
+      # The queue's "ready" status proves formatting only, not source/rights approval.
+      # Versioned editorial review precedes manually setting these exact release
+      # variables. A missing or stale binding must never reach the provider.
+      - name: Require approved exact Telegraph bytes and current-main CI
+        if: github.event_name != 'schedule' || steps.resolve.outputs.publication_id != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+          ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
+          PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
+          LORDCHRIST_TELEGRAPH_POSTING_ENABLED: ${{ vars.LORDCHRIST_TELEGRAPH_POSTING_ENABLED }}
+          LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID: ${{ vars.LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID }}
+          LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA: ${{ vars.LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA }}
+        run: |
+          set -euo pipefail
+          if [[ "$ACTION" == "preview" ]]; then
+            echo "Provider-free preview: no release authority is created."
+            exit 0
+          fi
+
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
+            echo "Public Telegraph mutation requires current main, not a PR or stale branch." >&2
+            exit 3
+          }
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$current_main" == "$GITHUB_SHA" ]] || {
+            echo "main moved after checkout; reject a stale public Telegraph mutation." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+
+          [[ "$LORDCHRIST_TELEGRAPH_POSTING_ENABLED" == "true" ]] || {
+            echo "Telegraph lane is not explicitly enabled after editorial review." >&2
+            exit 3
+          }
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          publication_id = os.environ["PUBLICATION_ID"]
+          approved_id = os.environ["LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID"]
+          approved_sha = os.environ["LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA"]
+          if not publication_id or approved_id != publication_id or re.fullmatch(r"[a-f0-9]{40}", approved_sha) is None:
+              raise SystemExit("No exact reviewed publication ID and 40-character Git article blob approval; reject.")
+          queue = json.loads(Path("content/telegram/lordchrist/telegraph-v1/article-queue.json").read_text("utf-8"))
+          matches = [item for item in queue["items"] if item["publication_id"] == publication_id]
+          if len(matches) != 1 or matches[0]["status"] != "ready":
+              raise SystemExit("Exact ready Telegraph article is absent or ambiguous; reject.")
+          article = matches[0]["article"]
+          if article["git_blob_sha"] != approved_sha:
+              raise SystemExit("Reviewed article blob differs from queued immutable blob; reject.")
+          root = Path.cwd().resolve()
+          article_path = (root / article["path"]).resolve()
+          if not article_path.is_relative_to(root) or not article_path.is_file():
+              raise SystemExit("Reviewed Telegraph article path is unsafe or missing; reject.")
+          data = article_path.read_bytes()
+          actual = hashlib.sha1(f"blob {len(data)}\\0".encode() + data).hexdigest()
+          if actual != approved_sha:
+              raise SystemExit("Reviewed article bytes differ from the exact approved Git blob; reject.")
+          print(f"Release-bound Telegraph article confirmed: {publication_id} / {actual}")
+          PY
+
       - name: Run Telegraph publisher
         if: github.event_name != 'schedule' || steps.resolve.outputs.publication_id != ''
         id: run
