@@ -15,6 +15,7 @@
   "drafted_count": 20,
   "conditionally_retained_count": 10,
   "semantic_revision_applied_count": 3,
+  "retained_verse_amendment_count": 1,
   "effective_contiguous_draft_count": 21,
   "effective_retained_for_context_count": 9,
   "note": "Candidate reading deck ONLY. These excerpts are NOT verified for every Russian phrase or cleared for publication. No existing queue, receipt or provider state is modified. This distinct schema is not recognized by publisher load paths.",
@@ -55,7 +56,7 @@
       "sequence": 2,
       "publication_id": "lordchrist-spurgeon-salvation-all-of-grace",
       "title": "«Спасение — всё от благодати» — Ч. Г. Сперджен",
-      "text": "«В спасении являются и другие Божьи свойства: премудрость измыслила план, сила совершает в нас дело спасения, неизменность хранит и ведёт его — словом, все свойства Бога возвеличены в спасении грешника. И всё же слово Писания вернейшим образом говорит, что благодать есть источник спасения и ярче всего сияет в нём. Благодать видна в нашем избрании: «остаток по избранию благодати, а если по благодати, то уже не от дел». Благодать явлена в искуплении: вы знаете благодать Господа нашего Иисуса Христа, и невозможно даже помыслить, чтобы какая душа заслужила искупления драгоценною Кровью Христовой; одна мысль об этом отвратительна для всякого святого ума.\n\nНаше призвание тоже от благодати: «Он спас нас и призвал званием святым — не по делам нашим, но по Своему изволению и благодати, данной нам во Христе Иисусе прежде вековых времён». Через благодать мы и оправдываемся: снова и снова апостол настаивает на этой великой и основополагающей истине — мы не оправдываемся пред Богом делами ни в какой мере, но верою одною, и «по вере, чтобы — по благодати».\n\nЗолотая нить благодати проходит через всю историю христианина — от избрания прежде веков до принятия в небесный покой. Благодать во всём «царствует праведностью к вечной жизни», и «где умножается грех, там благодать преизобилует». Ни в одной точке истории спасённой души нельзя сказать: «здесь он спасён своими заслугами». Всякое благословение приходит к нам каналом свободной милости, явленной во Христе Иисусе, Господе нашем. Похвала исключена, ибо заслуги исключены; заслуга — неведомое слово в Церкви Христовой, и единственный наш клик — над основанием и над верхним камнем: «Благодать, благодать на нём!»»\n\n© Чарльз Г. Сперджен, «Salvation — All of Grace (MTP 18:1064)»\n\n#Сперджен #Благодать #Спасение #Ефесянам2",
+      "text": "«В спасении являются и другие Божьи свойства: премудрость измыслила план, сила совершает в нас дело спасения, неизменность хранит и ведёт его — словом, все свойства Бога возвеличены в спасении грешника. И всё же слово Писания вернейшим образом говорит, что благодать есть источник спасения и ярче всего сияет в нём. Благодать видна в нашем избрании: „остаток по избранию благодати, а если по благодати, то уже не от дел“. Благодать явлена в искуплении: вы знаете благодать Господа нашего Иисуса Христа, и невозможно даже помыслить, чтобы какая душа заслужила искупления драгоценною Кровью Христовой; одна мысль об этом отвратительна для всякого святого ума.\n\nНаше призвание тоже от благодати: „Он спас нас и призвал званием святым — не по делам нашим, но по Своему изволению и благодати, данной нам во Христе Иисусе прежде вековых времён“. Через благодать мы и оправдываемся: снова и снова апостол настаивает на этой великой и основополагающей истине — мы не оправдываемся пред Богом делами ни в какой мере, но верою одною, и „по вере, чтобы — по благодати“.\n\nЗолотая нить благодати проходит через всю историю христианина — от избрания прежде веков до принятия в небесный покой. Благодать во всём „царствует праведностью к вечной жизни“, и „где умножается грех, там благодать преизобилует“. Ни в одной точке истории спасённой души нельзя сказать: „здесь он спасён своими заслугами“. Всякое благословение приходит к нам каналом свободной милости, явленной во Христе Иисусе, Господе нашем. Похвала исключена, ибо заслуги исключены; заслуга — неведомое слово в Церкви Христовой, и единственный наш клик — над основанием и над верхним камнем: „Благодать, благодать на нём!“»\n\n© Чарльз Г. Сперджен, «Salvation — All of Grace (MTP 18:1064)»\n\n#Сперджен #Благодать #Спасение #Ефесянам2",
       "source": {
         "author": "Чарльз Г. Сперджен",
         "work": "Salvation — All of Grace (MTP 18:1064)",
@@ -71,6 +72,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": "typography_only_no_word_changes",
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -78,7 +80,7 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:4cc35248e057ae7995265cb33e9bd53f5f93b1137f0094a0757c23e862667707",
-      "candidate_full_post_sha256": "sha256:4cc35248e057ae7995265cb33e9bd53f5f93b1137f0094a0757c23e862667707",
+      "candidate_full_post_sha256": "sha256:c5154e2d31dc6a035f7f729a6c891e5c1bdee7de55a8a238d28cf0b19b6d7ab5",
       "evidence_file": "content/telegram/lordchrist/verified-30-posts.json",
       "applied_original_field_proposals": [],
       "editorial_approval": false,
@@ -104,6 +106,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -126,7 +129,7 @@
       "sequence": 4,
       "publication_id": "lordchrist-owen-mortification-daily",
       "title": "«Умерщвляй грех каждый день» — Джон Оуэн",
-      "text": "«Даже избраннейшие верующие, которые, несомненно, освобождены от осуждающей власти греха, всё же должны вменять себе в обязанность на все дни свои умерщвлять в себе живущую силу греха. Так говорит апостол в Послании к Колоссянам 3:5: «Умертвите члены ваши на земле». К кому он обращается? К тем, кто «воскрес со Христом» (ст. 1); кто «умер» с Ним (ст. 3); кто живёт Христом и с Ним явится в славе (ст. 4).\n\nУмерщвляй же; делай это своей повседневной работой; пребывай в этом, пока жив; не прекращай этого труда ни на один день: убивай грех — иначе грех убьёт тебя. Твоё сораспятие Христу и оживление с Ним не освобождают тебя от этой работы. И наш Спаситель говорит, как Отец поступает с каждой плодовитой ветвью в Нём: «очищает её, чтобы более принесла плода» (Ин. 15:2); Он обрезает её — и не на день или два, но пока она остаётся ветвью в этом мире.\n\nАпостол говорит о собственном опыте в 1 Коринфянам 9:27: «я усмиряю и порабощаю тело моё». «Я делаю это, — говорит он, — ежедневно; это дело моей жизни; я не оставляю его; в этом моё занятие». Если такова была работа и дело Павла, столь несравненно возвышенного в благодати, откровениях, утешениях и привилегиях, — на каком основании мы можем считать себя освобождёнными от этого труда в этом мире? Живущий в нас грех пребывает, пока мы в этом мире; потому его и нужно постоянно умерщвлять.»\n\n© Джон Оуэн, «Of the Mortification of Sin in Believers»\n\n#Джон_Оуэн #Умерщвление_греха #Освящение",
+      "text": "«Даже избраннейшие верующие, которые, несомненно, освобождены от осуждающей власти греха, всё же должны вменять себе в обязанность на все дни свои умерщвлять в себе живущую силу греха. Так говорит апостол в Послании к Колоссянам 3:5: „Умертвите члены ваши на земле“. К кому он обращается? К тем, кто „воскрес со Христом“ (ст. 1); кто „умер“ с Ним (ст. 3); кто живёт Христом и с Ним явится в славе (ст. 4).\n\nУмерщвляй же; делай это своей повседневной работой; пребывай в этом, пока жив; не прекращай этого труда ни на один день: убивай грех — иначе грех убьёт тебя. Твоё сораспятие Христу и оживление с Ним не освобождают тебя от этой работы. И наш Спаситель говорит, как Отец поступает с каждой плодовитой ветвью в Нём: „очищает её, чтобы более принесла плода“ (Ин. 15:2); Он обрезает её — и не на день или два, но пока она остаётся ветвью в этом мире.\n\nАпостол говорит о собственном опыте в 1 Коринфянам 9:27: „я усмиряю и порабощаю тело моё“. „Я делаю это, — говорит он, — ежедневно; это дело моей жизни; я не оставляю его; в этом моё занятие“. Если такова была работа и дело Павла, столь несравненно возвышенного в благодати, откровениях, утешениях и привилегиях, — на каком основании мы можем считать себя освобождёнными от этого труда в этом мире? Живущий в нас грех пребывает, пока мы в этом мире; потому его и нужно постоянно умерщвлять.»\n\n© Джон Оуэн, «Of the Mortification of Sin in Believers»\n\n#Джон_Оуэн #Умерщвление_греха #Освящение",
       "source": {
         "author": "Джон Оуэн",
         "work": "Of the Mortification of Sin in Believers",
@@ -142,6 +145,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": "typography_only_no_word_changes",
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "major",
       "original_editorial_finding": "Original source chapter is II, but metadata says I; Russian syntax around Colossians needs copyediting.",
@@ -149,7 +153,7 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:03b0a5a3587be0f0f5f51f2673a426d670dd3b8a95cc002ca3c1fff3ae255c14",
-      "candidate_full_post_sha256": "sha256:40529f91e91b27c47c9c55da4d8d64f41a0176de0bb5a70376cb0f0dc093c1d8",
+      "candidate_full_post_sha256": "sha256:744f9655443f9e677d5105dc2cd979ce377758f3fa6184309e799781f63bfaf5",
       "evidence_file": "content/telegram/lordchrist/verified-30-posts.json",
       "applied_original_field_proposals": [
         {
@@ -317,6 +321,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -675,6 +680,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -777,6 +783,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -799,7 +806,7 @@
       "sequence": 24,
       "publication_id": "lordchrist-whitefield-almost-christian",
       "title": "«Почти христианин» — Джордж Уайтфилд",
-      "text": "«Почти христианин, если рассматривать его в отношении его долга к Богу, есть тот, кто колеблется между двумя мнениями; кто неустойчив между Христом и миром; кто хотел бы примирить Бога и маммону, свет и тьму, Христа и Велиала. Правда, в нём есть расположение к религии, но он осторожен, как бы не зайти в ней слишком далеко; его лживое сердце постоянно вопиёт: «пощади себя», «не делай себе вреда».\n\nОн молится, да, что «да будет воля Божья на земле, как на небе»; но при всём том он частичен в своём послушании и тешит себя надеждой, будто Бог не будет до крайности строг, чтобы замечать всякое умышленно совершаемое им зло — хотя вдохновенный апостол сказал ему, что «кто соблюдёт весь закон и согрешит в одном, тот становится виновным во всём».\n\nНо главное — это человек, много уповающий на внешние установления и потому почитающий себя праведным и презирающий других, хотя в то же самое время он такой же чуждый божественной жизни, как и всякий другой. Словом, он любит форму, но никогда не испытывает силы благочестия в сердце своём. Год за годом он ходит к средствам благодати, но, подобно тощим коровам фараоновым, от того не становится лучше — скорее, делается хуже.»\n\n© Джордж Уайтфилд, «Selected Sermons (Sermon 43)»\n\n#Джордж_Уайтфилд #Форма_благочестия #Обращение",
+      "text": "«Почти христианин, если рассматривать его в отношении его долга к Богу, есть тот, кто колеблется между двумя мнениями; кто неустойчив между Христом и миром; кто хотел бы примирить Бога и маммону, свет и тьму, Христа и Велиала. Правда, в нём есть расположение к религии, но он осторожен, как бы не зайти в ней слишком далеко; его лживое сердце постоянно вопиёт: „пощади себя“, „не делай себе вреда“.\n\nОн молится, да, что „да будет воля Божья на земле, как на небе“; но при всём том он частичен в своём послушании и тешит себя надеждой, будто Бог не будет до крайности строг, чтобы замечать всякое умышленно совершаемое им зло — хотя вдохновенный апостол сказал ему, что „кто соблюдёт весь закон и согрешит в одном, тот становится виновным во всём“.\n\nНо главное — это человек, много уповающий на внешние установления и потому почитающий себя праведным и презирающий других, хотя в то же самое время он такой же чуждый божественной жизни, как и всякий другой. Словом, он любит форму, но никогда не испытывает силы благочестия в сердце своём. Год за годом он ходит к средствам благодати, но, подобно тощим коровам фараоновым, от того не становится лучше — скорее, делается хуже.»\n\n© Джордж Уайтфилд, «Selected Sermons (Sermon 43)»\n\n#Джордж_Уайтфилд #Форма_благочестия #Обращение",
       "source": {
         "author": "Джордж Уайтфилд",
         "work": "Selected Sermons (Sermon 43)",
@@ -815,6 +822,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": "typography_only_no_word_changes",
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -822,7 +830,7 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:0a595c9029e48d641857d9a728ab6e3092207c5ef2935e8fb2d7e1a810035a46",
-      "candidate_full_post_sha256": "sha256:0a595c9029e48d641857d9a728ab6e3092207c5ef2935e8fb2d7e1a810035a46",
+      "candidate_full_post_sha256": "sha256:f010bd674d50eb050455ab7810b2e8a2c7af6674521bad255f09c628ddfe4cdd",
       "evidence_file": "content/telegram/lordchrist/verified-30-posts.json",
       "applied_original_field_proposals": [
         {
@@ -952,6 +960,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "major",
       "original_editorial_finding": "CCEL URL names only the Kuyper work landing page; pin the exact first meditation.",
@@ -991,6 +1000,7 @@
         "primary_source_type": "historical_primary"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "major",
       "original_editorial_finding": "Opening such special revelation leaves its antecedent outside the quotation.",
@@ -1017,7 +1027,7 @@
       "sequence": 30,
       "publication_id": "lordchrist-whitefield-self-denial",
       "title": "«Разумность самоотречения» — Джордж Уайтфилд",
-      "text": "«„И сказал всем: если кто хочет идти за Мною, отвергнись себя“ (Лк. 9:23). Кто читает Евангелие простым оком и с искренним намерением, тот найдёт, что благословенный Господь наш при всяком случае напоминал ученикам Своим, что Царство Его не от мира сего, что учение Его есть учение о кресте и что исповедание себя Его последователями призовёт их к постоянному состоянию добровольного страдания и самоотречения.\n\nСлова текста дают нам один из многих примеров такого обращения нашего Спасителя: ибо, открыв в предшествующих стихах Петру и прочим апостолам, что Он есть Христос Божий, — дабы они не превознеслись чрезмерно этим особым открытием Его Божества и не подумали, будто отношение к столь великой Личности будет сопряжено для них лишь с пышностью и величием, — Он говорит им в этом стихе, что Сын Человеческий должен много пострадать в этом мире, хотя в грядущем Ему предстоит увенчаться вечной славой и честью; и что если кто из них или из потомков их хочет разделить с Ним эту честь, тот должен разделить с Ним и Его самоотречение и страдания. Ибо Он сказал всем: „если кто хочет идти за Мною, отвергнись себя“.»\n\n© Джордж Уайтфилд, «Selected Sermons (Sermon 29)»\n\n#Джордж_Уайтфилд #Самоотречение #Крест",
+      "text": "«Кто читает Евангелие простым оком и с искренним намерением, тот найдёт, что благословенный Господь наш при всяком случае напоминал ученикам Своим, что Царство Его не от мира сего, что учение Его есть учение о кресте и что исповедание себя Его последователями призовёт их к постоянному состоянию добровольного страдания и самоотречения.\n\nСлова текста дают нам один из многих примеров такого обращения нашего Спасителя: ибо, открыв в предшествующих стихах Петру и прочим апостолам, что Он есть Христос Божий, — дабы они не превознеслись чрезмерно этим особым открытием Его Божества и не подумали, будто отношение к столь великой Личности будет сопряжено для них лишь с пышностью и величием, — Он говорит им в 22-м стихе, что Сын Человеческий должен много пострадать в этом мире, хотя в грядущем Ему предстоит увенчаться вечной славой и честью; и что если кто из них или из потомков их хочет разделить с Ним эту честь, тот должен разделить с Ним и Его самоотречение и страдания. Ибо Он сказал всем: „если кто хочет идти за Мною, отвергнись себя“.»\n\n© Джордж Уайтфилд, «Selected Sermons (Sermon 29)»\n\n#Джордж_Уайтфилд #Самоотречение #Крест",
       "source": {
         "author": "Джордж Уайтфилд",
         "work": "Selected Sermons (Sermon 29)",
@@ -1033,6 +1043,7 @@
         "edition_rights_status": "requires_edition_specific_review"
       },
       "preview_paragraph_normalization": null,
+      "retained_quote_depth_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
       "original_preliminary_risk": "screened",
       "original_editorial_finding": "No specific first-pass anomaly; complete primary-source word-by-word collation remains mandatory.",
@@ -1040,7 +1051,7 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
-      "candidate_full_post_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
+      "candidate_full_post_sha256": "sha256:3f770b3d682e1446066cad6d4fdf80256066bb66c21632520214687bfb620ca5",
       "evidence_file": "content/telegram/lordchrist/verified-30-posts.json",
       "applied_original_field_proposals": [
         {
@@ -1049,7 +1060,9 @@
         }
       ],
       "editorial_approval": false,
-      "provider_write_authorization": false
+      "provider_write_authorization": false,
+      "retained_verse_review_evidence_file": "docs/audits/2026-11-04-lordchrist-retained-verse-and-quotation-review.json",
+      "retained_verse_review_status": "pending_full_bilingual_and_rights_approval"
     }
   ]
 }

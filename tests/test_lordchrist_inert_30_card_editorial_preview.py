@@ -319,3 +319,112 @@ def test_semantic_revision_rejects_stale_input_and_fake_editorial_approval() -> 
             build()
     finally:
         globals_dict["_load"] = original_loader
+
+
+def test_retained_typography_is_nested_without_changing_quote_words() -> None:
+    import re
+
+    builder = runpy.run_path(str(BUILDER))
+    normalize = builder["_normalize_retained_quotation_depth"]
+    posts = _load(FILE)["posts"]
+    repaired = []
+    for n in (2, 3, 4, 9, 20, 23, 24, 28, 30):
+        card = posts[n - 1]
+        normalized = card["text"]
+        assert normalize(normalized) == normalized
+        assert normalized.count("\n\n" + chr(169) + " ") == 1
+        quoted = normalized.split("\n\n" + chr(169) + " ", 1)[0]
+        assert quoted.startswith(chr(171)) and quoted.endswith(chr(187))
+        assert quoted.count(chr(171)) == 1
+        assert quoted.count(chr(187)) == 1
+        assert quoted.count(chr(8222)) == quoted.count(chr(8220))
+        assert quoted.count(chr(8216)) == quoted.count(chr(8217))
+        if card.get("retained_quote_depth_normalization") is not None:
+            repaired.append(n)
+            assert card["retained_quote_depth_normalization"] == "typography_only_no_word_changes"
+    assert repaired == [2, 4, 24]
+
+    original = _load(QUEUE)["posts"]
+    for n in (2, 24):
+        raw_text = original[n - 1]["text"]
+        clean_text = posts[n - 1]["text"]
+        assert re.findall(r"\w+", raw_text) == re.findall(r"\w+", clean_text)
+
+    import pytest
+
+    with pytest.raises(ValueError, match="attribution"):
+        normalize("not a Telegram post")
+    with pytest.raises(ValueError, match="top-level"):
+        normalize("Unquoted" + "\n\n" + chr(169) + " attribution")
+    with pytest.raises(ValueError, match="Unclosed"):
+        normalize(chr(171) + chr(171) + "not closed" + chr(187) + "\n\n" + chr(169) + " attribution")
+
+
+def test_retained_luke_verse_22_is_distinguished_from_verse_23_without_false_preface() -> None:
+    doc = _load(ROOT / "docs/audits/2026-11-04-lordchrist-retained-verse-and-quotation-review.json")
+    deck = _load(FILE)
+    card = deck["posts"][29]
+    old_queue = _load(QUEUE)["posts"][29]
+    assert doc["schema_name"] == "video-channel-manager.lordchrist-nonpublishing-retained-verse-review"
+    assert doc["schema_version"] == 1
+    assert doc["original_queue_sha256"] == _hash(QUEUE.read_text(encoding="utf-8"))
+    assert doc["editorial_approval"] is False
+    assert doc["full_bilingual_review_complete"] is False
+    assert doc["rights_review_complete"] is False
+    assert doc["provider_write_authorization"] is False
+    assert doc["protected_ledger_write_authorization"] is False
+    assert deck["retained_verse_amendment_count"] == 1
+    assert len(doc["revisions"]) == 1
+    revision = doc["revisions"][0]
+    assert revision["sequence"] == 30
+    assert revision["original_publication_id"] == old_queue["publication_id"]
+    assert revision["original_full_post_sha256"] == _hash(old_queue["text"])
+    assert card["candidate_full_post_sha256"] == revision["candidate_full_post_sha256"]
+    assert card["candidate_full_post_sha256"] == _hash(card["text"])
+    assert card["retained_verse_review_status"] == "pending_full_bilingual_and_rights_approval"
+    assert card["editorial_approval"] is False
+    assert card["provider_write_authorization"] is False
+    assert card["text"].startswith(chr(171) + "Кто читает Евангелие")
+    assert "Он говорит им в 22-м стихе, что" in card["text"]
+    assert "Он говорит им в этом стихе, что" not in card["text"]
+    assert "Лк. 9:23" not in card["text"]
+    assert "если кто хочет идти за Мною, отвергнись себя" in card["text"]
+    assert revision["source_probe"]["source_explicit_22nd_verse"] is True
+    assert revision["source_probe"]["full_translation_certified"] is False
+    assert [e["field"] for e in revision["corrections"]] == ["text", "text"]
+    assert all(e["rationale"] for e in revision["corrections"])
+
+
+def test_retained_verse_review_cannot_be_replayed_or_authorized() -> None:
+    import pytest
+
+    builder = runpy.run_path(str(BUILDER))
+    build = builder["build"]
+    globals_dict = build.__globals__
+    original_loader = globals_dict["_load"]
+
+    def stale_loader(path: Path) -> dict:
+        doc = original_loader(path)
+        if path == builder["RETAINED_VERSE_REVIEW"]:
+            doc["revisions"][0]["expected_prior_preview_full_post_sha256"] = "sha256:" + "0" * 64
+        return doc
+
+    globals_dict["_load"] = stale_loader
+    try:
+        with pytest.raises(ValueError, match="does not match exact old candidate"):
+            build()
+    finally:
+        globals_dict["_load"] = original_loader
+
+    def permit_loader(path: Path) -> dict:
+        doc = original_loader(path)
+        if path == builder["RETAINED_VERSE_REVIEW"]:
+            doc["provider_write_authorization"] = True
+        return doc
+
+    globals_dict["_load"] = permit_loader
+    try:
+        with pytest.raises(ValueError, match="unsafe authority"):
+            build()
+    finally:
+        globals_dict["_load"] = original_loader

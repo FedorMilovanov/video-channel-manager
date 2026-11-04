@@ -77,3 +77,15 @@ A separate [six-field exact proposal register](2026-11-04-lordchrist-retained-qu
 - **#30 Whitefield:** the original introduction has *sincere intentions* (plural), not singular; fix the exact first English anchor. The Russian candidate also includes Luke 9:23 as an opening verse, which should be grounded in the original sermon heading in final editorial collation.
 
 Earlier proposals already cover **#4 Owen grammar/chapter** and **#28/#29 corrected direct URLs**; they are intentionally not cloned here. The **#29 Bavinck contextual demonstrative** remains a separate substantive review item, not something a URL replacement can solve. These findings do not confer publishing approval or alter the sealed v4 queue.
+
+
+## Follow-up: retained-source verse fidelity and nested quotation repair (2026-11-04)
+
+The [nonpublishing Luke 9:22/23 correction evidence](2026-11-04-lordchrist-retained-verse-and-quotation-review.json) binds the exact existing #30 Whitefield preview hash, original signed-v4 post SHA, primary URL, unchanged first/last English source anchors, and two narrowly scoped Russian text edits:
+
+- Remove the duplicated introductory quotation of Luke 9:23 which was placed **inside the author-attributed Russian text before the original English start anchor**. The source-selected text itself quotes the verse at the close; the editorial preview must not silently include outside material as if it were part of the continuous excerpt.
+- Replace ambiguous «в этом стихе» with **«в 22-м стихе»** when Whitefield explains Christ's announcement of suffering. This corresponds to the source's *“in the 22nd verse”* (the source also has a printing typo *tells then* rather than *tells them*); the later quotation concerns Luke 9:23, not Luke 9:22.
+
+The preview generator also now applies its existing **depth-aware Russian quotation normalizer** to all provisionally retained texts. It corrects only punctuation in #2 Spurgeon, #4 Owen, #24 Whitefield and leaves already well-nested texts unchanged. The text's original word tokens, source identifiers, old proposal history and the signed queue remain intact.
+
+The machine evidence is **NOT** permission to publish: the builder rejects a mismatched SHA, a tampered source probe or a forged provider authorization. Neither the queue nor the protected Telegram ledger is writable from this editorial operation. All remaining quotations still require an independent bilingual, context, theological and edition-specific rights review.
