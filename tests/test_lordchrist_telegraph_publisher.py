@@ -593,9 +593,19 @@ def test_in_place_revision_requires_original_account_token_before_network(
     with pytest.raises(RuntimeError, match="original Telegraph account access token"):
         publisher.main(
             [
-                "publish-telegraph-only", "--repo-root", str(ROOT), "--queue", DEFAULT_QUEUE_PATH.as_posix(),
-                "--ledger", str(ledger_path), "--publication-id", publication_id,
-                "--revision-confirm", f"REVISE:{publication_id}", "--media-base-url", MEDIA_BASE,
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
             ]
         )
     assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
@@ -616,9 +626,14 @@ def test_in_place_revision_edits_original_page_without_creating_new_url_or_teleg
     }
     ledger_path = tmp_path / "ledger.json"
     ledger_path.write_text(
-        json.dumps({"schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
-                    "schema_version": 1, "project_key": "lord-god-strength",
-                    "entries": {publication_id: record}}),
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+                "schema_version": 1,
+                "project_key": "lord-god-strength",
+                "entries": {publication_id: record},
+            }
+        ),
         encoding="utf-8",
     )
     fake = FakeTransport()
@@ -634,9 +649,19 @@ def test_in_place_revision_edits_original_page_without_creating_new_url_or_teleg
     monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-original-author-token")
     assert publisher.main(
         [
-            "publish-telegraph-only", "--repo-root", str(ROOT), "--queue", DEFAULT_QUEUE_PATH.as_posix(),
-            "--ledger", str(ledger_path), "--publication-id", publication_id,
-            "--revision-confirm", f"REVISE:{publication_id}", "--media-base-url", MEDIA_BASE,
+            "publish-telegraph-only",
+            "--repo-root",
+            str(ROOT),
+            "--queue",
+            DEFAULT_QUEUE_PATH.as_posix(),
+            "--ledger",
+            str(ledger_path),
+            "--publication-id",
+            publication_id,
+            "--revision-confirm",
+            f"REVISE:{publication_id}",
+            "--media-base-url",
+            MEDIA_BASE,
         ]
     ) == 0
     output = json.loads(capsys.readouterr().out)
