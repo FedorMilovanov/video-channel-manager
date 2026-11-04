@@ -1,0 +1,9 @@
+Source: St. Augustine of Hippo, "Confessions", Book I, Chapter I (Outler translation, Christian Classics Ethereal Library)
+URL: https://www.ccel.org/ccel/augustine/confessions/confessions.iv.html
+Fetched: 2026-10-28
+
+Verbatim (continuous excerpt, Book I, Ch. I — opening of Confessions):
+
+"'Great art thou, O Lord, and greatly to be praised; great is thy power, and infinite is thy wisdom.' And man desires to praise thee, for he is a part of thy creation; he bears his mortality about with him and carries the evidence of his sin and the proof that thou dost resist the proud. Still he desires to praise thee, this man who is only a small part of thy creation. Thou hast prompted him, that he should delight to praise thee, for thou hast made us for thyself and restless is our heart until it comes to rest in thee. Grant me, O Lord, to know and understand whether first to invoke thee or to praise thee; whether first to know thee or call upon thee. But who can invoke thee, knowing thee not? For he who knows thee not may invoke thee as another than thou art. It may be that we should invoke thee in order that we may come to know thee. But 'how shall they call on him in whom they have not believed? Or how shall they believe without a preacher?' Now, 'they shall praise the Lord who seek him,' for 'those who seek shall find him,' and, finding him, shall praise him. I will seek thee, O Lord, and call upon thee. I call upon thee, O Lord, in my faith which thou hast given me, which thou hast inspired in me through the humanity of thy Son, and through the ministry of thy preacher."
+
+[Integrity note: the previously-appended "Late have I loved thee" passage (Bk. X, Ch. 27) is famous but was not in the chunks fetched for this session; it has been removed so this file contains only text confirmed from the CCEL fetch above. Bk. I, Ch. I alone is used for post #10.]

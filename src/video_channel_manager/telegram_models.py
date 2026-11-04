@@ -196,7 +196,7 @@ class TelegramQueue(BaseModel):
 StateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 ProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 DispatchMode = Literal["manual", "scheduled"]
-ScheduledSlot = Literal["morning", "evening"]
+ScheduledSlot = Literal["morning", "evening", "midday"]
 
 
 class TargetProof(BaseModel):

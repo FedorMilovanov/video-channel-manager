@@ -1,0 +1,61 @@
+{
+  "schema_name": "video-manager.instagram-lord-god-first-reel-meta-v3-qc-nonpublishing",
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-04T03:45:51.616095+00:00",
+  "project_key": "lord-god-strength",
+  "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+  "source_video_id": "lTRm2NbnIas",
+  "source_url": "https://www.youtube.com/shorts/lTRm2NbnIas",
+  "source_title": "Что Почтит Жену Больше — Долг или Радость? Джон Пайпер о Том, Что Прославляет Бога",
+  "source_intake_snapshot_sha256": "sha256:1e898cd045515e3dc5879308dc0971e1f94e9ef7418f74231b1282a88c802c4b",
+  "source_local_basename": "Букет Роз на Годовщину Долг или Радость_9x16_blur.mp4",
+  "source_local_sha256": "sha256:13359972f1a4e981563bf788ba2d81169d6a383527824d0913ab1cbab0b20e55",
+  "source_local_size_bytes": 52092242,
+  "source_local_file_provenance": "candidate_local_original_unverified_against_youtube_source_bytes_or_reuse_rights",
+  "render_basename": "lord-god-lTRm2NbnIas-reel-9x16-meta-v3-technical.mp4",
+  "render_sha256": "sha256:93d6283c954eda608c95bbb26ed5c2f6b80ce3d824a22040bcd9f0587c221d56",
+  "render_size_bytes": 103472054,
+  "render_local_outbox_receipt_basename": "lord-god-lTRm2NbnIas-reel-9x16-meta-v3-technical-proof.json",
+  "physical_media_stored_in_git": false,
+  "media_technical_ruleset": "meta-instagram-reels-2026-09-v3",
+  "technical_review": "passed_existing_instagram_production_verify_local_reel",
+  "technical_video": {
+    "codec": "h264",
+    "width": 1080,
+    "height": 1920,
+    "pixel_format": "yuv420p",
+    "field_order": "progressive",
+    "frame_rate_fps": 30,
+    "source_frame_count": 4320,
+    "output_frame_count": 4320,
+    "closed_gop_verified": true,
+    "intra_frame_count": 72,
+    "idr_frame_count": 72
+  },
+  "technical_audio": {
+    "codec": "aac",
+    "sample_rate_hz": 44100,
+    "copied_compressed_stream_without_reencoding": true,
+    "source_compressed_stream_sha256": "fd38de99c14c89a402763fbd0972e063f4de542664cd9f36111e133974cf1b2f",
+    "output_compressed_stream_sha256": "fd38de99c14c89a402763fbd0972e063f4de542664cd9f36111e133974cf1b2f"
+  },
+  "container": {
+    "moov_before_mdat": true,
+    "edit_list_count": 0,
+    "stream_copy_for_audio": true,
+    "video_encoder": "h264_nvenc",
+    "encoder_profile": "p5 hq vbr cq18 max12Mbps forced-idr no-scenecut gop60"
+  },
+  "advisories": [
+    "audio_bitrate_not_recommended_128_kbps"
+  ],
+  "source_clip_full_duration_seconds": 144,
+  "editorial_visual_review": "pending",
+  "translation_and_speaker_attribution_review": "pending",
+  "reuse_rights_status": "pending_independent_review",
+  "instagram_professional_account_id": null,
+  "caption_approved": false,
+  "ready_to_publish": false,
+  "provider_writes_authorized": false,
+  "publication_release_id": null
+}

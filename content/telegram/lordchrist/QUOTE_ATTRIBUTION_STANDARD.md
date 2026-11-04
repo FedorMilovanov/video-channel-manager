@@ -8,6 +8,8 @@ The quotation entity contains **only the quoted words**. Author, work title, Scr
 
 Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote.
 
+**Two lane-specific exceptions live in `RICH_EDITOR_ARTICLE_STANDARD.md`:** in L2 the attribution is the last line *inside* the quote block and it is set in plain text, without the italic `*…*` of the short-post lane; and no lane prints a translation note («перевод мой» and the like) — a Russian rendering of a foreign author is the channel's translation by definition, so the credit names only the author and the work.
+
 **This placement rule governs the short-post lane (L1).** In the rich article lane (L2, editor «Статья») the attribution is the last line inside the quote block — see `RICH_EDITOR_ARTICLE_STANDARD.md` §5, «Lane split for the attribution». Everything else in this file — naming, titles, the `— ` prefix, balance of quotation marks — applies to both lanes. Every reader-facing attribution line begins with a Unicode em dash `—` (`U+2014`) followed by one normal space:
 
 > «Точный текст цитаты»

@@ -1,0 +1,33 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-restore",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v3",
+  "owning_issue": 694,
+  "base_release_id": "lordchrist-successor-depth-v2",
+  "base_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "handoff_published_prefix": 17,
+  "normalized_queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "release_state": "staged_provider_inert",
+  "provider_writes_authorized": false,
+  "reason": "Reader-facing rework of 2026-10-17 (issue #694): the literal exact_fragment_only translation corrections for pending sequences 32 and 36 produced quotations that open on unresolved anaphora («Он стал послушен…», «Если Он и я едины…»), which a visible title cannot repair. Sequence 17 was published under quote-v4 on 2026-10-17 (durable Telegram message 1567) before this release and is immutable history, so the restore covers only the two pending anaphora slots. Each is restored verbatim to the first sentence of the sealed source-v1 reviewed translation, where the subject is named. The accepted published history 1-17 and every other pending payload stay byte-identical to depth-v2.",
+  "restores": [
+    {
+      "sequence": 32,
+      "publication_id": "lordchrist-successor-depth-v2-32-chrysostom-son-obedience",
+      "base_payload_sha256": "sha256:9343f845d7ad45803a57110ac68f25bfbc1029fbbb3c94773327fbb125de9b77",
+      "restored_quote_ru": "Христос стал послушным Отцу как Сын; это не низводит Его до рабского состояния.",
+      "source_fragment_sha256": "sha256:e96bd7483cce989e782f98850c4a57d721d1dc7bc9df244619d7c1bcb83de64d",
+      "rationale_ru": "Дословный перевод фрагмента открывается местоимением «Он» без антецедента; заголовок не спасал читателя от обрывка. Восстановлено первое предложение исходного запечатанного перевода source-v1, где субъект назван по имени — Христос."
+    },
+    {
+      "sequence": 36,
+      "publication_id": "lordchrist-successor-depth-v2-36-bunyan-union-victory",
+      "base_payload_sha256": "sha256:e761a1a22bfa697f405227702ddbc4a7057b662d79bcef28954c46c791bf0abb",
+      "restored_quote_ru": "Если Христос и я соединены, тогда Его праведность — моя, Его заслуги — мои, Его победа — моя.",
+      "source_fragment_sha256": "sha256:2605cc9d75c57e1bafe2764950e5ac1b4606bdaedb380b1d273d0b0dee942331",
+      "rationale_ru": "Дословный перевод открывается «Если Он и я едины» без указания, кто «Он». Восстановлено первое предложение исходного запечатанного перевода source-v1 с явным именем Христа в условии."
+    }
+  ]
+}

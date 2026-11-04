@@ -3,14 +3,21 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Mapping
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
+from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.platforms.vk.wall import VkWallRecoveryRequired, VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import VkWallDeltaStatus, VkWallSurface, compare_wall_snapshots
+from video_channel_manager.platforms.vk.wall_safety import (
+    VkWallDeltaStatus,
+    VkWallPostFingerprint,
+    VkWallSurface,
+    compare_wall_snapshots,
+)
 from video_channel_manager.platforms.vk.writer import VkWriteError
 from video_channel_manager.wave_engine.engine import (
     KnownProviderRejectionError,
@@ -21,11 +28,22 @@ from video_channel_manager.wave_engine.models import WaveOperation
 
 
 LORD_GOD_WALL_OPERATION_KIND = "vk.lord_god.postponed_wall"
-LORD_GOD_WALL_POLICY_VERSION = "vk-lord-god-postponed-wall-v2"
+LORD_GOD_WALL_POLICY_VERSION = "vk-lord-god-postponed-wall-v4"
 LORD_GOD_PROJECT_KEY = "lord-god-strength"
 LORD_GOD_COMMUNITY_ID = 60805374
 LORD_GOD_OWNER_ID = -60805374
-LORD_GOD_ACCOUNT_ALIAS = "legendary-poet"
+# The legacy shared credential (aliases ``legendary-poet`` / ``default``) is
+# quarantined by docs/operations/vk-credential-quarantine.md: it must never be
+# used for a provider call again. Policy v4 therefore binds every new Lord God
+# postponed-wall operation to the community access key of community 60805374
+# itself (created in the community's API settings with the ``wall``
+# permission, stored in the GitHub Environment ``The_Lord_God_VK`` and
+# imported locally under this alias via ``video-manager vk
+# community-key-login``). Changing the alias also changes the payload and
+# therefore the operation identity, so a v3 plan can never be replayed under
+# the new credential.
+LORD_GOD_ACCOUNT_ALIAS = "vk-lord-god-community-key"
+LORD_GOD_QUARANTINED_ACCOUNT_ALIASES = frozenset({"legendary-poet", "default"})
 
 
 class LordGodWallError(RuntimeError):
@@ -41,6 +59,8 @@ class LordGodWallOperation:
     publish_date: int
     guid: str
     source_id: str
+    photo_path: str | None = None
+    photo_sha256: str | None = None
     video_owner_id: int | None = None
     video_id: int | None = None
     expected_video_title: str | None = None
@@ -110,6 +130,11 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
     if content_kind not in {"video", "text"}:
         raise LordGodWallError("content_kind must be video or text")
     account_alias = _exact_string(payload.get("account_alias"), field="account_alias")
+    if account_alias in LORD_GOD_QUARANTINED_ACCOUNT_ALIASES:
+        raise LordGodWallError(
+            "account_alias is the quarantined legacy VK credential; "
+            f"use the separately imported alias {LORD_GOD_ACCOUNT_ALIAS} (Lord God community access key)"
+        )
     if account_alias != LORD_GOD_ACCOUNT_ALIAS:
         raise LordGodWallError("account_alias differs from the reviewed Lord God credential alias")
     message = _canonical_message(payload.get("message"))
@@ -123,6 +148,15 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
     source_id = _exact_string(payload.get("source_id"), field="source_id")
 
     if content_kind == "text":
+        photo_path = payload.get("photo_path")
+        photo_sha256 = payload.get("photo_sha256")
+        if (photo_path is None) != (photo_sha256 is None):
+            raise LordGodWallError("photo_path and photo_sha256 must be supplied together")
+        if photo_path is not None:
+            photo_path = _exact_string(photo_path, field="photo_path")
+            if photo_path.startswith(("/", ".")) or ".." in Path(photo_path).parts or not photo_path.endswith(".jpg"):
+                raise LordGodWallError("photo_path must be a repository-relative .jpg path")
+            photo_sha256 = _sha256_value(photo_sha256, field="photo_sha256")
         return LordGodWallOperation(
             content_kind=content_kind,
             account_alias=account_alias,
@@ -131,6 +165,8 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
             publish_date=publish_date,
             guid=guid,
             source_id=source_id,
+            photo_path=photo_path,
+            photo_sha256=photo_sha256,
         )
 
     video_owner_id = payload.get("video_owner_id")
@@ -161,6 +197,122 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
 
 
 class LordGodWallWriter(VkWallWriter):
+    """Wall writer bound to the Lord God community access key.
+
+    The credential is a community key (``token_type == "community"``), not a
+    user token: it carries community permissions (``wall`` …) and can never
+    hold the user ``video`` scope the base writer demands before every call.
+    For community tokens the verified community permission set is therefore
+    authoritative — ``wall`` gates wall reads/writes, while video operations
+    still fail deterministically because ``video`` is not in that set.
+    """
+
+    def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
+        token = self.token_store.load_token(self.account_alias)
+        if token.token_type != "community":
+            return super().assert_token_scopes(*required_scopes)
+        if token.is_expired():
+            raise VkWriteError(
+                "VK community access key is expired. Import a fresh community key with verified permissions.",
+                method="token",
+                code=5,
+                attempts=0,
+            )
+        missing = [scope for scope in required_scopes if scope not in token.scopes]
+        if missing:
+            raise VkWriteError(
+                "Stored VK community key does not verify required permission(s): " + ", ".join(missing),
+                method="token",
+                code=7,
+                attempts=0,
+            )
+        return token
+
+    def _token_value(self) -> str:
+        token = self.token_store.load_token(self.account_alias)
+        if token.token_type != "community":
+            return super()._token_value()
+        self.assert_token_scopes()
+        return token.access_token
+
+    def credential_token_type(self) -> str:
+        return self.token_store.load_token(self.account_alias).token_type
+
+    def is_community_key(self) -> bool:
+        try:
+            return self.credential_token_type() == "community"
+        except (AttributeError, OSError, ValueError):
+            return False
+
+    def schedule_text_with_community_key(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        """Schedule one text post with the community access key.
+
+        VK rejects ``wall.get`` under group authorization (error 27), so the
+        snapshot-based preflight/postflight of the user-token path is
+        impossible with this credential. This mode therefore performs exactly
+        one ``wall.post`` (idempotency rests on the deterministic ``guid``
+        plus the wave journal) and then attempts a non-gating readback via
+        ``wall.getById``; the readback outcome is reported, never hidden.
+        """
+
+        if self.credential_token_type() != "community":
+            raise LordGodWallError("community-key scheduling requires a community access key token")
+        if wall.photo_path is not None:
+            # Live-proven (apply run 40197033579): VK rejects
+            # photos.getWallUploadServer under group authorization
+            # (error 27), so covers cannot be uploaded with this
+            # credential at all. Reject before any provider call.
+            raise LordGodWallError(
+                "cover photos cannot be uploaded with the community access key: "
+                "photos.getWallUploadServer is unavailable with group auth (VK error 27); "
+                "prepare the text-only variant"
+            )
+        self.assert_token_scopes("wall")
+        self.assert_method_circuit_closed("wall.post")
+        try:
+            response = self._call(
+                "wall.post",
+                params={
+                    "owner_id": LORD_GOD_OWNER_ID,
+                    "from_group": True,
+                    "message": wall.message,
+                    "publish_date": wall.publish_date,
+                    "guid": wall.guid,
+                },
+            )
+        except VkWriteError:
+            raise
+        except Exception as exc:
+            raise UnknownProviderOutcomeError(f"{type(exc).__name__}: {exc}") from exc
+        post_id = response.get("post_id") if isinstance(response, dict) else response
+        if type(post_id) is not int or post_id <= 0:
+            raise RuntimeError(f"wall.post returned no positive post ID: {response!r}")
+
+        readback: dict[str, Any]
+        try:
+            item = self.read_post(community_id=LORD_GOD_COMMUNITY_ID, post_id=post_id)
+        except VkWriteError as exc:
+            readback = {"status": "unavailable", "code": exc.code, "method": exc.method or "wall.getById"}
+        else:
+            if item is None:
+                readback = {"status": "not_visible"}
+            else:
+                fingerprint = VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
+                matches = (
+                    fingerprint.publish_date == wall.publish_date
+                    and fingerprint.text_sha256 == wall.message_sha256
+                    and not fingerprint.attachments
+                )
+                readback = {"status": "verified" if matches else "mismatch"}
+        return {
+            "status": "scheduled_community_key",
+            "remote_id": f"{LORD_GOD_OWNER_ID}_{post_id}",
+            "publish_date": wall.publish_date,
+            "surface": VkWallSurface.POSTPONED.value,
+            "readback": readback,
+            "source_id": wall.source_id,
+        }
+
     def verify_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
         if wall.content_kind != "video" or wall.video_owner_id is None or wall.video_id is None:
             raise LordGodWallError("verify_video requires a video operation")
@@ -189,6 +341,13 @@ class LordGodWallWriter(VkWallWriter):
             if wall.content_kind == "video":
                 if post.attachments != (expected_attachment,):
                     continue
+            elif wall.photo_path is not None:
+                # The saved photo identity is minted during apply, so the
+                # operation cannot name an exact token in advance. A photo
+                # text post matches when it carries exactly one photo
+                # attachment; the token itself is bound by the journal.
+                if len(post.attachments) != 1 or not post.attachments[0].startswith("photo"):
+                    continue
             elif post.attachments:
                 continue
             matches.append(post)
@@ -214,6 +373,13 @@ class LordGodWallWriter(VkWallWriter):
         return None
 
     def schedule_text(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        if self.is_community_key():
+            return self.schedule_text_with_community_key(wall)
+        if wall.photo_path is not None:
+            raise LordGodWallError(
+                "photo attachments are not supported on the Lord God wall path: "
+                "the community access key cannot upload wall photos (VK error 27)"
+            )
         self.assert_method_circuit_closed("wall.get")
         self.assert_method_circuit_closed("wall.post")
         before = self.capture_wall_snapshot(
@@ -341,11 +507,17 @@ class LordGodWallWriter(VkWallWriter):
 class LordGodPostponedWallAdapter:
     reconciliation_replay_safe = True
 
-    def __init__(self, *, account_alias: str = LORD_GOD_ACCOUNT_ALIAS) -> None:
+    def __init__(self, *, account_alias: str = LORD_GOD_ACCOUNT_ALIAS, repository_root: Path | None = None) -> None:
+        if account_alias in LORD_GOD_QUARANTINED_ACCOUNT_ALIASES:
+            raise ValueError(
+                "Lord God wall provider refuses the quarantined legacy VK credential; "
+                f"use the separately imported alias {LORD_GOD_ACCOUNT_ALIAS} (Lord God community access key)"
+            )
         if account_alias != LORD_GOD_ACCOUNT_ALIAS:
             raise ValueError("Lord God wall provider requires the exact local VK alias")
         settings = get_settings()
         self.settings = settings
+        self.repository_root = (repository_root or Path(".")).resolve()
         self.account_alias = account_alias
         self.writer = LordGodWallWriter(
             token_store=VkTokenStore(settings.data_dir),
@@ -369,6 +541,11 @@ class LordGodPostponedWallAdapter:
                 community_id=LORD_GOD_COMMUNITY_ID,
                 operation=f"lord-god-postponed-wall:{wall.source_id}",
             ):
+                if self.writer.is_community_key() and wall.content_kind == "video":
+                    raise OperationRejectedError(
+                        "the community access key cannot verify or schedule video operations; "
+                        "video slots require a user-token credential"
+                    )
                 if wall.content_kind == "video":
                     return self.writer.schedule_video(wall)
                 return self.writer.schedule_text(wall)
@@ -399,6 +576,7 @@ class LordGodPostponedWallAdapter:
 
 __all__ = [
     "LORD_GOD_ACCOUNT_ALIAS",
+    "LORD_GOD_QUARANTINED_ACCOUNT_ALIASES",
     "LORD_GOD_COMMUNITY_ID",
     "LORD_GOD_OWNER_ID",
     "LORD_GOD_PROJECT_KEY",

@@ -233,6 +233,43 @@ def _load_active_queue_or_fail_closed(path: Path, *, label: str) -> Any:
         raise ValueError(f"invalid {label} {path}: {exc}") from exc
 
 
+def _resolve_predecessor_archive_after_v4_cutover(
+    *,
+    predecessor_queue: Any,
+    state_ledger_path: Path,
+    active_queue_path: Path,
+) -> tuple[Path, TelegramLedger | None]:
+    """Keep the archived predecessor in the effect barrier after v4 replaces its state path.
+
+    The archive name is derived from the *verified predecessor queue digest*,
+    never from a newest-file search. The replacement ledger must validate
+    against the exact reviewed v4 queue or the entire barrier fails closed.
+    """
+    if not state_ledger_path.is_file():
+        return state_ledger_path, None  # The regular strict loader rejects missing state.
+
+    try:
+        current = TelegramLedger.model_validate_json(state_ledger_path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid predecessor state ledger {state_ledger_path}: {exc}") from exc
+    if current.queue_digest == predecessor_queue.digest:
+        return state_ledger_path, None
+
+    archive = state_ledger_path.with_name(
+        f"publication-ledger-archive-{predecessor_queue.digest.removeprefix('sha256:')[:12]}.json"
+    )
+    if not archive.is_file():
+        raise ValueError("v4 state ledger replaced predecessor without the exact archived predecessor ledger")
+
+    # Do not accept an unknown future queue as the v4 state merely because a
+    # digest-named predecessor archive is present.
+    active_queue = load_legacy_queue(active_queue_path)
+    if active_queue.digest != "sha256:a3e5bd757b49996f5db27d46427ce3e6909ce1cf8146d41f6bd316081a2065dd":
+        raise ValueError("active state ledger is not bound to the reviewed LordChrist quote-v4 queue")
+    active_ledger = load_legacy_ledger(state_ledger_path, active_queue)
+    return archive, active_ledger
+
+
 def require_no_cross_track_unresolved_effects(
     *,
     profile_path: Path,
@@ -251,11 +288,18 @@ def require_no_cross_track_unresolved_effects(
 
     from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue
 
+    active_queue_path = legacy_queue_path
+    v4_ledger: TelegramLedger | None = None
     if predecessor_queue_raw:
         legacy_queue_path = Path(predecessor_queue_raw)
         legacy_ledger_path = Path(predecessor_ledger_raw)
         research_ledger_path = legacy_ledger_path.parent / "research-v2/publication-ledger.json"
         legacy_queue = load_legacy_queue(legacy_queue_path)
+        legacy_ledger_path, v4_ledger = _resolve_predecessor_archive_after_v4_cutover(
+            predecessor_queue=legacy_queue,
+            state_ledger_path=legacy_ledger_path,
+            active_queue_path=active_queue_path,
+        )
     else:
         active_queue = _load_active_queue_or_fail_closed(legacy_queue_path, label="active Telegram queue")
         if isinstance(active_queue, SuccessorRuntimeQueue):
@@ -296,6 +340,7 @@ def require_no_cross_track_unresolved_effects(
             "successor": successor_ledger.entries.values() if successor_ledger is not None else (),
             "depth_v2": depth_ledger.entries.values() if depth_ledger is not None else (),
             "depth_v3": depth_v3_ledger.entries.values() if depth_v3_ledger is not None else (),
+            "v4": v4_ledger.entries.values() if v4_ledger is not None else (),
         },
         retired_publication_ids_by_track={
             "research": retired_research_publication_ids,
@@ -307,11 +352,13 @@ def require_no_cross_track_unresolved_effects(
         "successor_ledger_present": successor_ledger is not None,
         "depth_v2_ledger_present": depth_ledger is not None,
         "depth_v3_ledger_present": depth_v3_ledger is not None,
+        "v4_ledger_present": v4_ledger is not None,
         "legacy_unresolved": list(blockers["legacy"]),
         "research_unresolved": list(blockers["research"]),
         "successor_unresolved": list(blockers["successor"]),
         "depth_v2_unresolved": list(blockers["depth_v2"]),
         "depth_v3_unresolved": list(blockers["depth_v3"]),
+        "v4_unresolved": list(blockers["v4"]),
         "retired_research_publications": sorted(retired_research_publication_ids),
         "research_retirement_issue": retirement.owning_issue if retirement is not None else None,
     }

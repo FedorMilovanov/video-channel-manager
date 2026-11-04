@@ -1,0 +1,21 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-runtime-activation",
+  "schema_version": 3,
+  "progress_policy": "verified_prefix",
+  "published_history_sha256": "sha256:2d08a58b30803d3db2b6c5a75b0a844d0aac144598da9f7fb8212431a0d9fd35",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v3",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "sealed_handoff_published_prefix": 14,
+  "required_published_prefix": 17,
+  "required_pending_suffix": 43,
+  "presentation_policy_id": "lordchrist-quote-v5",
+  "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
+  "state_ledger_relative_path": "content/telegram/lordchrist/successor-depth-v3-publication-ledger.json",
+  "source_web_audit": "quote-source-web-audit-v2.json",
+  "source_live_probe": "quote-source-live-probe-v2.json",
+  "presentation_migration": "successor-depth-presentation-migration-v2.json",
+  "provider_writes_authorized": true,
+  "note": "Reader-facing rework authorized on 2026-10-17 under issue #694: complete self-contained quotations instead of anaphora fragments. Boundary is the verified 17/43 state: sequences 16 and 17 remain the only quote-v4 posts and immutable history bound by their durable dispatch evidence (17 is Telegram message 1567). The depth-v3 restore release returns pending slots 32 and 36 to the sealed source-v1 complete translations; every other payload stays byte-identical to depth-v2. The pending suffix renders quote-first under quote-v5 with no leading title. Sealed payloads, queue order, exact target, per-slot/day quotas, current-main gates and no-backfill stay enforced."
+}

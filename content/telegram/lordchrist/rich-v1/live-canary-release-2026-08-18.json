@@ -31,7 +31,8 @@
   },
   "media_registry": {
     "path": "content/telegram/lordchrist/rich-v1/media/media-registry.json",
-    "git_blob_sha": "e1f72a531db44c5993669308086500fdf39f36b0"
+    "git_blob_sha": "27abe674570342b34292cffa513620589eedc8ee",
+    "additive_refresh_note": "2026-10-22: blob refreshed because generated article covers were moved out of this registry into media/cover-registry.json. The canary's three Wikimedia attachments and their bytes are unchanged."
   },
   "article": {
     "path": "content/telegram/lordchrist/rich-v1/articles/lordchrist-rich-sermons-survive-century.json",

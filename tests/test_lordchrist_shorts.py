@@ -189,12 +189,12 @@ def test_policy_is_provider_inert_exactly_bound_and_respects_editorial_gap() -> 
     assert policy.telegram_provider_mutation_allowed is False
     assert policy.telegram_stories_enabled is False
     assert policy.daily_short_limit == 1
-    assert policy.slot_local_time == "17:17"
-    assert load_and_validate_editorial_schedule(EDITORIAL_SCHEDULE, policy) == ("09:17", "21:17")
+    assert policy.slot_local_time == "16:00"
+    assert load_and_validate_editorial_schedule(EDITORIAL_SCHEDULE, policy) == ("10:00", "21:00")
 
-    unsafe = policy.model_copy(update={"slot_local_time": "18:17"})
+    unsafe = policy.model_copy(update={"slot_local_time": "18:00"})
     with pytest.raises(ValueError, match="only 180 minutes"):
-        require_min_editorial_gap(unsafe, ("09:17", "21:17"))
+        require_min_editorial_gap(unsafe, ("10:00", "21:00"))
 
 
 def test_inventory_uses_exact_owner_metadata_and_keeps_historical_candidate() -> None:
@@ -297,8 +297,8 @@ def test_release_is_unauthorized_one_per_day_and_candidate_approval_is_snapshot_
     assert release.target_binding_sha256 is None
     assert release.chat_id is None
     assert len(release.items) == 2
-    assert release.items[0].scheduled_at.hour == 17
-    assert release.items[0].scheduled_at.minute == 17
+    assert release.items[0].scheduled_at.hour == 16
+    assert release.items[0].scheduled_at.minute == 0
     assert (release.items[1].scheduled_at - release.items[0].scheduled_at).days == 1
     assert all(isinstance(item.payload, GenericVideoPayload) for item in release.items)
     assert release.release_id.startswith("lordchrist-shorts-2026-08-21-")

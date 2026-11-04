@@ -78,6 +78,17 @@ def _fault(
         fault_hook(stage, operation)
 
 
+def ci_operator_confirmation_for(plan: WavePlan) -> str:
+    """Exact operator confirmation that authorizes ambiguous mutations in CI.
+
+    CI remains fail-closed by default: an ambiguous provider mutation may run
+    there only when a human operator supplied this exact token, which binds
+    the authorization to one immutable plan (self digest + operation set).
+    """
+
+    return f"WAVE-CI-APPLY:{plan.self_digest}:{plan.operation_set_digest}"
+
+
 class WaveEngine:
     def apply(
         self,
@@ -91,6 +102,7 @@ class WaveEngine:
         plan_file_path: Path,
         journal_directory: Path,
         provider_writes_enabled: bool,
+        ci_operator_confirmation: str | None = None,
         fault_hook: WaveFaultHook | None = None,
     ) -> WaveResult:
         intent.assert_matches(plan, source)
@@ -124,7 +136,11 @@ class WaveEngine:
             operation.mutation_class is MutationClass.AMBIGUOUS_MUTATION for operation in plan.operations
         )
         if contains_mutation and is_ci_environment():
-            raise ValueError("ambiguous provider mutations are prohibited in CI")
+            if ci_operator_confirmation != ci_operator_confirmation_for(plan):
+                raise ValueError(
+                    "ambiguous provider mutations are prohibited in CI without the exact "
+                    "plan-bound operator confirmation (WAVE-CI-APPLY:<plan_self_digest>:<operation_set_digest>)"
+                )
         if contains_mutation and (not intent.enable_provider_writes or not provider_writes_enabled):
             raise ValueError("ambiguous mutations require two explicit provider-write confirmations")
 

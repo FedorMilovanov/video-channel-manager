@@ -1,0 +1,124 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-source-bound-bilingual-line-edits-inert",
+  "schema_version": 1,
+  "review_date": "2026-11-04",
+  "editorial_approval": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "provider_write_authorization": false,
+  "protected_ledger_write_authorization": false,
+  "approved_new_queue": false,
+  "revisions": [
+    {
+      "sequence": 11,
+      "reason": "Murray's 'There we have' points back to his own explicitly quoted 1 Peter 1:5 text in the immediately preceding sentence; new contiguous opening gives the standalone reader the author's actual biblical referent.",
+      "edits": [
+        {
+          "field": "source.anchor_start",
+          "exact_before": "There we have two wonderful, blessed truths about the keeping by which a believer is kept unto salvation.",
+          "proposed_after": "The words of my text are:",
+          "source_phrase": "The words of my text are: “Kept by the power of God through faith.”",
+          "issue": "source opening previous sentence missing"
+        },
+        {
+          "field": "text",
+          "exact_before": "«Здесь перед нами две чудесные, благословенные истины",
+          "proposed_after": "«Слова, взятые за основу моей проповеди: „Хранимые силой Божьей через веру“. Здесь перед нами две чудесные, благословенные истины",
+          "source_phrase": "The words of my text are: “Kept by the power of God through faith.”",
+          "issue": "standalone anaphoric source context restored"
+        }
+      ],
+      "source_url": "https://ccel.org/ccel/murray/surrender/surrender.ix.html",
+      "original_publication_id": "lordchrist-murray-kept-by-power",
+      "original_full_post_sha256": "sha256:bd757a1732dcc4accf287fd6e7ff1df91de713afda8b18d41488c538e5deecaa",
+      "expected_prior_preview_full_post_sha256": "sha256:50acf3afd526a245bb2640b8177db742a9ac9753f268d2d2c62fe1a377ad6062",
+      "source_witness": {
+        "http_status": 200,
+        "source_begin_anchor_exact": true,
+        "source_end_anchor_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 184,
+        "phrase_checks": [
+          {
+            "evidence_phrase": "The words of my text are: “Kept by the power of God through faith.”",
+            "exact_tokens_in_original": true
+          },
+          {
+            "evidence_phrase": "The words of my text are: “Kept by the power of God through faith.”",
+            "exact_tokens_in_original": true
+          }
+        ],
+        "full_sentence_alignment_certified": false
+      },
+      "candidate_full_post_sha256": "sha256:521b75687de3add81a3c8efdded487095158203a63c5615d0613b3a881850687",
+      "candidate_begin_anchor_sha256": "sha256:6eba964e0c80b1ad1e91ae989d5cc082b30deeaf5e78af424711f0d147288f83"
+    },
+    {
+      "sequence": 13,
+      "reason": "Bunyan's autobiographical confession states that he was filled with ALL unrighteousness, working strongly in both his HEART and LIFE from childhood; Russian softened/omitted those distinctions and turned 'few equals considering my tender years' into 'among peers'.",
+      "edits": [
+        {
+          "field": "text",
+          "exact_before": "Неправда глубоко действовала во мне с самого детства, так что среди ровесников мало кто мог сравниться со мной",
+          "proposed_after": "Я был исполнен всякой неправды, сильно проявлявшейся и в моём сердце, и в моей жизни с детства; и, хотя лет мне было совсем немного, мало кто мог сравниться со мной",
+          "source_phrase": "Being filled with all unrighteousness, the which did also so strongly work and put forth itself, both in my heart and life, and that from a child, that I had but few equals, especially considering my years, which were tender, being few",
+          "issue": "missing author's theological specificity and youth qualifier"
+        }
+      ],
+      "source_url": "https://ccel.org/ccel/bunyan/grace.iv.html",
+      "original_publication_id": "lordchrist-bunyan-grace-abounding",
+      "original_full_post_sha256": "sha256:c7bc6973d288395e6a647214104c33404fcff0769640dfb44a0ae9ee787be0c9",
+      "expected_prior_preview_full_post_sha256": "sha256:c3b710b14fa009e8489c960adc99918bbed8bf59fdaac3705982576a1bad1767",
+      "source_witness": {
+        "http_status": 200,
+        "source_begin_anchor_exact": true,
+        "source_end_anchor_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 292,
+        "phrase_checks": [
+          {
+            "evidence_phrase": "Being filled with all unrighteousness, the which did also so strongly work and put forth itself, both in my heart and life, and that from a child, that I had but few equals, especially considering my years, which were tender, being few",
+            "exact_tokens_in_original": true
+          }
+        ],
+        "full_sentence_alignment_certified": false
+      },
+      "candidate_full_post_sha256": "sha256:04ee1440f57b115a2931e00b568b3709e82d46dc7252235f895af2d51e01c387",
+      "candidate_begin_anchor_sha256": "sha256:9ad7e0df8e373ad62132bc2f3e6726df9e34742608a7211ea89788098dc4ca50"
+    },
+    {
+      "sequence": 26,
+      "reason": "Bunyan says the listeners solemnly testified that they WERE affected and comforted, then thanked the Father for grace given to him. Prior Russian instead adds 'edification' in the reported testimony, which is not in that clause.",
+      "edits": [
+        {
+          "field": "text",
+          "exact_before": "Слушавшие не только казались тронутыми и утешенными, но и торжественно заявили перед великим Богом, что действительно получили утешение и назидание.",
+          "proposed_after": "Слушавшие не только казались тронутыми и утешенными, но и торжественно засвидетельствовали перед великим Богом, что они и в самом деле были тронуты и утешены.",
+          "source_phrase": "at which they not only seemed to be, but did solemnly protest, as in the sight of the great God, they were both affected and comforted",
+          "issue": "unattributed additional edification in listener testimony"
+        }
+      ],
+      "source_url": "https://ccel.org/ccel/bunyan/grace/grace.v.html",
+      "original_publication_id": "lordchrist-bunyan-preaching-call",
+      "original_full_post_sha256": "sha256:d9e25466cc5d28336f1c62389c806b7068b37d9bbb78950483d6caf924c3e9a0",
+      "expected_prior_preview_full_post_sha256": "sha256:831e0dd68eb8b82e2820b1a998e29538254cfff8995298edbaf6ce89c3194d1a",
+      "source_witness": {
+        "http_status": 200,
+        "source_begin_anchor_exact": true,
+        "source_end_anchor_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 217,
+        "phrase_checks": [
+          {
+            "evidence_phrase": "at which they not only seemed to be, but did solemnly protest, as in the sight of the great God, they were both affected and comforted",
+            "exact_tokens_in_original": true
+          }
+        ],
+        "full_sentence_alignment_certified": false
+      },
+      "candidate_full_post_sha256": "sha256:21094d0d6ff708a1293e3feca6d4767c80a0aaceb8f0768f8c42aded8e2519b1",
+      "candidate_begin_anchor_sha256": "sha256:f6fa7b0d32349dbc5e1430e5995c5f2432f87ab52a6e5ec06dc5e98d4d1caa02"
+    }
+  ],
+  "original_queue_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72"
+}

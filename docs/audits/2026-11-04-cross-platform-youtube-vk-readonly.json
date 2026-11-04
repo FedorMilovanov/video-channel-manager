@@ -1,0 +1,1703 @@
+{
+  "schema_name": "video-manager.cross-platform-public-first-page-readonly-gap-review",
+  "schema_version": 1,
+  "generated_utc": "2026-11-04T02:16:31.076131+00:00",
+  "evidence_level": "read_only_evidence_bundle",
+  "package_kind": "read_only_evidence_bundle",
+  "provider_adapter_connected": false,
+  "provider_writes_authorized": false,
+  "automatic_execution": false,
+  "upload_or_reupload_authorized": false,
+  "missing_from_vk_claims": 0,
+  "source_snapshot_sha256": "sha256:1e898cd045515e3dc5879308dc0971e1f94e9ef7418f74231b1282a88c802c4b",
+  "coverage_limitations": [
+    "YouTube public channel first-rendered pages are not complete owner uploads inventories",
+    "YouTube owner OAuth refresh returned HTTP 400; no owner AuditPackage exists for this capture",
+    "VK public page HTML exposed no verifiable exact video IDs and quarantined legacy VK token must not be used",
+    "Local native VK state only proves known eight Legendary Poet sources, not absence of any other video",
+    "July historic YouTube-to-VK mapping is identity evidence, not a fresh VK provider readback",
+    "VK ordinary videos and VK Clips are disjoint surfaces; do not infer Clip absence from video.get"
+  ],
+  "vk_legacy_credential_status": "quarantined_vk_api_code_9_issue_662",
+  "instagram_lord_god_target_status": "unbound_professional_account_id",
+  "known_legacy_exact_native_vk_verified": 8,
+  "historical_july_mapping_count": 111,
+  "verified_native_file_evidence": [
+    {
+      "youtube_id": "LF-MhY9AxkI",
+      "state_file_name": "1b5b1bbe50b61e305051fa052e6451c10b90bc9a1df049d223a5f798d8fff45f.json",
+      "state_sha256": "sha256:9945dd2a252c5a5f27c462baa0b7dfa17adfbf5a71cc1c9dbdf993e7895ae762",
+      "verification_observed_at": "2026-09-11T20:47:55.131612+00:00"
+    },
+    {
+      "youtube_id": "kxUwclMcE70",
+      "state_file_name": "232995d8140e6c93606c3252bab9e361702b1b06f3d5e5cdab1b0ffc23f09829.json",
+      "state_sha256": "sha256:1bad711c2dc171e20b1a851bf6c38df0f8200d5ab7c3775b93559dd30919b6ec",
+      "verification_observed_at": "2026-09-11T20:48:29.826803+00:00"
+    },
+    {
+      "youtube_id": "OP8cZmJHvJ8",
+      "state_file_name": "3538be9dcf0cec076a77970fc27195c777f1704f519948d9628b724858b198d2.json",
+      "state_sha256": "sha256:57c2b2a7712556d91d356dc5078a4b9628b594542f26553e41b43ac2f7fccaee",
+      "verification_observed_at": "2026-09-11T20:48:47.445504+00:00"
+    },
+    {
+      "youtube_id": "-Cy-O4rT5xU",
+      "state_file_name": "517937c92788b50844ef730701ddaa46e21512e79730adc67b6d2424903486ef.json",
+      "state_sha256": "sha256:81d9d1bb06c69a83a168bcf4247469fbdfa59a3af68bcfa36898e5d1c60947ec",
+      "verification_observed_at": "2026-09-11T20:47:36.237255+00:00"
+    },
+    {
+      "youtube_id": "hdKprsGFVdI",
+      "state_file_name": "88a9eafeb8826f5f30f22f89381bb661e2be05817da5e538c63aeeeaba4ac777.json",
+      "state_sha256": "sha256:6cdea549c9815fa98026140197c9d214b361f197066827341724619816d66dd6",
+      "verification_observed_at": "2026-09-11T20:45:11.842384+00:00"
+    },
+    {
+      "youtube_id": "fZ8T6AXrgLQ",
+      "state_file_name": "8b6e5c222c0a8e7a9cc3bd7293ef5bf0b31c3a676e83ec01f9264e00804251c8.json",
+      "state_sha256": "sha256:06dc0e54e3987e05da64bff0f1fa82f0eb9f6f9a06b945011577e5572ded285a",
+      "verification_observed_at": "2026-09-11T20:38:22.005488+00:00"
+    },
+    {
+      "youtube_id": "x-puy27S2qs",
+      "state_file_name": "c46b4fc26e65834119d04614dea308024189dfcc483f16e079280713a112d1e1.json",
+      "state_sha256": "sha256:021395a3ebed8c0a543e1a3baba3887e464285dc2d17bd5fb3d1dd952b7f655b",
+      "verification_observed_at": "2026-09-11T20:48:19.390464+00:00"
+    },
+    {
+      "youtube_id": "NgvWlaMqTnI",
+      "state_file_name": "ed122284043fcf2a59580b390877c0006826e657a557b6fed0e268978c433a9e.json",
+      "state_sha256": "sha256:de7edbe375ee89275341288afa4ee9a87ca6b06f054eb947ed3ad18a6123fc34",
+      "verification_observed_at": "2026-09-11T20:00:27.717571+00:00"
+    }
+  ],
+  "fresh_reconcile_priority": {
+    "project_key": "legendary-poet",
+    "surface": "videos",
+    "youtube_ids_ahead_of_latest_locally_verified_in_observed_page": [
+      "IRI5dkx9ldA",
+      "Lf0h4yXPVng",
+      "RuTmtXUuxm8",
+      "t_Ot-SQRxlw",
+      "5zUmdg_Wzek",
+      "bRK9ptwpvHE",
+      "hScoO2ldMMY",
+      "4kCWLySds6k"
+    ],
+    "source_relative_order_only": true,
+    "vk_exact_id_readback_required_before_upload": true,
+    "batch_upload_authorized": false
+  },
+  "source_surfaces": [
+    {
+      "project_key": "lord-god-strength",
+      "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+      "surface": "videos",
+      "public_first_rendered_page_count": 30,
+      "public_source_url": "https://www.youtube.com/@fedormilovanov/videos",
+      "observed_utc": "2026-11-04T02:10:40.463719+00:00",
+      "pagination_exhausted": false,
+      "vk_provider_readback_complete": false,
+      "items": [
+        {
+          "ordinal_on_public_first_page": 1,
+          "youtube_id": "OIe6sNb79Vc",
+          "youtube_url": "https://www.youtube.com/watch?v=OIe6sNb79Vc",
+          "title": "ДРЕВНИЙ ГИМН ✝ Свет Отрадный ✝ Φῶς ἱλαρόν - Гимн Вечерни",
+          "relative_published_label": "5 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 2,
+          "youtube_id": "i0BIxBG9Gbg",
+          "youtube_url": "https://www.youtube.com/watch?v=i0BIxBG9Gbg",
+          "title": "ИИ и Христиане - Как мы должны смотреть на это? — Нейтан Бузениц",
+          "relative_published_label": "7 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 3,
+          "youtube_id": "iCwpSy0VJdM",
+          "youtube_url": "https://www.youtube.com/watch?v=iCwpSy0VJdM",
+          "title": "Нидерландский ГИМН  ✝  Хвала Славе  ✝  Йодокус ван Лоденштейн",
+          "relative_published_label": "9 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 4,
+          "youtube_id": "UvB5WfxCN68",
+          "youtube_url": "https://www.youtube.com/watch?v=UvB5WfxCN68",
+          "title": "Нейтан и Бет Бузениц: Интервью с Новым Старшим Пастором Grace Church",
+          "relative_published_label": "10 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 5,
+          "youtube_id": "5eJBQUqBk4c",
+          "youtube_url": "https://www.youtube.com/watch?v=5eJBQUqBk4c",
+          "title": "Якобус Ревиус  ✝  Он Понёс Наши Скорби  ✝  НИДЕРЛАНДСКИЙ ГИМН",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 6,
+          "youtube_id": "j5XWVEeXOsY",
+          "youtube_url": "https://www.youtube.com/watch?v=j5XWVEeXOsY",
+          "title": "Нидерландский ГИМН  ✝  «Блаженно Быть Ничем Пред Богом»  ✝  Йодокус ван Лоденштейн - 2 ВЕРСИЯ",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 7,
+          "youtube_id": "vSFwn8XxwwE",
+          "youtube_url": "https://www.youtube.com/watch?v=vSFwn8XxwwE",
+          "title": "Нидерландский ГИМН  ✝  «Блаженно Быть Ничем Пред Богом»  ✝  Йодокус ван Лоденштейн - 1 ВЕРСИЯ",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 8,
+          "youtube_id": "_moo3Nh8P0g",
+          "youtube_url": "https://www.youtube.com/watch?v=_moo3Nh8P0g",
+          "title": "Нидерландский ГИМН  ✝  «Всё сотворённое — ничто, Иисус — всё»  ✝  Йодокус ван Лоденштейн",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 9,
+          "youtube_id": "li50iKnSg6U",
+          "youtube_url": "https://www.youtube.com/watch?v=li50iKnSg6U",
+          "title": "Хватит ли Сил Умереть за Христа? Уроки Нацистских Застенков и Онкологии — Джон Пайпер",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 10,
+          "youtube_id": "_eyOsyjlGUo",
+          "youtube_url": "https://www.youtube.com/watch?v=_eyOsyjlGUo",
+          "title": "Как Искать Святого Духа: 4 Библейских Шага к Его Полноте — Джон Пайпер",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 11,
+          "youtube_id": "HReIPJILr5E",
+          "youtube_url": "https://www.youtube.com/watch?v=HReIPJILr5E",
+          "title": "Церковь GRACE Объявила Имя Преемника Джона МакАртура (23.08.2026)",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 12,
+          "youtube_id": "ehIvvZsP_tQ",
+          "youtube_url": "https://www.youtube.com/watch?v=ehIvvZsP_tQ",
+          "title": "Может ли Верующий Сомневаться в Своём Спасении? - Евангелие и Сомнения - Джон Пайпер",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 13,
+          "youtube_id": "vnUXruxhvCg",
+          "youtube_url": "https://www.youtube.com/watch?v=vnUXruxhvCg",
+          "title": "Дела или Вера? - Как Оправдаться перед Богом? - Джон Пайпер",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 14,
+          "youtube_id": "MOwPPznWKes",
+          "youtube_url": "https://www.youtube.com/watch?v=MOwPPznWKes",
+          "title": "Ужасающие Последствия Отрицания Воскресения Христа — Водди Бокам",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 15,
+          "youtube_id": "TwvGj3C7oSo",
+          "youtube_url": "https://www.youtube.com/watch?v=TwvGj3C7oSo",
+          "title": "От Первозданной Наготы до Грехопадения: Богословие Стыда и Одежды — Р. Ч. Спроул",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 16,
+          "youtube_id": "8OTU6ardBN8",
+          "youtube_url": "https://www.youtube.com/watch?v=8OTU6ardBN8",
+          "title": "Космические Беглецы: Почему Человек Прячется от Бога? Р. Ч. Спроул",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 17,
+          "youtube_id": "vVH7CCET138",
+          "youtube_url": "https://www.youtube.com/watch?v=vVH7CCET138",
+          "title": "Как Христианам Понимать Израиль? - Абнер Чау",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 18,
+          "youtube_id": "HH-GJRwqNC4",
+          "youtube_url": "https://www.youtube.com/watch?v=HH-GJRwqNC4",
+          "title": "Всевидящий Взор Бога и Тайна Покрытого Стыда - Роберт Спроул",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 19,
+          "youtube_id": "agPnGFalf-Y",
+          "youtube_url": "https://www.youtube.com/watch?v=agPnGFalf-Y",
+          "title": "Леонард Равенхилл - Жизнь в Свете Вечности",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 20,
+          "youtube_id": "VCLJS_nWfdU",
+          "youtube_url": "https://www.youtube.com/watch?v=VCLJS_nWfdU",
+          "title": "Христианин и Работа - Джоэль Бики",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 21,
+          "youtube_id": "LQQHxKahrMo",
+          "youtube_url": "https://www.youtube.com/watch?v=LQQHxKahrMo",
+          "title": "Классическая Коллекция - ЧАСТЬ 5 - Цель Христианской Жизни - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 22,
+          "youtube_id": "QswEQFZfV2U",
+          "youtube_url": "https://www.youtube.com/watch?v=QswEQFZfV2U",
+          "title": "Архитектура Мышления - ЧАСТЬ 5 - Как Истина Повелевает Мной? - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 23,
+          "youtube_id": "T8s9DNkuavQ",
+          "youtube_url": "https://www.youtube.com/watch?v=T8s9DNkuavQ",
+          "title": "Архитектура Мышления - ЧАСТЬ 4 - Кто есть истина? - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 24,
+          "youtube_id": "-q2TcD8ldb4",
+          "youtube_url": "https://www.youtube.com/watch?v=-q2TcD8ldb4",
+          "title": "Архитектура Мышления - ЧАСТЬ 3 - Как истина связана со мной? - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 25,
+          "youtube_id": "uI-wfRaq2SA",
+          "youtube_url": "https://www.youtube.com/watch?v=uI-wfRaq2SA",
+          "title": "Архитектура Мышления - ЧАСТЬ 2 - Что же за пределом физического? - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 26,
+          "youtube_id": "pDU8kdhDfLo",
+          "youtube_url": "https://www.youtube.com/watch?v=pDU8kdhDfLo",
+          "title": "Архитектура Мышления - ЧАСТЬ 1 - Как мы знаем то, что мы знаем? - Р. Ч. Спроул",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 27,
+          "youtube_id": "gCBUpweMsGM",
+          "youtube_url": "https://www.youtube.com/watch?v=gCBUpweMsGM",
+          "title": "Воздыхания Неизреченные 【Римлянам 8:26–28】 Джон МакАртур",
+          "relative_published_label": "5 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 28,
+          "youtube_id": "s512Opa8Eu4",
+          "youtube_url": "https://www.youtube.com/watch?v=s512Opa8Eu4",
+          "title": "Shepherds Conference 2025 - GS1 - До Концов Земли: Слава Христа и Великое Поручение (Абнер Чау)",
+          "relative_published_label": "5 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 29,
+          "youtube_id": "8fVbrLCTypQ",
+          "youtube_url": "https://www.youtube.com/watch?v=8fVbrLCTypQ",
+          "title": "Почему Вы Диспенсационалист? - Абнер Чау & Кости Хинн",
+          "relative_published_label": "5 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 30,
+          "youtube_id": "9X-BAyxZXxc",
+          "youtube_url": "https://www.youtube.com/watch?v=9X-BAyxZXxc",
+          "title": "Беседы о Поклонении - 3 - Боб Кофлин",
+          "relative_published_label": "5 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        }
+      ]
+    },
+    {
+      "project_key": "lord-god-strength",
+      "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+      "surface": "shorts",
+      "public_first_rendered_page_count": 48,
+      "public_source_url": "https://www.youtube.com/@fedormilovanov/shorts",
+      "observed_utc": "2026-11-04T02:10:41.772888+00:00",
+      "pagination_exhausted": false,
+      "vk_provider_readback_complete": false,
+      "items": [
+        {
+          "ordinal_on_public_first_page": 1,
+          "youtube_id": "lTRm2NbnIas",
+          "youtube_url": "https://www.youtube.com/shorts/lTRm2NbnIas",
+          "title": "Что Почтит Жену Больше — Долг или Радость? Джон Пайпер о Том, Что Прославляет Бога",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 2,
+          "youtube_id": "VeY1tpoLUJU",
+          "youtube_url": "https://www.youtube.com/shorts/VeY1tpoLUJU",
+          "title": "Мученичество или рак? В чем схожесть этих страданий? - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 3,
+          "youtube_id": "B8SjAuu4Glg",
+          "youtube_url": "https://www.youtube.com/shorts/B8SjAuu4Glg",
+          "title": "Бог Требует Идеальной Праведности — но Откуда Человеку Её Взять? - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 4,
+          "youtube_id": "kzuJbzBVHyA",
+          "youtube_url": "https://www.youtube.com/shorts/kzuJbzBVHyA",
+          "title": "Стал ли Иисус Грешником на Кресте? - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 5,
+          "youtube_id": "DdhIRg80hyo",
+          "youtube_url": "https://www.youtube.com/shorts/DdhIRg80hyo",
+          "title": "Из 193 Видов Приматов Только Человек Носит Искусственную Одежду - Р. Ч. Спроул",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 6,
+          "youtube_id": "--vMnBkj5Lg",
+          "youtube_url": "https://www.youtube.com/shorts/--vMnBkj5Lg",
+          "title": "Где Искать Уверенность, Когда Сомнения и Осознание Греха Лишают Покоя? - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 7,
+          "youtube_id": "BmDGu6bj608",
+          "youtube_url": "https://www.youtube.com/shorts/BmDGu6bj608",
+          "title": "Что Делает Бог, Когда Сатана Указывает на Наши Запятнанные Грехом Одежды? - Р. Ч. Спроул",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 8,
+          "youtube_id": "VmMnLf5nFVw",
+          "youtube_url": "https://www.youtube.com/shorts/VmMnLf5nFVw",
+          "title": "Пока Иисус не Бог над Всем, то Вас Будут Принимать - Водди Бокам",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 9,
+          "youtube_id": "5EzaTfmVtow",
+          "youtube_url": "https://www.youtube.com/shorts/5EzaTfmVtow",
+          "title": "В Чем Заключается Самое Первое Искупительное Действие Бога в Библии? - Р. Ч. Спроул",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 10,
+          "youtube_id": "Wwk_eAo4Jnc",
+          "youtube_url": "https://www.youtube.com/shorts/Wwk_eAo4Jnc",
+          "title": "Сомнение — Это не Просто Слабость, Это Прямое Оскорбление Характера Бога - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 11,
+          "youtube_id": "80URgbTDMWU",
+          "youtube_url": "https://www.youtube.com/shorts/80URgbTDMWU",
+          "title": "Все Говорят про Гонения. Пристегнитесь! Ещё Ничего не Началось - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 12,
+          "youtube_id": "SyioCn3HBTI",
+          "youtube_url": "https://www.youtube.com/shorts/SyioCn3HBTI",
+          "title": "Настоящий Мужчина — Это Тот, Кто Умирает Ради Своей Жены - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 13,
+          "youtube_id": "raOsMZBdvug",
+          "youtube_url": "https://www.youtube.com/shorts/raOsMZBdvug",
+          "title": "Я не Хочу Умереть Как Пассивная Лягушка в Кипятке — Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 14,
+          "youtube_id": "B8JV7r0vpDk",
+          "youtube_url": "https://www.youtube.com/shorts/B8JV7r0vpDk",
+          "title": "Четыре Признака Вашей Принадлежности ко Христу - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 15,
+          "youtube_id": "_PZcQzlV9oI",
+          "youtube_url": "https://www.youtube.com/shorts/_PZcQzlV9oI",
+          "title": "\"Харизматическое движение не внесло никакого вклада в здравое учение\" - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 16,
+          "youtube_id": "tELrnM71TQA",
+          "youtube_url": "https://www.youtube.com/shorts/tELrnM71TQA",
+          "title": "За Все Эти Дары и Обещания Мы Благодарим Тебя - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 17,
+          "youtube_id": "2sapXv78y9Q",
+          "youtube_url": "https://www.youtube.com/shorts/2sapXv78y9Q",
+          "title": "Можно ли Обмануть Всех Вокруг, Оставаясь Внутри Духовным Банкротом? Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 18,
+          "youtube_id": "_aDIR0D7rSk",
+          "youtube_url": "https://www.youtube.com/shorts/_aDIR0D7rSk",
+          "title": "Битва за Разум - Битва за Умы - Пастор Джон Макартур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 19,
+          "youtube_id": "eyWl7bIV_Bk",
+          "youtube_url": "https://www.youtube.com/shorts/eyWl7bIV_Bk",
+          "title": "\"Мы Живём в Мире Глупцов\" - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 20,
+          "youtube_id": "y9a7_3DutWk",
+          "youtube_url": "https://www.youtube.com/shorts/y9a7_3DutWk",
+          "title": "Покаяние — Это Больше, Чем Просто «Прости Меня» - Джоэл Бики",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 21,
+          "youtube_id": "ba4ZahiY-U0",
+          "youtube_url": "https://www.youtube.com/shorts/ba4ZahiY-U0",
+          "title": "\"Как Уверуют в Того, о Ком не Слышали?\" - Суверенитет Божий и Благовестие - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 22,
+          "youtube_id": "PUlNpw83DFI",
+          "youtube_url": "https://www.youtube.com/shorts/PUlNpw83DFI",
+          "title": "Богоцентричные и Человекоцентричные Церкви - Р. Ч. Спроул",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 23,
+          "youtube_id": "6u33ckshblc",
+          "youtube_url": "https://www.youtube.com/shorts/6u33ckshblc",
+          "title": "Духовное Банкротство или Земное Богатство? - Пастор Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 24,
+          "youtube_id": "BItvJzcTCU0",
+          "youtube_url": "https://www.youtube.com/shorts/BItvJzcTCU0",
+          "title": "Путь Иуды — Это Самое Ужасное Что Может С Тобою Случиться - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 25,
+          "youtube_id": "8UDBAk42VEo",
+          "youtube_url": "https://www.youtube.com/shorts/8UDBAk42VEo",
+          "title": "Религиозный Дневник Может Привести к Самообману — Чарльз Сперджен",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 26,
+          "youtube_id": "u5iwS8cOtd4",
+          "youtube_url": "https://www.youtube.com/shorts/u5iwS8cOtd4",
+          "title": "Мы Должны Быть Осторожны с Нашими Свидетельствами - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 27,
+          "youtube_id": "kKxgz9BMaQo",
+          "youtube_url": "https://www.youtube.com/shorts/kKxgz9BMaQo",
+          "title": "Все Ваши Дела Будут Вскрыты У Белого Престола - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 28,
+          "youtube_id": "EozlBy39F1c",
+          "youtube_url": "https://www.youtube.com/shorts/EozlBy39F1c",
+          "title": "Путь Голгофы - Готов ли Ты Следовать за Христом? - Алексей Коломийцев",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 29,
+          "youtube_id": "qpKWRFuO6fI",
+          "youtube_url": "https://www.youtube.com/shorts/qpKWRFuO6fI",
+          "title": "Какова Цель Жизни для Божьих Детей? - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 30,
+          "youtube_id": "ylPpw9OqrEU",
+          "youtube_url": "https://www.youtube.com/shorts/ylPpw9OqrEU",
+          "title": "Ваша Дочь Будет Оценивать Брак по Вам - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 31,
+          "youtube_id": "Uw3Uv2tveR8",
+          "youtube_url": "https://www.youtube.com/shorts/Uw3Uv2tveR8",
+          "title": "Как Распознать Лжеучителя? - Спрол&МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 32,
+          "youtube_id": "CWLfRD18iIQ",
+          "youtube_url": "https://www.youtube.com/shorts/CWLfRD18iIQ",
+          "title": "Предопределение, Предизбрание и Предузнание - Какова Разница? - Джон МакАртур",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 33,
+          "youtube_id": "tQ1cjEIcv14",
+          "youtube_url": "https://www.youtube.com/shorts/tQ1cjEIcv14",
+          "title": "Что на Самом Деле Означает Библейский Призыв \"Хвалиться Только Крестом\"? - Джон Пайпер #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 34,
+          "youtube_id": "ZMQtADg4od8",
+          "youtube_url": "https://www.youtube.com/shorts/ZMQtADg4od8",
+          "title": "Трагедия Американской Мечты - Джон Пайпер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 35,
+          "youtube_id": "qX6sqAHIdX8",
+          "youtube_url": "https://www.youtube.com/shorts/qX6sqAHIdX8",
+          "title": "Отличие Реформатского и Католического Взгляда на Спасение - Роберт Спраул",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 36,
+          "youtube_id": "j5Muf6MaqxI",
+          "youtube_url": "https://www.youtube.com/shorts/j5Muf6MaqxI",
+          "title": "Хотите Научиться Безусловной Любви? - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 37,
+          "youtube_id": "Ln_G27bCimA",
+          "youtube_url": "https://www.youtube.com/shorts/Ln_G27bCimA",
+          "title": "Обязательна ли Вера в Доктрины Благодати для Спасения? - Роберт Спрол",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 38,
+          "youtube_id": "os14zTeWUrU",
+          "youtube_url": "https://www.youtube.com/shorts/os14zTeWUrU",
+          "title": "Мы Готови Людей ко Встрече с Богом - Водди Бокам",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 39,
+          "youtube_id": "iesUZRaKUus",
+          "youtube_url": "https://www.youtube.com/shorts/iesUZRaKUus",
+          "title": "Возложите Все Заботы на Господа — Делаете ли Вы Это? — Стюарт Олиотт",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 40,
+          "youtube_id": "zeex5Gm7qNU",
+          "youtube_url": "https://www.youtube.com/shorts/zeex5Gm7qNU",
+          "title": "Читай Библию Каждый День (Стихотворение) — Стюарт Олиотт",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 41,
+          "youtube_id": "BtW2ij_NPsk",
+          "youtube_url": "https://www.youtube.com/shorts/BtW2ij_NPsk",
+          "title": "Справедливость Божья - Ваш Друг? - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 42,
+          "youtube_id": "ZpgYdXzZAEg",
+          "youtube_url": "https://www.youtube.com/shorts/ZpgYdXzZAEg",
+          "title": "\"И Опять Же Я Не Знаю Почему Вы Хлопаете\" - Пол Вошер",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 43,
+          "youtube_id": "Gn96p5oexQg",
+          "youtube_url": "https://www.youtube.com/shorts/Gn96p5oexQg",
+          "title": "Проповедь Заключенным - Осознаете ли Вы, Перед Кем Вы Предстанете?! - Пол Вошер #Бог #Евангелие #Ад",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 44,
+          "youtube_id": "pLQoi6hoHew",
+          "youtube_url": "https://www.youtube.com/shorts/pLQoi6hoHew",
+          "title": "Обращение к Детям, Выросшим в Христианской Семье - Пол Вошер #Семья #Библия",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 45,
+          "youtube_id": "pLj89O__SX0",
+          "youtube_url": "https://www.youtube.com/shorts/pLj89O__SX0",
+          "title": "Быть Лидером в Церкви - Что Необходимо? - Абнер Чау",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 46,
+          "youtube_id": "VRQ6PdOWoyk",
+          "youtube_url": "https://www.youtube.com/shorts/VRQ6PdOWoyk",
+          "title": "Многие Популярные Проповедники не Говорят о Грехе - Пол Вошер #ПолВошер #Грех #Проповедь #Библия",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 47,
+          "youtube_id": "lE660cipDbM",
+          "youtube_url": "https://www.youtube.com/shorts/lE660cipDbM",
+          "title": "Мужественность и Смелость - Как Приобрести? - Джон МакАртур #Shorts #Библия",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 48,
+          "youtube_id": "ej0liwcy4EI",
+          "youtube_url": "https://www.youtube.com/shorts/ej0liwcy4EI",
+          "title": "\"Победить Когда-Либо Грех - Это Реально?\" Джон МакАртур #Shorts #ДжонМакАртур #Грех #Христианство",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        }
+      ]
+    },
+    {
+      "project_key": "legendary-poet",
+      "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+      "surface": "videos",
+      "public_first_rendered_page_count": 30,
+      "public_source_url": "https://www.youtube.com/@TheLegendaryPoet/videos",
+      "observed_utc": "2026-11-04T02:10:39.285000+00:00",
+      "pagination_exhausted": false,
+      "vk_provider_readback_complete": false,
+      "items": [
+        {
+          "ordinal_on_public_first_page": 1,
+          "youtube_id": "IRI5dkx9ldA",
+          "youtube_url": "https://www.youtube.com/watch?v=IRI5dkx9ldA",
+          "title": "Сергей Есенин: Битва в Заворожённом Лесу ⚡ Эпическая Версия «ЧТО ЭТО ТАКОЕ?»",
+          "relative_published_label": "23 ч назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 2,
+          "youtube_id": "Lf0h4yXPVng",
+          "youtube_url": "https://www.youtube.com/watch?v=Lf0h4yXPVng",
+          "title": "Неуютная Жидкая Лунность ⚡ Сергей Есенин",
+          "relative_published_label": "9 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 3,
+          "youtube_id": "RuTmtXUuxm8",
+          "youtube_url": "https://www.youtube.com/watch?v=RuTmtXUuxm8",
+          "title": "«За Непрядвой лебеди кричали…»⚡ НА ПОЛЕ КУЛИКОВОМ — часть II ⚡ Александр Блок",
+          "relative_published_label": "10 дн. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 4,
+          "youtube_id": "t_Ot-SQRxlw",
+          "youtube_url": "https://www.youtube.com/watch?v=t_Ot-SQRxlw",
+          "title": "Николай Гумилёв ⚡ «Рабочий» - ВЕРСИЯ 2 ⚡ Пуля, Которая Пришла за Мной",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 5,
+          "youtube_id": "5zUmdg_Wzek",
+          "youtube_url": "https://www.youtube.com/watch?v=5zUmdg_Wzek",
+          "title": "МОЩНЫЙ РОК ОТ ГУМИЛЁВА ⚡ «Рабочий» - ВЕРСИЯ 1 ⚡ Пуля Судьбы",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 6,
+          "youtube_id": "bRK9ptwpvHE",
+          "youtube_url": "https://www.youtube.com/watch?v=bRK9ptwpvHE",
+          "title": "Устал я жить в родном краю… 🖤 Сергей Есенин",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 7,
+          "youtube_id": "hScoO2ldMMY",
+          "youtube_url": "https://www.youtube.com/watch?v=hScoO2ldMMY",
+          "title": "А. К. Толстой — «Три побоища» ⚔️ Эпическая опера ⚔️ Гаральд • Гастингс • Изяслав",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 8,
+          "youtube_id": "4kCWLySds6k",
+          "youtube_url": "https://www.youtube.com/watch?v=4kCWLySds6k",
+          "title": "«Пороша. Еду. Тихо.» ⚡ Сергей Есенин",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 9,
+          "youtube_id": "-Cy-O4rT5xU",
+          "youtube_url": "https://www.youtube.com/watch?v=-Cy-O4rT5xU",
+          "title": "«Нет, не Тебя Так Пылко Я Люблю…» ⚡ Михаил Лермонтов",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 10,
+          "youtube_id": "hdKprsGFVdI",
+          "youtube_url": "https://www.youtube.com/watch?v=hdKprsGFVdI",
+          "title": "«Июль — Верхушка Лета» ⚡ Девять Русских Поэтов",
+          "relative_published_label": "1 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 11,
+          "youtube_id": "NgvWlaMqTnI",
+          "youtube_url": "https://www.youtube.com/watch?v=NgvWlaMqTnI",
+          "title": "«Зимний вечер» ⚡ VERSION 2 ⚡ Пушкин",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 12,
+          "youtube_id": "fZ8T6AXrgLQ",
+          "youtube_url": "https://www.youtube.com/watch?v=fZ8T6AXrgLQ",
+          "title": "«ДАВАЙ ЕЩЁ ОГНЯ!!» 💥 СЫН АРТИЛЛЕРИСТА 💥 Константин Симонов",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 13,
+          "youtube_id": "LF-MhY9AxkI",
+          "youtube_url": "https://www.youtube.com/watch?v=LF-MhY9AxkI",
+          "title": "«Чужой для всех, ничем не связан» ⚡ ЕВГЕНИЙ ОНЕГИН ⚡ Александр Пушкин",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 14,
+          "youtube_id": "OP8cZmJHvJ8",
+          "youtube_url": "https://www.youtube.com/watch?v=OP8cZmJHvJ8",
+          "title": "Я ПОСАДИЛ ДЕРЕВО 🌱 8-BIT VERSION 🌱 Виктор Цой - ENGLISH COVER",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 15,
+          "youtube_id": "x-puy27S2qs",
+          "youtube_url": "https://www.youtube.com/watch?v=x-puy27S2qs",
+          "title": "Сергей Есенин ⚡ Аудиоальбом «ЧЁРНЫЙ ЧЕЛОВЕК» ⚡ 7 Версий Стихотворения",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 16,
+          "youtube_id": "kxUwclMcE70",
+          "youtube_url": "https://www.youtube.com/watch?v=kxUwclMcE70",
+          "title": "Сергей Есенин ⚡ ХУЛИГАН ⚡ ВЕРСИЯ 2",
+          "relative_published_label": "2 мес. назад",
+          "local_vk_evidence_class": "exact_native_state_verified",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 17,
+          "youtube_id": "1fPBwddsYvQ",
+          "youtube_url": "https://www.youtube.com/watch?v=1fPBwddsYvQ",
+          "title": "Сергей Есенин ⚡ БЕРЁЗА ⚡ ВЕРСИЯ 2",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 18,
+          "youtube_id": "lrF2S-HB0ac",
+          "youtube_url": "https://www.youtube.com/watch?v=lrF2S-HB0ac",
+          "title": "Виктор Цой ⚡ WE WAIT FOR CHANGE — VERSION 2 — МЫ ЖДЁМ ПЕРЕМЕН ⚡ SUNO AI English Cover",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 19,
+          "youtube_id": "tpTJevJp1N4",
+          "youtube_url": "https://www.youtube.com/watch?v=tpTJevJp1N4",
+          "title": "«Я — ГРАЖДАНИН СОВЕТСКОГО СОЮЗА!» ⚡ VERSION 1 ⚡МАЯКОВСКИЙ В РИТМЕ REGGAE",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 20,
+          "youtube_id": "U4D40EQg10U",
+          "youtube_url": "https://www.youtube.com/watch?v=U4D40EQg10U",
+          "title": "О, Русь моя! Жена моя! ⚡ НА ПОЛЕ КУЛИКОВОМ ⚡ Александр Блок",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 21,
+          "youtube_id": "mFsty3NOEMs",
+          "youtube_url": "https://www.youtube.com/watch?v=mFsty3NOEMs",
+          "title": "Отговорила Роща Золотая ⚡ Сергей Есенин",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 22,
+          "youtube_id": "GVMafWIYPpI",
+          "youtube_url": "https://www.youtube.com/watch?v=GVMafWIYPpI",
+          "title": "И Невозможное Возможно ⚡ РОССИЯ ⚡ Александр Блок",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 23,
+          "youtube_id": "RQIlUvFf1KQ",
+          "youtube_url": "https://www.youtube.com/watch?v=RQIlUvFf1KQ",
+          "title": "Как Хорошо Ты, о Море Ночное… ⚡ Тютчев и Тайна Живого Моря",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 24,
+          "youtube_id": "5CzAVKhsscA",
+          "youtube_url": "https://www.youtube.com/watch?v=5CzAVKhsscA",
+          "title": "VIKTOR TSOI ⚡ WE WAIT FOR CHANGE - МЫ ЖДЕМ ПЕРЕМЕН ⚡ SUNO AI English Cover",
+          "relative_published_label": "3 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 25,
+          "youtube_id": "6JUXEhA-P-Y",
+          "youtube_url": "https://www.youtube.com/watch?v=6JUXEhA-P-Y",
+          "title": "Я Свободен ⚡Соло Маврина ⚡ SUNO AI COVER",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 26,
+          "youtube_id": "yaJNLxSSqZg",
+          "youtube_url": "https://www.youtube.com/watch?v=yaJNLxSSqZg",
+          "title": "Веня Д’ркин ⚡ Anno Domini ⚡ Руины, Свет и Слепые Санитары",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 27,
+          "youtube_id": "48WeOZPMaOA",
+          "youtube_url": "https://www.youtube.com/watch?v=48WeOZPMaOA",
+          "title": "Ельцин VS Зиновьев ⚡ Исторические Рэп Дебаты ⚡ Apostrophes 1990",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 28,
+          "youtube_id": "K-x6neQiyfs",
+          "youtube_url": "https://www.youtube.com/watch?v=K-x6neQiyfs",
+          "title": "Песнь о Вещем Олеге ⚡ VERSION 2 ⚡ А. С. Пушкин",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 29,
+          "youtube_id": "3ZFf2PBEYrM",
+          "youtube_url": "https://www.youtube.com/watch?v=3ZFf2PBEYrM",
+          "title": "Кто Здесь?! 🔥 Эпическая Зимняя Мистика Сергея Есенина - Что Это Такое? - FULL VERSION 2",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 30,
+          "youtube_id": "BSJZ3BogD94",
+          "youtube_url": "https://www.youtube.com/watch?v=BSJZ3BogD94",
+          "title": "Never Have I Been So Much Tired ⚡ Sergey Esenin @The Legendary Poet",
+          "relative_published_label": "4 мес. назад",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        }
+      ]
+    },
+    {
+      "project_key": "legendary-poet",
+      "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+      "surface": "shorts",
+      "public_first_rendered_page_count": 48,
+      "public_source_url": "https://www.youtube.com/@TheLegendaryPoet/shorts",
+      "observed_utc": "2026-11-04T02:10:40.319374+00:00",
+      "pagination_exhausted": false,
+      "vk_provider_readback_complete": false,
+      "items": [
+        {
+          "ordinal_on_public_first_page": 1,
+          "youtube_id": "F81hbOo24CY",
+          "youtube_url": "https://www.youtube.com/shorts/F81hbOo24CY",
+          "title": "Сергей Есенин ⚡ Я ПОСЛЕДНИЙ ПОЭТ ДЕРЕВНИ ⚡ Оживший Голос Поэзии",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 2,
+          "youtube_id": "vrsnHJjwACQ",
+          "youtube_url": "https://www.youtube.com/shorts/vrsnHJjwACQ",
+          "title": "«Я сердцем никогда не лгу» — Сергей Есенин оживает! #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 3,
+          "youtube_id": "fkF9pwkRsXw",
+          "youtube_url": "https://www.youtube.com/shorts/fkF9pwkRsXw",
+          "title": "Любовь ⚡ БРОСЬТЕ ГОРОДА ⚡ Владимир Маяковский",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 4,
+          "youtube_id": "7DT39P4k9yU",
+          "youtube_url": "https://www.youtube.com/shorts/7DT39P4k9yU",
+          "title": "Наш Век ⚡ «Приди на помощь моему неверью!..» ⚡ Фёдор Тютчев",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 5,
+          "youtube_id": "7W2205gTQNc",
+          "youtube_url": "https://www.youtube.com/shorts/7W2205gTQNc",
+          "title": "Если жить — то во весь голос. Если гореть — то так, чтобы будить других! - Владимир Маяковский",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 6,
+          "youtube_id": "Dh3blbyQO2w",
+          "youtube_url": "https://www.youtube.com/shorts/Dh3blbyQO2w",
+          "title": "«Три побоища» ⚔️ Гаральд • Гастингс • Изяслав ⚔️ А. К. Толстой",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 7,
+          "youtube_id": "7JoKMe85Fik",
+          "youtube_url": "https://www.youtube.com/shorts/7JoKMe85Fik",
+          "title": "«Пороша» ⚡ Сергей Есенин @TheLegendaryPoet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 8,
+          "youtube_id": "FKtflEKl-NY",
+          "youtube_url": "https://www.youtube.com/shorts/FKtflEKl-NY",
+          "title": "РЭП от Пушкина ❄️ Буря Мглою Небо Кроет ❄️ Зимний Вечер - 1825",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 9,
+          "youtube_id": "ieVzGdPhhvQ",
+          "youtube_url": "https://www.youtube.com/shorts/ieVzGdPhhvQ",
+          "title": "Любовь ⚡ Владимир Маяковский",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 10,
+          "youtube_id": "qtYcjHi49Zs",
+          "youtube_url": "https://www.youtube.com/shorts/qtYcjHi49Zs",
+          "title": "Адище Города 🔥 Владимир Маяковский",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 11,
+          "youtube_id": "56ETHrCvJ18",
+          "youtube_url": "https://www.youtube.com/shorts/56ETHrCvJ18",
+          "title": "БЕРЁЗА ⚡ РОК-ВЕРСИЯ 2 ⚡ Сергей Есенин",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 12,
+          "youtube_id": "h6VxRWTm0eY",
+          "youtube_url": "https://www.youtube.com/shorts/h6VxRWTm0eY",
+          "title": "Never Have I Been So Much Tired ⚡ Sergey Esenin",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 13,
+          "youtube_id": "lt3jbgLjklA",
+          "youtube_url": "https://www.youtube.com/shorts/lt3jbgLjklA",
+          "title": "Песнь о Вещем Олеге ⚡ VERSION 2 ⚡ А. С. Пушкин #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 14,
+          "youtube_id": "fwSlg4TDfms",
+          "youtube_url": "https://www.youtube.com/shorts/fwSlg4TDfms",
+          "title": "Поёт Зима, Аукает... - Nordic Folk Version - Сергей Есенин @The Legendary Poet​",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 15,
+          "youtube_id": "Yu0iV0fDsPQ",
+          "youtube_url": "https://www.youtube.com/shorts/Yu0iV0fDsPQ",
+          "title": "Я свободен ⚡ Соло Маврина ⚡ SUNO AI Cover #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 16,
+          "youtube_id": "0C1-2tk9aQg",
+          "youtube_url": "https://www.youtube.com/shorts/0C1-2tk9aQg",
+          "title": "Сергей Есенин ⚡ Хулиган ⚡ Рок-Версия #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 17,
+          "youtube_id": "EOaXd3EKNxA",
+          "youtube_url": "https://www.youtube.com/shorts/EOaXd3EKNxA",
+          "title": "Бесконечная Петля Блока ⚡ «Ночь, улица, фонарь, аптека…»",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 18,
+          "youtube_id": "_jqID4P7BiA",
+          "youtube_url": "https://www.youtube.com/shorts/_jqID4P7BiA",
+          "title": "«Я научилась просто, мудро жить…» ⚡Анна Ахматова Побеждает Тревогу @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 19,
+          "youtube_id": "g9bW6upeQCg",
+          "youtube_url": "https://www.youtube.com/shorts/g9bW6upeQCg",
+          "title": "Calm Night - Спокойная Ночь (English Version)⚡ Slow Epic Dramatic Ballad Inspired by KINO",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 20,
+          "youtube_id": "ux2T7UVjUpM",
+          "youtube_url": "https://www.youtube.com/shorts/ux2T7UVjUpM",
+          "title": "«Шёпот, робкое дыханье…» ⚡ Афанасий Фет @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 21,
+          "youtube_id": "M5hNecL_MsQ",
+          "youtube_url": "https://www.youtube.com/shorts/M5hNecL_MsQ",
+          "title": "⚡ Пушкин Танцует Последнюю Бурю ⚡",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 22,
+          "youtube_id": "V_64WsowBZc",
+          "youtube_url": "https://www.youtube.com/shorts/V_64WsowBZc",
+          "title": "В Этой Жизни Помереть Не Трудно ⚡ Маяковский: \"Сергею Есенину\" @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 23,
+          "youtube_id": "mFj0U1Sj_Ik",
+          "youtube_url": "https://www.youtube.com/shorts/mFj0U1Sj_Ik",
+          "title": "Внимая Ужасам Войны... - Николай Некрасов",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 24,
+          "youtube_id": "wFHa8VOom3U",
+          "youtube_url": "https://www.youtube.com/shorts/wFHa8VOom3U",
+          "title": "Творчество - VERSION 2 - Валерий Брюсов @TheLegendaryPoet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 25,
+          "youtube_id": "Sdv8puPeJYw",
+          "youtube_url": "https://www.youtube.com/shorts/Sdv8puPeJYw",
+          "title": "Кто Здесь?! 🔥 Эпическая  Зимняя Мистика Сергея Есенина - VERSION 3",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 26,
+          "youtube_id": "c__ZdqdiSJ0",
+          "youtube_url": "https://www.youtube.com/shorts/c__ZdqdiSJ0",
+          "title": "Брюсов: «Творчество»🌙 Тень Несозданных Созданий",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 27,
+          "youtube_id": "bStyYN4dvEs",
+          "youtube_url": "https://www.youtube.com/shorts/bStyYN4dvEs",
+          "title": "🌌 «Выхожу один я на дорогу…» - Лермонтов написал это за 6 недель до гибели - Ему было 26",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 28,
+          "youtube_id": "NFLJP84QQo4",
+          "youtube_url": "https://www.youtube.com/shorts/NFLJP84QQo4",
+          "title": "Маяковский в Стиле Регги 🎶 А Вы Могли Бы? 🎶",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 29,
+          "youtube_id": "E4gJWCKD50s",
+          "youtube_url": "https://www.youtube.com/shorts/E4gJWCKD50s",
+          "title": "Самый Депрессивный Стих Лермонтова:  \"И Скучно и Грустно\" @TheLegendaryPoet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 30,
+          "youtube_id": "MBdv5JvWuhw",
+          "youtube_url": "https://www.youtube.com/shorts/MBdv5JvWuhw",
+          "title": "Узник: Мы Вольные Птицы - Александр Пушкин @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 31,
+          "youtube_id": "7N-DEjLDZ3I",
+          "youtube_url": "https://www.youtube.com/shorts/7N-DEjLDZ3I",
+          "title": "Если бы Heroes 3 Вышли в 2026 Году #homm3",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 32,
+          "youtube_id": "cMuGYGlaof8",
+          "youtube_url": "https://www.youtube.com/shorts/cMuGYGlaof8",
+          "title": "DJ Маяковский 🎶 𝖭𝖮𝖪TU𝖱𝖭 🎶 А Вы Могли Бы? @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 33,
+          "youtube_id": "9nD37a7hKQ8",
+          "youtube_url": "https://www.youtube.com/shorts/9nD37a7hKQ8",
+          "title": "Шабаш - Алиса Cover",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 34,
+          "youtube_id": "55IPY5t7AOo",
+          "youtube_url": "https://www.youtube.com/shorts/55IPY5t7AOo",
+          "title": "Парус 🎶 Dj Версия - 2 🎶 Михаил Лермонтов @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 35,
+          "youtube_id": "kGav2FpMaZc",
+          "youtube_url": "https://www.youtube.com/shorts/kGav2FpMaZc",
+          "title": "Лиличка! - Маяковский  @The Legendary Poet #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 36,
+          "youtube_id": "r1YIF5scHgU",
+          "youtube_url": "https://www.youtube.com/shorts/r1YIF5scHgU",
+          "title": "Послушайте! - Лирическая Рок-Версия - Владимир Маяковский @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 37,
+          "youtube_id": "pE5Im38_jN0",
+          "youtube_url": "https://www.youtube.com/shorts/pE5Im38_jN0",
+          "title": "Парус 🎶 Драматическая Версия 🎶 Михаил Лермонтов",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 38,
+          "youtube_id": "T6WIgGaZm74",
+          "youtube_url": "https://www.youtube.com/shorts/T6WIgGaZm74",
+          "title": "Что Это Такое? - Кто здесь?! - Сергей Есенин @TheLegendaryPoet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 39,
+          "youtube_id": "gavdyL0QWJU",
+          "youtube_url": "https://www.youtube.com/shorts/gavdyL0QWJU",
+          "title": "Нет, Дед Мороз! - Расскажи, Снегурочка @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 40,
+          "youtube_id": "TDbW__q3hYk",
+          "youtube_url": "https://www.youtube.com/shorts/TDbW__q3hYk",
+          "title": "Веселая Невесёлая Песня - Цой в Новом Звучании - Кавер ⁨@TheLegendaryPoet⁩",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 41,
+          "youtube_id": "I1OsM65y-Lo",
+          "youtube_url": "https://www.youtube.com/shorts/I1OsM65y-Lo",
+          "title": "Парус 🎶 Dj Версия 🎶 Михаил Лермонтов @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 42,
+          "youtube_id": "Ac7Fz_9HS3I",
+          "youtube_url": "https://www.youtube.com/shorts/Ac7Fz_9HS3I",
+          "title": "Черный Человек - Version 4 - Сергей Есенин @TheLegendaryPoet #Shorts",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 43,
+          "youtube_id": "d50lIlqZed4",
+          "youtube_url": "https://www.youtube.com/shorts/d50lIlqZed4",
+          "title": "Мужество - Великое Русское Слово👤Анна Ахматова @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "vk_presence_not_proven",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 44,
+          "youtube_id": "KUDVfsn_atc",
+          "youtube_url": "https://www.youtube.com/shorts/KUDVfsn_atc",
+          "title": "Родина - Касаясь Трех Великих Океанов - Константин Симонов @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 45,
+          "youtube_id": "JefLdqrWmUM",
+          "youtube_url": "https://www.youtube.com/shorts/JefLdqrWmUM",
+          "title": "Страшная Сказка - Борис Пастернак @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 46,
+          "youtube_id": "V9XRuxOHl5E",
+          "youtube_url": "https://www.youtube.com/shorts/V9XRuxOHl5E",
+          "title": "Письмо Татьяны к Онегину — Александр Сергеевич Пушкин  @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 47,
+          "youtube_id": "IvAnQnO2CtQ",
+          "youtube_url": "https://www.youtube.com/shorts/IvAnQnO2CtQ",
+          "title": "У Лукоморья Дуб Зелёный - Кинематографическая Версия🎬 А. С. Пушкин @The Legendary Poet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        },
+        {
+          "ordinal_on_public_first_page": 48,
+          "youtube_id": "l-nzhGTw0V0",
+          "youtube_url": "https://www.youtube.com/shorts/l-nzhGTw0V0",
+          "title": "Черный Человек - Version 3 - Сергей Есенин (Полная Версия Стихотворения) @TheLegendaryPoet",
+          "relative_published_label": "",
+          "local_vk_evidence_class": "historical_july_identity_mapping_not_fresh_vk_proof",
+          "missing_from_vk_confirmed": false,
+          "new_upload_authorized": false
+        }
+      ]
+    }
+  ],
+  "source_snapshot_path": "docs/audits/2026-11-04-public-youtube-first-page-source-snapshot.json"
+}

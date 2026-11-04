@@ -448,7 +448,7 @@ def test_wave_apply_routes_lord_god_wall_plan_to_lord_god_adapter(
         enable_provider_writes=True,
     )
 
-    assert constructed == [{"account_alias": "legendary-poet"}]
+    assert constructed == [{"account_alias": "legendary-poet", "repository_root": tmp_path}]
 
 
 def test_wave_reconcile_routes_lord_god_wall_plan_to_lord_god_adapter(
@@ -504,4 +504,4 @@ def test_wave_reconcile_routes_lord_god_wall_plan_to_lord_god_adapter(
         vk_account="legendary-poet",
     )
 
-    assert constructed == [{"account_alias": "legendary-poet"}]
+    assert constructed == [{"account_alias": "legendary-poet", "repository_root": tmp_path}]

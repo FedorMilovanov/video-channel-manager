@@ -1,0 +1,57 @@
+{
+  "schema_name": "video-channel-manager.telegram-production-schedule",
+  "schema_version": 3,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "enabled": true,
+  "not_before_moscow_date": "2026-08-08",
+  "timezone": "Europe/Moscow",
+  "primary_time": "09:17",
+  "catchup_time": "21:17",
+  "slots": {
+    "morning": {
+      "cron": "17 6 * * *",
+      "time": "09:17",
+      "iso_weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "max_lateness_minutes": 720
+    },
+    "evening": {
+      "cron": "17 18 * * 2,5,0",
+      "time": "21:17",
+      "iso_weekdays": [
+        2,
+        5,
+        7
+      ],
+      "max_lateness_minutes": 160
+    },
+    "midday": {
+      "cron": "0 9 * * 2,5",
+      "time": "12:00",
+      "iso_weekdays": [
+        2,
+        5
+      ],
+      "max_lateness_minutes": 240
+    }
+  },
+  "max_verified_per_slot": 1,
+  "max_verified_per_day": 2,
+  "backfill_policy": "none",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "successor_queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "presentation_policy_id": "lordchrist-quote-v5",
+  "presentation_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
+  "activation_note": "Reader-facing quote-v5 rework authorized on 2026-10-17 under issue #694. The depth-v3 restore queue was activated at 17 published and 43 pristine pending with sequence 18 first; live progress is read from the state ref, not this note (22 published / 38 pending on 2026-10-21, next sequence 23). Quotes open with the quotation and the reviewed source line, no leading title. Slots: morning 09:17 daily and evening 21:17 Tue/Fri/Sun carry the quote lane; midday 12:00 Tue/Fri carries the rich_article lane for the L2 Charnock series and is published manually from its copy page, so no bot run may spend it on a quote. Crons are the UTC translations of the Moscow times. Immutable history, per-slot/day quotas, exact target/current-main gates and no backfill remain enforced; exhaustion and low stock are reported explicitly."
+}

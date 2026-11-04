@@ -221,6 +221,106 @@ def token_capabilities(
         raise typer.Exit(code=2) from exc
 
 
+@vk_app.command("community-key-login")
+def community_key_login(
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact numeric VK community ID")],
+    account: Annotated[
+        str, typer.Option("--account", "-a", help="Local alias for the community key")
+    ] = "community-key",
+    token_file: Annotated[
+        Path | None,
+        typer.Option("--token-file", help="Local ignored text/JSON file containing the community access key"),
+    ] = None,
+    force: Annotated[bool, typer.Option("--force", help="Replace an existing token for this alias")] = False,
+) -> None:
+    """Import and validate a VK community access key (wall permission required)."""
+
+    if community <= 0:
+        raise typer.BadParameter("community must be positive", param_hint="--community")
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    try:
+        account = store.validate_alias(account)
+        if store.token_exists(account) and not force:
+            console.print(
+                f"[yellow]Account '{account}' is already authorized.[/yellow] "
+                "Use --force only when you intentionally want to replace its token."
+            )
+            raise typer.Exit(code=2)
+        token = _read_token_input(token_file)
+        with TemporaryDirectory(prefix="video-manager-vk-community-key-login-") as temp_dir:
+            validation_store = VkTokenStore(Path(temp_dir))
+            validation_store.save_token(account, token)
+            client = VkApiClient(
+                token_store=validation_store,
+                account_alias=account,
+                api_version=settings.vk_api_version,
+            )
+            mask, enabled_permissions = client.get_community_token_permissions()
+            if "wall" not in enabled_permissions:
+                raise VkConfigurationError(
+                    "VK community key is missing the required 'wall' permission; "
+                    f"enabled permissions: {', '.join(enabled_permissions) or 'none'}"
+                )
+            record = client.get_community(community)
+            if record.ref.channel_id != str(community):
+                raise VkConfigurationError("VK community key does not belong to the requested community")
+        token.permission_mask = mask
+        token.scopes = list(enabled_permissions)
+        token.token_type = "community"
+        store.save_token(account, token)
+    except typer.Exit:
+        raise
+    except (OSError, ValueError, VkApiError, VkConfigurationError) as exc:
+        console.print(f"[red]VK community key authorization failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    console.print(f"[green]Validated VK community key for '{record.title}' ({community}) as alias '{account}'.[/green]")
+    console.print(f"Permissions: mask={mask}; enabled={','.join(enabled_permissions)}. Provider writes: 0.")
+
+
+@vk_app.command("community-key-capabilities")
+def community_key_capabilities(
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact numeric VK community ID")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "community-key",
+) -> None:
+    """Read a stored community key's live permissions and community binding (2 reads)."""
+
+    if community <= 0:
+        raise typer.BadParameter("community must be positive", param_hint="--community")
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    try:
+        alias = store.validate_alias(account)
+        if not store.token_exists(alias):
+            raise VkAccountNotFoundError(f"VK account token not found: {alias}")
+        client = VkApiClient(
+            token_store=store,
+            account_alias=alias,
+            api_version=settings.vk_api_version,
+            max_attempts=1,
+        )
+        try:
+            mask, enabled_permissions = client.get_community_token_permissions()
+            record = client.get_community(community)
+        finally:
+            client.close()
+        if record.ref.channel_id != str(community):
+            raise VkConfigurationError("VK community key does not belong to the requested community")
+        if "wall" not in enabled_permissions:
+            raise VkConfigurationError(
+                "VK community key is missing the required 'wall' permission; "
+                f"enabled permissions: {', '.join(enabled_permissions) or 'none'}"
+            )
+    except (OSError, ValueError, VkAccountNotFoundError, VkApiError, VkConfigurationError) as exc:
+        console.print(f"[red]Cannot read VK community key capabilities:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    console.print(
+        f"VK community key capabilities for '{alias}': community={community} ({record.title}); "
+        f"mask={mask}; enabled={','.join(enabled_permissions)}. Provider writes: 0."
+    )
+
+
 @vk_app.command("flood-status")
 def flood_status(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",

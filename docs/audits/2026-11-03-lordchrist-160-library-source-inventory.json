@@ -1,0 +1,2017 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quote-library-research-audit",
+  "schema_version": 1,
+  "review_date": "2026-11-03",
+  "code_base_sha": "e3caf0c967cedff43c93cb9dbe21a5aa14db5102",
+  "library_files": [
+    "quote-library-107.md",
+    "quote-library-v2-160.md"
+  ],
+  "status": "research_only_not_published_or_authorized",
+  "eligible_for_auto_release": false,
+  "primary_source_collation_complete": false,
+  "cards": [
+    {
+      "number": 1,
+      "heading": "Вера — рука души",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:23d105dd18c6c87f8661d56d222fd8d11e0754844eec581f9cda0dcee3c272d0",
+      "quote_characters": 552,
+      "source_url": "https://www.spurgeon.org/sermons/faith-essential-to-pleasing-god",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 2,
+      "heading": "Утром — сначала лицо Бога",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:d89444c95675b00959bb4e30d88bbbde8fe17917f24b60ab32038d9a67c9fb86",
+      "quote_characters": 756,
+      "source_url": "https://www.gracegems.org/Spurgeon/morning_and_evening_songs.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 3,
+      "heading": "Практические атеисты",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:3e1b0a71ece8244f39060d82c2ee13db20836cc042dc074da6b6b85fc1649eeb",
+      "quote_characters": 547,
+      "source_url": "https://www.gracegems.org/30/short_pithy_gems_Spurgeon.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 4,
+      "heading": "Наковальня разбивает молоты",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:9b51c712e26f64a2cd5f8d02aaea12798a250b789a93fc4f7fa9a8b30a22bb28",
+      "quote_characters": 689,
+      "source_url": "https://ccel.org/ccel/spurgeon/sermons58/sermons58.xlv.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 5,
+      "heading": "Принудь их войти",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:7deed72a9fb7f333169d24edd7f626c9064d3df9586f2335190a86005056de57",
+      "quote_characters": 513,
+      "source_url": "https://www.spurgeon.org/resource-library/sermons/compel-them-to-come-in/",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 6,
+      "heading": "Слово Божье — наковальня, мнения людей — молоты",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:84be0bac61c9dcbd41d69ac6e044917438a305bc08bc5f2466ab4b9ae25eb538",
+      "quote_characters": 690,
+      "source_url": "https://www.gracegems.org/30/short_pithy_gems_Spurgeon.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 7,
+      "heading": "Его руки никогда не устают",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:42cabf77838afd970b0cc1283364ddd12d6bcb18335689535ff9929760b5657b",
+      "quote_characters": 550,
+      "source_url": "https://www.gracegems.org/30/short_pithy_gems_Spurgeon.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 8,
+      "heading": "Две половины мудрости",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:3ac9e73cc4648e8362e7b712dd5149660ed274191cbf93fc6d2a16cfdce9ed20",
+      "quote_characters": 657,
+      "source_url": "https://www.ccel.org/ccel/calvin/institutes.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 9,
+      "heading": "Человеческий ум — вечная мастерская идолов",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f20317b2fc97f54c722edf0e429f5338dfe69a9486cdbe096d68598d0af3a099",
+      "quote_characters": 653,
+      "source_url": "https://www.ccel.org/ccel/calvin/institutes.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 10,
+      "heading": "Правильное определение веры",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:8aba3149f36ee3c5ac6717db4109f071aacd9705048793225c069395dfd43025",
+      "quote_characters": 623,
+      "source_url": "https://www.ccel.org/ccel/calvin/institutes.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 11,
+      "heading": "Сначала взгляни на Бога — потом на себя",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:2ea1723d5a6dc29a342494f836d45d8f552ae9da5fb364878433260e1608869f",
+      "quote_characters": 643,
+      "source_url": "https://www.ccel.org/ccel/calvin/institutes.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 12,
+      "heading": "Писание достаточно",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:c988a82bb59011c9f47427b9dce7cdba9f0b86a12bdbabec8eb8057b15a5783f",
+      "quote_characters": 897,
+      "source_url": "https://www.galaxie.com/article/tmsj15-2-02",
+      "source_domain": "galaxie.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 13,
+      "heading": "Слово вне времени, потому что вне времени Его Автор",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:77c5e691f3dfb6748d8943faf79cbc854074fa4d17c28f3ddc6807ef5748a5d9",
+      "quote_characters": 561,
+      "source_url": "https://www.gty.org/blogs/B140109/preach-the-word-because-it-is-timeless-and-powerful",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 14,
+      "heading": "Шесть свойств и шесть благ Писания",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:35af86bdf1235689d2b5450e0b88e1345c8c6bde8c5f1bb976b94e01d3040668",
+      "quote_characters": 919,
+      "source_url": "https://www.gty.org/sermons/TM19-6/the-blessed-work-of-the-sufficient-word-john-macarthur",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 15,
+      "heading": "Проповедуй вовремя и не вовремя",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:1d55a25f8d652084e201f396ad74ac6adafec6fb77fa442480a40fa0a63d4447",
+      "quote_characters": 660,
+      "source_url": "https://www.gty.org/blogs/B140109/preach-the-word-because-it-is-timeless-and-powerful",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 16,
+      "heading": "Бог наиболее прославляется в нас, когда мы наиболее удовлетворены Им",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:6152479873df8793f9638084b94f9a5f47ae0f4b3414b76dafe568a9f44aadaa",
+      "quote_characters": 675,
+      "source_url": "https://www.desiringgod.org/messages/boasting-only-in-the-cross/excerpts/dont-waste-your-life",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 17,
+      "heading": "Страдание с верой — самое чистое поклонение",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:69ff3a4758e98919e562de950ab298b2df0ba6cf71575ff026ef8fe9bdf55835",
+      "quote_characters": 586,
+      "source_url": "https://www.goodreads.com/author/quotes/25423.John_Piper",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 18,
+      "heading": "Непотраченная жизнь",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b314bd7eb44dd97b0fa60922f6650efc2fd1ce8d202385a28cde9da0275cd1f8",
+      "quote_characters": 674,
+      "source_url": "https://www.desiringgod.org/messages/boasting-only-in-the-cross/excerpts/dont-waste-your-life",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 19,
+      "heading": "Душа, набитая мелочами",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:fb90ba17187c40f4343c9eb5ef14edcd0b9b9530954ca23de2427490562ab03b",
+      "quote_characters": 442,
+      "source_url": "https://www.desiringgod.org/books/when-i-dont-desire-god",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 20,
+      "heading": "Мы тратим жизнь, когда не молимся об этом",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:fb47b607256d5a685ee39b6eed1b8d7779c6512948a8f1d3666ab63a015f48e1",
+      "quote_characters": 658,
+      "source_url": "https://www.desiringgod.org/books/dont-waste-your-life",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 21,
+      "heading": "Грех — космическая измена",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b6e92f1cf1b775d978b44d315244e40241f359c50b44db53efe01fb084e14a1f",
+      "quote_characters": 573,
+      "source_url": "https://www.goodreads.com/work/quotes/2101042-the-holiness-of-god",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 22,
+      "heading": "Святой — значит «Другой»",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:fcc0ac1a07e60279fc262a51dc3e37ee9d30db24efcc5a50af00a5924943a3cf",
+      "quote_characters": 625,
+      "source_url": "https://www.goodreads.com/work/quotes/2101042-the-holiness-of-god",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 23,
+      "heading": "Если одна молекула свободна",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:3fd6311d3757d5f2eb43babc22369396aba3720802b86b9ff2b6635b6e99d58e",
+      "quote_characters": 598,
+      "source_url": "https://www.goodreads.com/author/quotes/1250965.R_C_Sproul",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 24,
+      "heading": "Если спотыкаешься о гнев Божий — посмотри на крест",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:bbba05de522005620ad9f9461d23a21cb29767f9012ae3a08935eff3e8e07f1a",
+      "quote_characters": 660,
+      "source_url": "https://www.goodreads.com/work/quotes/2101042-the-holiness-of-god",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 25,
+      "heading": "Самая большая проблема человечества",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:df5be9dd820b67d4242788bf3c190dd5b1d61efa2f6718d9f8f44395330124ca",
+      "quote_characters": 686,
+      "source_url": "https://www.ligonier.org/posts/rc-sproul-through-years-holiness-god",
+      "source_domain": "ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 26,
+      "heading": "Дети Цезаря",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:55c3f22d7f1b0e7fa5e208196169cf28932a5563377032b0b18c65574124e746",
+      "quote_characters": 654,
+      "source_url": "https://www.goodreads.com/author/quotes/522076.Voddie_T_Baucham_Jr_",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 27,
+      "heading": "Библия истинна не потому, что «работает»",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:d8362cd6b34e74c4c7e2ef0c5db2c2fbb7285193664428ed678f417167b2f524",
+      "quote_characters": 817,
+      "source_url": "https://sermonindex.net/speakers/voddie-baucham/why-i-choose-to-believe-the-bible/",
+      "source_domain": "sermonindex.net",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 28,
+      "heading": "Мы сами себя обманываем",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:a65c20238925bd240436641790fd0ad810fc102722c0280aa6102e2d30b8d38b",
+      "quote_characters": 705,
+      "source_url": "https://www.goodreads.com/author/quotes/522076.Voddie_T_Baucham_Jr_",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 29,
+      "heading": "Любить истину больше",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:cc726cefe14da06a0bb1dc8bc6d917d1dbe84d4ac6786a6d2f83ae69815490db",
+      "quote_characters": 559,
+      "source_url": "https://www.goodreads.com/book/show/55990730-fault-lines",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 30,
+      "heading": "Семейное поклонение и крест",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:6deca6ab6ce20263d4444cf79c8327d6ace43d1298f36b883b2aff63b974cbfe",
+      "quote_characters": 827,
+      "source_url": "https://heritagebooks.org/blog/the-joel-beeke-interview-on-family-worship/",
+      "source_domain": "heritagebooks.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 31,
+      "heading": "Как дом — так и церковь",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:381e0cc22b9b86031341d6bce891d5ef6a41469ba7f89b80ddb4d0da96a2007b",
+      "quote_characters": 647,
+      "source_url": "https://www.heritagebooks.org/familyworship",
+      "source_domain": "heritagebooks.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 32,
+      "heading": "Басовый аккорд закона",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:73f17ffeee5bed7de69d44160f35f3f686ac72e7cd8b91d790ad401ca952f53c",
+      "quote_characters": 590,
+      "source_url": "https://www.goodreads.com/author/quotes/51268.Joel_R_Beeke",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 33,
+      "heading": "Суббота — предвкушение небесного пира",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:bf35b5b932005875474268ffc4e6d2f0789c712b111b19936855c2e186604c37",
+      "quote_characters": 549,
+      "source_url": "https://puritanboard.com/threads/beeke-how-to-cultivate-sabbath-keeping.91487/",
+      "source_domain": "puritanboard.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 34,
+      "heading": "Джон Беньян — ключ, который называется Обетование",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:36ce6b6a6ebf653a55ee44e991917020d6c0f5d7971cdba2b6a2d46d73b3a2f4",
+      "quote_characters": 670,
+      "source_url": "https://www.ccel.org/ccel/bunyan/pilgrim.iv.vii.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 35,
+      "heading": "Джон Беньян — великие грехи извлекают великую благодать",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:046d579a4c8d9497c89c440d12f599c63a42bac49e48aa6971dca52924aab1ef",
+      "quote_characters": 706,
+      "source_url": "https://www.ccel.org/ccel/bunyan/grace.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 36,
+      "heading": "Джон Беньян — в молитве лучше сердце без слов, чем слова без сердца",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:7cdf0b64a972d8151f2c9a0be4de0c350538b00ae9c297199611bb77f8b25fc2",
+      "quote_characters": 522,
+      "source_url": "https://www.azquotes.com/author/2160-John_Bunyan/tag/prayer",
+      "source_domain": "azquotes.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 37,
+      "heading": "Джон Беньян — кто внизу, тому нечего бояться падения",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:eb8478ec09cdcb7712aacbace18a77b1b4d5739fe1ae353892e2a28f4907b727",
+      "quote_characters": 439,
+      "source_url": "https://www.biblebb.com/files/bunyan/pilgrimsprogress2.htm",
+      "source_domain": "biblebb.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 38,
+      "heading": "Джон Оуэн — убивай грех, или он убьёт тебя",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:5d82fd2adf820560e4ea48bb5247e96cb2440785cf20089798ebe10f2609da47",
+      "quote_characters": 739,
+      "source_url": "https://ccel.org/ccel/owen/mort.i.v.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 39,
+      "heading": "Джон Оуэн — созерцание славы Христа",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b496bd8e37039720f88d95e84940aa69c5ff590ef1c55504c39c1a4e898f5475",
+      "quote_characters": 786,
+      "source_url": "https://www.banneroftruth.org/us/store/christian-living/the-glory-of-christ/",
+      "source_domain": "banneroftruth.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 40,
+      "heading": "Томас Уотсон — грех хуже бедствия",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:923b91d9c87869300322d1cf8c3170d26b3d86cab27ffacaa0ffc1ae5b9bca14",
+      "quote_characters": 855,
+      "source_url": "https://ccel.org/ccel/watson/prayer.ix.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 41,
+      "heading": "Томас Уотсон — лучше встретить Бога со слезами, чем с оружием",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:62d20a47595e854e7bca61e513f5ce6c1d49c143415adfce46e7ddef02088260",
+      "quote_characters": 875,
+      "source_url": "https://ccel.org/ccel/watson/divinity.all.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 42,
+      "heading": "Томас Уотсон — логика дьявола",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:d7027fc89ad709db0fd9ceeb485bc97aea108766be08cd066d81d9a7db733d90",
+      "quote_characters": 693,
+      "source_url": "https://ccel.org/ccel/watson/divinity.all.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 43,
+      "heading": "Ричард Сиббс — во Христе больше милости, чем в нас греха",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:2e1b431f3aea927216e0febcadfea6771d6fb957f6391a3b94f0e1741a8db883",
+      "quote_characters": 720,
+      "source_url": "https://www.gracegems.org/30/short_pithy_gems_from_Sibbes.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 44,
+      "heading": "Ричард Сиббс — искра веры",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:0f6bd05dd49cbfe150c9988d508b225f48b9d6085a8af482cd1165ecffcc0949",
+      "quote_characters": 775,
+      "source_url": "https://www.gracegems.org/30/short_pithy_gems_from_Sibbes.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 45,
+      "heading": "Джон Флавел — почему нам падать духом под печальными провидениями",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:47b950adaf7bd304efcf7d79b470c5436470d98de92d4243952965d9aab6a0f8",
+      "quote_characters": 760,
+      "source_url": "https://www.eternallifeministries.org/jf_prov2.htm",
+      "source_domain": "eternallifeministries.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 46,
+      "heading": "Джон Флавел — наблюдай провидения Бога",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:63081eb1c9b62d18bf328b161c3166efd1e63ab44d1f4d2edb9fbaa91c1bd891",
+      "quote_characters": 789,
+      "source_url": "https://www.eternallifeministries.org/jf_prov2.htm",
+      "source_domain": "eternallifeministries.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 47,
+      "heading": "Стивен Чарнок — святость — красота Бога",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:61e414a71c6f1115d9400d9f47f703c7cb3eb13886b6cedfd6b60099a3179a87",
+      "quote_characters": 708,
+      "source_url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 48,
+      "heading": "Стивен Чарнок — отрицать чистоту Бога хуже, чем отрицать Его бытие",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:9b4474c493b4507740c3a9947ccf62fbaf2765f76444a01d526087286879292f",
+      "quote_characters": 756,
+      "source_url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 49,
+      "heading": "Томас Брукс — приманка и крючок",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f69fc44c650c8fb7e08d6137b918508db5499e3de4c2a099e883b73465292569",
+      "quote_characters": 907,
+      "source_url": "https://www.gracegems.org/Brooks/precious_remedies_against_satan5.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 50,
+      "heading": "Томас Брукс — лёгкое покаяние",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:2ccdaa3657ce8425a9a1b42d68943884330b4826e7e6c0bf0068b665771c89ad",
+      "quote_characters": 758,
+      "source_url": "https://www.gracegems.org/Brooks/precious_remedies_against_satan5.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 51,
+      "heading": "Томас Мэнтон — смерть не отнимет Бога",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:88a7db215146065b76353660aeeb75d78b6722fb2e26d8ed442bd3680efd2d0e",
+      "quote_characters": 892,
+      "source_url": "https://www.apuritansmind.com/puritan-favorites/thomas-manton-1620-1677/the-works-of-thomas-manton-volume-1/christs-eternal-existence-and-the-dignity-of-his-person-asserted-and-proved/sermon-4-colossians-117-by-dr-thomas-manton/",
+      "source_domain": "apuritansmind.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 52,
+      "heading": "Томас Мэнтон — вечность должна быть в поле зрения",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:787eebf642dc05bad4a52cdefe9c2136ece2303f80e62271dadd37768bf5a173",
+      "quote_characters": 694,
+      "source_url": "https://www.gracegems.org/30/Thomas_Manton.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 53,
+      "heading": "Уильям Гёрналл — молитва: обетование, обращённое вспять",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b680ac1632a5992bf1dde44073e8a83ddf6af542e288b60f7c78d1897eff4fd4",
+      "quote_characters": 778,
+      "source_url": "https://libquotes.com/william-gurnall/works/the-christian-in-complete-armour",
+      "source_domain": "libquotes.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 54,
+      "heading": "Уильям Гёрналл — один Сын без греха, ни одного без страданий",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:c8b539633b6fd84b85619e3b5f240d828925f97cec4924e2bbe3813dfec1c4b3",
+      "quote_characters": 722,
+      "source_url": "https://www.theologyquotes.com/William%20Gurnall",
+      "source_domain": "theologyquotes.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 55,
+      "heading": "Джонатан Эдвардс — паук над огнём",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b7248c74f214010d451587fc9e18912bc5186b4e0858cce7785dcc2524ed2233",
+      "quote_characters": 761,
+      "source_url": "https://www.blueletterbible.org/Comm/edwards_jonathan/Sermons/Sinners.cfm",
+      "source_domain": "blueletterbible.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 56,
+      "heading": "Джонатан Эдвардс — вода, запруженная плотиной",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:e247868a0b353521f20ee3a236bafec248a29468e51c77ef036f4aaec40c401c",
+      "quote_characters": 709,
+      "source_url": "https://courses.lumenlearning.com/suny-empire-amliterature/chapter/jonathan-edwards-sinners-in-the-hands-of-an-angry-god/",
+      "source_domain": "courses.lumenlearning.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 57,
+      "heading": "Джонатан Эдвардс — небо — мир любви",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:50690c21e19fe5ca5314c37b6c1b6929feacbf67b17776c6ae49a9212f50fc6e",
+      "quote_characters": 676,
+      "source_url": "https://www.goodreads.com/work/quotes/3161047-heaven-a-world-of-love",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 58,
+      "heading": "Джонатан Эдвардс — зёрнышко горчичное",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f6f775c26c56ca06eb4a165a6b08cdc93a113977964a9e0d629f19349968bcd0",
+      "quote_characters": 651,
+      "source_url": "https://www.goodreads.com/work/quotes/3161047-heaven-a-world-of-love",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 59,
+      "heading": "Ричард Бакстер — как умирающий — умирающим",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f521c63a6a4951900c55e77d73d9bfda6e5bd697b87dae9f9f81ee0a65dfd983",
+      "quote_characters": 165,
+      "source_url": "https://ccel.org/ccel/baxter/pastor/pastor",
+      "source_domain": "ccel.org",
+      "flags": [
+        "below_250_character_editorial_quality_minimum"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 60,
+      "heading": "Ричард Бакстер — «Отдых!» — как сладко это слово",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:6b946d119a77977f685c41023b5f13283858822eecf6eea169f2afd8f2a966e0",
+      "quote_characters": 1048,
+      "source_url": "https://ccel.org/ccel/baxter/saints_rest/saints_rest.iii.XVI.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 61,
+      "heading": "Томас Бостон — посмотри в свой ум",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ac4cb37e50451df39e6c56ce12e62b79805745f352bed819f5db2cceab5cbc4f",
+      "quote_characters": 778,
+      "source_url": "https://www.gracegems.org/28/human_nature5.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 62,
+      "heading": "Томас Бостон — однажды рождены грешниками",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:160cf78d538180ecde7f364490971cf21ba9e1f5ceeec275fc467bba8d5293e6",
+      "quote_characters": 906,
+      "source_url": "https://www.gracegems.org/28/human_nature5.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 63,
+      "heading": "Дж. К. Райл — без святости никто не увидит Господа",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:16bdbfdb30445142aeeff6b835a7c84f8fb2c6c3e20dd826b15f46cd7df6e538",
+      "quote_characters": 803,
+      "source_url": "https://www.gracegems.org/Ryle/holiness4.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 64,
+      "heading": "Дж. К. Райл — святость без Христа",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:cb1acf626f3f3f47714b2b1d09489e5eed766453ccf94263faedbdd2d6bb7fd4",
+      "quote_characters": 539,
+      "source_url": "https://www.theologyquotes.com/J.C.%20Ryle",
+      "source_domain": "theologyquotes.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 65,
+      "heading": "Мэтью Генри — сухие и мокрые молитвы",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:aee4791b84f182150c0efda0e7a8bac769c6c3af62c043ddef6a2a42a352bd6e",
+      "quote_characters": 496,
+      "source_url": "https://www.heartlight.org/gallery/6688.html",
+      "source_domain": "heartlight.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 66,
+      "heading": "Джон Гилл — нет спасительного познания Бога без Христа",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:8eb228869598c2752d19c26335462e5b6b8166b40e2706a7aaccc63c71e2575f",
+      "quote_characters": 781,
+      "source_url": "https://www.biblestudytools.com/classics/gills-complete-body-of-practical-and-doctrinal-divinity/introduction.html",
+      "source_domain": "biblestudytools.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 67,
+      "heading": "Сэмюэл Резерфорд — величайшее искушение — жить без испытаний",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:1eceb4702dc1cf80e0bdcbb0797bbe087407d35c0fc9e0ba670d7a147bd10af7",
+      "quote_characters": 655,
+      "source_url": "https://www.goodreads.com/author/quotes/197580.Samuel_Rutherford",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 68,
+      "heading": "Сэмюэл Резерфорд — долой всякую любовь, кроме любви Христовой",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:28210e08633b3ad3a1916a636879674b9414b06ba8d8b41f296581eda375c69b",
+      "quote_characters": 694,
+      "source_url": "https://www.gutenberg.org/files/16892/16892-h/16892-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 69,
+      "heading": "Томас Гудвин — мы плывём к славе в Красном море",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:936a85dea9bcbe37904474619eae5155063024fa53bf27633000644012ed7078",
+      "quote_characters": 647,
+      "source_url": "https://www.apuritansmind.com/puritan-favorites/thomas-goodwin-1600-1680/most-holy-and-profitable-sayings-by-thomas-goodwin/",
+      "source_domain": "apuritansmind.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 70,
+      "heading": "Томас Гудвин — сердце Христа к грешникам на земле",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:022682762e0134f325c1575287f7b13f61e8b87cc53ff59c627d59c3ccafddb5",
+      "quote_characters": 758,
+      "source_url": "https://graceandtruthbooks.com/product/the-heart-of-christ-in-heaven-toward-sinners-on-earth/",
+      "source_domain": "graceandtruthbooks.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 71,
+      "heading": "Джон МакАртур — мы не делаем Христа Господом",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:e2c9211286d1325464cf44532c1dba1cfe297893194372b93864492b999c42ed",
+      "quote_characters": 609,
+      "source_url": "https://www.goodreads.com/work/quotes/48884-the-gospel-according-to-jesus",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 72,
+      "heading": "Джон МакАртур — лёгкое уверование",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ca3b9d2724bf9fce951e8099fa3cddec45a2908f5f8411293c0e45f1c8feb648",
+      "quote_characters": 829,
+      "source_url": "https://www.goodreads.com/work/quotes/48884-the-gospel-according-to-jesus",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 73,
+      "heading": "Жан Кальвин — вот Агнец Божий",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:7201fa368079c042b867fec7adee9a68a7104e77eb28aac05d216f5004656442",
+      "quote_characters": 752,
+      "source_url": "https://ccel.org/ccel/calvin/calcom34/calcom34.vii.vii.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 74,
+      "heading": "Жан Кальвин — Христос не может быть разделён",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:3a7afa5cc1f10f63071e4f5fba3a043be591ba4664ad33822bd436da737c87dd",
+      "quote_characters": 808,
+      "source_url": "https://heidelblog.net/2014/05/calvin-on-romans-213/",
+      "source_domain": "heidelblog.net",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 75,
+      "heading": "Джон Пайпер — конечное благо благой вести",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:2904405801fad9d07fbe282d81e90707c6fb7ec5f678c7111b671ec166955af8",
+      "quote_characters": 837,
+      "source_url": "https://www.goodreads.com/work/quotes/440901-the-passion-of-jesus-christ",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 76,
+      "heading": "Джон Пайпер — освобождение для радости",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:eb288c54280e5d29da20c389f35c89e52075777e4947bad048783786e40d68fe",
+      "quote_characters": 833,
+      "source_url": "https://www.goodreads.com/author/quotes/25423.John_Piper",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 77,
+      "heading": "Р. К. Спроул — вечность родилась",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:39ec78f3527a773bd358b2bcca8e77c31d4965d97a1c3dc6e1db722077b2266f",
+      "quote_characters": 665,
+      "source_url": "https://www.goodreads.com/work/quotes/73574909-truths-we-confess-a-systematic-exposition-of-the-westminster-confession",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 78,
+      "heading": "Р. К. Спроул — невидимая рука",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:706e3fb86a890c1fe3d3a3f8bae02a6dbab557a36b6701fa9b6a0dddff1bb30d",
+      "quote_characters": 567,
+      "source_url": "https://store.ligonier.org/invisible-hand-paperback",
+      "source_domain": "store.ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 79,
+      "heading": "Водди Бокэм — как отец, так и семья",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:61680c144d5da159a259300cbc15a98209dcb1f91a989ece28a4a91a8cbe5ec2",
+      "quote_characters": 711,
+      "source_url": "https://www.goodreads.com/work/quotes/16750710-family-shepherds-calling-and-equipping-men-to-lead-their-homes",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 80,
+      "heading": "Водди Бокэм — апологетика, центрированная на Евангелии",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:d4413cbf1152d905b0668e23b3c97fabd51a59259b4e01c46ba9bcc652431072",
+      "quote_characters": 589,
+      "source_url": "https://www.goodreads.com/work/quotes/41472430-expository-apologetics-answering-objections-with-the-power-of-the-word",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 81,
+      "heading": "Джоэл Бики и Марк Джонс — богословие для жизни",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:b935366c8be66d0f1dc217225dfcccf6f081d7a89caffff2f6d01e38626c513e",
+      "quote_characters": 712,
+      "source_url": "https://www.christianstudylibrary.org/files/pub/book_previews/Joel-R-Beeke-&-Mark-Jones_A-Puritan-Theology_The-Puritans-on-Union-with-Christ-Justification-and-Regeneration.pdf",
+      "source_domain": "christianstudylibrary.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 82,
+      "heading": "Джоэл Бики — пуританское размышление",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f987ce7308a1c5f6113d46c52e69e91c0c7f820e81227088b0b7d83e6c5246d1",
+      "quote_characters": 767,
+      "source_url": "https://reformationjournals.com/wp-content/uploads/2020/03/Beeke_Puritan_Meditation.pdf",
+      "source_domain": "reformationjournals.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 83,
+      "heading": "Джон Беньян — «Я никак не изгоню вон»",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:4de9bf42aa055a10360b3ca17bb4d4b8dd98dcb1f83540497d512eb3e8de5d7a",
+      "quote_characters": 998,
+      "source_url": "https://www.goodreads.com/work/quotes/2970475-come-and-welcome-to-jesus-christ",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 84,
+      "heading": "Джон Беньян — страх Божий",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:58e54be4ea222cf57ffd6ad4868d61bd0f2a4e793edbb9e575665239ce5d7d68",
+      "quote_characters": 920,
+      "source_url": "https://www.biblebb.com/files/fearof.htm",
+      "source_domain": "biblebb.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 85,
+      "heading": "Джон Оуэн — величайшая печаль, которую ты можешь причинить Отцу",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:a91683929e07b95c33c7e6270035011f1566dba09ac80b5dd921c9f2fe1a863b",
+      "quote_characters": 675,
+      "source_url": "https://www.goodreads.com/work/quotes/2096965-of-communion-with-god-the-father-son-and-holy-ghost",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 86,
+      "heading": "Джон Оуэн — солнце и луна",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:15fc3e6fe8d700400e9ac851a4b9a6935a0c166ed7f407b6f3ecfd7c052c2769",
+      "quote_characters": 726,
+      "source_url": "https://www.goodreads.com/work/quotes/2096965-of-communion-with-god-the-father-son-and-holy-ghost",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 87,
+      "heading": "Томас Уотсон — довольство как праща",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:31e9659020bd5bc1bc815d4bb63e11bbe6c6fad2816e262e0734d5cac180ae65",
+      "quote_characters": 743,
+      "source_url": "https://www.gracegems.org/Watson/art_of_divine_contentment2.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 88,
+      "heading": "Томас Мэнтон — сокрой слово в сердце",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:afafb1cdead765e2444357acee6417760a0bb3ed8c6e5b05d75da5f917a2f6bf",
+      "quote_characters": 813,
+      "source_url": "https://www.gracegems.org/33/manton_hiding_gods_word.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 89,
+      "heading": "Томас Мэнтон — цветы увядают в наших руках",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:4d3b98fadf104b52f911d4877124bd53d48fb99d96f68490e0fffadef9464d99",
+      "quote_characters": 813,
+      "source_url": "https://memoirandremains.com/2014/02/28/thomas-manton-on-psalm-119-1-a/",
+      "source_domain": "memoirandremains.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 90,
+      "heading": "Томас Брукс — небо по эту сторону неба",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:9aa4d1267091cecd21b1508b40fa78634e3605279543d9fab09407d31cc018d9",
+      "quote_characters": 891,
+      "source_url": "https://www.gracegems.org/Brooks/heaven_on_earth8.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 91,
+      "heading": "Томас Брукс — весь ад, который у тебя когда-либо будет",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:c5561902e1f6fdd7de93cc8f1ac443329cbdde1b8431ff8b094abbbd81ab4146",
+      "quote_characters": 910,
+      "source_url": "https://www.gracegems.org/09/09/09.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 92,
+      "heading": "Ричард Сиббс — когда сатана приносит приманку",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:6756d9ba396e05de4953a315e4b63d0b74bdfe86d8fa3df497d599db7c193a22",
+      "quote_characters": 813,
+      "source_url": "https://www.goodreads.com/en/book/show/36249255-a-glance-of-heaven",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 93,
+      "heading": "Ричард Сиббс — человек влюблён в собственную погибель",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:fbd562f1c88e3a3da8d687907337666c66da49dcde8366f6f5d61bd7658b0951",
+      "quote_characters": 749,
+      "source_url": "https://www.digitalpuritan.net/Digital%20Puritan%20Resources/Sibbes,%20Richard/%5BRS%5D%20The%20Complete%20Works%20of%20Richard%20Sibbes%20(vol.1",
+      "source_domain": "digitalpuritan.net",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 94,
+      "heading": "Джон Флавел — работа сердца",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ad5e89166975c15496611a1f4d94a17766de405b09285f1f266c0b09e97e8e9f",
+      "quote_characters": 994,
+      "source_url": "https://www.gracegems.org/27/keeping_the_heart2.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 95,
+      "heading": "Джон Флавел — сатана не находит покоя в покойных сердцах",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:3bfc9eccfb5e060a66819124416687db51b53c601d1398ac4ddbaddd2bb746c6",
+      "quote_characters": 1030,
+      "source_url": "https://www.gracegems.org/27/keeping_the_heart10.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 96,
+      "heading": "Уильям Гёрналл — холодная молитва не есть молитва",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:e7f73f5daefcd39be0d31eccfb46cfc1cb0a6481c2e5ed7826d145cef110fa01",
+      "quote_characters": 849,
+      "source_url": "https://www.goodreads.com/author/quotes/205830.William_Gurnall",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 97,
+      "heading": "Уильям Гёрналл — искушать другого хуже, чем согрешить самому",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:30f1db89b5685c3fa58549ef0234e296f3bce09e3e064e58fdc50b50673495a2",
+      "quote_characters": 765,
+      "source_url": "https://bibleportal.com/bible-quotes/author/William-Gurnall",
+      "source_domain": "bibleportal.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 98,
+      "heading": "Джонатан Эдвардс — истинная религия в значительной части состоит в святых чувствах",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:fbe69ba9d7844f105da2616fc9945f39bab36334f1c3fe2325e00b2f3b2fb3c7",
+      "quote_characters": 990,
+      "source_url": "https://www.ccel.org/ccel/edwards/affections.iii.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 99,
+      "heading": "Ричард Бакстер — миллионы пожалеют, что не обратились",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ee13ebbaf3d622d2be0441f7e50802018044c3cb9b2e7943c63cda76078df4b2",
+      "quote_characters": 957,
+      "source_url": "https://ccel.org/ccel/baxter/unconverted/unconverted",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 100,
+      "heading": "Томас Бостон — смирение и кривой жребий",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:dd9dee1b6607dbb73986eab4411fe723ee806d585f588f768c79f77883c3eccb",
+      "quote_characters": 1078,
+      "source_url": "https://www.apuritansmind.com/arminianism/the-crook-in-the-lot-by-thomas-boston/",
+      "source_domain": "apuritansmind.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 101,
+      "heading": "Дж. К. Райл — молитва — вернейший признак",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:9cc900de3d0451ac6d3011fc1e7c7609856f8dff31be60d676c78dcd957e807d",
+      "quote_characters": 841,
+      "source_url": "https://www.monergism.com/thethreshold/sdg/ryle/Practical%20Religion%20-Ryle.pdf",
+      "source_domain": "monergism.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 102,
+      "heading": "Дж. К. Райл — Библия и смертное ложе",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ffa8209e3e29874016fa6959239a9905d7c91e534afad471a80c7403056f5fbb",
+      "quote_characters": 698,
+      "source_url": "https://www.goodreads.com/book/show/1067553.Practical_Religion",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 103,
+      "heading": "Сэмюэл Резерфорд — клевета на крест",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:0a1767fff6d120471d8bf1502825931ed4d7cdc2228ad3a15cb6ff676debe398",
+      "quote_characters": 778,
+      "source_url": "https://www.gutenberg.org/files/16892/16892-h/16892-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 104,
+      "heading": "Томас Гудвин — Христос, предложенный взору",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:207968682b035df0f2f547947b3087fc1351211e1f938cc322cc56a2633a4a67",
+      "quote_characters": 936,
+      "source_url": "https://www.monergism.com/thethreshold/sdg/goodwin/Christ%20Set%20Forth%20-%20Thomas%20Goodwin.pdf",
+      "source_domain": "monergism.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 105,
+      "heading": "Мэтью Генри — идолы в сердце",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:f0cb74c337c2553f8851b86ee2515281dedac0bb960d02149ced1439377e7ced",
+      "quote_characters": 680,
+      "source_url": "https://www.goodreads.com/work/quotes/947856-matthew-henry-s-concise-commentary-on-the-whole-bible",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 106,
+      "heading": "Джон Гилл — суть завета благодати",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:ca9f4f1716a387d5c88adac0fb60c6e75e4a5d033b3f410ddf1ac545b4e7e920",
+      "quote_characters": 689,
+      "source_url": "https://cf.sbts.edu/equip/uploads/2021/10/SBJT-25.1-John-Gill-and-the-Eternal-Covenant-Scheiderer.pdf",
+      "source_domain": "cf.sbts.edu",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 107,
+      "heading": "Р. К. Спроул — королева наук",
+      "library_file": "quote-library-107.md",
+      "quote_sha256": "sha256:17e2a5620544ccafc47ea3ffc4d3952e0618ea426fd92e7fe7babb962e9d8507",
+      "quote_characters": 969,
+      "source_url": "https://www.goodreads.com/work/quotes/40112511-everyone-s-a-theologian-an-introduction-to-systematic-theology",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 108,
+      "heading": "Дж. К. Райл — Цена",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:3ffd07afd3210d2c2d12f9039db6d44d7ab769ab9c5988224e6af2a7a921cc22",
+      "quote_characters": 1489,
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.v.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 109,
+      "heading": "Дж. К. Райл — Что стоит настоящее христианство (продолжение)",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:c04b2f409f6cb68667aa5894e87e7c64a82c3883fdd8412679a070470cfc5d5c",
+      "quote_characters": 1445,
+      "source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.v.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 110,
+      "heading": "Дж. К. Райл — Без святости никто не увидит Господа",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:e6d0a2b991b7f403c96a7ef5d949f504a48e3b0de92d1caa6069a980ba494062",
+      "quote_characters": 1121,
+      "source_url": "https://www.gracegems.org/Ryle/holiness4.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 111,
+      "heading": "Дж. К. Райл — Что такое истинная святость",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:01476ecefd8566745e5da27c5a8efef07ab4b8a48eac69f1df3cfc94a5a44305",
+      "quote_characters": 1286,
+      "source_url": "https://www.gracegems.org/Ryle/holiness4.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 112,
+      "heading": "Дж. К. Райл — Грех",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:2cf2f7883c8a7d9a6e7cecd1fb715b80126c2c68081aeda798182443dfa41c55",
+      "quote_characters": 1335,
+      "source_url": "https://www.gracegems.org/Ryle/holiness2.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 113,
+      "heading": "Дж. К. Райл — Освящение",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:546f1ed8b3ec34cc358d66d5f20b077d83534fea68d7076ebd71f37cb9102fdd",
+      "quote_characters": 1587,
+      "source_url": "https://www.gracegems.org/Ryle/holiness3.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 114,
+      "heading": "Дж. К. Райл — Вера — корень, но не только она",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:347fef737ba4dd23d75c60657093fc524df6f8f26a545afb414a5eecaf14deec",
+      "quote_characters": 1590,
+      "source_url": "https://www.gracegems.org/Ryle/holiness1.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 115,
+      "heading": "Мартин Лютер — Крепость",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:1ae9fc860637a0ac8740967412220ddfcb6a7afc3d0bd63af7f7921917a8825d",
+      "quote_characters": 341,
+      "source_url": "https://www.gutenberg.org/cache/epub/20750/pg20750-images.html",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 116,
+      "heading": "Мартин Лютер — Послушание Слову выше дел",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:a85dcac890ad42a6f2c33b08875c00252aa630e788c69d96ed21f041637eeaff",
+      "quote_characters": 1003,
+      "source_url": "https://www.gutenberg.org/files/4815/4815-h/4815-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 117,
+      "heading": "Мартин Ллойд-Джонс — Ревность о Боге",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:0030084e1a3a6e312ccff450e79d081a0a367ed2a40b4288d5caf2bb85185fcf",
+      "quote_characters": 1014,
+      "source_url": "https://www.mljtrust.org/sermons/zeal-for-thy-house-hath-eaten-me-up/",
+      "source_domain": "mljtrust.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 118,
+      "heading": "Мартин Ллойд-Джонс — Страх перед Богом и страх перед людьми",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:f31878be4408cee96b6ba11145858cc1703da7ec56cea5b0621be8cb0ba996ec",
+      "quote_characters": 1182,
+      "source_url": "https://www.mljtrust.org/sermons/acts/grant-to-thy-servants-to-speak-thy-word-with-all-boldness/",
+      "source_domain": "mljtrust.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 119,
+      "heading": "Джонатан Эдвардс — Бог — высшее благо",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:514b888a8402c9c0232fc54260e49e91323ccd4a7cea34dcd06fb7b39740c838",
+      "quote_characters": 847,
+      "source_url": "https://ccel.org/ccel/edwards/works2/works2.vi.xvi.ii.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 120,
+      "heading": "Джонатан Эдвардс — Резолюции",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:6a0df21e31c231ba6a37fb473522951d86315141164fc1eb4ca32b23c841f0e3",
+      "quote_characters": 877,
+      "source_url": "https://www.gracegems.org/Edwards/resolutions.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 121,
+      "heading": "Чарльз Сперджен — Благодать спасает от начала и до конца",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:427b30c539855bac23108ad2df5f1c33d8e9a37fe7d3d8d9da55c4305cf98b4c",
+      "quote_characters": 1149,
+      "source_url": "https://www.spurgeon.org/sermons/salvation-all-of-grace",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 122,
+      "heading": "Чарльз Сперджен — Божественный суверенитет",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:a8f18f34151947981c51da37b125143a99ce2c1de28654e230284e5c3a6c6dac",
+      "quote_characters": 1154,
+      "source_url": "https://www.spurgeon.org/sermons/divine-sovereignty",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 123,
+      "heading": "Чарльз Сперджен — Мой единственный на небе",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:1e36375b64dd4be3dfc9b995dbae789f29f15562a61caadc01d7fe812b45b53c",
+      "quote_characters": 1159,
+      "source_url": "https://www.spurgeon.org/sermons/if-there-be-no-resurrection",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 124,
+      "heading": "Чарльз Сперджен — Мы оправдываемся одной верой",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:9177f98d07326b3d75c6600746528948b695c94a0115f81086c42ed96a0ab8c8",
+      "quote_characters": 1078,
+      "source_url": "https://www.spurgeon.org/sermons/salvation-all-of-grace",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 125,
+      "heading": "Чарльз Сперджен — Покаяние",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:b75d80f9bc3b219bd5c7df8076c5a7a114e5606f82e62a9c1a7f7a703af2a774",
+      "quote_characters": 1184,
+      "source_url": "https://www.spurgeon.org/sermons/repentance",
+      "source_domain": "spurgeon.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 126,
+      "heading": "Р. К. Спроул — Грех — космическая измена (полный отрывок)",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:2449a1ac9519b68d3c5bb58ef3b983f5a7eda17b8c67f25474e429f5c38c1261",
+      "quote_characters": 1164,
+      "source_url": "https://learn.ligonier.org/articles/cosmic-treason",
+      "source_domain": "learn.ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 127,
+      "heading": "Р. К. Спроул — Праведность Христа",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:2b493eacc38ac12f600272bfbb90908f82c3af3c04cb67416542beaf071a5978",
+      "quote_characters": 1138,
+      "source_url": "https://learn.ligonier.org/articles/instrumental-cause-justification",
+      "source_domain": "learn.ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 128,
+      "heading": "Р. К. Спроул — Вера — подарок",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:c5bc494bf2a55bc8f1dd715b145c81d125e5241b65e68475a2983f9998f75d11",
+      "quote_characters": 1138,
+      "source_url": "https://learn.ligonier.org/articles/grace-faith",
+      "source_domain": "learn.ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 129,
+      "heading": "Р. К. Спроул — Благодать не долг",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:42540886e064fa4cc58b96098f635d7fabe4f3951a8e604429d6aadcb7ae2be6",
+      "quote_characters": 1021,
+      "source_url": "https://learn.ligonier.org/articles/election-unfair",
+      "source_domain": "learn.ligonier.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 130,
+      "heading": "Жан Кальвин — Наша мудрость (длинный отрывок)",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:8af38c83702a7ee25ce22030bd4d2350a159a87a17a28f4c6ac62f593dd51199",
+      "quote_characters": 1556,
+      "source_url": "https://ccel.org/ccel/calvin/institutes/institutes.ii.i.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 131,
+      "heading": "Жан Кальвин — Вечное избрание",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:7b80189e44dffd2f1d00072103fb237bd4f8316144bbcb75a33683b7c036376f",
+      "quote_characters": 1058,
+      "source_url": "https://ccel.org/ccel/calvin/institutes/institutes.v.xxii.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 132,
+      "heading": "Томас Уотсон — Грех как попытка свергнуть Бога с престола",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:a80c03d366c87ef6f23225387e58c8e4f10614c18b8206b8abfc1f936a5de5b1",
+      "quote_characters": 1201,
+      "source_url": "https://ccel.org/ccel/watson/prayer.ix.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 133,
+      "heading": "Томас Уотсон — Истинная спасающая вера",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:2e26de8170f847d4b12bf18a05d0a64ce0555d0d6a709a8a0dd2c14318dd77e9",
+      "quote_characters": 1256,
+      "source_url": "https://ccel.org/ccel/watson/divinity.ix.i.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 134,
+      "heading": "Томас Уотсон — Довольство в Боге",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:332e8c0d024ab1a7758243efe68cc32ee3a6f6959085a9a90c1f83d49a560b35",
+      "quote_characters": 920,
+      "source_url": "https://www.gracegems.org/Watson/art_of_divine_contentment2.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 135,
+      "heading": "Джон Флавел — Хранение сердца",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:028003b2cd86bc88750317eed93bbf9ba8728672d9cdfb3d07d4d2cc42b8cd70",
+      "quote_characters": 1241,
+      "source_url": "https://www.gracegems.org/27/keeping_the_heart2.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 136,
+      "heading": "Джон Флавел — Закон ведёт ко Христу",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:ab707caa7cd0bde4f581771026462e9b703dda4b0c501e64317e86286da7ef03",
+      "quote_characters": 1176,
+      "source_url": "https://ccel.org/ccel/flavel/grace.xxi.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 137,
+      "heading": "Джон МакАртур — Достаточность Писания",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:bc900632860dfcfe2d0aa91c202f2f756a938aa0a632b3f59e4aecc31494807c",
+      "quote_characters": 1294,
+      "source_url": "https://www.gty.org/sermons/TM19-6/the-blessed-work-of-the-sufficient-word-john-macarthur",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 138,
+      "heading": "Джон МакАртур — Господство Христа",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:bbcd3ad5473c227511a8b48f8fb3647958ec8e3da1af9ea4f875aef579e51dcd",
+      "quote_characters": 1388,
+      "source_url": "https://www.gty.org/library/questions/QA138/what-is-lordship-salvation",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 139,
+      "heading": "Джон МакАртур — Покаяние не заслуга",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:8fd6b50e41a06f6597f6adb91fb0c3044db20e5c692dcd09fb59ff28693bc4f3",
+      "quote_characters": 1128,
+      "source_url": "https://www.gty.org/articles/A330/what-is-biblical-repentance",
+      "source_domain": "gty.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 140,
+      "heading": "Водди Бокэм — Семейное поклонение",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:f7498535b3fadaad6814431282c31b66a20d6e9f050c81360bf5a823f562abc9",
+      "quote_characters": 1093,
+      "source_url": "https://heritagebooks.org/blog/the-joel-beeke-interview-on-family-worship/",
+      "source_domain": "heritagebooks.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 141,
+      "heading": "Водди Бокэм — Апологетика, центрированная на Евангелии",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:bb62517a65e703bcb7ee2567e3959ca14994c9cbd6fa005eb6d5d35bb7e6796b",
+      "quote_characters": 1009,
+      "source_url": "https://www.goodreads.com/work/quotes/41472430-expository-apologetics-answering-objections-with-the-power-of-the-word",
+      "source_domain": "goodreads.com",
+      "flags": [
+        "aggregated_quote_not_primary_source"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 142,
+      "heading": "Джон Пайпер — Бог наиболее прославляется",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:7bc0cd6bb6f89b2a726383a99dace65be8594a6f83d62d863307d17454529891",
+      "quote_characters": 1036,
+      "source_url": "https://www.desiringgod.org/messages/boasting-only-in-the-cross/excerpts/dont-waste-your-life",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 143,
+      "heading": "Джон Пайпер — Конечное благо благой вести",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:d5939086073ed775e6cfb8a91f550c2f52dc2ba8dfefa1cb40a631599bf6791b",
+      "quote_characters": 1142,
+      "source_url": "https://www.desiringgod.org/messages/christ-suffered-once-for-sins",
+      "source_domain": "desiringgod.org",
+      "flags": [
+        "modern_publisher_text_rights_review"
+      ],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 144,
+      "heading": "Ричард Бакстер — Вечный покой святых",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:93d03256b25ad9b1f515836426bb0b0a32ea112f4304777c64e0794e3b68ef22",
+      "quote_characters": 1048,
+      "source_url": "https://ccel.org/ccel/baxter/saints_rest/saints_rest.iii.XVI.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 145,
+      "heading": "Ричард Бакстер — Как умирающий — умирающим",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:34d7507f2ed4750677f3f551596b0e01455ff5e3879ab51fe0c9d4797620e20a",
+      "quote_characters": 1073,
+      "source_url": "https://ccel.org/ccel/baxter/pastor/pastor",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 146,
+      "heading": "Томас Бостон — Смирение и гордость",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:dd9dee1b6607dbb73986eab4411fe723ee806d585f588f768c79f77883c3eccb",
+      "quote_characters": 1078,
+      "source_url": "https://www.apuritansmind.com/arminianism/the-crook-in-the-lot-by-thomas-boston/",
+      "source_domain": "apuritansmind.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 147,
+      "heading": "Сэмюэл Резерфорд — Крест и Христос",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:a17ce66ca7c6e2fd663fd46c6706f984835947cf85e50396f6bf95b755fa2af0",
+      "quote_characters": 969,
+      "source_url": "https://www.gutenberg.org/files/16892/16892-h/16892-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 148,
+      "heading": "Томас Гудвин — Сердце Христа к грешникам",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:5edf261e5aafdabc8a0db9c49c59f028a8971e27da598ed3a3b37a296c6c025f",
+      "quote_characters": 1181,
+      "source_url": "https://graceandtruthbooks.com/product/the-heart-of-christ-in-heaven-toward-sinners-on-earth/",
+      "source_domain": "graceandtruthbooks.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 149,
+      "heading": "Уильям Гёрналл — Холодная молитва",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:1b1dda816e15b175af1d9ec24832ba23dda8013742d9eff9f8fad0c28ef27689",
+      "quote_characters": 1251,
+      "source_url": "https://ccel.org/ccel/gurnall/armour/files/gurnal01a.htm",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 150,
+      "heading": "Уильям Гёрналл — Бог имел одного Сына без греха",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:e1b1e66c35f4c427c82cf6ebbff8ca3c9cbd5b63b4134fc73c52bdb6b038abdb",
+      "quote_characters": 1062,
+      "source_url": "https://ccel.org/ccel/gurnall/armour/files/gurnal03b.htm",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 151,
+      "heading": "Стивен Чарнок — Отрицать чистоту Бога хуже, чем отрицать Его бытие",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:812936ef389486859d9b6e26a147587a78187d26a5897898e1a410e07ff8a79b",
+      "quote_characters": 1146,
+      "source_url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 152,
+      "heading": "Томас Брукс — Приманка и крючок",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:c9cf8a56c1b5724cfd4cd369b332fc2e2558c188367f77166ecdf4aa8f8927d7",
+      "quote_characters": 1230,
+      "source_url": "https://www.gracegems.org/Brooks/precious_remedies_against_satan5.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 153,
+      "heading": "Мэтью Генри — Сухые и мокрые молитвы",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:9ca31b1a9cc0a8bfb57e96d5140cbd217032e9bc2c8ec39f37c7075f2bca4985",
+      "quote_characters": 1061,
+      "source_url": "https://www.biblestudytools.com/commentaries/matthew-henry-complete/hebrews/5.html",
+      "source_domain": "biblestudytools.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 154,
+      "heading": "Джон Гилл — Вечный завет благодати",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:b59231e3821867e5789cf6f8062f27e1f023d59cec38154723e492906ea85df2",
+      "quote_characters": 1055,
+      "source_url": "https://cf.sbts.edu/equip/uploads/2021/10/SBJT-25.1-John-Gill-and-the-Eternal-Covenant-Scheiderer.pdf",
+      "source_domain": "cf.sbts.edu",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 155,
+      "heading": "Августин — Беспокойно сердце наше",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:d64ad94db259658748a8d50bf18891787f59ed90f742ede8d6f6ef788f1b6f5e",
+      "quote_characters": 1218,
+      "source_url": "https://www.ccel.org/ccel/augustine/confessions.html",
+      "source_domain": "ccel.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 156,
+      "heading": "Джордж Уитфилд — Метод получения благодати",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:48742e5ca75592f242eae1744a32653a40ec932cf2282c7cd9d4c3f9f7503424",
+      "quote_characters": 1016,
+      "source_url": "https://www.monergism.com/method-george-whitefield",
+      "source_domain": "monergism.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 157,
+      "heading": "Роберт Мюррей Макчейн — Драгоценность времени",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:875c25363a55b6b39492de90481d99aef60dcf642e2e6513b28d5caa8c444b3f",
+      "quote_characters": 1061,
+      "source_url": "https://www.gracegems.org/McCheyne/brief_outline.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 158,
+      "heading": "Эндрю Мюррей — Смирение Христа",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:860b4817ea80ff8b8fabc1532d7edb1a62cd2eb17ac7e43574e1668a8fa0dda1",
+      "quote_characters": 1099,
+      "source_url": "https://www.gutenberg.org/files/45608/45608-h/45608-h.htm",
+      "source_domain": "gutenberg.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 159,
+      "heading": "Чарльз Ходж — Грех первородный",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:2a489eea932372e9a2cdb805a761c011c2cf153c463f9295891ebba61eb52125",
+      "quote_characters": 1136,
+      "source_url": "https://www.gracegems.org/Hodge/original_depravity.htm",
+      "source_domain": "gracegems.org",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    },
+    {
+      "number": 160,
+      "heading": "Герман Бавинк — Свидетельство Духа",
+      "library_file": "quote-library-v2-160.md",
+      "quote_sha256": "sha256:d5d9d9981b5c1713d290e1fc9828eaf80126106c17c312d7ca46e0a58069b422",
+      "quote_characters": 1371,
+      "source_url": "https://www.monergism.com/bavinck-holy-spirit-testimony",
+      "source_domain": "monergism.com",
+      "flags": [],
+      "source_verification": "pending_primary_source_collation",
+      "eligible_for_auto_release": false
+    }
+  ]
+}

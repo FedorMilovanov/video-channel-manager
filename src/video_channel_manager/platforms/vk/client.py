@@ -362,6 +362,48 @@ class VkApiClient(HttpClientOwner):
             )
         return response
 
+    def get_community_token_permissions(self) -> tuple[int, tuple[str, ...]]:
+        """Return (mask, enabled permission names) for a community access key.
+
+        This is the community-key counterpart of ``groups.getTokenPermissions``;
+        it never works for user tokens and never performs a provider write.
+        """
+
+        response = self._call("groups.getTokenPermissions")
+        if not isinstance(response, dict):
+            raise VkApiError(
+                "VK groups.getTokenPermissions returned an invalid payload.",
+                method="groups.getTokenPermissions",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+            )
+        mask = response.get("mask")
+        permissions = response.get("permissions")
+        if type(mask) is not int or mask < 0 or not isinstance(permissions, list):
+            raise VkApiError(
+                "VK groups.getTokenPermissions returned an invalid permission set.",
+                method="groups.getTokenPermissions",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+            )
+        enabled: list[str] = []
+        for item in permissions:
+            if not isinstance(item, dict):
+                raise VkApiError(
+                    "VK groups.getTokenPermissions returned an invalid permission entry.",
+                    method="groups.getTokenPermissions",
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
+            name = item.get("name")
+            setting = item.get("setting")
+            if not isinstance(name, str) or not name or type(setting) is not int:
+                raise VkApiError(
+                    "VK groups.getTokenPermissions returned an invalid permission entry.",
+                    method="groups.getTokenPermissions",
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
+            if setting:
+                enabled.append(name)
+        return mask, tuple(enabled)
+
     def get_current_user(self) -> VkUserIdentity:
         response = self._call("users.get", params={"fields": "screen_name"})
         users = [item for item in response if isinstance(item, dict)] if isinstance(response, list) else []

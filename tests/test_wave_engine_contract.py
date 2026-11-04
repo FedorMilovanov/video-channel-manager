@@ -413,6 +413,50 @@ def test_ambiguous_mutation_requires_two_confirmations_and_is_blocked_in_ci(
         )
 
 
+def test_ci_ambiguous_mutation_requires_exact_plan_bound_operator_confirmation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from video_channel_manager.wave_engine.engine import ci_operator_confirmation_for
+
+    plan = _plan(MutationClass.AMBIGUOUS_MUTATION)
+    plan_path = tmp_path / "plan.json"
+    intent = _intent(plan_path, plan, enabled=True)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+
+    # Wrong-plan or free-form confirmations stay prohibited in CI.
+    adapter = _RecordingAdapter()
+    with pytest.raises(ValueError, match="prohibited in CI"):
+        WaveEngine().apply(
+            plan=plan,
+            intent=intent,
+            adapter=adapter,
+            source=_source(),
+            repository_root=tmp_path,
+            source_file_path=tmp_path / "source-evidence.json",
+            plan_file_path=plan_path,
+            journal_directory=tmp_path / "journal-wrong",
+            provider_writes_enabled=True,
+            ci_operator_confirmation="WAVE-CI-APPLY:deadbeef:deadbeef",
+        )
+    assert adapter.calls == []
+
+    # The exact token binds authorization to this plan and operation set.
+    result = WaveEngine().apply(
+        plan=plan,
+        intent=intent,
+        adapter=adapter,
+        source=_source(),
+        repository_root=tmp_path,
+        source_file_path=tmp_path / "source-evidence.json",
+        plan_file_path=plan_path,
+        journal_directory=tmp_path / "journal-confirmed",
+        provider_writes_enabled=True,
+        ci_operator_confirmation=ci_operator_confirmation_for(plan),
+    )
+    assert result.status is WaveStatus.SUCCEEDED
+    assert adapter.calls == [plan.operations[0].operation_id]
+
+
 def test_result_requires_exact_status_and_mutation_semantics() -> None:
     safe_plan = _plan(MutationClass.SAFE_READ)
     unknown = WaveOperationResult(

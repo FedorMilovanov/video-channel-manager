@@ -1,0 +1,220 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-replacements",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "owning_issue": 667,
+  "review_state": "source_verified",
+  "entries": [
+    {
+      "replacement_key": "calvin-knowledge-god-self",
+      "title": "Две части истинной мудрости",
+      "theme": "worship_fear_obedience",
+      "quote_ru": "Наша мудрость, если её следует считать истинной и основательной, почти целиком состоит из двух частей: познания Бога и самих себя.",
+      "editorial_context_ru": "Кальвин начинает «Наставление» не с отвлечённой схемы, а с двойного знания, которое разрушает автономию человека. Чем яснее мы видим Бога, тем трезвее видим собственную зависимость, грех и нужду в благодати; и наоборот, честное знание себя направляет взгляд к Богу.",
+      "attribution_ru": "Жан Кальвин, «Наставление в христианской вере», книга I, гл. 1, §1",
+      "hashtags": ["#Кальвин", "#Богословие", "#ПознаниеБога"],
+      "source": {"author":"John Calvin","work":"Institutes of the Christian Religion","location":"Book I, chapter 1, section 1","url":"https://www.ccel.org/ccel/calvin/institutes.iii.ii.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"Our wisdom, in so far as it ought to be deemed true and solid Wisdom, consists almost entirely of two parts: the knowledge of God and of ourselves.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "edwards-holy-affections",
+      "title": "Истинная вера затрагивает сердце",
+      "theme": "faith",
+      "quote_ru": "Истинная религия в значительной мере состоит в святых чувствованиях.",
+      "editorial_context_ru": "Эдвардс не сводит христианство к эмоциям: весь трактат различает святые чувствования и обманчивое религиозное возбуждение. Его тезис направлен против холодной веры, которая оставляет волю, любовь, радость и ненависть ко греху практически нетронутыми.",
+      "attribution_ru": "Джонатан Эдвардс, «Религиозные чувствования», часть I",
+      "hashtags": ["#Эдвардс", "#Вера", "#Сердце"],
+      "source": {"author":"Jonathan Edwards","work":"Religious Affections","location":"Part I, doctrine on religious affections","url":"https://www.ccel.org/ccel/edwards/affections.iii.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"True religion, in great part, consists in holy affections.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "spurgeon-sovereignty-comfort",
+      "title": "Суверенитет как утешение",
+      "theme": "sovereignty",
+      "quote_ru": "Нет свойства Бога более утешительного для Его детей, чем учение о Божественном суверенитете.",
+      "editorial_context_ru": "Сперджен не превращает суверенитет в холодную схему детерминизма. Для верующего именно Божье господство означает, что скорбь не выпала из Его рук, не победила Его замысел и не стала областью, где Бог перестал быть Царём.",
+      "attribution_ru": "Чарльз Сперджен, проповедь «Божественный суверенитет», 1856",
+      "hashtags": ["#Сперджен", "#Суверенитет", "#Провидение"],
+      "source": {"author":"Charles H. Spurgeon","work":"Divine Sovereignty","location":"Opening paragraph","url":"https://www.spurgeon.org/sermons/divine-sovereignty","publisher":"The Spurgeon Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"There is no attribute of God more comforting to his children than the doctrine of Divine Sovereignty.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "ryle-faith-root",
+      "title": "Корень христианского характера",
+      "theme": "faith",
+      "quote_ru": "Вера — корень характера настоящего христианина.",
+      "editorial_context_ru": "Райл не противопоставляет веру святости. Он ставит их в правильный порядок: живое доверие Христу — корень, а преобразованная жизнь — плод. Плод не создаёт корень, но бесплодие заставляет серьёзно спросить, жив ли корень вообще.",
+      "attribution_ru": "Дж. К. Райл, «Святость», глава о вере Моисея",
+      "hashtags": ["#Райл", "#Вера", "#Святость"],
+      "source": {"author":"J. C. Ryle","work":"Holiness","location":"Faith and Christian character","url":"https://www.ccel.org/ccel/ryle/holiness.iii.vii.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"Faith is the root of a real Christian’s character.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "watson-sin-ungod",
+      "title": "Чего хочет грех",
+      "theme": "sin_mortification",
+      "quote_ru": "Грех не только сверг бы Бога с престола, но и лишил бы Его Божества. Если бы грешник мог, Бог перестал бы быть Богом.",
+      "editorial_context_ru": "Уотсон вскрывает внутреннюю логику греха: грешник не просто нарушает отдельное правило, а практически требует мира, в котором Божья воля перестала быть верховной. Именно поэтому грех нельзя измерять только видимым ущербом конкретного поступка.",
+      "attribution_ru": "Томас Уотсон, «Система богословия», о грехе",
+      "hashtags": ["#Уотсон", "#Грех", "#Святость"],
+      "source": {"author":"Thomas Watson","work":"A Body of Divinity","location":"The nature of sin","url":"https://ccel.org/ccel/watson/divinity/divinity.vii.i.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"Sin would not only unthrone God, but un-God him. If the sinner could help it, God would no longer be God.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "calvin-union-christ",
+      "title": "Христос должен стать нашим",
+      "theme": "christ",
+      "quote_ru": "Пока мы вне Христа и отделены от Него, ничто из того, что Он пострадал и совершил для спасения человеческого рода, не приносит нам ни малейшей пользы.",
+      "editorial_context_ru": "Кальвин переносит внимание с абстрактного признания дела Христа на союз со Христом. Искупление совершено объективно, но его спасительные блага принадлежат человеку не через одно знание фактов, а потому что Дух соединяет верующего со Христом и тот принимает Его верой.",
+      "attribution_ru": "Жан Кальвин, «Наставление в христианской вере», книга III, гл. 1, §1",
+      "hashtags": ["#Кальвин", "#Христос", "#Спасение"],
+      "source": {"author":"John Calvin","work":"Institutes of the Christian Religion","location":"Book III, chapter 1, section 1","url":"https://ccel.org/ccel/calvin/institutes/institutes.v.ii.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"so long as we are without Christ and separated from him, nothing which he suffered and did for the salvation of the human race is of the least benefit to us.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "ryle-cost-nothing",
+      "title": "Дешёвое христианство",
+      "theme": "worship_fear_obedience",
+      "quote_ru": "Религия, которая ничего нам не стоит, ничего и не стоит.",
+      "editorial_context_ru": "Райл говорит не о покупке спасения делами, а о цене ученичества. Бесплатная благодать не создаёт христианство без креста: тот, кто следует Христу, неизбежно сталкивается с самоотречением, борьбой с грехом и необходимостью предпочитать Христа удобству.",
+      "attribution_ru": "Дж. К. Райл, «Святость», «Цена»",
+      "hashtags": ["#Райл", "#Ученичество", "#Святость"],
+      "source": {"author":"J. C. Ryle","work":"Holiness","location":"The Cost","url":"https://www.ccel.org/ccel/ryle/holiness.iii.v.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"A religion that costs nothing is worth nothing.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "watson-faith-elect",
+      "title": "Спасающая вера не природна",
+      "theme": "faith",
+      "quote_ru": "Истинная оправдывающая вера — драгоценность, принадлежащая только избранным.",
+      "editorial_context_ru": "Уотсон отличает спасающую веру от простого знания фактов, временной религиозности и даже необычных даров. Его формулировка подчёркивает реформатскую мысль: вера не автономное достижение падшего человека, а действие Бога в тех, кого Он приводит ко Христу.",
+      "attribution_ru": "Томас Уотсон, «Система богословия», о вере",
+      "hashtags": ["#Уотсон", "#Вера", "#Избрание"],
+      "source": {"author":"Thomas Watson","work":"A Body of Divinity","location":"Faith: kinds of faith","url":"https://ccel.org/ccel/watson/divinity.ix.i.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"A true justifying faith, which is called ‘A faith of the operation of God,’ and is a jewel hung only upon the elect.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "sproul-holy-not",
+      "title": "Грех — космическая измена",
+      "theme": "repentance",
+      "quote_ru": "Грех — космическая измена.",
+      "editorial_context_ru": "Спроул намеренно отвергает язык, который сводит грех к «ошибке» или «неудачному выбору». Даже самый малый грех направлен против святости, славы и власти Творца: человек ставит собственную волю выше Божьей и потому действует как мятежник против Царя.",
+      "attribution_ru": "Р. К. Спроул, «Cosmic Treason»",
+      "hashtags": ["#Спроул", "#Грех", "#Святость"],
+      "source": {"author":"R. C. Sproul","work":"Cosmic Treason","location":"Opening thesis on the nature of sin","url":"https://learn.ligonier.org/articles/cosmic-treason","publisher":"Ligonier Ministries","source_tier":"official_author_or_ministry","rights_class":"modern_short_quote_editorial_context","original_language":"en","exact_fragment":"Sin is cosmic treason.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "spurgeon-grace-fountain",
+      "title": "Источник спасения",
+      "theme": "grace",
+      "quote_ru": "Благодать — источник спасения и проходит через него от начала до конца.",
+      "editorial_context_ru": "Сперджен прослеживает благодать не как один этап среди других, а как основание избрания, искупления, призвания, оправдания и сохранения. Поэтому христианину невозможно выделить участок спасения и сказать: «здесь решающей причиной был я сам».",
+      "attribution_ru": "Чарльз Сперджен, «Salvation All of Grace», 1872",
+      "hashtags": ["#Сперджен", "#Благодать", "#Спасение"],
+      "source": {"author":"Charles H. Spurgeon","work":"Salvation All of Grace","location":"Opening exposition of Ephesians 2:8","url":"https://www.spurgeon.org/sermons/salvation-all-of-grace","publisher":"The Spurgeon Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"grace is the fountain-head of salvation, and is most conspicuous throughout.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "spurgeon-sovereign-grace",
+      "title": "Причина спасения — не в человеке",
+      "theme": "sovereignty",
+      "quote_ru": "Если человек спасён, он спасён Божественной благодатью и только ею; причина его спасения находится не в нём, а в Боге.",
+      "editorial_context_ru": "Сперджен одновременно утверждает суверенную благодать и человеческую ответственность. Здесь он намеренно отсекает мысль, будто решающая причина спасения обнаруживается в природной воле, достоинстве или предварительном движении самого грешника.",
+      "attribution_ru": "Чарльз Сперджен, «Sovereign Grace and Man’s Responsibility», 1858",
+      "hashtags": ["#Сперджен", "#СувереннаяБлагодать", "#Спасение"],
+      "source": {"author":"Charles H. Spurgeon","work":"Sovereign Grace and Man’s Responsibility","location":"Divine sovereignty as exemplified in salvation","url":"https://www.spurgeon.org/sermons/sovereign-grace-and-mans-responsibility","publisher":"The Spurgeon Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"If any man be saved, he is saved by Divine grace, and by Divine grace alone; and the reason of his salvation is not to be found in him, but in God.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "calvin-prayer-faith",
+      "title": "Главное упражнение веры",
+      "theme": "faith",
+      "quote_ru": "Призывать Бога — главное упражнение веры и надежды; именно так мы получаем от Бога всякое благословение.",
+      "editorial_context_ru": "Для Кальвина молитва не конкурирует с Божьим суверенитетом. Напротив, обещания Бога возбуждают веру к молитве: зависимость от Бога проявляется не в бездействии, а в том, что человек идёт к Нему за тем, что только Он может дать.",
+      "attribution_ru": "Жан Кальвин, комментарий на Ефесянам 6:18",
+      "hashtags": ["#Кальвин", "#Молитва", "#Вера"],
+      "source": {"author":"John Calvin","work":"Commentary on Galatians and Ephesians","location":"Ephesians 6:18","url":"https://ccel.org/ccel/calvin/calcom41/calcom41.iv.vii.iv.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"To call upon God is the chief exercise of faith and hope; and it is in this way that we obtain from God every blessing.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "macarthur-scripture-sufficiency",
+      "title": "Не искать необходимой истины за Писанием",
+      "theme": "church_love_service",
+      "quote_ru": "Нам не нужно искать за пределами записанного Слова Божьего каких-либо необходимых учений.",
+      "editorial_context_ru": "МакАртур говорит именно о достаточности Писания для необходимой духовной истины, а не о том, что вне Библии нет вообще никакого полезного знания. Для веры, спасения и послушания церковь не нуждается в дополнительном равном Писанию источнике откровения.",
+      "attribution_ru": "Джон МакАртур, «What Doctrines Are Fundamental?», часть 1",
+      "hashtags": ["#МакАртур", "#Писание", "#SolaScriptura"],
+      "source": {"author":"John MacArthur","work":"What Doctrines Are Fundamental?, Part 1","location":"Sufficiency of written Scripture","url":"https://www.gty.org/articles/A326/what-doctrines-are-fundamental-part-1","publisher":"Grace to You","source_tier":"official_author_or_ministry","rights_class":"modern_short_quote_editorial_context","original_language":"en","exact_fragment":"We do not need to look beyond the written Word of God for any essential doctrines.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "flavel-heart-business",
+      "title": "Главное дело христианской жизни",
+      "theme": "sin_mortification",
+      "quote_ru": "Хранение сердца — самое важное дело христианской жизни. Без этого мы остаёмся лишь формалистами в религии.",
+      "editorial_context_ru": "Флавел не призывает к бесконечному самокопанию. «Хранить сердце» значит бодрствовать над внутренними источниками мыслей, желаний и поступков перед Богом, потому что внешне правильная религиозность без сердца легко остаётся одной формой.",
+      "attribution_ru": "Джон Флавел, «Хранение сердца»",
+      "hashtags": ["#Флавел", "#Сердце", "#Освящение"],
+      "source": {"author":"John Flavel","work":"Keeping the Heart","location":"The importance of keeping the heart","url":"https://ccel.org/ccel/f/flavel/saintindeed/cache/saintindeed.pdf","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"It is the most important business of a Christian's life. Without this we are but formalists in religion","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "sproul-imputation",
+      "title": "На чём покоится оправдание",
+      "theme": "grace",
+      "quote_ru": "В спасении мы не опираемся ни на что, кроме Христа и Его праведности.",
+      "editorial_context_ru": "Спроул различает основание и средство оправдания: вера принимает Христа, но не становится новой заслугой. Основание принятия грешника Богом — совершенная праведность Христа, вменяемая верующему, а не качество или сила самой веры.",
+      "attribution_ru": "Р. К. Спроул, «The Instrumental Cause of Justification»",
+      "hashtags": ["#Спроул", "#Оправдание", "#ПраведностьХриста"],
+      "source": {"author":"R. C. Sproul","work":"The Instrumental Cause of Justification","location":"Ground and instrument of justification","url":"https://learn.ligonier.org/articles/instrumental-cause-justification","publisher":"Ligonier Ministries","source_tier":"official_author_or_ministry","rights_class":"modern_short_quote_editorial_context","original_language":"en","exact_fragment":"We do not rest on anything else in our lives except Christ and His righteousness for our salvation.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "sproul-faith-grace",
+      "title": "Вера не достижение человека",
+      "theme": "faith",
+      "quote_ru": "Вера не является достижением человеческого духа.",
+      "editorial_context_ru": "Спроул подчёркивает монергическую сторону обращения: Бог требует веры, но падший человек не производит спасающую веру из собственных природных ресурсов. Поэтому наличие веры исключает хвастовство и направляет благодарность к благодати Бога.",
+      "attribution_ru": "Р. К. Спроул, «The Grace of Faith»",
+      "hashtags": ["#Спроул", "#Вера", "#Благодать"],
+      "source": {"author":"R. C. Sproul","work":"The Grace of Faith","location":"Saving faith as grace","url":"https://learn.ligonier.org/articles/grace-faith","publisher":"Ligonier Ministries","source_tier":"official_author_or_ministry","rights_class":"modern_short_quote_editorial_context","original_language":"en","exact_fragment":"Faith is not seen as an accomplishment of the human spirit.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "flavel-law-christ",
+      "title": "Закон ведёт ко Христу, Христос — к послушанию",
+      "theme": "worship_fear_obedience",
+      "quote_ru": "Закон посылает нас ко Христу для оправдания, а Христос посылает нас к закону, чтобы наша жизнь была им направляема.",
+      "editorial_context_ru": "Флавел одновременно отсекает законничество и антиномизм. Закон не является заветом, по которому верующий зарабатывает оправдание, но Божья нравственная воля остаётся правилом жизни тех, кто уже оправдан во Христе.",
+      "attribution_ru": "Джон Флавел, «Метод благодати в евангельском искуплении»",
+      "hashtags": ["#Флавел", "#Закон", "#Освящение"],
+      "source": {"author":"John Flavel","work":"Method of Grace in the Gospel Redemption","location":"Believers and the moral law","url":"https://www.ccel.org/ccel/flavel/grace.xxi.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"The law sends us to Christ to be justified, and Christ sends us to the law to be regulated.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "calvin-spirit-faith",
+      "title": "Кто производит веру",
+      "theme": "faith",
+      "quote_ru": "Сама вера производится только Духом.",
+      "editorial_context_ru": "Кальвин не отрицает реальности человеческого акта веры; он объясняет его источник. Евангелие внешне провозглашается всем слушающим, но внутреннее принятие Христа верой требует действия Святого Духа, открывающего сердце к Слову.",
+      "attribution_ru": "Жан Кальвин, «Наставление в христианской вере», книга III, гл. 1, §4",
+      "hashtags": ["#Кальвин", "#СвятойДух", "#Вера"],
+      "source": {"author":"John Calvin","work":"Institutes of the Christian Religion","location":"Book III, chapter 1, section 4","url":"https://ccel.org/ccel/calvin/institutes/institutes.v.ii.html","publisher":"Christian Classics Ethereal Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"faith itself is produced only by the Spirit.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "sproul-election-grace",
+      "title": "Благодать никому не должна",
+      "theme": "sovereignty",
+      "quote_ru": "Благодать по определению не есть то, что Бог обязан дать. Падшему миру Он не должен милости.",
+      "editorial_context_ru": "Спроул отвечает на возражение о «несправедливости» избрания различением справедливости и милости. Осуждение виновного не нарушает справедливость; спасение виновного есть незаслуженная милость, поэтому благодать перестаёт быть благодатью, если превращается в долг Бога перед человеком.",
+      "attribution_ru": "Р. К. Спроул, «Is Election Unfair?»",
+      "hashtags": ["#Спроул", "#Избрание", "#Благодать"],
+      "source": {"author":"R. C. Sproul","work":"Is Election Unfair?","location":"Justice and mercy","url":"https://learn.ligonier.org/articles/election-unfair","publisher":"Ligonier Ministries","source_tier":"official_author_or_ministry","rights_class":"modern_short_quote_editorial_context","original_language":"en","exact_fragment":"Grace, by definition, is something that God is not required to grant. He owes a fallen world no mercy.","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "spurgeon-justification-faith",
+      "title": "Не делами ни в какой мере",
+      "theme": "grace",
+      "quote_ru": "Мы оправдываемся перед Богом не делами — ни в какой мере и ни в какой степени, — но одной верой.",
+      "editorial_context_ru": "Сперджен говорит о способе принятия Божьего оправдания, а не о том, что вера является заслугой. Вера принимает Христа; основание оправдания лежит в Нём, поэтому человеческие дела не добавляют процент к праведности, достаточной перед Богом.",
+      "attribution_ru": "Чарльз Сперджен, «Salvation All of Grace», 1872",
+      "hashtags": ["#Сперджен", "#Оправдание", "#SolaFide"],
+      "source": {"author":"Charles H. Spurgeon","work":"Salvation All of Grace","location":"Justification by grace through faith","url":"https://www.spurgeon.org/sermons/salvation-all-of-grace","publisher":"The Spurgeon Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"We are not justified before God by works in any measure or in any degree, but by faith alone","checked_on":"2026-09-28","verification_status":"accepted"}
+    },
+    {
+      "replacement_key": "spurgeon-resurrection-keystone",
+      "title": "Единственная надежда — Христос распятый и воскресший",
+      "theme": "resurrection_eternity",
+      "quote_ru": "Моя единственная надежда во времени и вечности — Иисус, только Иисус; Иисус распятый и воскресший из мёртвых.",
+      "editorial_context_ru": "Сперджен ставит воскресение не рядом с человеческой нравственностью как ещё один источник уверенности. Его надежда целиком вне себя: Христос распятый понёс грех, а Христос воскресший является живым основанием оправдания, новой жизни и будущего воскресения верующих.",
+      "attribution_ru": "Чарльз Сперджен, «If There Be No Resurrection», 1890",
+      "hashtags": ["#Сперджен", "#Воскресение", "#Христос"],
+      "source": {"author":"Charles H. Spurgeon","work":"If There Be No Resurrection","location":"Christ alone as the ground of confidence","url":"https://www.spurgeon.org/sermons/if-there-be-no-resurrection","publisher":"The Spurgeon Library","source_tier":"public_domain_primary_text","rights_class":"public_domain_contiguous_excerpt","original_language":"en","exact_fragment":"My one hope for time and eternity is Jesus, only Jesus; Jesus crucified and risen from the dead.","checked_on":"2026-09-28","verification_status":"accepted"}
+    }
+  ]
+}

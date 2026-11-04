@@ -91,8 +91,8 @@ def test_current_state_never_documents_a_probe_of_the_quarantined_credential() -
 def test_quarantine_runbook_states_the_only_resume_condition() -> None:
     text = QUARANTINE.read_text(encoding="utf-8")
 
-    assert "54555649" in text
-    assert "video,wall,groups,offline" in text
+    assert "community access key of community 60805374" in text
+    assert "vk-lord-god-postponed-wall-v4" in text
     assert "blocked_on_oauth_consent_legacy_quarantined" in text
     # The quarantine must be justified as a policy decision, not as a code-9 rule, or it
     # contradicts wall-safety-contract.md.
@@ -105,9 +105,8 @@ def test_operator_runbook_documents_the_staged_recovery() -> None:
     invocations = _documented_invocations()
 
     assert invocations, "the VK recovery runbook must keep explicit commands"
-    assert any("flood-reset" in item for item in invocations)
-    assert any("community-probe" in item for item in invocations)
-    assert any("wall-probe" in item for item in invocations)
+    assert any("community-key-login" in item for item in invocations)
+    assert any("community-key-capabilities" in item for item in invocations)
 
 
 @pytest.mark.parametrize("invocation", _documented_invocations())
@@ -151,7 +150,16 @@ def test_probe_commands_reject_a_non_positive_community_before_any_lookup() -> N
 def test_recovery_runbook_never_documents_a_provider_write() -> None:
     """The staged recovery is read-only reads plus one local circuit reset."""
 
-    allowed = {"flood-reset", "flood-status", "community-probe", "wall-probe", "accounts", "token-capabilities"}
+    allowed = {
+        "flood-reset",
+        "flood-status",
+        "community-probe",
+        "wall-probe",
+        "accounts",
+        "token-capabilities",
+        "community-key-login",
+        "community-key-capabilities",
+    }
 
     for invocation in _documented_invocations():
         command = _argv_of(invocation)[0]

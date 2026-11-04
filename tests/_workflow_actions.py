@@ -33,6 +33,7 @@ PIN_PATTERN = re.compile(
 # editing tests; a downgrade or an undocumented ref fails.
 MINIMUM_RELEASES: dict[str, tuple[int, ...]] = {
     "actions/checkout": (7, 0, 1),
+    "actions/download-artifact": (7, 0, 0),
     "actions/setup-python": (7, 0, 0),
     "actions/upload-artifact": (7, 0, 1),
 }

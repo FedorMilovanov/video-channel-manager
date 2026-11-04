@@ -102,8 +102,9 @@ def test_formatted_transport_sends_html_and_verifies_returned_entities() -> None
     assert captured_payload["parse_mode"] == "HTML"
     assert captured_payload["link_preview_options"] == {"is_disabled": True}
     assert "© " not in str(captured_payload["text"])
-    assert "<b>Джон Беньян</b>" in str(captured_payload["text"])
-    assert "<i>«Путешествие Пилигрима»</i>" in str(captured_payload["text"])
+    first = queue.posts[0]
+    assert f"<b>{first.source.author}</b>" in str(captured_payload["text"])
+    assert f"<i>«{first.source.work}»</i>" in str(captured_payload["text"])
     assert entry.state == "published"
     assert entry.provider_effect == "verified"
     assert entry.message_id == 778

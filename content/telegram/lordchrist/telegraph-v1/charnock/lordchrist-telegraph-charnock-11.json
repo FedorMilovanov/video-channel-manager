@@ -1,0 +1,796 @@
+{
+  "schema_name": "video-channel-manager.rich-article-document",
+  "schema_version": 1,
+  "document_id": "lordchrist-telegraph-charnock-11",
+  "project_key": "lordchrist",
+  "metadata": {
+    "title": "Небо не молчит: суды, чудеса и пророчества",
+    "language": "ru",
+    "summary": "Одиннадцатая статья цикла по первой беседе Стивена Чарнока «О бытии Бога»: четвёртый довод — чрезвычайные события в мире. Суды, в которых грех читается в наказании (Ирод Агриппа, Туллий Гостилий), чудеса как действие силы выше природы и пророчества, сбывшиеся через века (Кир у Исаии), — и честный разбор возражений Юма и новой критики.",
+    "author": "Господь Бог",
+    "tags": [
+      "Чарнок",
+      "бытие Бога",
+      "чудеса",
+      "пророчества",
+      "Промысл",
+      "история"
+    ],
+    "created_at": "2026-10-24",
+    "updated_at": "2026-10-24"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "block_id": "h-1",
+      "text": [
+        {
+          "type": "bold",
+          "text": "НЕБО НЕ МОЛЧИТ: СУДЫ, ЧУДЕСА И ПРОРОЧЕСТВА"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-1",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-1",
+          "text": "Познан был Господь по суду, который Он совершил; нечестивый уловлен делами рук своих."
+        }
+      ],
+      "credit": "— Пс. 9:17"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-2",
+      "text": [
+        "Четвёртый довод беседы выходит из внутреннего мира наружу — в историю. Чарнок утверждает: кроме устроенного мира и устроенного человека есть ещё ",
+        {
+          "type": "bold",
+          "text": "события, выбивающиеся из обычного хода вещей"
+        },
+        ", — и они тоже говорят. Суды над явными преступниками, чудеса и исполнившиеся пророчества для него — три рода чрезвычайных происшествий, у которых один Автор."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-2",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-2",
+          "text": [
+            "Как глупо отрицать то, о чём согласились все народы мира, что засвидетельствовано устройством мира и что человек свидетельствует своим телом, душой и действиями совести, — так же глупо отрицать бытие Бога, о котором свидетельствуют ",
+            {
+              "type": "bold",
+              "text": "чрезвычайные события в мире"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-3",
+      "text": [
+        "Обратите внимание на скромность формы: Чарнок не говорит, что каждое совпадение — суд. Его довод строится на случаях, где связь греха и возмездия читается, — и на вопросе, во что превращается история, если все такие свидетельства объявить вымыслом."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-2",
+      "text": "Суды, в которых читается грех",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-4",
+      "text": [
+        "Первый род чрезвычайных событий — наказания, в которых, по выражению Чарнока, грех становится «читаемым». Не любое несчастье, а возмездие, приспособленное к вине: по форме суда можно прочесть, за что он послан."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-3",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-3",
+          "text": [
+            "Когда справедливое возмездие следует за мерзкими преступлениями — особенно когда суд приспособлен ко греху странной цепью и последовательностью промыслительных событий, устроенных так, чтобы произвести именно это наказание; когда грех народа или человека становится читаемым в наложенном суде, — это свидетельствует, что дело ",
+            {
+              "type": "bold",
+              "text": "не может быть случайным"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-5",
+      "text": [
+        "Здесь довод упирается в Писание не как в украшение, а как в основание: суды нужны миру, чтобы в нём не умирала мысль о Боге. Имя «ревнитель» для Чарнока — не метафора характера, а подпись под актами управления."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-4",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-4",
+          "text": "Писание объясняет нам необходимость таких судов — поддерживать в мире благоговейные мысли о Боге (Пс. 9:17): «Познан был Господь по суду, который Он совершил; нечестивый уловлен делами рук своих»; и имя Бога — ревнитель (Исх. 34:14): «потому что имя Его — „ревнитель“». От ложных богов Он отличается посылаемыми судами, как люди отличаются именами."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-6",
+      "text": [
+        "Второй слой того же довода — знамения, предварявшие суды у разных народов. Чарнок сознательно выходит за пределы библейской истории: если свидетельства многих народов сходятся, отмахнуться от них — значит объявить подделкой почти всё, что мы знаем о прошлом."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-5",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-5",
+          "text": "Чрезвычайные знамения у многих народов были вестниками чрезвычайных судов и предзнаменованиями тех самых судов, которые народы потом испытывали; римские и другие истории полны такими примерами. Что такие вещи были — неоспоримо, и что события отвечали угрозе, — неоспоримо так же, если только мы не хотим отбросить все человеческие свидетельства и счесть все истории мира подделками."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-7",
+      "text": [
+        "Из этих происшествий он поднимается по лестнице причин: невидимые силы, если они действуют стройно, сами нуждаются в управлении. Случай не объясняет строя — ни в мире видимом, ни в мире невидимом."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-6",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-6",
+          "text": [
+            "Такие вещи — свидетельства некоторой невидимой силы, которая устраивает эти дела. А если есть невидимые силы, есть и действенная причина, которая ими движет; несомненно, и среди них есть управление, как и в мире, — и тогда мы должны прийти к ",
+            {
+              "type": "bold",
+              "text": "некоему верховному Правителю"
+            },
+            ", который над ними председательствует."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-8",
+      "text": [
+        "Примеры у Чарнока намеренно телесны. Ирод Агриппа, принявший божеские почести, в тот же час исповедует другого Бога и гибнет от червей: суд отвечает греху как эхо — по содержанию."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-7",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-7",
+          "text": [
+            "Он принимает льстивые восклицания народа и мнит себя Богом; но внезапный удар заставляет его в муках исповедать другого. «Я бог, — говорит он, — по вашему счёту; но высший отзывает меня; волю небесного Бога должно претерпеть». Ангел Господень поразил его. Суд здесь был приспособлен ко греху: тот, кто хотел быть богом, ",
+            {
+              "type": "bold",
+              "text": "изъеден червями"
+            },
+            " — ничтожнейшими творениями."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-8",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-8",
+          "text": "Туллий Гостилий, римский царь, считавший самым нецарственным делом быть религиозным или признавать иного Бога, кроме своего меча, сам был истреблён — и весь дом его — молнией с неба."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-9",
+      "text": [
+        "Сюда же относится целый класс происшествий, которые Чарнок называет необъяснимыми без Бога: тайные убийства, открывающиеся странным образом; проклятия, которыми лжецы скрепляли ложь и которые обращались на их же головы."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-9",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-9",
+          "text": [
+            "Многое необъяснимо, если не прибегать к Богу: странные обнаружения убийц, совершивших преступления в глубочайшей тайне; исполнение страшных проклятий, которыми нечестивцы подтверждали ложь, — и тотчас ",
+            {
+              "type": "bold",
+              "text": "они были поражены тем судом, который сами себе пожелали"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-10",
+      "text": [
+        "Итог раздела — не страх перед совпадениями, а логическая связка: наказание предполагает вину, вина — закон, закон — Законодателя. Уберите первое звено сверху — и вся цепь повисает в воздухе."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-10",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-10",
+          "text": [
+            "Опрокидывание глубочайших и вернейших человеческих замыслов, когда они уже успешно шли и дошли до самой точки исполнения; когда все ухищрения оказываются перехитрованными, а суды врываются без контроля, — всё это громко возвещает Бога в мире: ",
+            {
+              "type": "bold",
+              "text": "если бы не было Бога, не было бы греха; если нет греха — нет и наказания"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-3",
+      "text": "Чудеса: природа не может против себя",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-11",
+      "text": [
+        "Второй род чрезвычайных событий — чудеса. Чарнок определяет их строго: не редкость и не диковина, а то, что ",
+        {
+          "type": "bold",
+          "text": "против порядка природы или выше её способности"
+        },
+        ". Солнце светит необходимо, огонь жжёт необходимо; природа не умеет отменять саму себя."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-11",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-11",
+          "text": [
+            "Ход природы равномерен; и когда он выводится из своего русла, это должно совершаться некоторой высшей силой, невидимой миру; и какими бы невидимыми орудиями чудеса ни совершались, их действенность должна зависеть от ",
+            {
+              "type": "bold",
+              "text": "некоторой первой причины выше природы"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-12",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-12",
+          "text": [
+            "То, что не может быть результатом естественной причины, должно быть результатом чего-то сверхъестественного: что вне пределов природы, то — действие силы, высшей природы; ибо это совершенно противно порядку природы и есть возвышение чего-либо на такую высоту, на какую вся природа не могла бы его поднять. ",
+            {
+              "type": "bold",
+              "text": "Природа не может выйти за свои собственные пределы."
+            }
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-12",
+      "text": [
+        "Дальше он ставит вопрос не о физике, а о свидетельстве. Чудеса известны нам по записям; но почти всё знание о прошлом держится на записях. Цена отрицания здесь выше, чем кажется: приходится объявить ложью не один текст, а саму память человечества."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-13",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-13",
+          "text": [
+            "Естественные деятели действуют необходимо: солнце необходимо светит, огонь необходимо жжёт. Что выше способности природы, то не может быть результатом природы; что против порядка природы, то не может быть её делом: природа не может действовать против самой себя или обращать вспять собственный ход. Мы должны признать, что такие вещи были, — иначе должны объявить все записи прежних веков грудой лжи; а кто делает это, тот ",
+            {
+              "type": "bold",
+              "text": "разрушает величайшую и лучшую часть человеческого знания"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-13",
+      "text": [
+        "Особый вес Чарнок придаёт признаниям противников: чудеса Спасителя не оспаривались по факту даже враждебными свидетелями. Спор шёл о причине — и это для него уже половина признания: событие, которое враг вынужден объяснять, нельзя просто вычеркнуть."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-14",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-14",
+          "text": [
+            "Чудеса, упомянутые в Писании и совершённые нашим Спасителем, признаются язычниками и иудеями даже сегодня, хотя они — Его величайшие враги. Нет спора о том, были ли совершены такие вещи: ",
+            {
+              "type": "bold",
+              "text": "«мёртвые воскресают», «слепые прозревают»"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-14",
+      "text": [
+        "К тому же роду он относит и способ, каким христианство распространилось: без меча и выгод, через людей, шедших на пламя. Для Чарнока это событие того же порядка: следствие несоразмерно всем видимым причинам."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-15",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-15",
+          "text": "Язычники признали чудесное затмение солнца при страдании Христовом — совершенно против правила природы, поскольку луна была тогда в противостоянии с солнцем; и распространение христианства вопреки способам, какими распространялись другие религии: в несколько лет народы мира были окроплены этим учением и дали больший список мучеников, искавших пожирающего пламени, чем все религии мира."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-15",
+      "text": [
+        "Замыкает раздел не каталог диковин, а живые случаи: избавление на грани гибели и ответ на молитву. Чудо у Чарнока — не фокус ради зрителей, а вмешательство управления там, где естественный ход уже вынес приговор."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-16",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-16",
+          "text": "Как и чудесное избавление человека или народа, когда они на самой грани гибели; внезапный ответ на молитву, когда Бога взыскали; отвращение суда, которого, по разуму, нельзя было ожидать отвращённым; и поднятие потонувшего народа из гибели, казавшейся неизбежной, — неожиданными путями."
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-4",
+      "text": "Пророчества: конец, объявленный от начала",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-16",
+      "text": [
+        "Третий род — исполнившиеся пророчества. Чарнок сразу отводит возражение о «предсказуемых» вещах: затмения и смену властей можно угадать по знакам времён. Его интересуют события, ",
+        {
+          "type": "bold",
+          "text": "не имеющие естественных знаков"
+        },
+        ", — предсказанные в деталях и сбывшиеся."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-17",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-17",
+          "text": [
+            "Вещи чисто случайные, которые нельзя познать по естественным знакам и в их причинах, — в отличие от затмений и перемен в народах, различимых по наблюдению знамений времён, — когда такие вещи, не входящие в этот круг, предсказаны и сбываются, они исходят ",
+            {
+              "type": "bold",
+              "text": "единственно от высшей руки"
+            },
+            " и выше естественной причины."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-17",
+      "text": [
+        "Поэтому пророчество для него — сильнейшее из трёх свидетельств: оно требует не только силы над природой, но и знания, охватывающего будущее как настоящее. Ошибка в таком знании неизбежна для всякого конечного ума; точность — подпись бесконечного."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-18",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-18",
+          "text": [
+            "Сила, открывающая будущее, которого не может охватить и предугадать вся человеческая предусмотрительность, — выше природы. А предсказывать его так верно, как если бы оно уже существовало или существовало давно, может только ",
+            {
+              "type": "bold",
+              "text": "бесконечно разумный Ум"
+            },
+            ": ибо это высший способ знания, и высшего вообразить нельзя."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-18",
+      "text": [
+        "Главный его пример — Кир, названный по имени больше чем за век до своего рождения. Чарнок опирается не только на текст Исаии, но и на внешнее предание: показ пророчества самому Киру объясняет его благоволение к иудеям лучше, чем политика."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-19",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-19",
+          "text": [
+            "Кир был предсказан Исаией (Ис. 44:28; 45:1) задолго до своего рождения; его победы, добычи, всё, что должно было произойти в Вавилоне, его щедрость к иудеям — всё сбылось по этому пророчеству; а вид этого пророчества, которое иудеи показали ему, как сообщают другие историки, побудил его ",
+            {
+              "type": "bold",
+              "text": "благоволить к иудеям"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-19",
+      "text": [
+        "Вывод четвёртого довода собирает не событие, а Силу: предрекать, устраивать причины и приводить предсказанное к концу может только бесконечное Существо — то самое, что сотворило мир."
+      ]
+    },
+    {
+      "type": "blockquote",
+      "block_id": "q-20",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "block_id": "qp-20",
+          "text": [
+            "Сила, которая предсказывает то, что вне досягаемости человеческого ума, и устраивает все причины к исполнению этих предсказаний, должна быть бесконечной силой — той же, что сотворила мир, поддерживает его и управляет всем в нём по Своему благоволению, к достижению Своих целей; и ",
+            {
+              "type": "bold",
+              "text": "это Существо есть Бог"
+            },
+            "."
+          ]
+        }
+      ],
+      "credit": "— Стивен Чарнок, «О бытии Бога»"
+    },
+    {
+      "type": "heading",
+      "block_id": "h-5",
+      "text": "Где Чарнок спорит с нашим ухом",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-20",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-первых, Юм перевернул его меру свидетельства."
+        },
+        " Чарнок говорит: отрицать все записи — разрушить знание о прошлом. Юм отвечает: чем равномернее опыт, тем сильнее должно быть свидетельство, его опровергающее, — а свидетельства о чудесах взаимно уничтожаются у разных народов. Честный ответ различает два вопроса: Юм прав, что «так записано» — ещё не «так было»; но его мера, применённая последовательно, запрещает верить и любому единичному событию прошлого. Спор здесь не решён одной фразой ни в ту, ни в другую сторону."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-21",
+      "text": [
+        {
+          "type": "bold",
+          "text": "Во-вторых, суды читаются задним числом."
+        },
+        " Мы замечаем тиранов, поражённых «в ответ на грех», и забываем тех, кто умер в своей постели в чести. Чарнок отвечает, что берёт не все несчастья, а случаи соразмерности; но соразмерность — свойство, которое рассказчик может придать событию после него. Этот довод сильнее в своей отрицательной части: история полна происшествий, которые материалистическая случайность не столько объясняет, сколько отказывается замечать."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-22",
+      "text": [
+        {
+          "type": "bold",
+          "text": "В-третьих, пророчество о Кире зависит от датировки."
+        },
+        " Чарнок исходил из того, что всю книгу Исаии написал один пророк за века до Кира. Главная критическая школа нового времени относит главы 40–55 ко времени самого Кира — и тогда это не предсказание, а современная событиям поэзия. Православное чтение не обязано принимать эту датировку, но обязано знать, что довод в форме Чарнока стоит или падает вместе с ней; сила примера для собеседника будет ровно такой, какова его уверенность в древности текста."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-6",
+      "text": "Писание, на котором он стоит",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-23",
+      "text": [
+        "Чарнок строит довод на пяти местах. Суд как откровение Бога о Себе: ",
+        {
+          "type": "bold",
+          "text": "Познан был Господь по суду, который Он совершил; нечестивый уловлен делами рук своих"
+        },
+        " (Пс. 9:17). Имя, отличающее истинного Бога от ложных: ",
+        {
+          "type": "bold",
+          "text": "ибо ты не должен поклоняться богу иному, кроме Господа, потому что имя Его — «ревнитель»; Он Бог ревнитель"
+        },
+        " (Исх. 34:14). Чудеса как дело одного Бога: ",
+        {
+          "type": "bold",
+          "text": "Благословен Господь Бог, Бог Израилев, един творящий чудеса"
+        },
+        " (Пс. 71:18). Вызов идолам предсказать будущее: ",
+        {
+          "type": "bold",
+          "text": "Скажите, что произойдет в будущем, и мы будем знать, что вы боги, или сделайте что-нибудь, доброе ли, худое ли, чтобы мы изумились и вместе с вами увидели"
+        },
+        " (Ис. 41:23). И итог: ",
+        {
+          "type": "bold",
+          "text": "Я возвещаю от начала, что будет в конце, и от древних времен то, что еще не сделалось, говорю: Мой совет состоится, и все, что Мне угодно, Я сделаю"
+        },
+        " (Ис. 46:10)."
+      ]
+    },
+    {
+      "type": "heading",
+      "block_id": "h-7",
+      "text": "Что это меняет",
+      "size": 2
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-24",
+      "text": [
+        "Четвёртый довод переводит вопрос о Боге из лаборатории в летопись. Можно спорить о каждом случае в отдельности — Чарнок спорил бы вместе с вами; его вопрос шире: ",
+        {
+          "type": "bold",
+          "text": "что делать с целым классом событий"
+        },
+        " — судами, в которых читается вина, вмешательствами вопреки ходу природы и словами, сбывшимися через века. Объявить весь класс вымыслом — тоже вера, и притом дорогая: она стоит нам доверия к памяти человечества."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "block_id": "p-25",
+      "text": [
+        "И второе. Если история — не просто шум причин, а управляемый рассказ, то и собственная биография читается иначе: странные избавления и странные удары перестают быть статистикой. Следующая глава беседы покажет оборотную сторону: почему отрицать такого Бога — не только ошибка ума, но и вред для мира и для самого отрицающего."
+      ]
+    }
+  ],
+  "media": [],
+  "sources": [
+    {
+      "source_id": "src-01-ps9-17",
+      "label": "Псалом 9:17 — эпиграф статьи",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-24",
+      "evidence": "Синодальный перевод: «Познан был Господь по суду, который Он совершил; нечестивый уловлен делами рук своих» (сверено по корпусу bibleonline/rst, parsed66)."
+    },
+    {
+      "source_id": "src-02-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 2",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: As it is a folly to deny that which all nations in the world have consented to, which the frame of the world evidenceth, which man in his body, soul, operations of conscience, witnesseth to; so it is a folly to deny the being of God, which is witnessed unto by extraordinary occurrences in the world. [смещение 11 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-03-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 3",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: When a just revenge follows abominable crimes, especially when the judgment is suited to the sin by a strange concatenation and succession of providences, methodized to bring such a particular punishment; when the sin of a nation or person is made legible in the inflicted judgment, which testifies that it cannot be a casual thing. [смещение 343 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-04-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 4",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: The Scripture gives us an account of the necessity of such judgments, to keep up the reverential thoughts of God in the world (Ps. ix. 16): “The Lord is known by the judgment which he executes; the wicked is snared in the work of his own hand:” and jealousy is the name of God, (Exod. xxxiv. 14), “Whose name is jealous.” He is distinguished from false gods by the judgments which he sends, as men are by their names. [смещение 676 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-05-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 5",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Extraordinary prodigies in many nations have been the heralds of extraordinary judgments, and presages of the particular judgments which afterwards they have felt, of which the Roman histories, and others, are full. That there are such things is undeniable, and that the events have been answerable to the threatening, unless we will throw away all human testimonies, and count all the histories of the world forgeries. [смещение 1094 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-06-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 6",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Such things are evidences of some invisible power which orders those affairs. And if there be invisible powers, there is also an efficacious cause which moves them; a government certainly there is among them, as well as in the world, and then we must come to some supreme governor which presides over them. [смещение 1514 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-07-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 7",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: He receives the flattering applause of the people, and thought himself a God; but by the sudden stroke upon him, was forced by his torture to confess another. “I am God,” saith he, “in your account, but a higher calls me away; the will of the heavenly Deity is to be endured.” The angel of the Lord smote him. The judgment here was suited to the sin; he that would be a god, is eaten up of worms, the vilest creatures. [смещение 1992 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-08-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 8",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Tully Hostilius, a Roman king, who counted it the most unroyal thing to be religious, or own any other God but his sword, was consumed himself, and his whole house, by lightning from heaven. [смещение 2411 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-09-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 9",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Many things are unaccountable unless we have recourse to God. The strange revelations of murderers, that have most secretly committed their crimes; the making good some dreadful imprecations, which some wretches have used to confirm a lie, and immediately have been struck with that judgment they wished; [смещение 2602 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-10-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 10",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: the overturning the deepest and surest counsels of men, when they have had a successful progress, and come to the very point of execution; the whole design of men’s preservation hath been beaten in pieces by some unforeseen circumstance, so that judgments have broken in upon them without control, and all their subtleties been outwitted; the strange crossing of some in their estates, though the most wise, industrious, and frugal persons, and that by strange and unexpected ways; and it is observable how often everything contributes to carry on a judgment intended, as if they rationally designed it: all those loudly proclaim a God in the world; if there were no God, there would be no sin; if no sin, there would be no punishment. [смещение 3010 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-11-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 11",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: The course of nature is uniform; and when it is put out of its course, it must be by some superior power invisible to the world; and by whatsoever invisible instruments they are wrought, the efficacy of them must depend upon some first cause above nature. [смещение 3762 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-12-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 12",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: That which cannot be the result of a natural cause, must be the result of something supernatural: what is beyond the reach of nature, is the effect of a power superior to nature; for it is quite against the order of nature, and is the elevation of something to such a pitch, which all nature could not advance it to. Nature cannot go beyond its own limits [смещение 4137 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-13-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 13",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Natural agents act necessarily; the sun doth necessarily shine, fire doth necessarily burn: that cannot be the result of nature, which is above the ability of nature; that cannot be the work of nature which is against the order of nature; nature cannot do anything against itself, or invert its own course. We must own that such things have been, or we must accuse all the records of former ages to be a pack of lies; which whosoever doth, destroys the greatest and best part of human knowledge. [смещение 4634 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-14-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 14",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: The miracles mentioned in the Scripture, wrought by our Saviour, are acknowledged by the heathen, by the Jews at this day, though his greatest enemies. There is no dispute whether such things were wrought, “the dead raised,” the “blind restored to sight.” [смещение 5130 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-15-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 15",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: The heathens have acknowledged the miraculous eclipse of the sun at the passion of Christ, quite against the rule of nature, the moon being then in opposition to the sun; the propagation of Christianity contrary to the methods whereby other religions have been propagated, that in a few years the nations of the world should be sprinkled with this doctrine, and give in a greater catalogue of martyrs courting the devouring flames, than all the religions of the world. [смещение 5386 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-16-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 16",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: the miraculous deliverance of a person or nation, when upon the very brink of ruin; the sudden answer of prayer when God hath been sought to, and the turning away a judgment, which in reason could not be expected to be averted, and the raising a sunk people from a ruin which seemed inevitable, by unexpected ways. [смещение 6648 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-17-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 17",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Those things which are purely contingent, and cannot be known by natural signs and in their causes, as eclipses and changes in nations, which may be discerned by an observation of the signs of the times; such things that fall not within this compass, if they be foretold and come to pass, are solely from some higher hand, and above the cause of nature. [смещение 6997 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-18-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 18",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: that power which discovers things future, which all the foresight of men cannot ken and conjecture, is above nature. And to foretell them so certainly as if they did already exist, or had existed long ago, must be the result of a mind infinitely intelligent; because it is the highest way of knowing, and a higher cannot be imagined [смещение 7785 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-19-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 19",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: Cyrus was prophesied of by Isaiah (xliv. 28, and xlv. 1) long before he was born; his victories, spoils, all that should happen in Babylon, his bounty to the Jews came to pass, according to that prophecy; and the sight of that prophecy which the Jews shewed him, as other historians report, was that which moved him to be favorable to the Jews. [смещение 8210 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-20-charnock",
+      "label": "Стивен Чарнок, «О бытии Бога», цитата 20",
+      "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
+      "verified_on": "2026-10-24",
+      "evidence": "EN: That power which foretells things beyond the reach of the wit of man, and orders all causes to bring about those predictions, must be an infinite power, the same that made the world, sustains it and governs all things in it according to his pleasure, and to bring about his own ends; and this being is God. [смещение 8754 в блоке G1 (нормализованный текст источника, позиция 220 053; 16 398 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-scripture-synodal",
+      "label": "Синодальный перевод: стихи раздела «Писание, на котором он стоит»",
+      "url": "https://github.com/bibleonline/rst",
+      "verified_on": "2026-10-24",
+      "evidence": "Пс. 9:17; Исх. 34:14; Пс. 71:18; Ис. 41:23; Ис. 46:10 — дословно по корпусу bibleonline/rst (parsed66); нумерация псалмов синодальная (у Чарнока по английской Библии: Ps. ix. 16 и Ps. lxxii. 18)."
+    }
+  ],
+  "media_slots": [
+    {
+      "slot_id": "media-cover",
+      "placement": {
+        "after": "h-1"
+      },
+      "depicts": "Поверженная бронзовая статуя древнего царя, разбитая на мраморных ступенях храма, расколотая корона рядом; луч солнца сквозь грозовые облака (кадр выбран оператором из шести баттлов двумя сериями: молния над храмом, затмение, писец, расступившееся море, статуя, комета; приведён к 16:9)",
+      "purpose": "Дать статье узнаваемую обложку серии и задать визуальный образ вмешательства неба в историю до чтения.",
+      "preferred_source_type": "AI-generated cover, battle mode, operator-approved",
+      "copyright_provenance": "Arena image generation, battle mode; chosen by the operator from three battles."
+    }
+  ],
+  "revision": "charnock-11-v1"
+}

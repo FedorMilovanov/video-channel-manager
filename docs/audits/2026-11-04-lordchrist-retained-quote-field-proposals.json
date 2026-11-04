@@ -1,0 +1,77 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-retain-quote-exact-field-review",
+  "schema_version": 1,
+  "review_date": "2026-11-04",
+  "status": "proposed_only_pending_full_editorial_signoff",
+  "editorial_approval": false,
+  "provider_write_authorization": false,
+  "edits": [
+    {
+      "sequence": 3,
+      "field": "source.anchor_end",
+      "exact_before": "It is God upon the throne whom we trust.",
+      "proposed_after": "It is God upon his throne whom we trust.",
+      "rationale": "Live Spurgeon witness has the pronoun his in the original English closing sentence; this fixes source-anchor transcription, not the approved text.",
+      "original_publication_id": "lordchrist-spurgeon-divine-sovereignty",
+      "original_source_url": "https://www.spurgeon.org/sermons/divine-sovereignty",
+      "original_full_post_sha256": "sha256:ffc9f0b1de32479b8d43aeea128363244ae7534faaab664b038820fe4ab4040b",
+      "status": "proposed_only_not_approved"
+    },
+    {
+      "sequence": 9,
+      "field": "text",
+      "exact_before": "что единственное наше спасение — в призывании имени Его.",
+      "proposed_after": "что наша единственная защита — в призывании Его имени.",
+      "rationale": "Calvin's original English has our only safety, not salvation. Keep the doctrine from being silently strengthened by the translator.",
+      "original_publication_id": "lordchrist-calvin-prayer-opens-treasures",
+      "original_source_url": "https://ccel.org/ccel/calvin/prayer/prayer.iii.ii.html",
+      "original_full_post_sha256": "sha256:0ad0e9c508714dae4d4ff662a3a3fc34fbb70065d11d84635c94160793c0d4e2",
+      "status": "proposed_only_not_approved"
+    },
+    {
+      "sequence": 20,
+      "field": "text",
+      "exact_before": "Попробую, однако, набросать образ святости, чтобы мы ясно видели его пред мысленными очами. (а)",
+      "proposed_after": "Попробую, однако, набросать образ святости, чтобы мы ясно видели его пред мысленными очами. Однако не следует забывать: даже всё, что я скажу, будет в лучшем случае лишь бедным и несовершенным наброском. (а)",
+      "rationale": "Adds the omitted Ryle disclaimer ('my account is but a poor imperfect outline') between consecutive clauses; the old selection claimed no omissions.",
+      "original_publication_id": "lordchrist-ryle-practical-holiness",
+      "original_source_url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iii.html",
+      "original_full_post_sha256": "sha256:743c5434a57174e6c945cd05455490be00b19c9ea7d6fc42aea059a879539795",
+      "status": "proposed_only_not_approved"
+    },
+    {
+      "sequence": 23,
+      "field": "source.anchor_end",
+      "exact_before": "they look like hypocrites, though they are not so.",
+      "proposed_after": "Oh that my head were waters, and mine eyes fountains of tears, that I might weep abundantly over them all!",
+      "rationale": "Original Flavel passage continues directly with the lament translated at the end of the current Russian body, which falls outside the old source end-anchor.",
+      "original_publication_id": "lordchrist-flavel-keeping-the-heart",
+      "original_source_url": "https://ccel.org/ccel/flavel/saintindeed/saintindeed.iv.html",
+      "original_full_post_sha256": "sha256:d28c098c309893fc1e967c53f32f4d1dafaebe716f4e70dab22e2c6024fc4983",
+      "status": "proposed_only_not_approved"
+    },
+    {
+      "sequence": 24,
+      "field": "source.anchor_end",
+      "exact_before": "goes on year after year, attending on the means of grace, but then, like Pharaoh's lean kine, he is never the better, but rather the worse for them.",
+      "proposed_after": "he is never the better, but rather the worse for them.",
+      "rationale": "CCEL inserts an inline [cow?] editor note after lean kine that prevents a literal uninterrupted anchor match. The shorter closing clause is directly present in the source.",
+      "original_publication_id": "lordchrist-whitefield-almost-christian",
+      "original_source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.xlv.html",
+      "original_full_post_sha256": "sha256:0a595c9029e48d641857d9a728ab6e3092207c5ef2935e8fb2d7e1a810035a46",
+      "status": "proposed_only_not_approved"
+    },
+    {
+      "sequence": 30,
+      "field": "source.anchor_start",
+      "exact_before": "Whoever reads the Gospel with a single eye, and sincere intention, will find",
+      "proposed_after": "Whoever reads the gospel with a single eye, and sincere intentions, will find",
+      "rationale": "Whitefield's original uses intentions (plural), while the stored anchor uses intention; the separately quoted Luke 9:23 sermon header also requires final context review.",
+      "original_publication_id": "lordchrist-whitefield-self-denial",
+      "original_source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.xxxi.html",
+      "original_full_post_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
+      "status": "proposed_only_not_approved"
+    }
+  ],
+  "original_queue_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72"
+}

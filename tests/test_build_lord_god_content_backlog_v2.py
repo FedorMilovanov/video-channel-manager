@@ -223,12 +223,118 @@ def test_select_historical_excludes_nonpublished_entry(tmp_path: Path) -> None:
 
 def test_select_quotes_requires_published_verified_telegram_evidence(tmp_path: Path) -> None:
     queue_path, ledger_path = _telegram_quote_evidence(tmp_path)
+    queue = module.TelegramQueue.model_validate(module.read_json(queue_path))
     selected = module.select_quotes(queue_path, ledger_path, count=24)
     assert len(selected) == 1
-    assert selected[0]["publication_id"] == "lordchrist-bunyan-cross-burden"
+    assert selected[0]["publication_id"] == queue.posts[0].publication_id
     assert selected[0]["telegram_message_id"] == 1470
     assert selected[0]["telegram_message_url"] == "https://t.me/lordchrist/1470"
     assert selected[0]["telegram_source_state"] == "published_verified"
+
+
+def test_telegram_text_full_mode_renders_every_section() -> None:
+    post = {
+        "title": "Заголовок",
+        "lead": "Лид",
+        "sections": [
+            {"heading": "Первая часть", "paragraphs": ["Абзац один.", "Абзац два."]},
+            {"heading": "Вторая часть", "paragraphs": ["Абзац три."]},
+        ],
+    }
+    excerpt = module.telegram_text(post)
+    assert "Абзац два." not in excerpt
+    full = module.telegram_text(post, text_mode="full")
+    assert "Первая часть" in full
+    assert "Абзац два." in full
+    assert "Вторая часть" in full
+    assert "Абзац три." in full
+
+
+def _successor_quote_evidence(tmp_path: Path) -> tuple[Path, Path, str]:
+    from video_channel_manager.telegram_quote_depth import build_depth_v3_runtime_queue
+    from video_channel_manager.wave_engine.canonical import write_json_atomic
+
+    base = Path(__file__).resolve().parents[1] / "content" / "telegram" / "lordchrist"
+    queue = build_depth_v3_runtime_queue(
+        candidate_path=base / "successor-quotes-v1.json",
+        translation_ledger_path=base / "successor-translation-ledger-v1.json",
+        integrity_amendment_path=base / "successor-integrity-amendments-v1.json",
+    )
+    queue_path = tmp_path / "depth-v3-queue.json"
+    write_json_atomic(queue_path, queue.model_dump(mode="json"))
+    entries: dict[str, object] = {}
+    for post in queue.posts:
+        entries[post.publication_id] = {
+            "publication_id": post.publication_id,
+            "payload_sha256": post.payload_sha256,
+        }
+    first = queue.posts[0]
+    entries[first.publication_id] = {
+        "publication_id": first.publication_id,
+        "payload_sha256": first.payload_sha256,
+        "state": "published",
+        "provider_effect": "verified",
+        "intent_id": "1234567890abcdef",
+        "dispatch_mode": "manual",
+        "workflow_run_id": "123",
+        "workflow_run_attempt": "1",
+        "github_sha": "a" * 40,
+        "github_workflow_sha": "b" * 40,
+        "attempted_at_utc": "2026-10-22T11:59:29Z",
+        "published_at_utc": "2026-10-22T11:59:30Z",
+        "message_id": 1578,
+        "message_url": "https://t.me/lordchrist/1578",
+        "actual_chat_id": -1001295216957,
+        "actual_chat_username": "lordchrist",
+        "bot_id": 8716602202,
+        "bot_username": "preaching_mp3_bot",
+    }
+    ledger_path = tmp_path / "depth-v3-ledger.json"
+    ledger_path.write_text(
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.telegram-publication-ledger",
+                "schema_version": 3,
+                "project_key": "lord-god-strength",
+                "channel_username": "@lordchrist",
+                "queue_digest": queue.digest,
+                "entries": entries,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return queue_path, ledger_path, first.publication_id
+
+
+def test_select_quotes_accepts_successor_runtime_queue(tmp_path: Path) -> None:
+    queue_path, ledger_path, publication_id = _successor_quote_evidence(tmp_path)
+    selected = module.select_quotes(queue_path, ledger_path, count=24)
+    assert len(selected) == 1
+    assert selected[0]["publication_id"] == publication_id
+    assert selected[0]["telegram_message_id"] == 1578
+    assert selected[0]["telegram_source_state"] == "published_verified"
+    assert selected[0]["source_url"] == ""
+
+
+def test_prepare_verifies_successor_runtime_quote_slots(tmp_path: Path) -> None:
+    queue_path, ledger_path, publication_id = _successor_quote_evidence(tmp_path)
+    queue = prepare_module.load_active_queue(queue_path)
+    ledger = prepare_module.TelegramLedger.model_validate(module.read_json(ledger_path))
+    post = queue.posts[0]
+    backlog = {
+        "telegram_quote_queue_digest": queue.digest,
+        "slots": [
+            {
+                "kind": "telegram_quote",
+                "publication_id": publication_id,
+                "telegram_payload_sha256": post.payload_sha256,
+                "telegram_message_id": 1578,
+                "telegram_message_url": "https://t.me/lordchrist/1578",
+            }
+        ],
+    }
+    prepare_module.verify_quote_slots(backlog, queue, ledger)
 
 
 def test_select_quotes_rejects_payload_drift(tmp_path: Path) -> None:
@@ -400,3 +506,37 @@ def test_prepare_rejects_historical_ledger_digest_drift(tmp_path: Path) -> None:
                 enable_provider_writes=False,
             )
         )
+
+
+def _backlog_args(**overrides: object) -> SimpleNamespace:
+    base: dict[str, object] = {
+        "audit": None,
+        "text_only": False,
+        "video_count": 60,
+        "max_views": 1500,
+        "repository_root": Path("."),
+        "historical_release": Path("release.json"),
+        "historical_ledger": Path("ledger.json"),
+        "quote_queue": Path("queue.json"),
+        "quote_ledger": Path("quote-ledger.json"),
+        "start_date": date(2026, 11, 2),
+        "days": 60,
+        "telegram_count": 1,
+        "quote_count": 24,
+        "historical_text_mode": "full",
+        "output": Path("backlog.json"),
+    }
+    base.update(overrides)
+    return SimpleNamespace(**base)
+
+
+def test_text_only_backlog_rejects_audit_and_video_count() -> None:
+    with pytest.raises(ValueError, match="does not accept an audit"):
+        module.build_backlog(_backlog_args(text_only=True, audit=Path("audit.json"), video_count=0))
+    with pytest.raises(ValueError, match="requires --video-count 0"):
+        module.build_backlog(_backlog_args(text_only=True, video_count=60))
+
+
+def test_full_backlog_requires_audit_file() -> None:
+    with pytest.raises(ValueError, match="audit file is required"):
+        module.build_backlog(_backlog_args())

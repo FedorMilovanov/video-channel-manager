@@ -24,18 +24,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 MAX_CHARS = 32_768
-SOFT_CHARS = 30_000
+SOFT_CHARS = 32_300
 MAX_BLOCKS = 500
 MAX_H1 = 120
 MAX_H2 = 80
 MAX_CONNECTOR = 120
-MAX_QUOTE = 600
+# Крупная цитата — норма: ключевой пассаж идёт до ~4 000 знаков, если мысль
+# автора в нём непрерывна (RICH_EDITOR_ARTICLE_STANDARD §5).
+MAX_QUOTE = 4000
 MAX_ITEM = 400
 HASHTAGS_MIN, HASHTAGS_MAX = 4, 6
-# Эмодзи-маркер раздела не ставится на коротких рубриках короче этого порога
-# (RICH_EDITOR_ARTICLE_STANDARD, §3).
-MARKER_MIN_SECTION_CHARS = 600
-
 ZWSP = "\u200b"
 WJ = "\u2060"
 
@@ -51,8 +49,19 @@ BANNED = (
 EMOJI_RE = re.compile(
     "[\U0001f300-\U0001faff\U00002300-\U000023ff\U00002600-\U000027bf\U0001f1e6-\U0001f1ff\U00002b00-\U00002bff]"
 )
-HASHTAG_RE = re.compile(r"#[0-9A-Za-zА-Яа-яЁё_]+")
-ATTRIBUTION_RE = re.compile(r"^\*— .+\*$")
+# Хэштег — это слово: «#53527» (номер eBook) хэштегом не считается.
+HASHTAG_RE = re.compile(r"#(?=[0-9A-Za-zА-Яа-яЁё_]*[A-Za-zА-Яа-яЁё])[0-9A-Za-zА-Яа-яЁё_]+")
+
+# Библиографическая пометка в конце статьи: книга, издание, источник цитат.
+# Начинается сразу с дела, без служебной фразы-заголовка и без значка:
+# с 22.10.2026 в серии не используются эмодзи вообще (решение оператора).
+SERVICE_NOTE_LEAD = "Цитаты Чарнока"
+SERVICE_NOTE_URL = "gutenberg.org"
+# Подпись цитаты в L2: обычная строка «— Автор, «Труд»» последней строкой блока.
+# Жирный и курсив в тексте разрешены (решение оператора 2026-10-22), но подпись
+# цитаты остаётся plain: это подпись, а не выделение.
+ATTRIBUTION_RE = re.compile(r"^— .+$")
+TRANSLATION_NOTE_RE = re.compile(r"перевод[а-я]*\s+(?:мой|наш)", re.IGNORECASE)
 ITEM_RE = re.compile(r"^(• |\d+\. )")
 MD_LIST_RE = re.compile(r"^[-*+] ")
 HEADING_RE = re.compile(r"^#{1,6}\s")
@@ -63,7 +72,7 @@ NUMBERED_H2_RE = re.compile(r"^\d+[.)]")
 class Report:
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
-    stats: dict = field(default_factory=dict)
+    stats: dict[str, int | float] = field(default_factory=dict)
 
     def error(self, msg: str) -> None:
         self.errors.append(msg)
@@ -114,7 +123,10 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     if chars > MAX_CHARS:
         rep.error(f"длина {chars} > {MAX_CHARS} символов")
     elif chars > SOFT_CHARS:
-        rep.warn(f"длина {chars}: близко к лимиту, оставьте запас (мягкий потолок {SOFT_CHARS})")
+        rep.warn(
+            f"длина {chars}: почти у потолка 32 768 — правки после вёрстки будут стоить сокращений "
+            f"(мягкий потолок {SOFT_CHARS})"
+        )
     if "\t" in text:
         rep.error("в тексте есть табуляция")
     for i, ln in enumerate(lines, 1):
@@ -145,16 +157,12 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             rep.error("H1 должен быть набран ЗАГЛАВНЫМИ")
         if len(plain_title) > MAX_H1:
             rep.error(f"H1 длиннее {MAX_H1} символов ({len(plain_title)})")
-        if not (title.startswith("**") and title.endswith("**")):
-            rep.warn("H1 лучше делать жирным: `# **ЗАГОЛОВОК**` (требование RICH_EDITORIAL_STANDARD §2)")
         if EMOJI_RE.search(plain_title):
-            rep.error(
-                "в H1 не должно быть эмодзи — маркер допускается только в начале строки H2 и только по правилу §3"
-            )
+            rep.error("в H1 не должно быть эмодзи — в этой серии их нет нигде (решение оператора 2026-10-22)")
 
-    # ---------- 3. H2: регистр, длина, воздух, эмодзи-маркер ----------
+    # ---------- 3. H2: регистр, длина, эмодзи ----------
     h2_titles = [stripped[s][3:].strip().replace("**", "") for s, _ in h2s]
-    numbered = [t for t in h2_titles if NUMBERED_H2_RE.match(EMOJI_RE.sub("", t).lstrip())]
+    numbered = [t for t in h2_titles if NUMBERED_H2_RE.match(t.lstrip())]
     rep.stats.update(h2_numbered=len(numbered))
     for (s, _), title in zip(h2s, h2_titles, strict=True):
         if len(title) > MAX_H2:
@@ -162,29 +170,12 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         if is_caps(title):
             rep.error(f"H2 «{title}» набран ЗАГЛАВНЫМИ: в L2 заголовки разделов обычным регистром")
 
-        next_h = len(stripped)
-        for j in range(s + 1, len(stripped)):
-            if HEADING_RE.match(stripped[j]):
-                next_h = j
-                break
-        section_chars = len("\n".join(stripped[s + 1 : next_h]).strip())
-        is_numbered = bool(NUMBERED_H2_RE.match(EMOJI_RE.sub("", title).lstrip()))
-
         markers = EMOJI_RE.findall(title)
         if markers:
-            if is_numbered:
-                rep.error(
-                    f"H2 «{title[:40]}»: раздел в нумерованной лесенке — номера уже маркируют место, эмодзи не нужен"
-                )
-            elif len(markers) > 1:
-                rep.error(f"H2 «{title[:40]}»: {len(markers)} эмодзи — маркер может быть только один, в начале строки")
-            elif not EMOJI_RE.match(title):
-                rep.error(f"H2 «{title[:40]}»: эмодзи должен вести строку — это маркер раздела, а не украшение")
-            elif section_chars < MARKER_MIN_SECTION_CHARS:
-                rep.error(
-                    f"H2 «{title[:40]}»: раздел короче ~{MARKER_MIN_SECTION_CHARS} знаков ({section_chars}) — "
-                    "маркер на короткой рубрике не ставится"
-                )
+            rep.error(
+                f"H2 «{title[:40]}»: {len(markers)} эмодзи — в этой серии их нет нигде "
+                "(решение оператора 2026-10-22), заголовок раздела пишется словами"
+            )
         if s == 0:
             rep.error("статья начинается с H2: первым блоком должен быть H1")
         else:
@@ -223,6 +214,8 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     # L2: подпись — ПОСЛЕДНЯЯ строка внутри блока цитаты (`> *— …*`).
     # Отдельный абзац под цитатой даёт блочный отступ редактора и лишний воздух.
     quotes, i = 0, 0
+    quote_lengths: list[int] = []
+    seen_quotes: dict[str, int] = {}
     while i < len(stripped):
         if stripped[i].startswith(">"):
             quotes += 1
@@ -237,13 +230,33 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             if not has_attr:
                 rep.error(
                     f"строка {end + 1}: у цитаты нет подписи последней строкой. "
-                    "В L2 правильно: `> *— Автор, «Труд»*` внутри блока"
+                    "В L2 правильно: `> — Автор, «Труд»` внутри блока"
+                )
+
+            if has_attr and TRANSLATION_NOTE_RE.search(body[-1]):
+                rep.error(
+                    f"строка {end + 1}: под подписью пометка о переводе — в L2 её нет: "
+                    "русский текст иностранного автора и так перевод канала, подпись кончается названием труда"
                 )
 
             if len(quote_text) > MAX_QUOTE:
                 rep.warn(
-                    f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — разбейте авторским текстом"
+                    f"строка {start + 1}: цитата {len(quote_text)} символов (> {MAX_QUOTE}) — "
+                    "проверьте, что это один непрерывный пассаж, а не склейка разных мест"
                 )
+
+            # дословный дубль цитаты (правило двух прогонов, §11 стандарта):
+            # одна и та же цитата дважды в одной статье — это дефект сборки,
+            # а не приём: читатель встречает одну и ту же мысль второй раз.
+            quote_key = re.sub(r"\s+", " ", quote_text).strip()
+            if quote_key:
+                if quote_key in seen_quotes:
+                    rep.error(
+                        f"строка {start + 1}: цитата дословно повторяет цитату в строке "
+                        f"{seen_quotes[quote_key]} — дубль цитаты в статье"
+                    )
+                else:
+                    seen_quotes[quote_key] = start + 1
 
             # подпись отдельным блоком — ошибка L2: даёт разрыв под цитатой
             nxt_idx = end + 1
@@ -252,12 +265,13 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
             if nxt_idx < len(stripped) and ATTRIBUTION_RE.match(stripped[nxt_idx].strip()):
                 rep.error(
                     f"строка {nxt_idx + 1}: подпись стоит отдельным блоком после цитаты — "
-                    "в L2 она должна быть последней строкой блока: `> *— Автор, «Труд»*`"
+                    "в L2 она должна быть последней строкой блока: `> — Автор, «Труд»`"
                 )
 
             if ">" in quote_text:
                 rep.error(f"строка {start + 1}: вложенная цитата (второй уровень `>`) запрещена")
 
+            quote_lengths.append(len(quote_text))
             # воздух перед цитатой: короткая связка в том же блоке — исключение
             connector_in_block = start > 0 and stripped[start - 1].strip() and not stripped[start - 1].startswith(">")
             has_blank_before = start > 0 and not stripped[start - 1].strip()
@@ -273,6 +287,44 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
         else:
             i += 1
     rep.stats["quotes"] = quotes
+
+    # «Мелкоцитатосып» (решение оператора 2026-10-24): статья, у которой больше
+    # половины цитат — обрывки короче 250 знаков, читается крошкой, а не мясом.
+    # Норма: цитата 400–1200 знаков; соседние фрагменты одного пассажа склеиваются
+    # в одну большую цитату, мелкие остаются только как афоризм-удар.
+    if len(quote_lengths) >= 20:
+        small = sum(1 for length in quote_lengths if length < 250)
+        if small / len(quote_lengths) > 0.55:
+            rep.warn(
+                f"мелкоцитатосып: {small} из {len(quote_lengths)} цитат короче 250 знаков — "
+                "укрупните: склейте соседние фрагменты одного пассажа в цитаты по 400–1200 знаков"
+            )
+
+    # ---------- 5б. жирный и курсив ----------
+    # Решение оператора 2026-10-22: в больших статьях жирный и курсив нужны —
+    # это форматирование редактора, а не украшение. Проверяем только целостность
+    # разметки: незакрытая скобка ломает и копи-страницу, и документ для провайдера.
+    for i, ln in enumerate(stripped, 1):
+        if ln.count("**") % 2:
+            rep.error(f"строка {i}: нечётное число ** — жирный не закрыт")
+        if ln.replace("**", "").count("*") % 2:
+            rep.error(f"строка {i}: нечётное число одинарных * — курсив не закрыт")
+
+    # ---------- 5в. библиографическая пометка в конце ----------
+    # Читатель должен видеть, откуда взяты цитаты, не выходя из статьи.
+    # Решение оператора 2026-10-24: пометка начинается со знака ©.
+    note_blocks = [
+        block_text
+        for s0, e0 in spans
+        if (block_text := " ".join(stripped[s0:e0]).strip().removeprefix("© ").strip()).startswith(SERVICE_NOTE_LEAD)
+    ]
+    if not note_blocks:
+        rep.error(
+            "нет библиографической пометки в конце: последний абзац начинается словами "
+            "«© Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
+        )
+    elif SERVICE_NOTE_URL not in note_blocks[-1].casefold():
+        rep.error("в библиографической пометке нет ссылки на источник (gutenberg.org)")
 
     # ---------- 6. хэштеги ----------
     all_tags = HASHTAG_RE.findall(text)
@@ -299,21 +351,22 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
                         rep.error(f"хэштег {tag}: должен начинаться с заглавной буквы")
 
     # ---------- 6б. эмодзи в теле ----------
+    # Заголовки проверяются отдельно (§2 и §3); здесь — всё остальное, включая
+    # текст цитат: эмодзи в серии не используются нигде.
     for s0, e0 in spans:
-        if HEADING_RE.match(stripped[s0]) or stripped[s0].startswith(">"):
+        if HEADING_RE.match(stripped[s0]):
             continue
         para = " ".join(stripped[s0:e0])
         if EMOJI_RE.search(para):
-            rep.error(
-                f"строка {s0 + 1}: эмодзи в обычном абзаце — в тексте их не ставят; маркер живёт только в начале заголовка H2"
-            )
+            rep.error(f"строка {s0 + 1}: эмодзи в тексте — в этой серии их нет нигде (решение оператора 2026-10-22)")
 
     # ---------- 7. служебные маркеры и мусор ----------
     low = text.casefold()
     for marker in BANNED:
         if marker in low:
             rep.error(f"служебный/машинный маркер в публичном тексте: «{marker}»")
-    raw_urls = re.findall(r"https?://\S+", text)
+    note_text = " ".join(note_blocks)
+    raw_urls = [url for url in re.findall(r"https?://\S+", text) if url not in note_text]
     if raw_urls:
         rep.warn(f"в тексте {len(raw_urls)} сырых URL: для L2 обычно не нужны")
 

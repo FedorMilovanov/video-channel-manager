@@ -1,0 +1,13 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-presentation-migration",
+  "schema_version": 2,
+  "release_id": "lordchrist-successor-depth-v3",
+  "queue_digest": "sha256:8d7dfd231908855894412b780a6c7a73840420ae03d931a0bfb49bac4e292913",
+  "published_boundary": 17,
+  "from_policy_id": "lordchrist-quote-v4",
+  "from_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
+  "to_policy_id": "lordchrist-quote-v5",
+  "to_policy_sha256": "sha256:4607230a3385d81d94dc49bd498fbe8f2fbd2d13e029710acf1413b1f8ef2f42",
+  "provider_writes_authorized": false,
+  "reason": "Sequences 16 (Spurgeon, Divine Sovereignty) and 17 (Gurnall, armour in suffering, durable message 1567) are the only cards published under the mandatory-title quote-v4 layout and remain immutable history. The reader-facing rework of 2026-10-17 moves the pending suffix to the depth-v3 restore release rendered under quote-v5: every quotation is a complete self-contained thought (the two remaining literal anaphora fragments are restored to the sealed source-v1 translations), the post opens directly with the quotation, the reviewed source line stays tight under it, and no leading title is rendered at all."
+}

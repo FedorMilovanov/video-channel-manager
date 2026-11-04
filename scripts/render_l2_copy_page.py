@@ -19,19 +19,31 @@ import json
 import re
 from pathlib import Path
 
-ZWSP = "\u200b"
-AIR = f"<p>{ZWSP}</p>"
+# Подпись цитаты: обычная строка «— Автор, «Труд»»; курсивная форма — только
+# ради совместимости со старыми материалами.
+ATTRIBUTION_RE = re.compile(r"^(?:\*— .+\*|— .+)$")
+
+# Воздух перед заголовком — пустой абзац. Именно U+00A0, а не U+200B: нулевой
+# пробел редактор «Статья» выбрасывает как пустой текст, и воздух исчезает при
+# вставке. Неразрывный пробел переживает разбор HTML и даёт ровно одну пустую строку.
+AIR = "<p>\u00a0</p>"
 
 
 def inline(text: str) -> str:
-    t = html.escape(text, quote=False)
-    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
-    t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", t)
-    return t
+    """Жирный и курсив в статье разрешены (решение оператора 2026-10-22).
+
+    `**x**` → <b>x</b>, `*x*` → <i>x</i>; остальное экранируется как есть.
+    Порядок важен: сначала экранирование, потом разметка — иначе разметка
+    внутри текста может быть испорчена спецсимволами.
+    """
+    out = html.escape(text, quote=False)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", out)
+    return re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", out)
 
 
 def plain(text: str) -> str:
-    return text.replace("**", "").replace("*", "")
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    return re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", text)
 
 
 def parse_blocks(md: str):
@@ -49,15 +61,19 @@ def parse_blocks(md: str):
 
 def render(md: str):
     blocks = parse_blocks(md)
-    out: list[str] = []
     plain_blocks: list[str] = []
+    # (вид, html): воздух расставляется вторым проходом, когда уже известно,
+    # что стоит до блока и после него.
+    items: list[tuple[str, str]] = []
     stats = {"headings": 0, "quotes": 0, "items": 0, "air": 0}
 
     def flush_text(buf: list[str]):
         if not buf:
             return
         text = "\n".join(buf)
-        out.append(f"<p>{inline(text)}</p>")
+        stripped = text.strip()
+        kind = "connector" if stripped.endswith(":") and len(stripped) <= 120 else "paragraph"
+        items.append((kind, f"<p>{inline(text)}</p>"))
         plain_blocks.append(plain(text))
         buf.clear()
 
@@ -65,21 +81,15 @@ def render(md: str):
         head = block[0]
 
         if re.match(r"^#\s", head):
-            if out:
-                out.append(AIR)
-                stats["air"] += 1
             title = head[2:].strip()
-            out.append(f"<h1>{inline(title)}</h1>")
+            items.append(("heading", f"<h1>{inline(title)}</h1>"))
             plain_blocks.append(plain(title))
             stats["headings"] += 1
             continue
 
         if re.match(r"^##\s", head):
-            if out:
-                out.append(AIR)
-                stats["air"] += 1
             title = head[3:].strip()
-            out.append(f"<h2>{inline(title)}</h2>")
+            items.append(("heading", f"<h2>{inline(title)}</h2>"))
             plain_blocks.append(plain(title))
             stats["headings"] += 1
             continue
@@ -87,7 +97,7 @@ def render(md: str):
         if head.startswith("• ") or re.match(r"^\d+\. ", head):
             for line in block:
                 if line.startswith("• ") or re.match(r"^\d+\. ", line):
-                    out.append(f"<p>{inline(line)}</p>")
+                    items.append(("item", f"<p>{inline(line)}</p>"))
                     plain_blocks.append(plain(line))
                     stats["items"] += 1
             continue
@@ -106,31 +116,49 @@ def render(md: str):
                 # L2: подпись — последняя строка блока, внутрь <blockquote>:
                 # отдельный абзац под цитатой получает блочный отступ и даёт воздух
                 attr = ""
-                if quote_lines and quote_lines[-1].startswith("*—"):
-                    attr = quote_lines.pop().strip("*").strip()
-                elif i < len(block) and block[i].startswith("*—"):
+                if quote_lines and ATTRIBUTION_RE.match(quote_lines[-1]):
+                    attr = plain(quote_lines.pop()).strip()
+                elif i < len(block) and ATTRIBUTION_RE.match(block[i].strip()):
                     # совместимость со старой формой: подпись отдельным абзацем
-                    attr = block[i].strip().strip("*").strip()
+                    attr = plain(block[i]).strip()
                     i += 1
                 inner = "<br>".join(inline(q) for q in quote_lines)
                 if attr:
                     inner += ("<br>" if inner else "") + f"<cite>{inline(attr)}</cite>"
-                out.append("<blockquote>" + inner + "</blockquote>")
+                items.append(("quote", "<blockquote>" + inner + "</blockquote>"))
                 plain_blocks.append(
                     "\n".join([plain(q) for q in quote_lines] + ([plain(attr)] if attr else [])).strip()
                 )
                 stats["quotes"] += 1
                 continue
-            if line.startswith("*—"):
+            if ATTRIBUTION_RE.match(line.strip()):
                 flush_text(buf)
-                attr = line.strip().strip("*")
-                out.append(f"<p><i>{inline(attr)}</i></p>")
+                attr = plain(line).strip()
+                items.append(("attribution", f"<p>{inline(attr)}</p>"))
                 plain_blocks.append(plain(attr))
                 i += 1
                 continue
             buf.append(line)
             i += 1
         flush_text(buf)
+
+    out: list[str] = []
+    for index, (kind, markup) in enumerate(items):
+        previous = items[index - 1][0] if index else ""
+        air = False
+        if kind == "heading":
+            air = index > 0
+        elif kind == "quote":
+            # воздух сверху цитаты; исключения — сразу после заголовка
+            # (после заголовка воздуха нет) и после короткой связки с двоеточием
+            air = previous not in ("", "heading", "connector")
+        elif previous == "quote":
+            # воздух снизу цитаты; перед заголовком его поставит сам заголовок
+            air = kind != "heading"
+        if air:
+            out.append(AIR)
+            stats["air"] += 1
+        out.append(markup)
 
     return "\n".join(out), "\n\n".join(plain_blocks) + "\n", stats
 
@@ -162,8 +190,7 @@ TPL = """<!DOCTYPE html>
   .article h2{font-size:17.5px;line-height:1.3;margin:18px 0 8px}
   .article p{margin:0 0 13px}
   .article blockquote{margin:0 0 4px;padding:6px 12px;border-left:3px solid var(--accent);color:#d7e2ec}
-  .article blockquote cite{font-style:italic;opacity:.85}
-  .article i{font-style:italic}
+  .article blockquote cite{font-style:normal;opacity:.85}
   .foot{color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
 </style>
 </head>
