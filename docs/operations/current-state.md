@@ -149,6 +149,7 @@ No future YouTube upload, metadata/thumbnail/playlist/visibility/comment mutatio
 ## Telegram runtime / supply chain
 The minimal Telegram runtime remains exact-version and SHA-256 hash locked with pip `--require-hashes`. Production/minimal installs keep this transaction isolated from test-only dependencies. Any lock refresh must pass isolated install, `pip check`, provider-free guarded CLI smoke and dependency audit.
 One durable state/concurrency namespace has one write owner at a time. Parallel agents must not create competing provider writers against the same state namespace.
+The [`mutation-boundary-register.json`](mutation-boundary-register.json) and [`mutation-fault-proof-register.json`](mutation-fault-proof-register.json) cover actual Telegram, Instagram and YouTube mutation entrypoints with single-attempt/no-blind-replay fault proofs, while discovery-based tests keep the provider-writing workflow inventory current; `provider_writes_in_quality_ci: false` refers only to quality CI, not scheduled publishers. The [`coverage-ratchet.json`](coverage-ratchet.json) and [`module-disposition.json`](module-disposition.json) enforce coverage floors and explicit disposition of unreachable modules. Details belong to those registers, not this live index.
 
 ## Local MP3 and Resi DASH
 Local MP3 remains `local_only_read_only_intake_and_manifest`: inspect/probe/hash/tag inventory and deterministic manifests only; no rewrite, rename/transcode, remote upload or provider mutation.

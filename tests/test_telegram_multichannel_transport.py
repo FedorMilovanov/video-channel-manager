@@ -168,6 +168,84 @@ def test_mutating_transport_never_retries_while_read_only_preflight_may_retry() 
     assert READ_ONLY_TRANSPORT_RETRIES > 0
 
 
+def test_send_message_once_rejects_payload_from_another_profile_before_dispatch() -> None:
+    """The profile binding is checked before any provider request, not after a send."""
+
+    profile = _profile()
+    other = profile.model_copy(update={"channel_username": "OtherChannel"})
+    payload = _message_payload(profile)
+    requests = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        return httpx.Response(200, json=_message_result(payload), request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(ValueError, match="not bound to the selected channel profile"):
+            send_message_once(other, _target(other), payload, token="test-token", client=client, now=NOW)
+
+    assert requests == 0
+
+
+def test_send_message_once_read_timeout_is_one_ambiguous_attempt() -> None:
+    """A lost dispatch response is ambiguous, single attempt, and never retried."""
+
+    profile = _profile()
+    payload = _message_payload(profile)
+    requests = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        raise httpx.ReadTimeout("lost response", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError) as exc_info:
+            send_message_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+
+    assert requests == 1
+    assert exc_info.value.provider_effect == "may_exist"
+    assert exc_info.value.retryable is False
+
+
+def test_send_poll_once_rejects_payload_from_another_profile_before_dispatch() -> None:
+    profile = _profile()
+    other = profile.model_copy(update={"channel_username": "OtherChannel"})
+    payload = _payload(profile)
+    requests = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        return httpx.Response(500, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(ValueError, match="not bound to the selected channel profile"):
+            send_poll_once(other, _target(other), payload, token="test-token", client=client, now=NOW)
+
+    assert requests == 0
+
+
+def test_send_poll_once_read_timeout_is_one_ambiguous_attempt() -> None:
+    profile = _profile()
+    payload = _payload(profile)
+    requests = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        raise httpx.ReadTimeout("lost response", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError) as exc_info:
+            send_poll_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+
+    assert requests == 1
+    assert exc_info.value.provider_effect == "may_exist"
+    assert exc_info.value.retryable is False
+
+
 def test_send_message_once_verifies_exact_formatting_and_source_link_entities() -> None:
     profile = _profile()
     target = _target(profile)

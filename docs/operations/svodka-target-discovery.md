@@ -1,6 +1,8 @@
 # Svodka target discovery and pinning
 
-Status: `@preaching_mp3_bot` is intentionally reused for `@deep_info_life`; Telegram provider writes remain disabled for Svodka.
+Status: discovery is **complete and consumed**. `@preaching_mp3_bot` is intentionally reused for `@deep_info_life`, the pinned binding exists at `content/telegram/channels/svodka-target-binding.json`, and the one-time workflow that produced it removed itself as designed, so this page is a record of how the binding was established, not an available operation.
+
+Whether Svodka may write to the provider right now is a property of the profile and is answered only by [`channel-write-authority.json`](channel-write-authority.json); this page does not restate it.
 
 ## Why discovery exists
 
@@ -26,7 +28,7 @@ Only the bot credential is shared. Channel profile, numeric chat ID, release que
 
 ## One-time binding
 
-`.github/workflows/svodka-target-discover-once.yml` is a temporary read-only workflow. On success it creates `content/telegram/channels/svodka-target-binding.json`, commits the non-secret binding, and removes itself.
+`.github/workflows/svodka-target-discover-once.yml` was a temporary read-only workflow. On success it created `content/telegram/channels/svodka-target-binding.json`, committed the non-secret binding, and removed itself — that is why the file no longer exists in the repository. Re-binding is a new reviewed operation with a new workflow, not a rerun of this one.
 
 The binding stores:
 

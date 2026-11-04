@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
+from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
 from video_channel_manager.telegram_multichannel_video import render_video_payload, send_video_once
 
 
@@ -139,6 +139,60 @@ def test_send_video_once_uses_one_exact_multipart_sendvideo_request(
     assert payload.caption.encode("utf-8") in request.content
     assert b'name="supports_streaming"' in request.content
     assert b"true" in request.content
+
+
+def test_send_video_once_read_timeout_is_one_ambiguous_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A lost dispatch response is ambiguous, single attempt, and never retried."""
+
+    monkeypatch.chdir(tmp_path)
+    Path(".runtime").mkdir()
+    media = b"fake-mp4-contract-bytes"
+    Path(".runtime/test-video.mp4").write_bytes(media)
+    profile = _profile()
+    payload = _payload(profile, media)
+    requests = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        raise httpx.ReadTimeout("lost response", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError) as exc_info:
+            send_video_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+
+    assert requests == 1
+    assert exc_info.value.provider_effect == "may_exist"
+    assert exc_info.value.retryable is False
+
+
+def test_send_video_once_marks_returned_caption_drift_as_ambiguous(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider echo that differs from the exact payload is never treated as success."""
+
+    monkeypatch.chdir(tmp_path)
+    Path(".runtime").mkdir()
+    media = b"fake-mp4-contract-bytes"
+    Path(".runtime/test-video.mp4").write_bytes(media)
+    profile = _profile()
+    payload = _payload(profile, media)
+    body = _result(payload)
+    body["result"]["caption"] = "чужой текст"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=body, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError, match="caption") as exc_info:
+            send_video_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
+    assert exc_info.value.retryable is False
 
 
 def test_send_video_once_rejects_media_drift_before_http(
