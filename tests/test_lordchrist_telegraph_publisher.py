@@ -699,6 +699,102 @@ def test_in_place_revision_edits_original_page_without_creating_new_url_or_teleg
     assert not any(url.endswith("/sendMessage") for url, _ in fake.json_calls)
 
 
+def test_in_place_revision_refuses_missing_original_page_path_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "owner-token")
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("network must not be contacted"))
+    with pytest.raises(RuntimeError, match="original Telegraph page path"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
+def test_in_place_revision_refuses_changed_url_and_leaves_ledger_intact(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original_path = "Original-Charnock-Page-10-24"
+    record = {
+        "publication_id": publication_id,
+        "telegraph_url": f"https://telegra.ph/{original_path}",
+        "telegraph_path": original_path,
+        "telegram_message_id": 1582,
+    }
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {publication_id: record},
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    fake = FakeTransport()
+
+    def multipart(url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
+        if "/editPage/" in url:
+            fake.multipart_calls.append((url, dict(fields)))
+            return {
+                "ok": True,
+                "result": {"url": "https://telegra.ph/Changed-Page-10-24", "path": "Changed-Page-10-24"},
+            }
+        return FakeTransport.post_multipart(fake, url, fields)
+
+    fake.post_multipart = multipart  # type: ignore[method-assign]
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: fake)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "owner-token")
+    with pytest.raises(RuntimeError, match="different Telegraph URL"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--revision-confirm",
+                f"REVISE:{publication_id}",
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+    assert not any("/createPage" in url for url, _ in fake.multipart_calls)
+
+
 def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(
