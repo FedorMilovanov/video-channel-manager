@@ -4,13 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Offline preview, publish Telegraph page only (test link privately), or publish full post to @lordchrist
+        description: Offline preview or reviewed staged publication to @lordchrist
         required: true
         default: preview
         type: choice
         options:
           - preview
-          - publish-telegraph-only
           - publish
       publication_id:
         description: Exact publication_id from content/telegram/lordchrist/telegraph-v1/article-queue.json
@@ -19,11 +18,6 @@ on:
         type: string
       confirm:
         description: Required ONLY for action=publish — type PUBLISH:<publication_id>
-        required: false
-        default: ""
-        type: string
-      revision_confirm:
-        description: For in-place edit of an EXISTING Telegraph page only, type REVISE:<publication_id>
         required: false
         default: ""
         type: string
@@ -47,13 +41,10 @@ concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
   queue: max
-  queue: max
 
 jobs:
   telegraph-publish:
     runs-on: ubuntu-24.04
-    env:
-      STATE_BRANCH: state/lordchrist-telegram
     timeout-minutes: 10
     steps:
       - name: Check out repository
