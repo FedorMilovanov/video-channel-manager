@@ -149,7 +149,7 @@ jobs:
           if not article_path.is_relative_to(root) or not article_path.is_file():
               raise SystemExit("Reviewed Telegraph article path is unsafe or missing; reject.")
           data = article_path.read_bytes()
-          actual = hashlib.sha1(f"blob {len(data)}\\0".encode() + data).hexdigest()
+          actual = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
           if actual != approved_sha:
               raise SystemExit("Reviewed article bytes differ from the exact approved Git blob; reject.")
           print(f"Release-bound Telegraph article confirmed: {publication_id} / {actual}")
