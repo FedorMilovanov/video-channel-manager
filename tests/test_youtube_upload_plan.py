@@ -176,3 +176,29 @@ def test_natural_description_words_do_not_trigger_template_guard(tmp_path: Path)
     spec["tags"] = ["Есенин", "Ссылка на литературный архив"]
     intent = build_intent(spec, media)
     validate_intent(intent)
+
+
+@pytest.mark.parametrize(
+    ("invalid_field", "invalid_value", "expected_message"),
+    [
+        ("snippet", None, "snippet must be a metadata object"),
+        ("title", None, "title or description is invalid"),
+        ("title", "   ", "title or description is invalid"),
+        ("description", 17, "title or description is invalid"),
+        ("tags", "Есенин", "tags must contain non-empty strings"),
+        ("tags", ["Есенин", ""], "tags must contain non-empty strings"),
+    ],
+)
+def test_resigned_upload_intent_rejects_invalid_metadata_structure(
+    tmp_path: Path, invalid_field: str, invalid_value: object, expected_message: str
+) -> None:
+    media, media_sha = _media(tmp_path)
+    intent = build_intent(_spec(media_sha), media)
+    if invalid_field == "snippet":
+        intent["snippet"] = invalid_value
+    else:
+        intent["snippet"][invalid_field] = invalid_value
+    intent["intent_sha256"] = intent_digest(intent)
+
+    with pytest.raises(UploadPlanError, match=expected_message):
+        validate_intent(intent)
