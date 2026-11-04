@@ -86,7 +86,7 @@ def test_original_field_proposals_are_reflected_without_changing_signed_queue() 
     posts = _load(FILE)["posts"]
     originals = _load(QUEUE)["posts"]
 
-    assert posts[2]["source"]["anchor_end"] == "It is God upon his throne whom we trust."
+    assert posts[2]["source"]["anchor_end"] == "and it is God upon his throne of whom we shall speak in this discourse."
     assert originals[2]["source"]["anchor_end"] != posts[2]["source"]["anchor_end"]
     assert "Послании к Колоссянам" in posts[3]["text"]
     assert "Так говорит апостол в Колоссянам" in originals[3]["text"]
@@ -428,3 +428,96 @@ def test_retained_verse_review_cannot_be_replayed_or_authorized() -> None:
             build()
     finally:
         globals_dict["_load"] = original_loader
+
+
+def test_spurgeon_and_owen_contiguous_source_amendments_are_sha_bound_and_unapproved() -> None:
+    doc_path = ROOT / "docs/audits/2026-11-04-lordchrist-owen-spurgeon-contiguity-inert.json"
+    packet = _load(doc_path)
+    preview = _load(FILE)
+    source = _load(QUEUE)
+    assert packet["schema_name"] == "video-channel-manager.lordchrist-owen-spurgeon-source-contiguity-inert"
+    assert packet["schema_version"] == 1
+    assert packet["original_queue_sha256"] == _hash(QUEUE.read_text(encoding="utf-8"))
+    assert packet["editorial_approval"] is False
+    assert packet["provider_write_authorization"] is False
+    assert packet["protected_ledger_write_authorization"] is False
+    assert packet["full_bilingual_review_complete"] is False
+    assert packet["rights_review_complete"] is False
+    assert packet["source_probe_not_full_translation_certification"] is True
+    assert preview["source_contiguity_amendment_count"] == 2
+    assert [x["sequence"] for x in packet["revisions"]] == [3, 4]
+    for row in packet["revisions"]:
+        n = row["sequence"]
+        card = preview["posts"][n - 1]
+        old = source["posts"][n - 1]
+        assert row["original_publication_id"] == old["publication_id"] == card["publication_id"]
+        assert row["original_full_post_sha256"] == _hash(old["text"])
+        assert row["candidate_full_post_sha256"] == _hash(card["text"])
+        assert row["candidate_source_end_anchor_sha256"] == _hash(card["source"]["anchor_end"])
+        assert card["source_contiguity_review_status"] == "pending_full_bilingual_rights_and_theological_review"
+        assert card["source_contiguity_review_evidence_file"] == doc_path.relative_to(ROOT).as_posix()
+        assert card["editorial_approval"] is False
+        assert card["provider_write_authorization"] is False
+        assert row["expected_prior_preview_full_post_sha256"] != card["candidate_full_post_sha256"]
+        assert row["status"] == "proposal_not_approved"
+        assert len(row["corrections"]) == 2
+        assert all(x["reason"] for x in row["corrections"])
+        witness = row["source_probe"]
+        assert witness["http_status"] == 200
+        assert witness["start_anchor_exact"] and witness["new_end_anchor_exact"]
+        assert witness["prior_end_anchor_exact"] and witness["forward_order"]
+        assert witness["prior_end_before_new_end"]
+        assert witness["full_bilingual_review_certified"] is False
+        assert witness["english_span_words"] > 200
+
+    spurgeon = preview["posts"][2]
+    assert [x["field"] for x in packet["revisions"][0]["corrections"]] == [
+        "source.anchor_end",
+        "text",
+    ]
+    assert spurgeon["source"]["anchor_end"].endswith("speak in this discourse.")
+    assert "пели сегодня утром" in spurgeon["text"]
+    assert "будем говорить в этой проповеди" in spurgeon["text"]
+    assert "мы поём и о Боге на престоле говорим" not in spurgeon["text"]
+
+    owen = preview["posts"][3]
+    assert [x["field"] for x in packet["revisions"][1]["corrections"]] == ["text", "text"]
+    assert owen["source"]["anchor_end"] == source["posts"][3]["source"]["anchor_end"]
+    assert "духовных радостях, привилегиях и утешениях" in owen["text"]
+    assert "Кратко назову причины этого: во-первых, живущий в нас грех" in owen["text"]
+    assert packet["revisions"][1]["source_probe"]["owen_reason_intro_in_source"] is True
+    assert packet["revisions"][1]["source_probe"]["owen_five_terms_in_source"] is True
+
+
+def test_spurgeon_owen_contiguity_requires_exact_prior_digest_and_cannot_authorize_send() -> None:
+    import pytest
+
+    builder = runpy.run_path(str(BUILDER))
+    loader = builder["build"].__globals__
+    original = loader["_load"]
+    filepath = builder["SPURGEON_OWEN_REVIEW"]
+
+    def mutate(path: Path, field: str, value: object) -> dict:
+        doc = original(path)
+        if path == filepath:
+            if field == "old_sha":
+                doc["revisions"][0]["expected_prior_preview_full_post_sha256"] = str(value)
+            elif field == "authority":
+                doc["provider_write_authorization"] = value
+            elif field == "source_proof":
+                doc["revisions"][1]["source_probe"]["owen_reason_intro_in_source"] = value
+            else:
+                raise ValueError("test harness invalid")
+        return doc
+
+    for field, value, pattern in (
+        ("old_sha", "sha256:" + "0" * 64, "Stale, ambiguous"),
+        ("authority", True, "missing or unsafe"),
+        ("source_proof", False, "Missing evidence"),
+    ):
+        loader["_load"] = lambda path, f=field, v=value: mutate(path, f, v)
+        try:
+            with pytest.raises(ValueError, match=pattern):
+                builder["build"]()
+        finally:
+            loader["_load"] = original
