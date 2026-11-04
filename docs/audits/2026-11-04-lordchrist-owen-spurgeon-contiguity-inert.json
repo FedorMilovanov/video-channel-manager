@@ -1,0 +1,90 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-owen-spurgeon-source-contiguity-inert",
+  "schema_version": 1,
+  "observed_on": "2026-11-04",
+  "editorial_approval": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "provider_write_authorization": false,
+  "protected_ledger_write_authorization": false,
+  "source_probe_not_full_translation_certification": true,
+  "revisions": [
+    {
+      "sequence": 3,
+      "source_url": "https://www.spurgeon.org/sermons/divine-sovereignty",
+      "status": "proposal_not_approved",
+      "reason": "The original Russian retained excerpt translates two more source sentences on singing and preaching after the stored English endpoint but drops time/setting qualifiers. Extend the exact English source endpoint and faithfully restore 'this morning' and 'in this discourse'.",
+      "corrections": [
+        {
+          "field": "source.anchor_end",
+          "exact_before": "It is God upon his throne whom we trust.",
+          "proposed_after": "and it is God upon his throne of whom we shall speak in this discourse.",
+          "reason": "New exact endpoint includes two English source sentences already claimed by current Russian, with no off-source material."
+        },
+        {
+          "field": "text",
+          "exact_before": "о Боге на престоле мы поём и о Боге на престоле говорим.",
+          "proposed_after": "о Боге на престоле мы пели сегодня утром и о Боге на престоле будем говорить в этой проповеди.",
+          "reason": "Retains Spurgeon's two clauses and translates this morning and in this discourse, rather than omitting their context."
+        }
+      ],
+      "original_publication_id": "lordchrist-spurgeon-divine-sovereignty",
+      "original_full_post_sha256": "sha256:ffc9f0b1de32479b8d43aeea128363244ae7534faaab664b038820fe4ab4040b",
+      "expected_prior_preview_full_post_sha256": "sha256:ffc9f0b1de32479b8d43aeea128363244ae7534faaab664b038820fe4ab4040b",
+      "source_probe": {
+        "http_status": 200,
+        "start_anchor_exact": true,
+        "new_end_anchor_exact": true,
+        "prior_end_anchor_exact": true,
+        "forward_order": true,
+        "english_span_words": 355,
+        "prior_end_before_new_end": true,
+        "owen_reason_intro_in_source": false,
+        "owen_five_terms_in_source": false,
+        "full_bilingual_review_certified": false
+      },
+      "candidate_full_post_sha256": "sha256:dc8f96ef6f36f218f9dc78395c77d2f186aacc54bb35017a647afdad46bebef8",
+      "candidate_source_end_anchor_sha256": "sha256:6775e295770606d3be589932c5a9a187ff79e7f06ab274b0278c0da356395ca8",
+      "candidate_russian_word_count": 251
+    },
+    {
+      "sequence": 4,
+      "source_url": "https://ccel.org/ccel/owen/mort/mort.i.v.html",
+      "status": "proposal_not_approved",
+      "reason": "The cited uninterrupted English source explicitly introduces a numbered list of reasons before the first reason; the Russian excerpt skipped this transition. It also combines Owen's enjoyments and consolations into one noun, losing a distinct author's term.",
+      "corrections": [
+        {
+          "field": "text",
+          "exact_before": "в благодати, откровениях, утешениях и привилегиях",
+          "proposed_after": "в благодати, откровениях, духовных радостях, привилегиях и утешениях",
+          "reason": "Separately renders Owen's 'grace, revelations, enjoyments, privileges, consolations'."
+        },
+        {
+          "field": "text",
+          "exact_before": "? Живущий в нас грех пребывает, пока мы в этом мире; потому его и нужно постоянно умерщвлять.",
+          "proposed_after": "? Кратко назову причины этого: во-первых, живущий в нас грех пребывает, пока мы в этом мире; потому его и нужно постоянно умерщвлять.",
+          "reason": "Restores 'Some brief account of the reasons hereof may be given:— 1. Indwelling sin always abides...', retaining the source's numbered reasoning."
+        }
+      ],
+      "original_publication_id": "lordchrist-owen-mortification-daily",
+      "original_full_post_sha256": "sha256:03b0a5a3587be0f0f5f51f2673a426d670dd3b8a95cc002ca3c1fff3ae255c14",
+      "expected_prior_preview_full_post_sha256": "sha256:744f9655443f9e677d5105dc2cd979ce377758f3fa6184309e799781f63bfaf5",
+      "source_probe": {
+        "http_status": 200,
+        "start_anchor_exact": true,
+        "new_end_anchor_exact": true,
+        "prior_end_anchor_exact": true,
+        "forward_order": true,
+        "english_span_words": 306,
+        "prior_end_before_new_end": true,
+        "owen_reason_intro_in_source": true,
+        "owen_five_terms_in_source": true,
+        "full_bilingual_review_certified": false
+      },
+      "candidate_full_post_sha256": "sha256:6ecb604c66ec83d63448479cda47d99a5d1596b8cd8d5eab6ba23d84d1c28be7",
+      "candidate_source_end_anchor_sha256": "sha256:8ff49f305c5f1c728a34be9c8380616e79f09e6fdde74df80f3e4714eb4ce796",
+      "candidate_russian_word_count": 236
+    }
+  ],
+  "original_queue_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72"
+}

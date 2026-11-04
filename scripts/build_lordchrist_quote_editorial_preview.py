@@ -26,6 +26,7 @@ REGISTER = AUDITS / "2026-11-03-lordchrist-v4-quote-editorial-register.json"
 REMAINING_AUDIT = AUDITS / "2026-11-04-lordchrist-remaining-20-source-audit.json"
 SEMANTIC_REVISIONS = AUDITS / "2026-11-04-lordchrist-quote-semantic-revisions-inert.json"
 RETAINED_VERSE_REVIEW = AUDITS / "2026-11-04-lordchrist-retained-verse-and-quotation-review.json"
+SPURGEON_OWEN_REVIEW = AUDITS / "2026-11-04-lordchrist-owen-spurgeon-contiguity-inert.json"
 PROPOSAL_FILES = (
     AUDITS / "2026-11-03-lordchrist-quote-exact-editorial-proposals.json",
     AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json",
@@ -402,6 +403,66 @@ def build() -> dict[str, Any]:
     target["retained_verse_review_status"] = "pending_full_bilingual_and_rights_approval"
     if len(target["text"]) > 4096:
         raise ValueError("Retained verse amendment exceeds quote length")
+
+    # Extend exact source boundaries only when the current, previous signed
+    # source-bound review is byte-identical. These are not publisher releases.
+    additional = _load(SPURGEON_OWEN_REVIEW)
+    if not (
+        additional["schema_name"] == "video-channel-manager.lordchrist-owen-spurgeon-source-contiguity-inert"
+        and additional["schema_version"] == 1
+        and additional["original_queue_sha256"] == queue_sha
+        and additional["editorial_approval"] is False
+        and additional["full_bilingual_review_complete"] is False
+        and additional["rights_review_complete"] is False
+        and additional["provider_write_authorization"] is False
+        and additional["protected_ledger_write_authorization"] is False
+        and additional["source_probe_not_full_translation_certification"] is True
+    ):
+        raise ValueError("Unapproved source-contiguity package missing or unsafe")
+    rows = additional["revisions"]
+    if not isinstance(rows, list) or [row["sequence"] for row in rows] != [3, 4]:
+        raise ValueError("Expected exactly two source-contiguity corrections in order")
+    for row in rows:
+        sequence = row["sequence"]
+        revised = preview[sequence - 1]
+        if not (
+            row["status"] == "proposal_not_approved"
+            and row["original_publication_id"] == revised["publication_id"]
+            and row["original_full_post_sha256"] == revised["original_full_post_sha256"]
+            and row["expected_prior_preview_full_post_sha256"] == revised["candidate_full_post_sha256"]
+            and row["source_url"] == revised["source"]["url"]
+            and len(row["corrections"]) == 2
+        ):
+            raise ValueError(f"Stale, ambiguous or approved contiguity patch for {sequence}")
+        witness = row["source_probe"]
+        if not (
+            witness["http_status"] == 200
+            and witness["start_anchor_exact"]
+            and witness["new_end_anchor_exact"]
+            and witness["prior_end_anchor_exact"]
+            and witness["forward_order"]
+            and witness["prior_end_before_new_end"]
+            and witness["full_bilingual_review_certified"] is False
+            and witness["english_span_words"] > 200
+        ):
+            raise ValueError(f"Insufficient original-language source proof on {sequence}")
+        if sequence == 4 and not (witness["owen_reason_intro_in_source"] and witness["owen_five_terms_in_source"]):
+            raise ValueError("Missing evidence for Owen's two omitted clauses")
+        expected_fields = ["source.anchor_end", "text"] if sequence == 3 else ["text", "text"]
+        if [edit["field"] for edit in row["corrections"]] != expected_fields:
+            raise ValueError("Unexpected contiguity patch fields")
+        for edit in row["corrections"]:
+            _replace_exact(revised, edit["field"], edit["exact_before"], edit["proposed_after"])
+        if not (
+            _sha(revised["text"]) == row["candidate_full_post_sha256"]
+            and _sha(revised["source"]["anchor_end"]) == row["candidate_source_end_anchor_sha256"]
+        ):
+            raise ValueError(f"Post-patch exact SHA verification failed on {sequence}")
+        revised["candidate_full_post_sha256"] = _sha(revised["text"])
+        revised["source_contiguity_review_status"] = "pending_full_bilingual_rights_and_theological_review"
+        revised["source_contiguity_review_evidence_file"] = SPURGEON_OWEN_REVIEW.relative_to(ROOT).as_posix()
+        if len(revised["text"]) > 4096:
+            raise ValueError(f"Contiguity patch {sequence} exceeds Telegram text envelope")
     return {
         "schema_name": SCHEMA,
         "schema_version": 1,
@@ -420,6 +481,7 @@ def build() -> dict[str, Any]:
         "conditionally_retained_count": 10,
         "semantic_revision_applied_count": 3,
         "retained_verse_amendment_count": 1,
+        "source_contiguity_amendment_count": 2,
         "effective_contiguous_draft_count": 21,
         "effective_retained_for_context_count": 9,
         "note": (
