@@ -18,7 +18,10 @@ def _read(path: Path) -> dict:
 
 
 def _digest(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git's core.autocrlf may translate committed JSON LF to CRLF on Windows.
+    # The reviewed evidence digest is defined over canonical Git/LF bytes.
+    raw = path.read_bytes().replace(b"\r\n", b"\n")
+    return "sha256:" + hashlib.sha256(raw).hexdigest()
 
 
 def test_four_public_surfaces_are_proven_exact_and_bounded() -> None:
@@ -131,6 +134,8 @@ def test_lord_god_reels_are_prioritized_without_account_or_media_fabrication() -
     assert queue["shorts_candidate_count"] == 12
     assert queue["sermon_cut_candidate_count"] == 8
     assert queue["ready_to_publish_count"] == 0
+    assert queue["technical_media_verified_count"] == 1
+    assert queue["source_only_candidate_count"] == 19
     assert queue["provider_writes_authorized"] is False
     assert queue["automatic_execution"] is False
     assert queue["media_rights_approved"] is False
@@ -159,10 +164,17 @@ def test_lord_god_reels_are_prioritized_without_account_or_media_fabrication() -
         assert card["transcript_and_attribution_review"] == "pending"
         assert card["reuse_edition_media_rights"] == "pending_independent_review"
         assert card["original_source_master_sha256"] is None
-        assert card["instagram_compatible_render_sha256"] is None
+        if card["source_video_id"] == "lTRm2NbnIas":
+            assert card["instagram_compatible_render_sha256"] == (
+                "sha256:93d6283c954eda608c95bbb26ed5c2f6b80ce3d824a22040bcd9f0587c221d56"
+            )
+            assert card["local_media_technical_status"] == "passed_meta_v3_no_provider_access"
+            assert card["status"] == "technical_render_verified_review_hold"
+        else:
+            assert card["instagram_compatible_render_sha256"] is None
+            assert card["status"] == "source_candidate_not_rendered"
         assert card["caption_review"] == "pending"
         assert card["instagram_professional_account_id"] is None
-        assert card["status"] == "source_candidate_not_rendered"
         assert card["provider_writes_authorized"] is False
         assert card["ready_to_publish"] is False
         assert card["needs_new_owner_source_proof"] is True
@@ -172,3 +184,15 @@ def test_lord_god_reels_are_prioritized_without_account_or_media_fabrication() -
     assert all(
         c["reel_treatment"] == "select_one_semantically_complete_sermon_excerpt" for c in queue["candidates"][12:]
     )
+
+
+def test_source_snapshot_hash_is_cross_platform_for_lf_and_crlf(tmp_path: Path) -> None:
+    source = SNAPSHOT.read_bytes().replace(b"\r\n", b"\n")
+    unix = tmp_path / "snapshot-lf.json"
+    windows = tmp_path / "snapshot-crlf.json"
+    unix.write_bytes(source)
+    windows.write_bytes(source.replace(b"\n", b"\r\n"))
+    report = _read(REPORT)
+    queue = _read(INSTAGRAM)
+    assert _digest(unix) == _digest(windows) == report["source_snapshot_sha256"]
+    assert _digest(unix) == queue["source_snapshot_sha256"]
