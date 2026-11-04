@@ -22,6 +22,11 @@ on:
         required: false
         default: ""
         type: string
+      revision_confirm:
+        description: For in-place edit of an EXISTING Telegraph page only, type REVISE:<publication_id>
+        required: false
+        default: ""
+        type: string
   schedule:
     # GitHub cron fires in UTC. 09:00 UTC = 12:00 Moscow — the midday article
     # slot, Tuesday and Friday (2 articles per week). The publisher resolves
@@ -93,6 +98,7 @@ jobs:
           ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
           PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
           CONFIRMATION: ${{ github.event_name == 'schedule' && format('PUBLISH:{0}', steps.resolve.outputs.publication_id) || inputs.confirm }}
+          REVISION_CONFIRM: ${{ inputs.revision_confirm }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           LEDGER_PATH: ".state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -108,6 +114,7 @@ jobs:
           elif [[ "$ACTION" == "publish-telegraph-only" ]]; then
             python -m video_channel_manager.lordchrist_telegraph_publisher publish-telegraph-only \
               --publication-id "$PUBLICATION_ID" \
+              --revision-confirm "$REVISION_CONFIRM" \
               --media-base-url "$MEDIA_BASE_URL" \
               --ledger "$LEDGER_PATH" | tee artifacts/result.json
           elif [[ "$ACTION" == "publish" ]]; then
