@@ -83,7 +83,7 @@
     },
     "lordchrist-telegraph-charnock-05": {
       "publication_id": "lordchrist-telegraph-charnock-05",
-      "state": "telegram_dispatch_claimed",
+      "state": "published",
       "provider_effect": "verified",
       "run_id": "41903410357",
       "run_attempt": 1,
@@ -95,8 +95,12 @@
       "telegraph_url": "https://telegra.ph/Nikto-ne-sotvoril-sebya-ot-tvarnoj-nemoshchi-k-vechnoj-Pervoprichine-11-04",
       "telegraph_path": "Nikto-ne-sotvoril-sebya-ot-tvarnoj-nemoshchi-k-vechnoj-Pervoprichine-11-04",
       "telegraph_updated_at_utc": "2026-11-04T20:06:57.407811+00:00",
-      "telegram_provider_effect": "unknown_until_reconciled",
-      "telegram_intent_at_utc": "2026-11-04T20:06:59.473282+00:00"
+      "telegram_provider_effect": "verified",
+      "telegram_intent_at_utc": "2026-11-04T20:06:59.473282+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1595,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-04T20:07:04.819198+00:00"
     }
   }
 }
