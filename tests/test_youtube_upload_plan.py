@@ -132,3 +132,73 @@ def test_journal_path_uses_stable_key_not_attempt_digest(tmp_path: Path) -> None
 
     assert first_path == second_path
     assert str(first["intent_sha256"]).removeprefix("sha256:") not in first_path.name
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    [
+        ("description", "Playlist: https://youtube.com/playlist?list=PASTE-YESENIN-PLAYLIST-ID"),
+        ("title", "The poet | YOUR_VIDEO_LINK"),
+        ("tags", ["Есенин", "INSERT-PLAYLIST-URL"]),
+        ("description", "Link: replace_my_playlist_id"),
+        ("description", "REPLACE_ME"),
+    ],
+)
+def test_unresolved_metadata_templates_fail_before_media_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str, invalid_value: object
+) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec[field] = invalid_value
+
+    def forbidden_digest(_path: Path) -> str:
+        pytest.fail("Unresolved metadata must fail before any media byte read")
+
+    monkeypatch.setattr("video_channel_manager.youtube_upload_plan.sha256_file", forbidden_digest)
+    with pytest.raises(UploadPlanError, match="Unresolved metadata placeholder"):
+        build_intent(spec, media)
+
+
+def test_resigned_upload_intent_cannot_smuggle_unresolved_template(tmp_path: Path) -> None:
+    media, media_sha = _media(tmp_path)
+    intent = build_intent(_spec(media_sha), media)
+    intent["snippet"]["description"] = "Playlist: https://youtube.com/playlist?list=PASTE-YESENIN-PLAYLIST-ID"
+    intent["intent_sha256"] = intent_digest(intent)
+
+    with pytest.raises(UploadPlanError, match="Unresolved metadata placeholder in description"):
+        validate_intent(intent)
+
+
+def test_natural_description_words_do_not_trigger_template_guard(tmp_path: Path) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["description"] = "Your link to the poet is here; paste the text into the discussion."
+    spec["tags"] = ["Есенин", "Ссылка на литературный архив"]
+    intent = build_intent(spec, media)
+    validate_intent(intent)
+
+
+@pytest.mark.parametrize(
+    ("invalid_field", "invalid_value", "expected_message"),
+    [
+        ("snippet", None, "snippet must be a metadata object"),
+        ("title", None, "title or description is invalid"),
+        ("title", "   ", "title or description is invalid"),
+        ("description", 17, "title or description is invalid"),
+        ("tags", "Есенин", "tags must contain non-empty strings"),
+        ("tags", ["Есенин", ""], "tags must contain non-empty strings"),
+    ],
+)
+def test_resigned_upload_intent_rejects_invalid_metadata_structure(
+    tmp_path: Path, invalid_field: str, invalid_value: object, expected_message: str
+) -> None:
+    media, media_sha = _media(tmp_path)
+    intent = build_intent(_spec(media_sha), media)
+    if invalid_field == "snippet":
+        intent["snippet"] = invalid_value
+    else:
+        intent["snippet"][invalid_field] = invalid_value
+    intent["intent_sha256"] = intent_digest(intent)
+
+    with pytest.raises(UploadPlanError, match=expected_message):
+        validate_intent(intent)
