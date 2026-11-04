@@ -25,6 +25,7 @@ INDEX = AUDITS / "2026-11-04-lordchrist-30-quote-editorial-candidate-index.json"
 REGISTER = AUDITS / "2026-11-03-lordchrist-v4-quote-editorial-register.json"
 REMAINING_AUDIT = AUDITS / "2026-11-04-lordchrist-remaining-20-source-audit.json"
 SEMANTIC_REVISIONS = AUDITS / "2026-11-04-lordchrist-quote-semantic-revisions-inert.json"
+RETAINED_VERSE_REVIEW = AUDITS / "2026-11-04-lordchrist-retained-verse-and-quotation-review.json"
 PROPOSAL_FILES = (
     AUDITS / "2026-11-03-lordchrist-quote-exact-editorial-proposals.json",
     AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json",
@@ -85,6 +86,18 @@ def _nest_original_speech_quotes(body: str) -> str:
     if depth:
         raise ValueError("Unclosed inner source quotation")
     return "".join(output)
+
+
+def _normalize_retained_quotation_depth(full_post: str) -> str:
+    """Correct inner speech typography; preserve all words, attribution, and tags."""
+    separator = "\n\n" + chr(169) + " "
+    if full_post.count(separator) != 1:
+        raise ValueError("Retained post must contain one unambiguous attribution boundary")
+    quoted, rest = full_post.split(separator, 1)
+    if not (quoted.startswith(chr(171)) and quoted.endswith(chr(187))):
+        raise ValueError("Retained post requires intact top-level speech quotation")
+    inner = _nest_original_speech_quotes(quoted[1:-1])
+    return chr(171) + inner + chr(187) + separator + rest
 
 
 def _draft_render(body: str, author: str, work: str, tags: str) -> str:
@@ -240,6 +253,11 @@ def build() -> dict[str, Any]:
             changed["source"].pop("copyright_status", None)
             changed["source"]["translation_review_status"] = "pending_full_bilingual_check"
             changed["source"]["edition_rights_status"] = "requires_edition_specific_review"
+            before_quote_normalization = changed["text"]
+            changed["text"] = _normalize_retained_quotation_depth(before_quote_normalization)
+            changed["retained_quote_depth_normalization"] = (
+                "typography_only_no_word_changes" if changed["text"] != before_quote_normalization else None
+            )
             evidence = SIGNED_QUEUE.relative_to(ROOT).as_posix()
 
         if len(changed["text"]) > 4096:
@@ -333,6 +351,57 @@ def build() -> dict[str, Any]:
             raise ValueError(f"Revised preview card {n} exceeds Telegram text limit")
     if adjusted != {7, 25, 29}:
         raise ValueError("All three source corrections must be present")
+
+    retained_review = _load(RETAINED_VERSE_REVIEW)
+    if not (
+        retained_review["schema_name"] == "video-channel-manager.lordchrist-nonpublishing-retained-verse-review"
+        and retained_review["schema_version"] == 1
+        and retained_review["original_queue_sha256"] == queue_sha
+        and retained_review["editorial_approval"] is False
+        and retained_review["full_bilingual_review_complete"] is False
+        and retained_review["rights_review_complete"] is False
+        and retained_review["provider_write_authorization"] is False
+        and retained_review["protected_ledger_write_authorization"] is False
+        and len(retained_review["revisions"]) == 1
+    ):
+        raise ValueError("Retained verse review is stale or would grant unsafe authority")
+
+    retained_fix = retained_review["revisions"][0]
+    if retained_fix["sequence"] != 30 or retained_fix["review_status"] != "proposed_only_not_source_fidelity_certified":
+        raise ValueError("Unexpected or approved retained verse review")
+    target = preview[29]
+    if (
+        retained_fix["original_publication_id"] != target["publication_id"]
+        or retained_fix["original_full_post_sha256"] != target["original_full_post_sha256"]
+        or retained_fix["expected_prior_preview_full_post_sha256"] != target["candidate_full_post_sha256"]
+        or retained_fix["source_url"] != target["source"]["url"]
+        or retained_fix["source_anchor_start"] != target["source"]["anchor_start"]
+        or retained_fix["source_anchor_end"] != target["source"]["anchor_end"]
+    ):
+        raise ValueError("Retained verse amendment does not match exact old candidate")
+    witness = retained_fix["source_probe"]
+    if not (
+        witness["http_status"] == 200
+        and witness["source_opening_exact"]
+        and witness["source_closing_exact"]
+        and witness["forward_order"]
+        and witness["source_explicit_22nd_verse"]
+        and witness["full_translation_certified"] is False
+    ):
+        raise ValueError("Retained verse amendment lacks precise source witness")
+    if len(retained_fix["corrections"]) != 2:
+        raise ValueError("Exactly two source-grounded retained verse corrections required")
+    for edit in retained_fix["corrections"]:
+        if edit["field"] != "text":
+            raise ValueError("Retained verse edits must affect the quote text only")
+        _replace_exact(target, edit["field"], edit["exact_before"], edit["proposed_after"])
+    if _sha(target["text"]) != retained_fix["candidate_full_post_sha256"]:
+        raise ValueError("Retained verse amendment digest mismatch")
+    target["candidate_full_post_sha256"] = _sha(target["text"])
+    target["retained_verse_review_evidence_file"] = RETAINED_VERSE_REVIEW.relative_to(ROOT).as_posix()
+    target["retained_verse_review_status"] = "pending_full_bilingual_and_rights_approval"
+    if len(target["text"]) > 4096:
+        raise ValueError("Retained verse amendment exceeds quote length")
     return {
         "schema_name": SCHEMA,
         "schema_version": 1,
@@ -350,6 +419,7 @@ def build() -> dict[str, Any]:
         "drafted_count": 20,
         "conditionally_retained_count": 10,
         "semantic_revision_applied_count": 3,
+        "retained_verse_amendment_count": 1,
         "effective_contiguous_draft_count": 21,
         "effective_retained_for_context_count": 9,
         "note": (

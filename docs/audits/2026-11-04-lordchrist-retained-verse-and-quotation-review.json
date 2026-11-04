@@ -1,0 +1,49 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-nonpublishing-retained-verse-review",
+  "schema_version": 1,
+  "review_date": "2026-11-04",
+  "editorial_approval": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "provider_write_authorization": false,
+  "protected_ledger_write_authorization": false,
+  "purpose": "Source-bound candidate fixes to retained quote #30 and normalized inner quotation marks of retained cards, with no sealed v4 mutation",
+  "revisions": [
+    {
+      "sequence": 30,
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.xxxi.html",
+      "source_anchor_start": "Whoever reads the gospel with a single eye, and sincere intentions, will find",
+      "source_anchor_end": "For He said unto them all, If any man will come after me, let him deny himself.",
+      "source_context_witness": "After announcing that he is Christ, the source says 'he tells then, in the 22nd verse' that the Son of Man would suffer; the selected passage then quotes Luke 9:23.",
+      "review_status": "proposed_only_not_source_fidelity_certified",
+      "corrections": [
+        {
+          "field": "text",
+          "exact_before": "„И сказал всем: если кто хочет идти за Мною, отвергнись себя“ (Лк. 9:23). ",
+          "proposed_after": "",
+          "rationale": "The first Russian sentence repeats a Luke 9:23 quotation from outside the old selected authorial English start anchor. The author quotes the same verse at the end of the selected passage. Avoid falsely attributing a prefatory repetition to the selected contiguous source."
+        },
+        {
+          "field": "text",
+          "exact_before": "Он говорит им в этом стихе, что",
+          "proposed_after": "Он говорит им в 22-м стихе, что",
+          "rationale": "The source expressly cites 'in the 22nd verse' for Christ's suffering and afterwards cites the different verse Luke 9:23 for self-denial. Russian 'в этом стихе' conflates these two distinct references."
+        }
+      ],
+      "original_publication_id": "lordchrist-whitefield-self-denial",
+      "expected_prior_preview_full_post_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
+      "original_full_post_sha256": "sha256:9d00b782b07610c680d0f2ef1355dcac5c4ae5acced554a98d08008143bac930",
+      "candidate_full_post_sha256": "sha256:3f770b3d682e1446066cad6d4fdf80256066bb66c21632520214687bfb620ca5",
+      "source_probe": {
+        "http_status": 200,
+        "source_opening_exact": true,
+        "source_closing_exact": true,
+        "forward_order": true,
+        "source_explicit_22nd_verse": true,
+        "source_excerpt_words": 215,
+        "full_translation_certified": false
+      }
+    }
+  ],
+  "original_queue_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72"
+}
