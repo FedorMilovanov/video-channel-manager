@@ -39,9 +39,14 @@ permissions:
   actions: read
   contents: write
 
+# All writers of the same durable ref must share one serialized run queue.
+env:
+  STATE_BRANCH: state/lordchrist-telegram
+
 concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
+  queue: max
   queue: max
 
 jobs:
@@ -60,9 +65,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code --heads origin state/lordchrist-telegram >/dev/null 2>&1; then
-            git fetch origin state/lordchrist-telegram:refs/remotes/origin/state/lordchrist-telegram
-            git worktree add .state/lordchrist origin/state/lordchrist-telegram
+          if git ls-remote --exit-code --heads origin "$STATE_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$STATE_BRANCH:refs/remotes/origin/$STATE_BRANCH"
+            git worktree add .state/lordchrist "origin/$STATE_BRANCH"
           else
             mkdir -p .state/lordchrist
           fi
