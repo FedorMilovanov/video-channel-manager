@@ -146,3 +146,20 @@ def test_archived_canary_attachment_conversion_preserves_all_other_content() -> 
     assert [item["caption"] for item in changed["blocks"][:3]] == [f"Verified {name}" for name in names]
     assert changed["blocks"][3] == original["blocks"][3]
     assert original["blocks"][0]["media"] == "https://assets.example.invalid/calvin.jpg"
+
+
+def test_archived_canary_rejects_incomplete_attachment_set_before_dispatch() -> None:
+    from types import SimpleNamespace
+
+    incomplete = SimpleNamespace(
+        media=(
+            SimpleNamespace(
+                media_id="media-calvin",
+                uri="https://assets.example.invalid/calvin.jpg",
+            ),
+        )
+    )
+    payload = {"blocks": [{"media": "https://assets.example.invalid/calvin.jpg"}]}
+    with pytest.raises(ValueError, match="one-to-one onto the reviewed attachment set"):
+        canary._replace_source_urls_with_attachments(payload, incomplete)
+    assert payload["blocks"][0]["media"] == "https://assets.example.invalid/calvin.jpg"
