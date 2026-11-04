@@ -31,8 +31,12 @@ def make_package() -> str:
         seed = f"Литературный абзац {i + 1}. Образы и композиция могут обсуждаться отдельно от фактов. "
         body = (seed * 8)[:525].rstrip()
         emph = [
-            "", " *Чтение текста.*", " _Образ автора._", " *Стихотворный ритм.*",
-            " _Форма стиха._", " *Заключительный образ.*",
+            "",
+            " *Чтение текста.*",
+            " _Образ автора._",
+            " *Стихотворный ритм.*",
+            " _Форма стиха._",
+            " *Заключительный образ.*",
         ][i]
         paragraphs.append((body + emph)[:570])
     desc = (
@@ -76,8 +80,10 @@ def test_detect_wrong_playlist_id_and_placeholder() -> None:
 
 
 def test_detect_markdown_links_and_no_youtube_emphasis() -> None:
-    pkg = make_package().replace("*VK:*", "**VK:**").replace(
-        "https://vk.ru/thelegendarypoet", "[VK](https://vk.ru/thelegendarypoet)"
+    pkg = (
+        make_package()
+        .replace("*VK:*", "**VK:**")
+        .replace("https://vk.ru/thelegendarypoet", "[VK](https://vk.ru/thelegendarypoet)")
     )
     codes = {item.code for item in validate_five_block_package(pkg)}
     assert "markdown_link" in codes
@@ -114,9 +120,7 @@ def test_description_rejects_wrong_soclink_order_and_too_few_paragraphs() -> Non
 
 
 def test_short_link_with_underscore_does_not_count_as_italic() -> None:
-    pkg = make_package().replace(
-        "PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q", "PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M"
-    )
+    pkg = make_package().replace("PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q", "PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M")
     assert "short_format" not in {item.code for item in validate_five_block_package(pkg)}
 
 
