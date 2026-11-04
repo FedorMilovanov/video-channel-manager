@@ -113,6 +113,12 @@ jobs:
             echo "Telegraph-only direct mutation is retired; use a reviewed staged release." >&2
             exit 3
           }
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            [[ "${{ inputs.confirm }}" == "PUBLISH:$PUBLICATION_ID" ]] || {
+              echo "Manual public publication requires exact PUBLISH:<publication_id> confirmation." >&2
+              exit 3
+            }
+          fi
           [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
             echo "Rerunning a provider-capable workflow attempt is forbidden." >&2
             exit 3
