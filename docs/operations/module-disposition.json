@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.module-disposition",
   "schema_version": 1,
-  "measured_at_utc": "2026-10-22T06:59:29Z",
+  "measured_at_utc": "2026-11-04T14:08:55Z",
   "rule": "Every module in src/video_channel_manager is either reachable from a production path (an import from src/ or scripts/, a pyproject console script, or a name/path used by a workflow, script or document) or listed here with a disposition. tests/test_module_disposition.py requires the two sets to match exactly, so the list can only change by decision.",
   "notes_are_evidence": "docs/operations/coverage-ratchet.json lists every module by path and is deliberately not evidence here.",
   "modules": [
@@ -160,6 +160,24 @@
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
+      "module": "video_channel_manager.telegram_quote_content_findings",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_lordchrist_quote_content_findings.py"
+      ],
+      "statements": 108,
+      "note": "No production import, console script, documented invocation or workflow reaches this research module in the current exact-main scan. It is retained only for source-review tests; explicit owner review is required before deletion or activation."
+    },
+    {
+      "module": "video_channel_manager.telegram_quote_source_probe",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_lordchrist_quote_source_probe.py"
+      ],
+      "statements": 82,
+      "note": "No production import, console script, documented invocation or workflow reaches this research module in the current exact-main scan. It is retained only for source-review tests; explicit owner review is required before deletion or activation."
+    },
+    {
       "module": "video_channel_manager.telegram_quote_v4_render_proof",
       "status": "pending_owner_decision",
       "owning_tests": [
@@ -167,6 +185,15 @@
       ],
       "statements": 102,
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+    },
+    {
+      "module": "video_channel_manager.telegram_quote_v5_render_proof",
+      "status": "pending_owner_decision",
+      "owning_tests": [
+        "tests/test_lordchrist_quote_v5_render_proof.py"
+      ],
+      "statements": 99,
+      "note": "No production import, console script, documented invocation or workflow reaches this research module in the current exact-main scan. It is retained only for source-review tests; explicit owner review is required before deletion or activation."
     },
     {
       "module": "video_channel_manager.telegram_release_binding_cli",

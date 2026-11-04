@@ -1,6 +1,6 @@
 """No module may sit in the package without a decision about who reaches it.
 
-The package ships 23 modules that nothing calls: nothing under `src/` or `scripts/` imports them, they
+The package includes modules that nothing calls: nothing under `src/` or `scripts/` imports them, they
 are not console scripts, and no workflow, script or document names them. Each of them has one test
 file that imports it, so the suite is confident about code that never runs in production.
 

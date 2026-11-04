@@ -51,9 +51,14 @@ IGNORED_DEVELOPMENT_DIRECTORIES = frozenset(
 
 def _tracked_powershell_paths(base: Path) -> list[Path]:
     return sorted(
-        path
-        for path in base.rglob("*.ps1")
-        if not IGNORED_DEVELOPMENT_DIRECTORIES.intersection(path.relative_to(ROOT).parts)
+        (
+            path
+            for path in base.rglob("*.ps1")
+            if not IGNORED_DEVELOPMENT_DIRECTORIES.intersection(path.relative_to(ROOT).parts)
+        ),
+        # WindowsPath sorts case-insensitively whereas the registry uses exact
+        # case-sensitive path strings. Compare using the same canonical key.
+        key=lambda path: path.relative_to(ROOT).as_posix(),
     )
 
 
