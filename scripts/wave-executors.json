@@ -877,6 +877,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/validate_legendary_poet_package_v31.py",
+      "private_imports": [],
+      "project_owner": "legendary-poet",
+      "provider_write_capable": false,
+      "sha256": "bec3a5e0afc29dcc2cecc4bbdb9ad91bce6316cd038d2f4f709a6dd3d293ed7f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/validate_video_article_sources.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
