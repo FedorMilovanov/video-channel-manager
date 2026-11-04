@@ -1,0 +1,66 @@
+{
+  "schema_name": "video-manager.lord-god-primary-source-caption-rights-inert",
+  "schema_version": 1,
+  "observed_date": "2026-11-04",
+  "project_key": "lord-god-strength",
+  "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+  "youtube_video_id": "lTRm2NbnIas",
+  "youtube_url": "https://www.youtube.com/shorts/lTRm2NbnIas",
+  "youtube_title": "Что Почтит Жену Больше — Долг или Радость? Джон Пайпер о Том, Что Прославляет Бога",
+  "short_duration_seconds": 144,
+  "original_speaker": "John Piper",
+  "original_work_title": "Ministry Reflections with John Piper and R. C. Sproul",
+  "original_event": "Ligonier Ministries 2011 National Conference",
+  "original_event_date": "2011-03-26",
+  "original_primary_transcript_url": "https://www.desiringgod.org/messages/ministry-reflections-with-john-piper-and-r-c-sproul",
+  "original_source_opening_anchor": "Or, the favorite story that I have, the rose story",
+  "original_source_closing_anchor": "We glorify the things we value by enjoying them.",
+  "source_verified_claims": [
+    "The rose-anniversary story is told by John Piper in the March 26, 2011 conference conversation with R. C. Sproul",
+    "The failed duty-only answer is contrasted with delight and enjoyment of one's wife",
+    "Piper applies the analogy to honoring God in joyful worship and refers to Romans 12:1"
+  ],
+  "russian_caption_track": {
+    "provenance": "public YouTube automatic Russian speech recognition; vidIQ transcript read-only",
+    "language": "ru",
+    "kind": "asr",
+    "caption_track_automatically_generated": true,
+    "caption_alignment_status": "primary_english_span_correspondence_confirmed_not_a_signed_translation_witness",
+    "caption_entire_text_stored": false,
+    "translated_audio_voice_owner_verified": false
+  },
+  "source_rights": {
+    "desiring_god_policy_url": "https://www.desiringgod.org/permissions",
+    "desiring_god_policy_scope": "John Piper audiovisual reproduction/reupload beyond unmodified webpage embedding requires prior written permission; public translations also require permission",
+    "ligonier_policy_url": "https://www.ligonier.org/copyright-policy",
+    "ligonier_policy_scope": "Ligonier audiovisual materials may not be reuploaded or adapted without special written permission",
+    "desiring_god_writing_authorization_reference": null,
+    "ligonier_recording_writing_authorization_reference": null,
+    "russian_translation_and_voice_authorization_reference": null,
+    "actual_rightsholders_confirmed": false,
+    "rights_review_complete": false
+  },
+  "editorial": {
+    "caption_title_ru": "Почему одних слов «это мой долг» недостаточно для поклонения Богу?",
+    "caption_ru": "🌹 Почему даже красивый подарок может не выразить любви?\n\nДжон Пайпер рассказывает о розах, которые муж приносит жене на годовщину. Ответ «потому что обязан» звучит холодно. А искренняя радость от возможности быть рядом с любимой подчёркивает её ценность.\n\nТак и в поклонении Богу: не только внешняя правильность поступков, но и радость в Самом Боге свидетельствует, насколько Он дорог нам. Радость не отменяет послушания — она раскрывает его сердечный смысл. Павел призывает посвятить Богу всю жизнь (Рим. 12:1).\n\n🎙 Джон Пайпер, беседа с Р. Ч. Спроулом, конференция Ligonier, 26 марта 2011 года.\n📚 Первоисточник: https://www.desiringgod.org/messages/ministry-reflections-with-john-piper-and-r-c-sproul\n🎥 Русский видеофрагмент: https://www.youtube.com/shorts/lTRm2NbnIas\n\n#ГосподьБогСилаМоя #ДжонПайпер #Проповедь #Библия #Поклонение #Христианство",
+    "caption_factual_review": "primary_source_grounded_draft",
+    "caption_final_approval": false,
+    "visual_review_complete": false,
+    "source_translation_rights_checked": false
+  },
+  "technical_reel": {
+    "technical_evidence_file": "docs/audits/2026-11-04-lord-god-piper-first-reel-meta-v3-technical-evidence.json",
+    "render_sha256": "sha256:93d6283c954eda608c95bbb26ed5c2f6b80ce3d824a22040bcd9f0587c221d56",
+    "output_readiness": "tech_verified_nonpublishing"
+  },
+  "publish_guard": {
+    "instagram_professional_account_id": null,
+    "provider_write_authorization": false,
+    "editorial_approval": false,
+    "rights_approval": false,
+    "publication_release_id": null,
+    "ready_to_publish": false,
+    "do_not_request_or_store_otp": true,
+    "browser_login_is_not_provider_graph_api_authorization": true
+  }
+}
