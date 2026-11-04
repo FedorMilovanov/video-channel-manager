@@ -569,6 +569,87 @@ def test_telegraph_only_rejects_existing_public_page_before_network(
     assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
 
 
+def test_in_place_revision_requires_original_account_token_before_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original = {
+        "schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "entries": {
+            publication_id: {
+                "publication_id": publication_id,
+                "telegraph_url": "https://telegra.ph/Original-Charnock-Page-10-24",
+                "telegraph_path": "Original-Charnock-Page-10-24",
+                "telegram_message_id": 1582,
+            }
+        },
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(json.dumps(original), encoding="utf-8")
+    monkeypatch.delenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", raising=False)
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("network must not be contacted"))
+    with pytest.raises(RuntimeError, match="original Telegraph account access token"):
+        publisher.main(
+            [
+                "publish-telegraph-only", "--repo-root", str(ROOT), "--queue", DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger", str(ledger_path), "--publication-id", publication_id,
+                "--revision-confirm", f"REVISE:{publication_id}", "--media-base-url", MEDIA_BASE,
+            ]
+        )
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == original
+
+
+def test_in_place_revision_edits_original_page_without_creating_new_url_or_telegram_post(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    publication_id = "lordchrist-telegraph-charnock-01b"
+    original_path = "Original-Charnock-Page-10-24"
+    original_url = f"https://telegra.ph/{original_path}"
+    record = {
+        "publication_id": publication_id,
+        "telegraph_url": original_url,
+        "telegraph_path": original_path,
+        "telegram_message_id": 1582,
+        "telegram_chat_id": -1001295216957,
+    }
+    ledger_path = tmp_path / "ledger.json"
+    ledger_path.write_text(
+        json.dumps({"schema_name": "video-channel-manager.lordchrist-telegraph-ledger",
+                    "schema_version": 1, "project_key": "lord-god-strength",
+                    "entries": {publication_id: record}}),
+        encoding="utf-8",
+    )
+    fake = FakeTransport()
+
+    def multipart(url: str, fields: Mapping[str, bytes]) -> dict[str, Any]:
+        if "/editPage/" in url:
+            fake.multipart_calls.append((url, dict(fields)))
+            return {"ok": True, "result": {"url": original_url, "path": original_path}}
+        return FakeTransport.post_multipart(fake, url, fields)
+
+    fake.post_multipart = multipart  # type: ignore[method-assign]
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: fake)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-original-author-token")
+    assert publisher.main(
+        [
+            "publish-telegraph-only", "--repo-root", str(ROOT), "--queue", DEFAULT_QUEUE_PATH.as_posix(),
+            "--ledger", str(ledger_path), "--publication-id", publication_id,
+            "--revision-confirm", f"REVISE:{publication_id}", "--media-base-url", MEDIA_BASE,
+        ]
+    ) == 0
+    output = json.loads(capsys.readouterr().out)
+    saved = json.loads(ledger_path.read_text(encoding="utf-8"))["entries"][publication_id]
+    assert output["telegraph_url"] == original_url
+    assert saved["telegraph_url"] == original_url
+    assert saved["telegram_message_id"] == 1582
+    assert saved["last_in_place_revision_at_utc"]
+    assert any("/editPage/" + original_path in url for url, _ in fake.multipart_calls)
+    assert not any("/createPage" in url for url, _ in fake.multipart_calls)
+    assert not any(url.endswith("/sendMessage") for url, _ in fake.json_calls)
+
+
 def test_cover_url_preflight_blocks_before_telegraph_dispatch() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(
