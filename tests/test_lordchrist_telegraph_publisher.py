@@ -174,42 +174,28 @@ def test_inline_images_are_rendered_and_preflighted_before_any_publish_mutation(
     assert unavailable.multipart_calls == [], "failed media preflight must precede Telegraph page creation"
 
 
-def test_telegraph_only_command_records_page_without_sending_telegram(tmp_path: Path, monkeypatch, capsys) -> None:
-    transport = FakeTransport()
-    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: transport)
-    monkeypatch.setattr(
-        publisher,
-        "publish_channel_message",
-        lambda *args, **kwargs: pytest.fail("Telegraph-only mode must not send a Telegram message"),
-    )
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+def test_telegraph_only_new_page_rejected_before_any_network(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    publication_id = "lordchrist-telegraph-charnock-history-02"
     ledger_path = tmp_path / "ledger.json"
-
-    result = publisher.main(
-        [
-            "publish-telegraph-only",
-            "--repo-root",
-            str(ROOT),
-            "--queue",
-            DEFAULT_QUEUE_PATH.as_posix(),
-            "--ledger",
-            str(ledger_path),
-            "--publication-id",
-            "lordchrist-telegraph-charnock-history-02",
-            "--media-base-url",
-            MEDIA_BASE,
-        ]
-    )
-
-    assert result == 0
-    output = json.loads(capsys.readouterr().out)
-    assert output["mode"] == "telegraph_only"
-    assert output["publication_id"] == "lordchrist-telegraph-charnock-history-02"
-    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
-    entry = ledger["entries"][output["publication_id"]]
-    assert entry["telegraph_url"] == output["telegraph_url"]
-    assert "telegram_message_id" not in entry
-    assert not any(url.endswith("/sendMessage") for url, _payload in transport.json_calls)
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("No provider access allowed"))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    with pytest.raises(RuntimeError, match="direct publish-telegraph-only is retired"):
+        publisher.main(
+            [
+                "publish-telegraph-only",
+                "--repo-root",
+                str(ROOT),
+                "--queue",
+                DEFAULT_QUEUE_PATH.as_posix(),
+                "--ledger",
+                str(ledger_path),
+                "--publication-id",
+                publication_id,
+                "--media-base-url",
+                MEDIA_BASE,
+            ]
+        )
+    assert not ledger_path.exists()
 
 
 def test_end_to_end_auto_account_telegraph_and_channel_publish() -> None:
