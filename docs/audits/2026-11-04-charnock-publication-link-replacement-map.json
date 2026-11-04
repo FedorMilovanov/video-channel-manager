@@ -16,7 +16,7 @@
       "previous_telegram_message_id": 1582,
       "previous_published_article_sha256": "sha256:3e890fd8c50e35eff2c996387f7cbf375986d79ce5fa528803545fe6de9ded84",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-01b.json",
-      "corrected_document_git_blob_sha": "cbffe51c8767d022a64867ce9a073f81603c41ee",
+      "corrected_document_git_blob_sha": "42488fd2665ca4ef4eddf744e7e94d5183286dc7",
       "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
@@ -39,7 +39,7 @@
       "previous_telegram_message_id": 1585,
       "previous_published_article_sha256": "sha256:267eadf21225c14f1bee0f09fc9e96c4841ee69684a6ea678c0418248c621ee7",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-      "corrected_document_git_blob_sha": "e547e14b4e4944100fb0ab56bd82d032f5c3e6cb",
+      "corrected_document_git_blob_sha": "f0e6b6e01adeae9e600afaf75f0f1698f69e3127",
       "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
@@ -58,7 +58,7 @@
       "previous_telegram_message_id": 1589,
       "previous_published_article_sha256": "sha256:de8ed676fa1c9e80eb509a9e8112f291e162e5dc21cdad5eaaaee89fe17b6b16",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-02.json",
-      "corrected_document_git_blob_sha": "2d1f3d1ecea2f13a9ff5f437ce57cfa368fb767a",
+      "corrected_document_git_blob_sha": "ba167336825ecdff246c3514447f3ac08cd1ff4f",
       "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
@@ -77,7 +77,7 @@
       "previous_telegram_message_id": 1592,
       "previous_published_article_sha256": "sha256:9e719a3ff869d255d537bee1a1d90d02e6a4369503a14691d4c8bb628f4799d5",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-03.json",
-      "corrected_document_git_blob_sha": "2c857971f0d32542652a9111e3f145782c42c727",
+      "corrected_document_git_blob_sha": "cac01a52dfce3a33062be0f1c1a47eb093cea21a",
       "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
@@ -96,7 +96,7 @@
       "previous_telegram_message_id": 1594,
       "previous_published_article_sha256": "sha256:0adea8268e3f805f1dadd39490c9a7124e3855ea55a023599b1430995ab05f84",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-04.json",
-      "corrected_document_git_blob_sha": "b84e038690a1b641fd64112fc91a33aeb162733a",
+      "corrected_document_git_blob_sha": "cdb934a8fe779d6b4bee15a8c3054d605328db7a",
       "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
@@ -110,5 +110,6 @@
     }
   ],
   "public_readback_on": "2026-11-04",
-  "public_readback_status": "five_previous_pages_successfully_read_with_original_contents; no in_place_edits performed"
+  "public_readback_status": "five_previous_pages_successfully_read_with_original_contents; no in_place_edits performed",
+  "reference_correction_note": "2026-11-04: 14 biblical epigraph source URLs now address their actual Synodal chapter; 02 was incorrectly linked to Haggai 1, 03 to Hebrews 10; history-01 epigraph reference corrected from Psalm 89:2 to Psalm 89:3. Historical public URLs remain unchanged until authorized provider edits."
 }
