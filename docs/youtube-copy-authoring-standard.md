@@ -12,6 +12,10 @@ This standard sits below the narrower sources of truth:
 
 If rules differ, the more specific canonical document above wins.
 
+**Owner's new manual YouTube-package format (2026-11-01):** before creating or correcting a `legendary-poet` title/description/SHORTS/pinned-comment/tags **copy package**, read [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) and follow its five-block output contract. It overrides the **layout and title presentation of new manual packages only**, specifically moving playlist and social lines **above** the first literary paragraph. The present document still owns source research, factual integrity and provider-safe handoff; exact IDs are always read from the profile/identity registry, not copied from a pasted master prompt. This does not convert previous published descriptions or authorize a YouTube update. A user request for only one component requires only that component.
+
+
+
 ## 1. Research before copy
 
 Any description or comment that states dates, publication history, biography, quotation, dedication, historical circumstances or an alleged authorial intention must be researched before it is called final.
