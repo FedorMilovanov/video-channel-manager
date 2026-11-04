@@ -67,3 +67,21 @@ def test_historical_epigraph_credit_and_rebuild_spec_use_psalm_89_3() -> None:
     assert spec["epigraph_source"] == document["sources"][0]
     assert spec["scripture_source"]["evidence"].startswith("Пс. 89:3;")
     assert document["sources"][0]["url"] == "https://bible.by/syn/19/89/"
+
+def test_long_charnock_quote_05_translates_english_psalm_100_3_to_synodal_99_3() -> None:
+    """KJV 100:3 is Synodal 99:3; Synodal 100:3 is another Psalm entirely."""
+    stem = "lordchrist-telegraph-charnock-05"
+    markdown = (BASE / f"{stem}.md").read_text(encoding="utf-8")
+    document = json.loads((BASE / f"{stem}.json").read_text(encoding="utf-8"))
+    english = next(source for source in document["sources"] if source["source_id"] == "src-02-charnock")
+    quote = next(block for block in document["blocks"] if block.get("block_id") == "q-2")
+    quote_text = quote["blocks"][0]["text"]
+
+    assert "(Ps. c. 3.)" in english["evidence"]
+    assert "Господь есть Бог; Он сотворил нас, а не мы сами себя" in quote_text
+    assert "(Пс. 99:3)" in quote_text
+    assert "(Пс. 100:3)" not in quote_text
+    assert "(Пс. 99:3)" in markdown
+    assert "(Пс. 100:3)" not in markdown
+    assert "кетив" in markdown
+    assert "кере" in markdown
