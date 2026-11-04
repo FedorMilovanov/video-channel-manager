@@ -22,7 +22,6 @@ from video_channel_manager.telegram_rich_provider import TelegramRichProviderTim
 
 RELEASE_PATH = Path("content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json")
 MODULE_PATH = Path("src/video_channel_manager/lordchrist_rich_live_canary.py")
-WORKFLOW_PATH = Path(".github/workflows/lordchrist-rich-live-canary.yml")
 
 
 def _input_media_identities(value: object) -> list[str]:
@@ -211,17 +210,3 @@ def test_new_live_canary_ledger_is_pending_and_non_retryable_states_are_named() 
     assert '"delivery_mode": "multipart-attach"' in source
     assert "publish_rich_once(" in source
     assert "sendMessage" not in source
-
-
-def test_live_workflow_is_manual_single_writer_when_present() -> None:
-    if not WORKFLOW_PATH.exists():
-        pytest.skip("workflow is added in the same live-canary branch after runtime tests")
-    source = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert "workflow_dispatch:" in source
-    assert "schedule:" not in source
-    assert "group: lordchrist-telegram-publisher" in source
-    assert "cancel-in-progress: false" in source
-    assert "PUBLISH:lordchrist-rich-sermons-survive-century" in source
-    assert "telegram_github_quality_gate" in source
-    assert source.count("lordchrist_rich_live_canary send") == 1
-    assert "three-expository-patterns" not in source

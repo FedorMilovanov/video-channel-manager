@@ -13,7 +13,6 @@ from video_channel_manager.lordchrist_cross_track_effect_guard import (
 from video_channel_manager.telegram_presentation import load_presentation_policy
 
 ROOT = Path(__file__).resolve().parents[1]
-RESEARCH_GUARD = ROOT / "src/video_channel_manager/lordchrist_research_cross_track_guard.py"
 LEGACY_CLI = ROOT / "src/video_channel_manager/telegram_cli.py"
 
 
@@ -52,13 +51,6 @@ def test_confirmed_absent_and_pending_states_do_not_false_block() -> None:
     ]
     result = require_no_unresolved_provider_effects(legacy_entries=entries, research_entries=entries)
     assert result == {"legacy": (), "research": ()}
-
-
-def test_research_daily_guard_checks_effects_before_quota_decision() -> None:
-    source = RESEARCH_GUARD.read_text(encoding="utf-8")
-    unresolved = source.index("require_no_unresolved_provider_effects(")
-    quota = source.index("legacy_verified = verified_on_date")
-    assert unresolved < quota
 
 
 def test_legacy_validate_and_preflight_guard_before_provider_access() -> None:

@@ -639,6 +639,10 @@ class InstagramPublicationLedger:
 
 RequestValue = str | int | float | bool | None
 
+# The HTTP verbs that can create or change provider state. Reads use GET, and a write that does
+# not name its resource is refused at the choke point instead of being classified by guessing.
+INSTAGRAM_MUTATION_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
 
 class InstagramProviderClient:
     """Minimal Meta Graph adapter plus isolated public-media verifier."""
@@ -669,7 +673,21 @@ class InstagramProviderClient:
         *,
         data: dict[str, RequestValue] | None = None,
         params: dict[str, RequestValue] | None = None,
+        resource: str | None = None,
     ) -> dict[str, object]:
+        """Dispatch one Meta Graph request; a write must name its provider resource.
+
+        Every Instagram provider effect goes through this method, and the mutation-boundary
+        scanner in `tests/test_mutation_boundary_register.py` reads it statically: a write with a
+        missing or computed `resource` is a violation, and a write that is not registered in
+        `docs/operations/mutation-boundary-register.json` fails CI. The runtime guard below is the
+        same rule, so a scanner blind spot cannot silently dispatch an unclassified write.
+        """
+
+        if method.upper() in INSTAGRAM_MUTATION_METHODS and not resource:
+            raise InstagramConfigurationError(
+                f"Instagram {method.upper()} {path!r} must declare an explicit provider resource"
+            )
         headers = {"Authorization": f"Bearer {self.config.access_token}"}
         try:
             response = self._client.request(
@@ -751,7 +769,12 @@ class InstagramProviderClient:
             data["cover_url"] = str(manifest.cover_url)
         if manifest.thumb_offset_ms is not None:
             data["thumb_offset"] = manifest.thumb_offset_ms
-        payload = self._request("POST", f"{self.config.account_id}/media", data=data)
+        payload = self._request(
+            "POST",
+            f"{self.config.account_id}/media",
+            data=data,
+            resource="media",
+        )
         container_id = payload.get("id")
         if not isinstance(container_id, str) or not container_id:
             raise InstagramProviderError("Instagram container response did not include an id")
@@ -770,6 +793,7 @@ class InstagramProviderClient:
             "POST",
             f"{self.config.account_id}/media_publish",
             data={"creation_id": container_id},
+            resource="media_publish",
         )
         media_id = payload.get("id")
         if not isinstance(media_id, str) or not media_id:

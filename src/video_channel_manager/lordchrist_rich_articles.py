@@ -337,7 +337,7 @@ def send(
 ) -> Any:
     """Publish one due article through the shared one-request multipart boundary."""
 
-    from video_channel_manager.lordchrist_rich_live_canary import LordChristMultipartProvider
+    from video_channel_manager.telegram_rich_provider import TelegramRichMultipartProvider
     from video_channel_manager.telegram_rich_provider import publish_rich_once
 
     if item.cover_path is None:
@@ -356,7 +356,7 @@ def send(
         expected_bot_username=binding.bot_username,
     )
     attachments = {ATTACHMENT_NAME: (item.cover_path.name, (root / item.cover_path).read_bytes(), "image/jpeg")}
-    provider = LordChristMultipartProvider(token=token, attachments=attachments)
+    provider = TelegramRichMultipartProvider(token=token, attachments=attachments)
     try:
         archived = publish_rich_once(
             document,

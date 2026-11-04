@@ -1,8 +1,16 @@
 {
   "schema_name": "video-channel-manager.mutation-boundary-register",
   "schema_version": 1,
+  "provider_writes_in_quality_ci": false,
+  "provider_write_workflows": [
+    ".github/workflows/lordchrist-quiz-poster.yml",
+    ".github/workflows/lordchrist-quiz-series-poster.yml",
+    ".github/workflows/lordchrist-telegram-poster.yml",
+    ".github/workflows/milovi-telegram-feed-publisher.yml",
+    ".github/workflows/svodka-canary.yml",
+    ".github/workflows/svodka-scheduled-publisher.yml"
+  ],
   "baseline_commit": "0f3062212745def6775b80b59085fede3ce68d48",
-  "provider_writes_in_ci": false,
   "boundaries": [
     {
       "boundary_id": "operator.native.child",
@@ -618,20 +626,20 @@
       ]
     },
     {
-      "boundary_id": "telegram.lordchrist.rich_live.send",
+      "boundary_id": "telegram.rich.multipart.send",
       "risk": "P0",
       "provider": "Telegram",
       "language": "python",
-      "source_file": "src/video_channel_manager/lordchrist_rich_live_canary.py",
-      "module": "video_channel_manager.lordchrist_rich_live_canary",
-      "callable": "_LordChristMultipartProvider.send_rich_message",
+      "source_file": "src/video_channel_manager/telegram_rich_provider.py",
+      "module": "video_channel_manager.telegram_rich_provider",
+      "callable": "TelegramRichMultipartProvider.send_rich_message",
       "scanner_marker": "http:sendRichMessage",
       "mutation_class": "ambiguous_mutation",
-      "intent_evidence": "Issue #473 exact release plus separate durable rich intent on state/lordchrist-telegram binds current-main SHA, exact target proof, document/render SHA and three source-media byte SHA-256 values before one provider request",
-      "dispatch_evidence": "one multipart sendRichMessage POST carries exactly lc_calvin/lc_spurgeon/lc_tape through execute_http_request with AMBIGUOUS_MUTATION and max_attempts=1",
-      "response_evidence": "same-credential exact TelegramRichProviderOutcome is archived as workflow artifact and state evidence before terminal ledger mutation",
-      "postflight_evidence": "separate rich live-canary ledger records published/verified message id and URL, may_exist, or failed_no_effect; successful workflow closure asserts verified publication",
-      "reconciliation_identity": "release_id, publication_id, document_sha256, exact target chat and bot, workflow run/attempt, and the three attachment byte SHA-256 values",
+      "intent_evidence": "Exact rich document, target binding, selected immutable media digest and one immutable pre-send intent before the shared multipart provider call; no archive-only canary execution authority is inherited",
+      "dispatch_evidence": "One shared Telegram sendRichMessage multipart POST with precisely bound attachment names and bytes; AMBIGUOUS_MUTATION, max_attempts=1, no fallback, no blind retry",
+      "response_evidence": "Exact same-credential TelegramRichProviderOutcome, with raw response retained and an immutable archive receipt before ledger state mutation",
+      "postflight_evidence": "Provider-visible message verification and archived receipt are separate required postconditions; may_exist or failed delivery never becomes published",
+      "reconciliation_identity": "project, publication_id, exact target chat/bot, document digest, reviewed media byte digests and one dispatch intent",
       "retry_policy": "never_replay",
       "unknown_status": "unknown_requires_reconciliation",
       "attempt_limit": 1,
@@ -642,7 +650,8 @@
       ],
       "owning_tests": [
         "tests/test_lordchrist_rich_live_canary.py",
-        "tests/test_lordchrist_workflow_post_proof_hardening.py"
+        "tests/test_lordchrist_workflow_post_proof_hardening.py",
+        "tests/test_lordchrist_rich_articles.py"
       ]
     },
     {
@@ -782,6 +791,426 @@
       ],
       "owning_tests": [
         "tests/test_lordchrist_telegraph_publisher.py"
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.message.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_transport.py",
+      "module": "video_channel_manager.telegram_multichannel_transport",
+      "callable": "send_message_once",
+      "scanner_marker": "telegram_api:sendMessage",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "channel profile write authorization, a fresh exact target proof bound to the profile digest, and a rendered message payload whose profile binding is re-checked before any request",
+      "dispatch_evidence": "one sendMessage POST through telegram_transport._api_call with the explicit mutation flag and zero transport retries",
+      "response_evidence": "returned chat identity, plain text, formatting entities and link-preview semantics are compared with the exact payload, and a message id is required before a verified receipt exists",
+      "postflight_evidence": "the receipt (message id, payload digest, target) is the only success evidence; durable state is applied afterwards through the queue outcome contract",
+      "reconciliation_identity": "publication_id, provider payload digest, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_transport.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.poll.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_transport.py",
+      "module": "video_channel_manager.telegram_multichannel_transport",
+      "callable": "send_poll_once",
+      "scanner_marker": "telegram_api:sendPoll",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "channel profile write authorization, fresh exact target proof, and a rendered poll payload whose profile binding is re-checked before any request",
+      "dispatch_evidence": "one sendPoll POST through telegram_transport._api_call with the explicit mutation flag and zero transport retries",
+      "response_evidence": "returned chat identity and every poll field (question, options, type, anonymity, multiple answers, revoting, membership, quiz explanation) are compared with the exact payload",
+      "postflight_evidence": "the receipt with message id is the only success evidence; poll state is applied afterwards through the queue outcome contract",
+      "reconciliation_identity": "publication_id, provider payload digest, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_transport.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.photo.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_transport.py",
+      "module": "video_channel_manager.telegram_multichannel_transport",
+      "callable": "send_photo_once",
+      "scanner_marker": "telegram_api:sendPhoto",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "channel profile write authorization, fresh exact target proof, and exact local media bytes re-read and hash-verified against the payload before any request",
+      "dispatch_evidence": "one multipart sendPhoto POST through telegram_transport._api_call with the explicit mutation flag and zero transport retries",
+      "response_evidence": "returned chat identity, caption and non-empty photo list are compared with the exact payload, and a message id is required before a verified receipt exists",
+      "postflight_evidence": "the receipt with message id is the only success evidence; durable state is applied afterwards through the queue outcome contract",
+      "reconciliation_identity": "publication_id, provider payload digest, media SHA-256, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_photo_transport.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.video.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_video.py",
+      "module": "video_channel_manager.telegram_multichannel_video",
+      "callable": "send_video_once",
+      "scanner_marker": "telegram_api:sendVideo",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "channel profile write authorization, fresh exact target proof, and exact local MP4 bytes re-read and hash-verified against the payload before any request",
+      "dispatch_evidence": "one multipart sendVideo POST through telegram_transport._api_call with the explicit mutation flag and zero transport retries",
+      "response_evidence": "returned chat identity, caption, non-empty video object and mime type are compared with the exact payload, and a message id is required before a verified receipt exists",
+      "postflight_evidence": "the receipt with message id is the only success evidence; durable state is applied afterwards through the queue outcome contract",
+      "reconciliation_identity": "publication_id, provider payload digest, media SHA-256, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_video.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
+      "boundary_id": "telegram.channel.dispatch.prepared",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_transport.py",
+      "module": "video_channel_manager.telegram_transport",
+      "callable": "dispatch_prepared",
+      "scanner_marker": "telegram_api:sendMessage",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "a prepared envelope whose exact rendered payload, target proof and provenance are already persisted as a dispatching intent with provider_effect=may_exist",
+      "dispatch_evidence": "one sendMessage POST through telegram_transport._api_call with the explicit mutation flag and zero transport retries",
+      "response_evidence": "a provider response is classified as verified, confirmed_absent (for example 429) or unknown; a lost response becomes unknown with may_exist and blocks replay",
+      "postflight_evidence": "the queue ledger is the durable record: verified commits the message id, confirmed_absent returns the item to pending, and unknown blocks the strict queue until reconciliation",
+      "reconciliation_identity": "publication_id, intent id, payload digest, chat_id and returned message_id or the absence of one",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_publisher.py",
+        "tests/test_telegram_presentation_transport.py"
+      ]
+    },
+    {
+      "boundary_id": "instagram.reel.container.create",
+      "risk": "P0",
+      "provider": "Instagram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/instagram/production.py",
+      "module": "video_channel_manager.instagram.production",
+      "callable": "InstagramProviderClient.create_reel_container",
+      "scanner_marker": "instagram_api:POST:media",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "a publication manifest whose exact account id, media SHA-256, size and content type were verified against the trusted public object, under a profile whose writes_enabled gate is true",
+      "dispatch_evidence": "one POST {ig-user-id}/media with media_type=REELS, the reviewed caption, share_to_feed and the verified video_url; zero transport retries",
+      "response_evidence": "the returned container id is required; a missing or non-string id is a provider error, and a 5xx or lost response stays ambiguous",
+      "postflight_evidence": "the durable publication ledger records container_requested before dispatch and only a returned container id may move it forward; an ambiguous creation is never re-created blindly",
+      "reconciliation_identity": "publication_key, account id, media SHA-256 and the returned container id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_instagram_production.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "instagram.reel.container.resumable",
+      "risk": "P0",
+      "provider": "Instagram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/instagram/local_resumable.py",
+      "module": "video_channel_manager.instagram.local_resumable",
+      "callable": "InstagramResumableProviderClient.create_resumable_reel_container",
+      "scanner_marker": "instagram_api:POST:media",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "an immutable local-media manifest (exact SHA-256, size, content type) plus the reviewed Facebook Login graph host; the resumable mode guard refuses any other login mode before a request exists",
+      "dispatch_evidence": "one POST {ig-user-id}/media with upload_type=resumable; zero transport retries",
+      "response_evidence": "both the container id and an upload URI on the exact rupload.facebook.com boundary are required; a foreign or missing URI is never followed",
+      "postflight_evidence": "the caller uploads bytes only to the validated URI and the durable ledger holds container_requested until an exact id exists",
+      "reconciliation_identity": "publication_key, local media SHA-256, container id and the upload URI host",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_instagram_local_resumable.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "instagram.reel.upload.binary",
+      "risk": "P0",
+      "provider": "Instagram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/instagram/local_resumable.py",
+      "module": "video_channel_manager.instagram.local_resumable",
+      "callable": "InstagramResumableProviderClient._dispatch_binary_upload",
+      "scanner_marker": "instagram_api:POST:resumable-binary-upload",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "the exact local MP4 bytes and size, re-read and hashed, and an upload URI that passed the exact rupload.facebook.com boundary check",
+      "dispatch_evidence": "one POST to the resumable upload URI with offset=0, file_size and the exact bytes; this is the only direct HTTP verb in the Instagram package outside the Graph helper",
+      "response_evidence": "a 2xx without success=false is required; a transport failure is a redacted InstagramTransportError with a secret-safe request fingerprint, and an error body is a provider error",
+      "postflight_evidence": "the container status poll is the success evidence, never the upload acknowledgement alone; the ledger stays container_requested until the container reports FINISHED",
+      "reconciliation_identity": "publication_key, media SHA-256, file size and the container id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_instagram_local_resumable.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "instagram.reel.publish",
+      "risk": "P0",
+      "provider": "Instagram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/instagram/production.py",
+      "module": "video_channel_manager.instagram.production",
+      "callable": "InstagramProviderClient.publish_container",
+      "scanner_marker": "instagram_api:POST:media_publish",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "a claimed publish request bound to one publication_key and one exact container id that already reported FINISHED; a manual media id is restricted to an ambiguous publish with a known container",
+      "dispatch_evidence": "one POST {ig-user-id}/media_publish with creation_id; zero transport retries",
+      "response_evidence": "the returned media id is required, and any later FINISHED container status is never treated as proof that an earlier publish had no effect",
+      "postflight_evidence": "the ledger records publish_requested before dispatch and only a returned media id may commit published/verified; an unknown publish stays unknown until an exact read-only reconciliation",
+      "reconciliation_identity": "publication_key, container id, returned media id and the durable ledger digest",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_instagram_production.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.session",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.start_upload_session",
+      "scanner_marker": "youtube_release_api:POST:videos.insert.resumable-session",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "a resumable videos.insert session, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one POST {upload}/videos?uploadType=resumable with the reviewed snippet/status and media size and MIME type; zero transport retries",
+      "response_evidence": "a Location header on the exact googleapis upload boundary is required; a missing or foreign Location stays ambiguous",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource videos.insert.resumable-session and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.media",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.upload_media",
+      "scanner_marker": "youtube_release_api:PUT:videos.insert.resumable-media",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "the exact media bytes and offset inside the immutable file range, sent to a validated resumable session URL, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one PUT to the resumable session with Content-Range over the exact remaining bytes; zero transport retries",
+      "response_evidence": "308 proves incompleteness with an exact next offset; 200/201 requires an exact video id, and a success without one stays ambiguous",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource videos.insert.resumable-media and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.metadata",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.update_metadata_status",
+      "scanner_marker": "youtube_release_api:PUT:videos.update.metadata-status",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact video id plus the reviewed snippet and status payload, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one PUT {api}/videos?part=snippet,status; zero transport retries",
+      "response_evidence": "an accepted response with a different id is ambiguous, and an accepted response is never success until an exact readback",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource videos.update.metadata-status and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.thumbnail",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.set_thumbnail",
+      "scanner_marker": "youtube_release_api:POST:thumbnails.set",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact video id, one local thumbnail file and its MIME type and size, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one POST {upload}/thumbnails/set?videoId=... with the exact bytes; zero transport retries",
+      "response_evidence": "a JSON receipt is required; a non-JSON 2xx stays ambiguous",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource thumbnails.set and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.playlist",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.insert_playlist_item",
+      "scanner_marker": "youtube_release_api:POST:playlistItems.insert",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact playlist id and video id after a bounded playlist readback, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one POST {api}/playlistItems?part=snippet; zero transport retries",
+      "response_evidence": "a returned membership id is recorded but membership is only proven by a bounded readback",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource playlistItems.insert and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.visibility",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.update_visibility",
+      "scanner_marker": "youtube_release_api:PUT:videos.update.visibility",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact video id plus the reviewed status payload, under a stored token that carries the force-ssl write scope (the gate is evaluated before any HTTP request)",
+      "dispatch_evidence": "one PUT {api}/videos?part=status; zero transport retries",
+      "response_evidence": "an accepted response stays may_exist until an exact readback proves the visibility",
+      "postflight_evidence": "the release execution ledger records the attempt before dispatch and classifies the outcome as verified, confirmed_absent or may_exist; an unknown effect blocks replay and requires read-only reconciliation",
+      "reconciliation_identity": "release identity, operation id, resource videos.update.visibility and the returned object identity (if any)",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_mutation_fault_stages_instagram_youtube.py"
       ]
     }
   ]

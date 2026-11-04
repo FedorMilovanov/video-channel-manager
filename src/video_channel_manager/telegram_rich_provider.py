@@ -763,6 +763,78 @@ class HttpxTelegramRichMutationProvider(HttpClientOwner):
         return TelegramRichProviderResponse(status_code=response.status_code, body=body)
 
 
+def _rich_multipart_attachment_names(value: Any) -> frozenset[str]:
+    names: set[str] = set()
+
+    def walk(candidate: Any) -> None:
+        if isinstance(candidate, dict):
+            identity = candidate.get("media")
+            if isinstance(identity, str) and identity.startswith("attach://"):
+                name = identity.removeprefix("attach://")
+                if not name:
+                    raise ValueError("empty LordChrist multipart attachment name")
+                names.add(name)
+            for child in candidate.values():
+                walk(child)
+        elif isinstance(candidate, list):
+            for child in candidate:
+                walk(child)
+
+    walk(value)
+    return frozenset(names)
+
+
+class TelegramRichMultipartProvider(HttpxTelegramRichMutationProvider):
+    """One-request sendRichMessage adapter carrying exact reviewed JPEG bytes as attachments."""
+
+    def __init__(
+        self, *, token: str, attachments: dict[str, tuple[str, bytes, str]], http_client: httpx.Client | None = None
+    ) -> None:
+        super().__init__(token=token, http_client=http_client)
+        if not attachments:
+            raise ValueError("LordChrist multipart provider requires at least one attachment")
+        self._attachments = attachments
+
+    def send_rich_message(
+        self,
+        *,
+        chat_id: int,
+        rich_message: dict[str, Any],
+        timeout: TelegramRichRequestTimeout,
+    ) -> TelegramRichProviderResponse:
+        if _rich_multipart_attachment_names(rich_message) != frozenset(self._attachments):
+            raise ValueError("LordChrist multipart request attachment references differ from the exact byte bundle")
+        files = {
+            name: (filename, content, content_type)
+            for name, (filename, content, content_type) in self._attachments.items()
+        }
+        try:
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    self._send_url,
+                    data={"chat_id": str(chat_id), "rich_message": _canonical_json(rich_message)},
+                    files=files,
+                    timeout=timeout.as_httpx(),
+                ),
+                provider="telegram",
+                operation=HttpOperationClass.AMBIGUOUS_MUTATION,
+                method="POST",
+                resource="sendRichMessage",
+                retry_policy=RetryPolicy(max_attempts=1),
+            )
+        except HttpTransportFailure as exc:
+            before_request = exc.cause_type in {"ConnectTimeout", "PoolTimeout", "ConnectError"}
+            if "Timeout" in exc.cause_type:
+                raise TelegramRichProviderTimeout(request_may_have_been_dispatched=not before_request) from exc
+            raise TelegramRichProviderTransportError(request_may_have_been_dispatched=not before_request) from exc
+        response = result.response
+        try:
+            body: Any = response.json()
+        except ValueError:
+            body = None
+        return TelegramRichProviderResponse(status_code=response.status_code, body=body)
+
+
 class TelegramRichProviderOutcome(BaseModel):
     """Evidence, not a delivery assertion.
 
@@ -1434,6 +1506,7 @@ def publish_rich_once(
 __all__ = [
     "ArchivedTelegramRichOutcome",
     "HttpxTelegramRichMutationProvider",
+    "TelegramRichMultipartProvider",
     "RICH_MUTATION_TRANSPORT_RETRIES",
     "RichProviderEffect",
     "TelegramRichMessageDocument",

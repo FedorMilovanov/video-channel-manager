@@ -15,8 +15,8 @@ Last reviewed: 2026-08-11 after PR #301 on `main@bca9a5de29b4c5480db4cdd7c1f09af
 - approved release digest: `sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce`
 - state branch: `state/svodka-telegram`
 - publication ledger path on the state branch: `content/telegram/svodka/publication-ledger.json`
-- current profile gate: `provider_writes_authorized=true`
-- current durable ledger checkpoint: 14/14 `pending`, 14/14 `provider_effect=impossible`, no dispatch intent or provider identity recorded
+- current profile gate: see [`channel-write-authority.json`](channel-write-authority.json) (the flag is compared with the profile by a test, so this page does not restate it)
+- current durable ledger checkpoint: 14/14 `skipped`, 14/14 `provider_effect=impossible`, no dispatch intent, message id or provider identity recorded. The August pilot windows expired and were recovered as stale-window skips (`Skip expired Svodka publication windows`, `state/svodka-telegram` `b7c06009`), so the original release is terminal no-replay evidence and cannot be published from
 - scheduled publisher: installed and fail-closed until a verified manual canary exists
 
 The approved runtime release is materialized from the immutable approval receipt plus the current canonical queue/profile/binding. There is no committed `content/telegram/svodka/approved-release-2026-08.json` file in the current production path; documentation or automation must not depend on that obsolete path.
