@@ -198,6 +198,9 @@ def test_every_quote_obeys_paragraph_contract_without_losing_draft_words() -> No
     revision_doc = _load(ROOT / "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json")
     revisions = {row["sequence"]: row for row in revision_doc["revisions"]}
     assert set(revisions) == {7, 25, 29}
+    line_packet = _load(ROOT / "docs/audits/2026-11-04-lordchrist-bilingual-line-edits-inert.json")
+    explicit_word_revisions = {row["sequence"] for row in line_packet["revisions"]}
+    assert explicit_word_revisions == {11, 13, 26}
 
     folded = []
     for card in preview:
@@ -216,7 +219,12 @@ def test_every_quote_obeys_paragraph_contract_without_losing_draft_words() -> No
         quoted = "\n\n".join(quote_blocks)
         assert quoted.startswith(chr(171)) and quoted.endswith(chr(187))
         authoritative_draft_body = revised["new_translation_ru"] if revised else draft["translation_ru"]
-        assert re.findall(r"\w+", quoted) == re.findall(r"\w+", authoritative_draft_body)
+        if card["sequence"] not in explicit_word_revisions:
+            assert re.findall(r"\w+", quoted) == re.findall(r"\w+", authoritative_draft_body)
+        else:
+            # The SHA-bound packet explicitly changes these tokens. Its exact
+            # source-bound replacements are validated by the dedicated tests.
+            assert card["source_bound_line_edit_status"] == ("unapproved_pending_full_bilingual_and_edition_rights")
         if card["preview_paragraph_normalization"]:
             folded.append(card["sequence"])
             assert len(draft["translation_ru"].split("\n\n")) == 4
@@ -521,3 +529,116 @@ def test_spurgeon_owen_contiguity_requires_exact_prior_digest_and_cannot_authori
                 builder["build"]()
         finally:
             loader["_load"] = original
+
+
+def test_bilingual_line_packet_has_three_immutable_source_bound_revisions() -> None:
+    doc_path = ROOT / "docs/audits/2026-11-04-lordchrist-bilingual-line-edits-inert.json"
+    evidence = _load(doc_path)
+    signed = _load(QUEUE)["posts"]
+    deck = _load(FILE)
+    assert evidence["schema_name"] == "video-channel-manager.lordchrist-source-bound-bilingual-line-edits-inert"
+    assert evidence["schema_version"] == 1
+    assert evidence["original_queue_sha256"] == _hash(QUEUE.read_text(encoding="utf-8"))
+    assert evidence["editorial_approval"] is False
+    assert evidence["full_bilingual_review_complete"] is False
+    assert evidence["rights_review_complete"] is False
+    assert evidence["provider_write_authorization"] is False
+    assert evidence["protected_ledger_write_authorization"] is False
+    assert evidence["approved_new_queue"] is False
+    assert deck["source_bound_line_edit_cards"] == 3
+    assert [row["sequence"] for row in evidence["revisions"]] == [11, 13, 26]
+
+    for row in evidence["revisions"]:
+        n = row["sequence"]
+        card = deck["posts"][n - 1]
+        assert row["original_publication_id"] == card["publication_id"] == signed[n - 1]["publication_id"]
+        assert row["original_full_post_sha256"] == _hash(signed[n - 1]["text"])
+        assert row["expected_prior_preview_full_post_sha256"] != card["candidate_full_post_sha256"]
+        assert row["candidate_full_post_sha256"] == card["candidate_full_post_sha256"]
+        assert card["candidate_full_post_sha256"] == _hash(card["text"])
+        assert row["candidate_begin_anchor_sha256"] == _hash(card["source"]["anchor_start"])
+        assert card["source_bound_line_edit_evidence_file"] == doc_path.relative_to(ROOT).as_posix()
+        assert card["source_bound_line_edit_count"] == len(row["edits"])
+        assert card["source_bound_line_edit_status"] == "unapproved_pending_full_bilingual_and_edition_rights"
+        assert card["editorial_approval"] is False
+        assert card["provider_write_authorization"] is False
+        assert card["source"]["edition_rights_status"] == "requires_edition_specific_review"
+        assert card["source"]["translation_review_status"] == "pending_full_bilingual_check"
+        witness = row["source_witness"]
+        assert witness["http_status"] == 200
+        assert witness["source_begin_anchor_exact"]
+        assert witness["source_end_anchor_exact"]
+        assert witness["forward_order"]
+        assert witness["english_source_span_words"] >= 80
+        assert witness["full_sentence_alignment_certified"] is False
+        assert len(witness["phrase_checks"]) == len(row["edits"])
+        assert all(x["exact_tokens_in_original"] for x in witness["phrase_checks"])
+        assert all(x["source_phrase"] and x["issue"] for x in row["edits"])
+
+    murray = deck["posts"][10]
+    assert murray["source"]["anchor_start"] == "The words of my text are:"
+    assert murray["text"].startswith(
+        chr(171)
+        + "Слова, взятые за основу моей проповеди: "
+        + chr(8222)
+        + "Хранимые силой Божьей через веру"
+        + chr(8220)
+    )
+    assert "Здесь перед нами две чудесные" in murray["text"]
+    assert deck["posts"][12]["source"]["anchor_start"] == signed[12]["source"]["anchor_start"]
+    assert "исполнен всякой неправды" in deck["posts"][12]["text"]
+    assert "и в моём сердце, и в моей жизни" in deck["posts"][12]["text"]
+    assert "лет мне было совсем немного" in deck["posts"][12]["text"]
+    assert "среди ровесников мало кто" not in deck["posts"][12]["text"]
+    assert "они и в самом деле были тронуты и утешены" in deck["posts"][25]["text"]
+    assert "действительно получили утешение и назидание" not in deck["posts"][25]["text"]
+
+
+def test_generic_source_bound_line_edit_avoids_new_special_case_for_each_author() -> None:
+    builder = runpy.run_path(str(BUILDER))
+    apply_edits = builder["_apply_bound_line_edits"]
+    assert callable(apply_edits)
+    assert builder["BILINGUAL_LINE_EDITS"].is_relative_to(ROOT / "docs/audits")
+    assert builder["OUTPUT"].is_relative_to(ROOT / "docs/audits")
+
+    # This engine reads the entries rather than hard-coding author's
+    # sequence numbers. It still requires identity, hashes and source proof.
+    preview = _load(FILE)
+    for n in (11, 13, 26):
+        assert preview["posts"][n - 1]["source_bound_line_edit_count"] in (1, 2)
+
+
+def test_bilingual_line_edit_fails_closed_on_authority_stale_hash_or_false_source() -> None:
+    import pytest
+
+    builder = runpy.run_path(str(BUILDER))
+    globals_dict = builder["build"].__globals__
+    original_loader = globals_dict["_load"]
+
+    cases = [
+        ("provider_write_authorization", True, "unsafe"),
+        ("stale_candidate", "sha256:" + "0" * 64, "Stale or mismatched"),
+        ("false_source", False, "lacks source evidence"),
+        ("encoding_corruption", "??", "Encoding corruption"),
+    ]
+
+    def altered(path: Path, key: str, value: object) -> dict:
+        data = original_loader(path)
+        if path == builder["BILINGUAL_LINE_EDITS"]:
+            if key == "stale_candidate":
+                data["revisions"][0]["expected_prior_preview_full_post_sha256"] = value
+            elif key == "false_source":
+                data["revisions"][2]["source_witness"]["phrase_checks"][0]["exact_tokens_in_original"] = value
+            elif key == "encoding_corruption":
+                data["revisions"][1]["edits"][0]["proposed_after"] = value
+            else:
+                data[key] = value
+        return data
+
+    for key, value, pattern in cases:
+        globals_dict["_load"] = lambda path, k=key, v=value: altered(path, k, v)
+        try:
+            with pytest.raises(ValueError, match=pattern):
+                builder["build"]()
+        finally:
+            globals_dict["_load"] = original_loader

@@ -27,6 +27,7 @@ REMAINING_AUDIT = AUDITS / "2026-11-04-lordchrist-remaining-20-source-audit.json
 SEMANTIC_REVISIONS = AUDITS / "2026-11-04-lordchrist-quote-semantic-revisions-inert.json"
 RETAINED_VERSE_REVIEW = AUDITS / "2026-11-04-lordchrist-retained-verse-and-quotation-review.json"
 SPURGEON_OWEN_REVIEW = AUDITS / "2026-11-04-lordchrist-owen-spurgeon-contiguity-inert.json"
+BILINGUAL_LINE_EDITS = AUDITS / "2026-11-04-lordchrist-bilingual-line-edits-inert.json"
 PROPOSAL_FILES = (
     AUDITS / "2026-11-03-lordchrist-quote-exact-editorial-proposals.json",
     AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json",
@@ -113,6 +114,77 @@ def _draft_render(body: str, author: str, work: str, tags: str) -> str:
         raise ValueError("Quote preview violates the 2-3 dense paragraph contract")
     nested = _nest_original_speech_quotes("\n\n".join(blocks))
     return f"{chr(171)}{nested}{chr(187)}\n\n{chr(169)} {author}, {chr(171)}{work}{chr(187)}\n\n{tags}"
+
+
+def _apply_bound_line_edits(preview: list[dict[str, Any]], queue_sha: str) -> int:
+    """Apply any number of exact-source, inert bilingual edits without one-off code branches."""
+    packet = _load(BILINGUAL_LINE_EDITS)
+    if not (
+        packet["schema_name"] == "video-channel-manager.lordchrist-source-bound-bilingual-line-edits-inert"
+        and packet["schema_version"] == 1
+        and packet["original_queue_sha256"] == queue_sha
+        and packet["editorial_approval"] is False
+        and packet["full_bilingual_review_complete"] is False
+        and packet["rights_review_complete"] is False
+        and packet["provider_write_authorization"] is False
+        and packet["protected_ledger_write_authorization"] is False
+        and packet["approved_new_queue"] is False
+    ):
+        raise ValueError("Line-edit packet missing, stale or unsafe for editorial preview")
+    rows = packet["revisions"]
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Line-edit packet must contain source-grounded revisions")
+
+    seen: set[int] = set()
+    for row in rows:
+        number = row["sequence"]
+        if not isinstance(number, int) or not 1 <= number <= len(preview) or number in seen:
+            raise ValueError("Duplicate or invalid sequence in line-edit packet")
+        seen.add(number)
+        card = preview[number - 1]
+        if not (
+            card["sequence"] == number
+            and card["publication_id"] == row["original_publication_id"]
+            and card["original_full_post_sha256"] == row["original_full_post_sha256"]
+            and card["candidate_full_post_sha256"] == row["expected_prior_preview_full_post_sha256"]
+            and card["source"]["url"] == row["source_url"]
+        ):
+            raise ValueError(f"Stale or mismatched candidate in line-edit packet: {number}")
+        witness = row["source_witness"]
+        if not (
+            witness["http_status"] == 200
+            and witness["source_begin_anchor_exact"]
+            and witness["source_end_anchor_exact"]
+            and witness["forward_order"]
+            and witness["english_source_span_words"] >= 80
+            and witness["full_sentence_alignment_certified"] is False
+            and len(witness["phrase_checks"]) == len(row["edits"])
+            and all(point["exact_tokens_in_original"] is True for point in witness["phrase_checks"])
+        ):
+            raise ValueError(f"Line-edit packet lacks source evidence: {number}")
+        edits = row["edits"]
+        if not isinstance(edits, list) or not 1 <= len(edits) <= 5:
+            raise ValueError("Line edits must be narrowly scoped")
+        for edit in edits:
+            if edit["field"] not in ("text", "source.anchor_start", "source.anchor_end"):
+                raise ValueError("Cannot change identifiers, permissions or source URL in line edits")
+            if not edit["source_phrase"] or not edit["issue"]:
+                raise ValueError("Every line edit needs primary-source phrase and rationale")
+            if "??" in edit["proposed_after"] or chr(65533) in edit["proposed_after"]:
+                raise ValueError("Encoding corruption in source-bound Cyrillic editorial text")
+            _replace_exact(card, edit["field"], edit["exact_before"], edit["proposed_after"])
+        if not (
+            _sha(card["text"]) == row["candidate_full_post_sha256"]
+            and _sha(card["source"]["anchor_start"]) == row["candidate_begin_anchor_sha256"]
+        ):
+            raise ValueError(f"Post-edit exact content SHA failed on {number}")
+        if len(card["text"]) > 4096:
+            raise ValueError(f"Reviewed card {number} exceeds Telegram text envelope")
+        card["candidate_full_post_sha256"] = _sha(card["text"])
+        card["source_bound_line_edit_status"] = "unapproved_pending_full_bilingual_and_edition_rights"
+        card["source_bound_line_edit_evidence_file"] = BILINGUAL_LINE_EDITS.relative_to(ROOT).as_posix()
+        card["source_bound_line_edit_count"] = len(edits)
+    return len(seen)
 
 
 def build() -> dict[str, Any]:
@@ -463,6 +535,7 @@ def build() -> dict[str, Any]:
         revised["source_contiguity_review_evidence_file"] = SPURGEON_OWEN_REVIEW.relative_to(ROOT).as_posix()
         if len(revised["text"]) > 4096:
             raise ValueError(f"Contiguity patch {sequence} exceeds Telegram text envelope")
+    line_edits_count = _apply_bound_line_edits(preview, queue_sha)
     return {
         "schema_name": SCHEMA,
         "schema_version": 1,
@@ -482,6 +555,7 @@ def build() -> dict[str, Any]:
         "semantic_revision_applied_count": 3,
         "retained_verse_amendment_count": 1,
         "source_contiguity_amendment_count": 2,
+        "source_bound_line_edit_cards": line_edits_count,
         "effective_contiguous_draft_count": 21,
         "effective_retained_for_context_count": 9,
         "note": (
