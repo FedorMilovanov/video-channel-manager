@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,9 +17,27 @@ JOURNAL_SCHEMA = "video-manager.youtube-video-upload-journal"
 JOURNAL_VERSION = "2.0"
 LIVE_STATE_EVIDENCE_SCHEMA = "video-manager.youtube-live-state-evidence"
 
+# Template markers left in a public title, description or tag must never become
+# immutable upload intent. Match unresolved *field/value* tokens, not ordinary
+# prose containing words like "your" or "link".
+_UNRESOLVED_METADATA_TOKEN = re.compile(
+    r"\b(?:(?:PASTE|INSERT|REPLACE|YOUR)(?:[-_][A-Z0-9]+){0,8}[-_](?:ID|URL|LINK)|REPLACE_ME)\b",
+    flags=re.IGNORECASE,
+)
+
 
 class UploadPlanError(RuntimeError):
     pass
+
+
+def require_resolved_metadata(*, title: str, description: str, tags: list[str]) -> None:
+    """Reject unresolved link/ID templates before binding metadata to a stable upload key."""
+    fields = [("title", title), ("description", description)]
+    fields.extend((f"tags[{index}]", value) for index, value in enumerate(tags))
+    for field_name, value in fields:
+        match = _UNRESOLVED_METADATA_TOKEN.search(value)
+        if match:
+            raise UploadPlanError(f"Unresolved metadata placeholder in {field_name}: {match.group(0)}")
 
 
 def canonical_sha256(payload: object) -> str:
@@ -82,6 +101,7 @@ def validate_spec(spec: dict[str, Any]) -> None:
     tags = spec.get("tags")
     if not isinstance(tags, list) or not all(isinstance(item, str) and item.strip() for item in tags):
         raise UploadPlanError("Spec tags must contain non-empty strings.")
+    require_resolved_metadata(title=spec["title"], description=spec["description"], tags=tags)
 
 
 def intent_digest(intent: dict[str, Any]) -> str:
@@ -156,6 +176,15 @@ def validate_intent(intent: dict[str, Any]) -> None:
         raise UploadPlanError("Unsupported upload intent schema; rebuild it from current code.")
     if intent.get("intent_sha256") != intent_digest(intent):
         raise UploadPlanError("Upload intent SHA-256 does not match canonical content.")
+    snippet = intent.get("snippet")
+    if not isinstance(snippet, dict):
+        raise UploadPlanError("Upload intent snippet must be a metadata object.")
+    title, description, tags = snippet.get("title"), snippet.get("description"), snippet.get("tags")
+    if not isinstance(title, str) or not title.strip() or not isinstance(description, str):
+        raise UploadPlanError("Upload intent title or description is invalid.")
+    if not isinstance(tags, list) or not all(isinstance(tag, str) and tag.strip() for tag in tags):
+        raise UploadPlanError("Upload intent tags must contain non-empty strings.")
+    require_resolved_metadata(title=title, description=description, tags=tags)
     project_key = str(intent.get("project_key") or "")
     account_alias = str(intent.get("account_alias") or "")
     target_channel_id = str(intent.get("target_channel_id") or "")
