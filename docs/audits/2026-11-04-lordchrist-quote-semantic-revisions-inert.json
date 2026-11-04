@@ -1,0 +1,90 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-nonpublishing-semantic-revisions",
+  "schema_version": 1,
+  "review_date": "2026-11-04",
+  "record_type": "source-bound-editorial-alternative-not-a-telegram-release",
+  "editorial_approval": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "provider_write_authorization": false,
+  "protected_ledger_write_authorization": false,
+  "source_probes_require_exact_opening_and_closing": true,
+  "revisions": [
+    {
+      "sequence": 7,
+      "edit_kind": "replace_english_span_russian_translation",
+      "source_url": "https://ccel.org/ccel/gurnall/armour/files/gurnal07b.htm",
+      "new_title_ru": "Живая молитва, а не нарисованный огонь",
+      "new_source_anchor_start": "Cold prayer is no more prayer than painted fire is fire.",
+      "new_source_anchor_end": "for their zeal in service of God, are called ‘a flame of fire.’",
+      "new_translation_ru": "Холодная молитва — не более молитва, чем нарисованный огонь — огонь. Неужели молитва, которая не согревает твоё собственное сердце, как ты полагаешь, подвигнет Бога? Ты открываешь кран, но сосуд замёрз. Человек не может пользоваться рукой, окоченевшей от холода; так и ты не можешь как следует молиться, пока сердце не отогреется и не ощутит того, о чём ты просишь.\n\nЧтобы согреть холодное сердце духовным жаром, рассмотрим первый довод — превосходство ревности и горячности в молитве. Если ты принадлежишь к святым, в тебе есть начало, побуждающее одобрять превосходное, и ревность в молитве принадлежит к такому превосходному. Жизнь составляет достоинство живых существ; даже в неодушевлённых вещах есть некое подобие жизни, придающее им ценность. Вино ценят за его крепость: чего оно стоит, если выдохлось и стало пресным? В алмазе ценят сверкание, в родниковой воде — движение, из-за которого её называют живой. Тем более это верно в отношении существ, действительно обладающих жизнью: потому блоха или муха почитаются более благородными созданиями, чем солнце.\n\nЧем выше род жизни, тем благороднее природа существа: животные выше растений, люди выше животных, ангелы выше людей. Как жизнь придаёт достоинство существу, так живость и сила действия придают достоинство самой жизни. Чем благороднее жизнь существа, тем сильнее проявляется его деятельность. У ангела разумение быстрее, а ревность сильнее, чем у человека. Поэтому чем живее ты исполняешь свой долг и чем больше ревности проявляешь в нём, тем ближе становишься к природе тех славных духов, которых за усердие в служении Богу называют «пламенем огненным».",
+      "issue_resolved": "Restores flea/fly versus sun comparison, angels faster understanding/greater zeal and exact source agency God rather than an invented anthropomorphic heart. CCEL bracketed intertitle is editorial apparatus rather than quoted author speech.",
+      "final_editorial_approval": false,
+      "source_probe": {
+        "http_status": 200,
+        "source_opening_exact": true,
+        "source_closing_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 321,
+        "source_review_not_full_translation_certification": true
+      },
+      "original_publication_id": "lordchrist-gurnall-cold-prayer",
+      "expected_prior_preview_full_post_sha256": "sha256:ccaf614dc6e33521093a7657bd0c35f3b8c6af9cd8ac05cc2576e01ae7ecb654",
+      "original_full_post_sha256": "sha256:00f06d452db29ba77c2a70545bce03732b4faf208383fb6c0668f665839e5ab0",
+      "new_russian_body_sha256": "sha256:f0d2f608fa421411acab11b4559b9bc846c373cddc8a1d0c28d19480a4abeedf",
+      "new_russian_word_count": 235,
+      "russian_paragraph_count": 3
+    },
+    {
+      "sequence": 25,
+      "edit_kind": "replace_english_span_russian_translation",
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.lx.html",
+      "new_title_ru": "Когда служители обещают мир, которого нет",
+      "new_source_anchor_start": "As God can send a nation or people no greater blessing than to give them faithful, sincere, and upright ministers,",
+      "new_source_anchor_end": "They have healed also the hurt of the daughter of my people slightly, saying, Peace, peace, when there is no peace.",
+      "new_translation_ru": "Как нет для народа большего благословения от Бога, чем получить верных, искренних и праведных служителей, так и величайшее проклятие, какое Бог может послать народу в этом мире, — отдать его во власть слепых, невозрождённых, плотских, равнодушных и неумелых наставников.\n\nМежду тем во все времена находилось немало волков в овечьей одежде: тех, кто замазывал стену непрочным раствором и пророчествовал более приятные вещи, чем позволял Бог. Как было прежде, так и теперь многие искажают Слово Божье и поступают с ним лукаво. Особенно это было заметно во времена пророка Иеремии. Верный своему Господу и призвавшему его Богу, он снова и снова обличал таких служителей и смело свидетельствовал о чести Бога, от имени Которого говорил.\n\nПрочитайте его пророчество и увидите: мало кто столь решительно обличал подобных наставников. Особенно строго Иеремия говорит о них в главе, из которой взят текст этой проповеди. Среди прочего он обвиняет их в корыстолюбии: «От малого до большого каждый из них предан корысти; и от пророка до священника — все действуют лживо» (Иер. 6:13). Затем он показывает, как вероломно они поступают с несчастными душами: «Врачуют раны дочери народа Моего легкомысленно, говоря: „мир! мир!“, а мира нет» (Иер. 6:14).",
+      "issue_resolved": "Preserves categorical 'greatest curse' instead of softening to the possibility of a greater calamity, and preserves explicit Jeremiah 6:13–14 rhetorical continuity.",
+      "final_editorial_approval": false,
+      "source_probe": {
+        "http_status": 200,
+        "source_opening_exact": true,
+        "source_closing_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 296,
+        "source_review_not_full_translation_certification": true
+      },
+      "original_publication_id": "lordchrist-whitefield-method-of-grace-peace",
+      "expected_prior_preview_full_post_sha256": "sha256:c65b52648c3ee46ebc46833f7b245bf6aab677815c8cc58a333029c8654ec1f6",
+      "original_full_post_sha256": "sha256:4271004a0e62f1864f9b9997e1a7e3ce30b56eeb870ef3e01be20c64b64c2a69",
+      "new_russian_body_sha256": "sha256:a7fabc2836118063a32969dc65e116c1661492615395019d1d322cd091f4040b",
+      "new_russian_word_count": 188,
+      "russian_paragraph_count": 3
+    },
+    {
+      "sequence": 29,
+      "edit_kind": "replace_retained_anaphoric_selection_with_contiguous_context",
+      "source_url": "https://ccel.org/ccel/bavinck/revelation/revelation.ii.html",
+      "new_title_ru": "Почему богословие начинается с откровения",
+      "new_source_anchor_start": "For, since all historical and psychological research into the origin and essence of the religion of Israel and Christianity must leave their peculiarity untouched,",
+      "new_source_anchor_end": "the task of unfolding the science of the revelation of God and of our knowledge concerning him.",
+      "new_translation_ru": "Поскольку исторические и психологические исследования происхождения и сущности религии Израиля и христианства всё равно оставляют нетронутым их своеобразие, что же остаётся: отвергнуть их как якобы безумие или принять верой как Божественную премудрость? Вера в такое особое откровение — исходный пункт и краеугольный камень христианского богословия. Как наука никогда не предшествует жизни, но всегда следует за ней и из неё проистекает, так и наука о познании Бога основывается на действительности Его откровения.\n\nЕсли Бога нет либо если Он не открыл Себя и поэтому непознаваем, тогда всякая религия есть иллюзия, а всякое богословие — призрак. Но на основании откровения богословие берётся за славный труд — раскрывать учение о Божьем откровении и о нашем познании Его.",
+      "issue_resolved": "Moves start-anchor back to the preceding source sentence expressly naming Israel and Christianity, so 'such a special revelation' has immediate referent instead of a dangling demonstrative.",
+      "final_editorial_approval": false,
+      "source_probe": {
+        "http_status": 200,
+        "source_opening_exact": true,
+        "source_closing_exact": true,
+        "forward_order": true,
+        "english_source_span_words": 149,
+        "source_review_not_full_translation_certification": true
+      },
+      "original_publication_id": "lordchrist-bavinck-revelation",
+      "expected_prior_preview_full_post_sha256": "sha256:ba188d65082813d83a0545a31ae8169e7f7b6c2bca036807d5801ccc3ffc1c49",
+      "original_full_post_sha256": "sha256:ba188d65082813d83a0545a31ae8169e7f7b6c2bca036807d5801ccc3ffc1c49",
+      "new_russian_body_sha256": "sha256:46f92ca8962bd35fa6725570834aeb7813e6714e640a4e59de7b5d754f43f873",
+      "new_russian_word_count": 110,
+      "russian_paragraph_count": 2
+    }
+  ],
+  "original_queue_sha256": "sha256:ff039a80cf4d20f3ea801256789a7a7096ac8910d61c58e02fa3fde22990cb72"
+}

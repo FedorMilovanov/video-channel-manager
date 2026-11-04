@@ -195,6 +195,9 @@ def test_every_quote_obeys_paragraph_contract_without_losing_draft_words() -> No
     older = _load(ROOT / "docs/audits/2026-11-04-lordchrist-contiguous-quote-redrafts.json")
     newer = _load(ROOT / "docs/audits/2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json")
     drafts = {row["sequence"]: row for doc in (older, newer) for row in doc["drafts"]}
+    revision_doc = _load(ROOT / "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json")
+    revisions = {row["sequence"]: row for row in revision_doc["revisions"]}
+    assert set(revisions) == {7, 25, 29}
 
     folded = []
     for card in preview:
@@ -209,9 +212,11 @@ def test_every_quote_obeys_paragraph_contract_without_losing_draft_words() -> No
             continue
 
         draft = drafts[card["sequence"]]
+        revised = revisions.get(card["sequence"])
         quoted = "\n\n".join(quote_blocks)
         assert quoted.startswith(chr(171)) and quoted.endswith(chr(187))
-        assert re.findall(r"\w+", quoted) == re.findall(r"\w+", draft["translation_ru"])
+        authoritative_draft_body = revised["new_translation_ru"] if revised else draft["translation_ru"]
+        assert re.findall(r"\w+", quoted) == re.findall(r"\w+", authoritative_draft_body)
         if card["preview_paragraph_normalization"]:
             folded.append(card["sequence"])
             assert len(draft["translation_ru"].split("\n\n")) == 4
@@ -219,3 +224,98 @@ def test_every_quote_obeys_paragraph_contract_without_losing_draft_words() -> No
             assert 2 <= len(draft["translation_ru"].split("\n\n")) <= 3
 
     assert folded == [14, 18, 21]
+
+
+def test_three_semantic_revisions_bind_primary_spans_and_are_not_approvals() -> None:
+    import re
+
+    doc = _load(ROOT / "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json")
+    posts = _load(FILE)["posts"]
+    original = _load(QUEUE)["posts"]
+    assert doc["schema_name"] == "video-channel-manager.lordchrist-nonpublishing-semantic-revisions"
+    assert doc["schema_version"] == 1
+    assert doc["original_queue_sha256"] == _hash(QUEUE.read_text(encoding="utf-8"))
+    assert doc["editorial_approval"] is False
+    assert doc["full_bilingual_review_complete"] is False
+    assert doc["rights_review_complete"] is False
+    assert doc["provider_write_authorization"] is False
+    assert doc["protected_ledger_write_authorization"] is False
+    assert [row["sequence"] for row in doc["revisions"]] == [7, 25, 29]
+
+    preview = _load(FILE)
+    assert preview["semantic_revision_applied_count"] == 3
+    assert preview["effective_contiguous_draft_count"] == 21
+    assert preview["effective_retained_for_context_count"] == 9
+
+    for revision in doc["revisions"]:
+        n = revision["sequence"]
+        p = posts[n - 1]
+        source = original[n - 1]
+        assert p["publication_id"] == source["publication_id"] == revision["original_publication_id"]
+        assert revision["original_full_post_sha256"] == _hash(source["text"])
+        assert revision["new_russian_body_sha256"] == _hash(revision["new_translation_ru"])
+        assert revision["new_russian_word_count"] == len(re.findall(r"\w+", revision["new_translation_ru"]))
+        assert revision["russian_paragraph_count"] in (2, 3)
+        assert revision["final_editorial_approval"] is False
+        assert p["candidate_full_post_sha256"] == _hash(p["text"])
+        assert p["source"]["anchor_start"] == revision["new_source_anchor_start"]
+        assert p["source"]["anchor_end"] == revision["new_source_anchor_end"]
+        assert p["source"]["url"] == revision["source_url"]
+        assert p["semantic_revision_status"] == "pending_independent_bilingual_and_rights_approval"
+        assert p["semantic_revision_evidence_file"].endswith("quote-semantic-revisions-inert.json")
+        assert p["editorial_approval"] is False
+        assert p["provider_write_authorization"] is False
+        assert p["candidate_full_post_sha256"] != revision["expected_prior_preview_full_post_sha256"]
+        source_check = revision["source_probe"]
+        assert source_check["http_status"] == 200
+        assert source_check["source_opening_exact"] is True
+        assert source_check["source_closing_exact"] is True
+        assert source_check["forward_order"] is True
+        assert source_check["source_review_not_full_translation_certification"] is True
+        assert source_check["english_source_span_words"] >= 120
+
+    assert "блоха или муха" in posts[6]["text"]
+    assert "чем солнце" in posts[6]["text"]
+    assert "разумение быстрее" in posts[6]["text"]
+    assert "тронет сердце Бога" not in posts[6]["text"]
+    assert "величайшее проклятие" in posts[24]["text"]
+    assert "едва ли возможно представить большее бедствие" not in posts[24]["text"]
+    assert posts[28]["text"].startswith(chr(171) + "Поскольку исторические")
+    assert posts[28]["preview_selection_change"] == "retained_source_replaced_by_context_complete_candidate"
+    assert "религии Израиля и христианства" in posts[28]["text"]
+
+
+def test_semantic_revision_rejects_stale_input_and_fake_editorial_approval() -> None:
+    import pytest
+
+    builder = runpy.run_path(str(BUILDER))
+    build = builder["build"]
+    globals_dict = build.__globals__
+    original_loader = globals_dict["_load"]
+    revision_path = builder["SEMANTIC_REVISIONS"]
+
+    def changed_loader(path: Path) -> dict:
+        doc = original_loader(path)
+        if path == revision_path:
+            doc["revisions"][0]["expected_prior_preview_full_post_sha256"] = "sha256:" + "0" * 64
+        return doc
+
+    globals_dict["_load"] = changed_loader
+    try:
+        with pytest.raises(ValueError, match="Unsafe or stale"):
+            build()
+    finally:
+        globals_dict["_load"] = original_loader
+
+    def authorized_loader(path: Path) -> dict:
+        doc = original_loader(path)
+        if path == revision_path:
+            doc["provider_write_authorization"] = True
+        return doc
+
+    globals_dict["_load"] = authorized_loader
+    try:
+        with pytest.raises(ValueError, match="not safe"):
+            build()
+    finally:
+        globals_dict["_load"] = original_loader

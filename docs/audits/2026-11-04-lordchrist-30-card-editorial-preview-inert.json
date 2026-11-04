@@ -14,6 +14,9 @@
   "rights_review_complete": false,
   "drafted_count": 20,
   "conditionally_retained_count": 10,
+  "semantic_revision_applied_count": 3,
+  "effective_contiguous_draft_count": 21,
+  "effective_retained_for_context_count": 9,
   "note": "Candidate reading deck ONLY. These excerpts are NOT verified for every Russian phrase or cleared for publication. No existing queue, receipt or provider state is modified. This distinct schema is not recognized by publisher load paths.",
   "posts": [
     {
@@ -231,7 +234,7 @@
       "sequence": 7,
       "publication_id": "lordchrist-gurnall-cold-prayer",
       "title": "«Живая молитва, а не нарисованный огонь» — Уильям Гарнелл",
-      "text": "«Холодная молитва — не более молитва, чем нарисованный огонь — настоящий огонь. Если молитва не согревает даже твоего собственного сердца, думаешь ли ты, что она тронет сердце Бога? Ты открываешь кран, но сосуд замёрз. Как человек не может пользоваться рукой, окоченевшей от холода, так и ты не сможешь деятельно молиться, пока сердце не согреется и не почувствует того, о чём ты просишь.\n\nЧтобы привести холодное сердце к духовной теплоте, подумай о превосходстве ревности и усердия. Если ты святой Божий, то в тебе есть начало, побуждающее ценить прекрасное; таково и усердие в молитве. Жизнь составляет достоинство живых существ, но даже в неодушевлённых вещах есть некое её подобие: в вине ценят его крепость, в алмазе — сияние, в родниковой воде — движение, почему её и называют живой.\n\nНасколько больше это относится к существам, обладающим подлинной жизнью! Чем выше образ жизни, тем благороднее природа существа: животные выше растений, люди выше животных, ангелы выше людей. Если жизнь придаёт существам достоинство, то живость и сила действий составляют достоинство самой жизни. Чем пламеннее ты служишь Богу, тем ближе становишься к духам славы, которых за усердие в служении Ему называют „пламенем огненным“.»\n\n© Уильям Гарнелл, «Христианин во всеоружии»\n\n#Уильям_Гарнелл #Молитва #Дух_Святой",
+      "text": "«Холодная молитва — не более молитва, чем нарисованный огонь — огонь. Неужели молитва, которая не согревает твоё собственное сердце, как ты полагаешь, подвигнет Бога? Ты открываешь кран, но сосуд замёрз. Человек не может пользоваться рукой, окоченевшей от холода; так и ты не можешь как следует молиться, пока сердце не отогреется и не ощутит того, о чём ты просишь.\n\nЧтобы согреть холодное сердце духовным жаром, рассмотрим первый довод — превосходство ревности и горячности в молитве. Если ты принадлежишь к святым, в тебе есть начало, побуждающее одобрять превосходное, и ревность в молитве принадлежит к такому превосходному. Жизнь составляет достоинство живых существ; даже в неодушевлённых вещах есть некое подобие жизни, придающее им ценность. Вино ценят за его крепость: чего оно стоит, если выдохлось и стало пресным? В алмазе ценят сверкание, в родниковой воде — движение, из-за которого её называют живой. Тем более это верно в отношении существ, действительно обладающих жизнью: потому блоха или муха почитаются более благородными созданиями, чем солнце.\n\nЧем выше род жизни, тем благороднее природа существа: животные выше растений, люди выше животных, ангелы выше людей. Как жизнь придаёт достоинство существу, так живость и сила действия придают достоинство самой жизни. Чем благороднее жизнь существа, тем сильнее проявляется его деятельность. У ангела разумение быстрее, а ревность сильнее, чем у человека. Поэтому чем живее ты исполняешь свой долг и чем больше ревности проявляешь в нём, тем ближе становишься к природе тех славных духов, которых за усердие в служении Богу называют „пламенем огненным“.»\n\n© Уильям Гарнелл, «Христианин во всеоружии»\n\n#Уильям_Гарнелл #Молитва #Дух_Святой",
       "source": {
         "author": "Уильям Гарнелл",
         "work": "Христианин во всеоружии",
@@ -253,11 +256,14 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:00f06d452db29ba77c2a70545bce03732b4faf208383fb6c0668f665839e5ab0",
-      "candidate_full_post_sha256": "sha256:ccaf614dc6e33521093a7657bd0c35f3b8c6af9cd8ac05cc2576e01ae7ecb654",
+      "candidate_full_post_sha256": "sha256:fc78c07250e397930e992a7efc764a4a656c080f9c855c967cdce071eeb99232",
       "evidence_file": "docs/audits/2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json",
       "applied_original_field_proposals": [],
       "editorial_approval": false,
-      "provider_write_authorization": false
+      "provider_write_authorization": false,
+      "semantic_revision_evidence_file": "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json",
+      "semantic_revision_status": "pending_independent_bilingual_and_rights_approval",
+      "semantic_revision_issue_resolved_in_draft": "Restores flea/fly versus sun comparison, angels faster understanding/greater zeal and exact source agency God rather than an invented anthropomorphic heart. CCEL bracketed intertitle is editorial apparatus rather than quoted author speech."
     },
     {
       "sequence": 8,
@@ -831,7 +837,7 @@
       "sequence": 25,
       "publication_id": "lordchrist-whitefield-method-of-grace-peace",
       "title": "«Когда служители обещают мир, которого нет» — Джордж Уайтфилд",
-      "text": "«Нет для народа большего Божьего благословения, чем верные, искренние и праведные служители. И наоборот, едва ли возможно представить большее бедствие, посланное Богом народу в этом мире, чем оказаться во власти слепых, невозрождённых, плотских, равнодушных и неумелых наставников.\n\nВо все времена встречались волки в овечьей одежде: люди, которые замазывали стену непрочным раствором и пророчествовали более приятное, чем позволял Бог. Как было прежде, так остаётся и теперь: многие искажают Слово Божье и поступают с ним лукаво. Особенно это проявилось во дни пророка Иеремии. Верный своему Господу и призвавшему его Богу, пророк не умолкал, обличая таких служителей и свидетельствуя о чести Того, от Чьего имени говорил.\n\nПрочитайте его пророчество — и увидите, как решительно он выступал против этих людей. В частности, он обличал их корыстолюбие: „От малого до большого каждый из них предан корысти; и от пророка до священника — все действуют лживо“ (ср. Иер. 6:13). Затем он особенно ясно показывает, как они изменяли бедным душам: „Врачуют раны дочери народа Моего легкомысленно, говоря: ‘мир! мир!’, а мира нет“ (Иер. 6:14).»\n\n© Джордж Уайтфилд, «Избранные проповеди»\n\n#Джордж_Уайтфилд #Ложный_мир #Проповедь",
+      "text": "«Как нет для народа большего благословения от Бога, чем получить верных, искренних и праведных служителей, так и величайшее проклятие, какое Бог может послать народу в этом мире, — отдать его во власть слепых, невозрождённых, плотских, равнодушных и неумелых наставников.\n\nМежду тем во все времена находилось немало волков в овечьей одежде: тех, кто замазывал стену непрочным раствором и пророчествовал более приятные вещи, чем позволял Бог. Как было прежде, так и теперь многие искажают Слово Божье и поступают с ним лукаво. Особенно это было заметно во времена пророка Иеремии. Верный своему Господу и призвавшему его Богу, он снова и снова обличал таких служителей и смело свидетельствовал о чести Бога, от имени Которого говорил.\n\nПрочитайте его пророчество и увидите: мало кто столь решительно обличал подобных наставников. Особенно строго Иеремия говорит о них в главе, из которой взят текст этой проповеди. Среди прочего он обвиняет их в корыстолюбии: „От малого до большого каждый из них предан корысти; и от пророка до священника — все действуют лживо“ (Иер. 6:13). Затем он показывает, как вероломно они поступают с несчастными душами: „Врачуют раны дочери народа Моего легкомысленно, говоря: ‘мир! мир!’, а мира нет“ (Иер. 6:14).»\n\n© Джордж Уайтфилд, «Избранные проповеди»\n\n#Джордж_Уайтфилд #Ложный_мир #Проповедь",
       "source": {
         "author": "Джордж Уайтфилд",
         "work": "Избранные проповеди",
@@ -853,11 +859,14 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:4271004a0e62f1864f9b9997e1a7e3ce30b56eeb870ef3e01be20c64b64c2a69",
-      "candidate_full_post_sha256": "sha256:c65b52648c3ee46ebc46833f7b245bf6aab677815c8cc58a333029c8654ec1f6",
+      "candidate_full_post_sha256": "sha256:119fd3d9210593430830902a01277bdbc98107cf51d21d22979e27f9da34850f",
       "evidence_file": "docs/audits/2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json",
       "applied_original_field_proposals": [],
       "editorial_approval": false,
-      "provider_write_authorization": false
+      "provider_write_authorization": false,
+      "semantic_revision_evidence_file": "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json",
+      "semantic_revision_status": "pending_independent_bilingual_and_rights_approval",
+      "semantic_revision_issue_resolved_in_draft": "Preserves categorical 'greatest curse' instead of softening to the possibility of a greater calamity, and preserves explicit Jeremiah 6:13–14 rhetorical continuity."
     },
     {
       "sequence": 26,
@@ -964,21 +973,22 @@
     {
       "sequence": 29,
       "publication_id": "lordchrist-bavinck-revelation",
-      "title": "«Откровение — основа религии и науки» — Герман Бавинк",
-      "text": "«Вера в такое особое откровение есть исходный пункт и краеугольный камень христианского богословия. Как наука никогда не предшествует жизни, но всегда следует за ней и из неё вытекает, так и наука богопознания покоится на действительности Его откровения. Если Бога нет, или если Он не открыл Себя и потому непознаваем, то всякая религия есть иллюзия, а всякое богословие — призрак.\n\nНо, построенное на основании откровения, богословие предпринимает славный труд — труд раскрытия науки об откровении Божием и о нашем познании Его. Оно совершает этот труд, когда посредством экзегезы стремится установить содержание откровения, когда старается свести это установленное содержание к единству мысли, когда пытается отстаивать его истину — наступлением или обороной — или рекомендовать его совести людей.»\n\n© Герман Бавинк, «Philosophy of Revelation (Stone Lectures 1908–09)»\n\n#Герман_Бавинк #Откровение #Богословие",
+      "title": "«Почему богословие начинается с откровения» — Герман Бавинк",
+      "text": "«Поскольку исторические и психологические исследования происхождения и сущности религии Израиля и христианства всё равно оставляют нетронутым их своеобразие, что же остаётся: отвергнуть их как якобы безумие или принять верой как Божественную премудрость? Вера в такое особое откровение — исходный пункт и краеугольный камень христианского богословия. Как наука никогда не предшествует жизни, но всегда следует за ней и из неё проистекает, так и наука о познании Бога основывается на действительности Его откровения.\n\nЕсли Бога нет либо если Он не открыл Себя и поэтому непознаваем, тогда всякая религия есть иллюзия, а всякое богословие — призрак. Но на основании откровения богословие берётся за славный труд — раскрывать учение о Божьем откровении и о нашем познании Его.»\n\n© Герман Бавинк, «Philosophy of Revelation (Stone Lectures 1908–09)»\n\n#Герман_Бавинк #Откровение #Богословие",
       "source": {
         "author": "Герман Бавинк",
         "work": "Philosophy of Revelation (Stone Lectures 1908–09)",
         "location": "Лекция I: The Idea of a Philosophy of Revelation",
         "url": "https://ccel.org/ccel/bavinck/revelation/revelation.ii.html",
-        "anchor_start": "Belief in such a special revelation is the starting-point and the foundation-stone of Christian theology.",
-        "anchor_end": "commend it to the consciences of men.",
+        "anchor_start": "For, since all historical and psychological research into the origin and essence of the religion of Israel and Christianity must leave their peculiarity untouched,",
+        "anchor_end": "the task of unfolding the science of the revelation of God and of our knowledge concerning him.",
         "source_type": "primary",
         "original_language": "en",
         "translation_language": "ru",
-        "selection_policy": "contiguous_complete_no_omissions",
+        "selection_policy": "new_source_contiguous_passage_proposed",
         "translation_review_status": "pending_full_bilingual_check",
-        "edition_rights_status": "requires_edition_specific_review"
+        "edition_rights_status": "requires_edition_specific_review",
+        "primary_source_type": "historical_primary"
       },
       "preview_paragraph_normalization": null,
       "editorial_preview_status": "editorial_preview_unapproved_no_provider_mutations",
@@ -988,7 +998,7 @@
       "bilingual_alignment_status": "pending_complete_sentence_alignment",
       "edition_specific_rights_status": "pending_independent_review",
       "original_full_post_sha256": "sha256:ba188d65082813d83a0545a31ae8169e7f7b6c2bca036807d5801ccc3ffc1c49",
-      "candidate_full_post_sha256": "sha256:ba188d65082813d83a0545a31ae8169e7f7b6c2bca036807d5801ccc3ffc1c49",
+      "candidate_full_post_sha256": "sha256:911b5075c13b6a5ec321e8a1cf0d60c93e50c9d525831704b29a03f9d31b396e",
       "evidence_file": "content/telegram/lordchrist/verified-30-posts.json",
       "applied_original_field_proposals": [
         {
@@ -997,7 +1007,11 @@
         }
       ],
       "editorial_approval": false,
-      "provider_write_authorization": false
+      "provider_write_authorization": false,
+      "semantic_revision_evidence_file": "docs/audits/2026-11-04-lordchrist-quote-semantic-revisions-inert.json",
+      "semantic_revision_status": "pending_independent_bilingual_and_rights_approval",
+      "semantic_revision_issue_resolved_in_draft": "Moves start-anchor back to the preceding source sentence expressly naming Israel and Christianity, so 'such a special revelation' has immediate referent instead of a dangling demonstrative.",
+      "preview_selection_change": "retained_source_replaced_by_context_complete_candidate"
     },
     {
       "sequence": 30,

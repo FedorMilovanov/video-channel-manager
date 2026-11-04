@@ -24,6 +24,7 @@ REMAINING_DRAFTS = AUDITS / "2026-11-04-lordchrist-remaining-10-contiguous-redra
 INDEX = AUDITS / "2026-11-04-lordchrist-30-quote-editorial-candidate-index.json"
 REGISTER = AUDITS / "2026-11-03-lordchrist-v4-quote-editorial-register.json"
 REMAINING_AUDIT = AUDITS / "2026-11-04-lordchrist-remaining-20-source-audit.json"
+SEMANTIC_REVISIONS = AUDITS / "2026-11-04-lordchrist-quote-semantic-revisions-inert.json"
 PROPOSAL_FILES = (
     AUDITS / "2026-11-03-lordchrist-quote-exact-editorial-proposals.json",
     AUDITS / "2026-11-04-lordchrist-retained-quote-field-proposals.json",
@@ -108,6 +109,7 @@ def build() -> dict[str, Any]:
     index = _load(INDEX)
     register = _load(REGISTER)
     remaining_audit = _load(REMAINING_AUDIT)
+    revisions = _load(SEMANTIC_REVISIONS)
     critical = _load(CRITICAL_DRAFTS)
     remaining = _load(REMAINING_DRAFTS)
     if (
@@ -267,6 +269,70 @@ def build() -> dict[str, Any]:
 
     if [p["sequence"] for p in preview] != list(range(1, 31)):
         raise ValueError("Preview must contain all 30 ordered identities")
+    if not (
+        revisions["schema_name"] == "video-channel-manager.lordchrist-nonpublishing-semantic-revisions"
+        and revisions["schema_version"] == 1
+        and revisions["original_queue_sha256"] == queue_sha
+        and revisions["editorial_approval"] is False
+        and revisions["full_bilingual_review_complete"] is False
+        and revisions["rights_review_complete"] is False
+        and revisions["provider_write_authorization"] is False
+        and revisions["protected_ledger_write_authorization"] is False
+    ):
+        raise ValueError("Semantic revision package is not safe, versioned, or queue bound")
+
+    adjusted: set[int] = set()
+    for revision in revisions["revisions"]:
+        n = revision["sequence"]
+        if n in adjusted or n not in (7, 25, 29):
+            raise ValueError("Unknown or repeated semantic revision")
+        adjusted.add(n)
+        target = preview[n - 1]
+        if (
+            target["original_full_post_sha256"] != revision["original_full_post_sha256"]
+            or target["publication_id"] != revision["original_publication_id"]
+            or target["candidate_full_post_sha256"] != revision["expected_prior_preview_full_post_sha256"]
+            or target["source"]["url"] != revision["source_url"]
+            or revision["new_russian_body_sha256"] != _sha(revision["new_translation_ru"])
+            or revision["final_editorial_approval"] is not False
+        ):
+            raise ValueError(f"Unsafe or stale source-bound semantic revision {n}")
+        proof = revision["source_probe"]
+        if not (
+            proof["http_status"] == 200
+            and proof["source_opening_exact"]
+            and proof["source_closing_exact"]
+            and proof["forward_order"]
+            and proof["english_source_span_words"] > 100
+            and proof["source_review_not_full_translation_certification"]
+        ):
+            raise ValueError(f"Missing source-context witness in semantic revision {n}")
+        blocks = revision["new_translation_ru"].split("\n\n")
+        if len(blocks) != revision["russian_paragraph_count"]:
+            raise ValueError(f"Paragraph count discrepancy in revision {n}")
+        target["text"] = _draft_render(
+            revision["new_translation_ru"],
+            target["source"]["author"],
+            target["source"]["work"],
+            _source_hashtags(original[n - 1]["text"]),
+        )
+        target["title"] = (
+            chr(171) + revision["new_title_ru"] + chr(187) + " " + chr(8212) + " " + target["source"]["author"]
+        )
+        target["source"]["anchor_start"] = revision["new_source_anchor_start"]
+        target["source"]["anchor_end"] = revision["new_source_anchor_end"]
+        target["candidate_full_post_sha256"] = _sha(target["text"])
+        target["semantic_revision_evidence_file"] = SEMANTIC_REVISIONS.relative_to(ROOT).as_posix()
+        target["semantic_revision_status"] = "pending_independent_bilingual_and_rights_approval"
+        target["semantic_revision_issue_resolved_in_draft"] = revision["issue_resolved"]
+        if n == 29:
+            target["preview_selection_change"] = "retained_source_replaced_by_context_complete_candidate"
+            target["source"]["selection_policy"] = "new_source_contiguous_passage_proposed"
+            target["source"]["primary_source_type"] = "historical_primary"
+        if len(target["text"]) > 4096:
+            raise ValueError(f"Revised preview card {n} exceeds Telegram text limit")
+    if adjusted != {7, 25, 29}:
+        raise ValueError("All three source corrections must be present")
     return {
         "schema_name": SCHEMA,
         "schema_version": 1,
@@ -283,6 +349,9 @@ def build() -> dict[str, Any]:
         "rights_review_complete": False,
         "drafted_count": 20,
         "conditionally_retained_count": 10,
+        "semantic_revision_applied_count": 3,
+        "effective_contiguous_draft_count": 21,
+        "effective_retained_for_context_count": 9,
         "note": (
             "Candidate reading deck ONLY. These excerpts are NOT verified for every "
             "Russian phrase or cleared for publication. No existing queue, receipt "
