@@ -34,13 +34,18 @@
       "transcript_and_attribution_review": "pending",
       "reuse_edition_media_rights": "pending_independent_review",
       "original_source_master_sha256": null,
-      "instagram_compatible_render_sha256": null,
+      "instagram_compatible_render_sha256": "sha256:93d6283c954eda608c95bbb26ed5c2f6b80ce3d824a22040bcd9f0587c221d56",
       "caption_review": "pending",
       "instagram_professional_account_id": null,
-      "status": "source_candidate_not_rendered",
+      "status": "technical_render_verified_review_hold",
       "provider_writes_authorized": false,
       "ready_to_publish": false,
-      "needs_new_owner_source_proof": true
+      "needs_new_owner_source_proof": true,
+      "local_media_technical_proof_path": "docs/audits/2026-11-04-lord-god-piper-first-reel-meta-v3-technical-evidence.json",
+      "local_media_technical_status": "passed_meta_v3_no_provider_access",
+      "local_media_source_candidate_sha256": "sha256:13359972f1a4e981563bf788ba2d81169d6a383527824d0913ab1cbab0b20e55",
+      "local_media_render_basename": "lord-god-lTRm2NbnIas-reel-9x16-meta-v3-technical.mp4",
+      "local_media_render_size_bytes": 103472054
     },
     {
       "candidate_id": "ig-lord-ytshort-VeY1tpoLUJU",
@@ -480,5 +485,7 @@
       "needs_new_owner_source_proof": true
     }
   ],
-  "source_snapshot_path": "docs/audits/2026-11-04-public-youtube-first-page-source-snapshot.json"
+  "source_snapshot_path": "docs/audits/2026-11-04-public-youtube-first-page-source-snapshot.json",
+  "technical_media_verified_count": 1,
+  "source_only_candidate_count": 19
 }
