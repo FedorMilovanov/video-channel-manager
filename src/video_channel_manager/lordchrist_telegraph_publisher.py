@@ -1032,9 +1032,16 @@ def due_item(
     item = matches[0]
     if item.is_canary:
         return None, "canary_is_manual_only"
-    entry = ledger_entries.get(item.publication_id) or {}
-    if isinstance(entry, Mapping) and entry.get("telegram_message_id"):
-        return None, "already_published"
+    entry = ledger_entries.get(item.publication_id)
+    if entry is not None:
+        if not isinstance(entry, Mapping):
+            raise LookupError(f"Telegraph article {item.publication_id} has invalid durable ledger entry")
+        if entry.get("telegram_message_id"):
+            return None, "already_published"
+        raise LookupError(
+            f"Telegraph article {item.publication_id} has an existing incomplete publication intent "
+            f"(state={entry.get('state', 'legacy_partial')!r}); operator reconciliation required, no replay"
+        )
     if not item.is_ready:
         raise LookupError(f"Telegraph article {item.publication_id} is not ready ({item.status})")
     return item, "due"
