@@ -495,5 +495,7 @@
   "technical_media_verified_count": 1,
   "source_only_candidate_count": 19,
   "source_grounded_caption_draft_count": 1,
-  "source_specific_rights_cleared_count": 0
+  "source_specific_rights_cleared_count": 0,
+  "public_youtube_player_metadata_snapshot_file": "docs/audits/2026-11-04-lord-god-20-youtube-source-views-and-duration-readonly.json",
+  "public_youtube_player_metadata_verified_count": 20
 }
