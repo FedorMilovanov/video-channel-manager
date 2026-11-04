@@ -42,10 +42,13 @@ permissions:
 concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
+  queue: max
 
 jobs:
   telegraph-publish:
     runs-on: ubuntu-24.04
+    env:
+      STATE_BRANCH: state/lordchrist-telegram
     timeout-minutes: 10
     steps:
       - name: Check out repository
