@@ -19,7 +19,6 @@ from video_channel_manager.lordchrist_rich_successor import build_provider_free_
 from video_channel_manager.platforms.http import (
     HttpClientOwner,
     HttpOperationClass,
-    HttpTransportFailure,
     RetryPolicy,
     execute_http_request,
 )
@@ -27,14 +26,10 @@ from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, preflight_channel
 from video_channel_manager.telegram_rich_models import RichArticleDocument
 from video_channel_manager.telegram_rich_provider import (
-    HttpxTelegramRichMutationProvider,
+    TelegramRichMultipartProvider,
     TelegramRichMessageDocument,
     TelegramRichOutcomeArchiveReceipt,
     TelegramRichProviderOutcome,
-    TelegramRichProviderResponse,
-    TelegramRichProviderTimeout,
-    TelegramRichProviderTransportError,
-    TelegramRichRequestTimeout,
     publish_rich_once,
 )
 
@@ -694,58 +689,10 @@ class _Archiver:
         )
 
 
-class _LordChristMultipartProvider(HttpxTelegramRichMutationProvider):
-    """One-request sendRichMessage adapter carrying exact reviewed JPEG bytes as attachments."""
-
-    def __init__(self, *, token: str, attachments: AttachmentBundle, http_client: httpx.Client | None = None) -> None:
-        super().__init__(token=token, http_client=http_client)
-        if not attachments:
-            raise ValueError("LordChrist multipart provider requires at least one attachment")
-        self._attachments = attachments
-
-    def send_rich_message(
-        self,
-        *,
-        chat_id: int,
-        rich_message: dict[str, Any],
-        timeout: TelegramRichRequestTimeout,
-    ) -> TelegramRichProviderResponse:
-        if _attachment_names(rich_message) != frozenset(self._attachments):
-            raise ValueError("LordChrist multipart request attachment references differ from the exact byte bundle")
-        files = {
-            name: (filename, content, content_type)
-            for name, (filename, content, content_type) in self._attachments.items()
-        }
-        try:
-            result = execute_http_request(
-                lambda: self._http_client.post(
-                    self._send_url,
-                    data={"chat_id": str(chat_id), "rich_message": _canonical_json(rich_message)},
-                    files=files,
-                    timeout=timeout.as_httpx(),
-                ),
-                provider="telegram",
-                operation=HttpOperationClass.AMBIGUOUS_MUTATION,
-                method="POST",
-                resource="sendRichMessage",
-                retry_policy=RetryPolicy(max_attempts=1),
-            )
-        except HttpTransportFailure as exc:
-            before_request = exc.cause_type in {"ConnectTimeout", "PoolTimeout", "ConnectError"}
-            if "Timeout" in exc.cause_type:
-                raise TelegramRichProviderTimeout(request_may_have_been_dispatched=not before_request) from exc
-            raise TelegramRichProviderTransportError(request_may_have_been_dispatched=not before_request) from exc
-        response = result.response
-        try:
-            body: Any = response.json()
-        except ValueError:
-            body = None
-        return TelegramRichProviderResponse(status_code=response.status_code, body=body)
-
-
-# Public alias: the one-request multipart sendRichMessage body is shared with the
-# long-article lane, so both lanes stay on the single registered mutation boundary.
-LordChristMultipartProvider = _LordChristMultipartProvider
+# Historic canary is archived; its multipart adapter now belongs to the
+# supported shared Telegram Rich transport. Preserve test-facing imports.
+_LordChristMultipartProvider = TelegramRichMultipartProvider
+LordChristMultipartProvider = TelegramRichMultipartProvider
 
 
 def send(

@@ -237,7 +237,15 @@ def test_apply_requires_the_reviewed_plan_digest_as_an_explicit_option(tmp_path:
     )
 
     assert result.exit_code == 2
-    assert "confirm-plan-sha256" in result.output
+    # Verify the exact required option in the Click command contract rather
+    # than in Rich's terminal-width-dependent/truncated error decoration.
+    from typer.main import get_command
+
+    apply = get_command(cli.app).commands["apply"]
+    digest = next(param for param in apply.params if param.name == "confirm_plan_sha256")
+    assert digest.required is True
+    assert digest.opts == ["--confirm-plan-sha256"]
+    assert not (tmp_path / "out" / "result.json").exists()
 
 
 def test_apply_reports_a_stopped_run_as_a_non_success_exit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

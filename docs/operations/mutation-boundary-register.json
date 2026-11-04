@@ -626,20 +626,20 @@
       ]
     },
     {
-      "boundary_id": "telegram.lordchrist.rich_live.send",
+      "boundary_id": "telegram.rich.multipart.send",
       "risk": "P0",
       "provider": "Telegram",
       "language": "python",
-      "source_file": "src/video_channel_manager/lordchrist_rich_live_canary.py",
-      "module": "video_channel_manager.lordchrist_rich_live_canary",
-      "callable": "_LordChristMultipartProvider.send_rich_message",
+      "source_file": "src/video_channel_manager/telegram_rich_provider.py",
+      "module": "video_channel_manager.telegram_rich_provider",
+      "callable": "TelegramRichMultipartProvider.send_rich_message",
       "scanner_marker": "http:sendRichMessage",
       "mutation_class": "ambiguous_mutation",
-      "intent_evidence": "Issue #473 exact release plus separate durable rich intent on state/lordchrist-telegram binds current-main SHA, exact target proof, document/render SHA and three source-media byte SHA-256 values before one provider request",
-      "dispatch_evidence": "one multipart sendRichMessage POST carries exactly lc_calvin/lc_spurgeon/lc_tape through execute_http_request with AMBIGUOUS_MUTATION and max_attempts=1",
-      "response_evidence": "same-credential exact TelegramRichProviderOutcome is archived as workflow artifact and state evidence before terminal ledger mutation",
-      "postflight_evidence": "separate rich live-canary ledger records published/verified message id and URL, may_exist, or failed_no_effect; successful workflow closure asserts verified publication",
-      "reconciliation_identity": "release_id, publication_id, document_sha256, exact target chat and bot, workflow run/attempt, and the three attachment byte SHA-256 values",
+      "intent_evidence": "Exact rich document, target binding, selected immutable media digest and one immutable pre-send intent before the shared multipart provider call; no archive-only canary execution authority is inherited",
+      "dispatch_evidence": "One shared Telegram sendRichMessage multipart POST with precisely bound attachment names and bytes; AMBIGUOUS_MUTATION, max_attempts=1, no fallback, no blind retry",
+      "response_evidence": "Exact same-credential TelegramRichProviderOutcome, with raw response retained and an immutable archive receipt before ledger state mutation",
+      "postflight_evidence": "Provider-visible message verification and archived receipt are separate required postconditions; may_exist or failed delivery never becomes published",
+      "reconciliation_identity": "project, publication_id, exact target chat/bot, document digest, reviewed media byte digests and one dispatch intent",
       "retry_policy": "never_replay",
       "unknown_status": "unknown_requires_reconciliation",
       "attempt_limit": 1,
@@ -650,7 +650,8 @@
       ],
       "owning_tests": [
         "tests/test_lordchrist_rich_live_canary.py",
-        "tests/test_lordchrist_workflow_post_proof_hardening.py"
+        "tests/test_lordchrist_workflow_post_proof_hardening.py",
+        "tests/test_lordchrist_rich_articles.py"
       ]
     },
     {
