@@ -848,6 +848,7 @@ def publish_telegraph_page(
     access_token: str,
     existing_path: str | None = None,
     telegraph_api_base: str = DEFAULT_TELEGRAPH_API_BASE,
+    allow_split: bool = True,
 ) -> tuple[str, str]:
     status_code, head_bytes = transport.get_status(payload.cover_url)
     if status_code != 200 or not head_bytes.startswith(JPEG_MAGIC):
@@ -878,6 +879,11 @@ def publish_telegraph_page(
 
     resp = _call_page(payload.title, payload.nodes, existing_path if access_token else None)
     if not resp.get("ok") and str(resp.get("error") or "") == "CONTENT_TOO_BIG":
+        if not allow_split:
+            raise RuntimeError(
+                f"{payload.publication_id}: CONTENT_TOO_BIG; staged one-shot release refuses "
+                "a second createPage without its own separately persisted dispatch intent"
+            )
         if existing_path:
             raise RuntimeError(
                 f"{payload.publication_id}: existing Telegraph page is too large to revise in place; "
