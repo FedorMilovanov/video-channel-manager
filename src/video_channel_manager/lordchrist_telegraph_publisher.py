@@ -1060,6 +1060,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         p.add_argument("--media-base-url", required=True)
         if name == "preview":
             p.add_argument("--html-out", type=Path)
+        if name == "publish-telegraph-only":
+            p.add_argument(
+                "--revision-confirm",
+                default="",
+                help="Only for an existing public page: REVISE:<publication_id>; requires original Telegraph account token",
+            )
         if name == "publish":
             p.add_argument("--profile", type=Path, default=DEFAULT_PROFILE_PATH)
             p.add_argument("--binding", type=Path, default=DEFAULT_BINDING_PATH)
@@ -1144,18 +1150,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     ledger = load_ledger(ledger_path)
     existing = ledger["entries"].get(item.publication_id) or {}
 
-    # A previously issued public page is an immutable historical provider
-    # identity unless an explicitly reviewed revision operation proves edit
-    # ownership and records the transition. The ordinary Telegraph-only
-    # command must never silently create another page or rewrite the ledger
-    # link still used by an existing Telegram message.
-    if args.command == "publish-telegraph-only" and existing.get("telegraph_url"):
-        raise RuntimeError(
-            f"{item.publication_id} already has a Telegraph page "
-            f"({existing['telegraph_url']}); refuse to overwrite its public link. "
-            "Use a separately reviewed revision workflow with an exact new page URL "
-            "and a verified update to the original Telegram message."
-        )
+    # Previously published Telegraph identity is immutable by default:
+    # allow an in-place correction only with a per-ID explicit confirmation,
+    # retained original page path and the original author's API credential.
+    # Never let this route fall through to createPage or change the public URL.
+    is_revision = args.command == "publish-telegraph-only" and bool(existing.get("telegraph_url"))
+    if is_revision:
+        expected_revision = f"REVISE:{item.publication_id}"
+        if args.revision_confirm != expected_revision:
+            raise RuntimeError(
+                f"{item.publication_id} already has a Telegraph page "
+                f"({existing['telegraph_url']}); refuse a new public URL. "
+                f"In-place edits require --revision-confirm {expected_revision!r}."
+            )
+        if not existing.get("telegraph_path"):
+            raise RuntimeError(f"{item.publication_id} cannot revise without the original Telegraph page path")
+        if not os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip():
+            raise RuntimeError(
+                f"{item.publication_id} cannot revise without the original Telegraph account access token"
+            )
 
     if args.command == "publish" and existing.get("telegram_message_id"):
         raise RuntimeError(
@@ -1181,6 +1194,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         access_token=token,
         existing_path=existing.get("telegraph_path") if explicit_token else None,
     )
+    if is_revision and (
+        telegraph_url != existing["telegraph_url"] or telegraph_path != existing["telegraph_path"]
+    ):
+        raise RuntimeError(
+            f"{item.publication_id} returned a different Telegraph URL during an in-place revision; "
+            "do not rewrite the ledger or the original Telegram message"
+        )
 
     entry_record: dict[str, Any] = {
         **existing,
@@ -1194,6 +1214,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
 
     if args.command == "publish-telegraph-only":
+        if is_revision:
+            entry_record["last_in_place_revision_at_utc"] = datetime.now(UTC).isoformat()
         ledger["entries"][item.publication_id] = entry_record
         save_ledger(ledger_path, ledger)
         print(
