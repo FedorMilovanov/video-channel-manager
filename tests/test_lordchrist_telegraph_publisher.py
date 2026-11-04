@@ -123,7 +123,7 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
         assert item.article_path is not None
         assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
         content = (ROOT / item.article_path).read_bytes()
-        blob = hashlib.sha1(f"blob {len(content)}\\0".encode("ascii") + content).hexdigest()
+        blob = hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
         assert entry["corrected_document_git_blob_sha"] == blob
 
 
