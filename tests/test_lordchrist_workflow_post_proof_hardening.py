@@ -12,7 +12,15 @@ RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
 QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
 QUIZ_SERIES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-poster.yml"
-EXPECTED_LOCK_PARTICIPANTS = {WORKFLOW, RECOVERY_WORKFLOW, APPROVAL_WORKFLOW, QUIZ_WORKFLOW, QUIZ_SERIES_WORKFLOW}
+TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
+EXPECTED_LOCK_PARTICIPANTS = {
+    WORKFLOW,
+    RECOVERY_WORKFLOW,
+    APPROVAL_WORKFLOW,
+    QUIZ_WORKFLOW,
+    QUIZ_SERIES_WORKFLOW,
+    TELEGRAPH_WORKFLOW,
+}
 
 
 def workflow_text() -> str:
