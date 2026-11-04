@@ -6,7 +6,7 @@
   "original_published_ledger_ref": "state/lordchrist-telegram",
   "original_ledger_blob_sha": "fd43937e27c63c5b8352f3212586b42fa9291c85",
   "source_review_pr": "https://github.com/FedorMilovanov/video-channel-manager/pull/777",
-  "release_policy": "fail-closed: no external provider mutation until exact revision quality gates pass; prefer original page edit only with proven owner account token; otherwise publish separate replacement and update exactly the existing Telegram message, preserving old URL in history",
+  "release_policy": "Preserve existing verified URL via author-token-backed editPage and exact URL readback whenever possible; separately edit and verify the existing Telegram message to remove obsolete text. If the original Telegraph account is inaccessible, publish a new verified page with a separate correction ID and atomically reconcile the existing Telegram link, retaining old URL in historical evidence. Never invent replacement URLs or replace ledger URL before provider proof.",
   "links_are_live": false,
   "targets": [
     {
@@ -23,7 +23,14 @@
       "provider_edit_status": "not_attempted",
       "replacement_state": "source_review_in_pr_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message."
+      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "previous_public_page_title_readback": "Подсвечник в тине и жертва Авеля: почему Каин верил в бытие Бога — и всё равно погиб",
+      "previous_public_page_still_uncorrected": true,
+      "telegram_message_revision_required": true,
+      "verified_public_hazards": [
+        "headline_claims_Cain_final_destruction_not_explicitly_attested_in_Genesis",
+        "claims_stone_altar_not_stated_in_Genesis"
+      ]
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-history-01",
@@ -39,7 +46,10 @@
       "provider_edit_status": "not_attempted",
       "replacement_state": "source_review_in_pr_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message."
+      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "previous_public_page_title_readback": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
+      "previous_public_page_still_uncorrected": true,
+      "telegram_message_revision_required": true
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-02",
@@ -55,7 +65,10 @@
       "provider_edit_status": "not_attempted",
       "replacement_state": "source_review_in_pr_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message."
+      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "previous_public_page_title_readback": "Всеобщее согласие: ни одного народа без Бога",
+      "previous_public_page_still_uncorrected": true,
+      "telegram_message_revision_required": true
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-03",
@@ -71,7 +84,10 @@
       "provider_edit_status": "not_attempted",
       "replacement_state": "source_review_in_pr_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message."
+      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "previous_public_page_title_readback": "Три возражения атеиста: предание, заговор правителей, страх",
+      "previous_public_page_still_uncorrected": true,
+      "telegram_message_revision_required": true
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-04",
@@ -87,7 +103,12 @@
       "provider_edit_status": "not_attempted",
       "replacement_state": "source_review_in_pr_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message."
+      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "previous_public_page_title_readback": "Мир как зеркало: как творение свидетельствует о Творце",
+      "previous_public_page_still_uncorrected": true,
+      "telegram_message_revision_required": true
     }
-  ]
+  ],
+  "public_readback_on": "2026-11-04",
+  "public_readback_status": "five_previous_pages_successfully_read_with_original_contents; no in_place_edits performed"
 }
