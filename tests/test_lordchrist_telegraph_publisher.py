@@ -103,6 +103,30 @@ def test_telegraph_queue_loads_all_fifteen_verified_items() -> None:
         assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
 
 
+def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_revision() -> None:
+    """A reviewed GitHub source is not itself a publicly corrected Telegraph page."""
+    import hashlib
+
+    path = ROOT / "docs/audits/2026-11-04-charnock-publication-link-replacement-map.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    queue = {entry.publication_id: entry for entry in load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)}
+    assert len(manifest["targets"]) == 5
+    for entry in manifest["targets"]:
+        publication_id = entry["publication_id"]
+        old_url = entry["previous_telegraph_url"]
+        assert old_url.startswith("https://telegra.ph/")
+        assert entry["previous_public_page_still_uncorrected"] is True
+        assert entry["replacement_telegraph_url"] is None
+        assert entry["replacement_telegram_message_url"] is None
+        assert entry["provider_writes_authorized"] is False
+        item = queue[publication_id]
+        assert item.article_path is not None
+        assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
+        content = (ROOT / item.article_path).read_bytes()
+        blob = hashlib.sha1(f"blob {len(content)}\\0".encode("ascii") + content).hexdigest()
+        assert entry["corrected_document_git_blob_sha"] == blob
+
+
 def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     for item in items:
