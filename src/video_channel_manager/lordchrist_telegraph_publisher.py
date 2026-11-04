@@ -878,6 +878,11 @@ def publish_telegraph_page(
 
     resp = _call_page(payload.title, payload.nodes, existing_path if access_token else None)
     if not resp.get("ok") and str(resp.get("error") or "") == "CONTENT_TOO_BIG":
+        if existing_path:
+            raise RuntimeError(
+                f"{payload.publication_id}: existing Telegraph page is too large to revise in place; "
+                "refuse createPage split to preserve its original public identity"
+            )
         part1_nodes, part2_nodes = _split_nodes_at_middle_heading(payload.nodes)
         resp2 = _call_page(f"{payload.title} (окончание)", part2_nodes)
         if not resp2.get("ok") or not isinstance(resp2.get("result"), dict):
@@ -1174,6 +1179,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise RuntimeError(
             f"{item.publication_id} was already published to @lordchrist "
             f"(message_id={existing['telegram_message_id']}, url={existing.get('telegraph_url')})"
+        )
+    if args.command == "publish" and existing.get("telegraph_url"):
+        raise RuntimeError(
+            f"{item.publication_id} already has a Telegraph page without a verified Telegram receipt "
+            f"({existing['telegraph_url']}); refuse ordinary publish replay. "
+            "A separately reviewed recovery operation must reconcile the existing provider effect."
         )
 
     if args.command == "publish":
