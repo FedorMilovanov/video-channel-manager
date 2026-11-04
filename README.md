@@ -86,6 +86,7 @@ complete snapshot + SHA-256
 
 ### YouTube
 
+- [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md) — новый пятиблочный ручной пакет The Legendary Poet, форматирование `*жирного*` / `_курсива_`; локальная механическая проверка: `scripts/validate_legendary_poet_package_v31.py`;
 - [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — структура канала, названия, плейлисты, фактчекинг и approval rules;
 - [`docs/youtube-comment-editorial-standard.md`](docs/youtube-comment-editorial-standard.md) — source-led top-level comments и schema v2 compatibility;
 - [`docs/operations/youtube-comment-publishing-runbook.md`](docs/operations/youtube-comment-publishing-runbook.md) — audit, queue, signed plan, dry-run, execute и resume для комментариев;
