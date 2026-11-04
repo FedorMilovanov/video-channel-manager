@@ -99,6 +99,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PYTHONPATH: src
           ACTION: ${{ github.event_name == 'schedule' && 'publish' || inputs.action }}
+          MANUAL_CONFIRM: ${{ inputs.confirm }}
           PUBLICATION_ID: ${{ github.event_name == 'schedule' && steps.resolve.outputs.publication_id || inputs.publication_id }}
           LORDCHRIST_TELEGRAPH_POSTING_ENABLED: ${{ vars.LORDCHRIST_TELEGRAPH_POSTING_ENABLED }}
           LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID: ${{ vars.LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID }}
@@ -114,7 +115,7 @@ jobs:
             exit 3
           }
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            [[ "${{ inputs.confirm }}" == "PUBLISH:$PUBLICATION_ID" ]] || {
+            [[ "$MANUAL_CONFIRM" == "PUBLISH:$PUBLICATION_ID" ]] || {
               echo "Manual public publication requires exact PUBLISH:<publication_id> confirmation." >&2
               exit 3
             }
