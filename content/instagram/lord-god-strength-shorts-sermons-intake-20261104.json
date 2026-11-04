@@ -45,7 +45,13 @@
       "local_media_technical_status": "passed_meta_v3_no_provider_access",
       "local_media_source_candidate_sha256": "sha256:13359972f1a4e981563bf788ba2d81169d6a383527824d0913ab1cbab0b20e55",
       "local_media_render_basename": "lord-god-lTRm2NbnIas-reel-9x16-meta-v3-technical.mp4",
-      "local_media_render_size_bytes": 103472054
+      "local_media_render_size_bytes": 103472054,
+      "primary_talk_source_review_file": "docs/audits/2026-11-04-lord-god-piper-primary-source-caption-rights-inert.json",
+      "original_talk_transcript_correspondence": "verified_primary_english_excerpt_2011_ligonier",
+      "english_primary_source_identified": true,
+      "desiring_god_av_written_reupload_permission_verified": false,
+      "ligonier_av_written_reupload_permission_verified": false,
+      "russian_dubbing_and_translation_reuse_permission_verified": false
     },
     {
       "candidate_id": "ig-lord-ytshort-VeY1tpoLUJU",
@@ -487,5 +493,7 @@
   ],
   "source_snapshot_path": "docs/audits/2026-11-04-public-youtube-first-page-source-snapshot.json",
   "technical_media_verified_count": 1,
-  "source_only_candidate_count": 19
+  "source_only_candidate_count": 19,
+  "source_grounded_caption_draft_count": 1,
+  "source_specific_rights_cleared_count": 0
 }
