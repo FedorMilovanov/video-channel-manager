@@ -1166,6 +1166,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     # retained original page path and the original author's API credential.
     # Never let this route fall through to createPage or change the public URL.
     is_revision = args.command == "publish-telegraph-only" and bool(existing.get("telegraph_url"))
+    if args.command == "publish-telegraph-only" and not is_revision:
+        raise RuntimeError(
+            "New Telegraph pages require durable staged page dispatch and receipt; "
+            "direct publish-telegraph-only is retired"
+        )
     if is_revision:
         expected_revision = f"REVISE:{item.publication_id}"
         if args.revision_confirm != expected_revision:
@@ -1200,6 +1205,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_confirm = f"PUBLISH:{item.publication_id}"
         if args.confirm != expected_confirm:
             raise ValueError(f"Confirmation mismatch: expected {expected_confirm!r}")
+        raise RuntimeError(
+            "Monolithic publish is retired: use durable staged page and Telegram dispatch "
+            "with independently verified state-branch receipts"
+        )
 
     transport = HttpxLiveTransport()
     explicit_token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip() or None
