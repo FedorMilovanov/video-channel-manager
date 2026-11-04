@@ -219,7 +219,7 @@ def channels(
                 ],
             )
         )
-    except (AccountNotFoundError, OSError, ValueError, YouTubeApiError) as exc:
+    except (AccountNotFoundError, OAuthFlowError, OSError, ValueError, YouTubeApiError) as exc:
         console.print(f"[red]Cannot read YouTube channels:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     table = Table(title=f"YouTube channels for '{account}'")
@@ -253,9 +253,14 @@ def scan(
                     f"Specify --channel because this account has {len(available_channels)} choices: {choices}"
                 )
             channel_id = available_channels[0].ref.remote_id
+        elif channel_id not in {item.ref.remote_id for item in available_channels}:
+            raise ValueError(
+                "Requested --channel does not belong to the authenticated --account; "
+                "select the matching YouTube/Brand Account."
+            )
         with console.status("Reading YouTube channel inventory…"):
             package = YouTubeInventoryService(client).build_audit_package(channel_id)
-    except (AccountNotFoundError, OSError, ValueError, YouTubeApiError) as exc:
+    except (AccountNotFoundError, OAuthFlowError, OSError, ValueError, YouTubeApiError) as exc:
         console.print(f"[red]YouTube scan failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
