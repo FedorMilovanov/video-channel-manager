@@ -18,7 +18,9 @@ MEDIA = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/
 
 
 class FakeTransport:
-    def __init__(self, *, page_error: bool = False, telegram_error: bool = False, content_too_big: bool = False) -> None:
+    def __init__(
+        self, *, page_error: bool = False, telegram_error: bool = False, content_too_big: bool = False
+    ) -> None:
         self.page_error = page_error
         self.telegram_error = telegram_error
         self.content_too_big = content_too_big
@@ -210,7 +212,7 @@ def test_telegraph_workflow_persists_each_claim_before_provider_mutation() -> No
     )
     offsets = [text.index(name) for name in ordered]
     assert offsets == sorted(offsets)
-    assert text.count("git -C \"$state_dir\" push origin HEAD:state/lordchrist-telegram") == 4
+    assert text.count('git -C "$state_dir" push origin HEAD:state/lordchrist-telegram') == 4
     assert "GITHUB_RUN_ATTEMPT" in text
     assert "LORDCHRIST_TELEGRAPH_POSTING_ENABLED" in text
     assert "inputs.confirm" in text
