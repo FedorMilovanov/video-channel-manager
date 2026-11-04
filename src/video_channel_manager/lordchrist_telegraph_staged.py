@@ -34,9 +34,7 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_target_binding import load_target_binding
 
-STATES = frozenset(
-    {"page_dispatch_claimed", "page_published", "telegram_dispatch_claimed", "published"}
-)
+STATES = frozenset({"page_dispatch_claimed", "page_published", "telegram_dispatch_claimed", "published"})
 
 
 def _now() -> str:
@@ -91,10 +89,7 @@ def _checked_entry(args: argparse.Namespace, ledger: dict[str, Any], expected: s
 
 
 def _verified_payload(entry: dict[str, Any], payload: Any) -> None:
-    if (
-        entry.get("article_sha256") != payload.article_sha256
-        or entry.get("cover_sha256") != payload.cover_sha256
-    ):
+    if entry.get("article_sha256") != payload.article_sha256 or entry.get("cover_sha256") != payload.cover_sha256:
         raise RuntimeError("Article or cover changed after durable intent; refuse public mutation")
 
 
@@ -130,9 +125,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("Persistent Telegraph account token required; do not create a disposable account")
         transport = HttpxLiveTransport()
         ensure_telegraph_token(transport, explicit_token=token)
-        url, page_path = publish_telegraph_page(
-            transport, payload, access_token=token, allow_split=False
-        )
+        url, page_path = publish_telegraph_page(transport, payload, access_token=token, allow_split=False)
         entry.update(
             state="page_published",
             provider_effect="verified",
@@ -199,9 +192,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m video_channel_manager.lordchrist_telegraph_staged")
-    parser.add_argument(
-        "stage", choices=("prepare-page", "send-page", "prepare-telegram", "send-telegram")
-    )
+    parser.add_argument("stage", choices=("prepare-page", "send-page", "prepare-telegram", "send-telegram"))
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--queue", type=Path, default=DEFAULT_QUEUE_PATH)
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER_PATH)
