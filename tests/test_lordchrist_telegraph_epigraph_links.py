@@ -68,6 +68,7 @@ def test_historical_epigraph_credit_and_rebuild_spec_use_psalm_89_3() -> None:
     assert spec["scripture_source"]["evidence"].startswith("Пс. 89:3;")
     assert document["sources"][0]["url"] == "https://bible.by/syn/19/89/"
 
+
 def test_long_charnock_quote_05_translates_english_psalm_100_3_to_synodal_99_3() -> None:
     """KJV 100:3 is Synodal 99:3; Synodal 100:3 is another Psalm entirely."""
     stem = "lordchrist-telegraph-charnock-05"
