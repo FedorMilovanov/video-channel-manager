@@ -51,5 +51,29 @@
     "Exclude personal/non-cake content until per-video review.",
     "Do not add long-form uploads to historical Issue #323 Shorts allowlist.",
     "No VK write calls and no date assignments have been made."
-  ]
+  ],
+  "editorial_title_triage": {
+    "basis": "public Youtube titles, category prefilter only; videos and rights not reviewed",
+    "cake_promo_candidates": [
+      "k5SHDoBbYy8",
+      "K2bq-GN8onk"
+    ],
+    "third_party_masterclass_rights_hold": [
+      "_sk207NSuPw"
+    ],
+    "excluded_non_cake_content": [
+      "iBdHanQ0ILI",
+      "rxCoANTKzkA",
+      "3wL3z3dItMc",
+      "EyyIU_OW8dk",
+      "rM3I9bCeH7M",
+      "bvVZHnx1EgY",
+      "-xzfaTzWsTc",
+      "6WOKoPS-bPc",
+      "DjFEBTZeT-E",
+      "NI-nL0VeDyw"
+    ],
+    "automatically_eligible_for_vk_upload": [],
+    "full_video_content_review_completed": false
+  }
 }
