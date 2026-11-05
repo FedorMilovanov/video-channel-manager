@@ -209,7 +209,7 @@
     },
     "lordchrist-telegraph-charnock-11": {
       "publication_id": "lordchrist-telegraph-charnock-11",
-      "state": "telegram_dispatch_claimed",
+      "state": "published",
       "provider_effect": "verified",
       "run_id": "41967623004",
       "run_attempt": 1,
@@ -221,8 +221,12 @@
       "telegraph_url": "https://telegra.ph/Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05",
       "telegraph_path": "Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05",
       "telegraph_updated_at_utc": "2026-11-05T04:24:54.110432+00:00",
-      "telegram_provider_effect": "unknown_until_reconciled",
-      "telegram_intent_at_utc": "2026-11-05T04:24:55.965030+00:00"
+      "telegram_provider_effect": "verified",
+      "telegram_intent_at_utc": "2026-11-05T04:24:55.965030+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1601,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-05T04:24:59.549548+00:00"
     }
   }
 }
