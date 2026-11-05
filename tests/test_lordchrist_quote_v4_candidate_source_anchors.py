@@ -13,6 +13,7 @@ def test_unreleased_quote_source_anchor_corrections():
     assert cards[29]["candidate_source_anchor_start"].startswith("For, since all historical and psychological research")
     assert cards[29]["candidate_source_anchor_end"] == "the science of the revelation of God and of our knowledge concerning him."
     assert cards[30]["candidate_source_anchor_start"] == "Whoever reads the gospel with a single eye, and sincere intentions, will find,"
+    assert cards[23]["candidate_source_anchor_end"] == "that I might weep abundantly over them all!"
     assert data["approved_new_queue"] is False
     assert data["provider_write_authorization"] is False
     assert all(not c["eligible_for_release"] for c in cards.values())
