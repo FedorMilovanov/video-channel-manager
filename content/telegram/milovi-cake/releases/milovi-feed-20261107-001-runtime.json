@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261107-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_publication_id": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261107-001",
+      "scheduled_at": "2026-11-07T10:30:00+03:00",
+      "source_sha256": "sha256:8ebdd2f5b9747399acf6559f1642327ac736ff585007c6c5d54102f90ef3997c",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261107-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:6409906785a569bacd5b66919ce4d4306cb6413674774ab9bf714b3987e55c7a",
+        "caption": "????????? ?????? ??? ?????????? ?????\n\n?? ????? ? ????????? ?????? ??????????: ??????? ????, ?????? ?????? ? ?????????? ??????????.\n\n???????? ????????? ??????: https://milovicake.ru/svadebnye-torty/\n\n#MiloviCake #?????????????",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261107-001/milovi-v12.mp4",
+        "media_sha256": "sha256:8ebdd2f5b9747399acf6559f1642327ac736ff585007c6c5d54102f90ef3997c",
+        "media_byte_size": 2367134,
+        "media_filename": "milovi-v12.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    }
+  ]
+}
