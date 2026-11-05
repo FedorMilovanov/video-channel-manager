@@ -268,17 +268,17 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.stage == "verify":
         if receipt.get("state") != "sent":
             raise RuntimeError("Only a confirmed send can be read back")
-        new_id = receipt.get("new_message_id")
-        if not isinstance(new_id, int) or new_id <= 0:
+        verified_message_id = receipt.get("new_message_id")
+        if not isinstance(verified_message_id, int) or verified_message_id <= 0:
             raise RuntimeError("Missing provider-acknowledged replacement message identity")
         response = httpx.get(
-            f"https://t.me/lordchrist/{new_id}?embed=1",
+            f"https://t.me/lordchrist/{verified_message_id}?embed=1",
             timeout=20,
             follow_redirects=True,
         )
         response.raise_for_status()
         if (
-            f'data-post="lordchrist/{new_id}"' not in response.text
+            f'data-post="lordchrist/{verified_message_id}"' not in response.text
             or source["verified_telegraph_url"] not in response.text
         ):
             raise RuntimeError("New Telegram message is not publicly verified; do not retry send")
@@ -286,7 +286,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             state="verified", provider_effect="verified", verified_at_moscow=now.astimezone(MOSCOW).isoformat()
         )
         save_ledger(ledger_path, ledger)
-        return {"stage": "verified", "publication_id": args.publication_id, "message_id": new_id}
+        return {"stage": "verified", "publication_id": args.publication_id, "message_id": verified_message_id}
 
     raise ValueError(f"Unsupported Charnock scheduled stage {args.stage!r}")
 
