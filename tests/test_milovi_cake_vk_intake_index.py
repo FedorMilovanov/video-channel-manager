@@ -70,3 +70,43 @@ def test_inventory_cannot_be_misread_as_permission_or_absence_proof() -> None:
     assert "upload_operations" not in index
     assert "wall_operations" not in index
     assert "execute" not in index
+
+
+def test_longform_public_index_is_exact_and_every_item_is_triaged() -> None:
+    path = ROOT / "docs/audits/2026-11-05-milovi-cake-longform-public-index.json"
+    index = json.loads(path.read_text(encoding="utf-8"))
+    assert index["schema_name"] == "video-manager.milovi-cake-youtube-longform-public-index"
+    assert index["project_key"] == "milovi-cake"
+    assert index["youtube_channel_id"] == "UCMDnxfGZiBqcDzgUV1zjFpw"
+    assert index["vk_community_id"] == 68859909
+    assert index["vk_owner_id"] == -68859909
+    assert re.fullmatch(r"sha256:[a-f0-9]{64}", index["snapshot"]["sha256"])
+    source = index["source_ids_in_public_order"]
+    assert len(source) == len(set(source)) == index["totals"]["public_longform_ids"] == 13
+    assert all(re.fullmatch(r"[A-Za-z0-9_-]{11}", value) for value in source)
+
+    triage = index["editorial_title_triage"]
+    cake = set(triage["cake_promo_candidates"])
+    held = set(triage["third_party_masterclass_rights_hold"])
+    excluded = set(triage["excluded_non_cake_content"])
+    assert len(cake) == 2
+    assert len(held) == 1
+    assert len(excluded) == 10
+    assert not (cake & held or cake & excluded or held & excluded)
+    assert cake | held | excluded == set(source)
+    assert triage["automatically_eligible_for_vk_upload"] == []
+    assert triage["full_video_content_review_completed"] is False
+
+    shorts = _read()
+    assert set(source).isdisjoint(shorts["source_ids_in_public_order"])
+    assert len(source) + len(shorts["source_ids_in_public_order"]) == 148
+    assert index["review"]["current_vk_inventory"] == "unavailable"
+    assert index["review"]["default_vk_status"] == "vk_presence_unverified"
+    assert index["review"]["cake_only_content_verified"] is False
+    assert index["review"]["rights_verified"] is False
+    assert index["totals"]["confirmed_missing_from_vk"] == 0
+    assert index["publication"] == {
+        "execution_authorized": False,
+        "ready_to_publish": False,
+        "scheduled_count": 0,
+    }
