@@ -167,15 +167,18 @@
     },
     "lordchrist-telegraph-charnock-09": {
       "publication_id": "lordchrist-telegraph-charnock-09",
-      "state": "page_dispatch_claimed",
-      "provider_effect": "unknown_until_reconciled",
+      "state": "page_published",
+      "provider_effect": "verified",
       "run_id": "41966604736",
       "run_attempt": 1,
       "github_sha": "92b73b4e6acb3fdc0f0aa038f108f59b6c1296f7",
       "title": "Не нужно выходить из дома: тело и душа как свидетельство о Творце",
       "article_sha256": "sha256:b0d3936488829ceb21f8b599ccfe925d26564b8ee9e9c7d63eb6970d2de2adb3",
       "cover_sha256": "sha256:68e6d872432eae12361bec0762d330298182acaae2c8909e1be8dbeef8d670ba",
-      "page_intent_at_utc": "2026-11-05T04:15:02.876466+00:00"
+      "page_intent_at_utc": "2026-11-05T04:15:02.876466+00:00",
+      "telegraph_url": "https://telegra.ph/Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
+      "telegraph_path": "Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
+      "telegraph_updated_at_utc": "2026-11-05T04:15:07.618530+00:00"
     }
   }
 }
