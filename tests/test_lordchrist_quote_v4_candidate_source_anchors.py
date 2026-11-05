@@ -78,3 +78,21 @@ def test_ten_retained_candidates_match_evidence_hashes():
         assert idx[n]["candidate_body_sha256"] == digest
         assert posts[n]["text"].split("\n\n©", 1)[0] == "«" + text + "»"
         assert idx[n]["eligible_for_release"] is False
+
+
+def test_all_candidate_digests_are_source_bound():
+    import hashlib
+    data = json.loads(FILE.read_text(encoding="utf-8"))
+    base = ROOT / "docs/audits"
+    sources = {}
+    for name in ("2026-11-04-lordchrist-contiguous-quote-redrafts.json", "2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json"):
+        files = json.loads((base / name).read_text(encoding="utf-8"))
+        sources.update({x["sequence"]: x["translation_ru"] for x in files["drafts"]})
+    for name in ("2026-11-05-lordchrist-quote-v4-four-reconciled-drafts.json", "2026-11-05-lordchrist-quote-v4-ten-retained-candidates.json"):
+        files = json.loads((base / name).read_text(encoding="utf-8"))
+        sources.update({x["sequence"]: x["translation_ru"] for x in files["items"]})
+    assert len(sources) == len(data["entries"]) == 30
+    for entry in data["entries"]:
+        digest = hashlib.sha256(sources[entry["sequence"]].encode()).hexdigest()
+        assert entry["candidate_body_sha256"] == "sha256:" + digest
+    assert data["provider_write_authorization"] is False
