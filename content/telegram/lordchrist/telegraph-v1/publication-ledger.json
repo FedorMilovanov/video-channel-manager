@@ -51,7 +51,7 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-10-25T13:03:16.582728+00:00",
       "correction": {
-        "state": "telegram_claimed",
+        "state": "corrected",
         "publication_id": "lordchrist-telegraph-charnock-history-01",
         "run_id": "42075385542",
         "run_attempt": 1,
@@ -65,8 +65,11 @@
         "new_telegraph_url": "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
         "new_telegraph_path": "Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
         "page_created_at_utc": "2026-11-05T17:36:42.802924+00:00",
-        "telegram_provider_effect": "unknown_until_reconciled",
-        "telegram_claimed_at_utc": "2026-11-05T17:36:46.086504+00:00"
+        "telegram_provider_effect": "verified",
+        "telegram_claimed_at_utc": "2026-11-05T17:36:46.086504+00:00",
+        "telegram_message_id": 1585,
+        "corrected_at_utc": "2026-11-05T17:37:54.822498+00:00",
+        "telegram_link_preview_large_media": true
       }
     },
     "lordchrist-telegraph-charnock-02": {
