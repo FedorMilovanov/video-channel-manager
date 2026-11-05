@@ -194,3 +194,75 @@ def test_repository_review_registry_contains_provisional_holds_only() -> None:
     assert sum(r["status"] == "manual_review" for r in registry["entries"]) == 19
     assert len({r["youtube_video_id"] for r in registry["entries"]}) == 26
     assert not {ID, OTHER} & {r["youtube_video_id"] for r in registry["entries"]}
+
+
+def _write_cli_inputs(tmp_path: Path) -> tuple[list[str], Path]:
+    data = make_inputs()
+    paths: dict[str, Path] = {}
+    for label in ("source_inventory", "youtube_metadata", "captions", "draft_slots", "hold_registry"):
+        path = tmp_path / (label + ".json")
+        path.write_text(json.dumps(data[label], ensure_ascii=False), encoding="utf-8")
+        paths[label] = path
+    output_path = tmp_path / "milovi-preview.json"
+    args = [
+        "instagram",
+        "milovi-cake-preview",
+        str(paths["source_inventory"]),
+        str(paths["youtube_metadata"]),
+        str(paths["captions"]),
+        str(paths["draft_slots"]),
+        "--holds",
+        str(paths["hold_registry"]),
+        "--output",
+        str(output_path),
+    ]
+    return args, output_path
+
+
+def test_cli_writes_exact_provider_impossible_preview(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from video_channel_manager.cli.app import app
+
+    args, output_path = _write_cli_inputs(tmp_path)
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert "Candidates: 2" in result.output
+    assert "Meta writes: 0" in result.output
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["candidate_count"] == 2
+    assert payload["publish_ready_count"] == 0
+    assert payload["schedule_armed"] is False
+    assert payload["scope_hold_count"] == 1
+    assert payload["rows"][0]["scheduled"] is False
+
+
+def test_cli_rejects_wrong_project_and_refuses_output(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from video_channel_manager.cli.app import app
+
+    args, output_path = _write_cli_inputs(tmp_path)
+    inventory = tmp_path / "source_inventory.json"
+    payload = json.loads(inventory.read_text(encoding="utf-8"))
+    payload["project_key"] = "legendary-poet"
+    inventory.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 2
+    assert "Milovi Cake Instagram preview refused" in result.output
+    assert "source project mismatch" in result.output
+    assert not output_path.exists()
+
+
+def test_cli_default_hold_registry_refuses_incomplete_snapshot(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from video_channel_manager.cli.app import app
+
+    args, output_path = _write_cli_inputs(tmp_path)
+    args = args[: args.index("--holds")] + args[args.index("--output") :]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 2
+    assert "stoplist contains unknown source ID" in result.output
+    assert not output_path.exists()
