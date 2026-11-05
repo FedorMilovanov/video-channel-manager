@@ -13,7 +13,7 @@ QUEUE = BASE / "article-queue.json"
 
 
 def git_blob_sha(raw: bytes) -> str:
-    return hashlib.sha1(f"blob {len(raw)}\\0".encode("ascii") + raw).hexdigest()
+    return hashlib.sha1(f"blob {len(raw)}\0".encode("ascii") + raw).hexdigest()
 
 
 def test_all_telegraph_json_paths_are_checked_out_as_lf() -> None:
@@ -26,7 +26,10 @@ def test_all_telegraph_json_paths_are_checked_out_as_lf() -> None:
         cwd=ROOT,
         text=True,
     )
-    found = {line.split(": eol: ", 1)[0]: line.split(": eol: ", 1)[1] for line in output.splitlines()}
+    found = {
+        line.split(": eol: ", 1)[0]: line.split(": eol: ", 1)[1]
+        for line in output.splitlines()
+    }
     assert set(found) == {path.as_posix() for path in paths}
     assert set(found.values()) == {"lf"}
 
@@ -39,5 +42,5 @@ def test_all_telegraph_articles_preserve_reviewed_blob_sha_on_checkout() -> None
             continue
         path = ROOT / item["article"]["path"]
         raw = path.read_bytes()
-        assert b"\\r\\n" not in raw, item["publication_id"]
+        assert b"\r\n" not in raw, item["publication_id"]
         assert git_blob_sha(raw) == item["article"]["git_blob_sha"], item["publication_id"]
