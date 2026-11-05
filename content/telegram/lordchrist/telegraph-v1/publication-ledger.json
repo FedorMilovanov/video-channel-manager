@@ -104,7 +104,7 @@
     },
     "lordchrist-telegraph-charnock-06": {
       "publication_id": "lordchrist-telegraph-charnock-06",
-      "state": "telegram_dispatch_claimed",
+      "state": "published",
       "provider_effect": "verified",
       "run_id": "41966277293",
       "run_attempt": 1,
@@ -116,8 +116,12 @@
       "telegraph_url": "https://telegra.ph/Lyutnya-mirozdaniya-kak-vrazhduyushchie-stihii-solnce-i-okean-sluzhat-odnomu-domu-11-05",
       "telegraph_path": "Lyutnya-mirozdaniya-kak-vrazhduyushchie-stihii-solnce-i-okean-sluzhat-odnomu-domu-11-05",
       "telegraph_updated_at_utc": "2026-11-05T04:12:10.868997+00:00",
-      "telegram_provider_effect": "unknown_until_reconciled",
-      "telegram_intent_at_utc": "2026-11-05T04:12:13.021873+00:00"
+      "telegram_provider_effect": "verified",
+      "telegram_intent_at_utc": "2026-11-05T04:12:13.021873+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1596,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-05T04:12:17.385883+00:00"
     }
   }
 }
