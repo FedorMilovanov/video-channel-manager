@@ -1,0 +1,79 @@
+{
+  "schema_name": "video-manager.milovi-cake-youtube-longform-public-index",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "youtube_channel_id": "UCMDnxfGZiBqcDzgUV1zjFpw",
+  "vk_community_id": 68859909,
+  "vk_owner_id": -68859909,
+  "snapshot": {
+    "captured_date": "2026-11-05",
+    "kind": "public_youtube_videos_tab_listing",
+    "local_path": "operator-output/milovi-cake-youtube-public-videos-20261105.json",
+    "sha256": "sha256:e1f4fe89b2399649a55b2b0d557e45c04ad02367663fa064efcf68da37fccafe",
+    "claimed_scope": "public regular-video tab only, 13 entries",
+    "historical_owner_audit": "operator-output/milovi-youtube-audit.json",
+    "historical_owner_audit_date": "2026-08-10",
+    "confirmed_all_ids_in_historical_owner_audit": true
+  },
+  "source_ids_in_public_order": [
+    "iBdHanQ0ILI",
+    "rxCoANTKzkA",
+    "3wL3z3dItMc",
+    "k5SHDoBbYy8",
+    "_sk207NSuPw",
+    "K2bq-GN8onk",
+    "EyyIU_OW8dk",
+    "rM3I9bCeH7M",
+    "bvVZHnx1EgY",
+    "-xzfaTzWsTc",
+    "6WOKoPS-bPc",
+    "DjFEBTZeT-E",
+    "NI-nL0VeDyw"
+  ],
+  "totals": {
+    "public_longform_ids": 13,
+    "confirmed_missing_from_vk": 0
+  },
+  "review": {
+    "cake_only_content_verified": false,
+    "rights_verified": false,
+    "current_vk_inventory": "unavailable",
+    "default_vk_status": "vk_presence_unverified",
+    "private_unlisted_assumed_absent": false
+  },
+  "publication": {
+    "execution_authorized": false,
+    "ready_to_publish": false,
+    "scheduled_count": 0
+  },
+  "notes": [
+    "Public YouTube presence is not proof of current VK absence.",
+    "Exclude personal/non-cake content until per-video review.",
+    "Do not add long-form uploads to historical Issue #323 Shorts allowlist.",
+    "No VK write calls and no date assignments have been made."
+  ],
+  "editorial_title_triage": {
+    "basis": "public Youtube titles, category prefilter only; videos and rights not reviewed",
+    "cake_promo_candidates": [
+      "k5SHDoBbYy8",
+      "K2bq-GN8onk"
+    ],
+    "third_party_masterclass_rights_hold": [
+      "_sk207NSuPw"
+    ],
+    "excluded_non_cake_content": [
+      "iBdHanQ0ILI",
+      "rxCoANTKzkA",
+      "3wL3z3dItMc",
+      "EyyIU_OW8dk",
+      "rM3I9bCeH7M",
+      "bvVZHnx1EgY",
+      "-xzfaTzWsTc",
+      "6WOKoPS-bPc",
+      "DjFEBTZeT-E",
+      "NI-nL0VeDyw"
+    ],
+    "automatically_eligible_for_vk_upload": [],
+    "full_video_content_review_completed": false
+  }
+}
