@@ -35,3 +35,26 @@ def test_source_reconciliation_digests_and_preview():
         assert ix[num]["candidate_body_sha256"] == digest
         assert posts[num]["text"].split("\n\n©", 1)[0] == "«" + body + "»"
     assert "единственный наш клик" not in posts[2]["text"]
+
+
+def test_all_twenty_redrafts_match_the_inert_reader_preview():
+    import re
+    base = ROOT / "docs/audits"
+    files = ["2026-11-04-lordchrist-contiguous-quote-redrafts.json",
+             "2026-11-04-lordchrist-remaining-10-contiguous-redrafts.json"]
+    draft_items = []
+    for filename in files:
+        draft_items.extend(json.loads((base / filename).read_text(encoding="utf-8"))["drafts"])
+    corrected = json.loads((base / "2026-11-05-lordchrist-quote-v4-four-reconciled-drafts.json").read_text(encoding="utf-8"))
+    by_number = {entry["sequence"]: entry["translation_ru"] for entry in draft_items}
+    assert len(by_number) == 20
+    by_number.update({entry["sequence"]: entry["translation_ru"] for entry in corrected["items"]})
+    preview = json.loads((base / "2026-11-04-lordchrist-30-card-editorial-preview-inert.json").read_text(encoding="utf-8"))
+    previews = {entry["sequence"]: entry["text"] for entry in preview["posts"]}
+
+    def canonical(text):
+        return re.sub(r'[\s«»„“”]', "", text).casefold()
+
+    for number, accepted_text in by_number.items():
+        quote = previews[number].split("\n\n©", 1)[0]
+        assert canonical(quote) == canonical(accepted_text), number
