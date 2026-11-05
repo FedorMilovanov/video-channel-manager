@@ -296,3 +296,19 @@ def test_unconfirmed_public_correction_never_replays_edit(monkeypatch):
         m._wait_for_public_correction(MESSAGE, CORRECTED)
     assert len(reads) == len(m.CORRECTED_READBACK_DELAYS)
     assert sleeps == list(m.CORRECTED_READBACK_DELAYS[1:])
+
+
+def test_public_correction_readback_recovers_from_transient_http_failure(monkeypatch):
+    attempts = []
+    sleeps = []
+
+    def read(message_id, url):
+        attempts.append((message_id, url))
+        if len(attempts) == 1:
+            raise m.httpx.TimeoutException("Telegram widget read timed out")
+
+    monkeypatch.setattr(m, "_read_original_post", read)
+    monkeypatch.setattr(m.time, "sleep", sleeps.append)
+    m._wait_for_public_correction(MESSAGE, CORRECTED)
+    assert attempts == [(MESSAGE, CORRECTED), (MESSAGE, CORRECTED)]
+    assert sleeps == [2]
