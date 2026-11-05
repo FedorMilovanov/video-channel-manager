@@ -137,12 +137,30 @@ def clean_title(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip(" -")
 
 
+def _authors_in_text(value: str) -> list[str]:
+    """Only exact author aliases count; never match surnames inside other words."""
+    folded = value.casefold()
+    return [
+        canonical
+        for canonical, aliases in AUTHOR_ALIASES
+        if any(re.search(rf"(?<!\w){re.escape(alias.casefold())}(?!\w)", folded) for alias in aliases)
+    ]
+
+
 def detect_author(title: str, tags: list[str]) -> str | None:
-    haystack = (title + " " + " ".join(tags)).casefold()
-    for canonical, aliases in AUTHOR_ALIASES:
-        if any(alias in haystack for alias in aliases):
-            return canonical
-    return None
+    """Title attribution beats potentially unrelated YouTube SEO tags.
+
+    Conflicting author names in the same priority tier are ambiguous rather
+    than a reason to return the first entry in AUTHOR_ALIASES.
+    """
+    in_title = _authors_in_text(title)
+    if len(in_title) == 1:
+        return in_title[0]
+    if in_title:
+        return None
+
+    in_tags = _authors_in_text(" ".join(tags))
+    return in_tags[0] if len(in_tags) == 1 else None
 
 
 def hashtags_for(title: str, author: str | None) -> tuple[str, ...]:
