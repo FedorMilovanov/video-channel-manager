@@ -125,7 +125,7 @@
     },
     "lordchrist-telegraph-charnock-07": {
       "publication_id": "lordchrist-telegraph-charnock-07",
-      "state": "page_published",
+      "state": "telegram_dispatch_claimed",
       "provider_effect": "verified",
       "run_id": "41966465271",
       "run_attempt": 1,
@@ -136,7 +136,9 @@
       "page_intent_at_utc": "2026-11-05T04:13:45.527636+00:00",
       "telegraph_url": "https://telegra.ph/CHasy-bez-chasovshchika-poryadok-mira-kotoryj-ne-slozhilsya-sam-11-05",
       "telegraph_path": "CHasy-bez-chasovshchika-poryadok-mira-kotoryj-ne-slozhilsya-sam-11-05",
-      "telegraph_updated_at_utc": "2026-11-05T04:13:49.778220+00:00"
+      "telegraph_updated_at_utc": "2026-11-05T04:13:49.778220+00:00",
+      "telegram_provider_effect": "unknown_until_reconciled",
+      "telegram_intent_at_utc": "2026-11-05T04:13:51.645186+00:00"
     }
   }
 }
