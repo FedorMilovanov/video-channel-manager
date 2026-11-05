@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -41,6 +42,8 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 MAP_PATH = Path("docs/audits/2026-11-04-charnock-publication-link-replacement-map.json")
 CHARNOCK_PREFIX = "lordchrist-telegraph-charnock-"
 CORRECTION_STATES = {"page_claimed", "page_created", "telegram_claimed", "corrected"}
+# Read-only backoff after the one allowed editMessageText; never retry the mutation.
+CORRECTED_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
 
 
 def _now() -> str:
@@ -54,6 +57,22 @@ def _read_original_post(message_id: int, prior_url: str) -> None:
     body = response.text
     if f'data-post="lordchrist/{message_id}"' not in body or prior_url not in body:
         raise RuntimeError("Existing Telegram post or old link was not proved live; no mutation")
+
+
+def _wait_for_public_correction(message_id: int, corrected_url: str) -> None:
+    """Wait for eventual public Telegram propagation; NEVER repeat editMessageText."""
+    for delay in CORRECTED_READBACK_DELAYS:
+        if delay:
+            time.sleep(delay)
+        try:
+            _read_original_post(message_id, corrected_url)
+        except (httpx.HTTPError, RuntimeError):
+            continue
+        return
+    raise RuntimeError(
+        "Telegram acknowledged the edit but public readback remained unverified; "
+        "manual reconciliation required, never retry the edit"
+    )
 
 
 def _target(args: argparse.Namespace, ledger: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], Any, Any]:
@@ -221,7 +240,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         }
         if new_url not in urls:
             raise RuntimeError("Telegram edit receipt does not contain the corrected article link")
-        _read_original_post(original_id, new_url)
+        _wait_for_public_correction(original_id, new_url)
         receipt.update(
             state="corrected",
             telegram_provider_effect="verified",

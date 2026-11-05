@@ -263,3 +263,52 @@ def test_correction_claim_rejects_changed_immutable_context(monkeypatch, tmp_pat
     original["correction"]["github_sha"] = "f" * 40
     with pytest.raises(RuntimeError, match="Correction intent identity or reviewed payload changed"):
         m._claimed(args, original, "page_claimed", FakePayload())
+
+
+def test_public_correction_readback_polls_without_repeating_provider_mutation(monkeypatch):
+    reads = []
+    sleeps = []
+
+    def read(message_id, url):
+        reads.append((message_id, url))
+        if len(reads) < 3:
+            raise RuntimeError("Telegram public widget is not updated yet")
+
+    monkeypatch.setattr(m, "_read_original_post", read)
+    monkeypatch.setattr(m.time, "sleep", sleeps.append)
+    m._wait_for_public_correction(MESSAGE, CORRECTED)
+    assert reads == [(MESSAGE, CORRECTED)] * 3
+    assert sleeps == [2, 4]
+
+
+def test_unconfirmed_public_correction_never_replays_edit(monkeypatch):
+    reads = []
+    sleeps = []
+
+    def read(message_id, url):
+        reads.append((message_id, url))
+        raise RuntimeError("Public readback stale")
+
+    monkeypatch.setattr(m, "_read_original_post", read)
+    monkeypatch.setattr(m.time, "sleep", sleeps.append)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("never mutate after Telegram ack"))
+    with pytest.raises(RuntimeError, match="manual reconciliation required, never retry the edit"):
+        m._wait_for_public_correction(MESSAGE, CORRECTED)
+    assert len(reads) == len(m.CORRECTED_READBACK_DELAYS)
+    assert sleeps == list(m.CORRECTED_READBACK_DELAYS[1:])
+
+
+def test_public_correction_readback_recovers_from_transient_http_failure(monkeypatch):
+    attempts = []
+    sleeps = []
+
+    def read(message_id, url):
+        attempts.append((message_id, url))
+        if len(attempts) == 1:
+            raise m.httpx.TimeoutException("Telegram widget read timed out")
+
+    monkeypatch.setattr(m, "_read_original_post", read)
+    monkeypatch.setattr(m.time, "sleep", sleeps.append)
+    m._wait_for_public_correction(MESSAGE, CORRECTED)
+    assert attempts == [(MESSAGE, CORRECTED), (MESSAGE, CORRECTED)]
+    assert sleeps == [2]

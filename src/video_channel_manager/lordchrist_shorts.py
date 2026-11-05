@@ -812,6 +812,8 @@ def ffprobe_media(path: Path) -> dict[str, Any]:
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except (OSError, subprocess.CalledProcessError) as exc:
         raise ValueError(f"ffprobe failed for {path}: {exc}") from exc

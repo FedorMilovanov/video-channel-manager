@@ -63,6 +63,22 @@ def _read_token_input(token_file: Path | None) -> VkAccessToken:
     return VkAccessToken.from_text(raw)
 
 
+def _read_community_key_input(token_file: Path | None) -> VkAccessToken:
+    """Read a community key without falling back to the legacy user-token setting.
+
+    The global VK_ACCESS_TOKEN setting is user-token configuration and may be
+    quarantined. A new community key must always be explicitly supplied.
+    """
+    if token_file is not None:
+        return VkAccessToken.from_file(token_file)
+    raw = typer.prompt(
+        "Paste a VK community access key",
+        hide_input=True,
+        confirmation_prompt=False,
+    )
+    return VkAccessToken.from_text(raw)
+
+
 @vk_app.command("login")
 def login(
     account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
@@ -247,7 +263,7 @@ def community_key_login(
                 "Use --force only when you intentionally want to replace its token."
             )
             raise typer.Exit(code=2)
-        token = _read_token_input(token_file)
+        token = _read_community_key_input(token_file)
         with TemporaryDirectory(prefix="video-manager-vk-community-key-login-") as temp_dir:
             validation_store = VkTokenStore(Path(temp_dir))
             validation_store.save_token(account, token)
@@ -454,6 +470,55 @@ def wall_probe(
         f"[green]VK wall probe succeeded:[/green] wall.get / {community}; "
         f"published_head_items={len(items)} total={total}. Provider calls: 1. Provider writes: 0."
     )
+
+
+@vk_app.command("milovi-school-postponed-canary")
+def milovi_school_postponed_canary(
+    preview_path: Annotated[Path, typer.Option("--preview-path", help="Exact editorial preview manifest")],
+    editorial_path: Annotated[Path, typer.Option("--editorial-path", help="Exact ten-draft source file")],
+    journal_path: Annotated[Path, typer.Option("--journal-path", help="Durable one-shot journal, never overwrite")],
+    data_dir: Annotated[Path | None, typer.Option("--data-dir", help="Existing persistent VK token-store root")] = None,
+    apply: Annotated[bool, typer.Option("--apply", help="Allow one provider write after all gates")] = False,
+    confirmation: Annotated[
+        str, typer.Option("--confirmation", help="Exact reviewed Milovi source/date confirmation")
+    ] = "",
+    admin_queue_witness: Annotated[
+        str, typer.Option("--admin-queue-witness", help="Exact owner administrative witness")
+    ] = "",
+) -> None:
+    """One text-only, project-bound Milovi School VK postponed canary; never a batch."""
+    from video_channel_manager.platforms.vk.milovi_school_wall_publisher import (
+        MiloviCanaryBlocked,
+        load_canary_preview,
+        schedule_canary_once,
+    )
+
+    try:
+        preview = load_canary_preview(preview_path=preview_path, editorial_path=editorial_path)
+        if not apply:
+            console.print(
+                f"Milovi Cake editorial canary only: community={preview['community_id']}, "
+                f"source={preview['source_article_id']}, slot={preview['publish_at_msk']}, "
+                "provider writes=0. Use --apply with exact authority only after reviewed gates."
+            )
+            return
+        store = VkTokenStore(data_dir or get_settings().data_dir)
+        result = schedule_canary_once(
+            store=store,
+            api_version=get_settings().vk_api_version,
+            preview_path=preview_path,
+            editorial_path=editorial_path,
+            journal_path=journal_path,
+            confirmation=confirmation,
+            admin_queue_witness=admin_queue_witness,
+        )
+        console.print(
+            f"Milovi VK one-shot acknowledged: post_id={result['post_id']}; "
+            f"state={result['state']}; journal={journal_path}. No further write dispatched."
+        )
+    except (OSError, ValueError, MiloviCanaryBlocked, VkWriteError, VkApiError) as exc:
+        console.print(f"[red]Milovi Cake VK canary blocked; never retry blindly:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @vk_app.command("communities")

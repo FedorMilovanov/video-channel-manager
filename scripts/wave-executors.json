@@ -105,6 +105,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/audit_milovi_school_vk_public_wall.py",
+      "private_imports": [],
+      "project_owner": "milovi-cake",
+      "provider_write_capable": false,
+      "sha256": "b56356cecbee6284b54dec4eca924939a62a91c7759b730447dcf701df15f557",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/audit_vk_description_rendering.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
@@ -139,7 +149,7 @@
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
-      "sha256": "32ffce67f1a69dd1216b784e2e3b87c6b59f8de346de67f3e7a7cb9c286549e2",
+      "sha256": "65172da8791aa64eab333d4871de8e3d7c9a0565a51f0a755303fbf3e941b741",
       "status": "independent_tool"
     },
     {
@@ -597,6 +607,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "57cd9483ee58b7834d1135679010af9e50e07b810319bcb548f760ba74e7695f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_quote_v6_preview.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "9be8e5bee3efdb92794920355e4818f226c5d1e5aae9b9699bde35fc6700757d",
       "status": "independent_tool"
     },
     {

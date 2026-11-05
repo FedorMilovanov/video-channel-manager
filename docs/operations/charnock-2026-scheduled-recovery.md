@@ -32,3 +32,18 @@ approval gates, or schedule. It also adds a CI-tested PyYAML syntax parse
 for every workflow file, including a regression for the original error.
 The publication hold remains until the repaired workflows are registered
 and the exact merged main passes CI.
+
+
+## Delayed public readback after Telegram edit (2026-11-05)
+
+The first corrective run, `42064895183`, created the corrected №01b Telegraph page and received
+a successful `editMessageText` response for **the original Telegram message 1582**. Its immediate
+public-widget readback failed while the change was still propagating. Do not dispatch
+another edit: the ledger intentionally remained `telegram_claimed`. Later independent
+public readback confirmed the exact new link and absence of the former link, and the
+original claim was reconciled in `state/lordchrist-telegram` commit `d71c814b`
+without a second provider mutation.
+
+Future corrections must make the edit only once and use bounded **read-only**
+public-readback retries. Exhausting that window is a fail-closed, manual-reconciliation
+condition; it never authorizes a second `editMessageText`.

@@ -214,3 +214,86 @@ def test_community_key_commands_reject_non_positive_community_before_any_lookup(
             community_key_login(community=community, account="vk-lord-god-community-key")
         with pytest.raises(typer.BadParameter, match="community"):
             community_key_capabilities(community=community, account="vk-lord-god-community-key")
+
+
+@pytest.mark.parametrize("token_source", ["prompt", "file"])
+def test_community_key_login_never_uses_quarantined_global_user_token(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    token_source: str,
+) -> None:
+    """Only the explicit new community key may reach the community validation client."""
+    from pydantic import SecretStr
+
+    store = VkTokenStore(tmp_path)
+    store.save_token("default", VkAccessToken.from_text("quarantined-user-token"))
+    monkeypatch.setattr(
+        vk_cli,
+        "get_settings",
+        lambda: SimpleNamespace(
+            data_dir=tmp_path,
+            vk_api_version="5.199",
+            vk_access_token=SecretStr("quarantined-user-token"),
+        ),
+    )
+
+    class ExactCommunityClient:
+        def __init__(self, *, token_store: VkTokenStore, account_alias: str, **_kwargs: Any) -> None:
+            assert account_alias == "vk-milovi-cake-community-key"
+            assert token_store.load_token(account_alias).access_token == "new-milovi-community-key"
+
+        def get_community_token_permissions(self) -> tuple[int, tuple[str, ...]]:
+            return 262144, ("wall",)
+
+        def get_community(self, community_id: int) -> SimpleNamespace:
+            assert community_id == 68859909
+            return SimpleNamespace(ref=SimpleNamespace(channel_id="68859909"), title="Milovi Cake")
+
+    monkeypatch.setattr(vk_cli, "VkApiClient", ExactCommunityClient)
+    args = ["community-key-login", "--community", "68859909", "--account", "vk-milovi-cake-community-key"]
+    input_text = "new-milovi-community-key\n"
+    if token_source == "file":
+        token_file = tmp_path / "new-community-key.txt"
+        token_file.write_text("new-milovi-community-key", encoding="utf-8")
+        args.extend(["--token-file", str(token_file)])
+        input_text = ""
+
+    result = runner.invoke(vk_app, args, input=input_text)
+
+    assert result.exit_code == 0, result.output
+    assert "Milovi Cake" in result.output
+    assert "Provider writes: 0" in result.output
+    assert "new-milovi-community-key" not in result.output
+    assert store.load_token("vk-milovi-cake-community-key").access_token == "new-milovi-community-key"
+    assert store.load_token("default").access_token == "quarantined-user-token"
+
+
+def test_community_key_login_missing_input_fails_closed_without_legacy_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from pydantic import SecretStr
+
+    monkeypatch.setattr(
+        vk_cli,
+        "get_settings",
+        lambda: SimpleNamespace(
+            data_dir=tmp_path,
+            vk_api_version="5.199",
+            vk_access_token=SecretStr("quarantined-user-token"),
+        ),
+    )
+    monkeypatch.setattr(
+        vk_cli,
+        "VkApiClient",
+        lambda **_kwargs: pytest.fail("No provider client when community key input is absent"),
+    )
+
+    result = runner.invoke(
+        vk_app,
+        ["community-key-login", "--community", "68859909", "--account", "vk-milovi-cake-community-key"],
+        input="",
+    )
+
+    assert result.exit_code != 0
+    assert not VkTokenStore(tmp_path).token_exists("vk-milovi-cake-community-key")
