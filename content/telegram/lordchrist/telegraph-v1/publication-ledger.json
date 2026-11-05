@@ -167,7 +167,7 @@
     },
     "lordchrist-telegraph-charnock-09": {
       "publication_id": "lordchrist-telegraph-charnock-09",
-      "state": "page_published",
+      "state": "telegram_dispatch_claimed",
       "provider_effect": "verified",
       "run_id": "41966604736",
       "run_attempt": 1,
@@ -178,7 +178,9 @@
       "page_intent_at_utc": "2026-11-05T04:15:02.876466+00:00",
       "telegraph_url": "https://telegra.ph/Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
       "telegraph_path": "Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
-      "telegraph_updated_at_utc": "2026-11-05T04:15:07.618530+00:00"
+      "telegraph_updated_at_utc": "2026-11-05T04:15:07.618530+00:00",
+      "telegram_provider_effect": "unknown_until_reconciled",
+      "telegram_intent_at_utc": "2026-11-05T04:15:09.565671+00:00"
     }
   }
 }
