@@ -230,15 +230,18 @@
     },
     "lordchrist-telegraph-charnock-12": {
       "publication_id": "lordchrist-telegraph-charnock-12",
-      "state": "page_dispatch_claimed",
-      "provider_effect": "unknown_until_reconciled",
+      "state": "page_published",
+      "provider_effect": "verified",
       "run_id": "41967692313",
       "run_attempt": 1,
       "github_sha": "6f67b689f3de6ba811134bb4b49eff0e2fd9fee3",
       "title": "Нельзя доказать, что Бога нет: шесть ответов сомневающемуся",
       "article_sha256": "sha256:dc201d797b000f879711a56f16c19c3010d0b891b9afe12a44808aad4b3d7b67",
       "cover_sha256": "sha256:09c2c61268ad07d3d989ca91c02ff33cdc44b0f50a21c861442b769304f63c16",
-      "page_intent_at_utc": "2026-11-05T04:25:30.577541+00:00"
+      "page_intent_at_utc": "2026-11-05T04:25:30.577541+00:00",
+      "telegraph_url": "https://telegra.ph/Nelzya-dokazat-chto-Boga-net-shest-otvetov-somnevayushchemusya-11-05",
+      "telegraph_path": "Nelzya-dokazat-chto-Boga-net-shest-otvetov-somnevayushchemusya-11-05",
+      "telegraph_updated_at_utc": "2026-11-05T04:25:35.141352+00:00"
     }
   }
 }
