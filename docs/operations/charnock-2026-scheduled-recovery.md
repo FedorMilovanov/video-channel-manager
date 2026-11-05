@@ -32,3 +32,31 @@ approval gates, or schedule. It also adds a CI-tested PyYAML syntax parse
 for every workflow file, including a regression for the original error.
 The publication hold remains until the repaired workflows are registered
 and the exact merged main passes CI.
+
+
+## 2026-11-05 / first actual correction — public readback reconciliation
+
+The guarded one-shot correction of Charnock 01b used
+[Actions run 42064895183](https://github.com/FedorMilovanov/video-channel-manager/actions/runs/42064895183).
+It created a fully revised Telegraph page, durably recorded its receipt, then
+committed `telegram_claimed` before calling Telegram `editMessageText` for
+the existing message ID 1582. Telegram's edit API returned the expected
+message ID, channel, and revised `text_link` URL. The next immediate public
+`t.me/lordchrist/1582?embed=1` check was stale, so the job failed without a
+terminal ledger receipt. A later independent public read confirmed that the
+*same Telegram ID 1582* contains the corrected new page URL and no longer
+contains the original URL.
+
+**Never re-run the original one-shot correction for 01b.** The journal is
+intentionally `telegram_claimed` until a separately approved reconciliation
+verifies the immutable corrected public Telegraph page and the existing
+Telegram message again, then records a truthful `corrected` result. The
+`lordchrist-charnock-correction-reconcile.yml` workflow has no Telegram bot
+secret and no Telegram send/edit API operation. It requires the original
+failed run ID, a distinct one-ID approval gate, current-main CI, and exact
+public readback. All approvals are revoked after the run.
+
+For later corrective edits, the original workflow uses bounded
+post-edit public readback retries to tolerate normal Telegram web cache
+propagation. If even those cannot confirm the edit, the durable claim is
+retained and only read-only reconciliation is permitted.

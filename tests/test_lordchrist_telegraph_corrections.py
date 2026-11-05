@@ -263,3 +263,88 @@ def test_correction_claim_rejects_changed_immutable_context(monkeypatch, tmp_pat
     original["correction"]["github_sha"] = "f" * 40
     with pytest.raises(RuntimeError, match="Correction intent identity or reviewed payload changed"):
         m._claimed(args, original, "page_claimed", FakePayload())
+
+
+def _reconciliation_fixture(monkeypatch, tmp_path):
+    args, _ledger, original = setup(monkeypatch, tmp_path, "telegram_claimed")
+    args.stage = "reconcile-telegram"
+    args.original_run_id = "456"
+    original["correction"].update(
+        publication_id=ID,
+        original_telegram_message_id=MESSAGE,
+        original_telegraph_url=ORIGINAL,
+        provider_effect="verified",
+        telegram_provider_effect="unknown_until_reconciled",
+    )
+    return args, original
+
+
+def test_delayed_public_readback_is_bounded_and_never_edits_again(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def read_post(message_id, url):
+        assert message_id == MESSAGE
+        assert url == CORRECTED
+        calls.append(url)
+        if len(calls) < 3:
+            raise RuntimeError("Telegram web cache still old")
+
+    monkeypatch.setattr(m, "_read_original_post", read_post)
+    monkeypatch.setattr(m.time, "sleep", sleeps.append)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("never touch the provider"))
+    m._confirm_public_edit(MESSAGE, CORRECTED, attempts=5, delay_seconds=0.5)
+    assert len(calls) == 3
+    assert sleeps == [0.5, 0.5]
+
+
+def test_unconfirmed_public_readback_requires_read_only_reconciliation(monkeypatch):
+    calls = []
+    monkeypatch.setattr(m, "_read_original_post", lambda *a: (_ for _ in ()).throw(RuntimeError("stale")))
+    monkeypatch.setattr(m.time, "sleep", lambda n: calls.append(n))
+    with pytest.raises(RuntimeError, match="never replay editMessageText"):
+        m._confirm_public_edit(MESSAGE, CORRECTED, attempts=3, delay_seconds=0)
+    assert len(calls) == 2
+
+
+def test_read_only_reconciliation_marks_proved_existing_edit_without_bot_api(monkeypatch, tmp_path):
+    args, original = _reconciliation_fixture(monkeypatch, tmp_path)
+    checks = []
+    monkeypatch.setattr(m, "_proof_page", lambda *a: checks.append("full Telegraph readback"))
+    monkeypatch.setattr(m, "_read_original_post", lambda *a: checks.append("existing Telegram message readback"))
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("read-only reconciliation used Bot API"))
+    result = m.execute(args)
+    assert result["message_id"] == MESSAGE
+    assert result["url"] == CORRECTED
+    assert checks == ["full Telegraph readback", "existing Telegram message readback"]
+    receipt = original["correction"]
+    assert receipt["state"] == "corrected"
+    assert receipt["telegram_provider_effect"] == "verified_public_readback"
+    assert receipt["reconciled_from_run_id"] == "456"
+    assert receipt["reconciliation_run_id"] == args.run_id
+    assert original["telegram_message_id"] == MESSAGE
+    assert original["telegraph_url"] == ORIGINAL
+    with pytest.raises(RuntimeError, match="previously claimed ambiguous Telegram edit"):
+        m.execute(args)
+
+
+def test_read_only_reconciliation_rejects_unrelated_or_forged_claim(monkeypatch, tmp_path):
+    args, original = _reconciliation_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(m, "_proof_page", lambda *a: pytest.fail("unapproved claim contacted provider"))
+    args.original_run_id = "999"
+    with pytest.raises(RuntimeError, match="Original correction claim"):
+        m.execute(args)
+    args.original_run_id = "456"
+    original["correction"]["cover_sha256"] = "forged"
+    with pytest.raises(RuntimeError, match="Original correction claim"):
+        m.execute(args)
+
+
+def test_read_only_reconciliation_keeps_claim_when_public_link_is_stale(monkeypatch, tmp_path):
+    args, original = _reconciliation_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(m, "_proof_page", lambda *a: None)
+    monkeypatch.setattr(m, "_read_original_post", lambda *a: (_ for _ in ()).throw(RuntimeError("public edit absent")))
+    with pytest.raises(RuntimeError, match="public edit absent"):
+        m.execute(args)
+    assert original["correction"]["state"] == "telegram_claimed"
+    assert original["correction"]["telegram_provider_effect"] == "unknown_until_reconciled"

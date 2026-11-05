@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import time
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -54,6 +56,23 @@ def _read_original_post(message_id: int, prior_url: str) -> None:
     body = response.text
     if f'data-post="lordchrist/{message_id}"' not in body or prior_url not in body:
         raise RuntimeError("Existing Telegram post or old link was not proved live; no mutation")
+
+
+def _confirm_public_edit(message_id: int, corrected_url: str, *, attempts: int = 7, delay_seconds: float = 5.0) -> None:
+    """Allow bounded Telegram web propagation after a confirmed edit; never edit twice."""
+    if attempts < 1 or delay_seconds < 0:
+        raise ValueError("Invalid public readback retry limits")
+    for number in range(attempts):
+        try:
+            _read_original_post(message_id, corrected_url)
+            return
+        except (RuntimeError, httpx.HTTPError) as exc:
+            if number + 1 == attempts:
+                raise RuntimeError(
+                    "Telegram edit was acknowledged but public readback is not yet verified; "
+                    "reconcile the original edit, never replay editMessageText"
+                ) from exc
+            time.sleep(delay_seconds)
 
 
 def _target(args: argparse.Namespace, ledger: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], Any, Any]:
@@ -221,7 +240,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         }
         if new_url not in urls:
             raise RuntimeError("Telegram edit receipt does not contain the corrected article link")
-        _read_original_post(original_id, new_url)
+        _confirm_public_edit(original_id, new_url)
         receipt.update(
             state="corrected",
             telegram_provider_effect="verified",
@@ -234,12 +253,63 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         save_ledger(ledger_path, ledger)
         return {"stage": args.stage, "publication_id": args.publication_id, "url": new_url, "message_id": original_id}
 
+    if args.stage == "reconcile-telegram":
+        # Read-only recovery of an edit already acknowledged by Telegram but not
+        # durably verified because public widget readback lagged. No Bot API call.
+        receipt = prior.get("correction")
+        original_run_id = getattr(args, "original_run_id", None)
+        if not isinstance(original_run_id, str) or not re.fullmatch(r"[1-9][0-9]*", original_run_id):
+            raise RuntimeError("Exact original correction run ID required for reconciliation")
+        if not isinstance(receipt, dict) or receipt.get("state") != "telegram_claimed":
+            raise RuntimeError("Only a previously claimed ambiguous Telegram edit can be reconciled")
+        if (
+            receipt.get("run_id") != original_run_id
+            or receipt.get("run_attempt") != 1
+            or receipt.get("publication_id") != args.publication_id
+            or receipt.get("original_telegram_message_id") != original_id
+            or receipt.get("original_telegraph_url") != original_url
+            or receipt.get("article_sha256") != payload.article_sha256
+            or receipt.get("cover_sha256") != payload.cover_sha256
+            or receipt.get("provider_effect") != "verified"
+            or receipt.get("telegram_provider_effect") != "unknown_until_reconciled"
+            or not isinstance(receipt.get("github_sha"), str)
+            or not re.fullmatch(r"[a-f0-9]{40}", receipt["github_sha"])
+        ):
+            raise RuntimeError("Original correction claim or immutable content does not match")
+        corrected_url = receipt.get("new_telegraph_url")
+        if not isinstance(corrected_url, str) or not corrected_url.startswith("https://telegra.ph/"):
+            raise RuntimeError("Durable corrected Telegraph page receipt missing")
+        if corrected_url == original_url:
+            raise RuntimeError("Correction cannot link the historical original page")
+        _proof_page(
+            {"verified_telegraph_url": corrected_url},
+            replace(payload, title=f"{payload.title} — исправленное издание"),
+        )
+        _read_original_post(original_id, corrected_url)
+        receipt.update(
+            state="corrected",
+            telegram_provider_effect="verified_public_readback",
+            telegram_message_id=original_id,
+            corrected_at_utc=_now(),
+            reconciliation_run_id=args.run_id,
+            reconciled_from_run_id=original_run_id,
+        )
+        save_ledger(ledger_path, ledger)
+        return {
+            "stage": args.stage,
+            "publication_id": args.publication_id,
+            "url": corrected_url,
+            "message_id": original_id,
+        }
+
     raise ValueError(f"Unsupported corrective publication stage {args.stage!r}")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m video_channel_manager.lordchrist_telegraph_corrections")
-    parser.add_argument("stage", choices=("prepare-page", "send-page", "prepare-telegram", "edit-telegram"))
+    parser.add_argument(
+        "stage", choices=("prepare-page", "send-page", "prepare-telegram", "edit-telegram", "reconcile-telegram")
+    )
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--queue", type=Path, default=DEFAULT_QUEUE_PATH)
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER_PATH)
@@ -248,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-attempt", type=int, required=True)
     parser.add_argument("--github-sha", required=True)
+    parser.add_argument("--original-run-id")
     args = parser.parse_args(argv)
     print(json.dumps(execute(args), ensure_ascii=False))
     return 0

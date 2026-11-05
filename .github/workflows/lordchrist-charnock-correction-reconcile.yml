@@ -1,0 +1,101 @@
+name: Lordchrist Charnock public-edit read-only reconciliation
+
+on:
+  workflow_dispatch:
+    inputs:
+      publication_id:
+        description: Exact historical Charnock publication ID to reconcile
+        required: true
+        type: string
+      original_run_id:
+        description: Exact failed one-shot correction workflow run ID
+        required: true
+        type: string
+      confirm:
+        description: Exact RECONCILE:<publication_id>:<original_run_id>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  read-only-reconciliation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PUBLICATION_ID: ${{ inputs.publication_id }}
+      ORIGINAL_RUN_ID: ${{ inputs.original_run_id }}
+      CONFIRM: ${{ inputs.confirm }}
+      MEDIA_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}
+      LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+      APPROVED_ID: ${{ vars.LORDCHRIST_RECONCILE_APPROVED_PUBLICATION_ID }}
+      APPROVED_RUN_ID: ${{ vars.LORDCHRIST_RECONCILE_APPROVED_RUN_ID }}
+      ENABLED: ${{ vars.LORDCHRIST_RECONCILE_ENABLED }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install read-only verifier dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Exact main CI and one historical run approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" && "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || exit 3
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$PUBLICATION_ID" == lordchrist-telegraph-charnock-* ]] || exit 3
+          [[ "$ORIGINAL_RUN_ID" =~ ^[1-9][0-9]*$ ]] || exit 3
+          [[ "$CONFIRM" == "RECONCILE:$PUBLICATION_ID:$ORIGINAL_RUN_ID" ]] || exit 3
+          [[ "$ENABLED" == "true" && "$APPROVED_ID" == "$PUBLICATION_ID" ]] || exit 3
+          [[ "$APPROVED_RUN_ID" == "$ORIGINAL_RUN_ID" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+      - name: Independently verify public edit and persist reconciled existing receipt
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state_dir=".state/lordchrist"
+          ledger_rel="content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
+          git fetch origin state/lordchrist-telegram:refs/remotes/origin/state/lordchrist-telegram
+          git worktree add "$state_dir" origin/state/lordchrist-telegram
+          test -f "$LEDGER_PATH"
+          git -C "$state_dir" config user.name "lordchrist-correction-reconcile[bot]"
+          git -C "$state_dir" config user.email "lordchrist-correction-reconcile@users.noreply.github.com"
+          python -m video_channel_manager.lordchrist_telegraph_corrections reconcile-telegram \
+            --publication-id "$PUBLICATION_ID" \
+            --original-run-id "$ORIGINAL_RUN_ID" \
+            --media-base-url "$MEDIA_BASE_URL" \
+            --ledger "$LEDGER_PATH" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA"
+          git -C "$state_dir" add -- "$ledger_rel"
+          if git -C "$state_dir" diff --cached --quiet; then
+            echo "No exact public-edit evidence to reconcile" >&2
+            exit 3
+          fi
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          git -C "$state_dir" commit -m "chore(lordchrist): verified public correction $PUBLICATION_ID from $ORIGINAL_RUN_ID"
+          git -C "$state_dir" push origin HEAD:state/lordchrist-telegram
+          local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+          remote_sha="$(git ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
