@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-feed-video",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20261107-001",
+  "media_id": "v12",
+  "candidate_path": "content/telegram/milovi-cake/november-first-video-candidate-20261107.json",
+  "caption_sha256": "sha256:1d09a1b79fce783fab9a309d1ac40c7e5346c8ed0d681719eb60a35d023934d9",
+  "artifact_repository": "FedorMilovanov/video-channel-manager",
+  "artifact_ref": "agent/milovi-video-accepted-73c578eff825",
+  "artifact_path": "artifacts/milovi-telegram/video/milovi-v12.mp4",
+  "artifact_git_blob_sha1": "1c5904deabdd79c2db2ba28ac87a0559d1bca6d5",
+  "artifact_byte_size": 2367134,
+  "artifact_sha256": "sha256:8ebdd2f5b9747399acf6559f1642327ac736ff585007c6c5d54102f90ef3997c",
+  "evidence_sha256": "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae",
+  "local_media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261107-001/milovi-v12.mp4",
+  "filename": "milovi-v12.mp4",
+  "provider_write_performed": false
+}
