@@ -77,6 +77,10 @@ def test_detect_author_title_outweighs_noisy_tags_and_ambiguity_fails_closed() -
     assert detect_author("Есенин и Маяковский", ["Александр Пушкин"]) is None
     assert detect_author("Пейзаж", ["Блок", "Пушкин"]) is None
     assert detect_author("Блокнот поэта", []) is None
+    assert detect_author("РЭП от Пушкина — Зимний вечер", []) == "Александр Пушкин"
+    assert detect_author("Зимняя мистика Сергея Есенина", []) == "Сергей Есенин"
+    assert detect_author("Пушкина и Есенина", ["Александр Пушкин"]) is None
+    assert detect_author("Пушкиназвание", []) is None
 
 
 def test_frozen_snapshot_rebuild_identifies_real_title_authors() -> None:
@@ -85,3 +89,5 @@ def test_frozen_snapshot_rebuild_identifies_real_title_authors() -> None:
     assert by_id["156l_su1P48"].author == "Александр Блок"
     assert by_id["x-TPtQ9E2mc"].author == "Михаил Лермонтов"
     assert by_id["d50lIlqZed4"].author == "Анна Ахматова"
+    assert by_id["FKtflEKl-NY"].author == "Александр Пушкин"
+    assert by_id["Sdv8puPeJYw"].author == "Сергей Есенин"
