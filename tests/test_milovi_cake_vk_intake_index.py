@@ -133,3 +133,31 @@ def test_historical_ip_and_existing_vk_objects_are_not_new_upload_authority() ->
     assert (protected | ip | trademark | existing) <= set(index["source_ids_in_public_order"])
     assert holds["fresh_upload_allowlist"] == []
     assert holds["all_exclusions_require_current_provider_and_editorial_reconciliation"] is True
+
+
+def test_milovi_school_vk_editorial_queue_has_ten_unique_sources_but_no_write_authority() -> None:
+    editorial = (ROOT / "content/editorial/milovi-cake/vk-school-wave-20261105.md").read_text(
+        encoding="utf-8"
+    )
+    ids = re.findall(r"^Source ID: `([a-z0-9-]+)`$", editorial, flags=re.MULTILINE)
+    assert ids == [
+        "herme-ispahan-deep",
+        "tech-mirror-glaze",
+        "grolet-lemon-yuzu",
+        "mercotte-entremets-system",
+        "recipe-madeleines",
+        "recipe-fondant-chocolat",
+        "tech-tempering-chocolate",
+        "tech-creme-pat",
+        "recipe-macarons-herme",
+        "tech-mousse-stability",
+    ]
+    assert len(ids) == len(set(ids)) == 10
+    assert len(re.findall(r"^## Пост \\d+ — ", editorial, flags=re.MULTILINE)) == 10
+    for source_id in ids:
+        canonical = f"https://french.milovicake.ru/articles/{source_id}/"
+        assert editorial.count(canonical) == 2
+    assert "project_key=milovi-cake" in editorial
+    assert "community `68859909`" in editorial
+    assert "`draft_only; vk_presence=unknown; publish_date=unset; execution_authorized=false`" in editorial
+    assert "Стадия всех 10" in editorial
