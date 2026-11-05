@@ -1,0 +1,69 @@
+{
+  "schema_name": "video-channel-manager.quote-v4-source-reconciliation",
+  "schema_version": 1,
+  "role": "editorial_candidate_only",
+  "observed_on": "2026-11-05",
+  "original_index_git_blob_sha": "2137005de8b0cc02f2223e13537d5ace008c9c7d",
+  "original_preview_git_blob_sha": "7235c4423127d1e4c4f833566370b98d05565d7e",
+  "release_digest": null,
+  "editorial_approval": false,
+  "provider_write_authorization": false,
+  "protected_ledger_mutation_authorization": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "description": "Four source-bounded candidate translations reconciled between the long-form redraft and reader-facing inert preview; source research remains incomplete. Seq 11 preview restored to bounded passage in separate change.",
+  "items": [
+    {
+      "sequence": 7,
+      "publication_id": "lordchrist-gurnall-cold-prayer",
+      "source_url": "https://ccel.org/ccel/gurnall/armour/files/gurnal07b.htm",
+      "anchor_start": "Cold prayer is no more prayer than painted fire is fire.",
+      "anchor_end": "for their zeal in service of God, are called ‘a flame of fire.’",
+      "translation_ru": "Холодная молитва — не более настоящая молитва, чем нарисованный огонь — настоящий огонь. Неужели молитва, которая не согревает даже твоё собственное сердце, тронет Бога? Ты открываешь кран, но сосуд замёрз. Человек не может пользоваться рукой, окоченевшей от холода; так и ты не можешь как следует молиться, пока сердце не отогреется и не ощутит того, о чём ты просишь.\n\nЧтобы согреть холодное сердце духовным жаром, рассмотрим первый довод — превосходство ревности и горячности в молитве. Если ты принадлежишь к святым, в тебе есть начало, побуждающее одобрять превосходное, и ревность в молитве принадлежит к такому превосходному. Жизнь составляет достоинство живых существ; даже в неодушевлённых вещах есть некое подобие жизни, придающее им ценность. Вино ценят за его крепость: чего оно стоит, если выдохлось и стало пресным? В алмазе ценят сверкание, в родниковой воде — движение, из-за которого её называют живой. Тем более это верно в отношении существ, действительно обладающих жизнью: потому блоха или муха почитаются более благородными созданиями, чем солнце.\n\nЧем выше род жизни, тем благороднее природа существа: животные выше растений, люди выше животных, ангелы выше людей. Как жизнь придаёт достоинство существу, так живость и сила действия придают достоинство самой жизни. Чем благороднее жизнь существа, тем сильнее проявляется его деятельность. У ангела разумение быстрее, а ревность сильнее, чем у человека. Поэтому чем живее ты исполняешь свой долг и чем больше ревности проявляешь в нём, тем ближе становишься к природе тех славных духов, которых за усердие в служении Богу называют „пламенем огненным“.",
+      "translation_sha256": "sha256:e858ad8223ad5842b0ee1952bdc5afe9733389ac3026b4bb8389b055162b6dc2",
+      "full_bilingual_review_complete": false,
+      "rights_review_complete": false,
+      "release_eligible": false,
+      "decision_reason": "Use complete continuous source span including flea/sun and angel comparisons; improve literal Russian opener"
+    },
+    {
+      "sequence": 13,
+      "publication_id": "lordchrist-bunyan-grace-abounding",
+      "source_url": "https://ccel.org/ccel/bunyan/grace.iv.html",
+      "anchor_start": "For my descent then, it was, as is well known by many, of a low and inconsiderable generation;",
+      "anchor_end": "for cursing, swearing, lying, and blaspheming the holy name of God.",
+      "translation_ru": "Что до моего происхождения, то, как многим известно, я родился в семье низкого и незнатного положения: дом моего отца принадлежал к числу самых бедных и презираемых в стране. Потому мне нечем, подобно другим, хвалиться благородной кровью и высоким рождением по плоти. Однако, принимая всё это во внимание, я прославляю Небесное Величие за то, что именно через эту дверь Он ввёл меня в мир, чтобы я мог приобщиться благодати и жизни во Христе через Евангелие.\n\nНесмотря на скромное и незнатное положение моих родителей, Бог вложил им в сердце желание отдать меня в школу, чтобы я научился читать и писать. Я овладел грамотой настолько, насколько это было доступно детям других бедняков. Однако, к своему стыду, признаюсь: вскоре я утратил почти всё, чему выучился, — и задолго до того, как Господь начал во мне Своё благодатное дело обращения.\n\nМоя жизнь до познания Бога вполне соответствовала обычаям этого мира и „духу, действующему ныне в сынах противления“ (Еф. 2:2–3). Я находил удовольствие в том, чтобы быть „уловленным дьяволом в его волю“ (ср. 2 Тим. 2:26). Я был исполнен всякой неправды, сильно проявлявшейся и в моём сердце, и в моей жизни с детства; и, хотя лет мне было совсем немного, мало кто мог сравниться со мной в сквернословии, клятвах, лжи и хуле на святое имя Божье.",
+      "translation_sha256": "sha256:85eb371a34f7522b068ecfaed5260858dc2e0d99130c983817248e3b0597db6a",
+      "full_bilingual_review_complete": false,
+      "rights_review_complete": false,
+      "release_eligible": false,
+      "decision_reason": "Preserve the original's explicit 'filled with all unrighteousness'"
+    },
+    {
+      "sequence": 25,
+      "publication_id": "lordchrist-whitefield-method-of-grace-peace",
+      "source_url": "https://ccel.org/ccel/whitefield/sermons/sermons.lx.html",
+      "anchor_start": "As God can send a nation or people no greater blessing than to give them faithful, sincere, and upright ministers,",
+      "anchor_end": "They have healed also the hurt of the daughter of my people slightly, saying, Peace, peace, when there is no peace.",
+      "translation_ru": "Как нет для народа большего благословения от Бога, чем получить верных, искренних и праведных служителей, так и величайшее проклятие, какое Бог может послать народу в этом мире, — отдать его во власть слепых, невозрождённых, плотских, равнодушных и неумелых наставников.\n\nМежду тем во все времена находилось немало волков в овечьей одежде: тех, кто замазывал стену непрочным раствором и пророчествовал более приятные вещи, чем позволял Бог. Как было прежде, так и теперь многие искажают Слово Божье и поступают с ним лукаво. Особенно это было заметно во времена пророка Иеремии. Верный своему Господу и призвавшему его Богу, он снова и снова обличал таких служителей и смело свидетельствовал о чести Бога, от имени Которого говорил.\n\nПрочитайте его пророчество и увидите: мало кто столь решительно обличал подобных наставников. Особенно строго Иеремия говорит о них в главе, из которой взят текст этой проповеди. Среди прочего он обвиняет их в корыстолюбии: „От малого до большого каждый из них предан корысти; и от пророка до священника — все действуют лживо“ (Иер. 6:13). Затем он показывает, как вероломно они поступают с несчастными душами: „Врачуют раны дочери народа Моего легкомысленно, говоря: ‘мир! мир!’, а мира нет“ (Иер. 6:14).",
+      "translation_sha256": "sha256:d69d2a8b198ddb69a87264ae3b85cdd7a63e35b5764cdc7f69e364062f7efc6f",
+      "full_bilingual_review_complete": false,
+      "rights_review_complete": false,
+      "release_eligible": false,
+      "decision_reason": "Restore original opening antithesis and attribution of Jeremiah"
+    },
+    {
+      "sequence": 26,
+      "publication_id": "lordchrist-bunyan-preaching-call",
+      "source_url": "https://ccel.org/ccel/bunyan/grace/grace.v.html",
+      "anchor_start": "after I had been about five or six years awakened,",
+      "anchor_end": "gave thanks to the Father of mercies for the grace bestowed on me.",
+      "translation_ru": "Когда прошло около пяти или шести лет с тех пор, как я пробудился и получил помощь, чтобы увидеть и свою нужду в Иисусе Христе, Господе нашем, и Его бесконечную драгоценность, и когда я решился доверить Ему свою душу, некоторые из наиболее зрелых святых среди нас — люди, которых считали особенно рассудительными и благочестивыми, — заметили, что Бог удостоил меня некоторого понимания Своей святой и благословенной воли, открытой в Его Слове. Они увидели также, что Он в какой-то мере дал мне способность излагать понятое ради назидания других.\n\nПоэтому они стали настойчиво просить меня, чтобы иногда на одном из собраний я произносил для них слово увещания. Поначалу это очень смутило меня и привело в замешательство. Однако они продолжали просить, и я согласился. Дважды, в двух разных собраниях, пока ещё частных, я со множеством слабостей и немощей попытался воспользоваться полученным даром.\n\nСлушавшие не только казались тронутыми и утешенными, но и торжественно засвидетельствовали перед великим Богом, что они и в самом деле были тронуты и утешены. Они вознесли благодарность Отцу милосердия за благодать, дарованную мне.",
+      "translation_sha256": "sha256:a5c9406663b012b22343f29e5bc84b518212bff105a2425e2905a3768afd651b",
+      "full_bilingual_review_complete": false,
+      "rights_review_complete": false,
+      "release_eligible": false,
+      "decision_reason": "Preserve Bunyan's two-stage contrast: seemed moved, then solemn affirmation of effect"
+    }
+  ]
+}
