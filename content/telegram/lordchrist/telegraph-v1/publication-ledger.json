@@ -251,7 +251,7 @@
     },
     "lordchrist-telegraph-charnock-13": {
       "publication_id": "lordchrist-telegraph-charnock-13",
-      "state": "telegram_dispatch_claimed",
+      "state": "published",
       "provider_effect": "verified",
       "run_id": "41967758767",
       "run_attempt": 1,
@@ -263,8 +263,12 @@
       "telegraph_url": "https://telegra.ph/Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05",
       "telegraph_path": "Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05",
       "telegraph_updated_at_utc": "2026-11-05T04:26:14.561761+00:00",
-      "telegram_provider_effect": "unknown_until_reconciled",
-      "telegram_intent_at_utc": "2026-11-05T04:26:16.662921+00:00"
+      "telegram_provider_effect": "verified",
+      "telegram_intent_at_utc": "2026-11-05T04:26:16.662921+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1603,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-05T04:26:21.384021+00:00"
     }
   }
 }
