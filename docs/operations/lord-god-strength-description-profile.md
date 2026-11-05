@@ -156,3 +156,50 @@ non-member playlists, mixed/semantic URL lines, nonpublic targets, unrelated
 project identities and any content modification other than deletion of the
 recognized shelf line. If none passes, stop and prepare a new editorial
 review for the individual video rather than weakening the gate.
+
+
+## One-video transcript-anchored chapter review (Issue #795)
+
+Do not turn automatic captions into arbitrary equal-length timecodes. The
+source-anchored chapter review records the exact video ID, public owner channel,
+current published description SHA, transcript chunk count, selected chunk
+indices, source text excerpts, cues, and editor-chosen thematic headings.
+The original review stays explicitly non-executable while YouTube quota is
+exhausted.
+
+Only the reviewed, one-video builder may convert that evidence to a
+schema-valid, signed guarded plan:
+
+    python scripts/autofix_youtube_copy.py <canonical-owner-AuditPackage.json> `
+      --lord-god-chapters-review <REVIEW-ONLY.json> `
+      --previous-editorial-plan <previous-signed-description-PLAN.json> `
+      --archive-transcript-db <read-only-transcript-archive.db> `
+      --target-video-id VIDEO-ID `
+      --plan-output <one-video-chapter-PLAN.json> `
+      --report-output <one-video-chapter-report.md>
+
+    video-manager youtube apply-copy-fixes <one-video-chapter-PLAN.json> `
+      --account fedor-milovanov `
+      --confirm-channel UCeSJsC6go2c9pdJCuUI1BYA `
+      --max-operations 1
+
+The last command is a dry-run. Only add the explicit execute flag with
+a unique backup and result after the owner API has recovered and a fresh
+preflight proves the exact before-description SHA. On quotaExceeded, stop.
+Never retry blindly, create alternative OAuth clients to circumvent quota,
+or silently apply a stale plan.
+
+The builder fails closed unless the exact source owner and previous signed
+plan match the same original title, revision and description, and all
+metadata-inaccessible uploads are preserved as explicit unresolved IDs.
+Each anchor is checked against the archive SQLite transcript's chunk index,
+timestamp, source excerpt, and text cue. Timecodes start at 00:00,
+strictly increase, leave at least ten seconds per chapter, and use
+h:mm:ss format after one hour. Only one chapter block may be appended;
+previous descriptive text and links must remain byte-for-byte unchanged.
+
+A successful API readback proves description text and chapter syntax,
+NOT that the YouTube player has displayed chapter navigation or that
+editorial section boundaries precisely match the underlying audio.
+The latter are separate visual/audio witnesses. The generic full-inventory
+fail-closed policy is not changed.
