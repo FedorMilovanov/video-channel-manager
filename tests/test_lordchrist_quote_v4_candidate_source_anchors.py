@@ -58,3 +58,23 @@ def test_all_twenty_redrafts_match_the_inert_reader_preview():
     for number, accepted_text in by_number.items():
         quote = previews[number].split("\n\n©", 1)[0]
         assert canonical(quote) == canonical(accepted_text), number
+
+
+def test_ten_retained_candidates_match_evidence_hashes():
+    import hashlib
+    base = ROOT / "docs/audits"
+    name = "2026-11-05-lordchrist-quote-v4-ten-retained-candidates.json"
+    evidence = json.loads((base / name).read_text(encoding="utf-8"))
+    index = json.loads(FILE.read_text(encoding="utf-8"))
+    deck = json.loads((base / "2026-11-04-lordchrist-30-card-editorial-preview-inert.json").read_text(encoding="utf-8"))
+    idx = {x["sequence"]: x for x in index["entries"]}
+    posts = {x["sequence"]: x for x in deck["posts"]}
+    assert sorted(x["sequence"] for x in evidence["items"]) == [2, 3, 4, 9, 20, 23, 24, 28, 29, 30]
+    assert evidence["provider_write_authorization"] is False
+    for x in evidence["items"]:
+        n, text = x["sequence"], x["translation_ru"]
+        digest = "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+        assert x["translation_sha256"] == digest
+        assert idx[n]["candidate_body_sha256"] == digest
+        assert posts[n]["text"].split("\n\n©", 1)[0] == "«" + text + "»"
+        assert idx[n]["eligible_for_release"] is False
