@@ -7,7 +7,7 @@ uploads metadata remains an explicit unresolved ledger; no unknown IDs are skipp
 from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 import hashlib
 import re
 from urllib.parse import parse_qs, urlsplit
@@ -35,7 +35,7 @@ def _owner_video(audit: dict[str, Any], video_id: str) -> dict[str, Any]:
     matches = [v for v in audit.get("videos", []) if v.get("ref", {}).get("remote_id") == video_id]
     if len(matches) != 1 or matches[0].get("ref", {}).get("channel_id") != LORD_GOD_CHANNEL:
         raise ValueError("Target ID is not one unique video of the exact channel")
-    return matches[0]
+    return cast(dict[str, Any], matches[0])
 
 
 def _missing_metadata_exceptions(audit: dict[str, Any], video_id: str) -> list[str]:
