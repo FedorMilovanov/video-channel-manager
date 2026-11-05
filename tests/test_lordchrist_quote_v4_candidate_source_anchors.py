@@ -23,6 +23,10 @@ def test_unreleased_quote_source_anchor_corrections():
         == "Whoever reads the gospel with a single eye, and sincere intentions, will find,"
     )
     assert cards[23]["candidate_source_anchor_end"] == "that I might weep abundantly over them all!"
+    assert cards[2]["candidate_source_anchor_end"] == "Grace, grace unto it!"
+    assert cards[9]["candidate_source_anchor_start"].startswith("To prayer ,")
+    assert cards[24]["candidate_source_anchor_end"].endswith("the worse for them.")
+    assert cards[30]["candidate_source_anchor_end"].startswith("he said unto them all,")
     assert data["approved_new_queue"] is False
     assert data["provider_write_authorization"] is False
     assert all(not c["eligible_for_release"] for c in cards.values())
