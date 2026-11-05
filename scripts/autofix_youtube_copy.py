@@ -82,6 +82,13 @@ def _target_channel_id(payload: dict[str, Any], channel_ids: set[str]) -> str:
 
 
 def _build_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, Any], str, int]:
+    metadata = payload.get("metadata")
+    inventory = metadata.get("uploads_playlist_inventory") if isinstance(metadata, dict) else None
+    if isinstance(inventory, dict) and inventory.get("complete") is not True:
+        raise ValueError(
+            "Owner uploads inventory is incomplete or has duplicate pagination entries; "
+            "reconcile the exact upload IDs before generating any description write plan."
+        )
     videos = [item for item in payload.get("videos", []) if isinstance(item, dict)]
     operations: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
