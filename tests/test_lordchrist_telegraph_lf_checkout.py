@@ -26,10 +26,10 @@ def test_all_telegraph_json_paths_are_checked_out_as_lf() -> None:
         cwd=ROOT,
         text=True,
     )
-    found = {
-        line.split(": eol: ", 1)[0]: line.split(": eol: ", 1)[1]
-        for line in output.splitlines()
-    }
+    found = {}
+    for line in output.splitlines():
+        path, attr = line.split(": eol: ", 1)
+        found[path] = attr
     assert set(found) == {path.as_posix() for path in paths}
     assert set(found.values()) == {"lf"}
 
