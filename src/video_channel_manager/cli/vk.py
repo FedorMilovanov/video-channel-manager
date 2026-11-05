@@ -63,6 +63,22 @@ def _read_token_input(token_file: Path | None) -> VkAccessToken:
     return VkAccessToken.from_text(raw)
 
 
+def _read_community_key_input(token_file: Path | None) -> VkAccessToken:
+    """Read a community key without falling back to the legacy user-token setting.
+
+    The global VK_ACCESS_TOKEN setting is user-token configuration and may be
+    quarantined. A new community key must always be explicitly supplied.
+    """
+    if token_file is not None:
+        return VkAccessToken.from_file(token_file)
+    raw = typer.prompt(
+        "Paste a VK community access key",
+        hide_input=True,
+        confirmation_prompt=False,
+    )
+    return VkAccessToken.from_text(raw)
+
+
 @vk_app.command("login")
 def login(
     account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
@@ -247,7 +263,7 @@ def community_key_login(
                 "Use --force only when you intentionally want to replace its token."
             )
             raise typer.Exit(code=2)
-        token = _read_token_input(token_file)
+        token = _read_community_key_input(token_file)
         with TemporaryDirectory(prefix="video-manager-vk-community-key-login-") as temp_dir:
             validation_store = VkTokenStore(Path(temp_dir))
             validation_store.save_token(account, token)
