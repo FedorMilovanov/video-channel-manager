@@ -1,0 +1,5 @@
+# Telegraph releases are pinned to the exact committed bytes of their JSON.
+# On Windows core.autocrlf=true silently changes LF to CRLF, breaking the
+# reviewed Git blob SHA check even for unrelated articles in the queue.
+# Enforce byte-stable worktree JSON across all platforms. JPEG stays binary.
+*.json text eol=lf
