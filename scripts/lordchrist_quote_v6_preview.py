@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 AUDITS = Path("docs/audits")
 V5_PREVIEW = AUDITS / "2026-11-05-lordchrist-30-card-editorial-preview-v5-inert.json"
 V5_INDEX = AUDITS / "2026-11-05-lordchrist-30-quote-editorial-candidate-index-v5.json"

@@ -7,7 +7,7 @@ import html
 import json
 from pathlib import Path
 
-from video_channel_manager.lordchrist_quote_v6_preview import (
+from scripts.lordchrist_quote_v6_preview import (
     DEFAULT_OUTPUT,
     ROOT,
     V5_INDEX,
