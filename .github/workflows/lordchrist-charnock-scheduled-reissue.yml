@@ -1,0 +1,81 @@
+name: Lordchrist Charnock reviewed scheduled reissue
+
+on:
+  schedule:
+    # 09:00 UTC = 12:00 Moscow, Tuesday and Friday; no catch-up.
+    - cron: "0 9 * * 2,5"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  schedule-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+      MANIFEST: content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json
+      LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+      ENABLED: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_ENABLED }}
+      APPROVED_MANIFEST_SHA256: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256 }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install publisher dependencies
+        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+      - name: Select exact calendar slot and prove separately authorized immutable manifest
+        id: due
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == "schedule" && "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$ENABLED" == "true" ]] || {
+            echo "Charnock scheduled recovery disabled"
+            exit 3
+          }
+          [[ "$APPROVED_MANIFEST_SHA256" =~ ^[a-f0-9]{64}$ ]] || exit 3
+          [[ "$(sha256sum "$MANIFEST" | cut -d' ' -f1)" == "$APPROVED_MANIFEST_SHA256" ]] || {
+            echo "Charnock scheduled edition manifest changed after approval" >&2
+            exit 3
+          }
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          python - <<'PY'
+          import json, os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          now=datetime.now(ZoneInfo("Europe/Moscow"))
+          data=json.loads(Path(os.environ["MANIFEST"]).read_text("utf-8"))
+          matches=[i for i in data["items"] if i["scheduled_on_moscow"]==now.date().isoformat()]
+          if not matches:
+              print("No Charnock replacement due today; no provider effect")
+              raise SystemExit(0)
+          if now.hour not in (12,13):
+              raise SystemExit("Late/early scheduled run: no catch-up")
+          if len(matches)!=1:
+              raise SystemExit("Ambiguous Charnock scheduled date")
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as out:
+              print("publication_id="+matches[0]["publication_id"],file=out)
+          PY
+      - name: Publish exactly one due recovery article
+        if: steps.due.outputs.publication_id != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_ID: ${{ steps.due.outputs.publication_id }}
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: bash scripts/lordchrist_charnock_reschedule.sh

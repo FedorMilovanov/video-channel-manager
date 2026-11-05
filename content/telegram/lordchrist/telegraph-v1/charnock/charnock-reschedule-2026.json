@@ -1,0 +1,74 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-charnock-2026-reissue-v1",
+  "schema_version": 1,
+  "channel": "@lordchrist",
+  "timezone": "Europe/Moscow",
+  "release_time": "12:00",
+  "source": "correction of 2026-11-05 mass-post incident; owner manually deleted the 8 posts",
+  "items": [
+    {
+      "publication_id": "lordchrist-telegraph-charnock-06",
+      "scheduled_on_moscow": "2026-11-10",
+      "article_git_blob_sha": "95ae61f30dbdc7c6e7db2c01baeeeab40884590d",
+      "source_article_sha256": "sha256:29d6405667ce1abc6a1ecd74237bb92656f4dcf4b4b089305c5c11f3a8322f96",
+      "verified_telegraph_url": "https://telegra.ph/Lyutnya-mirozdaniya-kak-vrazhduyushchie-stihii-solnce-i-okean-sluzhat-odnomu-domu-11-05",
+      "deleted_telegram_message_id": 1596
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-07",
+      "scheduled_on_moscow": "2026-11-13",
+      "article_git_blob_sha": "8673f8d47938e7fc29cec47861366cfacb1244a5",
+      "source_article_sha256": "sha256:6222eca42088f78f21173bdf0c12e17a0b979642047a636fbc30dad4c83ee410",
+      "verified_telegraph_url": "https://telegra.ph/CHasy-bez-chasovshchika-poryadok-mira-kotoryj-ne-slozhilsya-sam-11-05",
+      "deleted_telegram_message_id": 1597
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-08",
+      "scheduled_on_moscow": "2026-11-17",
+      "article_git_blob_sha": "278c87293a06639e24b2d890621b5e29f19973aa",
+      "source_article_sha256": "sha256:3c10b0892e28b1a606a0360937ed6404c82c9c35faac11a5c8bc123f0feb26b1",
+      "verified_telegraph_url": "https://telegra.ph/Strela-ne-vybiraet-cel-instinkt-tvorenij-i-sohranenie-mira-11-05",
+      "deleted_telegram_message_id": 1598
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-09",
+      "scheduled_on_moscow": "2026-11-20",
+      "article_git_blob_sha": "bbf90eb3062eeb383bfe58745c86898ddb1feb17",
+      "source_article_sha256": "sha256:b0d3936488829ceb21f8b599ccfe925d26564b8ee9e9c7d63eb6970d2de2adb3",
+      "verified_telegraph_url": "https://telegra.ph/Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
+      "deleted_telegram_message_id": 1599
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-10",
+      "scheduled_on_moscow": "2026-11-24",
+      "article_git_blob_sha": "1173a305bb192c0aec3606485c5b3664c95e8650",
+      "source_article_sha256": "sha256:b15e2658d1ed040c3bef62a7be226ed75a19fd0136bfd519ce0e89c42c43c7ae",
+      "verified_telegraph_url": "https://telegra.ph/Sudya-kotorogo-nelzya-vyklyuchit-sovest-i-zhazhda-beskonechnogo-11-05",
+      "deleted_telegram_message_id": 1600
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-11",
+      "scheduled_on_moscow": "2026-11-27",
+      "article_git_blob_sha": "cd64ba6071f08591e5959949cc73b877d4401e70",
+      "source_article_sha256": "sha256:1122e3bf756a9a9d323c263c8cc97d1bd4b0709102eed086ac154d0f5898d001",
+      "verified_telegraph_url": "https://telegra.ph/Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05",
+      "deleted_telegram_message_id": 1601
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-12",
+      "scheduled_on_moscow": "2026-12-01",
+      "article_git_blob_sha": "095de9e09ccfcb99e389ea92fc40e350fa374f02",
+      "source_article_sha256": "sha256:dc201d797b000f879711a56f16c19c3010d0b891b9afe12a44808aad4b3d7b67",
+      "verified_telegraph_url": "https://telegra.ph/Nelzya-dokazat-chto-Boga-net-shest-otvetov-somnevayushchemusya-11-05",
+      "deleted_telegram_message_id": 1602
+    },
+    {
+      "publication_id": "lordchrist-telegraph-charnock-13",
+      "scheduled_on_moscow": "2026-12-04",
+      "article_git_blob_sha": "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9",
+      "source_article_sha256": "sha256:6f83bb80d8a1d9456a0b555a9cc3fc0ed5ea3f4b08aca1c459f78d170b1c9f3c",
+      "verified_telegraph_url": "https://telegra.ph/Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05",
+      "deleted_telegram_message_id": 1603
+    }
+  ]
+}

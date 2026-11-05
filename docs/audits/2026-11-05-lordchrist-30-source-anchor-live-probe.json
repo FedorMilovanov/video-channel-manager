@@ -1,0 +1,322 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quote-v4-source-anchor-live-probe",
+  "schema_version": 1,
+  "scope": "non-authoritative-source-availability-and-anchor-order-only",
+  "observed_on": "2026-11-05",
+  "source_index": "docs/audits/2026-11-05-lordchrist-30-quote-editorial-candidate-index-v2.json",
+  "method": "Read-only live HTTP GET with standard Python requests+BeautifulSoup HTML parser; casefold, HTML unescape, quotation mark/space normalization; exact start and downstream end anchors in visible page text.",
+  "coverage": {
+    "cards": 30,
+    "http_200": 30,
+    "start_anchor_matched": 30,
+    "end_anchor_matched": 30,
+    "correct_order": 30
+  },
+  "limitations": "Does not establish complete bilingual source collation, translation correctness, original-word semantic fidelity, copyright status or publication approval.",
+  "editorial_approval": false,
+  "full_bilingual_review_complete": false,
+  "rights_review_complete": false,
+  "provider_write_authorization": false,
+  "results": [
+    {
+      "n": 1,
+      "status": 200,
+      "chars": 46632,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 194,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.v.html"
+    },
+    {
+      "n": 2,
+      "status": 200,
+      "chars": 39074,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 384,
+      "url": "https://www.spurgeon.org/sermons/salvation-all-of-grace"
+    },
+    {
+      "n": 3,
+      "status": 200,
+      "chars": 30820,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 351,
+      "url": "https://www.spurgeon.org/sermons/divine-sovereignty"
+    },
+    {
+      "n": 4,
+      "status": 200,
+      "chars": 20609,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 309,
+      "url": "https://ccel.org/ccel/owen/mort/mort.i.v.html"
+    },
+    {
+      "n": 5,
+      "status": 200,
+      "chars": 7633,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 317,
+      "url": "https://ccel.org/ccel/calvin/institutes/institutes.iii.ii.html"
+    },
+    {
+      "n": 6,
+      "status": 200,
+      "chars": 602581,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 248,
+      "url": "https://www.gutenberg.org/files/3296/3296-h/3296-h.htm"
+    },
+    {
+      "n": 7,
+      "status": 200,
+      "chars": 244531,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 319,
+      "url": "https://ccel.org/ccel/gurnall/armour/files/gurnal07b.htm"
+    },
+    {
+      "n": 8,
+      "status": 200,
+      "chars": 24265,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 272,
+      "url": "https://ccel.org/ccel/baxter/pastor/pastor.i.ii.html"
+    },
+    {
+      "n": 9,
+      "status": 200,
+      "chars": 1773,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 264,
+      "url": "https://ccel.org/ccel/calvin/prayer/prayer.iii.ii.html"
+    },
+    {
+      "n": 10,
+      "status": 200,
+      "chars": 128762,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 279,
+      "url": "https://ccel.org/ccel/charnock/cleansing.ii.html"
+    },
+    {
+      "n": 11,
+      "status": 200,
+      "chars": 26080,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 169,
+      "url": "https://ccel.org/ccel/murray/surrender/surrender.ix.html"
+    },
+    {
+      "n": 12,
+      "status": 200,
+      "chars": 54390,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 229,
+      "url": "https://www.spurgeon.org/sermons/the-resurrection-of-the-dead"
+    },
+    {
+      "n": 13,
+      "status": 200,
+      "chars": 173010,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 291,
+      "url": "https://ccel.org/ccel/bunyan/grace.iv.html"
+    },
+    {
+      "n": 14,
+      "status": 200,
+      "chars": 38512,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 256,
+      "url": "https://ccel.org/ccel/edwards/sermons/sinners.html"
+    },
+    {
+      "n": 15,
+      "status": 200,
+      "chars": 211797,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 198,
+      "url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html"
+    },
+    {
+      "n": 16,
+      "status": 200,
+      "chars": 56086,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 260,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.ii.html"
+    },
+    {
+      "n": 17,
+      "status": 200,
+      "chars": 39211,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 177,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.i.html"
+    },
+    {
+      "n": 18,
+      "status": 200,
+      "chars": 43693,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 270,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iv.html"
+    },
+    {
+      "n": 19,
+      "status": 200,
+      "chars": 114770,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 202,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.vi.html"
+    },
+    {
+      "n": 20,
+      "status": 200,
+      "chars": 46348,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 275,
+      "url": "https://ccel.org/ccel/ryle/holiness/holiness.iii.iii.html"
+    },
+    {
+      "n": 21,
+      "status": 200,
+      "chars": 2736,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 212,
+      "url": "https://ccel.org/ccel/watson/contentment/contentment.iv.html"
+    },
+    {
+      "n": 22,
+      "status": 200,
+      "chars": 4192,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 208,
+      "url": "https://ccel.org/ccel/watson/contentment/contentment.ix.html"
+    },
+    {
+      "n": 23,
+      "status": 200,
+      "chars": 16728,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 254,
+      "url": "https://ccel.org/ccel/flavel/saintindeed/saintindeed.iv.html"
+    },
+    {
+      "n": 24,
+      "status": 200,
+      "chars": 27034,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 227,
+      "url": "https://ccel.org/ccel/whitefield/sermons/sermons.xlv.html"
+    },
+    {
+      "n": 25,
+      "status": 200,
+      "chars": 38445,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 295,
+      "url": "https://ccel.org/ccel/whitefield/sermons/sermons.lx.html"
+    },
+    {
+      "n": 26,
+      "status": 200,
+      "chars": 28671,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 217,
+      "url": "https://ccel.org/ccel/bunyan/grace/grace.v.html"
+    },
+    {
+      "n": 27,
+      "status": 200,
+      "chars": 582886,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 215,
+      "url": "https://ccel.org/ccel/bunyan/pilgrim.all.html"
+    },
+    {
+      "n": 28,
+      "status": 200,
+      "chars": 8580,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 175,
+      "url": "https://www.ccel.org/ccel/kuyper/near.ii.html"
+    },
+    {
+      "n": 29,
+      "status": 200,
+      "chars": 55954,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 146,
+      "url": "https://ccel.org/ccel/bavinck/revelation/revelation.ii.html"
+    },
+    {
+      "n": 30,
+      "status": 200,
+      "chars": 25576,
+      "start": true,
+      "end": true,
+      "ordered": true,
+      "words": 212,
+      "url": "https://ccel.org/ccel/whitefield/sermons/sermons.xxxi.html"
+    }
+  ]
+}
