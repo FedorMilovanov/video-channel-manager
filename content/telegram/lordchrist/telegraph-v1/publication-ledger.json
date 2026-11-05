@@ -248,6 +248,18 @@
       "telegram_message_id": 1602,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-05T04:25:41.046647+00:00"
+    },
+    "lordchrist-telegraph-charnock-13": {
+      "publication_id": "lordchrist-telegraph-charnock-13",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "41967758767",
+      "run_attempt": 1,
+      "github_sha": "6f67b689f3de6ba811134bb4b49eff0e2fd9fee3",
+      "title": "Утвердиться и поклониться: чем заканчивается беседа о бытии Бога",
+      "article_sha256": "sha256:6f83bb80d8a1d9456a0b555a9cc3fc0ed5ea3f4b08aca1c459f78d170b1c9f3c",
+      "cover_sha256": "sha256:8dd5431b214c8174d9ae2d7908984deb6ffa5972e5e39e4fb604dee7fb45d32a",
+      "page_intent_at_utc": "2026-11-05T04:26:08.760758+00:00"
     }
   }
 }
