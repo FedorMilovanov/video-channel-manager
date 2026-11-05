@@ -1213,6 +1213,33 @@
         "tests/test_youtube_release_provider.py",
         "tests/test_mutation_fault_stages_instagram_youtube.py"
       ]
+    },
+    {
+      "boundary_id": "vk.wall.milovi.school.postponed.post",
+      "risk": "P0",
+      "provider": "VK",
+      "language": "python",
+      "source_file": "src/video_channel_manager/platforms/vk/milovi_school_wall_publisher.py",
+      "module": "video_channel_manager.platforms.vk.milovi_school_wall_publisher",
+      "callable": "MiloviCommunitySchoolWriter.send_one",
+      "scanner_marker": "vk_api:wall.post",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact Milovi School editorial preview, project/owner/source/message digest, publish_date and GUID; independent operator confirmation plus prior admin witness and fresh complete public-wall read; fsynced one-shot intent journal and per-community lock",
+      "dispatch_evidence": "exactly one community-key wall.post request after writing dispatch_started journal; retries disabled",
+      "response_evidence": "positive post_id is provisional; errors/unknown responses persist a non-retryable journal state",
+      "postflight_evidence": "accepted post ID remains vk_accepted_pending_admin_postflight; separate exact admin postponed-queue readback is required before canary_verified",
+      "reconciliation_identity": "Milovi community 68859909/owner -68859909; tech-mirror-glaze; exact text digest, publish_date, deterministic guid and durable journal post_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "before_final_commit"
+      ],
+      "owning_tests": [
+        "tests/test_milovi_school_wall_publisher.py"
+      ]
     }
   ]
 }

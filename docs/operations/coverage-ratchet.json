@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.coverage-ratchet",
   "schema_version": 1,
-  "updated_at_utc": "2026-11-05T19:58:00Z",
+  "updated_at_utc": "2026-11-05T21:18:34.337348+00:00",
   "measured_python": "3.11",
   "command": "python -m pytest --cov=video_channel_manager --cov-report=json:coverage.json",
   "total_floor": 75.01,
@@ -196,6 +196,7 @@
     "src/video_channel_manager/platforms/vk/milovi_promotion.py": 95.45,
     "src/video_channel_manager/platforms/vk/milovi_rollout_sources.py": 61.27,
     "src/video_channel_manager/platforms/vk/milovi_school_public_wall_audit.py": 85.0,
+    "src/video_channel_manager/platforms/vk/milovi_school_wall_publisher.py": 70.0,
     "src/video_channel_manager/platforms/vk/milovi_targeted_youtube_retry.py": 23.75,
     "src/video_channel_manager/platforms/vk/milovi_targeted_youtube_retry_stable.py": 62.96,
     "src/video_channel_manager/platforms/vk/milovi_token_clip_rollout.py": 58.87,
