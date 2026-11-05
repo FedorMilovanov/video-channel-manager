@@ -113,6 +113,10 @@ jobs:
             echo "Telegraph-only direct mutation is retired; use a reviewed staged release." >&2
             exit 3
           }
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$PUBLICATION_ID" == lordchrist-telegraph-charnock-* ]]; then
+            echo "Manual Charnock publication is permanently retired after the 2026-11-05 incident; use the reviewed calendar reissue only." >&2
+            exit 3
+          fi
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             [[ "$MANUAL_CONFIRM" == "PUBLISH:$PUBLICATION_ID" ]] || {
               echo "Manual public publication requires exact PUBLISH:<publication_id> confirmation." >&2
