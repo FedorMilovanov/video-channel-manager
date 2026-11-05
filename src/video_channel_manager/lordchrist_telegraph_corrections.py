@@ -256,29 +256,29 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.stage == "reconcile-telegram":
         # Read-only recovery of an edit already acknowledged by Telegram but not
         # durably verified because public widget readback lagged. No Bot API call.
-        receipt = prior.get("correction")
+        reconciled_receipt = prior.get("correction")
         original_run_id = getattr(args, "original_run_id", None)
         if not isinstance(original_run_id, str) or not re.fullmatch(r"[1-9][0-9]*", original_run_id):
             raise RuntimeError("Exact original correction run ID required for reconciliation")
-        if not isinstance(receipt, dict) or receipt.get("state") != "telegram_claimed":
+        if not isinstance(reconciled_receipt, dict) or reconciled_receipt.get("state") != "telegram_claimed":
             raise RuntimeError("Only a previously claimed ambiguous Telegram edit can be reconciled")
         if (
-            receipt.get("run_id") != original_run_id
-            or receipt.get("run_attempt") != 1
-            or receipt.get("publication_id") != args.publication_id
-            or receipt.get("original_telegram_message_id") != original_id
-            or receipt.get("original_telegraph_url") != original_url
-            or receipt.get("article_sha256") != payload.article_sha256
-            or receipt.get("cover_sha256") != payload.cover_sha256
-            or receipt.get("provider_effect") != "verified"
-            or receipt.get("telegram_provider_effect") != "unknown_until_reconciled"
-            or not isinstance(receipt.get("github_sha"), str)
-            or not re.fullmatch(r"[a-f0-9]{40}", receipt["github_sha"])
+            reconciled_receipt.get("run_id") != original_run_id
+            or reconciled_receipt.get("run_attempt") != 1
+            or reconciled_receipt.get("publication_id") != args.publication_id
+            or reconciled_receipt.get("original_telegram_message_id") != original_id
+            or reconciled_receipt.get("original_telegraph_url") != original_url
+            or reconciled_receipt.get("article_sha256") != payload.article_sha256
+            or reconciled_receipt.get("cover_sha256") != payload.cover_sha256
+            or reconciled_receipt.get("provider_effect") != "verified"
+            or reconciled_receipt.get("telegram_provider_effect") != "unknown_until_reconciled"
+            or not isinstance(reconciled_receipt.get("github_sha"), str)
+            or not re.fullmatch(r"[a-f0-9]{40}", reconciled_receipt["github_sha"])
         ):
             raise RuntimeError("Original correction claim or immutable content does not match")
-        corrected_url = receipt.get("new_telegraph_url")
+        corrected_url = reconciled_receipt.get("new_telegraph_url")
         if not isinstance(corrected_url, str) or not corrected_url.startswith("https://telegra.ph/"):
-            raise RuntimeError("Durable corrected Telegraph page receipt missing")
+            raise RuntimeError("Durable corrected Telegraph page reconciled_receipt missing")
         if corrected_url == original_url:
             raise RuntimeError("Correction cannot link the historical original page")
         _proof_page(
@@ -286,7 +286,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             replace(payload, title=f"{payload.title} — исправленное издание"),
         )
         _read_original_post(original_id, corrected_url)
-        receipt.update(
+        reconciled_receipt.update(
             state="corrected",
             telegram_provider_effect="verified_public_readback",
             telegram_message_id=original_id,

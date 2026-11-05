@@ -14,6 +14,7 @@ QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
 QUIZ_SERIES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-poster.yml"
 TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
 CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
+CHARNOCK_RECONCILIATION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-correction-reconcile.yml"
 CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
     WORKFLOW,
@@ -23,6 +24,7 @@ EXPECTED_LOCK_PARTICIPANTS = {
     QUIZ_SERIES_WORKFLOW,
     TELEGRAPH_WORKFLOW,
     CHARNOCK_CORRECTION_WORKFLOW,
+    CHARNOCK_RECONCILIATION_WORKFLOW,
     CHARNOCK_SCHEDULE_WORKFLOW,
 }
 
@@ -52,6 +54,13 @@ def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract
     assert "telegram_historical_production preflight" not in approval
     assert "telegram_historical_production send" not in approval
     assert "sendRichMessage" not in approval
+
+    reconciliation = CHARNOCK_RECONCILIATION_WORKFLOW.read_text(encoding="utf-8")
+    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in reconciliation
+    assert "LORDCHRIST_TELEGRAPH_ACCESS_TOKEN" not in reconciliation
+    assert "editMessageText" not in reconciliation
+    assert "sendMessage" not in reconciliation
+    assert "reconcile-telegram" in reconciliation
 
 
 def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run() -> None:
