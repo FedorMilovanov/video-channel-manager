@@ -143,6 +143,18 @@
       "telegram_message_id": 1597,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-05T04:13:55.441452+00:00"
+    },
+    "lordchrist-telegraph-charnock-08": {
+      "publication_id": "lordchrist-telegraph-charnock-08",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "41966523687",
+      "run_attempt": 1,
+      "github_sha": "92b73b4e6acb3fdc0f0aa038f108f59b6c1296f7",
+      "title": "Стрела не выбирает цель: инстинкт творений и сохранение мира",
+      "article_sha256": "sha256:3c10b0892e28b1a606a0360937ed6404c82c9c35faac11a5c8bc123f0feb26b1",
+      "cover_sha256": "sha256:9cd4954c98fc049b1378fbfee53a76b680ddea022fc0bd60ae77a860e32cc5d4",
+      "page_intent_at_utc": "2026-11-05T04:14:20.907989+00:00"
     }
   }
 }
