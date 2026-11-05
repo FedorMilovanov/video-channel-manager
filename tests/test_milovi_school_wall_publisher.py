@@ -250,3 +250,69 @@ def test_ambiguous_response_persists_journal_and_blocks_replay(monkeypatch: pyte
     with pytest.raises(mp.MiloviCanaryBlocked, match="already exists"):
         mp.schedule_canary_once(**args)
     assert sends == [1]
+
+
+def test_final_journal_commit_failure_still_blocks_replay(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    journal = tmp_path / "intent.json"
+    dispatch_count: list[int] = []
+    real_atomic_update = mp._atomic_update_journal
+
+    @contextmanager
+    def fake_lock(*args: object, **kwargs: object):
+        yield
+
+    class FakeClient:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def get_community_token_permissions(self) -> tuple[int, tuple[str, ...]]:
+            return 1024, ("wall",)
+
+        def get_community(self, cid: int) -> object:
+            assert cid == 68859909
+            return SimpleNamespace(ref=SimpleNamespace(channel_id="68859909"))
+
+        def close(self) -> None:
+            pass
+
+    class FakeWriter:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def send_one(self, plan: dict) -> int:
+            dispatch_count.append(1)
+            return 1043
+
+        def close(self) -> None:
+            pass
+
+    def fail_final_commit(path: Path, state: dict) -> None:
+        if state["state"] == "vk_accepted_pending_admin_postflight":
+            raise OSError("simulated interrupted fsync before final journal commit")
+        real_atomic_update(path, state)
+
+    monkeypatch.setattr(mp, "local_vk_write_lock", fake_lock)
+    monkeypatch.setattr(mp, "read_public_preflight", lambda **kwargs: {"public_wall_posts": 162})
+    monkeypatch.setattr(mp, "VkApiClient", FakeClient)
+    monkeypatch.setattr(mp, "MiloviCommunitySchoolWriter", FakeWriter)
+    monkeypatch.setattr(mp, "_atomic_update_journal", fail_final_commit)
+    args = dict(
+        store=Store(),
+        api_version="5.199",
+        preview_path=PREVIEW,
+        editorial_path=EDITORIAL,
+        journal_path=journal,
+        confirmation=mp.CONFIRMATION,
+        admin_queue_witness="OWNER_REPORTED_EMPTY_2026-11-05",
+    )
+    with pytest.raises(OSError, match="interrupted fsync"):
+        mp.schedule_canary_once(**args)
+    state = json.loads(journal.read_text(encoding="utf-8"))
+    assert state["state"] == "dispatch_started_ambiguous_if_no_ack"
+    assert state["provider_writes_attempted"] == 1
+    assert dispatch_count == [1]
+    with pytest.raises(mp.MiloviCanaryBlocked, match="already exists"):
+        mp.schedule_canary_once(**args)
+    assert dispatch_count == [1]
