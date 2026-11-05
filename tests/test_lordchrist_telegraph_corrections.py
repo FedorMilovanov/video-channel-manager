@@ -11,6 +11,8 @@ import pytest
 
 from video_channel_manager import lordchrist_telegraph_corrections as m
 
+REAL_TARGET = m._target
+
 ID = "lordchrist-telegraph-charnock-01b"
 ORIGINAL = "https://telegra.ph/Old-Charnock-10-24"
 CORRECTED = "https://telegra.ph/Corrected-Charnock-11-05"
@@ -152,3 +154,112 @@ def test_successful_edit_preserves_message_id_and_replaces_link(monkeypatch, tmp
     assert calls[0][0].endswith("/editMessageText")
     assert calls[0][1]["message_id"] == MESSAGE
     assert calls[0][1]["link_preview_options"]["url"] == CORRECTED
+
+
+def test_correction_public_post_proof_requires_exact_live_identity_and_url(monkeypatch):
+    seen = []
+
+    class Response:
+        text = f'<div data-post="lordchrist/{MESSAGE}"><a href="{ORIGINAL}">read</a></div>'
+
+        def raise_for_status(self):
+            seen.append("http-ok")
+
+    def fetch(url, **kwargs):
+        assert url in {f"https://t.me/lordchrist/{mid}?embed=1" for mid in (MESSAGE, MESSAGE + 1)}
+        assert kwargs["follow_redirects"] is True
+        return Response()
+
+    monkeypatch.setattr(m.httpx, "get", fetch)
+    m._read_original_post(MESSAGE, ORIGINAL)
+    assert seen == ["http-ok"]
+
+    with pytest.raises(RuntimeError, match="old link was not proved live"):
+        m._read_original_post(MESSAGE, CORRECTED)
+
+    with pytest.raises(RuntimeError, match="not proved live"):
+        m._read_original_post(MESSAGE + 1, ORIGINAL)
+
+
+def test_correction_target_uses_exact_audited_original_and_corrected_blob(monkeypatch, tmp_path):
+    args, ledger, original = setup(monkeypatch, tmp_path)
+    # Test the real _target, not setup's fast fake implementation.
+    actual_target = REAL_TARGET
+    monkeypatch.setattr(m, "_target", actual_target)
+    map_path = tmp_path / m.MAP_PATH
+    map_path.parent.mkdir(parents=True)
+    target = {
+        "publication_id": ID,
+        "previous_telegraph_url": ORIGINAL,
+        "previous_telegram_message_id": MESSAGE,
+        "previous_published_article_sha256": "sha256:original",
+        "corrected_document_git_blob_sha": "b" * 40,
+    }
+    import json
+
+    map_path.write_text(json.dumps({"targets": [target]}), encoding="utf-8")
+    item = SimpleNamespace(is_ready=True, channel_post=object(), cover_path=Path("cover.png"), article_blob="b" * 40)
+    monkeypatch.setattr(m, "load_telegraph_queue", lambda *_: [item])
+    monkeypatch.setattr(m, "_find_item", lambda *_: item)
+    monkeypatch.setattr(m, "build_telegraph_payload", lambda *a, **kw: FakePayload())
+
+    result = actual_target(args, ledger)
+    assert result[0] is original
+    assert result[1] == target
+    assert result[2] is item
+
+    original["telegram_message_id"] = 999
+    with pytest.raises(RuntimeError, match="Historical published identity differs"):
+        actual_target(args, ledger)
+    original["telegram_message_id"] = MESSAGE
+
+    item.article_blob = "unexpected"
+    with pytest.raises(RuntimeError, match="Corrected article blob differs"):
+        actual_target(args, ledger)
+    item.article_blob = "b" * 40
+
+    item.is_ready = False
+    with pytest.raises(RuntimeError, match="Corrected article and channel post must be ready"):
+        actual_target(args, ledger)
+
+
+def test_correction_send_page_requires_retained_token_and_new_telegraph_url(monkeypatch, tmp_path):
+    args, _ledger, original = setup(monkeypatch, tmp_path, "page_claimed")
+    args.stage = "send-page"
+    monkeypatch.delenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", raising=False)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("no provider call without token"))
+    with pytest.raises(RuntimeError, match="retained Telegraph author token"):
+        m.execute(args)
+
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    monkeypatch.setattr(m, "HttpxLiveTransport", object)
+    monkeypatch.setattr(m, "ensure_telegraph_token", lambda *a, **kw: None)
+    monkeypatch.setattr(m, "publish_telegraph_page", lambda *a, **kw: (ORIGINAL, "original"))
+    with pytest.raises(RuntimeError, match="distinct real Telegraph URL"):
+        m.execute(args)
+    assert original["correction"]["state"] == "page_claimed"
+
+
+def test_correction_prepare_telegram_needs_verified_page_and_old_post(monkeypatch, tmp_path):
+    args, _ledger, original = setup(monkeypatch, tmp_path, "page_created")
+    args.stage = "prepare-telegram"
+    calls = []
+    monkeypatch.setattr(m, "_proof_page", lambda *a: calls.append("verified-new-page"))
+    monkeypatch.setattr(m, "_read_original_post", lambda *a: calls.append("verified-old-post"))
+    assert m.execute(args)["stage"] == "prepare-telegram"
+    assert calls == ["verified-new-page", "verified-old-post"]
+    assert original["correction"]["state"] == "telegram_claimed"
+
+    original["correction"]["state"] = "page_created"
+    original["correction"]["new_telegraph_url"] = ORIGINAL.replace("https://", "http://")
+    calls.clear()
+    with pytest.raises(RuntimeError, match="Verified new public page receipt required"):
+        m.execute(args)
+    assert calls == []
+
+
+def test_correction_claim_rejects_changed_immutable_context(monkeypatch, tmp_path):
+    args, _ledger, original = setup(monkeypatch, tmp_path, "page_claimed")
+    original["correction"]["github_sha"] = "f" * 40
+    with pytest.raises(RuntimeError, match="Correction intent identity or reviewed payload changed"):
+        m._claimed(args, original, "page_claimed", FakePayload())
