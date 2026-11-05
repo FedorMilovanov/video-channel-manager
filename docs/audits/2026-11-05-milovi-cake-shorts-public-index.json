@@ -190,5 +190,24 @@
     "The current Milovi YouTube OAuth refresh returned HTTP 400; do not substitute a different channel.",
     "Old VK 2026-08-10 inventory contains only 18 video objects and cannot prove current absence.",
     "This is an immutable public source index, not an executable upload manifest."
-  ]
+  ],
+  "historical_2026_08_editorial_exclusions": {
+    "source_contract": "src/video_channel_manager/platforms/vk/milovi_gap_thumbnail_evidence.py::_CANDIDATE_ROWS; historical classification, not a new live presence proof",
+    "ip_hold_do_not_auto_transfer": [
+      "P2Bpt77k408",
+      "jZjDWn_MNq0",
+      "xzMgMEWz5pM",
+      "7FCbopqeTYE",
+      "ZuQt6yFePO0",
+      "qPXHrdUgPUY"
+    ],
+    "trademark_review_do_not_auto_transfer": [
+      "2yhQ4nMWm3I"
+    ],
+    "known_historical_native_vk_presence_do_not_reupload": [
+      "SiluLt5Bz1c"
+    ],
+    "all_exclusions_require_current_provider_and_editorial_reconciliation": true,
+    "fresh_upload_allowlist": []
+  }
 }
