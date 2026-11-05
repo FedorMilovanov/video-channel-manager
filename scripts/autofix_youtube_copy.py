@@ -15,7 +15,10 @@ from typing import Any
 
 from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
 from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text
-from video_channel_manager.platforms.youtube.lord_god_scoped import build_one_video_scoped_plan
+from video_channel_manager.platforms.youtube.lord_god_scoped import (
+    build_one_video_chapter_plan,
+    build_one_video_scoped_plan,
+)
 
 RULESET = "youtube-copy-safe-v2"
 
@@ -254,7 +257,14 @@ def main() -> int:
     parser.add_argument("input", type=Path, help="video-manager AuditPackage JSON")
     parser.add_argument("--plan-output", type=Path, help="Output JSON plan path")
     parser.add_argument("--lord-god-preview", type=Path, help="Exact reviewed Lord God shelf cleanup preview")
-    parser.add_argument("--target-video-id", help="Exactly one public Lord God target; requires --lord-god-preview")
+    parser.add_argument(
+        "--lord-god-chapters-review", type=Path, help="Reviewed source-anchored chapter JSON (never direct execution)"
+    )
+    parser.add_argument(
+        "--previous-editorial-plan", type=Path, help="Prior signed owner-video description release plan"
+    )
+    parser.add_argument("--archive-transcript-db", type=Path, help="Archived timestamped SQLite transcript source")
+    parser.add_argument("--target-video-id", help="Exactly one public Lord God video for either reviewed scoped mode")
     parser.add_argument("--report-output", type=Path, help="Output Markdown diff path")
     parser.add_argument(
         "--fail-on-unresolved",
@@ -267,15 +277,35 @@ def main() -> int:
         payload = json.loads(args.input.read_text(encoding="utf-8-sig"))
         if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.audit-package":
             raise ValueError("Input must be a video-manager AuditPackage JSON object.")
-        if bool(args.lord_god_preview) != bool(args.target_video_id):
-            raise ValueError("--lord-god-preview and --target-video-id are required together")
-        if args.lord_god_preview:
+        if args.lord_god_preview and args.lord_god_chapters_review:
+            raise ValueError("Shelf cleanup and semantic chapter reviews are mutually exclusive")
+        if args.lord_god_chapters_review:
+            if not (args.target_video_id and args.previous_editorial_plan and args.archive_transcript_db):
+                raise ValueError("Chapter mode requires target ID, previous editorial plan and transcript DB")
+            previous = json.loads(args.previous_editorial_plan.read_text(encoding="utf-8-sig"))
+            review = json.loads(args.lord_god_chapters_review.read_text(encoding="utf-8-sig"))
+            plan, report = build_one_video_chapter_plan(
+                payload,
+                args.input,
+                previous,
+                args.previous_editorial_plan,
+                review,
+                args.lord_god_chapters_review,
+                args.archive_transcript_db,
+                video_id=args.target_video_id,
+            )
+            unresolved_count = len(plan["unresolved"])
+        elif args.lord_god_preview:
+            if not args.target_video_id or args.previous_editorial_plan or args.archive_transcript_db:
+                raise ValueError("Shelf preview mode requires only --target-video-id")
             preview = json.loads(args.lord_god_preview.read_text(encoding="utf-8-sig"))
             plan, report = build_one_video_scoped_plan(
                 payload, args.input, preview, args.lord_god_preview, video_id=args.target_video_id
             )
             unresolved_count = len(plan["unresolved"])
         else:
+            if args.target_video_id or args.previous_editorial_plan or args.archive_transcript_db:
+                raise ValueError("Scoped flags require a Lord God review mode")
             plan, report, unresolved_count = _build_plan(payload, args.input)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         parser.error(str(exc))
