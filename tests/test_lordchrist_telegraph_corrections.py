@@ -1,0 +1,153 @@
+"""Safe one-shot correction semantics for historical Charnock Telegraph pages."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from video_channel_manager import lordchrist_telegraph_corrections as m
+
+ID = "lordchrist-telegraph-charnock-01b"
+ORIGINAL = "https://telegra.ph/Old-Charnock-10-24"
+CORRECTED = "https://telegra.ph/Corrected-Charnock-11-05"
+SHA = "a" * 40
+CHAT = -1001295216957
+MESSAGE = 1582
+
+
+@dataclass
+class FakePayload:
+    article_sha256: str = "sha256:new"
+    cover_sha256: str = "sha256:cover"
+    title: str = "Corrected Charnock"
+
+
+def setup(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, state: str | None = None):
+    original = {
+        "publication_id": ID,
+        "telegraph_url": ORIGINAL,
+        "telegram_message_id": MESSAGE,
+        "telegram_chat_id": CHAT,
+        "article_sha256": "sha256:original",
+    }
+    payload = FakePayload()
+    item = SimpleNamespace(channel_post=object())
+    target = {"previous_telegraph_url": ORIGINAL, "previous_telegram_message_id": MESSAGE}
+    ledger = {"entries": {ID: original}}
+    if state:
+        original["correction"] = {
+            "state": state,
+            "run_id": "456",
+            "run_attempt": 1,
+            "github_sha": SHA,
+            "article_sha256": payload.article_sha256,
+            "cover_sha256": payload.cover_sha256,
+            "new_telegraph_url": CORRECTED,
+            "new_telegraph_path": "Corrected-Charnock-11-05",
+        }
+    args = argparse.Namespace(
+        stage="prepare-page",
+        repo_root=tmp_path,
+        queue=Path("queue.json"),
+        ledger=tmp_path / "ledger.json",
+        publication_id=ID,
+        media_base_url="https://example.org",
+        run_id="456",
+        run_attempt=1,
+        github_sha=SHA,
+    )
+    monkeypatch.setattr(m, "_require_execution_context", lambda _: None)
+    monkeypatch.setattr(m, "_ledger", lambda _: (args.ledger, ledger))
+    monkeypatch.setattr(m, "_target", lambda *_: (original, target, item, payload))
+    monkeypatch.setattr(m, "_read_original_post", lambda *_: None)
+    return args, ledger, original
+
+
+def test_correction_claim_preserves_original_identity_and_refuses_replay(monkeypatch, tmp_path):
+    args, ledger, original = setup(monkeypatch, tmp_path)
+    result = m.execute(args)
+    assert result["stage"] == "prepare-page"
+    assert original["telegraph_url"] == ORIGINAL
+    assert original["telegram_message_id"] == MESSAGE
+    assert original["correction"]["state"] == "page_claimed"
+    with pytest.raises(RuntimeError, match="already exists"):
+        m.execute(args)
+
+
+def test_corrected_page_created_exactly_once_without_split(monkeypatch, tmp_path):
+    args, ledger, original = setup(monkeypatch, tmp_path, "page_claimed")
+    args.stage = "send-page"
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: object())
+    monkeypatch.setattr(m, "ensure_telegraph_token", lambda *a, **k: "test-token")
+    calls = []
+
+    def create(*a, **kw):
+        calls.append(kw)
+        return CORRECTED, "Corrected-Charnock-11-05"
+
+    monkeypatch.setattr(m, "publish_telegraph_page", create)
+    result = m.execute(args)
+    assert result["url"] == CORRECTED
+    assert len(calls) == 1
+    assert calls[0]["allow_split"] is False
+    assert original["telegraph_url"] == ORIGINAL
+    assert original["correction"]["state"] == "page_created"
+    with pytest.raises(RuntimeError, match="Exact correction stage not claimed"):
+        m.execute(args)
+    assert len(calls) == 1
+
+
+def test_no_telegram_edit_without_its_own_durable_claim(monkeypatch, tmp_path):
+    args, ledger, original = setup(monkeypatch, tmp_path, "page_created")
+    args.stage = "edit-telegram"
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("transport constructed"))
+    with pytest.raises(RuntimeError, match="Exact correction stage not claimed"):
+        m.execute(args)
+
+
+def test_successful_edit_preserves_message_id_and_replaces_link(monkeypatch, tmp_path):
+    args, ledger, original = setup(monkeypatch, tmp_path, "telegram_claimed")
+    args.stage = "edit-telegram"
+    monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "test-bot-token")
+    monkeypatch.setattr(
+        m, "load_channel_profile", lambda *_: SimpleNamespace(bot_token_env="LORDCHRIST_TELEGRAM_BOT_TOKEN")
+    )
+    monkeypatch.setattr(m, "load_target_binding", lambda *a, **k: SimpleNamespace(bot_id=123, chat_id=CHAT))
+    monkeypatch.setattr(m, "render_channel_post", lambda *a, **k: SimpleNamespace(html_text="corrected"))
+    calls = []
+
+    class Transport:
+        def read_json(self, url, payload):
+            if url.endswith("/getMe"):
+                return {"ok": True, "result": {"id": 123}}
+            if url.endswith("/getChat"):
+                return {"ok": True, "result": {"id": CHAT}}
+            raise AssertionError(url)
+
+        def post_json(self, url, payload):
+            calls.append((url, payload))
+            return {
+                "ok": True,
+                "result": {
+                    "message_id": MESSAGE,
+                    "chat": {"id": CHAT},
+                    "entities": [{"type": "text_link", "url": CORRECTED}],
+                    "link_preview_options": {"prefer_large_media": True},
+                },
+            }
+
+    monkeypatch.setattr(m, "HttpxLiveTransport", Transport)
+    result = m.execute(args)
+    assert result["message_id"] == MESSAGE
+    assert original["telegram_message_id"] == MESSAGE
+    assert original["telegraph_url"] == ORIGINAL
+    assert original["correction"]["state"] == "corrected"
+    assert len(calls) == 1
+    assert calls[0][0].endswith("/editMessageText")
+    assert calls[0][1]["message_id"] == MESSAGE
+    assert calls[0][1]["link_preview_options"]["url"] == CORRECTED
