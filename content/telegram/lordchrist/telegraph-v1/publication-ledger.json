@@ -146,7 +146,7 @@
     },
     "lordchrist-telegraph-charnock-08": {
       "publication_id": "lordchrist-telegraph-charnock-08",
-      "state": "page_published",
+      "state": "telegram_dispatch_claimed",
       "provider_effect": "verified",
       "run_id": "41966523687",
       "run_attempt": 1,
@@ -157,7 +157,9 @@
       "page_intent_at_utc": "2026-11-05T04:14:20.907989+00:00",
       "telegraph_url": "https://telegra.ph/Strela-ne-vybiraet-cel-instinkt-tvorenij-i-sohranenie-mira-11-05",
       "telegraph_path": "Strela-ne-vybiraet-cel-instinkt-tvorenij-i-sohranenie-mira-11-05",
-      "telegraph_updated_at_utc": "2026-11-05T04:14:26.762064+00:00"
+      "telegraph_updated_at_utc": "2026-11-05T04:14:26.762064+00:00",
+      "telegram_provider_effect": "unknown_until_reconciled",
+      "telegram_intent_at_utc": "2026-11-05T04:14:28.956196+00:00"
     }
   }
 }
