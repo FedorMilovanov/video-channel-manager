@@ -165,7 +165,20 @@
       "telegram_chat_id": -1001295216957,
       "telegram_message_id": 1594,
       "telegram_link_preview_large_media": true,
-      "telegram_published_at_utc": "2026-11-03T16:44:03.114188+00:00"
+      "telegram_published_at_utc": "2026-11-03T16:44:03.114188+00:00",
+      "correction": {
+        "state": "page_claimed",
+        "publication_id": "lordchrist-telegraph-charnock-04",
+        "run_id": "42121176480",
+        "run_attempt": 1,
+        "github_sha": "31091fd1b17c9b09aa786efb8654386668845353",
+        "original_telegraph_url": "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce-11-03",
+        "original_telegram_message_id": 1594,
+        "article_sha256": "sha256:f05a4adf64a1212cf161707b312f28971cd3f5afc8865ff37cf215384b2a4af6",
+        "cover_sha256": "sha256:c30f5027d85208f8dad7f4bf45b09e1ec31d9c1ad184032b4e820651402acfd3",
+        "provider_effect": "unknown_until_reconciled",
+        "page_claimed_at_utc": "2026-11-05T22:24:21.753479+00:00"
+      }
     },
     "lordchrist-telegraph-charnock-05": {
       "publication_id": "lordchrist-telegraph-charnock-05",
