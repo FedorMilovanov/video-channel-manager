@@ -203,3 +203,43 @@ NOT that the YouTube player has displayed chapter navigation or that
 editorial section boundaries precisely match the underlying audio.
 The latter are separate visual/audio witnesses. The generic full-inventory
 fail-closed policy is not changed.
+
+
+## Source-preserving retired-appeal removal: exact one-video mode
+
+Removing old shelf_id links is not the same as repairing a complete YouTube
+description. Many historical descriptions still contain personal translator
+solicitations, fundraising, or unrelated playlist navigation. Some contain
+almost no original editorial content. Never treat the 1,386-item source preview
+as a mass write plan.
+
+For a narrowly source-verified item, the new offline builder is:
+
+    python scripts/autofix_youtube_copy.py <owner-AuditPackage.json> `
+      --lord-god-retired-appeal-review <LORDGOD-EXACT-VIDEO-REVIEW-ONLY.json> `
+      --target-video-id VIDEO-ID `
+      --plan-output <VIDEO-SIGNED-PREFLIGHT-PENDING.json> `
+      --report-output <VIDEO-SIGNED-REPORT.md>
+
+This emits exactly one standard SHA-bound copy plan, not a provider mutation.
+Required evidence: the precise public owner ID, two independently reconciled
+owner upload-ID reads, all six explicit metadata gaps, exact original description,
+previously source-validated removal of shelf-only URLs, and exactly one
+full-line allowlisted retired translator appeal. The deleted appeal must not
+contain any unrelated attribution, copyright/source, or third-party URLs.
+Every surviving line is kept byte-for-byte in original order. The builder
+rejects unknown lines, nonpublic videos, stale source SHA, incomplete content,
+out-of-scope playlists, or personal contacts still present.
+
+Once the official YouTube daily quota recovers, the first-party
+video-manager youtube apply-copy-fixes dry-run must confirm the exact owner,
+video, original description and SHA again. Only then permit one explicitly
+bounded execute with unique backup and result; independently read back the
+published after SHA and do not retry blindly after an ambiguous timeout.
+No alternative OAuth app and no API quota bypass are provided.
+
+In the archival November 2026 owner review, only 12 of 1,386 old shelf-linked
+items met the strict source-preserving minimum for this additional method.
+The others require genuine topic-based editorial revision or proof of source
+and playlist provenance. An offline plan does not prove rights clearance
+or publication status.

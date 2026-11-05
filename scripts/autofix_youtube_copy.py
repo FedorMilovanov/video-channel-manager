@@ -15,6 +15,7 @@ from typing import Any
 
 from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
 from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text
+from video_channel_manager.platforms.youtube.lord_god_retired_appeal import build_one_video_retired_appeal_plan
 from video_channel_manager.platforms.youtube.lord_god_scoped import (
     build_one_video_chapter_plan,
     build_one_video_scoped_plan,
@@ -258,6 +259,11 @@ def main() -> int:
     parser.add_argument("--plan-output", type=Path, help="Output JSON plan path")
     parser.add_argument("--lord-god-preview", type=Path, help="Exact reviewed Lord God shelf cleanup preview")
     parser.add_argument(
+        "--lord-god-retired-appeal-review",
+        type=Path,
+        help="Strict one-video legacy shelf and retired appeal review; no provider writes",
+    )
+    parser.add_argument(
         "--lord-god-chapters-review", type=Path, help="Reviewed source-anchored chapter JSON (never direct execution)"
     )
     parser.add_argument(
@@ -277,9 +283,22 @@ def main() -> int:
         payload = json.loads(args.input.read_text(encoding="utf-8-sig"))
         if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.audit-package":
             raise ValueError("Input must be a video-manager AuditPackage JSON object.")
-        if args.lord_god_preview and args.lord_god_chapters_review:
-            raise ValueError("Shelf cleanup and semantic chapter reviews are mutually exclusive")
-        if args.lord_god_chapters_review:
+        selected_modes = [
+            bool(args.lord_god_preview),
+            bool(args.lord_god_chapters_review),
+            bool(args.lord_god_retired_appeal_review),
+        ]
+        if sum(selected_modes) > 1:
+            raise ValueError("Lord God reviewed cleanup modes are mutually exclusive")
+        if args.lord_god_retired_appeal_review:
+            if not args.target_video_id or args.previous_editorial_plan or args.archive_transcript_db:
+                raise ValueError("Retired appeal review mode requires exact video ID, no other scoped arguments")
+            review = json.loads(args.lord_god_retired_appeal_review.read_text(encoding="utf-8-sig"))
+            plan, report = build_one_video_retired_appeal_plan(
+                payload, args.input, review, args.lord_god_retired_appeal_review, video_id=args.target_video_id
+            )
+            unresolved_count = len(plan["unresolved"])
+        elif args.lord_god_chapters_review:
             if not (args.target_video_id and args.previous_editorial_plan and args.archive_transcript_db):
                 raise ValueError("Chapter mode requires target ID, previous editorial plan and transcript DB")
             previous = json.loads(args.previous_editorial_plan.read_text(encoding="utf-8-sig"))
