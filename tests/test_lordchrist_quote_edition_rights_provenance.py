@@ -19,9 +19,7 @@ def load(path: Path) -> dict:
 
 def committed_blob(path: Path) -> str:
     rel = path.relative_to(ROOT).as_posix()
-    return subprocess.check_output(
-        ["git", "rev-parse", f"HEAD:{rel}"], cwd=ROOT, text=True
-    ).strip()
+    return subprocess.check_output(["git", "rev-parse", f"HEAD:{rel}"], cwd=ROOT, text=True).strip()
 
 
 def test_rights_research_binds_exact_v5_files_and_all_thirty_cards() -> None:
@@ -35,9 +33,7 @@ def test_rights_research_binds_exact_v5_files_and_all_thirty_cards() -> None:
     assert [entry["sequence"] for entry in report["entries"]] == list(range(1, 31))
     assert len({entry["publication_id"] for entry in report["entries"]}) == 30
 
-    for researched, reviewed, card in zip(
-        report["entries"], index["entries"], preview["posts"], strict=True
-    ):
+    for researched, reviewed, card in zip(report["entries"], index["entries"], preview["posts"], strict=True):
         assert researched["sequence"] == reviewed["sequence"] == card["sequence"]
         assert researched["publication_id"] == reviewed["original_publication_id"]
         assert researched["candidate_source_url"] == reviewed["candidate_source_url"]
