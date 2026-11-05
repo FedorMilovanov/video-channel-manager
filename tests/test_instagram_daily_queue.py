@@ -5,6 +5,7 @@ from video_channel_manager.instagram.daily_queue import (
     PUBLISHED_SOURCE_IDS,
     RIGHTS_REVIEW,
     build_legendary_poet_daily_queue,
+    detect_author,
     queue_sha256,
 )
 
@@ -67,3 +68,20 @@ def test_queue_digest_is_stable_sha256() -> None:
     digest = queue_sha256(_queue())
     assert digest.startswith("sha256:")
     assert len(digest) == 71
+
+
+def test_detect_author_title_outweighs_noisy_tags_and_ambiguity_fails_closed() -> None:
+    assert detect_author("Скифы — Александр Блок", ["Александр Пушкин"]) == "Александр Блок"
+    assert detect_author("Парус — Михаил Лермонтов", ["Александр Пушкин"]) == "Михаил Лермонтов"
+    assert detect_author("Лирика классиков", ["Александр Пушкин"]) == "Александр Пушкин"
+    assert detect_author("Есенин и Маяковский", ["Александр Пушкин"]) is None
+    assert detect_author("Пейзаж", ["Блок", "Пушкин"]) is None
+    assert detect_author("Блокнот поэта", []) is None
+
+
+def test_frozen_snapshot_rebuild_identifies_real_title_authors() -> None:
+    by_id = {item.source_id: item for item in _queue().items}
+    assert by_id["F5kgP197YUE"].author == "Александр Блок"
+    assert by_id["156l_su1P48"].author == "Александр Блок"
+    assert by_id["x-TPtQ9E2mc"].author == "Михаил Лермонтов"
+    assert by_id["d50lIlqZed4"].author == "Анна Ахматова"
