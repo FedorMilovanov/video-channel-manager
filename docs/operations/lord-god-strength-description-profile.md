@@ -170,17 +170,17 @@ exhausted.
 Only the reviewed, one-video builder may convert that evidence to a
 schema-valid, signed guarded plan:
 
-    python scripts/autofix_youtube_copy.py <canonical-owner-AuditPackage.json> \
-      --lord-god-chapters-review <REVIEW-ONLY.json> \
-      --previous-editorial-plan <previous-signed-description-PLAN.json> \
-      --archive-transcript-db <read-only-transcript-archive.db> \
-      --target-video-id VIDEO-ID \
-      --plan-output <one-video-chapter-PLAN.json> \
+    python scripts/autofix_youtube_copy.py <canonical-owner-AuditPackage.json> `
+      --lord-god-chapters-review <REVIEW-ONLY.json> `
+      --previous-editorial-plan <previous-signed-description-PLAN.json> `
+      --archive-transcript-db <read-only-transcript-archive.db> `
+      --target-video-id VIDEO-ID `
+      --plan-output <one-video-chapter-PLAN.json> `
       --report-output <one-video-chapter-report.md>
 
-    video-manager youtube apply-copy-fixes <one-video-chapter-PLAN.json> \
-      --account fedor-milovanov \
-      --confirm-channel UCeSJsC6go2c9pdJCuUI1BYA \
+    video-manager youtube apply-copy-fixes <one-video-chapter-PLAN.json> `
+      --account fedor-milovanov `
+      --confirm-channel UCeSJsC6go2c9pdJCuUI1BYA `
       --max-operations 1
 
 The last command is a dry-run. Only add the explicit execute flag with
