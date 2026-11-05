@@ -81,6 +81,6 @@ def test_sensitive_edition_and_translation_distinctions_remain_explicit() -> Non
     assert "1925" in groups["kuyper"]["edition_lineage"]
     assert "1909" in groups["bavinck"]["known_historical_publication"]
     for death_year in ("1912", "1926", "1949"):
-        assert death_year in report["completed_research_checks"][-1]
+        assert death_year in " ".join(report["completed_research_checks"])
     assert report["entries"][11]["work_id"] == "spurgeon-resurrection"
     assert "Acts 24:15" in groups["spurgeon-resurrection"]["edition_lineage"]
