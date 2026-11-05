@@ -105,6 +105,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/audit_milovi_school_vk_public_wall.py",
+      "private_imports": [],
+      "project_owner": "milovi-cake",
+      "provider_write_capable": false,
+      "sha256": "b56356cecbee6284b54dec4eca924939a62a91c7759b730447dcf701df15f557",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/audit_vk_description_rendering.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
