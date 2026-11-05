@@ -463,3 +463,43 @@ def historical_backlog(
         f"Reviewed outside floor: {counts.reviewed_ids_outside_historical_floor} | "
         f"Factory sources outside floor: {counts.factory_youtube_sources_outside_historical_floor}"
     )
+
+
+@instagram_app.command("milovi-cake-preview")
+def milovi_cake_preview(
+    inventory: Annotated[Path, typer.Argument(help="Milovi Cake exact public YouTube source inventory")],
+    metadata: Annotated[Path, typer.Argument(help="Fresh public YouTube metadata for selected exact video IDs")],
+    captions: Annotated[Path, typer.Argument(help="Unapproved Milovi Cake caption draft JSON")],
+    slots: Annotated[Path, typer.Argument(help="Unarmed Tue/Thu/Sat Moscow slot proposal")],
+    holds: Annotated[Path | None, typer.Option("--holds", help="Exact Milovi Cake scope hold registry")] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Build a validated Milovi Cake review-only staggered schedule; never dispatch Meta writes."""
+
+    from video_channel_manager.editorial.milovi_instagram_transfer_preview import (
+        MiloviInstagramPreviewError,
+        preview_from_files,
+    )
+
+    if holds is None:
+        holds = _REPOSITORY_ROOT / "content" / "instagram" / "milovi-cake-scope-holds-v1.json"
+    if output is None:
+        output = get_settings().data_dir / "reports" / "milovi-cake-instagram-preview.json"
+
+    try:
+        result = preview_from_files(
+            inventory=inventory,
+            metadata=metadata,
+            captions=captions,
+            slots=slots,
+            stoplist=holds,
+        )
+        _write_json(output, result)
+    except (MiloviInstagramPreviewError, OSError, ValueError) as exc:
+        console.print(f"[red]Milovi Cake Instagram preview refused:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    console.print(
+        f"[green]Milovi Cake provider-inert review preview: {output}[/green]\n"
+        f"Candidates: {result['candidate_count']} | Armed: 0 | Ready: 0 | Meta writes: 0"
+    )

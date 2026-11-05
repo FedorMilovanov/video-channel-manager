@@ -1,0 +1,141 @@
+{
+  "schema": "milovi-cake-instagram-scope-holds-v1",
+  "project_key": "milovi-cake",
+  "youtube_channel_id": "UCMDnxfGZiBqcDzgUV1zjFpw",
+  "evidence": "2026-11-05 public YouTube titles; historical VK review is not Instagram presence evidence",
+  "provider_writes_authorized": false,
+  "note": "Title-level manual triage only. Not a copyright determination. All unlisted videos remain rights-unverified.",
+  "entry_count": 26,
+  "entries": [
+    {
+      "youtube_video_id": "1AHaYiru8VI",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "2yhQ4nMWm3I",
+      "status": "manual_review",
+      "reason": "brand_or_logo_title_flag"
+    },
+    {
+      "youtube_video_id": "54AAsJb4npg",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "7FCbopqeTYE",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "94KbvcOuNzw",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "9lM1aTX6J4A",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "BUF6CG3rvZU",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "c1OfXbwDqXA",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "CB-p-6caAd0",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "jcCr2yHPvDA",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "jZjDWn_MNq0",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "lEpaHkg6D5A",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "MbwyXxM5tXE",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "N4iW8Ov6qgI",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "P2Bpt77k408",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "p3xZaajOMvc",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "qPXHrdUgPUY",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "R9Bsduj1De8",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "S3Aga1UDFdE",
+      "status": "manual_review",
+      "reason": "brand_or_logo_title_flag"
+    },
+    {
+      "youtube_video_id": "suurVa6w5U4",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "TIgBhy93wj4",
+      "status": "scope_excluded",
+      "reason": "non_cake_or_personal_title_flag"
+    },
+    {
+      "youtube_video_id": "vByaC26Rxqc",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "Vin9ATN9xuA",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "xzMgMEWz5pM",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    },
+    {
+      "youtube_video_id": "ypUBcdJyepc",
+      "status": "manual_review",
+      "reason": "brand_or_logo_title_flag"
+    },
+    {
+      "youtube_video_id": "ZuQt6yFePO0",
+      "status": "manual_review",
+      "reason": "character_or_franchise_title_flag"
+    }
+  ]
+}
