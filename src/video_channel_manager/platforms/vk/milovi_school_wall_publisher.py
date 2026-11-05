@@ -16,6 +16,7 @@ from typing import Any
 
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
 from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
+from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.milovi_school_public_wall_audit import (
     MILOVI_COMMUNITY_ID,
     MILOVI_OWNER_ID,
@@ -44,7 +45,10 @@ def _sha256(text: str) -> str:
 
 
 def load_canary_preview(*, preview_path: Path, editorial_path: Path) -> dict[str, Any]:
-    p = json.loads(preview_path.read_text(encoding="utf-8"))
+    raw = json.loads(preview_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise MiloviCanaryBlocked("Preview must be a JSON object")
+    p: dict[str, Any] = raw
     editorial = editorial_path.read_text(encoding="utf-8")
     expected = {
         "schema_name": "video-manager.milovi-school-vk-wall-canary-preview",
@@ -84,7 +88,7 @@ def load_canary_preview(*, preview_path: Path, editorial_path: Path) -> dict[str
 class MiloviCommunitySchoolWriter(VkWallWriter):
     """Community-authorized text writer bound to one Milovi Cake alias."""
 
-    def assert_token_scopes(self, *required_scopes: str) -> Any:
+    def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
         if self.account_alias != COMMUNITY_ACCOUNT:
             raise MiloviCanaryBlocked("Milovi School publisher requires its exact account alias")
         token = self.token_store.load_token(COMMUNITY_ACCOUNT)
