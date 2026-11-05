@@ -51,7 +51,7 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-10-25T13:03:16.582728+00:00",
       "correction": {
-        "state": "page_claimed",
+        "state": "page_created",
         "publication_id": "lordchrist-telegraph-charnock-history-01",
         "run_id": "42075385542",
         "run_attempt": 1,
@@ -60,8 +60,11 @@
         "original_telegram_message_id": 1585,
         "article_sha256": "sha256:dbb884613c5c74655b067c32b982bc909bba361133e1ff1cda4e994fc9c5a74d",
         "cover_sha256": "sha256:8243bf044de5e752eaa71b04484679823584278c8b5dc990ebb5ab39ea0d1172",
-        "provider_effect": "unknown_until_reconciled",
-        "page_claimed_at_utc": "2026-11-05T17:36:36.924645+00:00"
+        "provider_effect": "verified",
+        "page_claimed_at_utc": "2026-11-05T17:36:36.924645+00:00",
+        "new_telegraph_url": "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
+        "new_telegraph_path": "Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
+        "page_created_at_utc": "2026-11-05T17:36:42.802924+00:00"
       }
     },
     "lordchrist-telegraph-charnock-02": {
