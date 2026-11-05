@@ -153,7 +153,7 @@ def test_milovi_school_vk_editorial_queue_has_ten_unique_sources_but_no_write_au
         "tech-mousse-stability",
     ]
     assert len(ids) == len(set(ids)) == 10
-    assert len(re.findall(r"^## Пост \\d+ — ", editorial, flags=re.MULTILINE)) == 10
+    assert len(re.findall(r"^## Пост \d+ — ", editorial, flags=re.MULTILINE)) == 10
     for source_id in ids:
         canonical = f"https://french.milovicake.ru/articles/{source_id}/"
         assert editorial.count(canonical) == 2
