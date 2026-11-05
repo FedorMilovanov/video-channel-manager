@@ -113,3 +113,46 @@ Before showing `ready`, preflight must reject:
 
 - YouTube read/write authorization: alias `fedor-milovanov`; reauthorize with `--write --force` and verify exact channel ID before mutation.
 - VK authorization: shared user-token alias `legendary-poet`; select the current project only through community `60805374` and owner `-60805374`.
+
+## Scoped legacy-shelf cleanup when owner uploads contains known metadata gaps
+
+The generic YouTube auto-fix builder MUST continue to reject an owner
+`AuditPackage` with `uploads_playlist_inventory.complete=false`. An
+unmaterialized video ID must never silently disappear from coverage.
+
+Only the separately reviewed Lord God one-video mode permits a narrowly
+scoped plan in the presence of explicit `youtube.owner-upload-metadata-gap`
+errors. It requires the canonical channel ID, matching exact metadata-gap
+finding IDs, two agreeing owner-upload enumerations, exactly one present
+public target and an SHA-bound editorial preview with **only** known obsolete
+`shelf_id` lines deleted. All inaccessible upload IDs appear in the plan's
+`unresolved` section, never as implicitly corrected videos.
+
+Example (operator-managed private files, no token files in Git):
+
+```powershell
+python scripts/autofix_youtube_copy.py <owner-AuditPackage.json> `
+  --lord-god-preview <DESCRIPTION-CLEANUP-REVIEW-ONLY.json> `
+  --target-video-id <exact-public-YouTube-ID> `
+  --plan-output <one-video-plan.json> `
+  --report-output <one-video-report.md>
+
+video-manager youtube apply-copy-fixes <one-video-plan.json> `
+  --account fedor-milovanov `
+  --confirm-channel UCeSJsC6go2c9pdJCuUI1BYA `
+  --max-operations 1
+```
+
+The second invocation above is **dry-run**. No `--execute` may be added
+without completing source and rights review, exact before/after diff
+inspection, owner write-scope confirmation, and no competing writer.
+Use the existing CLI lock, write-ahead backup/journal, provider readback and
+safe rollback. Historical archived descriptions or auto-generated previews
+are **not** execution authority.
+
+The scoped builder rejects legacy personal contacts and donation/translation
+solicitations, an empty heading left by a shelf deletion, unknown or
+non-member playlists, mixed/semantic URL lines, nonpublic targets, unrelated
+project identities and any content modification other than deletion of the
+recognized shelf line. If none passes, stop and prepare a new editorial
+review for the individual video rather than weakening the gate.
