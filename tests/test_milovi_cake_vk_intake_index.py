@@ -110,3 +110,26 @@ def test_longform_public_index_is_exact_and_every_item_is_triaged() -> None:
         "ready_to_publish": False,
         "scheduled_count": 0,
     }
+
+
+def test_historical_ip_and_existing_vk_objects_are_not_new_upload_authority() -> None:
+    index = _read()
+    holds = index["historical_2026_08_editorial_exclusions"]
+    protected = set(index["protected_historical_2026_08_source_ids"])
+    ip = set(holds["ip_hold_do_not_auto_transfer"])
+    trademark = set(holds["trademark_review_do_not_auto_transfer"])
+    existing = set(holds["known_historical_native_vk_presence_do_not_reupload"])
+    assert ip == {
+        "P2Bpt77k408",
+        "jZjDWn_MNq0",
+        "xzMgMEWz5pM",
+        "7FCbopqeTYE",
+        "ZuQt6yFePO0",
+        "qPXHrdUgPUY",
+    }
+    assert trademark == {"2yhQ4nMWm3I"}
+    assert existing == {"SiluLt5Bz1c"}
+    assert len(protected | ip | trademark | existing) == 20
+    assert (protected | ip | trademark | existing) <= set(index["source_ids_in_public_order"])
+    assert holds["fresh_upload_allowlist"] == []
+    assert holds["all_exclusions_require_current_provider_and_editorial_reconciliation"] is True
