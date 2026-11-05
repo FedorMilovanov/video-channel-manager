@@ -13,6 +13,8 @@ WRITER_GROUP = "group: lordchrist-telegram-publisher"
 QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
 QUIZ_SERIES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-poster.yml"
 TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
+CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
+CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
     WORKFLOW,
     RECOVERY_WORKFLOW,
@@ -20,6 +22,8 @@ EXPECTED_LOCK_PARTICIPANTS = {
     QUIZ_WORKFLOW,
     QUIZ_SERIES_WORKFLOW,
     TELEGRAPH_WORKFLOW,
+    CHARNOCK_CORRECTION_WORKFLOW,
+    CHARNOCK_SCHEDULE_WORKFLOW,
 }
 
 

@@ -33,6 +33,7 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
     render_channel_post,
     save_ledger,
 )
+from video_channel_manager.lordchrist_charnock_reschedule import _proof_page
 from video_channel_manager.lordchrist_telegraph_staged import _ledger, _require_execution_context
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_target_binding import load_target_binding
@@ -48,10 +49,9 @@ def _now() -> str:
 
 def _read_original_post(message_id: int, prior_url: str) -> None:
     """Public read only: refuse editing an already changed post."""
-    with httpx.Client(timeout=20, follow_redirects=True) as client:
-        response = client.get(f"https://t.me/lordchrist/{message_id}?embed=1")
-        response.raise_for_status()
-        body = response.text
+    response = httpx.get(f"https://t.me/lordchrist/{message_id}?embed=1", timeout=20, follow_redirects=True)
+    response.raise_for_status()
+    body = response.text
     if f'data-post="lordchrist/{message_id}"' not in body or prior_url not in body:
         raise RuntimeError("Existing Telegram post or old link was not proved live; no mutation")
 
@@ -148,9 +148,12 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.stage == "prepare-telegram":
         receipt = _claimed(args, prior, "page_created", payload)
-        url = receipt.get("new_telegraph_url")
-        if not isinstance(url, str) or not url.startswith("https://telegra.ph/"):
+        page_url = receipt.get("new_telegraph_url")
+        if not isinstance(page_url, str) or not page_url.startswith("https://telegra.ph/"):
             raise RuntimeError("Verified new public page receipt required")
+        _proof_page(
+            {"verified_telegraph_url": page_url}, replace(payload, title=f"{payload.title} — исправленное издание")
+        )
         _read_original_post(original_id, original_url)
         receipt.update(
             state="telegram_claimed",
@@ -165,6 +168,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         new_url = receipt.get("new_telegraph_url")
         if not isinstance(new_url, str) or new_url == original_url:
             raise RuntimeError("Invalid separately published correction URL")
+        _proof_page(
+            {"verified_telegraph_url": new_url}, replace(payload, title=f"{payload.title} — исправленное издание")
+        )
         profile = load_channel_profile(args.repo_root / DEFAULT_PROFILE_PATH)
         binding = load_target_binding(args.repo_root / DEFAULT_BINDING_PATH, profile=profile)
         token = os.environ.get(profile.bot_token_env, "").strip()
@@ -179,8 +185,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         if (
             not me.get("ok")
             or int((me.get("result") or {}).get("id", 0)) != binding.bot_id
+            or (me.get("result") or {}).get("username") != "preaching_mp3_bot"
             or not chat.get("ok")
             or int((chat.get("result") or {}).get("id", 0)) != binding.chat_id
+            or (chat.get("result") or {}).get("username") != "lordchrist"
+            or (chat.get("result") or {}).get("type") != "channel"
         ):
             raise RuntimeError("Bot or channel binding mismatch")
         edited = transport.post_json(
@@ -212,6 +221,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         }
         if new_url not in urls:
             raise RuntimeError("Telegram edit receipt does not contain the corrected article link")
+        _read_original_post(original_id, new_url)
         receipt.update(
             state="corrected",
             telegram_provider_effect="verified",

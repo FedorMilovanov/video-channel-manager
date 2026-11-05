@@ -64,6 +64,7 @@ def setup(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, state: str | None = N
     monkeypatch.setattr(m, "_ledger", lambda _: (args.ledger, ledger))
     monkeypatch.setattr(m, "_target", lambda *_: (original, target, item, payload))
     monkeypatch.setattr(m, "_read_original_post", lambda *_: None)
+    monkeypatch.setattr(m, "_proof_page", lambda *_: None)
     return args, ledger, original
 
 
@@ -124,9 +125,9 @@ def test_successful_edit_preserves_message_id_and_replaces_link(monkeypatch, tmp
     class Transport:
         def read_json(self, url, payload):
             if url.endswith("/getMe"):
-                return {"ok": True, "result": {"id": 123}}
+                return {"ok": True, "result": {"id": 123, "username": "preaching_mp3_bot"}}
             if url.endswith("/getChat"):
-                return {"ok": True, "result": {"id": CHAT}}
+                return {"ok": True, "result": {"id": CHAT, "username": "lordchrist", "type": "channel"}}
             raise AssertionError(url)
 
         def post_json(self, url, payload):
