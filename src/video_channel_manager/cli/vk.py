@@ -472,6 +472,55 @@ def wall_probe(
     )
 
 
+@vk_app.command("milovi-school-postponed-canary")
+def milovi_school_postponed_canary(
+    preview_path: Annotated[Path, typer.Option("--preview-path", help="Exact editorial preview manifest")],
+    editorial_path: Annotated[Path, typer.Option("--editorial-path", help="Exact ten-draft source file")],
+    journal_path: Annotated[Path, typer.Option("--journal-path", help="Durable one-shot journal, never overwrite")],
+    data_dir: Annotated[Path | None, typer.Option("--data-dir", help="Existing persistent VK token-store root")] = None,
+    apply: Annotated[bool, typer.Option("--apply", help="Allow one provider write after all gates")] = False,
+    confirmation: Annotated[
+        str, typer.Option("--confirmation", help="Exact reviewed Milovi source/date confirmation")
+    ] = "",
+    admin_queue_witness: Annotated[
+        str, typer.Option("--admin-queue-witness", help="Exact owner administrative witness")
+    ] = "",
+) -> None:
+    """One text-only, project-bound Milovi School VK postponed canary; never a batch."""
+    from video_channel_manager.platforms.vk.milovi_school_wall_publisher import (
+        MiloviCanaryBlocked,
+        load_canary_preview,
+        schedule_canary_once,
+    )
+
+    try:
+        preview = load_canary_preview(preview_path=preview_path, editorial_path=editorial_path)
+        if not apply:
+            console.print(
+                f"Milovi Cake editorial canary only: community={preview['community_id']}, "
+                f"source={preview['source_article_id']}, slot={preview['publish_at_msk']}, "
+                "provider writes=0. Use --apply with exact authority only after reviewed gates."
+            )
+            return
+        store = VkTokenStore(data_dir or get_settings().data_dir)
+        result = schedule_canary_once(
+            store=store,
+            api_version=get_settings().vk_api_version,
+            preview_path=preview_path,
+            editorial_path=editorial_path,
+            journal_path=journal_path,
+            confirmation=confirmation,
+            admin_queue_witness=admin_queue_witness,
+        )
+        console.print(
+            f"Milovi VK one-shot acknowledged: post_id={result['post_id']}; "
+            f"state={result['state']}; journal={journal_path}. No further write dispatched."
+        )
+    except (OSError, ValueError, MiloviCanaryBlocked, VkWriteError, VkApiError) as exc:
+        console.print(f"[red]Milovi Cake VK canary blocked; never retry blindly:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 @vk_app.command("communities")
 def communities(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
