@@ -18,3 +18,17 @@ Owner decision, 2026-11-05: **The eight Charnock posts №06–13 were intended 
 Incident hold: `lordchrist-telegraph-poster.yml` disabled manually, `LORDCHRIST_TELEGRAPH_POSTING_ENABLED=false` with exact approval vars removed, `LORDCHRIST_CORRECTION_ENABLED=false`. Do not loosen this just to make a preview pass. PR #784 and its CI precede any correction provider writes. For the separate scheduled recovery, release authority is the reviewed exact manifest digest plus `LORDCHRIST_CHARNOCK_RECOVERY_ENABLED=true`; it is never an unrestricted token to post a queue.
 
 Release completion is per article: exact revised Telegraph page verified, originally deleted Telegram ID remains historical, new replacement Telegram ID confirmed and publicly readable on its scheduled date, durable ledger marked `scheduled_reissue.state=verified`. Do not call the overall series closed before all eight date-scoped deliveries and five early correction edits are verified.
+
+
+## Workflow parser repair after merge of #784 (2026-11-05)
+
+The first main-branch push containing the two new Charnock Actions workflows
+reported workflow-file failures before starting any jobs (runs 42059688291
+and 42059690985). No Charnock provider call was made by those runs. The
+source was unquoted YAML plain scalars containing the pip option
+`--only-binary=:all:` immediately before whitespace. PR #794 changes the
+install steps to valid YAML block scalars without changing their commands,
+approval gates, or schedule. It also adds a CI-tested PyYAML syntax parse
+for every workflow file, including a regression for the original error.
+The publication hold remains until the repaired workflows are registered
+and the exact merged main passes CI.
