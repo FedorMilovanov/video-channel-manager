@@ -61,9 +61,7 @@ def test_polish_has_no_provider_release_or_source_drift():
         assert new_posts[n]["candidate_full_post_sha256"] == digest(new_posts[n]["text"])
         if n not in (3, 20, 23):
             assert new["candidate_body_sha256"] == old["candidate_body_sha256"]
-            assert canonical(quote(new_posts[n]["text"])) == canonical(
-                quote(old_posts[n]["text"])
-            )
+            assert canonical(quote(new_posts[n]["text"])) == canonical(quote(old_posts[n]["text"]))
 
 
 def test_six_polished_cards_and_three_quote_digests():
