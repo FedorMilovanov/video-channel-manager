@@ -206,6 +206,18 @@
       "telegram_message_id": 1600,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-05T04:24:19.194746+00:00"
+    },
+    "lordchrist-telegraph-charnock-11": {
+      "publication_id": "lordchrist-telegraph-charnock-11",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "41967623004",
+      "run_attempt": 1,
+      "github_sha": "6f67b689f3de6ba811134bb4b49eff0e2fd9fee3",
+      "title": "Небо не молчит: суды, чудеса и пророчества",
+      "article_sha256": "sha256:1122e3bf756a9a9d323c263c8cc97d1bd4b0709102eed086ac154d0f5898d001",
+      "cover_sha256": "sha256:14e017c89623f51d76e06a80bbc636765026f2284a4c0832b83894b98507d5f6",
+      "page_intent_at_utc": "2026-11-05T04:24:50.174868+00:00"
     }
   }
 }
