@@ -104,15 +104,18 @@
     },
     "lordchrist-telegraph-charnock-06": {
       "publication_id": "lordchrist-telegraph-charnock-06",
-      "state": "page_dispatch_claimed",
-      "provider_effect": "unknown_until_reconciled",
+      "state": "page_published",
+      "provider_effect": "verified",
       "run_id": "41966277293",
       "run_attempt": 1,
       "github_sha": "92b73b4e6acb3fdc0f0aa038f108f59b6c1296f7",
       "title": "Лютня мироздания: как враждующие стихии, солнце и океан служат одному дому",
       "article_sha256": "sha256:29d6405667ce1abc6a1ecd74237bb92656f4dcf4b4b089305c5c11f3a8322f96",
       "cover_sha256": "sha256:38a777a6d5f0752e69646eee9609250c3bfa21fafc3b5282be6f59a1f14ccc67",
-      "page_intent_at_utc": "2026-11-05T04:12:05.403104+00:00"
+      "page_intent_at_utc": "2026-11-05T04:12:05.403104+00:00",
+      "telegraph_url": "https://telegra.ph/Lyutnya-mirozdaniya-kak-vrazhduyushchie-stihii-solnce-i-okean-sluzhat-odnomu-domu-11-05",
+      "telegraph_path": "Lyutnya-mirozdaniya-kak-vrazhduyushchie-stihii-solnce-i-okean-sluzhat-odnomu-domu-11-05",
+      "telegraph_updated_at_utc": "2026-11-05T04:12:10.868997+00:00"
     }
   }
 }
