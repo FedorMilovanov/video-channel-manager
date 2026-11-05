@@ -136,9 +136,7 @@ def test_historical_ip_and_existing_vk_objects_are_not_new_upload_authority() ->
 
 
 def test_milovi_school_vk_editorial_queue_has_ten_unique_sources_but_no_write_authority() -> None:
-    editorial = (ROOT / "content/editorial/milovi-cake/vk-school-wave-20261105.md").read_text(
-        encoding="utf-8"
-    )
+    editorial = (ROOT / "content/editorial/milovi-cake/vk-school-wave-20261105.md").read_text(encoding="utf-8")
     ids = re.findall(r"^Source ID: `([a-z0-9-]+)`$", editorial, flags=re.MULTILINE)
     assert ids == [
         "herme-ispahan-deep",
