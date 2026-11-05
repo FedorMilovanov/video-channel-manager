@@ -119,7 +119,7 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-10-30T15:27:10.905768+00:00",
       "correction": {
-        "state": "telegram_claimed",
+        "state": "corrected",
         "publication_id": "lordchrist-telegraph-charnock-03",
         "run_id": "42120794851",
         "run_attempt": 1,
@@ -133,8 +133,11 @@
         "new_telegraph_url": "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05",
         "new_telegraph_path": "Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05",
         "page_created_at_utc": "2026-11-05T22:21:45.426273+00:00",
-        "telegram_provider_effect": "unknown_until_reconciled",
-        "telegram_claimed_at_utc": "2026-11-05T22:21:47.975714+00:00"
+        "telegram_provider_effect": "verified",
+        "telegram_claimed_at_utc": "2026-11-05T22:21:47.975714+00:00",
+        "telegram_message_id": 1592,
+        "corrected_at_utc": "2026-11-05T22:22:53.734149+00:00",
+        "telegram_link_preview_large_media": true
       }
     },
     "lordchrist-telegraph-history-reformation-1517-01": {
