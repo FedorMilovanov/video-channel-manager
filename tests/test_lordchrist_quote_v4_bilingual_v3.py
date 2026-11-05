@@ -25,9 +25,7 @@ def test_v3_review_amendments_are_bound_to_the_reader_preview():
     ix = {x["sequence"]: x for x in index["entries"]}
     post = {x["sequence"]: x for x in preview["posts"]}
     prev = {x["sequence"]: x for x in previous["posts"]}
-    evidence_path = (
-        "docs/audits/2026-11-05-lordchrist-quote-v4-bilingual-language-revisions-v3.json"
-    )
+    evidence_path = "docs/audits/2026-11-05-lordchrist-quote-v4-bilingual-language-revisions-v3.json"
     for row in evidence["items"]:
         seq = row["sequence"]
         assert ix[seq]["candidate_evidence_file"] == evidence_path
