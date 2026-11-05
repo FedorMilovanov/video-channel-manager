@@ -185,6 +185,18 @@
       "telegram_message_id": 1599,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-05T04:15:13.620529+00:00"
+    },
+    "lordchrist-telegraph-charnock-10": {
+      "publication_id": "lordchrist-telegraph-charnock-10",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "41967545062",
+      "run_attempt": 1,
+      "github_sha": "6f67b689f3de6ba811134bb4b49eff0e2fd9fee3",
+      "title": "Судья, которого нельзя выключить: совесть и жажда бесконечного",
+      "article_sha256": "sha256:b15e2658d1ed040c3bef62a7be226ed75a19fd0136bfd519ce0e89c42c43c7ae",
+      "cover_sha256": "sha256:d2fffe4e5c9f04c64eece0dd7d84d2e52d4907c6acf3b76092edd1895e9071d0",
+      "page_intent_at_utc": "2026-11-05T04:24:05.777405+00:00"
     }
   }
 }
