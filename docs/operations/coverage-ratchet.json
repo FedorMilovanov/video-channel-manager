@@ -230,6 +230,7 @@
     "src/video_channel_manager/platforms/youtube/copy_plan.py": 82.4,
     "src/video_channel_manager/platforms/youtube/gap_inventory.py": 96.87,
     "src/video_channel_manager/platforms/youtube/labels.py": 100.0,
+    "src/video_channel_manager/platforms/youtube/lord_god_scoped.py": 80.0,
     "src/video_channel_manager/platforms/youtube/models.py": 83.75,
     "src/video_channel_manager/platforms/youtube/oauth.py": 54.83,
     "src/video_channel_manager/platforms/youtube/renderers.py": 80.51,
