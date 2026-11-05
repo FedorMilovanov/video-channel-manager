@@ -30,7 +30,11 @@ def list_videos_with_gaps(
     """
 
     uploads_playlist = client._uploads_playlist_id(channel_id)
-    pagination_params = {"part": "contentDetails", "playlistId": uploads_playlist, "maxResults": 50}
+    pagination_params: dict[str, str | int] = {
+        "part": "contentDetails",
+        "playlistId": uploads_playlist,
+        "maxResults": 50,
+    }
     playlist_items = client._list_all("playlistItems", params=pagination_params)
     ordered_ids: list[str] = []
     for item in playlist_items:
