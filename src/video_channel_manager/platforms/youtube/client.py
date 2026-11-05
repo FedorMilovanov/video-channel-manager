@@ -297,6 +297,12 @@ class YouTubeApiClient(HttpClientOwner):
             if video_id:
                 ordered_ids.append(video_id)
 
+        if len(ordered_ids) != len(set(ordered_ids)):
+            raise YouTubeApiError(
+                "Owner uploads pagination returned repeated video IDs; "
+                "use the read-only AuditPackage inventory diagnostics before planning changes."
+            )
+
         raw_by_id: dict[str, dict[str, Any]] = {}
         for batch in _chunks(ordered_ids, 50):
             payload = self._get(
