@@ -252,9 +252,7 @@ def test_ambiguous_response_persists_journal_and_blocks_replay(monkeypatch: pyte
     assert sends == [1]
 
 
-def test_final_journal_commit_failure_still_blocks_replay(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_final_journal_commit_failure_still_blocks_replay(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     journal = tmp_path / "intent.json"
     dispatch_count: list[int] = []
     real_atomic_update = mp._atomic_update_journal
