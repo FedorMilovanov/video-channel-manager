@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from video_channel_manager.platforms.youtube.copy_plan import sha256_text
 from video_channel_manager.platforms.youtube.writer import (
     YouTubeRevisionConflictError,
     descriptions_equivalent,
@@ -121,3 +122,64 @@ def verify_copy_operations(
                 }
             )
     return failures
+
+
+def reconcile_copy_operations(
+    operations: list[dict[str, Any]],
+    *,
+    confirm_channel: str,
+    writer: Any,
+) -> list[dict[str, Any]]:
+    """Read owner snapshots only; classify exact before/after/third description states.
+
+    This is intentionally not a release gate. A live before-state cannot prove
+    that an earlier request never happened, or that a rollback was not in
+    progress. Even a live after-state without a completed matching receipt is
+    evidence of current provider bytes, not evidence of which writer sent them.
+    No caller may use this classification as automatic retry authority.
+    """
+
+    if not confirm_channel:
+        raise ValueError("Exact --confirm-channel is required for reconciliation.")
+    if not operations:
+        raise ValueError("No YouTube copy operations to reconcile.")
+
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for operation in operations:
+        video_id = required_text(operation, "video_id")
+        channel_id = required_text(operation, "channel_id")
+        before = required_text(operation, "before_description")
+        after = required_text(operation, "after_description")
+        if video_id in seen:
+            raise ValueError(f"Duplicate YouTube copy video ID in reconciliation: {video_id}")
+        seen.add(video_id)
+        if channel_id != confirm_channel:
+            raise ValueError(f"Plan video {video_id} does not belong to confirmed channel {confirm_channel}.")
+
+        live = writer.read_description(video_id)
+        if live.channel_id != confirm_channel:
+            raise YouTubeRevisionConflictError(
+                f"Owner mismatch for live video {video_id}: {live.channel_id} != {confirm_channel}"
+            )
+        if descriptions_equivalent(live.description, after):
+            state = "live_after"
+        elif descriptions_equivalent(live.description, before):
+            state = "live_before"
+        else:
+            state = "live_third_state"
+
+        result.append(
+            {
+                "video_id": video_id,
+                "channel_id": live.channel_id,
+                "live_title": live.title,
+                "live_description_sha256": sha256_text(live.description),
+                "planned_before_sha256": sha256_text(before),
+                "planned_after_sha256": sha256_text(after),
+                "state": state,
+                "provider_mutations": 0,
+                "safe_to_replay": False,
+            }
+        )
+    return result
