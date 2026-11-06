@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_cli import _read_scheduled_canary_authorization
@@ -180,7 +181,7 @@ def test_approval_date_and_owner_boolean_are_strictly_validated() -> None:
     ):
         changed = dict(value)
         changed[field] = new
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             OwnerScheduledCanaryApproval.model_validate(changed)
 
 
