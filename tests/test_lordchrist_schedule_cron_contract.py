@@ -63,7 +63,10 @@ def test_every_workflow_cron_is_either_a_configured_slot_or_the_historical_slot(
     crons = _workflow_crons()
 
     assert len(crons) == len(set(crons)), "a duplicated cron would run twice"
-    assert set(crons) == configured | {HISTORICAL_CRON}
+    # Only independent midday-rich and historical-rich schedules remain.
+    assert set(crons) == {str(_schedule()["slots"]["midday"]["cron"]), HISTORICAL_CRON}  # type: ignore[index]
+    assert "0 7 * * *" in configured - set(crons)
+    assert "0 18 * * 2,5,0" in configured - set(crons)
     assert HISTORICAL_CRON not in configured
 
 
@@ -102,13 +105,18 @@ def test_every_declared_cron_has_exactly_one_route() -> None:
     slot_crons = {slot.cron for slot in load_production_schedule(SCHEDULE).slots.values()}
     publish_next = _job_condition("publish-next")
     historical = _job_condition("historical-rich")
+    charnock = _job_condition("charnock-rich")
+    # A literal false at the job boundary makes the v4 queue unreachable.
+    assert re.search(r"(?m)^\s+false &&\s*$", publish_next)
     exclusion = "&& github.event.schedule == '{cron}'"
 
     for cron in crons:
         excluded_from_quote = exclusion.format(cron=cron) in publish_next
         selected_elsewhere = f"github.event.schedule == '{cron}'" in historical
         if cron in slot_crons:
-            assert not excluded_from_quote, f"{cron} is a queue slot and must reach publish-next"
+            assert not excluded_from_quote, f"{cron} remains a historical schedule slot"
+            assert cron == str(_schedule()["slots"]["midday"]["cron"])  # type: ignore[index]
+            assert f"github.event.schedule == '{cron}'" in charnock
         else:
             assert excluded_from_quote, f"{cron} is not a queue slot and must not reach publish-next"
             assert selected_elsewhere, f"{cron} is declared but no job consumes it"

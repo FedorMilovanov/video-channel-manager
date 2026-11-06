@@ -64,9 +64,9 @@ def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run(
 
 def test_lordchrist_scheduler_preserves_three_moscow_windows_and_pins_runner() -> None:
     text = workflow_text()
-    assert 'cron: "0 7 * * *"' in text
+    assert 'cron: "0 7 * * *"' not in text  # retired old quote-v4
     assert 'cron: "17 16 * * 1,3,6"' in text
-    assert 'cron: "0 18 * * 2,5,0"' in text
+    assert 'cron: "0 18 * * 2,5,0"' not in text  # retired old quote-v4
     assert 'cron: "17 21 * * *"' not in text
     # These expressions are already the UTC form of the Moscow windows
     # (07:00 UTC = 10:00 Moscow, 18:00 UTC = 21:00 Moscow). A `timezone:` key
