@@ -6,6 +6,7 @@
     ".github/workflows/lordchrist-quiz-poster.yml",
     ".github/workflows/lordchrist-quiz-series-poster.yml",
     ".github/workflows/lordchrist-quote-v6-publisher.yml",
+    ".github/workflows/lordchrist-shorts4-publisher.yml",
     ".github/workflows/lordchrist-telegram-poster.yml",
     ".github/workflows/lordchrist-telegraph-poster.yml",
     ".github/workflows/milovi-telegram-feed-publisher.yml",
