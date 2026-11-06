@@ -89,6 +89,30 @@ protected state and current main, with durable intent and one attempt.
 **Merge and validate are not Telegram publication**.
 
 
+## One-time GitHub due dispatch (after explicit owner approval)
+
+The account already has the maximum 5 ChatGPT scheduled tasks; do not
+delete or displace unrelated agents' automations. Use normal repository
+infrastructure for this *single* exact release instead.
+
+- Workflow: .github/workflows/milovi-telegram-exact-due-20261107.yml
+- Cron trigger: 2026-11-07 08:07 UTC = 11:07 Europe/Moscow.
+- GitHub cron may be delayed; the dispatcher checks real UTC time and
+  refuses every invocation outside [08:00, 10:00) UTC on that date.
+- The workflow also rejects a stale main, changed release/digest, missing
+  owner approval or absent/inconsistent durable release ledger/index.
+- Manual workflow_dispatch runs are permanent **read-only dry-runs**.
+- On the exact date only, a pending/impossible record with zero intent
+  permits dispatch of milovi-telegram-feed-publisher.yml with
+  PUBLISH:@MiloviCake:milovi-feed-20261107-002.
+- This dispatcher never handles a Telegram bot token or calls Telegram.
+  The existing writer has the real bot/target proof, concurrency control,
+  one durable intent/attempt, terminal outcome, and verified message id.
+- Already-published verified records are skipped; unknown, dispatching,
+  failed, or unverified states halt. **Never blindly retry**.
+- After 2026-11-07 this schedule becomes inert even if GitHub triggers it
+  in later years; remove only after preserving audit evidence.
+
 ## Fifteen audio-free video candidates, 8-22 November (provider-inert)
 
 All remaining 15 of original 16 transports were individually verified by
@@ -111,4 +135,29 @@ Signed Nov 7 v12-muted stays unchanged.
 - All fifteen: release_authorized=false, execution_authorized=false,
   provider_mutation_allowed=false, scheduling_active=false and zero provider sends.
 - Proposed dates are not activated server-side Telegram schedules or GitHub
-  cron triggers. The separate previously blocked scheduler is NOT bypassed.
+  cron triggers. The owner-approved Nov 7 one-time scheduler is an independent exact gate; do not authorize these 15 as part of it.
+
+
+## Owner-authorized fifteen follow-on releases (not yet scheduled)
+
+Following the owner's explicit request on 2026-11-06 to upload the
+MILOVI CAKE videos in deferred order, all fifteen audio-free videos
+were individually authorized for **one exact future publication each**,
+with their own Pydantic-reviewed candidate digest, release SHA,
+individual human execution authority and frozen file SHA. The source
+candidate bytes remain provider-inert; no old production history
+is modified.
+
+Exact collective provenance is recorded at
+content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json.
+The owner's direction is not represented as an independent external
+license certificate. All music has been removed. Public old video
+lengths 21, 28, 48, 59 seconds are not byte-identical to these 10-second
+sources. Source-clip semantic overlap cannot be proven absent.
+
+These fifteen now pass the exact release and execution gate, but **no
+protected state ledger is initialized and no scheduling trigger is
+active** until a separate state-initialization transaction and
+daily due-dispatch workflow are completed. The existing Nov 7 v12
+release remains intact. This approval does not authorize a burst
+upload or blind retries.
