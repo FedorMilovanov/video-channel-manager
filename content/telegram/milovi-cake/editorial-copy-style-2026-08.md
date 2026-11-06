@@ -66,3 +66,7 @@ Telegram does not need to link to itself inside every Telegram post.
 - Customer quotations remain exact and source-bound.
 - Price, delivery, timing, availability and service claims require fresh exact support when used.
 - Editorial approval is not provider execution authority.
+
+## Milovi School educational reading style (November 2026)
+
+Educational story posts should lead with a concrete source-supported fact, a clean bold title, one restrained italic line, a concise narrative with genuine historical/technical specifics, and one clickable source phrase pointing to the related Milovi School article. Maximum two hashtags; omit image-credit boilerplate, AI-like slogans, excessive emoji and unfounded claims that a School image represents a Milovi Cake order. See docs/operations/milovi-school-telegram-reading-wave-20261106.md.

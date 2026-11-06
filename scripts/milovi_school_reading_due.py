@@ -8,10 +8,21 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from video_channel_manager.milovi_telegram_feed import state_init, validate_bundle
+from video_channel_manager.milovi_telegram_feed import (
+    MiloviFeedIndex,
+    _save_index,
+    state_init,
+    validate_bundle,
+)
 from video_channel_manager.telegram_multichannel_release import load_release
-from video_channel_manager.telegram_multichannel_state import load_ledger
+from video_channel_manager.telegram_multichannel_state import (
+    GenericPublicationLedger,
+    initialize_ledger,
+    load_ledger,
+    save_ledger,
+)
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
+from video_channel_manager.telegram_multichannel_transport import GenericRichPhotoPayload
 
 ZONE = ZoneInfo("Europe/Moscow")
 ROOT = Path("content/telegram/milovi-cake")
@@ -26,6 +37,23 @@ RELEASES = (
 # First screen contains actual native Cake videos. Never count pending, failed,
 # historical deleted canaries, or unverified mock deliveries.
 FIRST_TEN = ("milovi-feed-20261107-002",) + tuple(f"milovi-feed-202611{day:02d}-001" for day in range(8, 17))
+
+# A one-time owner-authorized editorial revision. No media or publication dates
+# change, and only records proven entirely pending and provider-impossible can migrate.
+# These are actual protected-state pre-revision identities, never inferred from a
+# mutable current release.
+RICH_EDITORIAL_PREDECESSORS: dict[str, tuple[str, str, str]] = {
+    "milovi-feed-20261121-002": (
+        "sha256:1db4cd061b8ed44c16a74131b8fd18b99a1aaf9912978a4547a19ab8cfbe9564",
+        "sha256:73aa78fc7508a9a508e1990eee1489abd862141201fed197c45046d1241822c0",
+        "sha256:2169fec7b56fa6d6bb082c78cdc29a590e167aa4b4785ae7dd32e1c42899c520",
+    ),
+    "milovi-feed-20261125-001": (
+        "sha256:5c8702f05799dba96f1e20fe927fb8351010f5a3d80b716b5db0c415e9d90821",
+        "sha256:ade7ed5ba38cd03ca8b97bb7e44f04f3aebf7f03506c56cf8f90a0023c27a2c5",
+        "sha256:5b21ef36c094b110e32d6adc5e55fa7f982b204c19cc2469db18d1b499215ce1",
+    ),
+}
 OWNER_EARLY_PARIS_BREST = "milovi-feed-20261106-001"
 ORIGINAL_PARIS_BREST = "milovi-feed-20261117-002"
 
@@ -139,14 +167,98 @@ def validate_exact_releases() -> None:
             == f"public/images/articles/{'body-croissant-golden-baked' if slug == 'croissant-history' else slug}.webp"
             and candidate["source_context"]["school_article_url"] == f"https://french.milovicake.ru/articles/{slug}/"
             and item.payload.caption.count(f"https://french.milovicake.ru/articles/{slug}/") == 1
-            and "Иллюстрация — Milovi School." in item.payload.caption
             and "Milovi Cake готовит" not in item.payload.caption
         ):
             raise ValueError(f"School release source and educational boundary mismatch: {pid}")
+        if slug == "paris-brest-race-dessert":
+            # The Nov 17 legacy candidate is retained as historic evidence, and
+            # suppressed when the Nov 6 true Telegram receipt is verified.
+            if item.payload.schema_version != 1:
+                raise ValueError("Existing historical Paris-Brest release was mutated")
+        elif not (
+            isinstance(item.payload, GenericRichPhotoPayload)
+            and item.payload.schema_version == 2
+            and "<b>" in item.payload.caption
+            and "<i>" in item.payload.caption
+            and '<a href="https://french.milovicake.ru/articles/' in item.payload.caption
+            and "Иллюстрация —" not in item.payload.expected_plain_caption
+            and len(item.payload.expected_plain_caption) <= 1024
+        ):
+            raise ValueError(f"Future School photo has no real rich-text/URL entities: {pid}")
+
+
+def migrate_two_provider_inert_editorial_revisions(checkout: Path) -> None:
+    """One-time atomic (Git-committed) migration, refusing any earlier provider intent.
+
+    Exact legacy digest, release candidate and payload IDs are sourced from the
+    already-initialized protected branch. Writes happen only after BOTH records
+    have been validated, never after a possible Telegram delivery.
+    """
+    path = checkout / STATE_FEED / "index.json"
+    if not path.exists():
+        return  # clean local test/state: ordinary initialize below handles it
+    index = MiloviFeedIndex.model_validate_json(path.read_text(encoding="utf-8"))
+    to_write: list[tuple[Path, GenericPublicationLedger]] = []
+    for pid, (old_digest, old_candidate, old_payload) in RICH_EDITORIAL_PREDECESSORS.items():
+        release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
+        ledger_path = checkout / STATE_FEED / f"{pid}.json"
+        if not ledger_path.exists() and pid not in index.entries:
+            continue  # entirely new, not yet initialized
+        if not ledger_path.exists() or pid not in index.entries:
+            raise ValueError(f"Editorial state/index missing one side of an existing record: {pid}")
+        before = GenericPublicationLedger.model_validate_json(ledger_path.read_text(encoding="utf-8"))
+        indexed = index.entries[pid]
+        if before.release_digest == release.digest:
+            load_ledger(ledger_path, release)
+            if indexed.release_candidate_sha256 != release.candidate_digest() or (
+                indexed.provider_payload_sha256 != release.items[0].payload.provider_payload_sha256
+            ):
+                raise ValueError(f"Rich School revision existing ledger/index mismatch: {pid}")
+            continue
+        if (
+            before.release_digest != old_digest
+            or before.release_id != pid
+            or before.project_key != "milovi-cake"
+            or before.channel_username != "@MiloviCake"
+            or before.profile_sha256 != release.profile_sha256
+            or set(before.entries) != {pid}
+            or before.entries[pid].provider_payload_sha256 != old_payload
+            or indexed.publication_id != pid
+            or indexed.release_id != pid
+            or indexed.release_candidate_sha256 != old_candidate
+            or indexed.provider_payload_sha256 != old_payload
+            or indexed.ledger_relative_path != f"content/telegram/milovi-cake/feed/{pid}.json"
+        ):
+            raise ValueError(f"Rich School revision is not pinned to exact protected pre-revision state: {pid}")
+        entry = before.entries[pid]
+        if not (
+            entry.state == indexed.state == "pending"
+            and entry.provider_effect == indexed.provider_effect == "impossible"
+            and entry.intent_id is None
+            and indexed.intent_id is None
+            and entry.message_id is None
+            and indexed.message_id is None
+            and entry.message_url is None
+            and indexed.message_url is None
+            and entry.attempted_at_utc is None
+            and entry.published_at_utc is None
+            and entry.workflow_run_id is None
+            and entry.workflow_run_attempt is None
+        ):
+            raise ValueError(f"Rich School revision cannot rewrite any possibly sent Telegram item: {pid}")
+        new_ledger = initialize_ledger(release)
+        to_write.append((ledger_path, new_ledger))
+        indexed.release_candidate_sha256 = release.candidate_digest()
+        indexed.provider_payload_sha256 = release.items[0].payload.provider_payload_sha256
+    for ledger_path, new_ledger in to_write:
+        save_ledger(ledger_path, new_ledger)
+    if to_write:
+        _save_index(path, index)
 
 
 def initialize_all(checkout: Path) -> None:
     validate_exact_releases()
+    migrate_two_provider_inert_editorial_revisions(checkout)
     for _, pid, _ in RELEASES:
         result = state_init(pid, state_checkout=checkout)
         print(json.dumps({"school_release_initialized": pid, "result": result}, ensure_ascii=False))

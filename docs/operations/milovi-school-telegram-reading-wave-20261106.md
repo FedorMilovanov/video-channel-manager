@@ -10,7 +10,7 @@ Owning scope: Milovi Cake Telegram #353. Owner explicitly requested posts sharin
 | 21 Nov 2026 | 12:30 (GitHub 12:37) | `milovi-feed-20261121-002` | https://french.milovicake.ru/articles/croissant-history/ |
 | 25 Nov 2026 | 12:30 (GitHub 12:37) | `milovi-feed-20261125-001` | https://french.milovicake.ru/articles/stohrer-1730/ |
 
-All three are native Telegram photos, not link-only previews: source WebP at 1280×800 (Paris-Brest, Stohrer) or 1280×796 (the superior visually inspected `body-croissant-golden-baked.webp` Croissant figure, rather than the ambiguous round `croissant-history.webp` hero) from the exact public `FedorMilovanov/Milovi_School` commit `f540e8d6fca89592a8394e0a707e6af0d85afc14`, converted deterministically to JPEG with Pillow 13.0.0 using the existing Milovi feed media contract. Provider-facing captions are fully written, <1024 chars, in Russian. Each story features a specific historical fact, a short contextual explanation, an educational project link and an image-disclosure line. No product CTA or Cake production-lineage implication.
+All three are native Telegram photos, not link-only previews: source WebP at 1280×800 (Paris-Brest, Stohrer) or 1280×796 (the superior visually inspected `body-croissant-golden-baked.webp` Croissant figure, rather than the ambiguous round `croissant-history.webp` hero) from the exact public `FedorMilovanov/Milovi_School` commit `f540e8d6fca89592a8394e0a707e6af0d85afc14`, converted deterministically to JPEG with Pillow 13.0.0 using the existing Milovi feed media contract. Provider-facing captions are fully written, <1024 chars, in Russian. Each story features a historical fact, a concise explanation and an educational article link. Future captions use Telegram rich HTML without an image credit in the public text. No product CTA or Cake production-lineage implication.
 
 ## Hard independent safety gates
 
@@ -25,7 +25,7 @@ All three are native Telegram photos, not link-only previews: source WebP at 128
 
 ## Source / narrative provenance
 
-- `paris-brest-race-dessert`: 1910 Paris–Brest–Paris cycling race; Louis Durand's wheel-shaped pastry; later interpretation by Philippe Conticini.
+- `paris-brest-race-dessert`: 1891 founding of the Paris–Brest–Paris cycling race; Louis Durand's 1910 wheel-shaped pastry; later interpretation by Philippe Conticini.
 - `croissant-history`: historical Austrian kipferl precursor, diffusion into Paris in the nineteenth century, later development of laminated dough; 1683 siege story explicitly treated as an unverified legend.
 - `stohrer-1730`: Maison Stohrer on rue Montorgueil, 51, tracing its Paris establishment to 1730; earlier/modern recipes carefully distinguished.
 
@@ -42,3 +42,20 @@ Owner explicitly overrode the delayed first-screen policy for ONE School story: 
 The original Nov17 release and protected pending ledger remain untouched as historical evidence. At the Nov17 due slot the School dispatcher verifies the early photo's actual published/verified protected receipt, positive message ID, exact bot/chat, identical caption, source digest and JPEG transport digest. It will suppress Nov17 if the Nov6 message has actually been sent. On Nov21 and Nov25, a verified early receipt may satisfy the Paris-Brest predecessor, but the first-ten real Cake videos remain an absolute prerequisite for those later two School posts. No blind retry is authorized after an uncertain provider outcome.
 
 This explicit exception does not authorize sending the other two School photos early and does not affect any Milovi Cake video schedule. Real completion requires Telegram provider receipt and public message URL. Manual execution uses only existing canonical milovi-telegram-feed-publisher.yml, operation publish, exact publication ID and PUBLISH:@MiloviCake confirmation; do not use a second bot client.
+
+## November 6: owner-requested polished Telegram reading style
+
+School posts are informative historical miniatures, not product portfolio captions.
+
+- Start with a verifiable name, date, technique or unexpected detail. No advertising slogans.
+- One compact bold headline (native Telegram HTML b tag), at most one relevant lead emoji.
+- One italic framing line; other italic text only for useful foreign culinary vocabulary.
+- Two or three compact paragraphs with facts, names, dates, addresses and mechanisms.
+- One clickable contextual article link using the native Telegram a href tag, with Milovi School as its visible reading destination.
+- Up to two relevant hashtags. No naked long URL, image-credit line, boilerplate disclaimers, calls to buy or claims about what Milovi Cake produced.
+
+Nov 6 published Paris-Brest message #27 is NOT auto-edited; the owner requested a revised ready-to-paste caption. The Nov17 duplicate remains suppressed on receipt. Only unattempted Nov21/25 entries are restyled to rich HTML photo v2, without changing the image bytes, schedules, or protected bot/channel identities.
+
+The typed v2 payload records source HTML, expected visible plain text and UTF-16 Telegram formatting entities, including the exact article URL. A reply lacking those entities is treated as an ambiguous send, never blindly retried. All existing v1 photo releases keep their original schema and digest.
+
+For the protected-state transition, main-CI bootstrap checks the exact pre-revision release digest, candidate digest, provider-payload digest and both ledgers/index rows. Only provider-impossible, never-attempted pending records may migrate. Both are validated before either is written. Other posts (especially published Nov6 message #27) remain unchanged. The operation is idempotent, provider-inert and uses the existing channel-wide writer lock.

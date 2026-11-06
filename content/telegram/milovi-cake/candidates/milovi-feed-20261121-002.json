@@ -22,8 +22,8 @@
     "pixel_width": 1280,
     "pixel_height": 796
   },
-  "caption_sha256": "sha256:9ce563412844414a8b6687d2dd4638d776b5a7acd64b92dfd709479fab1fdca6",
-  "caption": "🥐 КРУАССАН НЕ ВСЕГДА БЫЛ СЛОЁНЫМ\n\nУ австрийского kipferl уже была форма полумесяца, но не было тех тонких хрустящих слоёв, за которые ценят современный французский круассан. В XIX веке венская выпечка пришла в Париж; позднее пекари объединили дрожжевое тесто с турированным маслом.\n\nА известная история о пекарях, спасших Вену в 1683 году, остаётся легендой — достоверных подтверждений ей нет.\n\n📖 Как выпечка с центральноевропейскими корнями стала символом Франции — в нашем образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/croissant-history/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияВыпечки",
+  "caption_sha256": "sha256:ec6b9b850420b28ba59353745be792be0d1936a81e59d2f94b2cbe7631a0f246",
+  "caption": "🥐 <b>Круассан: венские корни, французские слои</b>\n\n<i>В Париж он пришёл ещё до того, как стал слоёным.</i>\n\nВ 1839 году австриец Август Занг открыл в Париже <i>Boulangerie Viennoise</i>. Среди венской выпечки был <i>kipferl</i> — булочка в форме полумесяца. На современный круассан она походила очертаниями, но не тестом: тонких масляных слоёв ещё не было.\n\nПозднее французские пекари освоили <i>tourage</i>: масло раскатывают между слоями теста и несколько раз складывают. При выпечке эти слои разделяются — так появляются хрустящая корочка и воздушный мякиш.\n\nА рассказ о пекарях, которые якобы спасли Вену при осаде 1683 года, — красивая легенда без надёжного документального подтверждения.\n\n📖 <a href=\"https://french.milovicake.ru/articles/croissant-history/\">История круассана — Milovi School</a>\n\n#MiloviSchool #ИсторияВыпечки",
   "editorial_guards": {
     "school_separate_educational_content": true,
     "contains_product_process_claim": false,
@@ -37,5 +37,6 @@
     "school_article_id": "croissant-history",
     "school_article_url": "https://french.milovicake.ru/articles/croissant-history/"
   },
-  "execution_note": "Owner 2026-11-06 requested Milovi School story/photo/link Telegram promotions; scheduled only after first ten verified Cake native video posts."
+  "execution_note": "Owner 2026-11-06 requested Milovi School story/photo/link Telegram promotions; scheduled only after first ten verified Cake native video posts.",
+  "editorial_style": "Telegram HTML: one bold title, one italic opening, native clickable source link, factual body, minimal tags; no repetitive photo-credit line"
 }

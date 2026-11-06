@@ -22,8 +22,8 @@
     "pixel_width": 1280,
     "pixel_height": 800
   },
-  "caption_sha256": "sha256:06488c9c5babcb0059b56ac27569b93d04ca0f41c1e5d79acd0036bd3602c5a6",
-  "caption": "🏛 КОНДИТЕРСКАЯ, КОТОРАЯ РАБОТАЕТ С 1730 ГОДА\n\nВ Париже на rue Montorgueil, 51, и сегодня работает Maison Stohrer. Её история начинается с Николя Шторера — кондитера при дворе Марии Лещинской, супруги Людовика XV.\n\nЗдесь витрина похожа на гастрономический архив: baba au rhum, religieuse, puits d’amour. Но между историей дома и легендой о «рецепте, не менявшемся три столетия» есть важная разница.\n\n📖 Что действительно сохранилось с XVIII века, а что менялось — в нашем отдельном образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/stohrer-1730/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияКондитерскогоИскусства",
+  "caption_sha256": "sha256:802f6195667506e90fe8dc8ddafcec46799a58d9ad5e4af5467ece3b6a0b07e9",
+  "caption": "🏛 <b>Maison Stohrer: кондитерская на одном адресе с 1730 года</b>\n\n<i>Париж, улица Монторгёй, 51. Здесь три столетия продают выпечку.</i>\n\nНиколя Шторер служил при дворе Марии Лещинской, супруги Людовика XV. В 1730 году он открыл собственную кондитерскую — и она работает по тому же адресу до сих пор.\n\nStohrer связывают с историей <i>baba au rhum</i>, <i>puits d’amour</i> и других французских десертов. Но привычная сегодня ромовая баба возникла не сразу: ранние версии пропитывали вином, а рецептура постепенно менялась.\n\nДаже интерьер здесь представляет историческую ценность: оформление XIX века включено в реестр памятников Франции.\n\n📖 <a href=\"https://french.milovicake.ru/articles/stohrer-1730/\">История Maison Stohrer — Milovi School</a>\n\n#MiloviSchool #ИсторияКондитерских",
   "editorial_guards": {
     "school_separate_educational_content": true,
     "contains_product_process_claim": false,
@@ -37,5 +37,6 @@
     "school_article_id": "stohrer-1730",
     "school_article_url": "https://french.milovicake.ru/articles/stohrer-1730/"
   },
-  "execution_note": "Owner 2026-11-06 requested Milovi School story/photo/link Telegram promotions; scheduled only after first ten verified Cake native video posts."
+  "execution_note": "Owner 2026-11-06 requested Milovi School story/photo/link Telegram promotions; scheduled only after first ten verified Cake native video posts.",
+  "editorial_style": "Telegram HTML: one bold title, one italic opening, native clickable source link, factual body, minimal tags; no repetitive photo-credit line"
 }
