@@ -87,3 +87,28 @@ Publishing still must happen only when the precise due window opens, through
 the existing GitHub Actions single-writer workflow after fresh checks of
 protected state and current main, with durable intent and one attempt.
 **Merge and validate are not Telegram publication**.
+
+
+## One-time GitHub due dispatch (after explicit owner approval)
+
+The account already has the maximum 5 ChatGPT scheduled tasks; do not
+delete or displace unrelated agents' automations. Use normal repository
+infrastructure for this *single* exact release instead.
+
+- Workflow: .github/workflows/milovi-telegram-exact-due-20261107.yml
+- Cron trigger: 2026-11-07 08:07 UTC = 11:07 Europe/Moscow.
+- GitHub cron may be delayed; the dispatcher checks real UTC time and
+  refuses every invocation outside [08:00, 10:00) UTC on that date.
+- The workflow also rejects a stale main, changed release/digest, missing
+  owner approval or absent/inconsistent durable release ledger/index.
+- Manual workflow_dispatch runs are permanent **read-only dry-runs**.
+- On the exact date only, a pending/impossible record with zero intent
+  permits dispatch of milovi-telegram-feed-publisher.yml with
+  PUBLISH:@MiloviCake:milovi-feed-20261107-002.
+- This dispatcher never handles a Telegram bot token or calls Telegram.
+  The existing writer has the real bot/target proof, concurrency control,
+  one durable intent/attempt, terminal outcome, and verified message id.
+- Already-published verified records are skipped; unknown, dispatching,
+  failed, or unverified states halt. **Never blindly retry**.
+- After 2026-11-07 this schedule becomes inert even if GitHub triggers it
+  in later years; remove only after preserving audit evidence.
