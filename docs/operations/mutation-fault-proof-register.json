@@ -1225,6 +1225,32 @@
           "claim": "Interrupted result journal commit after a provider acknowledgement leaves dispatch intent and disallows a second wall.post"
         }
       ]
+    },
+    {
+      "boundary_id": "lordchrist.quote.v6.telegram.send",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_before_dispatch_rejects_unverified_intent",
+          "claim": "tampered exact intent is rejected before sendMessage and durable dispatching record remains blocking"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_after_dispatch_before_response_is_unknown_without_replay",
+          "claim": "one lost-response mutation writes an unknown may_exist state and never permits a next dispatch"
+        },
+        {
+          "stages": [
+            "after_response_before_commit"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_after_response_before_commit_cannot_replay",
+          "claim": "crash of durable result persistence after provider success leaves original dispatching may_exist intent blocking the second send"
+        }
+      ]
     }
   ],
   "cross_cutting_proofs": [
