@@ -11,6 +11,7 @@ import pytest
 from scripts import milovi_school_reading_due as school
 from video_channel_manager.milovi_telegram_feed import validate_bundle
 from video_channel_manager.telegram_multichannel_release import load_release
+from video_channel_manager.telegram_multichannel_transport import GenericRichPhotoPayload
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_ROOT = ROOT / "content/telegram/milovi-cake/releases"
@@ -57,7 +58,18 @@ def test_three_exact_school_photo_releases_keep_cake_and_school_distinct() -> No
         assert release.items[0].payload.media_sha256 == media["transport"]["sha256"]
         assert candidate["caption_sha256"] == "sha256:" + hashlib.sha256(caption.encode("utf-8")).hexdigest()
         assert len(caption) < 1024
-        assert "Иллюстрация — Milovi School." in caption
+        if slug == "paris-brest-race-dessert":
+            assert "Иллюстрация — Milovi School." in caption  # legacy Nov 17 never actually sends after Nov6
+            assert release.items[0].payload.schema_version == 1
+        else:
+            assert "Иллюстрация — Milovi School." not in caption
+            assert isinstance(release.items[0].payload, GenericRichPhotoPayload)
+            assert release.items[0].payload.schema_version == 2
+            assert release.items[0].payload.parse_mode == "HTML"
+            assert sum(e.type == "text_link" for e in release.items[0].payload.expected_caption_entities) == 1
+            assert any(e.type == "bold" for e in release.items[0].payload.expected_caption_entities)
+            assert any(e.type == "italic" for e in release.items[0].payload.expected_caption_entities)
+            assert len(release.items[0].payload.expected_plain_caption) < 1024
         assert f"https://french.milovicake.ru/articles/{slug}/" in caption
 
 

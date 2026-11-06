@@ -30,8 +30,10 @@
       "image_sha256": "sha256:1f8497984b1b65564cbbf2deda5a5481d97b85c8ce72981f32776e282f9bb77b",
       "jpeg_sha256": "sha256:875a2e9696bcf673993758956b9ee7fdf55ebd26f118f3de2f42c518a917650e",
       "jpg_bytes": 375303,
-      "caption_length": 630,
-      "release_digest": "sha256:1db4cd061b8ed44c16a74131b8fd18b99a1aaf9912978a4547a19ab8cfbe9564"
+      "caption_length": 727,
+      "release_digest": "sha256:a6fb6bb840bf624eb1630833f483b2bfcd1f0b5f01fd3a275fff6ea73f9cd092",
+      "caption_sha256": "sha256:ec6b9b850420b28ba59353745be792be0d1936a81e59d2f94b2cbe7631a0f246",
+      "telegram_rich_entities": 6
     },
     {
       "publication_id": "milovi-feed-20261125-001",
@@ -41,8 +43,10 @@
       "image_sha256": "sha256:fc379f006cc76f99641a555d32649912c7cf7248b21f2ba5ffe30fdddcbbeb0b",
       "jpeg_sha256": "sha256:1fefaefc94ff7af0e1c9410899c9f51158f0783dfa34919f6b88b4798bb9e487",
       "jpg_bytes": 418542,
-      "caption_length": 645,
-      "release_digest": "sha256:5c8702f05799dba96f1e20fe927fb8351010f5a3d80b716b5db0c415e9d90821"
+      "caption_length": 688,
+      "release_digest": "sha256:37d4bd10abe9e71ccd30a4ec491f29293a292290a8b30d6d0de204636bd7f430",
+      "caption_sha256": "sha256:802f6195667506e90fe8dc8ddafcec46799a58d9ad5e4af5467ece3b6a0b07e9",
+      "telegram_rich_entities": 5
     }
   ],
   "owner_early_exception": {
@@ -54,5 +58,20 @@
     "no_second_paris_brest_on_nov17": true,
     "other_school_posts_require_ten_cake_video_receipts": true,
     "delivery_completed": false
+  },
+  "editorial_style_20261106": {
+    "style": "quiet facts first; Telegram rich HTML only for future photos",
+    "plain_text_headline": false,
+    "bold_headline": true,
+    "one_italic_lead": true,
+    "one_contextual_html_link": true,
+    "remove_caption_credit": true,
+    "no_product_or_recipe_claims": true,
+    "audience_call_to_action": "read the source article once",
+    "emoji_max": 2,
+    "hashtags_max": 2,
+    "published_20261106_not_edited": true,
+    "no_auto_edit_telegram_message_27": true,
+    "revision_requires_protected_pending_ledger_migration": true
   }
 }

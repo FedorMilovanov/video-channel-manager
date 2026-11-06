@@ -323,3 +323,109 @@ def test_preflight_rejects_get_chat_member_identity_drift() -> None:
                 now=NOW,
             )
     assert exc_info.value.provider_effect == "not_dispatched"
+
+
+def test_rich_photo_html_multipart_preserves_formatted_entities_and_source_link(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from video_channel_manager.telegram_multichannel_transport import (
+        GenericRichPhotoPayload,
+        render_rich_photo_payload,
+    )
+
+    profile = _profile()
+    target = _target(profile)
+    media = b"exact-rich-photo-contract-bytes"
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
+    html = (
+        "🥐 <b>Круассан</b>\n\n<i>Венские корни</i>\n\n"
+        '📖 <a href="https://french.milovicake.ru/articles/croissant-history/">Milovi School</a>'
+    )
+    payload = render_rich_photo_payload(
+        profile,
+        publication_id="svodka-photo-html-contract-test",
+        html_caption=html,
+        media_path=str(media_path),
+        media_sha256="sha256:" + hashlib.sha256(media).hexdigest(),
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    assert isinstance(payload, GenericRichPhotoPayload)
+    assert payload.schema_version == 2
+    assert len(payload.expected_caption_entities) == 3
+    assert payload.expected_plain_caption.startswith("🥐 Круассан")
+    old = render_photo_payload(
+        profile,
+        publication_id=payload.publication_id,
+        caption=html,
+        media_path=str(media_path),
+        media_sha256=payload.media_sha256,
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    assert old.provider_payload_sha256 != payload.provider_payload_sha256
+    changes = render_rich_photo_payload(
+        profile,
+        publication_id=payload.publication_id,
+        html_caption=html.replace("<b>", "<i>").replace("</b>", "</i>"),
+        media_path=str(media_path),
+        media_sha256=payload.media_sha256,
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    assert changes.provider_payload_sha256 != payload.provider_payload_sha256
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        assert b'name="parse_mode"' in request.content
+        assert b"HTML" in request.content
+        assert html.encode("utf-8") in request.content
+        assert media in request.content
+        response = _photo_result(payload, caption=payload.expected_plain_caption)
+        response["result"]["caption_entities"] = [
+            e.model_dump(mode="json", exclude_none=True) for e in payload.expected_caption_entities
+        ]
+        response["result"]["caption_entities"].append({"type": "hashtag", "offset": 0, "length": 2})
+        return httpx.Response(200, json=response, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        receipt = send_photo_once(profile, target, payload, token="test-token", client=client, now=NOW)
+    assert len(calls) == 1
+    assert receipt.message_id == 91
+    assert receipt.provider_effect == "verified"
+
+
+def test_rich_photo_mismatched_telegram_link_is_not_verified(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from video_channel_manager.telegram_multichannel_transport import render_rich_photo_payload
+
+    profile = _profile()
+    media = b"same-photo"
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
+    payload = render_rich_photo_payload(
+        profile,
+        publication_id="svodka-photo-html-link-drift",
+        html_caption='<b>Факт</b> <a href="https://example.test/good">источник</a>',
+        media_path=str(media_path),
+        media_sha256="sha256:" + hashlib.sha256(media).hexdigest(),
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        response = _photo_result(payload, caption=payload.expected_plain_caption)
+        entities = [e.model_dump(mode="json", exclude_none=True) for e in payload.expected_caption_entities]
+        for e in entities:
+            if e["type"] == "text_link":
+                e["url"] = "https://example.test/wrong"
+        response["result"]["caption_entities"] = entities
+        return httpx.Response(200, json=response, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError, match="formatting/source link") as ex:
+            send_photo_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+    assert ex.value.provider_effect == "may_exist"
+    assert calls == 1
