@@ -1,0 +1,42 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261125-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:ade7ed5ba38cd03ca8b97bb7e44f04f3aebf7f03506c56cf8f90a0023c27a2c5",
+  "reviewed_publication_id": "milovi-feed-20261125-001",
+  "reviewed_by": "Owner's 2026-11-06 direct request for Milovi School article+image+website promotions in Milovi Cake Telegram",
+  "reviewed_at": "2026-11-06T20:23:56.330154+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261125-001",
+      "scheduled_at": "2026-11-25T12:30:00+03:00",
+      "source_sha256": "sha256:fc379f006cc76f99641a555d32649912c7cf7248b21f2ba5ffe30fdddcbbeb0b",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261125-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:5b21ef36c094b110e32d6adc5e55fa7f982b204c19cc2469db18d1b499215ce1",
+        "caption": "🏛 КОНДИТЕРСКАЯ, КОТОРАЯ РАБОТАЕТ С 1730 ГОДА\n\nВ Париже на rue Montorgueil, 51, и сегодня работает Maison Stohrer. Её история начинается с Николя Шторера — кондитера при дворе Марии Лещинской, супруги Людовика XV.\n\nЗдесь витрина похожа на гастрономический архив: baba au rhum, religieuse, puits d’amour. Но между историей дома и легендой о «рецепте, не менявшемся три столетия» есть важная разница.\n\n📖 Что действительно сохранилось с XVIII века, а что менялось — в нашем отдельном образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/stohrer-1730/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияКондитерскогоИскусства",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261125-001.jpg",
+        "media_sha256": "sha256:1fefaefc94ff7af0e1c9410899c9f51158f0783dfa34919f6b88b4798bb9e487",
+        "media_byte_size": 418542,
+        "media_filename": "milovi-feed-20261125-001.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}
