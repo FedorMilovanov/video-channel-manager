@@ -152,7 +152,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 lambda: self._http_client.request(
                     method,
                     url,
-                    params=httpx.QueryParams(params or {}),
+                    params=httpx.QueryParams(params) if params else None,
                     headers=request_headers,
                 ),
                 provider="YouTube",
@@ -193,7 +193,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 lambda: self._http_client.request(
                     method,
                     url,
-                    params=httpx.QueryParams(params or {}),
+                    params=httpx.QueryParams(params) if params else None,
                     headers=request_headers,
                     json=json_body,
                     content=content,
@@ -359,15 +359,19 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if not 0 <= offset < media_size_bytes:
             raise YouTubeReleaseProviderError("Upload offset is outside the immutable media range.")
         remaining = media_size_bytes - offset
+        media_headers = {
+            "Content-Length": str(remaining),
+            "Content-Type": media_mime_type,
+        }
+        # Google's full-file PUT must preserve the exact upload session URL and
+        # must not send Content-Range. Partial resumes require Content-Range.
+        if offset:
+            media_headers["Content-Range"] = f"bytes {offset}-{media_size_bytes - 1}/{media_size_bytes}"
         response, failure = self._mutation_request(
             "PUT",
             session_url,
             resource="videos.insert.resumable-media",
-            headers={
-                "Content-Length": str(remaining),
-                "Content-Type": media_mime_type,
-                "Content-Range": f"bytes {offset}-{media_size_bytes - 1}/{media_size_bytes}",
-            },
+            headers=media_headers,
             content=_file_chunks(media_path, offset=offset),
         )
         if failure is not None:

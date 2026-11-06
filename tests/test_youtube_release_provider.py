@@ -186,7 +186,8 @@ def test_upload_308_proves_incomplete_and_exact_next_offset(tmp_path: Path) -> N
     media.write_bytes(b"0123456789")
 
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.headers["content-range"] == "bytes 0-9/10"
+        assert "content-range" not in request.headers
+        assert request.headers["content-length"] == "10"
         return httpx.Response(308, headers={"Range": "bytes=0-4"}, request=request)
 
     provider = _provider(tmp_path, handler)
@@ -492,3 +493,78 @@ def test_top_level_comment_reuses_repository_writer(monkeypatch, tmp_path: Path)
         provider.close()
     assert result.provider_effect == "verified"
     assert result.remote_id == "comment-1"
+
+
+def test_full_upload_preserves_google_resumable_session_query(tmp_path: Path) -> None:
+    media = tmp_path / "video.mp4"
+    media.write_bytes(b"0123456789")
+    session = SESSION + "&uploadType=resumable&part=snippet%2Cstatus"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "PUT"
+        assert str(request.url) == session
+        assert request.url.params["upload_id"] == "abc123"
+        assert request.url.params["part"] == "snippet,status"
+        assert request.headers["content-length"] == "10"
+        assert request.headers["content-type"] == "video/mp4"
+        assert "content-range" not in request.headers
+        assert request.read() == b"0123456789"
+        return httpx.Response(201, json={"id": "video123"}, request=request)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        result = provider.upload_media(
+            session_url=session,
+            media_path=media,
+            media_size_bytes=10,
+            media_mime_type="video/mp4",
+            offset=0,
+        )
+    finally:
+        provider.close()
+    assert result.provider_effect == "verified"
+    assert result.remote_id == "video123"
+
+
+def test_resumed_upload_preserves_session_query_and_content_range(tmp_path: Path) -> None:
+    media = tmp_path / "video.mp4"
+    media.write_bytes(b"0123456789")
+    session = SESSION + "&uploadType=resumable"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == session
+        assert request.url.params["upload_id"] == "abc123"
+        assert request.headers["content-range"] == "bytes 5-9/10"
+        assert request.headers["content-length"] == "5"
+        assert request.read() == b"56789"
+        return httpx.Response(201, json={"id": "resumed123"}, request=request)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        result = provider.upload_media(
+            session_url=session,
+            media_path=media,
+            media_size_bytes=10,
+            media_mime_type="video/mp4",
+            offset=5,
+        )
+    finally:
+        provider.close()
+    assert result.provider_effect == "verified"
+    assert result.remote_id == "resumed123"
+
+
+def test_safe_read_preserves_existing_query_when_no_params(tmp_path: Path) -> None:
+    uri = SESSION + "&part=snippet%2Cstatus"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == uri
+        assert request.url.params["upload_id"] == "abc123"
+        return httpx.Response(200, json={"items": []}, request=request)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        response = provider._safe_request("GET", uri, resource="test-session-url")
+    finally:
+        provider.close()
+    assert response.status_code == 200
