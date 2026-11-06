@@ -612,6 +612,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/lordchrist_quote_v6_native_readonly.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "844a3f1f38ab4eb890ed9a572654e5c02c61d405bc248f9211d18d772f25ea56",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/lordchrist_quote_v6_preview.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
