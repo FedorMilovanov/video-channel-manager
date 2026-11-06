@@ -325,6 +325,57 @@ def _require_only_binding(paths: dict[str, Path], allowed: str) -> None:
             raise ValueError(f"{allowed} Milovi feed bundle must not carry a {binding_name} binding")
 
 
+def retired_publication_ids() -> set[str]:
+    """Enumerate only immutable, evidence-backed tombstones; never auto-retry."""
+    data = _read_json(RETIRED_PUBLICATIONS_PATH)
+    if data.get("schema_name") != "video-channel-manager.milovi-feed-retired-publications":
+        raise ValueError("unexpected Milovi retired-publications contract")
+    entries = data.get("retired_publication_ids")
+    if not isinstance(entries, dict):
+        raise ValueError("Milovi retired-publications registry must be a dictionary")
+    return set(entries)
+
+
+def validate_retired_bundle(publication_id: str) -> dict[str, Any]:
+    """Verify a retired historical release is held, not merely skip validation."""
+    entry = _read_json(RETIRED_PUBLICATIONS_PATH)["retired_publication_ids"].get(publication_id)
+    if not isinstance(entry, dict):
+        raise ValueError("Milovi publication is not in the exact retired registry")
+    if entry.get("restore_or_retry_allowed") is not False or entry.get("provider_write_performed") is not False:
+        raise ValueError("retired publication registry must forbid replay and provider writes")
+    path = Path(str(entry["candidate_path"]))
+    candidate_bytes = path.read_bytes()
+    if _sha256_bytes(candidate_bytes) != entry["candidate_file_sha256"]:
+        raise ValueError("retired Milovi candidate was changed after terminalization")
+    candidate = _read_json(path)
+    if (
+        candidate.get("publication_id") != publication_id
+        or candidate.get("project_key") != PROJECT_KEY
+        or not isinstance(candidate.get("caption"), str)
+        or candidate["caption"].count("?") < 10
+    ):
+        raise ValueError("retired Milovi candidate is no longer the proven corrupt transcript")
+    _require_provider_inert_candidate(candidate, publication_id)
+    paths = exact_paths(publication_id)
+    release = load_release(paths["release"])
+    authority = _load_authority(paths["authority"])
+    if (
+        release.release_id != publication_id
+        or release.release_authorized
+        or authority.execution_authorized
+        or authority.provider_mutation_allowed
+        or authority.release_id != publication_id
+    ):
+        raise ValueError("retired Milovi publication unexpectedly contains an active authorization")
+    return {
+        "publication_id": publication_id,
+        "status": "retired_proven_never_send",
+        "candidate_sha256": entry["candidate_file_sha256"],
+        "provider_access_performed": False,
+        "provider_write_performed": False,
+    }
+
+
 def validate_bundle(
     publication_id: str,
     *,
@@ -332,8 +383,7 @@ def validate_bundle(
     require_execution_authorized: bool = False,
 ) -> dict[str, Any]:
     paths = exact_paths(publication_id)
-    retired = _read_json(RETIRED_PUBLICATIONS_PATH)
-    if publication_id in retired["retired_publication_ids"]:
+    if publication_id in retired_publication_ids():
         raise ValueError("Milovi publication identity is permanently retired: unreadable UTF-8 candidate")
     profile = load_channel_profile(Path("content/telegram/channels/milovi-cake.json"))
     if (

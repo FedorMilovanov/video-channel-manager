@@ -15,6 +15,12 @@ BASE = Path("content/telegram/milovi-cake")
 def test_november_v12_corrupt_cyrillic_bundle_is_permanently_retired() -> None:
     # Before launch, a Windows code-page error replaced the Russian caption
     # with literal '?' characters. Never revive this digest-bound identity.
+    from video_channel_manager.milovi_telegram_feed import validate_retired_bundle
+
+    proof = validate_retired_bundle(ID)
+    assert proof["status"] == "retired_proven_never_send"
+    assert proof["provider_access_performed"] is False
+    assert proof["provider_write_performed"] is False
     with pytest.raises(ValueError, match="permanently retired"):
         validate_bundle(ID)
     with pytest.raises(ValueError, match="permanently retired"):
