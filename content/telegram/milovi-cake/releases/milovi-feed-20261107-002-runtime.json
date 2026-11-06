@@ -11,11 +11,11 @@
   "chat_id": -1002215328390,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "release_authorized": false,
-  "reviewed_candidate_sha256": null,
-  "reviewed_publication_id": null,
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:9fc771f328b91d07600c1d64e9bac14b57d3607547d66c83dde29bd5dc3a9106",
+  "reviewed_publication_id": "milovi-feed-20261107-002",
+  "reviewed_by": "MILOVI CAKE owner via explicit ChatGPT instruction, 2026-11-06",
+  "reviewed_at": "2026-11-06T04:38:29.002503+03:00",
   "items": [
     {
       "sequence": 1,
