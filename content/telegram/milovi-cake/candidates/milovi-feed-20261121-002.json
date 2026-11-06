@@ -13,14 +13,14 @@
   "operation": "sendPhoto",
   "media": {
     "media_id": "school-croissant",
-    "source_path": "public/images/articles/croissant-history.webp",
-    "source_git_blob_sha1": "eecdbaa2cfde81b77e20bf633d3dd31eea037961",
-    "source_sha256": "sha256:1d3ad261d2885cf48624d914d6f4a87146d90b293365b00494611a5bf9293978",
+    "source_path": "public/images/articles/body-croissant-golden-baked.webp",
+    "source_git_blob_sha1": "1803623140a9c28bd9e8399c328cfb7b250b688e",
+    "source_sha256": "sha256:1f8497984b1b65564cbbf2deda5a5481d97b85c8ce72981f32776e282f9bb77b",
     "transport_format": "image/jpeg",
-    "transport_byte_size": 230156,
-    "transport_sha256": "sha256:c62ba06336abcaa3251d0e434b6e1b5d95b1c0fbce5918cef7871f15f0860829",
+    "transport_byte_size": 375303,
+    "transport_sha256": "sha256:875a2e9696bcf673993758956b9ee7fdf55ebd26f118f3de2f42c518a917650e",
     "pixel_width": 1280,
-    "pixel_height": 800
+    "pixel_height": 796
   },
   "caption_sha256": "sha256:9ce563412844414a8b6687d2dd4638d776b5a7acd64b92dfd709479fab1fdca6",
   "caption": "🥐 КРУАССАН НЕ ВСЕГДА БЫЛ СЛОЁНЫМ\n\nУ австрийского kipferl уже была форма полумесяца, но не было тех тонких хрустящих слоёв, за которые ценят современный французский круассан. В XIX веке венская выпечка пришла в Париж; позднее пекари объединили дрожжевое тесто с турированным маслом.\n\nА известная история о пекарях, спасших Вену в 1683 году, остаётся легендой — достоверных подтверждений ей нет.\n\n📖 Как выпечка с центральноевропейскими корнями стала символом Франции — в нашем образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/croissant-history/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияВыпечки",

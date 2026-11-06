@@ -101,7 +101,8 @@ def validate_exact_releases() -> None:
             and item.scheduled_at.astimezone(ZONE).strftime("%H:%M") == "12:30"
             and media["source"]["repository"] == SCHOOL_REPO
             and media["source"]["commit"] == SOURCE_COMMIT
-            and media["source"]["path"] == f"public/images/articles/{slug}.webp"
+            and media["source"]["path"]
+            == f"public/images/articles/{'body-croissant-golden-baked' if slug == 'croissant-history' else slug}.webp"
             and candidate["source_context"]["school_article_url"] == f"https://french.milovicake.ru/articles/{slug}/"
             and item.payload.caption.count(f"https://french.milovicake.ru/articles/{slug}/") == 1
             and "Иллюстрация — Milovi School." in item.payload.caption

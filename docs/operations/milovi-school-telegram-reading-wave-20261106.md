@@ -10,7 +10,7 @@ Owning scope: Milovi Cake Telegram #353. Owner explicitly requested posts sharin
 | 21 Nov 2026 | 12:30 (GitHub 12:37) | `milovi-feed-20261121-002` | https://french.milovicake.ru/articles/croissant-history/ |
 | 25 Nov 2026 | 12:30 (GitHub 12:37) | `milovi-feed-20261125-001` | https://french.milovicake.ru/articles/stohrer-1730/ |
 
-All three are native Telegram photos, not link-only previews: 1280×800 WebP from the exact public `FedorMilovanov/Milovi_School` commit `f540e8d6fca89592a8394e0a707e6af0d85afc14`, converted deterministically to JPEG with Pillow 13.0.0 using the existing Milovi feed media contract. Provider-facing captions are fully written, <1024 chars, in Russian. Each story features a specific historical fact, a short contextual explanation, an educational project link and an image-disclosure line. No product CTA or Cake production-lineage implication.
+All three are native Telegram photos, not link-only previews: source WebP at 1280×800 (Paris-Brest, Stohrer) or 1280×796 (the superior visually inspected `body-croissant-golden-baked.webp` Croissant figure, rather than the ambiguous round `croissant-history.webp` hero) from the exact public `FedorMilovanov/Milovi_School` commit `f540e8d6fca89592a8394e0a707e6af0d85afc14`, converted deterministically to JPEG with Pillow 13.0.0 using the existing Milovi feed media contract. Provider-facing captions are fully written, <1024 chars, in Russian. Each story features a specific historical fact, a short contextual explanation, an educational project link and an image-disclosure line. No product CTA or Cake production-lineage implication.
 
 ## Hard independent safety gates
 

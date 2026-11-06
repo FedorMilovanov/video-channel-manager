@@ -26,12 +26,12 @@
       "publication_id": "milovi-feed-20261121-002",
       "date": "2026-11-21T12:30:00+03:00",
       "article_id": "croissant-history",
-      "image_source_path": "public/images/articles/croissant-history.webp",
-      "image_sha256": "sha256:1d3ad261d2885cf48624d914d6f4a87146d90b293365b00494611a5bf9293978",
-      "jpeg_sha256": "sha256:c62ba06336abcaa3251d0e434b6e1b5d95b1c0fbce5918cef7871f15f0860829",
-      "jpg_bytes": 230156,
+      "image_source_path": "public/images/articles/body-croissant-golden-baked.webp",
+      "image_sha256": "sha256:1f8497984b1b65564cbbf2deda5a5481d97b85c8ce72981f32776e282f9bb77b",
+      "jpeg_sha256": "sha256:875a2e9696bcf673993758956b9ee7fdf55ebd26f118f3de2f42c518a917650e",
+      "jpg_bytes": 375303,
       "caption_length": 630,
-      "release_digest": "sha256:967a9216460c5231421e0651ff12a42141e4b741b9784997bb04fbee1e39fb83"
+      "release_digest": "sha256:1db4cd061b8ed44c16a74131b8fd18b99a1aaf9912978a4547a19ab8cfbe9564"
     },
     {
       "publication_id": "milovi-feed-20261125-001",

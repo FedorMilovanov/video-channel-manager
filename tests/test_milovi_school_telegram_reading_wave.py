@@ -42,9 +42,12 @@ def test_three_exact_school_photo_releases_keep_cake_and_school_distinct() -> No
         assert approval["blind_mutation_retries"] == 0
         assert media["source"]["repository"] == school.SCHOOL_REPO
         assert media["source"]["commit"] == school.SOURCE_COMMIT
-        assert media["source"]["path"] == f"public/images/articles/{slug}.webp"
+        assert (
+            media["source"]["path"]
+            == f"public/images/articles/{'body-croissant-golden-baked' if slug == 'croissant-history' else slug}.webp"
+        )
         assert media["source"]["pixel_width"] == 1280
-        assert media["source"]["pixel_height"] == 800
+        assert media["source"]["pixel_height"] == (796 if slug == "croissant-history" else 800)
         assert media["transport"]["format"] == "image/jpeg"
         assert candidate["editorial_guards"]["school_separate_educational_content"] is True
         assert candidate["editorial_guards"]["contains_product_process_claim"] is False
