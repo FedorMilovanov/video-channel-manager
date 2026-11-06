@@ -109,7 +109,7 @@ class GenericPhotoPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-photo-payload"]
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2]
     project_key: str
     channel_username: str
     publication_id: str
@@ -124,6 +124,10 @@ class GenericPhotoPayload(BaseModel):
 
     @model_validator(mode="after")
     def validate_media_path(self) -> "GenericPhotoPayload":
+        # The legacy v1 class never accepts a v2 payload without typed HTML proof.
+        # The rich-photo subclass supplies the exact v2 schema and entity checks.
+        if type(self) is GenericPhotoPayload and self.schema_version != 1:
+            raise ValueError("legacy photo cannot masquerade as rich-photo schema v2")
         path = Path(self.media_path)
         if path.is_absolute() or ".." in path.parts:
             raise ValueError("photo media_path must be repository-relative without parent traversal")

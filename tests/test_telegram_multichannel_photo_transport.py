@@ -429,3 +429,19 @@ def test_rich_photo_mismatched_telegram_link_is_not_verified(tmp_path: Path, mon
             send_photo_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
     assert ex.value.provider_effect == "may_exist"
     assert calls == 1
+
+
+def test_legacy_photo_class_rejects_fake_v2_without_typed_html_proof(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from pydantic import ValidationError
+    from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload
+
+    profile = _profile()
+    media = b"schema-identity"
+    path = _write_relative_media(tmp_path, monkeypatch, media)
+    legacy = _photo_payload(profile, path, media)
+    raw = legacy.model_dump(mode="json")
+    raw["schema_version"] = 2
+    with pytest.raises(ValidationError, match="masquerade"):
+        GenericPhotoPayload.model_validate(raw)
