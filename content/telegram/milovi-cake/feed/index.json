@@ -241,8 +241,8 @@
     "milovi-feed-20261121-002": {
       "publication_id": "milovi-feed-20261121-002",
       "release_id": "milovi-feed-20261121-002",
-      "release_candidate_sha256": "sha256:73aa78fc7508a9a508e1990eee1489abd862141201fed197c45046d1241822c0",
-      "provider_payload_sha256": "sha256:2169fec7b56fa6d6bb082c78cdc29a590e167aa4b4785ae7dd32e1c42899c520",
+      "release_candidate_sha256": "sha256:31a3967bdbd51b0d09089f6bb7ef476414cab3e445a7e8a15ad1c43d4a8cdfd2",
+      "provider_payload_sha256": "sha256:4774a71af54e3dc31aa4f43d4071b203fdd02126cb4ac696b8d94f9f363211a6",
       "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261121-002.json",
       "state": "pending",
       "provider_effect": "impossible",
@@ -254,8 +254,8 @@
     "milovi-feed-20261125-001": {
       "publication_id": "milovi-feed-20261125-001",
       "release_id": "milovi-feed-20261125-001",
-      "release_candidate_sha256": "sha256:ade7ed5ba38cd03ca8b97bb7e44f04f3aebf7f03506c56cf8f90a0023c27a2c5",
-      "provider_payload_sha256": "sha256:5b21ef36c094b110e32d6adc5e55fa7f982b204c19cc2469db18d1b499215ce1",
+      "release_candidate_sha256": "sha256:7cc0c85cdbb092b633ff090a4fa77a9d73ce1d68e18000fa73f8a326fd256325",
+      "provider_payload_sha256": "sha256:40c2e4e3f208d102d4ed960e6671650732bae7bbc6f65105580f5695fc972c51",
       "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261125-001.json",
       "state": "pending",
       "provider_effect": "impossible",

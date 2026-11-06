@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.telegram-generic-publication-ledger",
   "schema_version": 1,
-  "release_digest": "sha256:1db4cd061b8ed44c16a74131b8fd18b99a1aaf9912978a4547a19ab8cfbe9564",
+  "release_digest": "sha256:a6fb6bb840bf624eb1630833f483b2bfcd1f0b5f01fd3a275fff6ea73f9cd092",
   "release_id": "milovi-feed-20261121-002",
   "project_key": "milovi-cake",
   "channel_username": "@MiloviCake",
@@ -9,7 +9,7 @@
   "entries": {
     "milovi-feed-20261121-002": {
       "publication_id": "milovi-feed-20261121-002",
-      "provider_payload_sha256": "sha256:2169fec7b56fa6d6bb082c78cdc29a590e167aa4b4785ae7dd32e1c42899c520",
+      "provider_payload_sha256": "sha256:4774a71af54e3dc31aa4f43d4071b203fdd02126cb4ac696b8d94f9f363211a6",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
