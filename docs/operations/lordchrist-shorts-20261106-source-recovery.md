@@ -45,3 +45,41 @@ The fix explicitly decodes ffprobe JSON as UTF-8 with replacement for malformed 
 5. No recurring timer, release or Telegram upload was activated. Daily 16:00 Moscow remains only a provider-inert editorial cadence.
 
 This work does not modify YouTube #795, LordChrist existing quote/Charnock/Jude ledgers, other branches or protected state refs.
+
+
+## Owner-requested four-video deferred review, 6 November 2026
+
+A separate, provider-inert editorial preview now records exactly four
+owned-channel accepted MP4s: three John MacArthur videos proposed
+8, 9 and 10 November, and one John Piper video proposed 11 November,
+one per day at 16:00 Moscow. All source media, caption text and
+provenance SHA256s are pinned in
+content/telegram/lordchrist/shorts-piper-macarthur-deferred-review-20261106.json.
+
+This is NOT an active Telegram schedule and does not grant copyright
+clearance. The channel owner requested reuploads and deferred slots,
+but Desiring God expressly requires written permission for online
+audio/video re-uploads and for public translations; a specific request
+was sent 6 November and no affirmative answer is known. GTY's
+historical 2019 limited grant and 2026 pending management review
+cannot automatically be extended to unverified third-party footage
+or these exact native Telegram videos. Do not put private email
+correspondence or confidential identifiers in this public repository.
+
+No LordChrist provider writer, state ref or scheduled workflow is
+modified. Charnock/Jude/quote lanes have separate ownership.
+The Shorts policy still has telegram_provider_mutation_allowed=false.
+Publishing requires source-specific rightsholder evidence, latest
+public duplicate check, exact approved release, full durable state,
+serialization across existing writers and one verified Telegram receipt.
+
+### Frozen UTF-8 caption repair (provider-inert)
+
+A Windows PowerShell codepage damaged *only* the Russian source-label
+and hashtags in the first four-copy preview, saving literal question
+marks. New provider-inert captions regenerate the exact source label
+and Russian tags as Unicode; SHA256 is recomputed per exact caption.
+The source title, video ID, media bytes, 16:00 editorial date and
+rights/license holds are byte-identical. The new regression test
+fails closed on any run of four question marks, so a valid checksum
+of corrupted text cannot be accepted.

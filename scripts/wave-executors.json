@@ -630,6 +630,18 @@
       "status": "independent_tool"
     },
     {
+      "callers": [
+        ".github/workflows/lordchrist-quote-v6-publisher.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_quote_v6_publisher.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "c605ec0ffdbba14e30ed44a1212d2e719990bfefbd358c7f1abba2aa0dda035d",
+      "status": "independent_tool"
+    },
+    {
       "callers": [],
       "direct_entrypoint": true,
       "path": "scripts/lordchrist_quote_v6_release_candidate.py",

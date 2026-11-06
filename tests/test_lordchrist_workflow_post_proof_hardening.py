@@ -13,6 +13,7 @@ WRITER_GROUP = "group: lordchrist-telegram-publisher"
 QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
 QUIZ_SERIES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-poster.yml"
 TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
+QUOTE_V6_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quote-v6-publisher.yml"
 CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
 CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
@@ -22,6 +23,7 @@ EXPECTED_LOCK_PARTICIPANTS = {
     QUIZ_WORKFLOW,
     QUIZ_SERIES_WORKFLOW,
     TELEGRAPH_WORKFLOW,
+    QUOTE_V6_WORKFLOW,
     CHARNOCK_CORRECTION_WORKFLOW,
     CHARNOCK_SCHEDULE_WORKFLOW,
 }
@@ -64,9 +66,9 @@ def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run(
 
 def test_lordchrist_scheduler_preserves_three_moscow_windows_and_pins_runner() -> None:
     text = workflow_text()
-    assert 'cron: "0 7 * * *"' in text
+    assert 'cron: "0 7 * * *"' not in text  # retired old quote-v4
     assert 'cron: "17 16 * * 1,3,6"' in text
-    assert 'cron: "0 18 * * 2,5,0"' in text
+    assert 'cron: "0 18 * * 2,5,0"' not in text  # retired old quote-v4
     assert 'cron: "17 21 * * *"' not in text
     # These expressions are already the UTC form of the Moscow windows
     # (07:00 UTC = 10:00 Moscow, 18:00 UTC = 21:00 Moscow). A `timezone:` key

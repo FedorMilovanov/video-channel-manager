@@ -292,7 +292,9 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
 def _scan_python_mutation_callsites() -> list[tuple[str, str, str]]:
     callsites: list[tuple[str, str, str]] = []
     violations: list[tuple[str, str, str]] = []
-    for path in sorted((ROOT / "src").rglob("*.py")):
+    source_files = list((ROOT / "src").rglob("*.py"))
+    source_files.append(ROOT / "scripts/lordchrist_quote_v6_publisher.py")
+    for path in sorted(source_files):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         visitor = _MutationCallsiteVisitor(
             path.relative_to(ROOT).as_posix(),
