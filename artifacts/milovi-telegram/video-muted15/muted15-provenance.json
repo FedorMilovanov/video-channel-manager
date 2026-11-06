@@ -1,0 +1,183 @@
+{
+  "schema_name": "video-channel-manager.milovi-muted15-frozen-evidence",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "parent_artifact_commit": "f4f5512d7b60f1b9c61c293c07620b128536df27",
+  "parent_artifact_ref": "agent/milovi-video-accepted-73c578eff825",
+  "local_processing_manifest_sha256": "sha256:80ee7f9feab868160e5bfc55b9360b8daf205df92c38ff586cddc4e5fae672d0",
+  "content_reviewed": false,
+  "historical_duplicate_review_complete": false,
+  "rights_recorded_per_source": false,
+  "release_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "provider_write_performed": false,
+  "items_count": 15,
+  "items": [
+    {
+      "media_id": "v01",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v01-muted.mp4",
+      "sha256": "sha256:3425e096d2f5d47dc86594f1fde8b47db34e4623ce8ef7badcf338ddd5664ceb",
+      "byte_size": 4968773,
+      "parent_sha256": "sha256:34f1040ded2e32b1a901e8663e62fec272e4b5f05a76ef82c04767f89a894df6",
+      "video_stream_sha256": "sha256:95f88c10f9023e1f0a4289c8cc8ac25e3c7245f8587fde8c6665987aeb204630",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v02",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v02-muted.mp4",
+      "sha256": "sha256:b37ec688a7ce57b07ae89ba84a615cf5aa3db6d809a27d366751da8f3c750050",
+      "byte_size": 3594103,
+      "parent_sha256": "sha256:6f8134e728476cc3d867236459091de7645dfa600a0b49dcb42588a05dae7409",
+      "video_stream_sha256": "sha256:13294d1fa0e8e1c440b98842b65eb1556c77471362d347e9a8c2dacfa4f0dc1b",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v03",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v03-muted.mp4",
+      "sha256": "sha256:016689263305ea032358cb6bf86eece0a469d3d5f755815672c6854411101bc6",
+      "byte_size": 3131076,
+      "parent_sha256": "sha256:4a9f102232ea341c28a3ba576531e7901cd09346fcc3ccd168a4e73f02b0047d",
+      "video_stream_sha256": "sha256:ad4bc340081bc1ece306e4fb02a9366a7d6fd637371ebf1eb68cb0b2077eb6b3",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v04",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v04-muted.mp4",
+      "sha256": "sha256:8632cc1500bbda59c7da96c8d0a89d9a5567038df59c786a8d3622a6c729c884",
+      "byte_size": 2552773,
+      "parent_sha256": "sha256:42107adac60dc914c4de95eea96ea0269ebcae5782f0da1c184ebfbc73ddc203",
+      "video_stream_sha256": "sha256:24af9beb5c58009197aa96919a5edb1550d5f993e6395aeac54e985d494b322e",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v05",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v05-muted.mp4",
+      "sha256": "sha256:53a6f2adb50bc4aff4a57680dd12f17ac2f300603e526fa425c8a2c3779ef31e",
+      "byte_size": 2645565,
+      "parent_sha256": "sha256:e36e6dcd5656132febf992e2c9d58f99f71583c877e9f480ed19860a23aed524",
+      "video_stream_sha256": "sha256:10b2e789eefb53b86246afa41869528a2b18180fa4a1caac23277e37c0aac940",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v06",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v06-muted.mp4",
+      "sha256": "sha256:93f981439e3b1812e6bd7cb74bce27cf06076db648b7133e9c69cbdf9db70af1",
+      "byte_size": 2233030,
+      "parent_sha256": "sha256:ec7f26489d420122a2f073138e9ae87fea8f6122d7dad6e38a16aab96cb42d1b",
+      "video_stream_sha256": "sha256:87e7d20caaf9a79985c7bcb6ffabe9c714d1714f6f133498d06e84e0fd31854a",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v07",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v07-muted.mp4",
+      "sha256": "sha256:37591c36a5d17ac8abe902906305a596c161e283225ce47756ba0fcb29949a88",
+      "byte_size": 2281294,
+      "parent_sha256": "sha256:c31c38197e122d95d85d8539bbbd5bf1cd6a4648845dbde1dc23f553077b05f7",
+      "video_stream_sha256": "sha256:069633cdc6475964e588474191e440ac63d4de600f30c1bf9ccb729a980cd9d9",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v08",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v08-muted.mp4",
+      "sha256": "sha256:4326df7c8664224d5a9c6352f48821e81818a97678f43cb79abc7edfcc194450",
+      "byte_size": 3714295,
+      "parent_sha256": "sha256:5b59c58c3236264f54ecf7d154bef3a64660d9269a78dd6dabb5ac2dc4569a6b",
+      "video_stream_sha256": "sha256:b5edd4bba77b8896d96a392074bbe37964862d9ac1d46e3793d83ce1aef07406",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v09",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v09-muted.mp4",
+      "sha256": "sha256:bd9eb7d565d1a6bcc760fb9837827bc6b6a4900959a60b05bbb9f74ecf016c79",
+      "byte_size": 3463002,
+      "parent_sha256": "sha256:d7e8cb120b48a49e96d32c0365af2d0afe700439a3f3670688713448b6b410ca",
+      "video_stream_sha256": "sha256:69dd16e1477cb065d4d2e85434702f256127ee61a54cfcc658ca0fd96732374b",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v10",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v10-muted.mp4",
+      "sha256": "sha256:6a83b9f253bfaed2683d2a577dc0bcad5a8723057cb152406bab1b3785643882",
+      "byte_size": 3108399,
+      "parent_sha256": "sha256:31770e841825d74f5328d22984b82794639bb16c4a640fc2f933cdaae9eee89c",
+      "video_stream_sha256": "sha256:7b28ec471d86dd28d9dfc6c1aeab1c6d6292d6dc6f234fb998f32de32c13be36",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v11",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v11-muted.mp4",
+      "sha256": "sha256:f53f1fa455e2a69166361ac0412d8ed5c4aa14afe1bed27e048f41452786518b",
+      "byte_size": 2999579,
+      "parent_sha256": "sha256:d3560ee671464e2a575e2edb5122404236d288d4e436637018b8f39491623486",
+      "video_stream_sha256": "sha256:1b2592f9f166089a8cc197b3cd8df1a840c9b7f6b82382351e55c88fd624a36e",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v13",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v13-muted.mp4",
+      "sha256": "sha256:935bd2e405f61ccb5399227691902056eedd4d9618225db2d2e791e52dbe30f7",
+      "byte_size": 3906023,
+      "parent_sha256": "sha256:f1cb88f54f9f9f4f9d02cca83250d79477bdb38f2e4e9e4077979ab3e87895ad",
+      "video_stream_sha256": "sha256:cece60cf693d0e0a1450f9ab2e419d8ba14a1e51238a9fd4a9d07e67303ebab5",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v14",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v14-muted.mp4",
+      "sha256": "sha256:f71a02f13319b7929f46d7abc707f49adce3518873c71ed96d45d4b76f50a31f",
+      "byte_size": 4531682,
+      "parent_sha256": "sha256:f68343bee09f9e2ea3c98ae2ea43484a9a22e989a6e4e670a8af22c6bc93a5b8",
+      "video_stream_sha256": "sha256:a97d088935ee22f5bd9a141855ac3744b87b857916536883e8f694885156abe8",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v15",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v15-muted.mp4",
+      "sha256": "sha256:d49c0dced716363b963c142cc763d67d85a1e40d0f1b4553bc17d1fb0c379cab",
+      "byte_size": 3564352,
+      "parent_sha256": "sha256:509733fbd90f3f1403aac44415b4e16336b8e655a991fb17bb814acc550b92e9",
+      "video_stream_sha256": "sha256:22a8f9c1fb5f44f185b77483d0eb263880ee725c09b08cd5f50d2eff78629339",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    },
+    {
+      "media_id": "v16",
+      "path": "artifacts/milovi-telegram/video-muted15/milovi-v16-muted.mp4",
+      "sha256": "sha256:0a0b0c768fb198daca554529723116f19c440bed67802beb6fc36b86b83cbec4",
+      "byte_size": 3062073,
+      "parent_sha256": "sha256:bde7984c3ce390b3aec4fdd7359c7b24d79e5206bae853628c0b2039e90f44e0",
+      "video_stream_sha256": "sha256:b9b2ed057dc36fc4a54caf811a4881d5069eaca7480a65e80fa186a0b17f0796",
+      "audio_stream_count": 0,
+      "provider_write_performed": false,
+      "release_authorized": false
+    }
+  ]
+}
