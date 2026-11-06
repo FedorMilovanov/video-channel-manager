@@ -96,7 +96,7 @@ def _write_complete_receipts(plan_path: Path, backup_path: Path, result_path: Pa
                 "source_plan": str(plan_path),
                 "backup": str(backup_path),
                 "status": "completed",
-                "summary": {"postflight_verified": 1, "applied": 1},
+                "summary": {"postflight_verified": 1, "applied": 1, "attempted": 1},
                 "attempted": [{"video_id": "video-1"}],
                 "applied": [{"video_id": "video-1"}],
             }
@@ -209,4 +209,23 @@ def test_existing_readonly_report_is_never_overwritten(tmp_path: Path, monkeypat
         _run_reconcile(monkeypatch, plan_path, backup_path, result_path, report_path, writer)
     assert exc.value.exit_code == 2
     assert report_path.read_bytes() == b"original evidence"
-    assert writer.read_count == 1
+    assert writer.read_count == 0
+
+
+def test_completed_receipt_with_empty_backup_does_not_fake_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
+    plan = _plan(plan_path)
+    _write_complete_receipts(plan_path, backup_path, result_path, plan)
+    backup = json.loads(backup_path.read_text(encoding="utf-8"))
+    backup["operations"] = []
+    backup_path.write_text(json.dumps(backup), encoding="utf-8")
+    writer = ReadOnlyWriter("Reviewed final description")
+    with pytest.raises(typer.Exit) as exc:
+        _run_reconcile(monkeypatch, plan_path, backup_path, result_path, report_path, writer)
+    assert exc.value.exit_code == 2
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["outcome"] == "live_after_receipt_not_terminally_verified"
+    assert report["terminally_verified"] is False
+    assert report["safe_to_replay"] is False
