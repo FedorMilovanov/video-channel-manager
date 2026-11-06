@@ -157,8 +157,9 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
     assert '--scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}"' in workflow
     assert "production schedule chat id does not match configured Telegram target" not in workflow
     assert "LORDCHRIST_SCHEDULE_ENABLED is not true." not in workflow
-    assert 'cron: "0 7 * * *"' in workflow
-    assert 'cron: "0 18 * * 2,5,0"' in workflow
+    # Old quote-v4 slots are retired, not silently resurrected by workflow cron.
+    assert 'cron: "0 7 * * *"' not in workflow
+    assert 'cron: "0 18 * * 2,5,0"' not in workflow
     assert 'cron: "17 16 * * 1,3,6"' in workflow
     # The previous UTC-as-Moscow expressions fired three hours past every
     # documented slot boundary and must never return.
