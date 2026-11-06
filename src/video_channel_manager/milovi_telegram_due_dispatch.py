@@ -16,6 +16,7 @@ from typing import Any
 
 from video_channel_manager.milovi_telegram_feed import validate_bundle
 from video_channel_manager.telegram_multichannel_release import load_release
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 
 PUBLICATION_ID = "milovi-feed-20261107-002"
 EXPECTED_MEDIA_SHA256 = "sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7"
@@ -33,6 +34,8 @@ def require_exact_release() -> None:
     checked = validate_bundle(PUBLICATION_ID, require_execution_authorized=True)
     release = load_release(RELEASE_PATH)
     item = release.items[0]
+    if not isinstance(item.payload, GenericVideoPayload):
+        raise ValueError("exact due release must carry a bound video payload")
     if (
         not checked["valid"]
         or checked["blockers"]
