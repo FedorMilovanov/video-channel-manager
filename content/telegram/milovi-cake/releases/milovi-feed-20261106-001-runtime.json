@@ -1,0 +1,42 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261106-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:4b382b39a9c7e096b24b21e7391b2f0f675bf64870d689dd66ef72ed3f705fd3",
+  "reviewed_publication_id": "milovi-feed-20261106-001",
+  "reviewed_by": "Owner explicitly overrode Milovi School first-screen date barrier and authorized immediate native Paris-Brest send on Nov 6, 2026",
+  "reviewed_at": "2026-11-06T22:25:16.648979+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261106-001",
+      "scheduled_at": "2026-11-06T22:20:00+03:00",
+      "source_sha256": "sha256:ba5864dbc467722631281dc548e607306cf651ea338bb2a40051284e77a98b9c",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261106-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:5bcd87633c9da1e598fa352140533f971292649934cf68391f771d434fe91108",
+        "caption": "🚴 PARIS-BREST: ДЕСЕРТ В ЧЕСТЬ ВЕЛОГОНКИ\n\nПочему знаменитое французское пирожное напоминает велосипедное колесо? В 1910 году кондитер Луи Дюран посвятил Paris-Brest гонке Париж — Брест — Париж. Кольцо из заварного теста с кремом и пралине пережило сам повод и стало классикой.\n\nПочти через столетие Филипп Контисини предложил собственное прочтение этого десерта. Так история продолжается даже тогда, когда рецепт уже кажется каноническим.\n\n📖 Как спортивное событие превратилось в кондитерскую легенду — рассказываем в нашем отдельном образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/paris-brest-race-dessert/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияДесертов",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261106-001.jpg",
+        "media_sha256": "sha256:c5058fb212f3f5386af62d85ef4b25701f60ce4d338d7e7b87d0ec0b5a536e16",
+        "media_byte_size": 363866,
+        "media_filename": "milovi-feed-20261106-001.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}

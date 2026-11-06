@@ -44,5 +44,15 @@
       "caption_length": 645,
       "release_digest": "sha256:5c8702f05799dba96f1e20fe927fb8351010f5a3d80b716b5db0c415e9d90821"
     }
-  ]
+  ],
+  "owner_early_exception": {
+    "publication_id": "milovi-feed-20261106-001",
+    "source_equivalent_to": "milovi-feed-20261117-002",
+    "requested_immediate_send_on": "2026-11-06",
+    "owner_authorized_first_screen_exception": true,
+    "early_receipt_must_be_telegram_verified_before_nov17_suppression": true,
+    "no_second_paris_brest_on_nov17": true,
+    "other_school_posts_require_ten_cake_video_receipts": true,
+    "delivery_completed": false
+  }
 }

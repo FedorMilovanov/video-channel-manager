@@ -26,6 +26,8 @@ RELEASES = (
 # First screen contains actual native Cake videos. Never count pending, failed,
 # historical deleted canaries, or unverified mock deliveries.
 FIRST_TEN = ("milovi-feed-20261107-002",) + tuple(f"milovi-feed-202611{day:02d}-001" for day in range(8, 17))
+OWNER_EARLY_PARIS_BREST = "milovi-feed-20261106-001"
+ORIGINAL_PARIS_BREST = "milovi-feed-20261117-002"
 
 
 def _load_state_index(checkout: Path) -> dict[str, object]:
@@ -53,6 +55,38 @@ def _verified(entry: object, expected_pid: str) -> bool:
         and entry["message_id"] > 0
         and entry.get("message_url") is not None
     )
+
+
+def _early_paris_brest_verified(checkout: Path, entries: dict[str, object]) -> bool:
+    """Recognize only the owner-approved exact Nov 6 published photo, not a loose match."""
+    early = entries.get(OWNER_EARLY_PARIS_BREST)
+    if not _verified(early, OWNER_EARLY_PARIS_BREST):
+        return False
+    assert isinstance(early, dict)
+    release = load_release(ROOT / "releases" / f"{OWNER_EARLY_PARIS_BREST}-runtime.json")
+    original = load_release(ROOT / "releases" / f"{ORIGINAL_PARIS_BREST}-runtime.json")
+    if (
+        len(release.items) != 1
+        or release.channel_username != "@MiloviCake"
+        or release.chat_id != -1002215328390
+        or release.bot_id != 8716602202
+        or release.items[0].source_sha256 != original.items[0].source_sha256
+        or release.items[0].payload.caption != original.items[0].payload.caption
+        or release.items[0].payload.media_sha256 != original.items[0].payload.media_sha256
+    ):
+        raise ValueError("Owner's early School post identity differs from original Nov 17 story")
+    ledger = load_ledger(checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json", release)
+    item = ledger.entries[OWNER_EARLY_PARIS_BREST]
+    if not (
+        item.state == "published"
+        and item.provider_effect == "verified"
+        and item.actual_chat_id == release.chat_id
+        and item.bot_id == release.bot_id
+        and item.message_id == early["message_id"]
+        and item.message_url == early["message_url"]
+    ):
+        raise ValueError("Early School publication is not confirmed by exact protected provider receipt")
+    return True
 
 
 def require_first_ten_real_cake_videos(checkout: Path, entries: dict[str, object]) -> None:
@@ -133,6 +167,9 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
     if clock < slot or clock >= slot + timedelta(minutes=120):
         return {"dispatch": "false", "reason": "outside_reviewed_school_slot"}
     entries = _load_state_index(checkout)
+    early_verified = _early_paris_brest_verified(checkout, entries)
+    if pid == ORIGINAL_PARIS_BREST and early_verified:
+        return {"dispatch": "false", "reason": "original_story_already_sent_20261106"}
     require_first_ten_real_cake_videos(checkout, entries)
 
     # One shared provider account and index. Any unresolved effect anywhere blocks.
@@ -145,6 +182,8 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
             raise ValueError(f"unresolved Milovi channel-wide effect: {eid}")
     previous = [x for x in RELEASES if x[0] < clock.date().isoformat()]
     for _, prior_pid, _ in previous:
+        if prior_pid == ORIGINAL_PARIS_BREST and early_verified:
+            continue
         if not _verified(entries.get(prior_pid), prior_pid):
             raise ValueError(f"School reading strict predecessor not verified: {prior_pid}")
 
