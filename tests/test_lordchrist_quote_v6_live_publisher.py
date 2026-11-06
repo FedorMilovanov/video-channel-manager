@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -165,3 +165,121 @@ def test_no_external_user_interface_automation() -> None:
         forbidden not in source
         for forbidden in ("pyautogui", "SetForegroundWindow", "keybd_event", "win32clipboard", "ImageGrab")
     )
+
+
+def _prepared_v6_fault_fixture(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Produce immutable, stateful pre-send evidence without any provider request."""
+    import scripts.lordchrist_quote_v6_publisher as publisher
+    from video_channel_manager.telegram_state import save_ledger
+
+    queue = release_and_queue(ROOT)
+    ledger = initialize_ledger(queue)
+    attempt_at = datetime(2026, 11, 6, 8, 1, tzinfo=UTC)
+    proof = TargetProof(
+        schema_name="video-channel-manager.telegram-target-proof",
+        schema_version=2,
+        bot_id=8716602202,
+        bot_username="preaching_mp3_bot",
+        chat_id=-1001295216957,
+        chat_username="lordchrist",
+        chat_title="Господь Бог - Сила Моя",
+        chat_type="channel",
+        member_status="administrator",
+        can_post_messages=True,
+        checked_at_utc=attempt_at,
+    )
+    prepared = prepare_next(
+        queue,
+        ledger,
+        run_id="fault-stage-run",
+        run_attempt="1",
+        github_sha="b" * 40,
+        github_workflow_sha="b" * 40,
+        mode="manual",
+        target=proof,
+        expected_publication_id=FIRST_ID,
+        now=attempt_at,
+    )
+    assert prepared.envelope is not None
+    ledger_path = tmp_path / publisher.STATE_PATH / publisher.STATE_LEDGER
+    save_ledger(ledger_path, ledger)
+    monkeypatch.setattr(publisher, "release_and_queue", lambda _root: queue)
+    monkeypatch.setattr(publisher, "guard_cross_track", lambda _root: None)
+    monkeypatch.setattr(publisher, "load_dispatch", lambda _path: prepared.envelope)
+    monkeypatch.setattr(publisher, "utc_now", lambda: attempt_at + timedelta(minutes=1))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "fixture-token-not-a-real-credential")
+    return publisher, queue, ledger_path, prepared.envelope
+
+
+def test_quote_v6_fault_before_dispatch_rejects_unverified_intent(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """No request is attempted when the immutable intent text differs."""
+    publisher, queue, ledger_path, envelope = _prepared_v6_fault_fixture(monkeypatch, tmp_path)
+    import video_channel_manager.telegram_state as state
+
+    monkeypatch.setattr(publisher, "load_dispatch", lambda _path: envelope.model_copy(update={"text": "tampered"}))
+    calls: list[str] = []
+    monkeypatch.setattr(publisher, "_api_call", lambda *args, **kwargs: calls.append("send"))
+    with pytest.raises(ValueError, match="text differs"):
+        publisher.send(tmp_path)
+    assert calls == []
+    durable = state.load_ledger(ledger_path, queue)
+    assert durable.entries[FIRST_ID].state == "dispatching"
+    assert strict_next_post(queue, durable)[0] is None
+
+
+def test_quote_v6_fault_after_dispatch_before_response_is_unknown_without_replay(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Lost response causes one send and a durable may_exist blocker."""
+    publisher, queue, ledger_path, _envelope = _prepared_v6_fault_fixture(monkeypatch, tmp_path)
+    import video_channel_manager.telegram_state as state
+    from video_channel_manager.telegram_transport import TelegramApiError
+
+    count = 0
+
+    def lost_response(*args, **kwargs):
+        nonlocal count
+        count += 1
+        raise TelegramApiError("response lost", provider_effect="may_exist")
+
+    monkeypatch.setattr(publisher, "_api_call", lost_response)
+    assert publisher.send(tmp_path) == 6
+    assert count == 1
+    durable = state.load_ledger(ledger_path, queue)
+    entry = durable.entries[FIRST_ID]
+    assert (entry.state, entry.provider_effect) == ("unknown", "may_exist")
+    assert strict_next_post(queue, durable)[0] is None
+
+
+def test_quote_v6_fault_after_response_before_commit_cannot_replay(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """If disk commit fails after provider response, persisted intent blocks replay."""
+    publisher, queue, ledger_path, _envelope = _prepared_v6_fault_fixture(monkeypatch, tmp_path)
+    import video_channel_manager.telegram_state as state
+
+    first = queue.posts[0]
+    _, plain, entities = make_rendered(first)
+    count = 0
+
+    def one_reply(*args, **kwargs):
+        nonlocal count
+        count += 1
+        return {
+            "chat": {"id": -1001295216957, "username": "lordchrist", "type": "channel"},
+            "text": plain,
+            "entities": [entity.model_dump(mode="json") for entity in entities],
+            "message_id": 99123,
+        }
+
+    monkeypatch.setattr(publisher, "_api_call", one_reply)
+    monkeypatch.setattr(publisher, "save_ledger", lambda *_args: (_ for _ in ()).throw(OSError("disk unavailable")))
+    with pytest.raises(OSError, match="disk unavailable"):
+        publisher.send(tmp_path)
+    assert count == 1
+    durable = state.load_ledger(ledger_path, queue)
+    assert durable.entries[FIRST_ID].state == "dispatching"
+    assert durable.entries[FIRST_ID].provider_effect == "may_exist"
+    assert strict_next_post(queue, durable)[0] is None
