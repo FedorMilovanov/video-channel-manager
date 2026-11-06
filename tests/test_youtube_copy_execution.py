@@ -125,12 +125,8 @@ def test_local_write_lock_rejects_second_process_context(tmp_path: Path) -> None
 
 
 def test_reconcile_reads_after_state_without_mutating_owner_video() -> None:
-    writer = FakeWriter(
-        {"video-1": Snapshot("video-1", "channel-1", "Title", "After\n", "rev-2")}
-    )
-    row = reconcile_copy_operations(
-        [_operation()], confirm_channel="channel-1", writer=writer
-    )[0]
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "After\n", "rev-2")})
+    row = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)[0]
     assert row["state"] == "live_after"
     assert row["video_id"] == "video-1"
     assert row["provider_mutations"] == 0
@@ -140,18 +136,14 @@ def test_reconcile_reads_after_state_without_mutating_owner_video() -> None:
 
 def test_reconcile_before_state_is_not_retry_authority() -> None:
     writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Before", "rev-3")})
-    rows = reconcile_copy_operations(
-        [_operation()], confirm_channel="channel-1", writer=writer
-    )
+    rows = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
     assert rows[0]["state"] == "live_before"
     assert rows[0]["safe_to_replay"] is False
 
 
 def test_reconcile_unknown_third_state_is_explicit_conflict() -> None:
     writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Concurrent edit", "rev-3")})
-    rows = reconcile_copy_operations(
-        [_operation()], confirm_channel="channel-1", writer=writer
-    )
+    rows = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
     assert rows[0]["state"] == "live_third_state"
     assert rows[0]["safe_to_replay"] is False
 
@@ -159,14 +151,12 @@ def test_reconcile_unknown_third_state_is_explicit_conflict() -> None:
 def test_reconcile_refuses_live_wrong_channel() -> None:
     writer = FakeWriter({"video-1": Snapshot("video-1", "wrong-channel", "Title", "After", "rev-2")})
     with pytest.raises(YouTubeRevisionConflictError, match="Owner mismatch"):
-        reconcile_copy_operations(
-            [_operation()], confirm_channel="channel-1", writer=writer
-        )
+        reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
 
 
 def test_reconcile_refuses_unsigned_target_change_or_duplicate_id() -> None:
     writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "After", "rev-2")})
-    with pytest.raises(ValueError, match="confirmed channel"):
+    with pytest.raises(ValueError, match="--confirm-channel"):
         reconcile_copy_operations([_operation()], confirm_channel="", writer=writer)
     with pytest.raises(ValueError, match="No YouTube copy"):
         reconcile_copy_operations([], confirm_channel="channel-1", writer=writer)
@@ -177,6 +167,4 @@ def test_reconcile_refuses_unsigned_target_change_or_duplicate_id() -> None:
             writer=writer,
         )
     with pytest.raises(ValueError, match="Duplicate YouTube copy video ID"):
-        reconcile_copy_operations(
-            [_operation(), _operation()], confirm_channel="channel-1", writer=writer
-        )
+        reconcile_copy_operations([_operation(), _operation()], confirm_channel="channel-1", writer=writer)
