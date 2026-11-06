@@ -1,0 +1,368 @@
+name: Lordchrist four exact Shorts video publisher
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        required: true
+        type: choice
+        default: validate
+        options:
+          - validate
+          - initialize
+          - publish-canary
+      publication_id:
+        required: false
+        type: string
+      confirm:
+        required: false
+        type: string
+  schedule:
+    # The first video is an exact manual canary; only verified follow-ons run here.
+    # 13:07 UTC = 16:07 Europe/Moscow, Nov 9-11.
+    - cron: "7 13 9-11 11 *"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  four-video-single-writer:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_sha == github.sha))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src:.
+      STATE_DIR: .state/lordchrist
+      STATE_BRANCH: state/lordchrist-telegram
+      LEDGER_REL: content/telegram/lordchrist/shorts-v1-publication-ledger.json
+      RELEASE: content/telegram/lordchrist/shorts-v1-release.json
+      PROFILE: content/telegram/channels/lordchrist-shorts-v1.json
+      BINDING: content/telegram/channels/lordchrist-shorts-v1-target-binding.json
+      MANIFEST: content/telegram/lordchrist/shorts-v1-source-manifest.json
+      ENVELOPE: .runtime/lordchrist-shorts-v1-dispatch.json
+      TARGET_PROOF: .runtime/lordchrist-shorts-v1-target-proof.json
+      OUTCOME: .runtime/lordchrist-shorts-v1-outcome.json
+      MAX_PUBLICATION_LAG_MINUTES: 120
+
+    steps:
+      - name: Checkout exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Require exact current main and CI before state or provider work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+
+      - name: Validate exact source manifest and reviewed release (no provider access)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_target_binding import load_target_binding
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
+          profile=load_channel_profile(Path("content/telegram/channels/lordchrist-shorts-v1.json"))
+          binding=load_target_binding(Path("content/telegram/channels/lordchrist-shorts-v1-target-binding.json"),profile)
+          release=load_release(Path("content/telegram/lordchrist/shorts-v1-release.json"))
+          source=json.loads(Path("content/telegram/lordchrist/shorts-v1-source-manifest.json").read_text(encoding="utf-8"))
+          ids=("ba4ZahiY-U0","_aDIR0D7rSk","tELrnM71TQA","VeY1tpoLUJU")
+          assert release.release_authorized and release.digest==source["release_digest"]
+          assert source["source_evidence_commit"]=="85990401e732a22a8a12b390683196264a50ba8c"
+          assert profile.channel_username=="@lordchrist"
+          assert profile.concurrency_group=="lordchrist-telegram-publisher"
+          assert release.profile_sha256==profile.digest
+          assert release.target_binding_sha256==binding.digest
+          assert binding.chat_id==release.chat_id==-1001295216957
+          assert binding.bot_id==release.bot_id==8716602202
+          assert len(ids)==len(release.items)==len(source["items"])==4
+          for index,(item,evidence) in enumerate(zip(release.items,source["items"],strict=True)):
+              assert isinstance(item.payload,GenericVideoPayload)
+              assert evidence["youtube_video_id"]==ids[index]
+              assert item.publication_id==evidence["publication_id"]
+              assert item.payload.media_sha256==evidence["source_sha256"]
+              assert item.payload.media_byte_size==evidence["source_byte_size"]
+              assert item.payload.provider_payload_sha256==evidence["provider_payload_sha256"]
+              assert evidence["artifact_commit"]==source["source_evidence_commit"]
+              assert item.payload.media_filename=="lordchrist-short-"+ids[index]+".mp4"
+              assert len(item.payload.caption)<=1024 and "????" not in item.payload.caption
+          print("Four exact video source bindings and write-authority profile verified without provider access")
+          PY
+
+      - name: Checkout independent protected shared LordChrist state
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Determine fully read-only mode or exact bootstrap mode
+        id: action
+        env:
+          ACTION_INPUT: ${{ inputs.action }}
+          PUBLICATION_INPUT: ${{ inputs.publication_id }}
+          CONFIRM_INPUT: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          mode=validate
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            mode=initialize
+          elif [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            mode=scheduled
+          elif [[ "$ACTION_INPUT" == "initialize" ]]; then
+            mode=initialize
+          elif [[ "$ACTION_INPUT" == "publish-canary" ]]; then
+            [[ "$PUBLICATION_INPUT" == "lordchrist-short-ba4ZahiY-U0" ]] || exit 3
+            [[ "$CONFIRM_INPUT" == "PUBLISH:$PUBLICATION_INPUT" ]] || exit 3
+            mode=manual
+          elif [[ "$ACTION_INPUT" != "validate" ]]; then
+            exit 3
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+      - name: Initialize exact four-item ledger only when requested or CI first succeeds
+        if: steps.action.outputs.mode == 'initialize'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import initialize_ledger,load_ledger,save_ledger
+          release=load_release(Path(os.environ["RELEASE"]))
+          dest=Path(os.environ["STATE_DIR"])/os.environ["LEDGER_REL"]
+          if dest.exists():
+              load_ledger(dest,release)
+              print("Existing exact immutable Shorts ledger verified; no reset")
+          else:
+              save_ledger(dest,initialize_ledger(release))
+              print("Four-video ledger initialized; no Telegram messages sent")
+          PY
+
+      - name: Persist newly initialized ledger atomically in shared state
+        if: steps.action.outputs.mode == 'initialize'
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_REL"
+          if git -C "$STATE_DIR" diff --cached --quiet; then
+            echo "Four-video Shorts state already initialized"
+            exit 0
+          fi
+          git -C "$STATE_DIR" commit -m "Initialize exact LordChrist four-video ledger [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          [[ "$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" == "$local_sha" ]] || exit 3
+
+      - name: Choose strict-next source and verify exact Moscow send window
+        if: steps.action.outputs.mode == 'manual' || steps.action.outputs.mode == 'scheduled'
+        id: chosen
+        env:
+          MODE: ${{ steps.action.outputs.mode }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python - <<'PY'
+          from datetime import UTC,datetime,timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          import os
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import load_ledger,strict_next_item
+          release=load_release(Path(os.environ["RELEASE"]))
+          ledger=load_ledger(Path(os.environ["STATE_DIR"])/os.environ["LEDGER_REL"],release)
+          item,reason=strict_next_item(release,ledger)
+          if item is None:
+              raise SystemExit("No publishable strict-next item: "+reason)
+          now=datetime.now(UTC).astimezone(ZoneInfo("Europe/Moscow"))
+          first="lordchrist-short-ba4ZahiY-U0"
+          mode=os.environ["MODE"]
+          if mode=="manual":
+              if item.publication_id!=first or now.date().isoformat()!="2026-11-08":
+                  raise SystemExit("Manual video canary requires first exact Nov 8 item")
+          elif mode=="scheduled":
+              if os.environ["GITHUB_RUN_ATTEMPT"]!="1" or now.year!=2026 or now.month!=11 or now.day not in (9,10,11):
+                  raise SystemExit("Wrong schedule year/day or an attempted replay")
+              if item.scheduled_at.date()!=now.date():
+                  raise SystemExit("Strict-next item is not due today; refuse skipped or out-of-order send")
+          slot=item.scheduled_at.astimezone(ZoneInfo("Europe/Moscow"))
+          if not slot<=now<slot+timedelta(hours=2):
+              raise SystemExit("Current time outside exact 16:00-18:00 Moscow send window")
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as f:
+              f.write("publication_id="+item.publication_id+"\n")
+          print("Chosen immutable video "+item.publication_id+" in strict scheduled window")
+          PY
+
+      - name: Verify no unresolved cross-track LordChrist Telegram effects
+        if: steps.chosen.outputs.publication_id != ''
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.lordchrist_quote_v6_publisher import guard_cross_track
+          guard_cross_track(Path("."))
+          print("No unresolved predecessor Telegram effects across LordChrist writer tracks")
+          PY
+
+      - name: Materialize and SHA-check exact immutable MP4 before dispatch intent
+        if: steps.chosen.outputs.publication_id != ''
+        env:
+          PUBLICATION_ID: ${{ steps.chosen.outputs.publication_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,urllib.request
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+          release=load_release(Path(os.environ["RELEASE"]))
+          manifest=json.loads(Path(os.environ["MANIFEST"]).read_text(encoding="utf-8"))
+          pid=os.environ["PUBLICATION_ID"]
+          item=next(x for x in release.items if x.publication_id==pid)
+          entry=next(x for x in manifest["items"] if x["publication_id"]==pid)
+          if entry["artifact_commit"]!="85990401e732a22a8a12b390683196264a50ba8c":
+              raise SystemExit("Source commit drift")
+          if not entry["artifact_path"].startswith("artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-"):
+              raise SystemExit("Media source path not under protected immutable ref")
+          url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"+entry["artifact_commit"]+"/"+entry["artifact_path"]
+          request=urllib.request.Request(url,headers={"User-Agent":"VCM-Lordchrist-Shorts/1"})
+          with urllib.request.urlopen(request,timeout=80) as res:
+              data=res.read()
+          if len(data)!=item.payload.media_byte_size or "sha256:"+hashlib.sha256(data).hexdigest()!=item.payload.media_sha256:
+              raise SystemExit("Downloaded media digest or byte count differs from reviewed video")
+          gitblob=hashlib.sha1(b"blob "+str(len(data)).encode("ascii")+b"\0"+data).hexdigest()
+          if gitblob!=entry["git_blob_sha1"]:
+              raise SystemExit("Downloaded media differs from exact Git blob")
+          dest=Path(item.payload.media_path)
+          if dest.name!=item.payload.media_filename or not str(dest).startswith(".runtime/lordchrist-shorts-v1/"):
+              raise SystemExit("Media destination differs from immutable payload")
+          dest.parent.mkdir(parents=True,exist_ok=True)
+          dest.write_bytes(data)
+          print("Verified exact video bytes",pid,len(data))
+          PY
+
+      - name: Fresh exact bot and channel preflight with provider read-only API
+        if: steps.chosen.outputs.publication_id != ''
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli preflight             --profile "$PROFILE"             --expected-chat-id -1001295216957             --expected-bot-id 8716602202             --expected-bot-username preaching_mp3_bot             --output "$TARGET_PROOF"
+
+      - name: Prepare exactly one safe generic intent
+        if: steps.chosen.outputs.publication_id != ''
+        id: prepare
+        env:
+          MODE: ${{ steps.action.outputs.mode }}
+          PUBLICATION_ID: ${{ steps.chosen.outputs.publication_id }}
+        run: |
+          set -euo pipefail
+          params=(--profile "$PROFILE" --release "$RELEASE"             --ledger "$STATE_DIR/$LEDGER_REL" --target-proof "$TARGET_PROOF"             --mode "$MODE" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"             --github-sha "$GITHUB_SHA" --github-workflow-sha "${{ github.workflow_sha }}"             --envelope-output "$ENVELOPE")
+          if [[ "$MODE" == manual ]]; then params+=(--publication-id "$PUBLICATION_ID"); fi
+          python -m video_channel_manager.telegram_multichannel_cli prepare "${params[@]}"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist pre-send intent in protected ledger and evidence dir
+        if: steps.prepare.outputs.prepared == 'true'
+        id: intent
+        run: |
+          set -euo pipefail
+          evidence="content/telegram/lordchrist/dispatches/shorts-v1/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$STATE_DIR/$evidence"
+          cp "$ENVELOPE" "$STATE_DIR/$evidence/dispatch.json"
+          cp "$TARGET_PROOF" "$STATE_DIR/$evidence/target-proof.json"
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_REL" "$evidence"
+          git -C "$STATE_DIR" diff --cached --quiet && exit 3
+          git -C "$STATE_DIR" commit -m "Record exact Shorts intent $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          [[ "$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" == "$local_sha" ]] || exit 3
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent             --release "$RELEASE" --ledger "$STATE_DIR/$LEDGER_REL" --envelope "$ENVELOPE"
+          echo "evidence=$evidence" >> "$GITHUB_OUTPUT"
+
+      - name: Re-prove current main and reviewed release immediately before sending
+        if: steps.intent.outputs.evidence != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+
+      - name: Exactly one native Telegram sendVideo attempt
+        if: steps.intent.outputs.evidence != ''
+        id: send
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once             --profile "$PROFILE" --release "$RELEASE"             --ledger "$STATE_DIR/$LEDGER_REL" --envelope "$ENVELOPE"             --outcome-output "$OUTCOME"
+          result=$?
+          set -e
+          echo "status=$result" >> "$GITHUB_OUTPUT"
+          [[ -f "$OUTCOME" ]] || exit 5
+
+      - name: Archive exact provider outcome to allow safe reconciliation
+        if: steps.send.outputs.status != '' && always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lordchrist-shorts4-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-shorts-v1-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
+
+      - name: Apply receipt or conservative uncertain-effect blocker
+        if: steps.send.outputs.status != '' && always()
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome             --release "$RELEASE" --ledger "$STATE_DIR/$LEDGER_REL"             --envelope "$ENVELOPE" --outcome "$OUTCOME"
+          evidence="${{ steps.intent.outputs.evidence }}"
+          cp "$OUTCOME" "$STATE_DIR/$evidence/outcome.json"
+          git -C "$STATE_DIR" add -- "$LEDGER_REL" "$evidence/outcome.json"
+          git -C "$STATE_DIR" diff --cached --quiet && exit 3
+          git -C "$STATE_DIR" commit -m "Record Shorts v1 outcome $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          [[ "$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" == "$local_sha" ]] || exit 3
+          [[ "${{ steps.send.outputs.status }}" == "0" ]] || {
+            echo "Not confirmed as published; durable non-replayable outcome captured" >&2
+            exit 4
+          }
