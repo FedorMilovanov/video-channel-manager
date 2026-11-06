@@ -19,6 +19,7 @@ def test_november_v12_corrupt_cyrillic_bundle_is_permanently_retired() -> None:
 
     proof = validate_retired_bundle(ID)
     assert proof["status"] == "retired_proven_never_send"
+    assert proof["candidate_sha256"] == ("sha256:37bcd9abe9dfbd492a5d346894764aeb358577dacf0ed72ec388ab6b7b338e16")
     assert proof["provider_access_performed"] is False
     assert proof["provider_write_performed"] is False
     with pytest.raises(ValueError, match="permanently retired"):

@@ -344,8 +344,10 @@ def validate_retired_bundle(publication_id: str) -> dict[str, Any]:
     if entry.get("restore_or_retry_allowed") is not False or entry.get("provider_write_performed") is not False:
         raise ValueError("retired publication registry must forbid replay and provider writes")
     path = Path(str(entry["candidate_path"]))
-    candidate_bytes = path.read_bytes()
-    if _sha256_bytes(candidate_bytes) != entry["candidate_file_sha256"]:
+    # Text-mode input normalizes Windows CRLF into repository-canonical LF.
+    # The registry binds the tracked Git blob's UTF-8 bytes, not an OS-specific checkout.
+    canonical_candidate_text = path.read_text(encoding="utf-8")
+    if _sha256_bytes(canonical_candidate_text.encode("utf-8")) != entry["candidate_file_sha256"]:
         raise ValueError("retired Milovi candidate was changed after terminalization")
     candidate = _read_json(path)
     if (
