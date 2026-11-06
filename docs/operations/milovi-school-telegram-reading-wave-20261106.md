@@ -34,3 +34,11 @@ School articles are editorially sourced, not proof of individual original produc
 ## Completion and provider-state truth
 
 A merged release and an initialized ledger mean **queued / pending**, not already published. For each exact date retain the canonical Telegram message ID, chat match, content proof and channel-visible link. If a precondition or exact scheduled window is missed, do not bulk backfill or bypass the first-screen guard.
+
+## 6 November 2026: fresh owner-authorized early Paris-Brest publication
+
+Owner explicitly overrode the delayed first-screen policy for ONE School story: «Да нормально, отправляй сейчас сегодня, разрешаю». Immediate native photo release 'milovi-feed-20261106-001' is source-, caption-, and JPEG-byte-equivalent to the Paris-Brest story originally scheduled Nov 17, with its own fresh authorization, exact 22:20 Moscow November 6 release time, and one-attempt canonical dispatch.
+
+The original Nov17 release and protected pending ledger remain untouched as historical evidence. At the Nov17 due slot the School dispatcher verifies the early photo's actual published/verified protected receipt, positive message ID, exact bot/chat, identical caption, source digest and JPEG transport digest. It will suppress Nov17 if the Nov6 message has actually been sent. On Nov21 and Nov25, a verified early receipt may satisfy the Paris-Brest predecessor, but the first-ten real Cake videos remain an absolute prerequisite for those later two School posts. No blind retry is authorized after an uncertain provider outcome.
+
+This explicit exception does not authorize sending the other two School photos early and does not affect any Milovi Cake video schedule. Real completion requires Telegram provider receipt and public message URL. Manual execution uses only existing canonical milovi-telegram-feed-publisher.yml, operation publish, exact publication ID and PUBLISH:@MiloviCake confirmation; do not use a second bot client.
