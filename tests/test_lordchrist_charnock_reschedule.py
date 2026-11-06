@@ -233,12 +233,21 @@ def test_verification_requires_public_readback_and_no_resend(monkeypatch, tmp_pa
 def test_verification_failure_keeps_sent_without_replay(monkeypatch, tmp_path):
     args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
     args.stage = "verify"
-    monkeypatch.setattr(
-        m.httpx, "get", lambda *a, **k: SimpleNamespace(text="Unavailable", raise_for_status=lambda: None)
-    )
-    with pytest.raises(RuntimeError, match="not publicly verified"):
+    calls = []
+    delays = []
+    monkeypatch.setattr(m.time, "sleep", delays.append)
+
+    def stale(url, **kwargs):
+        calls.append(url)
+        return SimpleNamespace(text="Unavailable", raise_for_status=lambda: None)
+
+    monkeypatch.setattr(m.httpx, "get", stale)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("Never replay sendMessage"))
+    with pytest.raises(RuntimeError, match="reconcile the existing send receipt"):
         m.execute(args)
     assert original["scheduled_reissue"]["state"] == "sent"
+    assert calls == ["https://t.me/lordchrist/1701?embed=1"] * len(m.NEW_POST_PUBLIC_READBACK_DELAYS)
+    assert delays == list(m.NEW_POST_PUBLIC_READBACK_DELAYS[1:])
 
 
 def test_no_write_before_live_schedule_and_no_forged_clock(monkeypatch, tmp_path):
@@ -288,3 +297,71 @@ def test_telegra_ph_api_must_match_entire_last_reviewed_page(monkeypatch):
     document.nodes[0]["children"] = ["A different revision"]
     with pytest.raises(RuntimeError, match="entire reviewed latest"):
         m._proof_page(source, document)
+
+
+def test_delayed_public_telegram_message_is_verified_without_second_send(monkeypatch, tmp_path):
+    args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
+    args.stage = "verify"
+    attempts = []
+    delays = []
+
+    def delayed(url, **kwargs):
+        attempts.append((url, kwargs))
+        if len(attempts) < 4:
+            return SimpleNamespace(text="Temporarily unavailable", raise_for_status=lambda: None)
+        return SimpleNamespace(
+            text=f'<div data-post="lordchrist/1701"><a href="{URL}">Full article</a></div>',
+            raise_for_status=lambda: None,
+        )
+
+    monkeypatch.setattr(m.httpx, "get", delayed)
+    monkeypatch.setattr(m.time, "sleep", delays.append)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No Telegram writes on verify"))
+    assert m.execute(args)["stage"] == "verified"
+    assert original["scheduled_reissue"]["new_message_id"] == 1701
+    assert original["scheduled_reissue"]["state"] == "verified"
+    assert len(attempts) == 4
+    assert delays == [2, 4, 8]
+
+
+def test_public_verification_recovers_from_temporary_http_failure(monkeypatch, tmp_path):
+    args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
+    args.stage = "verify"
+    reads = []
+
+    def public_get(url, **kwargs):
+        reads.append(url)
+        if len(reads) == 1:
+            raise m.httpx.TimeoutException("Telegram widget did not respond")
+        return SimpleNamespace(
+            text=f'<div data-post="lordchrist/1701"><a href="{URL}">Full article</a></div>',
+            raise_for_status=lambda: None,
+        )
+
+    monkeypatch.setattr(m.httpx, "get", public_get)
+    monkeypatch.setattr(m.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No provider call after acknowledged send"))
+    assert m.execute(args)["stage"] == "verified"
+    assert len(reads) == 2
+    assert original["scheduled_reissue"]["state"] == "verified"
+
+
+def test_public_verification_refuses_wrong_telegraph_revision(monkeypatch, tmp_path):
+    args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
+    args.stage = "verify"
+    calls = []
+
+    def wrong_url(url, **kwargs):
+        calls.append(url)
+        return SimpleNamespace(
+            text='<div data-post="lordchrist/1701"><a href="https://telegra.ph/Old-stale-revision">Old</a></div>',
+            raise_for_status=lambda: None,
+        )
+
+    monkeypatch.setattr(m.httpx, "get", wrong_url)
+    monkeypatch.setattr(m.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("Never repeat provider send"))
+    with pytest.raises(RuntimeError, match="reconcile the existing send receipt"):
+        m.execute(args)
+    assert original["scheduled_reissue"]["state"] == "sent"
+    assert len(calls) == len(m.NEW_POST_PUBLIC_READBACK_DELAYS)
