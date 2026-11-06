@@ -18,7 +18,7 @@ def _candidate() -> dict[str, object]:
     return json.loads((CONTENT / "november-muted-video-candidate-20261107.json").read_text(encoding="utf-8"))
 
 
-def test_audio_free_candidate_has_correct_cyrillic_and_is_inert() -> None:
+def test_audio_free_candidate_is_inert_but_exact_owner_release_is_authorized() -> None:
     candidate = _candidate()
     caption = str(candidate["caption"])
     assert len(caption) > 140
@@ -34,15 +34,13 @@ def test_audio_free_candidate_has_correct_cyrillic_and_is_inert() -> None:
     check = feed.validate_bundle(ID)
     assert check["valid"] is True
     assert check["payload_kind"] == "video"
-    assert check["blockers"] == [
-        "release_authorized=false",
-        "execution_authorized=false",
-        "provider_mutation_allowed=false",
-    ]
-    with pytest.raises(ValueError, match="not freshly authorized"):
-        feed.validate_bundle(ID, require_release_authorized=True)
-    with pytest.raises(ValueError, match="not freshly authorized"):
-        feed.validate_bundle(ID, require_execution_authorized=True)
+    assert check["blockers"] == []
+    assert check["release_authorized"] is True
+    assert check["execution_authorized"] is True
+    assert check["provider_mutation_allowed"] is True
+    assert check["provider_access_performed"] is False
+    assert feed.validate_bundle(ID, require_release_authorized=True)["valid"] is True
+    assert feed.validate_bundle(ID, require_execution_authorized=True)["valid"] is True
 
 
 def test_variant_evidence_is_independent_from_legacy_16() -> None:
@@ -76,7 +74,13 @@ def test_variant_evidence_is_independent_from_legacy_16() -> None:
     assert release.items[0].payload.media_sha256 == variant["sha256"]
     assert release.items[0].payload.media_byte_size == variant["byte_size"]
     assert authority["release_candidate_sha256"] == release.candidate_digest()
-    assert authority["execution_authorized"] is False
+    assert release.release_authorized is True
+    assert release.reviewed_publication_id == ID
+    assert authority["execution_authorized"] is True
+    assert authority["provider_mutation_allowed"] is True
+    assert authority["authorized_publication_id"] == ID
+    assert authority["release_digest"] == release.digest
+    assert release.items[0].scheduled_at.isoformat() == "2026-11-07T11:00:00+03:00"
 
 
 @pytest.mark.parametrize("change", ["corrupt_caption", "remove_audio_proof", "swap_media_hash"])
@@ -108,3 +112,31 @@ def test_video_materialization_does_not_accept_unreviewed_bytes(tmp_path: Path) 
     wrong.write_bytes(b"tampered")
     with pytest.raises(ValueError, match="accepted video bytes differ"):
         feed.materialize_video(ID, source_path=wrong)
+
+
+def test_owner_rights_attestation_is_exact_to_muted_video_and_caption() -> None:
+    registry = json.loads(VARIANT_REGISTRY.read_text(encoding="utf-8"))["variants"]["v12-muted"]
+    assert registry["content_approved"] is True
+    assert registry["rights_verified"] is True
+    owner = json.loads(Path(registry["rights_evidence_path"]).read_text(encoding="utf-8"))
+    candidate = _candidate()
+    assert owner["publication_id"] == ID
+    assert owner["video_visual_rights_confirmed_by_owner"] is True
+    assert owner["audio_rights_claimed"] is False
+    assert owner["provider_media_audio_streams"] == 0
+    assert owner["exact_video_sha256"] == registry["sha256"]
+    assert owner["exact_caption_sha256"] == candidate["caption_sha256"]
+    assert owner["exact_release_slot"] == "2026-11-07T11:00:00+03:00"
+
+
+@pytest.mark.parametrize("missing_gate", ["content_approved", "rights_verified"])
+def test_owner_rights_cannot_be_bypassed_when_missing(
+    missing_gate: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry = json.loads(VARIANT_REGISTRY.read_text(encoding="utf-8"))
+    registry["variants"]["v12-muted"][missing_gate] = False
+    test_registry = tmp_path / "unapproved-variant-registry.json"
+    test_registry.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(feed, "MUTED_VIDEO_VARIANTS_PATH", test_registry)
+    with pytest.raises(ValueError, match="lacks exact content and visual-rights approval"):
+        feed.validate_bundle(ID, require_execution_authorized=True)

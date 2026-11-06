@@ -23,9 +23,10 @@
       "width": 720,
       "height": 1282,
       "frames": 299,
-      "content_approved": false,
-      "rights_verified": false,
-      "release_authorized": false
+      "content_approved": true,
+      "rights_verified": true,
+      "release_authorized": false,
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-feed-20261107-002-owner-attestation.json"
     }
   }
 }

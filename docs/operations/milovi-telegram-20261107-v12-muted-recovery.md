@@ -65,3 +65,25 @@ Materialize-video rechecks both SHA256 and Git blob before any use.
 5. Close #809 only after exact native Telegram message ID/URL verified.
 
 No VK, Instagram, YouTube, quote, Charnock or Jude changes were made.
+
+
+## Owner authorization, 6 November 2026
+
+The current owner explicitly confirms that the original v12 wedding cake
+footage belongs to MILOVI CAKE and requests upload. The exact video is
+a 299-frame muted H.264 transport, so this declaration applies to source
+video rights, **not** unlicensed music or other older videos.
+
+The owner request binds the one already fully proofed Nov 7 candidate,
+`milovi-feed-20261107-002`, its Russian caption, SHA256 and exact proposed
+11:00 Europe/Moscow slot. The user requested actual uploading, so distinct
+signed release and execution authority are now recorded for this exact
+publication. The original source candidate file remains deliberately
+provider-inert (data provenance, not permission). The reviewer/source
+attestation is in
+`content/telegram/milovi-cake/releases/milovi-feed-20261107-002-owner-attestation.json`.
+
+Publishing still must happen only when the precise due window opens, through
+the existing GitHub Actions single-writer workflow after fresh checks of
+protected state and current main, with durable intent and one attempt.
+**Merge and validate are not Telegram publication**.
