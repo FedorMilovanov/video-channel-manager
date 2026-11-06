@@ -112,3 +112,28 @@ Signed Nov 7 v12-muted stays unchanged.
   provider_mutation_allowed=false, scheduling_active=false and zero provider sends.
 - Proposed dates are not activated server-side Telegram schedules or GitHub
   cron triggers. The separate previously blocked scheduler is NOT bypassed.
+
+
+## Owner-authorized fifteen follow-on releases (not yet scheduled)
+
+Following the owner's explicit request on 2026-11-06 to upload the
+MILOVI CAKE videos in deferred order, all fifteen audio-free videos
+were individually authorized for **one exact future publication each**,
+with their own Pydantic-reviewed candidate digest, release SHA,
+individual human execution authority and frozen file SHA. The source
+candidate bytes remain provider-inert; no old production history
+is modified.
+
+Exact collective provenance is recorded at
+content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json.
+The owner's direction is not represented as an independent external
+license certificate. All music has been removed. Public old video
+lengths 21, 28, 48, 59 seconds are not byte-identical to these 10-second
+sources. Source-clip semantic overlap cannot be proven absent.
+
+These fifteen now pass the exact release and execution gate, but **no
+protected state ledger is initialized and no scheduling trigger is
+active** until a separate state-initialization transaction and
+daily due-dispatch workflow are completed. The existing Nov 7 v12
+release remains intact. This approval does not authorize a burst
+upload or blind retries.

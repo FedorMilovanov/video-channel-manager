@@ -40,12 +40,14 @@
       "source_video_stream_sha256": "sha256:95f88c10f9023e1f0a4289c8cc8ac25e3c7245f8587fde8c6665987aeb204630",
       "muted_video_stream_sha256": "sha256:95f88c10f9023e1f0a4289c8cc8ac25e3c7245f8587fde8c6665987aeb204630",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v02-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -59,12 +61,14 @@
       "source_video_stream_sha256": "sha256:13294d1fa0e8e1c440b98842b65eb1556c77471362d347e9a8c2dacfa4f0dc1b",
       "muted_video_stream_sha256": "sha256:13294d1fa0e8e1c440b98842b65eb1556c77471362d347e9a8c2dacfa4f0dc1b",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v03-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -78,12 +82,14 @@
       "source_video_stream_sha256": "sha256:ad4bc340081bc1ece306e4fb02a9366a7d6fd637371ebf1eb68cb0b2077eb6b3",
       "muted_video_stream_sha256": "sha256:ad4bc340081bc1ece306e4fb02a9366a7d6fd637371ebf1eb68cb0b2077eb6b3",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v04-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -97,12 +103,14 @@
       "source_video_stream_sha256": "sha256:24af9beb5c58009197aa96919a5edb1550d5f993e6395aeac54e985d494b322e",
       "muted_video_stream_sha256": "sha256:24af9beb5c58009197aa96919a5edb1550d5f993e6395aeac54e985d494b322e",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v05-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -116,12 +124,14 @@
       "source_video_stream_sha256": "sha256:10b2e789eefb53b86246afa41869528a2b18180fa4a1caac23277e37c0aac940",
       "muted_video_stream_sha256": "sha256:10b2e789eefb53b86246afa41869528a2b18180fa4a1caac23277e37c0aac940",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v06-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -135,12 +145,14 @@
       "source_video_stream_sha256": "sha256:87e7d20caaf9a79985c7bcb6ffabe9c714d1714f6f133498d06e84e0fd31854a",
       "muted_video_stream_sha256": "sha256:87e7d20caaf9a79985c7bcb6ffabe9c714d1714f6f133498d06e84e0fd31854a",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v07-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -154,12 +166,14 @@
       "source_video_stream_sha256": "sha256:069633cdc6475964e588474191e440ac63d4de600f30c1bf9ccb729a980cd9d9",
       "muted_video_stream_sha256": "sha256:069633cdc6475964e588474191e440ac63d4de600f30c1bf9ccb729a980cd9d9",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v08-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -173,12 +187,14 @@
       "source_video_stream_sha256": "sha256:b5edd4bba77b8896d96a392074bbe37964862d9ac1d46e3793d83ce1aef07406",
       "muted_video_stream_sha256": "sha256:b5edd4bba77b8896d96a392074bbe37964862d9ac1d46e3793d83ce1aef07406",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v09-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -192,12 +208,14 @@
       "source_video_stream_sha256": "sha256:69dd16e1477cb065d4d2e85434702f256127ee61a54cfcc658ca0fd96732374b",
       "muted_video_stream_sha256": "sha256:69dd16e1477cb065d4d2e85434702f256127ee61a54cfcc658ca0fd96732374b",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v10-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -211,12 +229,14 @@
       "source_video_stream_sha256": "sha256:7b28ec471d86dd28d9dfc6c1aeab1c6d6292d6dc6f234fb998f32de32c13be36",
       "muted_video_stream_sha256": "sha256:7b28ec471d86dd28d9dfc6c1aeab1c6d6292d6dc6f234fb998f32de32c13be36",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v11-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -230,12 +250,14 @@
       "source_video_stream_sha256": "sha256:1b2592f9f166089a8cc197b3cd8df1a840c9b7f6b82382351e55c88fd624a36e",
       "muted_video_stream_sha256": "sha256:1b2592f9f166089a8cc197b3cd8df1a840c9b7f6b82382351e55c88fd624a36e",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v13-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -249,12 +271,14 @@
       "source_video_stream_sha256": "sha256:cece60cf693d0e0a1450f9ab2e419d8ba14a1e51238a9fd4a9d07e67303ebab5",
       "muted_video_stream_sha256": "sha256:cece60cf693d0e0a1450f9ab2e419d8ba14a1e51238a9fd4a9d07e67303ebab5",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v14-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -268,12 +292,14 @@
       "source_video_stream_sha256": "sha256:a97d088935ee22f5bd9a141855ac3744b87b857916536883e8f694885156abe8",
       "muted_video_stream_sha256": "sha256:a97d088935ee22f5bd9a141855ac3744b87b857916536883e8f694885156abe8",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v15-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -287,12 +313,14 @@
       "source_video_stream_sha256": "sha256:22a8f9c1fb5f44f185b77483d0eb263880ee725c09b08cd5f50d2eff78629339",
       "muted_video_stream_sha256": "sha256:22a8f9c1fb5f44f185b77483d0eb263880ee725c09b08cd5f50d2eff78629339",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     },
     "v16-muted": {
       "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
@@ -306,12 +334,14 @@
       "source_video_stream_sha256": "sha256:b9b2ed057dc36fc4a54caf811a4881d5069eaca7480a65e80fa186a0b17f0796",
       "muted_video_stream_sha256": "sha256:b9b2ed057dc36fc4a54caf811a4881d5069eaca7480a65e80fa186a0b17f0796",
       "audio_streams": 0,
-      "content_approved": false,
-      "rights_verified": false,
+      "content_approved": true,
+      "rights_verified": true,
       "historical_duplicates_reconciled": false,
       "release_authorized": false,
       "editorial_source_commit": "0456427e10266bde9544f0680a475af477b0c878",
-      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd"
+      "editorial_gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+      "rights_evidence_path": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+      "owner_authorization_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
     }
   }
 }
