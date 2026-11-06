@@ -1,0 +1,23 @@
+{
+  "schema_name": "video-channel-manager.telegram-owner-scheduled-canary-approval",
+  "schema_version": 1,
+  "release_digest": "sha256:8232f393ef3d1ce001d69776ef1ce810ec6de08fec6bd615cb5c495e07871837",
+  "first_publication_id": "lordchrist-short-ba4ZahiY-U0",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+  "target_binding_sha256": "sha256:c6282b005a6437ea8e27eec6de3ead2c725ad099c5213df4824d9646bcc17b4b",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "source_manifest_path": "content/telegram/lordchrist/shorts-v1-source-manifest.json",
+  "source_manifest_git_blob_sha1": "784ccd6b950ee58da13ec1b8216cd79d00e7f168",
+  "approved_by": "Owner's explicit November 6 deferred Telegram publication instruction",
+  "approval_reference": "Owner requested native deferred publication of the Piper and MacArthur Shorts and explicitly requested completion of all existing Telegram queues on 2026-11-06.",
+  "approved_at": "2026-11-06T17:42:00+03:00",
+  "scheduled_at": "2026-11-08T16:00:00+03:00",
+  "owner_authorized": true,
+  "only_first_scheduled_video": true,
+  "maximum_first_send_attempts": 1,
+  "require_verified_first_receipt_for_followons": true
+}

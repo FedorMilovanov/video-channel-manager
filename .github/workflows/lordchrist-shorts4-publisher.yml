@@ -25,9 +25,10 @@ on:
         required: false
         type: string
   schedule:
-    # The first video is an exact manual canary; only verified follow-ons run here.
-    # 13:07 UTC = 16:07 Europe/Moscow, Nov 9-11.
-    - cron: "7 13 9-11 11 *"
+    # Owner approved Nov 8 as the first scheduled video canary; Nov 9-11
+    # require its verified Telegram receipt and the exact same source authority.
+    # 13:07 UTC = 16:07 Europe/Moscow, Nov 8-11, year-gated below.
+    - cron: "7 13 8-11 11 *"
 
 permissions:
   contents: write
@@ -56,6 +57,7 @@ jobs:
       PROFILE: content/telegram/channels/lordchrist-shorts-v1.json
       BINDING: content/telegram/channels/lordchrist-shorts-v1-target-binding.json
       MANIFEST: content/telegram/lordchrist/shorts-v1-source-manifest.json
+      OWNER_CANARY_PROOF: content/telegram/lordchrist/shorts-v1-scheduled-canary-approval.json
       ENVELOPE: .runtime/lordchrist-shorts-v1-dispatch.json
       TARGET_PROOF: .runtime/lordchrist-shorts-v1-target-proof.json
       OUTCOME: .runtime/lordchrist-shorts-v1-outcome.json
@@ -217,7 +219,7 @@ jobs:
               if item.publication_id!=first or now.date().isoformat()!="2026-11-08":
                   raise SystemExit("Manual video canary requires first exact Nov 8 item")
           elif mode=="scheduled":
-              if os.environ["GITHUB_RUN_ATTEMPT"]!="1" or now.year!=2026 or now.month!=11 or now.day not in (9,10,11):
+              if os.environ["GITHUB_RUN_ATTEMPT"]!="1" or now.year!=2026 or now.month!=11 or now.day not in (8,9,10,11):
                   raise SystemExit("Wrong schedule year/day or an attempted replay")
               if item.scheduled_at.date()!=now.date():
                   raise SystemExit("Strict-next item is not due today; refuse skipped or out-of-order send")
@@ -293,7 +295,11 @@ jobs:
         run: |
           set -euo pipefail
           params=(--profile "$PROFILE" --release "$RELEASE"             --ledger "$STATE_DIR/$LEDGER_REL" --target-proof "$TARGET_PROOF"             --mode "$MODE" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"             --github-sha "$GITHUB_SHA" --github-workflow-sha "${{ github.workflow_sha }}"             --envelope-output "$ENVELOPE")
-          if [[ "$MODE" == manual ]]; then params+=(--publication-id "$PUBLICATION_ID"); fi
+          if [[ "$MODE" == manual ]]; then
+            params+=(--publication-id "$PUBLICATION_ID")
+          else
+            params+=(--scheduled-canary-authorization "$OWNER_CANARY_PROOF")
+          fi
           python -m video_channel_manager.telegram_multichannel_cli prepare "${params[@]}"
           echo "prepared=true" >> "$GITHUB_OUTPUT"
 

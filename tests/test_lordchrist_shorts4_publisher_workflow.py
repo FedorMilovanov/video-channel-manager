@@ -22,7 +22,7 @@ def test_exact_four_video_workflow_is_one_writer_and_provider_conservative() -> 
     assert profile.state_branch == "state/lordchrist-telegram"
     assert profile.channel_username == release.channel_username == "@lordchrist"
     assert target.chat_id == release.chat_id == -1001295216957
-    assert "7 13 9-11 11 *" in text
+    assert "7 13 8-11 11 *" in text
     assert "lordchrist-short-ba4ZahiY-U0" in text
     assert "2026-11-08" in text
     assert "2026-11-11" in text or "now.day not in (9,10,11)" in text
@@ -42,7 +42,7 @@ def test_exact_four_video_workflow_is_one_writer_and_provider_conservative() -> 
 
 def test_no_scheduler_can_forge_first_manual_canary() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert "9-11 11 *" in text
+    assert "8-11 11 *" in text
     assert "mode=manual" in text
     assert "publish-canary" in text
     assert "PUBLISH:$PUBLICATION_INPUT" in text
@@ -50,5 +50,8 @@ def test_no_scheduler_can_forge_first_manual_canary() -> None:
     assert "scheduled execution requires a verified manual canary" not in text
     assert "GITHUB_RUN_ATTEMPT" in text
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in text
+    assert "scheduled-canary-authorization" in text
+    assert "OWNER_CANARY_PROOF" in text
+    assert "mode=scheduled" in text
     assert "sendVideo" in text
     assert "provider" in text.lower()
