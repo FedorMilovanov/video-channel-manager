@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from datetime import UTC, datetime
@@ -19,6 +20,7 @@ from video_channel_manager.telegram_multichannel_release import GenericReleaseQu
 from video_channel_manager.telegram_multichannel_state import (
     GenericDispatchEnvelope,
     GenericPublicationLedger,
+    OwnerScheduledCanaryApproval,
     initialize_ledger,
     load_ledger,
     prepare_next,
@@ -66,6 +68,7 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--target-proof", type=Path, required=True)
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     prepare.add_argument("--publication-id")
+    prepare.add_argument("--scheduled-canary-authorization", type=Path)
     prepare.add_argument(
         "--recover-stale-predecessors",
         action="store_true",
@@ -106,6 +109,21 @@ def _load_model(path: Path, model: type[ModelT]) -> ModelT:
         return model.model_validate_json(path.read_text(encoding="utf-8"))
     except (OSError, ValidationError) as exc:
         raise ValueError(f"invalid runtime artifact {path}: {exc}") from exc
+
+
+def _read_scheduled_canary_authorization(path: Path) -> OwnerScheduledCanaryApproval:
+    try:
+        authority = OwnerScheduledCanaryApproval.model_validate_json(path.read_text(encoding="utf-8"))
+        manifest_path = Path(authority.source_manifest_path)
+        if manifest_path.is_absolute() or ".." in manifest_path.parts:
+            raise ValueError("owner-scheduled canary manifest path must be repository-relative")
+        source = manifest_path.read_bytes()
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid owner-scheduled canary evidence: {exc}") from exc
+    git_blob_sha1 = hashlib.sha1(b"blob " + str(len(source)).encode("ascii") + b"\0" + source).hexdigest()
+    if git_blob_sha1 != authority.source_manifest_git_blob_sha1:
+        raise ValueError("owner-scheduled canary source manifest changed after owner approval")
+    return authority
 
 
 def _write_model(path: Path, value: BaseModel) -> None:
@@ -374,6 +392,11 @@ def main() -> int:
             recover_stale_predecessors=args.recover_stale_predecessors,
         )
         target = _load_model(args.target_proof, GenericTargetProof)
+        owner_canary = (
+            _read_scheduled_canary_authorization(args.scheduled_canary_authorization)
+            if args.scheduled_canary_authorization is not None
+            else None
+        )
         prepared = prepare_next(
             profile,
             release,
@@ -385,6 +408,7 @@ def main() -> int:
             mode=args.mode,
             target=target,
             expected_publication_id=args.publication_id,
+            scheduled_canary_approval=owner_canary,
         )
         if prepared.envelope is None:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))

@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
 
 GenericStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
@@ -120,6 +121,73 @@ class GenericPublicationLedger(BaseModel):
         if len(intents) != len(set(intents)):
             raise ValueError("ledger intent_id values must be unique")
         return self
+
+
+class OwnerScheduledCanaryApproval(BaseModel):
+    """Exact owner-reviewed exception for one explicitly scheduled first video.
+
+    All other Telegram releases still require the original verified manual canary.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-owner-scheduled-canary-approval"]
+    schema_version: Literal[1]
+    release_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    first_publication_id: str = Field(min_length=5, max_length=96)
+    project_key: str
+    channel_username: str
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    target_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    chat_id: int = Field(lt=0)
+    bot_id: int = Field(gt=0)
+    bot_username: str
+    source_manifest_path: str
+    source_manifest_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    approved_by: str = Field(min_length=10, max_length=200)
+    approval_reference: str = Field(min_length=20, max_length=600)
+    approved_at: datetime
+    scheduled_at: datetime
+    owner_authorized: Literal[True]
+    only_first_scheduled_video: Literal[True]
+    maximum_first_send_attempts: Literal[1]
+    require_verified_first_receipt_for_followons: Literal[True]
+
+    @model_validator(mode="after")
+    def validate_owner_approval(self) -> "OwnerScheduledCanaryApproval":
+        if self.approved_at.tzinfo is None or self.scheduled_at.tzinfo is None:
+            raise ValueError("owner-scheduled video approval timestamps must be timezone-aware")
+        if self.approved_at >= self.scheduled_at:
+            raise ValueError("owner-scheduled approval must predate the exact first slot")
+        return self
+
+    def require_exact_binding(
+        self,
+        profile: TelegramChannelProfile,
+        release: GenericReleaseQueue,
+        target: GenericTargetProof,
+    ) -> None:
+        if not release.release_authorized or not release.items:
+            raise ValueError("owner-scheduled video requires an authorized immutable release")
+        if (
+            self.release_digest != release.digest
+            or self.first_publication_id != release.items[0].publication_id
+            or self.project_key != profile.project_key
+            or self.project_key != release.project_key
+            or self.channel_username.casefold() != profile.channel_username.casefold()
+            or self.channel_username.casefold() != release.channel_username.casefold()
+            or self.profile_sha256 != profile.digest
+            or self.target_binding_sha256 != release.target_binding_sha256
+            or self.chat_id != release.chat_id
+            or self.bot_id != release.bot_id
+            or self.bot_username.casefold() != str(release.bot_username).casefold()
+            or self.chat_id != target.chat_id
+            or self.bot_id != target.bot_id
+            or self.bot_username.casefold() != target.bot_username.casefold()
+            or self.scheduled_at != release.items[0].scheduled_at
+            or not isinstance(release.items[0].payload, GenericVideoPayload)
+        ):
+            raise ValueError("owner-scheduled canary differs from exact video release or Telegram target")
 
 
 class GenericDispatchEnvelope(BaseModel):
@@ -356,6 +424,7 @@ def prepare_next(
     target: GenericTargetProof,
     expected_publication_id: str | None = None,
     now: datetime | None = None,
+    scheduled_canary_approval: OwnerScheduledCanaryApproval | None = None,
 ) -> PreparedGenericDispatch:
     prepared_at = now or utc_now()
     if prepared_at.tzinfo is None:
@@ -370,6 +439,10 @@ def prepare_next(
         github_sha=github_sha,
         github_workflow_sha=github_workflow_sha,
     )
+    if scheduled_canary_approval is not None:
+        if mode != "scheduled":
+            raise ValueError("owner-scheduled canary is invalid for manual dispatch")
+        scheduled_canary_approval.require_exact_binding(profile, release, target)
     if mode == "scheduled" and run_attempt != "1":
         return PreparedGenericDispatch(envelope=None, reason="scheduled workflow re-runs are forbidden")
 
@@ -397,9 +470,30 @@ def prepare_next(
             for entry in ledger.entries.values()
         )
         if not manual_canary:
-            return PreparedGenericDispatch(
-                envelope=None, reason="scheduled execution requires a verified manual canary"
+            if scheduled_canary_approval is None:
+                return PreparedGenericDispatch(
+                    envelope=None, reason="scheduled execution requires a verified manual canary"
+                )
+            first = release.items[0]
+            first_state = ledger.entries[first.publication_id]
+            first_is_pending = first_state.state == "pending" and first_state.provider_effect in {
+                "impossible",
+                "not_dispatched",
+                "confirmed_absent",
+            }
+            first_is_verified = (
+                first_state.state == "published"
+                and first_state.provider_effect == "verified"
+                and first_state.dispatch_mode == "scheduled"
+                and first_state.actual_chat_id == target.chat_id
+                and first_state.bot_id == target.bot_id
+                and first_state.message_id is not None
+                and first_state.message_id > 0
             )
+            if not (first_is_pending or first_is_verified):
+                return PreparedGenericDispatch(
+                    envelope=None, reason="owner-scheduled first video canary has no verified receipt"
+                )
 
     item, reason = strict_next_item(release, ledger)
     if item is None:
