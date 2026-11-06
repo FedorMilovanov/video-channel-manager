@@ -342,8 +342,8 @@ jobs:
           binding_path = Path(f"content/telegram/milovi-cake/releases/{publication_id}-video.json")
           binding = json.loads(binding_path.read_text(encoding="utf-8"))
           safe_path = "/".join(urllib.parse.quote(part, safe="") for part in binding["artifact_path"].split("/"))
-          if binding["schema_version"] == 2:
-              # A new muted transport is pinned to one immutable evidence commit.
+          if binding["schema_version"] in (2, 3):
+              # A separate audio-free transport is pinned to one immutable evidence commit.
               evidence_commit = binding["artifact_commit"]
           elif binding["schema_version"] == 1:
               # Historical 16/16 bindings remain byte-identical; pin source by SHA
