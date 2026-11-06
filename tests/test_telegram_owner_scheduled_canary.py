@@ -188,7 +188,9 @@ def test_approval_date_and_owner_boolean_are_strictly_validated() -> None:
 def test_workflow_schedules_all_four_without_forging_manual_provenance() -> None:
     text = (ROOT / ".github/workflows/lordchrist-shorts4-publisher.yml").read_text(encoding="utf-8")
     assert 'cron: "7 13 8-11 11 *"' in text
-    assert "now.day not in (8,9,10,11)" in text
+    assert 'valid_days=(8,9,10,11) if os.environ["WAVE"]=="v1" else (12,13,14,15)' in text
+    assert "now.day not in valid_days" in text
+    assert 'cron: "7 13 12-15 11 *"' in text
     assert "scheduled-canary-authorization" in text
     assert "OWNER_CANARY_PROOF" in text
     assert "mode=scheduled" in text

@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_multichannel_cli import _read_scheduled_canary_authorization
 from video_channel_manager.telegram_multichannel_release import load_release
 from video_channel_manager.telegram_multichannel_state import OwnerScheduledCanaryApproval, initialize_ledger
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload, render_video_payload
@@ -65,10 +66,14 @@ def test_four_continuation_shorts_are_exact_and_separate_from_immutable_predeces
         assert "#ГосподьБог #Проповедь" in item.payload.caption
         assert f"https://www.youtube.com/watch?v={video_id}" in item.payload.caption
         assert len(item.payload.caption) <= 1024
-        assert source["caption_sha256"] == "sha256:" + hashlib.sha256(item.payload.caption.encode("utf-8")).hexdigest()
+        caption_digest = hashlib.sha256(item.payload.caption.encode("utf-8")).hexdigest()
+        assert source["caption_sha256"] == "sha256:" + caption_digest
         assert item.payload.media_filename == f"lordchrist-short-{video_id}.mp4"
         assert source["artifact_commit"] == EVIDENCE_COMMIT
-        assert source["artifact_path"] == f"artifacts/lordchrist-telegram/shorts-extra4-20261106/lordchrist-short-{video_id}.mp4"
+        assert (
+            source["artifact_path"]
+            == f"artifacts/lordchrist-telegram/shorts-extra4-20261106/lordchrist-short-{video_id}.mp4"
+        )
         assert len(source["git_blob_sha1"]) == 40
         reconstructed = render_video_payload(
             profile,
@@ -88,6 +93,7 @@ def test_four_continuation_shorts_are_exact_and_separate_from_immutable_predeces
 
 def test_second_wave_scheduled_canary_binds_exact_immutable_manifest() -> None:
     approval = OwnerScheduledCanaryApproval.model_validate_json(APPROVAL.read_text(encoding="utf-8"))
+    assert _read_scheduled_canary_authorization(APPROVAL) == approval
     release = load_release(RELEASE)
     manifest_bytes = MANIFEST.read_bytes()
     blob = hashlib.sha1(b"blob " + str(len(manifest_bytes)).encode("ascii") + b"\0" + manifest_bytes).hexdigest()
@@ -102,19 +108,19 @@ def test_second_wave_scheduled_canary_binds_exact_immutable_manifest() -> None:
 
 def test_continuation_reuses_one_existing_guarded_writer_and_protected_evidence() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert '7 13 8-11 11 *' in workflow
-    assert '7 13 12-15 11 *' in workflow
+    assert "7 13 8-11 11 *" in workflow
+    assert "7 13 12-15 11 *" in workflow
     assert "lordchrist-telegram-publisher" in workflow
     assert "content/telegram/lordchrist/shorts-v2-publication-ledger.json" in workflow
     assert "require all" not in workflow.lower() or "verified" in workflow.lower()
     assert "Final-four wave blocked until all four earlier Shorts have exact verified Telegram receipts" in workflow
     assert 'state.state=="published" and state.provider_effect=="verified"' in workflow
-    assert 'state.actual_chat_id==release.chat_id and state.bot_id==release.bot_id' in workflow
+    assert "state.actual_chat_id==release.chat_id and state.bot_id==release.bot_id" in workflow
     assert 'valid_days=(8,9,10,11) if os.environ["WAVE"]=="v1" else (12,13,14,15)' in workflow
     assert "scripts.lordchrist_quote_v6_publisher import guard_cross_track" in workflow
     assert workflow.count("telegram_multichannel_cli send-once") == 1
     assert workflow.index("Persist pre-send intent") < workflow.index("Exactly one native Telegram sendVideo attempt")
-    refs = json.loads((ROOT/"docs/operations/protected-evidence-refs.json").read_text(encoding="utf-8"))
+    refs = json.loads((ROOT / "docs/operations/protected-evidence-refs.json").read_text(encoding="utf-8"))
     entries = [x for x in refs["refs"] if x["ref"] == "agent/lordchrist-shorts8-media-20261106"]
     assert len(entries) == 1
     assert entries[0]["tip_commit"] == EVIDENCE_COMMIT
