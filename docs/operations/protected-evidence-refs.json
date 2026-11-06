@@ -61,6 +61,14 @@
       "tip_commit": "85990401e732a22a8a12b390683196264a50ba8c",
       "why": "Pinned four exact owner-channel MP4 bytes for LordChrist Telegram Shorts #810, Nov 8-11. Exact SHA and Git blob are bound to four-item source manifest. Keep immutable media evidence separate from runnable publisher state.",
       "restore": "git push origin 85990401e732a22a8a12b390683196264a50ba8c:refs/heads/agent/lordchrist-shorts4-media-20261106"
+    },
+    {
+      "ref": "agent/lordchrist-shorts8-media-20261106",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "d45230ae5ab07b0f2301d01628c04e4fa7a3fb84",
+      "why": "Immutable exact owner-channel media bytes for remaining LordChrist Telegram Shorts #810 Nov 12-15, approved source/hash-bound release. Never rewrite or prune.",
+      "restore": "git push origin d45230ae5ab07b0f2301d01628c04e4fa7a3fb84:refs/heads/agent/lordchrist-shorts8-media-20261106"
     }
   ]
 }

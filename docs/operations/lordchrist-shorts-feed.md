@@ -315,3 +315,13 @@ Forbidden without a new exact rollout scope and authorization:
 - live schedule activation.
 
 A future live rollout requires a new exact owning scope, fresh current-main proof, fresh durable state, exact target preflight, immutable reviewed release, separate human execution authority, durable intent before one provider attempt, zero blind mutation retries and exact provider-visible postflight.
+
+## November 6, 2026 — Issue #810 continuation: final four of eight Shorts
+
+This addendum supersedes the older provider-inert #503 scope only for the exact owner-requested #810 rollout. The Nov 8–11 four-item release remains immutable. The Nov 12–15 continuation is a separate v2 release with video IDs 2sapXv78y9Q (Washer), PUlNpw83DFI (Sproul), y9a7_3DutWk (Beeke), EozlBy39F1c (Kolomiytsev), one per local day at 16:00 Moscow, GitHub due check at 16:07.
+
+The four MP4 files are pinned to immutable Git commit d45230ae5ab07b0f2301d01628c04e4fa7a3fb84, protected ref agent/lordchrist-shorts8-media-20261106, with per-file SHA256, Git blob and byte counts. There is no new sender: both immutable waves use the existing lordchrist-shorts4-publisher workflow, the same lordchrist-telegram-publisher mutex, exact Telegram bot/chat binding and state/lordchrist-telegram branch. V2 has its own non-overwriting ledger and source manifest. The CI-triggered bootstrap is provider-inert.
+
+Every one of the four v1 predecessors MUST have a durable published/verified Telegram receipt on the expected chat and bot before any v2 provider intent. A missing, skipped, failed, unknown, or pending predecessor stops v2. The schedule is year-gated to November 12–15, 2026, with no blind retry, only one item per day, freshness limits and exact-media verification. The initial v2 scheduled canary is additionally bound to a specific owner approval, target, release digest and manifest blob. No future publication has been claimed completed.
+
+The owner explicitly requested native Telegram publication of the remaining four already accepted YouTube excerpts. This records owner direction but does not assert an independently issued third-party copyright licence. Keep other LordChrist Telegram writers, Charnock, Jude, and quotes unchanged. Only declare v2 active after main merge, mandatory CI success, durable ledger initialization and verification; only declare individual uploads complete after verified Telegram message IDs.

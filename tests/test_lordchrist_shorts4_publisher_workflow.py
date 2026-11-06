@@ -25,7 +25,7 @@ def test_exact_four_video_workflow_is_one_writer_and_provider_conservative() -> 
     assert "7 13 8-11 11 *" in text
     assert "lordchrist-short-ba4ZahiY-U0" in text
     assert "2026-11-08" in text
-    assert "now.day not in (8,9,10,11)" in text
+    assert 'valid_days=(8,9,10,11) if os.environ["WAVE"]=="v1" else (12,13,14,15)' in text
     assert "state/lordchrist-telegram" in text
     assert "quote-v6-publication-ledger.json" not in text
     assert "shorts-v1-publication-ledger.json" in text
