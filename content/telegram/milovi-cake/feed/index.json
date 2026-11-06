@@ -263,6 +263,19 @@
       "message_id": null,
       "message_url": null,
       "updated_at_utc": null
+    },
+    "milovi-feed-20261106-001": {
+      "publication_id": "milovi-feed-20261106-001",
+      "release_id": "milovi-feed-20261106-001",
+      "release_candidate_sha256": "sha256:4b382b39a9c7e096b24b21e7391b2f0f675bf64870d689dd66ef72ed3f705fd3",
+      "provider_payload_sha256": "sha256:5bcd87633c9da1e598fa352140533f971292649934cf68391f771d434fe91108",
+      "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261106-001.json",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "message_id": null,
+      "message_url": null,
+      "updated_at_utc": null
     }
   }
 }
