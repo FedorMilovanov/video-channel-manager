@@ -53,6 +53,14 @@
       "tip_commit": "9331af0c6015404bfda0cd2c6392066b78dc68b3",
       "why": "Immutable, verified 15 video-only MP4 transports for Milovi Cake Telegram #809, exact source frames with audio removed. Content rights, duplicates and release authority are still held. Do not delete or rewrite evidence while November 8-22 editorial previews reference it.",
       "restore": "git push origin 9331af0c6015404bfda0cd2c6392066b78dc68b3:refs/heads/agent/milovi-video-muted15-80ee7f9fea"
+    },
+    {
+      "ref": "agent/lordchrist-shorts4-media-20261106",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "85990401e732a22a8a12b390683196264a50ba8c",
+      "why": "Pinned four exact owner-channel MP4 bytes for LordChrist Telegram Shorts #810, Nov 8-11. Exact SHA and Git blob are bound to four-item source manifest. Keep immutable media evidence separate from runnable publisher state.",
+      "restore": "git push origin 85990401e732a22a8a12b390683196264a50ba8c:refs/heads/agent/lordchrist-shorts4-media-20261106"
     }
   ]
 }

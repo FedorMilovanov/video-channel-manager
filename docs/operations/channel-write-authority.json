@@ -7,20 +7,6 @@
   "reading_rule": "provider_writes_authorized is a property of one profile, not of a channel: @lordchrist has two profiles and they disagree on purpose (the legacy quote queue is closed, the historical rich editorial is open). Read the row for the exact profile a workflow loads.",
   "channels": [
     {
-      "profile": "content/telegram/channels/lordchrist.json",
-      "project_key": "lord-god-strength",
-      "channel_username": "@lordchrist",
-      "state_ref": "state/lordchrist-telegram",
-      "concurrency_group": "lordchrist-telegram-publisher",
-      "provider_writes_authorized": false,
-      "profile_digest": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
-      "profile_file_sha256": "sha256:c7fa38adbbc4e8df99e589dcc81b16fffd2ea2e93ed58cd23c53e6d0516abbd9",
-      "target_binding": "content/telegram/channels/lordchrist-target-binding.json",
-      "chat_id": -1001295216957,
-      "bot_id": 8716602202,
-      "bot_username": "preaching_mp3_bot"
-    },
-    {
       "profile": "content/telegram/channels/lordchrist-rich.json",
       "project_key": "lord-god-strength",
       "channel_username": "@lordchrist",
@@ -30,6 +16,34 @@
       "profile_digest": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
       "profile_file_sha256": "sha256:a3c22548c1467b4b519bbb75ad387d80b3370cffb64c3cbbf76372bc25c8da8e",
       "target_binding": "content/telegram/channels/lordchrist-rich-target-binding.json",
+      "chat_id": -1001295216957,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    {
+      "profile": "content/telegram/channels/lordchrist-shorts-v1.json",
+      "project_key": "lord-god-strength",
+      "channel_username": "@lordchrist",
+      "state_ref": "state/lordchrist-telegram",
+      "concurrency_group": "lordchrist-telegram-publisher",
+      "provider_writes_authorized": true,
+      "profile_digest": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+      "profile_file_sha256": "sha256:34879696ad87e9ec2d75f38a03ebdb9ec00b7c7daf557ab375cd2e128a738b8a",
+      "target_binding": "content/telegram/channels/lordchrist-shorts-v1-target-binding.json",
+      "chat_id": -1001295216957,
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    {
+      "profile": "content/telegram/channels/lordchrist.json",
+      "project_key": "lord-god-strength",
+      "channel_username": "@lordchrist",
+      "state_ref": "state/lordchrist-telegram",
+      "concurrency_group": "lordchrist-telegram-publisher",
+      "provider_writes_authorized": false,
+      "profile_digest": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+      "profile_file_sha256": "sha256:c7fa38adbbc4e8df99e589dcc81b16fffd2ea2e93ed58cd23c53e6d0516abbd9",
+      "target_binding": "content/telegram/channels/lordchrist-target-binding.json",
       "chat_id": -1001295216957,
       "bot_id": 8716602202,
       "bot_username": "preaching_mp3_bot"
