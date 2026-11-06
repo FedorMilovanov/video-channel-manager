@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-v6-owner-requested-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-quote-v6-20261106",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "candidate_digest": "sha256:a1d865277e794aa5d47ea8248bfab9406b05a44e0ec822400650ed3f580e06f0",
+  "owner_release_requested_on": "2026-11-06",
+  "activation_basis": "Owner explicitly requested scheduling and publication of all 30 new quotes in ChatGPT conversation, 2026-11-06",
+  "source_review_status": "The frozen v6 source candidate and separate legal/editorial ledger remain unapproved; this release does not claim rights clearance or final bilingual human review",
+  "writes_authorized_by_owner_request": true,
+  "quote_v4_replay_authorized": false,
+  "retired_v4_workflow_must_remain_disabled": true,
+  "first_canary_publication_id": "lordchrist-ryle-religion-cost",
+  "scheduled_start_moscow_date": "2026-11-08",
+  "schedule_time_moscow": "10:00",
+  "max_posts_per_run": 1,
+  "new_state_ledger_relative_path": "content/telegram/lordchrist/quote-v6-publication-ledger.json"
+}
