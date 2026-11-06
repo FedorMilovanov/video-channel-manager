@@ -231,6 +231,7 @@
     "src/video_channel_manager/platforms/youtube/comment_plan.py": 83.1,
     "src/video_channel_manager/platforms/youtube/comments.py": 86.05,
     "src/video_channel_manager/platforms/youtube/copy_execution.py": 89.79,
+    "src/video_channel_manager/platforms/youtube/copy_output_safety.py": 75.51,
     "src/video_channel_manager/platforms/youtube/copy_plan.py": 82.4,
     "src/video_channel_manager/platforms/youtube/gap_inventory.py": 96.87,
     "src/video_channel_manager/platforms/youtube/labels.py": 100.0,
