@@ -212,7 +212,9 @@ def test_existing_readonly_report_is_never_overwritten(tmp_path: Path, monkeypat
     assert writer.read_count == 0
 
 
-def test_completed_receipt_with_empty_backup_does_not_fake_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_completed_receipt_with_empty_backup_does_not_fake_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
