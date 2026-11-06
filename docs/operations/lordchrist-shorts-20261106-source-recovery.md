@@ -72,3 +72,14 @@ The Shorts policy still has telegram_provider_mutation_allowed=false.
 Publishing requires source-specific rightsholder evidence, latest
 public duplicate check, exact approved release, full durable state,
 serialization across existing writers and one verified Telegram receipt.
+
+### Frozen UTF-8 caption repair (provider-inert)
+
+A Windows PowerShell codepage damaged *only* the Russian source-label
+and hashtags in the first four-copy preview, saving literal question
+marks. New provider-inert captions regenerate the exact source label
+and Russian tags as Unicode; SHA256 is recomputed per exact caption.
+The source title, video ID, media bytes, 16:00 editorial date and
+rights/license holds are byte-identical. The new regression test
+fails closed on any run of four question marks, so a valid checksum
+of corrupted text cannot be accepted.
