@@ -74,9 +74,7 @@ def _plan(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _write_complete_receipts(
-    plan_path: Path, backup_path: Path, result_path: Path, plan: dict[str, Any]
-) -> None:
+def _write_complete_receipts(plan_path: Path, backup_path: Path, result_path: Path, plan: dict[str, Any]) -> None:
     backup_path.write_text(
         json.dumps(
             {
@@ -128,9 +126,7 @@ def _run_reconcile(
     )
 
 
-def test_readonly_completed_receipt_and_live_after_verified(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_readonly_completed_receipt_and_live_after_verified(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
@@ -146,9 +142,7 @@ def test_readonly_completed_receipt_and_live_after_verified(
     assert plan_path.exists() and backup_path.exists() and result_path.exists()
 
 
-def test_missing_result_and_live_before_is_unknown_not_retry(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_missing_result_and_live_before_is_unknown_not_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     _plan(plan_path)
     writer = ReadOnlyWriter("Original description")
@@ -162,9 +156,7 @@ def test_missing_result_and_live_before_is_unknown_not_retry(
     assert report["safe_to_replay"] is False
 
 
-def test_live_after_but_running_receipt_remains_not_terminal(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_live_after_but_running_receipt_remains_not_terminal(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
@@ -180,25 +172,19 @@ def test_live_after_but_running_receipt_remains_not_terminal(
     assert report["receipt_state"] == "running"
 
 
-def test_third_party_edit_blocks_reconciliation_success(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_third_party_edit_blocks_reconciliation_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
     with pytest.raises(typer.Exit) as exc:
-        _run_reconcile(
-            monkeypatch, plan_path, backup_path, result_path, report_path, ReadOnlyWriter("Other editor")
-        )
+        _run_reconcile(monkeypatch, plan_path, backup_path, result_path, report_path, ReadOnlyWriter("Other editor"))
     assert exc.value.exit_code == 2
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["outcome"] == "manual_or_concurrent_description_conflict"
     assert report["rows"][0]["state"] == "live_third_state"
 
 
-def test_mismatched_backup_evidence_blocks_before_owner_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_mismatched_backup_evidence_blocks_before_owner_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
@@ -213,9 +199,7 @@ def test_mismatched_backup_evidence_blocks_before_owner_read(
     assert not report_path.exists()
 
 
-def test_existing_readonly_report_is_never_overwritten(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_existing_readonly_report_is_never_overwritten(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
     plan = _plan(plan_path)
     _write_complete_receipts(plan_path, backup_path, result_path, plan)
