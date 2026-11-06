@@ -31,6 +31,10 @@ def test_four_specific_shorts_are_prepared_without_provider_authorization() -> N
         assert at.isoformat() == f"2026-11-{8 + i:02d}T16:00:00+03:00"
         assert r["publication_id"] == "lordchrist-short-" + vids[i]
         assert r["caption_sha256"] == "sha256:" + hashlib.sha256(r["caption"].encode("utf-8")).hexdigest()
+        assert "????" not in r["caption"], "Windows console codepage corrupted Russian caption"
+        assert "Исходное видео:" in r["caption"]
+        assert "#ГосподьБог" in r["caption"]
+        assert f"https://www.youtube.com/watch?v={vids[i]}" in r["caption"]
         assert r["original_rightsholder_written_telegram_reupload_permission_verified"] is False
         assert r["video_release_authorized"] is False
         assert r["video_publish_operation_allowed"] is False
