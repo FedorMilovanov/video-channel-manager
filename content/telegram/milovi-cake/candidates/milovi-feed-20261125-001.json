@@ -1,0 +1,41 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-next-publication-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_exact_candidate",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "publication_id": "milovi-feed-20261125-001",
+  "scheduled_at": "2026-11-25T12:30:00+03:00",
+  "timezone": "Europe/Moscow",
+  "operation": "sendPhoto",
+  "media": {
+    "media_id": "school-stohrer",
+    "source_path": "public/images/articles/stohrer-1730.webp",
+    "source_git_blob_sha1": "81e17cfca3cd4adaec6e446031181d3d948dcfcd",
+    "source_sha256": "sha256:fc379f006cc76f99641a555d32649912c7cf7248b21f2ba5ffe30fdddcbbeb0b",
+    "transport_format": "image/jpeg",
+    "transport_byte_size": 418542,
+    "transport_sha256": "sha256:1fefaefc94ff7af0e1c9410899c9f51158f0783dfa34919f6b88b4798bb9e487",
+    "pixel_width": 1280,
+    "pixel_height": 800
+  },
+  "caption_sha256": "sha256:06488c9c5babcb0059b56ac27569b93d04ca0f41c1e5d79acd0036bd3602c5a6",
+  "caption": "🏛 КОНДИТЕРСКАЯ, КОТОРАЯ РАБОТАЕТ С 1730 ГОДА\n\nВ Париже на rue Montorgueil, 51, и сегодня работает Maison Stohrer. Её история начинается с Николя Шторера — кондитера при дворе Марии Лещинской, супруги Людовика XV.\n\nЗдесь витрина похожа на гастрономический архив: baba au rhum, religieuse, puits d’amour. Но между историей дома и легендой о «рецепте, не менявшемся три столетия» есть важная разница.\n\n📖 Что действительно сохранилось с XVIII века, а что менялось — в нашем отдельном образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/stohrer-1730/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияКондитерскогоИскусства",
+  "editorial_guards": {
+    "school_separate_educational_content": true,
+    "contains_product_process_claim": false,
+    "contains_unverified_price_or_availability_claim": false,
+    "source_image_is_school_illustration": true,
+    "article_url_verified": true
+  },
+  "source_context": {
+    "school_repository": "FedorMilovanov/Milovi_School",
+    "school_commit": "f540e8d6fca89592a8394e0a707e6af0d85afc14",
+    "school_article_id": "stohrer-1730",
+    "school_article_url": "https://french.milovicake.ru/articles/stohrer-1730/"
+  },
+  "execution_note": "Owner 2026-11-06 requested Milovi School story/photo/link Telegram promotions; scheduled only after first ten verified Cake native video posts."
+}

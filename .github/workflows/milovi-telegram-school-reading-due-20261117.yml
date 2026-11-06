@@ -1,0 +1,120 @@
+name: Milovi School three exact reading posts (single Milovi publisher)
+
+on:
+  workflow_run:
+    workflows:
+      - Milovi Telegram feed quality
+    types:
+      - completed
+    branches:
+      - main
+  schedule:
+    # 09:37 UTC = 12:37 Moscow. Exact Nov 17/21/25 2026; year-gated.
+    - cron: "37 9 17,21,25 11 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  # Share with all Milovi Telegram article/photo/video mutations and state writes.
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  school-three-single-dispatcher:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_sha == github.sha))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src:.
+      STATE_DIR: .state/milovi
+      STATE_BRANCH: state/milovi-cake-telegram
+    steps:
+      - name: Check out exact current-main release and source bindings
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned minimal Telegram validator
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Reject stale main and require current completed Milovi quality
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml --sha "$GITHUB_SHA"
+
+      - name: Validate three immutable Milovi School releases without provider access
+        run: python -m scripts.milovi_school_reading_due validate
+
+      - name: Checkout protected, shared Milovi channel state branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Initialize three exact provider-inert photo ledgers and shared channel index
+        if: github.event_name == 'workflow_run'
+        run: python -m scripts.milovi_school_reading_due initialize-all --state-checkout "$STATE_DIR"
+
+      - name: Persist initialization atomically, no Telegram provider contact
+        if: github.event_name == 'workflow_run'
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- content/telegram/milovi-cake/feed/index.json \
+            content/telegram/milovi-cake/feed/milovi-feed-20261117-002.json \
+            content/telegram/milovi-cake/feed/milovi-feed-20261121-002.json \
+            content/telegram/milovi-cake/feed/milovi-feed-20261125-001.json
+          if git -C "$STATE_DIR" diff --cached --quiet; then
+            echo "All three School ledgers already initialized; no writes."
+            exit 0
+          fi
+          git -C "$STATE_DIR" commit -m "Initialize Milovi School three exact owner-approved reading-photo ledgers"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
+      - name: Verify exact due school item and ten actual Cake receipts before dispatch
+        if: github.event_name == 'schedule'
+        id: due
+        run: |
+          set -euo pipefail
+          python -m scripts.milovi_school_reading_due due \
+            --state-checkout "$STATE_DIR" --output "$GITHUB_OUTPUT"
+
+      - name: Dispatch only existing canonical single-writer Milovi Telegram publisher
+        if: github.event_name == 'schedule' && steps.due.outputs.dispatch == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_ID: ${{ steps.due.outputs.publication_id }}
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || exit 3
+          gh workflow run milovi-telegram-feed-publisher.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f operation=publish -f publication_id="$PUBLICATION_ID" \
+            -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"

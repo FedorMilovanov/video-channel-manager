@@ -1,0 +1,42 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261121-002",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:73aa78fc7508a9a508e1990eee1489abd862141201fed197c45046d1241822c0",
+  "reviewed_publication_id": "milovi-feed-20261121-002",
+  "reviewed_by": "Owner's 2026-11-06 direct request for Milovi School article+image+website promotions in Milovi Cake Telegram",
+  "reviewed_at": "2026-11-06T20:23:56.330154+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261121-002",
+      "scheduled_at": "2026-11-21T12:30:00+03:00",
+      "source_sha256": "sha256:1f8497984b1b65564cbbf2deda5a5481d97b85c8ce72981f32776e282f9bb77b",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261121-002",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:2169fec7b56fa6d6bb082c78cdc29a590e167aa4b4785ae7dd32e1c42899c520",
+        "caption": "🥐 КРУАССАН НЕ ВСЕГДА БЫЛ СЛОЁНЫМ\n\nУ австрийского kipferl уже была форма полумесяца, но не было тех тонких хрустящих слоёв, за которые ценят современный французский круассан. В XIX веке венская выпечка пришла в Париж; позднее пекари объединили дрожжевое тесто с турированным маслом.\n\nА известная история о пекарях, спасших Вену в 1683 году, остаётся легендой — достоверных подтверждений ей нет.\n\n📖 Как выпечка с центральноевропейскими корнями стала символом Франции — в нашем образовательном проекте Milovi School:\nhttps://french.milovicake.ru/articles/croissant-history/\n\nИллюстрация — Milovi School.\n#MiloviSchool #ИсторияВыпечки",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261121-002.jpg",
+        "media_sha256": "sha256:875a2e9696bcf673993758956b9ee7fdf55ebd26f118f3de2f42c518a917650e",
+        "media_byte_size": 375303,
+        "media_filename": "milovi-feed-20261121-002.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}
