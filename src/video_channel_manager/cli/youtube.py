@@ -577,12 +577,11 @@ def reconcile_copy_fixes(
             raise ValueError("Signed plan target_channel_id differs from --confirm-channel.")
         if len({plan.resolve(), backup.resolve(), result.resolve()}) != 3:
             raise ValueError("Plan, backup, and result paths must be distinct.")
-        if report_output is not None and report_output.resolve() in {
-            plan.resolve(),
-            backup.resolve(),
-            result.resolve(),
-        }:
-            raise ValueError("Read-only report output cannot overwrite a plan, backup, or result.")
+        if report_output is not None:
+            if report_output.resolve() in {plan.resolve(), backup.resolve(), result.resolve()}:
+                raise ValueError("Read-only report output cannot overwrite a plan, backup, or result.")
+            if report_output.exists():
+                raise FileExistsError(f"Read-only report already exists: {report_output}")
         back = _read_optional_youtube_recovery_json(backup)
         receipt = _read_optional_youtube_recovery_json(result)
         expected_operations: dict[str, dict[str, Any]] = {str(op["video_id"]): op for op in payload["operations"]}
@@ -598,6 +597,7 @@ def reconcile_copy_fixes(
             back_operations = back.get("operations")
             if not isinstance(back_operations, list):
                 raise ValueError("Backup operations must be an array.")
+            backup_ids: list[str] = []
             for operation in back_operations:
                 if not isinstance(operation, dict):
                     raise ValueError("Backup operation must be an object.")
@@ -605,6 +605,9 @@ def reconcile_copy_fixes(
                 expected = expected_operations.get(video_id)
                 if expected is None:
                     raise ValueError(f"Backup contains an unapproved video: {video_id}")
+                if video_id in backup_ids:
+                    raise ValueError(f"Backup repeats a video ID: {video_id}")
+                backup_ids.append(video_id)
                 if any(
                     operation.get(key) != expected.get(key)
                     for key in ("channel_id", "before_description", "after_description")
@@ -654,7 +657,13 @@ def reconcile_copy_fixes(
                     isinstance(summary, dict)
                     and summary.get("postflight_verified") == len(rows)
                     and summary.get("applied") == len(rows)
+                    and summary.get("attempted") == len(rows)
+                    and set(backup_ids) == set(expected_operations)
+                    and len(backup_ids) == len(rows)
                     and len(receipt["applied"]) == len(rows)
+                    and len(receipt["attempted"]) == len(rows)
+                    and {str(entry["video_id"]) for entry in receipt["applied"]} == set(expected_operations)
+                    and {str(entry["video_id"]) for entry in receipt["attempted"]} == set(expected_operations)
                 )
                 outcome = "completed_live_verified" if complete else "live_after_receipt_not_terminally_verified"
             else:
