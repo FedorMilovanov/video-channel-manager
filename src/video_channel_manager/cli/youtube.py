@@ -585,6 +585,7 @@ def reconcile_copy_fixes(
         back = _read_optional_youtube_recovery_json(backup)
         receipt = _read_optional_youtube_recovery_json(result)
         expected_operations: dict[str, dict[str, Any]] = {str(op["video_id"]): op for op in payload["operations"]}
+        backup_ids: list[str] = []
         if back is None:
             backup_state = "missing"
         elif back.get("schema_name") == "video-manager.youtube-copy-output-reservation":
@@ -597,7 +598,6 @@ def reconcile_copy_fixes(
             back_operations = back.get("operations")
             if not isinstance(back_operations, list):
                 raise ValueError("Backup operations must be an array.")
-            backup_ids: list[str] = []
             for operation in back_operations:
                 if not isinstance(operation, dict):
                     raise ValueError("Backup operation must be an object.")
