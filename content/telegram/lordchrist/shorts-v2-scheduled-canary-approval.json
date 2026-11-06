@@ -1,0 +1,23 @@
+{
+  "schema_name": "video-channel-manager.telegram-owner-scheduled-canary-approval",
+  "schema_version": 1,
+  "release_digest": "sha256:fbe26ec1c06da004b9d3433e9476d2615e73988c6f545224670bc13544510e16",
+  "first_publication_id": "lordchrist-short-2sapXv78y9Q",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+  "target_binding_sha256": "sha256:c6282b005a6437ea8e27eec6de3ead2c725ad099c5213df4824d9646bcc17b4b",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "source_manifest_path": "content/telegram/lordchrist/shorts-v2-source-manifest.json",
+  "source_manifest_git_blob_sha1": "4660b72dd7f9b6fed5c20bc930f8c9f9721b3594",
+  "approved_by": "Owner's explicit Nov 6 request to queue final four accepted Telegram Shorts",
+  "approval_reference": "Owner: «Отдельно решить судьбу оставшихся четырёх ... давай грузи их тоже в очередь, я же сказал».",
+  "approved_at": "2026-11-06T19:32:33.265271+03:00",
+  "scheduled_at": "2026-11-12T16:00:00+03:00",
+  "owner_authorized": true,
+  "only_first_scheduled_video": true,
+  "maximum_first_send_attempts": 1,
+  "require_verified_first_receipt_for_followons": true
+}

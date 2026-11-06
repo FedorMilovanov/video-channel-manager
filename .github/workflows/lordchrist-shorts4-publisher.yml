@@ -1,4 +1,4 @@
-name: Lordchrist four exact Shorts video publisher
+name: Lordchrist eight exact Shorts video publisher (two immutable four-item waves)
 
 on:
   workflow_run:
@@ -10,6 +10,13 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      wave:
+        required: true
+        type: choice
+        default: v1
+        options:
+          - v1
+          - v2
       action:
         required: true
         type: choice
@@ -29,6 +36,8 @@ on:
     # require its verified Telegram receipt and the exact same source authority.
     # 13:07 UTC = 16:07 Europe/Moscow, Nov 8-11, year-gated below.
     - cron: "7 13 8-11 11 *"
+    # Continuation after verified Nov 8-11 predecessor wave.
+    - cron: "7 13 12-15 11 *"
 
 permissions:
   contents: write
@@ -52,6 +61,7 @@ jobs:
       PYTHONPATH: src:.
       STATE_DIR: .state/lordchrist
       STATE_BRANCH: state/lordchrist-telegram
+      WAVE: v1
       LEDGER_REL: content/telegram/lordchrist/shorts-v1-publication-ledger.json
       RELEASE: content/telegram/lordchrist/shorts-v1-release.json
       PROFILE: content/telegram/channels/lordchrist-shorts-v1.json
@@ -80,6 +90,40 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
+      - name: Select exact immutable wave from verified schedule or read-only dispatch
+        env:
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+          INPUT_WAVE: ${{ inputs.wave }}
+          INPUT_ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
+          wave=v1
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            case "$SCHEDULE_EXPRESSION" in
+              '7 13 8-11 11 *') wave=v1 ;;
+              '7 13 12-15 11 *') wave=v2 ;;
+              *) echo "Unknown Shorts cron; refuse to select release" >&2; exit 3 ;;
+            esac
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$INPUT_WAVE" == "v2" ]]; then
+              [[ "$INPUT_ACTION" != "publish-canary" ]] || exit 3
+              wave=v2
+            elif [[ "$INPUT_WAVE" != "v1" && -n "$INPUT_WAVE" ]]; then
+              exit 3
+            fi
+          fi
+          if [[ "$wave" == "v2" ]]; then
+            echo "WAVE=v2" >> "$GITHUB_ENV"
+            echo "RELEASE=content/telegram/lordchrist/shorts-v2-release.json" >> "$GITHUB_ENV"
+            echo "LEDGER_REL=content/telegram/lordchrist/shorts-v2-publication-ledger.json" >> "$GITHUB_ENV"
+            echo "MANIFEST=content/telegram/lordchrist/shorts-v2-source-manifest.json" >> "$GITHUB_ENV"
+            echo "OWNER_CANARY_PROOF=content/telegram/lordchrist/shorts-v2-scheduled-canary-approval.json" >> "$GITHUB_ENV"
+            echo "ENVELOPE=.runtime/lordchrist-shorts-v2-dispatch.json" >> "$GITHUB_ENV"
+            echo "TARGET_PROOF=.runtime/lordchrist-shorts-v2-target-proof.json" >> "$GITHUB_ENV"
+            echo "OUTCOME=.runtime/lordchrist-shorts-v2-outcome.json" >> "$GITHUB_ENV"
+          fi
+          echo "Selected immutable Shorts $wave; no provider contact"
+
       - name: Require exact current main and CI before state or provider work
         env:
           GH_TOKEN: ${{ github.token }}
@@ -92,7 +136,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json,os
           from pathlib import Path
           from video_channel_manager.telegram_channel_profile import load_channel_profile
           from video_channel_manager.telegram_target_binding import load_target_binding
@@ -100,11 +144,17 @@ jobs:
           from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
           profile=load_channel_profile(Path("content/telegram/channels/lordchrist-shorts-v1.json"))
           binding=load_target_binding(Path("content/telegram/channels/lordchrist-shorts-v1-target-binding.json"),profile)
-          release=load_release(Path("content/telegram/lordchrist/shorts-v1-release.json"))
-          source=json.loads(Path("content/telegram/lordchrist/shorts-v1-source-manifest.json").read_text(encoding="utf-8"))
-          ids=("ba4ZahiY-U0","_aDIR0D7rSk","tELrnM71TQA","VeY1tpoLUJU")
+          release=load_release(Path(os.environ["RELEASE"]))
+          source=json.loads(Path(os.environ["MANIFEST"]).read_text(encoding="utf-8"))
+          pins={
+              "v1":(("ba4ZahiY-U0","_aDIR0D7rSk","tELrnM71TQA","VeY1tpoLUJU"),
+                    "85990401e732a22a8a12b390683196264a50ba8c","shorts4-20261106"),
+              "v2":(("2sapXv78y9Q","PUlNpw83DFI","y9a7_3DutWk","EozlBy39F1c"),
+                    "d45230ae5ab07b0f2301d01628c04e4fa7a3fb84","shorts-extra4-20261106"),
+          }
+          ids,evidence_commit,evidence_folder=pins[os.environ["WAVE"]]
           assert release.release_authorized and release.digest==source["release_digest"]
-          assert source["source_evidence_commit"]=="85990401e732a22a8a12b390683196264a50ba8c"
+          assert source["source_evidence_commit"]==evidence_commit
           assert profile.channel_username=="@lordchrist"
           assert profile.concurrency_group=="lordchrist-telegram-publisher"
           assert release.profile_sha256==profile.digest
@@ -120,6 +170,7 @@ jobs:
               assert item.payload.media_byte_size==evidence["source_byte_size"]
               assert item.payload.provider_payload_sha256==evidence["provider_payload_sha256"]
               assert evidence["artifact_commit"]==source["source_evidence_commit"]
+              assert evidence["artifact_path"]=="artifacts/lordchrist-telegram/"+evidence_folder+"/lordchrist-short-"+ids[index]+".mp4"
               assert item.payload.media_filename=="lordchrist-short-"+ids[index]+".mp4"
               assert len(item.payload.caption)<=1024 and "????" not in item.payload.caption
           print("Four exact video source bindings and write-authority profile verified without provider access")
@@ -166,14 +217,15 @@ jobs:
           from pathlib import Path
           from video_channel_manager.telegram_multichannel_release import load_release
           from video_channel_manager.telegram_multichannel_state import initialize_ledger,load_ledger,save_ledger
-          release=load_release(Path(os.environ["RELEASE"]))
-          dest=Path(os.environ["STATE_DIR"])/os.environ["LEDGER_REL"]
-          if dest.exists():
-              load_ledger(dest,release)
-              print("Existing exact immutable Shorts ledger verified; no reset")
-          else:
-              save_ledger(dest,initialize_ledger(release))
-              print("Four-video ledger initialized; no Telegram messages sent")
+          for wave in ("v1","v2"):
+              release=load_release(Path("content/telegram/lordchrist/shorts-"+wave+"-release.json"))
+              dest=Path(os.environ["STATE_DIR"])/("content/telegram/lordchrist/shorts-"+wave+"-publication-ledger.json")
+              if dest.exists():
+                  load_ledger(dest,release)
+                  print("Existing immutable "+wave+" Shorts ledger verified; no reset")
+              else:
+                  save_ledger(dest,initialize_ledger(release))
+                  print("Exact four-item "+wave+" ledger initialized without provider contact")
           PY
 
       - name: Persist newly initialized ledger atomically in shared state
@@ -182,7 +234,7 @@ jobs:
           set -euo pipefail
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- "$LEDGER_REL"
+          git -C "$STATE_DIR" add -- content/telegram/lordchrist/shorts-v1-publication-ledger.json content/telegram/lordchrist/shorts-v2-publication-ledger.json
           if git -C "$STATE_DIR" diff --cached --quiet; then
             echo "Four-video Shorts state already initialized"
             exit 0
@@ -209,6 +261,15 @@ jobs:
           from video_channel_manager.telegram_multichannel_state import load_ledger,strict_next_item
           release=load_release(Path(os.environ["RELEASE"]))
           ledger=load_ledger(Path(os.environ["STATE_DIR"])/os.environ["LEDGER_REL"],release)
+          if os.environ["WAVE"]=="v2":
+              prior=load_release(Path("content/telegram/lordchrist/shorts-v1-release.json"))
+              prior_ledger=load_ledger(Path(os.environ["STATE_DIR"])/"content/telegram/lordchrist/shorts-v1-publication-ledger.json",prior)
+              for predecessor in prior.items:
+                  state=prior_ledger.entries[predecessor.publication_id]
+                  if not (state.state=="published" and state.provider_effect=="verified"
+                          and state.message_id is not None and state.message_id>0
+                          and state.actual_chat_id==release.chat_id and state.bot_id==release.bot_id):
+                      raise SystemExit("Final-four wave blocked until all four earlier Shorts have exact verified Telegram receipts")
           item,reason=strict_next_item(release,ledger)
           if item is None:
               raise SystemExit("No publishable strict-next item: "+reason)
@@ -219,7 +280,8 @@ jobs:
               if item.publication_id!=first or now.date().isoformat()!="2026-11-08":
                   raise SystemExit("Manual video canary requires first exact Nov 8 item")
           elif mode=="scheduled":
-              if os.environ["GITHUB_RUN_ATTEMPT"]!="1" or now.year!=2026 or now.month!=11 or now.day not in (8,9,10,11):
+              valid_days=(8,9,10,11) if os.environ["WAVE"]=="v1" else (12,13,14,15)
+              if os.environ["GITHUB_RUN_ATTEMPT"]!="1" or now.year!=2026 or now.month!=11 or now.day not in valid_days:
                   raise SystemExit("Wrong schedule year/day or an attempted replay")
               if item.scheduled_at.date()!=now.date():
                   raise SystemExit("Strict-next item is not due today; refuse skipped or out-of-order send")
@@ -257,10 +319,15 @@ jobs:
           pid=os.environ["PUBLICATION_ID"]
           item=next(x for x in release.items if x.publication_id==pid)
           entry=next(x for x in manifest["items"] if x["publication_id"]==pid)
-          if entry["artifact_commit"]!="85990401e732a22a8a12b390683196264a50ba8c":
+          pins={
+              "v1":("85990401e732a22a8a12b390683196264a50ba8c","shorts4-20261106"),
+              "v2":("d45230ae5ab07b0f2301d01628c04e4fa7a3fb84","shorts-extra4-20261106"),
+          }
+          expected_sha,folder=pins[os.environ["WAVE"]]
+          if manifest["source_evidence_commit"]!=expected_sha or entry["artifact_commit"]!=expected_sha:
               raise SystemExit("Source commit drift")
-          if not entry["artifact_path"].startswith("artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-"):
-              raise SystemExit("Media source path not under protected immutable ref")
+          if entry["artifact_path"]!="artifacts/lordchrist-telegram/"+folder+"/"+pid+".mp4":
+              raise SystemExit("Media source path does not exactly match immutable publication identity")
           url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"+entry["artifact_commit"]+"/"+entry["artifact_path"]
           request=urllib.request.Request(url,headers={"User-Agent":"VCM-Lordchrist-Shorts/1"})
           with urllib.request.urlopen(request,timeout=80) as res:
@@ -271,7 +338,7 @@ jobs:
           if gitblob!=entry["git_blob_sha1"]:
               raise SystemExit("Downloaded media differs from exact Git blob")
           dest=Path(item.payload.media_path)
-          if dest.name!=item.payload.media_filename or not str(dest).startswith(".runtime/lordchrist-shorts-v1/"):
+          if dest.name!=item.payload.media_filename or not str(dest).startswith(".runtime/lordchrist-shorts-"+os.environ["WAVE"]+"/"):
               raise SystemExit("Media destination differs from immutable payload")
           dest.parent.mkdir(parents=True,exist_ok=True)
           dest.write_bytes(data)
@@ -308,7 +375,7 @@ jobs:
         id: intent
         run: |
           set -euo pipefail
-          evidence="content/telegram/lordchrist/dispatches/shorts-v1/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence="content/telegram/lordchrist/dispatches/shorts-$WAVE/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$STATE_DIR/$evidence"
           cp "$ENVELOPE" "$STATE_DIR/$evidence/dispatch.json"
           cp "$TARGET_PROOF" "$STATE_DIR/$evidence/target-proof.json"
@@ -349,8 +416,8 @@ jobs:
         if: steps.send.outputs.status != '' && always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: lordchrist-shorts4-outcome-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .runtime/lordchrist-shorts-v1-outcome.json
+          name: lordchrist-shorts-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTCOME }}
           if-no-files-found: error
           retention-days: 30
           include-hidden-files: true
