@@ -243,3 +243,63 @@ items met the strict source-preserving minimum for this additional method.
 The others require genuine topic-based editorial revision or proof of source
 and playlist provenance. An offline plan does not prove rights clearance
 or publication status.
+
+
+## YouTube-native presentation and retired solicitations: mandatory pre-publish gate
+
+As of the November 2026 editorial review (#795), the exact Lord God channel ID is
+UCeSJsC6go2c9pdJCuUI1BYA. Any first-party YouTube apply-copy-fixes plan
+targeting this ID must pass the **project-bound presentation gate before
+OAuth/API preflight**, for both dry-run and execute. This applies even if
+a historical signed plan was previously generated; no retroactive edit.
+
+**YouTube presentation:**
+
+- Keep the first meaningful paragraph unmarked and useful in a share
+  preview. In long descriptions (at least 350 characters), use a small
+  number of YouTube-native single-asterisk bold spans (e.g. *heading:*)
+  and single-underscore italic spans (e.g. _meaning_). No double-star
+  Markdown, hidden Markdown hyperlinks, unbalanced markers, or wrong
+  punctuation outside the emphasized phrase.
+- Keep bare URL links. Distinguish original source and rights credit,
+  topical recommendations, channel destinations, and video membership.
+  Do not remove cited external sources merely because they are not
+  owner-playlist members. Chapters remain true timestamp starts.
+- The Legendary Poet shares the **YouTube markup syntax and factual
+  rigor**, NOT its poetry-specific channel identity, links, six social
+  rows, 3500–4600 length target, fixed playlist order, or biography format.
+
+**Historical cleanup and rights:**
+
+- Remove retired personal translator recruitment, outdated personal
+  contact links, bank/card solicitations, Yandex wallet numbers,
+  DonatePay references and obsolete VK donor applications before
+  treating a rewritten description as final.
+- Do not insert new bank details, fundraising apps, contact handles or
+  donation links without separate and explicit owner approval.
+- Retain sermon sources, source and translation attribution, speaker
+  identity, notices about rights, and genuine citations unless a separate
+  review proves a particular claim/link incorrect.
+- Reject unverified claims about all videos having been moved to VK,
+  invented chapters, fake translations and irrelevant cross-project
+  links. Avoid dense navigation-only and SEO keyword-stuffed boilerplate.
+
+**Staged source evidence is NOT publication approval:**
+
+- Six Prokopenko descriptions: the newer YouTube-formatted v2 offline
+  plans pass the renderer and supersede earlier plain v1 plans. They
+  still require exact live owner/API preflight, source/rights review and
+  independent postflight after an individual write.
+- Twelve earlier source-preserving shelf and translator-appeal cleanups:
+  the signed plain archival plans lack proper formatting. They are
+  NOT cleared as final YouTube publications. Re-edit and sign new
+  plans preserving source and attribution first.
+- Older proposed chapter appends are not exempt; their resulting
+  descriptions must pass this same gate. Previously published videos
+  are not automatically modified or rolled back by this policy.
+
+**Implementation:** src/video_channel_manager/cli/youtube.py uses
+platforms/youtube/lord_god_presentation.py and the shared
+editorial.youtube_copy.validate_youtube_description checker. Fix a
+rejected plan upstream and re-sign. Never bypass the validation,
+replay an ambiguous timeout, or work around a quotaExceeded response.

@@ -27,6 +27,7 @@ from video_channel_manager.platforms.youtube import (
     YouTubeInventoryService,
     YouTubeWriteError,
 )
+from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     verify_copy_operations,
@@ -301,6 +302,8 @@ def apply_copy_fixes(
     settings = get_settings()
     try:
         payload = _load_copy_fix_plan(plan)
+        # Project-bound YouTube display/retired-contact rules run BEFORE any OAuth or API use.
+        require_lord_god_youtube_presentation(payload)
         raw_operations = payload["operations"]
         operations = [item for item in raw_operations if isinstance(item, dict)]
         if not operations:
