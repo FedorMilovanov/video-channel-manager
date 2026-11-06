@@ -540,7 +540,6 @@ def apply_copy_fixes(
         raise typer.Exit(code=2) from exc
 
 
-
 def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
     """An absent journal is a reported uncertainty; a corrupt one is an error."""
 
@@ -561,9 +560,7 @@ def reconcile_copy_fixes(
     backup: Annotated[Path, typer.Option("--backup", help="Exact existing backup path; not modified")],
     result: Annotated[Path, typer.Option("--result", help="Exact existing apply-result path; not modified")],
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
-    confirm_channel: Annotated[
-        str, typer.Option("--confirm-channel", help="Exact owner YouTube channel ID")
-    ] = "",
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel", help="Exact owner YouTube channel ID")] = "",
     report_output: Annotated[
         Path | None, typer.Option("--report-output", help="Optional new JSON evidence path; never overwrite")
     ] = None,
@@ -588,9 +585,7 @@ def reconcile_copy_fixes(
             raise ValueError("Read-only report output cannot overwrite a plan, backup, or result.")
         back = _read_optional_youtube_recovery_json(backup)
         receipt = _read_optional_youtube_recovery_json(result)
-        expected_operations: dict[str, dict[str, Any]] = {
-            str(op["video_id"]): op for op in payload["operations"]
-        }
+        expected_operations: dict[str, dict[str, Any]] = {str(op["video_id"]): op for op in payload["operations"]}
         if back is None:
             backup_state = "missing"
         elif back.get("schema_name") == "video-manager.youtube-copy-output-reservation":
@@ -631,9 +626,7 @@ def reconcile_copy_fixes(
             if Path(str(receipt.get("backup", ""))).resolve() != backup.resolve():
                 raise ValueError("Result backup path differs from the supplied backup.")
             receipt_state = str(receipt.get("status") or "invalid_missing_status")
-            if receipt_state not in {
-                "running", "completed", "failed_rolled_back", "failed_partial_rollback"
-            }:
+            if receipt_state not in {"running", "completed", "failed_rolled_back", "failed_partial_rollback"}:
                 raise ValueError("Unsupported or missing result terminal/intermediate status.")
             for field in ("attempted", "applied"):
                 entries = receipt.get(field)
