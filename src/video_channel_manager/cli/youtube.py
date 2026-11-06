@@ -32,8 +32,10 @@ from video_channel_manager.platforms.youtube import (
 from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
+    reconcile_copy_operations,
     verify_copy_operations,
 )
+from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
@@ -535,4 +537,164 @@ def apply_copy_fixes(
             )
     except YouTubeWriteError as exc:
         console.print(f"[red]YouTube write safety error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+
+def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
+    """An absent journal is a reported uncertainty; a corrupt one is an error."""
+
+    if not path.exists():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Cannot read YouTube recovery evidence at {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"YouTube recovery evidence at {path} is not a JSON object.")
+    return value
+
+
+@youtube_app.command("reconcile-copy-fixes")
+def reconcile_copy_fixes(
+    plan: Annotated[Path, typer.Argument(help="Existing signed v3 copy plan; read only")],
+    backup: Annotated[Path, typer.Option("--backup", help="Exact existing backup path; not modified")],
+    result: Annotated[Path, typer.Option("--result", help="Exact existing apply-result path; not modified")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+    confirm_channel: Annotated[
+        str, typer.Option("--confirm-channel", help="Exact owner YouTube channel ID")
+    ] = "",
+    report_output: Annotated[
+        Path | None, typer.Option("--report-output", help="Optional new JSON evidence path; never overwrite")
+    ] = None,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Read-only owner reconciliation. Never dispatch, repeat, or roll back a write."""
+
+    prepare_windows_youtube_console()
+    try:
+        payload = _load_copy_fix_plan(plan)
+        validate_copy_plan(payload)
+        require_lord_god_youtube_presentation(payload)
+        if not confirm_channel or payload["target_channel_id"] != confirm_channel:
+            raise ValueError("Signed plan target_channel_id differs from --confirm-channel.")
+        if len({plan.resolve(), backup.resolve(), result.resolve()}) != 3:
+            raise ValueError("Plan, backup, and result paths must be distinct.")
+        if report_output is not None and report_output.resolve() in {
+            plan.resolve(),
+            backup.resolve(),
+            result.resolve(),
+        }:
+            raise ValueError("Read-only report output cannot overwrite a plan, backup, or result.")
+        back = _read_optional_youtube_recovery_json(backup)
+        receipt = _read_optional_youtube_recovery_json(result)
+        expected_operations: dict[str, dict[str, Any]] = {
+            str(op["video_id"]): op for op in payload["operations"]
+        }
+        if back is None:
+            backup_state = "missing"
+        elif back.get("schema_name") == "video-manager.youtube-copy-output-reservation":
+            backup_state = "reserved_only"
+        elif back.get("schema_name") == "video-manager.youtube-copy-backup":
+            if back.get("channel_id") != confirm_channel or back.get("account") != account:
+                raise ValueError("Backup account or channel does not match the requested owner.")
+            if Path(str(back.get("source_plan", ""))).resolve() != plan.resolve():
+                raise ValueError("Backup source_plan does not match the signed plan path.")
+            back_operations = back.get("operations")
+            if not isinstance(back_operations, list):
+                raise ValueError("Backup operations must be an array.")
+            for operation in back_operations:
+                if not isinstance(operation, dict):
+                    raise ValueError("Backup operation must be an object.")
+                video_id = str(operation.get("video_id", ""))
+                expected = expected_operations.get(video_id)
+                if expected is None:
+                    raise ValueError(f"Backup contains an unapproved video: {video_id}")
+                if any(
+                    operation.get(key) != expected.get(key)
+                    for key in ("channel_id", "before_description", "after_description")
+                ):
+                    raise ValueError(f"Backup before/after evidence differs from signed plan: {video_id}")
+            backup_state = "bound_backup"
+        else:
+            raise ValueError("Backup file does not contain a supported YouTube copy backup or reservation.")
+
+        if receipt is None:
+            receipt_state = "missing"
+        elif receipt.get("schema_name") == "video-manager.youtube-copy-output-reservation":
+            receipt_state = "reserved_only"
+        elif receipt.get("schema_name") == "video-manager.youtube-copy-apply-result":
+            if receipt.get("account") != account or receipt.get("channel_id") != confirm_channel:
+                raise ValueError("Result account or channel does not match the requested owner.")
+            if Path(str(receipt.get("source_plan", ""))).resolve() != plan.resolve():
+                raise ValueError("Result source_plan does not match signed plan path.")
+            if Path(str(receipt.get("backup", ""))).resolve() != backup.resolve():
+                raise ValueError("Result backup path differs from the supplied backup.")
+            receipt_state = str(receipt.get("status") or "invalid_missing_status")
+            if receipt_state not in {
+                "running", "completed", "failed_rolled_back", "failed_partial_rollback"
+            }:
+                raise ValueError("Unsupported or missing result terminal/intermediate status.")
+            for field in ("attempted", "applied"):
+                entries = receipt.get(field)
+                if not isinstance(entries, list) or any(
+                    not isinstance(entry, dict) or str(entry.get("video_id", "")) not in expected_operations
+                    for entry in entries
+                ):
+                    raise ValueError(f"Result contains invalid {field} entries.")
+        else:
+            raise ValueError("Result is not a supported YouTube copy receipt or reservation.")
+
+        _, _, writer = _writer_components(account, client_secret)
+        rows = reconcile_copy_operations(
+            payload["operations"],
+            confirm_channel=confirm_channel,
+            writer=writer,
+        )
+        live_states = [str(row["state"]) for row in rows]
+        if any(state == "live_third_state" for state in live_states):
+            outcome = "manual_or_concurrent_description_conflict"
+        elif all(state == "live_after" for state in live_states):
+            if receipt_state == "completed" and backup_state == "bound_backup" and receipt is not None:
+                summary = receipt.get("summary")
+                complete = (
+                    isinstance(summary, dict)
+                    and summary.get("postflight_verified") == len(rows)
+                    and summary.get("applied") == len(rows)
+                    and len(receipt["applied"]) == len(rows)
+                )
+                outcome = "completed_live_verified" if complete else "live_after_receipt_not_terminally_verified"
+            else:
+                outcome = "live_after_receipt_not_terminally_verified"
+        else:
+            outcome = "live_before_or_partial_unknown_no_replay"
+
+        report: dict[str, Any] = {
+            "schema_name": "video-manager.youtube-copy-readonly-reconciliation",
+            "schema_version": 1,
+            "checked_at_utc": datetime.now(UTC).isoformat(),
+            "plan_sha256": payload["plan_sha256"],
+            "channel_id": confirm_channel,
+            "account": account,
+            "backup_state": backup_state,
+            "receipt_state": receipt_state,
+            "outcome": outcome,
+            "terminally_verified": outcome == "completed_live_verified",
+            "safe_to_replay": False,
+            "provider_writes": 0,
+            "rows": rows,
+        }
+        console.print(json.dumps(report, ensure_ascii=True, indent=2))
+        if report_output is not None:
+            report_output.parent.mkdir(parents=True, exist_ok=True)
+            with report_output.open("x", encoding="utf-8") as handle:
+                handle.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            console.print(f"Read-only evidence saved to {report_output}")
+
+        if not report["terminally_verified"]:
+            raise typer.Exit(code=2)
+    except (AccountNotFoundError, OSError, ValueError, YouTubeWriteError) as exc:
+        console.print(f"[red]YouTube reconciliation stopped without provider writes:[/red] {exc}")
         raise typer.Exit(code=2) from exc
