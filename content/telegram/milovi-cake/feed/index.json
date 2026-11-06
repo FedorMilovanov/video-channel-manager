@@ -224,6 +224,45 @@
       "message_id": null,
       "message_url": null,
       "updated_at_utc": null
+    },
+    "milovi-feed-20261117-002": {
+      "publication_id": "milovi-feed-20261117-002",
+      "release_id": "milovi-feed-20261117-002",
+      "release_candidate_sha256": "sha256:434d80581092f8ae4925e4417e08cbabd5e309ad15354c80c469b5cca0e65c3e",
+      "provider_payload_sha256": "sha256:6f6dbd74ff82eff37e00e1e9099f29c62f0a0c196272fa357088b35e24bbd2da",
+      "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261117-002.json",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "message_id": null,
+      "message_url": null,
+      "updated_at_utc": null
+    },
+    "milovi-feed-20261121-002": {
+      "publication_id": "milovi-feed-20261121-002",
+      "release_id": "milovi-feed-20261121-002",
+      "release_candidate_sha256": "sha256:73aa78fc7508a9a508e1990eee1489abd862141201fed197c45046d1241822c0",
+      "provider_payload_sha256": "sha256:2169fec7b56fa6d6bb082c78cdc29a590e167aa4b4785ae7dd32e1c42899c520",
+      "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261121-002.json",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "message_id": null,
+      "message_url": null,
+      "updated_at_utc": null
+    },
+    "milovi-feed-20261125-001": {
+      "publication_id": "milovi-feed-20261125-001",
+      "release_id": "milovi-feed-20261125-001",
+      "release_candidate_sha256": "sha256:ade7ed5ba38cd03ca8b97bb7e44f04f3aebf7f03506c56cf8f90a0023c27a2c5",
+      "provider_payload_sha256": "sha256:5b21ef36c094b110e32d6adc5e55fa7f982b204c19cc2469db18d1b499215ce1",
+      "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261125-001.json",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "message_id": null,
+      "message_url": null,
+      "updated_at_utc": null
     }
   }
 }
