@@ -3,6 +3,7 @@
 The module cannot send provider requests. All actual sends are delegated to
 the existing canonical single-writer workflow with durable intent protection.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -165,12 +166,16 @@ def main() -> int:
         out.write("dispatch=" + ("true" if permit else "false") + "\n")
         if permit:
             out.write("publication_id=" + row["publication_id"] + "\n")
-    print(json.dumps({
-        "dispatch": permit,
-        "publication_id": row["publication_id"] if permit else None,
-        "provider_access": False,
-        "provider_mutation": False,
-    }))
+    print(
+        json.dumps(
+            {
+                "dispatch": permit,
+                "publication_id": row["publication_id"] if permit else None,
+                "provider_access": False,
+                "provider_mutation": False,
+            }
+        )
+    )
     return 0
 
 
