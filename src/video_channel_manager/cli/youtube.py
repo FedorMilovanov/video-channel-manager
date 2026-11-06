@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import uuid
 from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,6 +33,10 @@ from video_channel_manager.platforms.youtube.lord_god_presentation import requir
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     verify_copy_operations,
+)
+from video_channel_manager.platforms.youtube.copy_output_safety import (
+    prepare_windows_youtube_console,
+    reserve_youtube_copy_journals,
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
@@ -75,10 +81,18 @@ def _load_copy_fix_plan(path: Path) -> dict[str, Any]:
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    """Durable atomic JSON replacement with a unique, exclusive temporary file."""
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 @youtube_app.command("login")
@@ -299,6 +313,7 @@ def apply_copy_fixes(
 ) -> None:
     """Preflight or apply description-guarded fixes with retries, postflight, and rollback."""
 
+    prepare_windows_youtube_console()
     settings = get_settings()
     try:
         payload = _load_copy_fix_plan(plan)
@@ -366,6 +381,19 @@ def apply_copy_fixes(
                 backup_output = settings.data_dir / "reports" / f"youtube-copy-backup-{timestamp}.json"
             if result_output is None:
                 result_output = settings.data_dir / "reports" / f"youtube-copy-apply-{timestamp}.json"
+
+            # Before dispatching a YouTube write, reserve both unique journal
+            # paths and prove that their volume has sufficient free space.
+            # Existing backups/results are immutable recovery evidence.
+            try:
+                reserve_youtube_copy_journals(
+                    plan_path=plan,
+                    backup_output=backup_output,
+                    result_output=result_output,
+                )
+            except (OSError, ValueError) as exc:
+                console.print(f"[red]Output safety preflight failed; no YouTube write:[/red] {exc}")
+                raise typer.Exit(code=2) from exc
 
             backup_payload = {
                 "schema_name": "video-manager.youtube-copy-backup",
