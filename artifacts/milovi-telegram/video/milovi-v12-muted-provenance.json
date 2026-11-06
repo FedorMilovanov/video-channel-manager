@@ -1,0 +1,52 @@
+{
+  "schema_name": "video-channel-manager.milovi-audio-free-video-provenance",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "source_media_id": "v12",
+  "variant_media_id": "v12-muted",
+  "canonical_source": {
+    "reservoir_path": "content/telegram/milovi-cake/accepted-video-reservoir-2026-08.json",
+    "artifact_ref": "agent/milovi-video-accepted-73c578eff825",
+    "artifact_commit": "f4f5512d7b60f1b9c61c293c07620b128536df27",
+    "artifact_path": "artifacts/milovi-telegram/video/milovi-v12.mp4",
+    "sha256": "sha256:8ebdd2f5b9747399acf6559f1642327ac736ff585007c6c5d54102f90ef3997c",
+    "byte_size": 2367134
+  },
+  "derivation": {
+    "command": [
+      "ffmpeg",
+      "-nostdin",
+      "-hide_banner",
+      "-i",
+      "<exact-pinned-v12-accepted-MP4>",
+      "-map",
+      "0:v:0",
+      "-c:v",
+      "copy",
+      "-an",
+      "-movflags",
+      "+faststart",
+      "<milovi-v12-muted.mp4>"
+    ],
+    "operation": "remove_audio_without_video_reencoding",
+    "video_streamhash_sha256": "b521332dd0f153dd097753fe44f5a5af7cfe735f5b04a78adb256f2b4061cc82",
+    "source_video_streamhash_sha256": "b521332dd0f153dd097753fe44f5a5af7cfe735f5b04a78adb256f2b4061cc82"
+  },
+  "output": {
+    "path": "artifacts/milovi-telegram/video/milovi-v12-muted.mp4",
+    "byte_size": 2195289,
+    "sha256": "sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7",
+    "video_codec": "h264",
+    "pixel_format": "yuv420p",
+    "width": 720,
+    "height": 1282,
+    "video_frames": 299,
+    "audio_streams": 0
+  },
+  "video_content_reviewed": false,
+  "source_visual_rights_verified": false,
+  "release_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "provider_write_performed": false
+}
