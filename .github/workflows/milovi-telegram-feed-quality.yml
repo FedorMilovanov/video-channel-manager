@@ -34,15 +34,28 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          from video_channel_manager.milovi_telegram_feed import validate_bundle
+          from video_channel_manager.milovi_telegram_feed import (
+              retired_publication_ids,
+              validate_bundle,
+              validate_retired_bundle,
+          )
 
           releases = Path("content/telegram/milovi-cake/releases")
           runtime_files = sorted(releases.glob("milovi-feed-*-runtime.json"))
           assert runtime_files, "at least one exact Milovi feed runtime release is required"
+          retired = retired_publication_ids()
+          seen_retired = set()
           for runtime in runtime_files:
               publication_id = runtime.name.removesuffix("-runtime.json")
+              if publication_id in retired:
+                  proof = validate_retired_bundle(publication_id)
+                  assert proof["status"] == "retired_proven_never_send"
+                  print(publication_id, proof["status"])
+                  seen_retired.add(publication_id)
+                  continue
               result = validate_bundle(publication_id)
               print(publication_id, result["blockers"])
+          assert seen_retired == retired, "retired publication must retain exact historic runtime"
           PY
       - name: Enforce permanent Milovi workflow topology
         shell: bash
