@@ -47,3 +47,28 @@ without a second provider mutation.
 Future corrections must make the edit only once and use bounded **read-only**
 public-readback retries. Exhausting that window is a fail-closed, manual-reconciliation
 condition; it never authorizes a second `editMessageText`.
+
+
+## Read-only delivery verification for eight scheduled replacements (2026-11-06)
+
+All eight calendar entries in the immutable approved manifest are already
+`ready` in the actual editorial queue with matching dates, article Git blobs,
+and prepared Telegram announcements. A read-only preflight against the
+official Telegra.ph `getPage(return_content=true)` endpoint verified each
+complete public page, and the original owner-deleted Telegram messages
+1596–1603 remained absent. This is a **future GitHub Actions schedule**, not
+eight Telegram-server-native scheduled messages: bots cannot create Telegram
+server-side scheduled messages via `schedule_date`.
+
+For the future releases, after one acknowledged `sendMessage` and its durable
+`sent` receipt, public Telegram widget propagation can be delayed. The
+`verify` stage now uses a bounded **read-only** poll with short backoff to
+confirm the exact new message ID and reviewed Telegra.ph URL. This never
+repeats a provider mutation, changes an approved article, or relaxes the
+single-date/immutable-manifest/CI gates. If the bounded window expires, the
+`sent` receipt remains unresolved for evidence-based read-only reconciliation;
+**never retry the send**.
+
+The calendar was prepared in advance, but final delivery closure still
+requires a real public Telegram post and `scheduled_reissue.state=verified`
+after each of the eight future dates.

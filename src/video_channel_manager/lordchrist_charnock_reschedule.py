@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,8 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 MOSCOW = ZoneInfo("Europe/Moscow")
 MANIFEST = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json")
 LIVE_WINDOW_HOUR = (12, 13)
+# Read-only backoff after the single allowed sendMessage; never retry the provider mutation.
+NEW_POST_PUBLIC_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
 
 
 def _select_due(
@@ -103,6 +106,25 @@ def _prove_owner_deletion(entry: dict[str, Any]) -> None:
         raise RuntimeError("Known-good channel readback unavailable; cannot confirm original deletion")
     if _readback_existing_post(message_id=int(entry["deleted_telegram_message_id"])):
         raise RuntimeError("Original Telegram message is still visible; refuse duplicate release")
+
+
+def _prove_new_public_post(*, message_id: int, telegraph_url: str) -> None:
+    """Wait for public widget propagation without EVER sending the Telegram message again."""
+    url = f"https://t.me/lordchrist/{message_id}?embed=1"
+    for seconds in NEW_POST_PUBLIC_READBACK_DELAYS:
+        if seconds:
+            time.sleep(seconds)
+        try:
+            response = httpx.get(url, timeout=20, follow_redirects=True)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            continue
+        if f'data-post="lordchrist/{message_id}"' in response.text and telegraph_url in response.text:
+            return
+    raise RuntimeError(
+        "New Telegram message is not publicly verified after bounded readback; "
+        "reconcile the existing send receipt, never retry sendMessage"
+    )
 
 
 def _normalized_telegraph_node(value: Any) -> Any:
@@ -271,17 +293,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         verified_message_id = receipt.get("new_message_id")
         if not isinstance(verified_message_id, int) or verified_message_id <= 0:
             raise RuntimeError("Missing provider-acknowledged replacement message identity")
-        response = httpx.get(
-            f"https://t.me/lordchrist/{verified_message_id}?embed=1",
-            timeout=20,
-            follow_redirects=True,
-        )
-        response.raise_for_status()
-        if (
-            f'data-post="lordchrist/{verified_message_id}"' not in response.text
-            or source["verified_telegraph_url"] not in response.text
-        ):
-            raise RuntimeError("New Telegram message is not publicly verified; do not retry send")
+        _prove_new_public_post(message_id=verified_message_id, telegraph_url=source["verified_telegraph_url"])
         receipt.update(
             state="verified", provider_effect="verified", verified_at_moscow=now.astimezone(MOSCOW).isoformat()
         )
