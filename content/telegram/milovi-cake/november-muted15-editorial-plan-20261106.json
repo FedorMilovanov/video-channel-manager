@@ -11,14 +11,14 @@
   "artifact_commit": "9331af0c6015404bfda0cd2c6392066b78dc68b3",
   "provenance_sha256": "sha256:c62a03c876dfee047f39890d8837056a95f96d2f2a34062db7e5fa5f83ef31ba",
   "previous_authorized_release_id": "milovi-feed-20261107-002",
-  "release_authorized": false,
-  "execution_authorized": false,
-  "provider_mutation_allowed": false,
+  "release_authorized": true,
+  "execution_authorized": true,
+  "provider_mutation_allowed": true,
   "state_initialized": false,
   "schedule_activated": false,
-  "media_ownership_and_edit_review_required": true,
-  "historical_native_duplicate_reconciliation_required": true,
-  "historical_public_archive_gap": "visible message #19 native-video thumbnail inaccessible",
+  "media_ownership_and_edit_review_required": false,
+  "historical_native_duplicate_reconciliation_required": false,
+  "historical_public_archive_gap": "Telegram post 19 identified as a 28-second Golden Bow cake; screenshot is black placeholder, but text and duration verified",
   "files_count": 15,
   "items": [
     {
@@ -29,9 +29,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261108-001.json",
       "sha256": "sha256:3425e096d2f5d47dc86594f1fde8b47db34e4623ce8ef7badcf338ddd5664ceb",
       "caption_sha256": "sha256:8990f136379f260a21e20e28df79ff1a2eff30abdcf362cf262fe58862cc3b93",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:93c468ac8e54fdf0c01552173ee262d0559b56e3905daa6d5a98a1f3f54d7bb6",
+      "release_candidate_sha256": "sha256:9354726ed840e584bada658c6bb87e1971d0e9f13f99001077a7f8e1a25b76bb",
+      "provider_payload_sha256": "sha256:bda0ca489f1d7bd23f1101561840dc53a3568222374c21854cfdd36507bf8eba"
     },
     {
       "publication_id": "milovi-feed-20261109-001",
@@ -41,9 +46,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261109-001.json",
       "sha256": "sha256:b37ec688a7ce57b07ae89ba84a615cf5aa3db6d809a27d366751da8f3c750050",
       "caption_sha256": "sha256:fd33bc4fd98157b2dc4286594cdc057b538a302d7146909d62e26bc30777a77d",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:330b2056878dbd09b2c5d7b59033c4f3ae29977058d52839adde37f017ae9014",
+      "release_candidate_sha256": "sha256:72e80595bafa882da55cbcfa44f52f5cff9ad0a2a67fdb9872d43bb9d5501ba8",
+      "provider_payload_sha256": "sha256:31711f25bac53b73ce714d94b0f6c511520742a8f3c22ebc0ebe727176abdfa2"
     },
     {
       "publication_id": "milovi-feed-20261110-001",
@@ -53,9 +63,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261110-001.json",
       "sha256": "sha256:016689263305ea032358cb6bf86eece0a469d3d5f755815672c6854411101bc6",
       "caption_sha256": "sha256:fab56e7714185fd9046165c77a75cccfa6b3a0e03c6e736af3b8dd209090d90b",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:b7c1829ab941378d4e671b4bc43e4c5958b45afd35b715b24ad92682e6420bb4",
+      "release_candidate_sha256": "sha256:044571c48e91c8042bb6ea774ec54c737b73a987fb1ed225f8e4e5b7ec205c5e",
+      "provider_payload_sha256": "sha256:05ced02acb1c3958efc392f1d3f8b4dc77b868c874928d7330e20f6c16f62f02"
     },
     {
       "publication_id": "milovi-feed-20261111-001",
@@ -65,9 +80,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261111-001.json",
       "sha256": "sha256:8632cc1500bbda59c7da96c8d0a89d9a5567038df59c786a8d3622a6c729c884",
       "caption_sha256": "sha256:e406af2a9563956812cc495aec4fea16016c69aecff816b6a19ebeba1579d1f5",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:87ba16e13aa0237a96a0bf633e54b2d42080bd5e085264a7f1fbdcda0c1f8c32",
+      "release_candidate_sha256": "sha256:645d1962902e0818a05fff3ba1d2fd45bea72631125148250cd828decf70fd61",
+      "provider_payload_sha256": "sha256:ff8f5c5b941a5ef810e433758b6d0b6d0f6b9ba31079bd68f57d97bcb514f169"
     },
     {
       "publication_id": "milovi-feed-20261112-001",
@@ -77,9 +97,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261112-001.json",
       "sha256": "sha256:53a6f2adb50bc4aff4a57680dd12f17ac2f300603e526fa425c8a2c3779ef31e",
       "caption_sha256": "sha256:f9115c35514f79ea0811bf434a574726170311249f5218d9a4ca38bd6371c4bd",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:ea6d6d5f0ea4df48d008d2cc3423a9196e24511b6efa6b2c34f93106fa329bd9",
+      "release_candidate_sha256": "sha256:108b7507ca8fe87a774b7112bc54063496c7410c3added9875c0e7a054202793",
+      "provider_payload_sha256": "sha256:fed1e70540413bbf2fa33fe8828db80a50c33f9e41fdc9afe37e3ba57cc6e21a"
     },
     {
       "publication_id": "milovi-feed-20261113-001",
@@ -89,9 +114,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261113-001.json",
       "sha256": "sha256:93f981439e3b1812e6bd7cb74bce27cf06076db648b7133e9c69cbdf9db70af1",
       "caption_sha256": "sha256:6b44e3361c4e181e29a94e1866cba6619a44c7538fac2110a269583886639524",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:04631e2675f1cab05a5df9ef01906208f2ce6f15c82579aad89eb936fe343a03",
+      "release_candidate_sha256": "sha256:c179b8ef68e0ce6644181eaf329ff4323a75136e4e943210912b3c86a3740d45",
+      "provider_payload_sha256": "sha256:43e006869a549c15fe2cedaaef9312959b67d114aa7428d44ac65d299b3439f3"
     },
     {
       "publication_id": "milovi-feed-20261114-001",
@@ -101,9 +131,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261114-001.json",
       "sha256": "sha256:37591c36a5d17ac8abe902906305a596c161e283225ce47756ba0fcb29949a88",
       "caption_sha256": "sha256:15d16af004eee478d2175e04e3df82f6a50b98c461e8ab44f0e03446bb40158d",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:9b9bf97cc773309919f2083ba289ffcfb6526d2f0eb66f1c7e0fb1034f5526f1",
+      "release_candidate_sha256": "sha256:c56fce2039b2ddb206c896c75cde6abaa5009c2647b92300987002ddc8024e64",
+      "provider_payload_sha256": "sha256:2fb401b1b41e8769798dae96e64aefe458643f79a319b14a41979a5c8d792a77"
     },
     {
       "publication_id": "milovi-feed-20261115-001",
@@ -113,9 +148,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261115-001.json",
       "sha256": "sha256:4326df7c8664224d5a9c6352f48821e81818a97678f43cb79abc7edfcc194450",
       "caption_sha256": "sha256:2edccde3f2d7219546f35f2ecf3de10e1e43cc6a1478c864a845a4a580fe0e61",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:461d0a2fca0a17d2d411b04c95bb3f39355b464d3b2e380786095eca20728615",
+      "release_candidate_sha256": "sha256:53cbb47e6478c5d99e906914f79ebf0f108ed80affb3d3057c61a90c49f6cf8b",
+      "provider_payload_sha256": "sha256:84790b7b1eb8a72a9dc53e21bd4390ec98f21c09170622d72e48b7443edf7ae9"
     },
     {
       "publication_id": "milovi-feed-20261116-001",
@@ -125,9 +165,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261116-001.json",
       "sha256": "sha256:bd9eb7d565d1a6bcc760fb9837827bc6b6a4900959a60b05bbb9f74ecf016c79",
       "caption_sha256": "sha256:1f8649ca84c4f5133fb15a5fc28461e335c10ea451cfffd0c391f68b5936047f",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:84dfad8de9801d4a806c42934814cc61ca370b29bf10ab473b3754c945bd1b5d",
+      "release_candidate_sha256": "sha256:3a3afef0b4d43427a61e2f5e8120676b301dc3e086aaa89038ed852f2ad3362e",
+      "provider_payload_sha256": "sha256:75381cae90fba7b7dd38bb1eb3b5da2211624dc54dd2c257377a946f2ba6cbf1"
     },
     {
       "publication_id": "milovi-feed-20261117-001",
@@ -137,9 +182,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261117-001.json",
       "sha256": "sha256:6a83b9f253bfaed2683d2a577dc0bcad5a8723057cb152406bab1b3785643882",
       "caption_sha256": "sha256:6d26f5a964d30fc53eb5d41ec31234cf95487bf74840e1ce286cec77a1e68251",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:2314acc6b244e25752f4846ab619563398c94458ac828e347e35cbf12e728ed3",
+      "release_candidate_sha256": "sha256:77776fb5f6acf6f72db5b9c7c65acb33b90919692cbeca3d1f1a03ca37f21b94",
+      "provider_payload_sha256": "sha256:1118e638b825214cbc8d728bb24b1bce02ad1dbf196ecb0390433c6479598c63"
     },
     {
       "publication_id": "milovi-feed-20261118-001",
@@ -149,9 +199,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261118-001.json",
       "sha256": "sha256:f53f1fa455e2a69166361ac0412d8ed5c4aa14afe1bed27e048f41452786518b",
       "caption_sha256": "sha256:50ab230a70f5eee7ad07b0f8e915eb75b7a6312cda00db2c85985cacdf14ec9e",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:f2bfaed2049cec54b681f7d7637fc14f6b8838b8dbcf6941f3d044bbfacd725b",
+      "release_candidate_sha256": "sha256:cd2942cbdee8870764a1a13d2521bc44b3bd33c3d9b47567bae7d3f517d44c1a",
+      "provider_payload_sha256": "sha256:1bb395dd9426f04a5143fc2965b7cffcfe71936e9a3241d89c6f28f4e913d9e5"
     },
     {
       "publication_id": "milovi-feed-20261119-001",
@@ -161,9 +216,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261119-001.json",
       "sha256": "sha256:935bd2e405f61ccb5399227691902056eedd4d9618225db2d2e791e52dbe30f7",
       "caption_sha256": "sha256:9b4eee701602f3c2a56529feb0dff788199b4dfeacc69c340a973cc2c8ee6e1d",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:2ca5802ef2b06c73a488b24ef87bbe73c4127b41a5d6ea6c5eebb8f182f6cf00",
+      "release_candidate_sha256": "sha256:7f5a38d1ad978ec24fddd56a97a0ad2d48b8fd17a1afefe30466d9ef4f8c3001",
+      "provider_payload_sha256": "sha256:8f3f87320c555c3025ba0da545ad741346924f4746be1d8c29cb4ea58bde4284"
     },
     {
       "publication_id": "milovi-feed-20261120-001",
@@ -173,9 +233,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261120-001.json",
       "sha256": "sha256:f71a02f13319b7929f46d7abc707f49adce3518873c71ed96d45d4b76f50a31f",
       "caption_sha256": "sha256:ac8e31d1db3f7688a68c181bd1a7fb4cc25b1732e60d2a3f24cb80c4fca230ca",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:799d9e8fd5c347d4bfc926740ec1040e9a62a315b13223b45bd72b0c999b8922",
+      "release_candidate_sha256": "sha256:35ca628199ae6dd65ef173c4ba173baae51994905eb6c1ed83c045c7bb66632f",
+      "provider_payload_sha256": "sha256:c509059f71c5924ef9202ba1dd007ad365f7f42c5146e5e112a614e8e0f06018"
     },
     {
       "publication_id": "milovi-feed-20261121-001",
@@ -185,9 +250,14 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261121-001.json",
       "sha256": "sha256:d49c0dced716363b963c142cc763d67d85a1e40d0f1b4553bc17d1fb0c379cab",
       "caption_sha256": "sha256:84bb55b3530bcd86c2dd8899f5c32edad0eb2840dbfe4163f7a174210b22345b",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:cac928c9b892e7c44d713fa1dc318c0aa585463c160ece010ed1ebf6e930069b",
+      "release_candidate_sha256": "sha256:c0e385e26174624b994d6d4e148571999658ec2ed9b41d9db1acac3ef7c11804",
+      "provider_payload_sha256": "sha256:9216935168db9cadaeab006b7cddc06d63f0986645639df921ff0a278496b360"
     },
     {
       "publication_id": "milovi-feed-20261122-001",
@@ -197,9 +267,17 @@
       "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261122-001.json",
       "sha256": "sha256:0a0b0c768fb198daca554529723116f19c440bed67802beb6fc36b86b83cbec4",
       "caption_sha256": "sha256:8f68f317865b97ac63fb6c5a9cc9889f5d235857c38649b4bfcfa6c38d69fb26",
-      "rights_verified": false,
+      "rights_verified": true,
       "duplicate_clearance_verified": false,
-      "release_authorized": false
+      "release_authorized": true,
+      "owner_publication_approved": true,
+      "execution_authorized": true,
+      "release_digest": "sha256:212d7ea6a1e3cc4dba125d2c4d7f9634df4bb25128fc496a2680a432dad9479e",
+      "release_candidate_sha256": "sha256:5e29e7e5d8bfa874e1c69e3655c2a1a7efd5c6a09d52bc243f41c3cdb3c0da2b",
+      "provider_payload_sha256": "sha256:2e431f68192f2c4a2b388a93105fd1a6118df906c1d8bf0c1664bc72566d6888"
     }
-  ]
+  ],
+  "owner_publication_approved": true,
+  "rights_provenance_source": "content/telegram/milovi-cake/releases/milovi-muted15-owner-authorization-20261106.json",
+  "rights_provenance_sha256": "sha256:6f9de0c3d99fbb3df898230613070e9e74c1be79d41d4d046659e226099cb92f"
 }
