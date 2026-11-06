@@ -235,6 +235,47 @@ class MiloviFeedMutedVideoBinding(BaseModel):
         return self
 
 
+class MiloviFeedAdditionalMutedVideoBinding(BaseModel):
+    """An immutable audio-free video from the separate pinned 15-source evidence ref."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.milovi-telegram-feed-video"]
+    schema_version: Literal[3]
+    project_key: Literal["milovi-cake"]
+    publication_id: str
+    media_id: str = Field(pattern=r"^v(?:0[1-9]|1[0-6])-muted$")
+    candidate_path: str = Field(min_length=5, max_length=500)
+    caption_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    artifact_repository: Literal["FedorMilovanov/video-channel-manager"]
+    artifact_ref: Literal["agent/milovi-video-muted15-80ee7f9fea"]
+    artifact_commit: Literal["9331af0c6015404bfda0cd2c6392066b78dc68b3"]
+    artifact_path: str = Field(
+        pattern=r"^artifacts/milovi-telegram/video-muted15/milovi-v(?:0[1-9]|1[0-6])-muted\.mp4$"
+    )
+    artifact_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    artifact_byte_size: int = Field(gt=0, le=50_000_000)
+    artifact_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    provenance_sha256: Literal["sha256:c62a03c876dfee047f39890d8837056a95f96d2f2a34062db7e5fa5f83ef31ba"]
+    local_media_path: str = Field(min_length=1, max_length=500)
+    filename: str = Field(pattern=r"^milovi-v(?:0[1-9]|1[0-6])-muted\.mp4$")
+    provider_write_performed: Literal[False]
+
+    @model_validator(mode="after")
+    def validate_variant_identity(self) -> "MiloviFeedAdditionalMutedVideoBinding":
+        variant_id = self.media_id
+        if variant_id == "v12-muted":
+            raise ValueError("v12-muted must retain its separate legacy v2 binding")
+        if self.artifact_path != f"artifacts/milovi-telegram/video-muted15/milovi-{variant_id}.mp4":
+            raise ValueError("muted15 artifact path differs from exact media ID")
+        if self.filename != f"milovi-{variant_id}.mp4":
+            raise ValueError("muted15 filename differs from exact media ID")
+        local = Path(self.local_media_path)
+        if local.is_absolute() or ".." in local.parts or local.name != self.filename:
+            raise ValueError("muted15 local path must be relative and use exact filename")
+        return self
+
+
 FeedStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 FeedProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 
@@ -286,9 +327,13 @@ def _load_message(path: Path) -> MiloviFeedMessageBinding:
         raise ValueError(f"invalid Milovi feed message binding {path}: {exc}") from exc
 
 
-def _load_video(path: Path) -> MiloviFeedVideoBinding | MiloviFeedMutedVideoBinding:
+def _load_video(
+    path: Path,
+) -> MiloviFeedVideoBinding | MiloviFeedMutedVideoBinding | MiloviFeedAdditionalMutedVideoBinding:
     try:
         raw = _read_json(path)
+        if raw.get("schema_version") == 3:
+            return MiloviFeedAdditionalMutedVideoBinding.model_validate(raw)
         if raw.get("schema_version") == 2:
             return MiloviFeedMutedVideoBinding.model_validate(raw)
         return MiloviFeedVideoBinding.model_validate(raw)
@@ -492,9 +537,11 @@ def validate_bundle(
         caption = str(candidate.get("caption") or "")
         if _sha256_bytes(caption.encode("utf-8")) != video.caption_sha256:
             raise ValueError("Milovi video candidate caption digest differs from video binding")
-        if isinstance(video, MiloviFeedMutedVideoBinding):
+        if isinstance(video, (MiloviFeedMutedVideoBinding, MiloviFeedAdditionalMutedVideoBinding)):
             variants = _read_json(MUTED_VIDEO_VARIANTS_PATH)
-            accepted = variants["variants"]["v12-muted"]
+            accepted = variants.get("variants", {}).get(video.media_id)
+            if not isinstance(accepted, dict):
+                raise ValueError("Milovi muted video lacks exact accepted variant record")
             required = (
                 ("artifact_ref", "artifact_ref"),
                 ("artifact_commit", "artifact_commit"),
@@ -510,12 +557,19 @@ def validate_bundle(
                 accepted.get("content_approved") is True and accepted.get("rights_verified") is True
             )
             if (
-                candidate.get("variant_media_id") != "v12-muted"
+                candidate.get("variant_media_id") != video.media_id
                 or candidate.get("audio_removed") is not True
+                or accepted.get("audio_streams") != 0
                 or candidate.get("accepted_video", {}).get("artifact_sha256") != video.artifact_sha256
                 or candidate.get("accepted_video", {}).get("artifact_commit") != video.artifact_commit
+                or candidate.get("accepted_video", {}).get("artifact_git_blob_sha1") != video.artifact_git_blob_sha1
             ):
                 raise ValueError("Milovi muted candidate lacks exact audio-free source binding")
+            if isinstance(video, MiloviFeedAdditionalMutedVideoBinding) and (
+                candidate.get("source", {}).get("parent_sha256") != accepted.get("source_sha256")
+                or accepted.get("source_video_stream_sha256") != accepted.get("muted_video_stream_sha256")
+            ):
+                raise ValueError("Milovi muted15 candidate lacks exact parent video-stream identity")
         elif (
             video.artifact_repository != VIDEO_ARTIFACT_REPOSITORY
             or video.artifact_ref != VIDEO_ARTIFACT_REF

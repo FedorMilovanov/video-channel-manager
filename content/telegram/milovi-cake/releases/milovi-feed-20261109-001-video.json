@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-feed-video",
+  "schema_version": 3,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20261109-001",
+  "media_id": "v02-muted",
+  "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261109-001.json",
+  "caption_sha256": "sha256:fd33bc4fd98157b2dc4286594cdc057b538a302d7146909d62e26bc30777a77d",
+  "artifact_repository": "FedorMilovanov/video-channel-manager",
+  "artifact_ref": "agent/milovi-video-muted15-80ee7f9fea",
+  "artifact_commit": "9331af0c6015404bfda0cd2c6392066b78dc68b3",
+  "artifact_path": "artifacts/milovi-telegram/video-muted15/milovi-v02-muted.mp4",
+  "artifact_git_blob_sha1": "2b0c70797252653a16d4208c09c2455df980fdf6",
+  "artifact_byte_size": 3594103,
+  "artifact_sha256": "sha256:b37ec688a7ce57b07ae89ba84a615cf5aa3db6d809a27d366751da8f3c750050",
+  "provenance_sha256": "sha256:c62a03c876dfee047f39890d8837056a95f96d2f2a34062db7e5fa5f83ef31ba",
+  "local_media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261109-001/milovi-v02-muted.mp4",
+  "filename": "milovi-v02-muted.mp4",
+  "provider_write_performed": false
+}
