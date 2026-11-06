@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261114-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_publication_id": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261114-001",
+      "scheduled_at": "2026-11-14T19:00:00+03:00",
+      "source_sha256": "sha256:37591c36a5d17ac8abe902906305a596c161e283225ce47756ba0fcb29949a88",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261114-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:2fb401b1b41e8769798dae96e64aefe458643f79a319b14a41979a5c8d792a77",
+        "caption": "НОВАЯ РАБОТА MILOVI CAKE\n\nбенто на день рождения\nНебольшой праздничный торт с милой иллюстрацией и надписью.\n\nБольше наших работ: https://milovicake.ru/\n\n#MiloviCake #ТортыСПб",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261114-001/milovi-v07-muted.mp4",
+        "media_sha256": "sha256:37591c36a5d17ac8abe902906305a596c161e283225ce47756ba0fcb29949a88",
+        "media_byte_size": 2281294,
+        "media_filename": "milovi-v07-muted.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-execution-authority",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20261117-001",
+  "release_id": "milovi-feed-20261117-001",
+  "release_candidate_sha256": "sha256:77776fb5f6acf6f72db5b9c7c65acb33b90919692cbeca3d1f1a03ca37f21b94",
+  "release_digest": null,
+  "provider_payload_sha256": "sha256:1118e638b825214cbc8d728bb24b1bce02ad1dbf196ecb0390433c6479598c63",
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "authorized_by": null,
+  "authorized_publication_id": null,
+  "authorized_at": null,
+  "authority_source": "fresh_exact_human_authorization_only",
+  "historical_authorization_inherits": false,
+  "automation_is_execution_authority": false,
+  "max_provider_attempts": 1,
+  "blind_mutation_retries": 0
+}
