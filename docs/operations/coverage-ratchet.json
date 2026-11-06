@@ -131,6 +131,7 @@
     "src/video_channel_manager/lordchrist_telegraph_staged.py": 76.0,
     "src/video_channel_manager/milovi_telegram_activation_review.py": 61.26,
     "src/video_channel_manager/milovi_telegram_bootstrap.py": 64.2,
+    "src/video_channel_manager/milovi_telegram_due_dispatch.py": 66.66,
     "src/video_channel_manager/milovi_telegram_feed.py": 59.18,
     "src/video_channel_manager/milovi_telegram_follow_on.py": 68.31,
     "src/video_channel_manager/milovi_telegram_follow_on_readiness.py": 64.33,
