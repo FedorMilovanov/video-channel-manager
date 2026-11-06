@@ -31,6 +31,37 @@ The three content bindings are mutually exclusive. The validator fails closed if
 
 The frozen editorial/source candidate remains a separate provenance object. It never becomes provider authority by itself.
 
+## November 2026 separate muted video transport
+
+Issue #809 recovered the existing v12 finished-cake footage and made a
+standalone transport with the soundtrack **entirely removed**, retaining the
+exact H.264 stream. This is NOT a rewrite or replacement of the accepted
+August 16/16 MP4 reservoir.
+
+- Accepted additional manifest:
+  content/telegram/milovi-cake/accepted-video-variants-2026-11.json
+- Protected evidence ref:
+  agent/milovi-video-muted-v12-3b680fe94b50
+- Immutable artifact commit:
+  686223b41c01ce365853f2e2bf22c20240a1df01
+- Exact media identity: v12-muted, schema version 2, original accepted v12
+  parent and SHA-bound provenance, zero audio streams.
+- Only new ID milovi-feed-20261107-002 may bind this new transport. The
+  old audio-bearing milovi-feed-20261107-001 was permanently retired due to
+  a corrupted Cyrillic caption; it must not be remediated in-place or replayed.
+- The media registry remains content_approved=false and
+  rights_verified=false until the owner validates the actual footage.
+- Sending still requires the established **single** stateful Milovi
+  permanent-feed writer, exact current-main and target proof, verified rights,
+  signed release, independent execution permission, durable intent and
+  one no-retry send.
+- For both version-1 and version-2 video bindings the canonical writer now
+  fetches the media from an **immutable full Git commit**, not a branch name,
+  and checks the exact accepted SHA256 and Git blob before materialization.
+
+This extension is additive. The August transport manifest and original 16
+accepted media identities are unchanged.
+
 ## Supported permanent-feed payloads
 
 The sole writer supports three exact payload kinds through the same generic one-attempt runtime:

@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.milovi-video-accepted-variants",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "provider_access_performed": false,
+  "provider_write_performed": false,
+  "legacy_reservoir_unchanged": "accepted-video-reservoir-2026-08.json",
+  "variants": {
+    "v12-muted": {
+      "artifact_ref": "agent/milovi-video-muted-v12-3b680fe94b50",
+      "artifact_commit": "686223b41c01ce365853f2e2bf22c20240a1df01",
+      "artifact_path": "artifacts/milovi-telegram/video/milovi-v12-muted.mp4",
+      "git_blob_sha1": "832d7632cac63a2302f045b8bec0fc1b41344328",
+      "byte_size": 2195289,
+      "sha256": "sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7",
+      "provenance_sha256": "sha256:9657c47381b923394cee72d7dd832174f69de8293e648b0ae68876a58f8309be",
+      "source_artifact_commit": "f4f5512d7b60f1b9c61c293c07620b128536df27",
+      "source_sha256": "sha256:8ebdd2f5b9747399acf6559f1642327ac736ff585007c6c5d54102f90ef3997c",
+      "source_video_stream_sha256": "b521332dd0f153dd097753fe44f5a5af7cfe735f5b04a78adb256f2b4061cc82",
+      "muted_video_stream_sha256": "b521332dd0f153dd097753fe44f5a5af7cfe735f5b04a78adb256f2b4061cc82",
+      "audio_streams": 0,
+      "video_streams": 1,
+      "width": 720,
+      "height": 1282,
+      "frames": 299,
+      "content_approved": false,
+      "rights_verified": false,
+      "release_authorized": false
+    }
+  }
+}

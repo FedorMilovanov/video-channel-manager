@@ -40,6 +40,9 @@ INDEX_RELATIVE_PATH = STATE_ROOT / "index.json"
 VIDEO_ARTIFACT_REPOSITORY = "FedorMilovanov/video-channel-manager"
 VIDEO_ARTIFACT_REF = "agent/milovi-video-accepted-73c578eff825"
 VIDEO_EVIDENCE_SHA256 = "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae"
+MUTED_VIDEO_VARIANTS_PATH = Path("content/telegram/milovi-cake/accepted-video-variants-2026-11.json")
+RETIRED_PUBLICATIONS_PATH = Path("content/telegram/milovi-cake/retired-publications-2026-11.json")
+MUTED_PROVENANCE_SHA256 = "sha256:9657c47381b923394cee72d7dd832174f69de8293e648b0ae68876a58f8309be"
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -200,6 +203,38 @@ class MiloviFeedVideoBinding(BaseModel):
         return self
 
 
+class MiloviFeedMutedVideoBinding(BaseModel):
+    """Separate exact muted video identity; never overrides the legacy 16/16 reservoir."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.milovi-telegram-feed-video"]
+    schema_version: Literal[2]
+    project_key: Literal["milovi-cake"]
+    publication_id: str
+    media_id: Literal["v12-muted"]
+    candidate_path: str
+    caption_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    artifact_repository: Literal["FedorMilovanov/video-channel-manager"]
+    artifact_ref: Literal["agent/milovi-video-muted-v12-3b680fe94b50"]
+    artifact_commit: Literal["686223b41c01ce365853f2e2bf22c20240a1df01"]
+    artifact_path: Literal["artifacts/milovi-telegram/video/milovi-v12-muted.mp4"]
+    artifact_git_blob_sha1: Literal["832d7632cac63a2302f045b8bec0fc1b41344328"]
+    artifact_byte_size: Literal[2_195_289]
+    artifact_sha256: Literal["sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7"]
+    provenance_sha256: Literal["sha256:9657c47381b923394cee72d7dd832174f69de8293e648b0ae68876a58f8309be"]
+    local_media_path: str = Field(min_length=1, max_length=500)
+    filename: Literal["milovi-v12-muted.mp4"]
+    provider_write_performed: Literal[False]
+
+    @model_validator(mode="after")
+    def validate_muted_media_path(self) -> "MiloviFeedMutedVideoBinding":
+        local = Path(self.local_media_path)
+        if local.is_absolute() or ".." in local.parts or local.suffix.casefold() != ".mp4":
+            raise ValueError("Milovi muted video local path must be repository-relative MP4")
+        return self
+
+
 FeedStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 FeedProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 
@@ -251,10 +286,13 @@ def _load_message(path: Path) -> MiloviFeedMessageBinding:
         raise ValueError(f"invalid Milovi feed message binding {path}: {exc}") from exc
 
 
-def _load_video(path: Path) -> MiloviFeedVideoBinding:
+def _load_video(path: Path) -> MiloviFeedVideoBinding | MiloviFeedMutedVideoBinding:
     try:
-        return MiloviFeedVideoBinding.model_validate_json(path.read_text(encoding="utf-8"))
-    except (OSError, ValidationError) as exc:
+        raw = _read_json(path)
+        if raw.get("schema_version") == 2:
+            return MiloviFeedMutedVideoBinding.model_validate(raw)
+        return MiloviFeedVideoBinding.model_validate(raw)
+    except (OSError, ValidationError, ValueError) as exc:
         raise ValueError(f"invalid Milovi feed video binding {path}: {exc}") from exc
 
 
@@ -294,6 +332,9 @@ def validate_bundle(
     require_execution_authorized: bool = False,
 ) -> dict[str, Any]:
     paths = exact_paths(publication_id)
+    retired = _read_json(RETIRED_PUBLICATIONS_PATH)
+    if publication_id in retired["retired_publication_ids"]:
+        raise ValueError("Milovi publication identity is permanently retired: unreadable UTF-8 candidate")
     profile = load_channel_profile(Path("content/telegram/channels/milovi-cake.json"))
     if (
         profile.project_key != PROJECT_KEY
@@ -337,6 +378,7 @@ def validate_bundle(
         raise ValueError("Milovi execution authority differs from exact release/payload")
 
     payload_kind: Literal["photo", "message", "video"]
+    muted_variant_rights_approved: bool | None = None
     if isinstance(item.payload, GenericPhotoPayload):
         _require_only_binding(paths, "media")
         media = _load_media(paths["media"])
@@ -398,7 +440,31 @@ def validate_bundle(
         caption = str(candidate.get("caption") or "")
         if _sha256_bytes(caption.encode("utf-8")) != video.caption_sha256:
             raise ValueError("Milovi video candidate caption digest differs from video binding")
-        if (
+        if isinstance(video, MiloviFeedMutedVideoBinding):
+            variants = _read_json(MUTED_VIDEO_VARIANTS_PATH)
+            accepted = variants["variants"]["v12-muted"]
+            required = (
+                ("artifact_ref", "artifact_ref"),
+                ("artifact_commit", "artifact_commit"),
+                ("artifact_path", "artifact_path"),
+                ("artifact_git_blob_sha1", "git_blob_sha1"),
+                ("artifact_sha256", "sha256"),
+                ("artifact_byte_size", "byte_size"),
+                ("provenance_sha256", "provenance_sha256"),
+            )
+            if any(getattr(video, field) != accepted[key] for field, key in required):
+                raise ValueError("Milovi muted video differs from exact pinned accepted variant")
+            muted_variant_rights_approved = (
+                accepted.get("content_approved") is True and accepted.get("rights_verified") is True
+            )
+            if (
+                candidate.get("variant_media_id") != "v12-muted"
+                or candidate.get("audio_removed") is not True
+                or candidate.get("accepted_video", {}).get("artifact_sha256") != video.artifact_sha256
+                or candidate.get("accepted_video", {}).get("artifact_commit") != video.artifact_commit
+            ):
+                raise ValueError("Milovi muted candidate lacks exact audio-free source binding")
+        elif (
             video.artifact_repository != VIDEO_ARTIFACT_REPOSITORY
             or video.artifact_ref != VIDEO_ARTIFACT_REF
             or video.evidence_sha256 != VIDEO_EVIDENCE_SHA256
@@ -424,6 +490,8 @@ def validate_bundle(
             raise ValueError("Milovi release is not freshly authorized")
         if release.reviewed_publication_id != publication_id:
             raise ValueError("Milovi release review provenance does not bind exact publication_id")
+        if muted_variant_rights_approved is False:
+            raise ValueError("Milovi muted video still lacks exact content and visual-rights approval")
     if require_execution_authorized:
         if not authority.execution_authorized or not authority.provider_mutation_allowed:
             raise ValueError("fresh exact Milovi execution authority is missing")

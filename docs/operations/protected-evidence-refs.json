@@ -37,6 +37,14 @@
       "tip_commit": "b77bbf5f65f3f976694d1e4310650799205a5a78",
       "why": "Later re-materialization of the same 16 videos: every artifact blob is byte-identical to the accepted ref, and only the evidence generation differs (identity sha256:f0e25d9c905fc95... versus the accepted sha256:73c578eff8256...). No code references it, so it proves reproducibility rather than binding a release.",
       "restore": "git push origin b77bbf5f65f3f976694d1e4310650799205a5a78:refs/heads/agent/milovi-video-accepted-f0e25d9c905f"
+    },
+    {
+      "ref": "agent/milovi-video-muted-v12-3b680fe94b50",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "686223b41c01ce365853f2e2bf22c20240a1df01",
+      "why": "Distinct reviewed-evidence transport v12-muted, original H.264 video stream byte-identical to accepted v12, and audio entirely absent. Referenced by November 2026 Milovi Telegram muted-video variant registry; never rewrite, delete or replace it with the audio-bearing legacy v12.",
+      "restore": "git push origin 686223b41c01ce365853f2e2bf22c20240a1df01:refs/heads/agent/milovi-video-muted-v12-3b680fe94b50"
     }
   ]
 }
