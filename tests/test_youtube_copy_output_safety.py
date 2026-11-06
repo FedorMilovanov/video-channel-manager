@@ -33,18 +33,14 @@ def test_reserve_journals_exclusively_and_never_overwrite(tmp_path: Path) -> Non
     backup = tmp_path / "report" / "backup.json"
     result = tmp_path / "report" / "result.json"
 
-    reserve_youtube_copy_journals(
-        plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0
-    )
+    reserve_youtube_copy_journals(plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0)
     assert json.loads(backup.read_text(encoding="utf-8"))["provider_dispatch"] == "not_started"
     assert json.loads(result.read_text(encoding="utf-8"))["provider_dispatch"] == "not_started"
 
     existing_backup = backup.read_bytes()
     existing_result = result.read_bytes()
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
-        reserve_youtube_copy_journals(
-            plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0
-        )
+        reserve_youtube_copy_journals(plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0)
     assert backup.read_bytes() == existing_backup
     assert result.read_bytes() == existing_result
 
@@ -56,9 +52,7 @@ def test_reservation_rejects_colliding_output_paths(tmp_path: Path, alias: str) 
     result = plan if alias == "plan" else backup
 
     with pytest.raises(ValueError, match="three different files"):
-        reserve_youtube_copy_journals(
-            plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0
-        )
+        reserve_youtube_copy_journals(plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0)
     assert not backup.exists()
     assert not plan.exists()
 
@@ -70,9 +64,7 @@ def test_existing_result_refuses_new_backup_without_mutation(tmp_path: Path) -> 
     result.write_bytes(b"previous successful result")
 
     with pytest.raises(FileExistsError, match="existing YouTube output"):
-        reserve_youtube_copy_journals(
-            plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0
-        )
+        reserve_youtube_copy_journals(plan_path=plan, backup_output=backup, result_output=result, min_free_bytes=0)
     assert not backup.exists()
     assert result.read_bytes() == b"previous successful result"
 
@@ -86,9 +78,7 @@ def test_near_full_disk_fails_closed_before_creating_any_journal(
     monkeypatch.setattr(copy_output_safety.shutil, "disk_usage", lambda _: SimpleNamespace(free=0))
 
     with pytest.raises(OSError, match="Insufficient free space"):
-        reserve_youtube_copy_journals(
-            plan_path=plan, backup_output=backup, result_output=result
-        )
+        reserve_youtube_copy_journals(plan_path=plan, backup_output=backup, result_output=result)
     assert not backup.exists()
     assert not result.exists()
 
