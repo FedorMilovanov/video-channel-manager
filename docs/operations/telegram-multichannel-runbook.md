@@ -31,10 +31,11 @@ the profiles and their pinned target bindings and compared with them by
 | --- | --- | --- | --- | --- |
 | `content/telegram/channels/lordchrist.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `false` |
 | `content/telegram/channels/lordchrist-rich.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
+| `content/telegram/channels/lordchrist-shorts-v1.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
 | `content/telegram/channels/milovi-cake.json` | `milovi-cake` | `@MiloviCake` | `state/milovi-cake-telegram` | `true` |
 | `content/telegram/channels/svodka.json` | `svodka` | `@deep_info_life` | `state/svodka-telegram` | `true` |
 
-The flag belongs to a profile, not to a channel: `@lordchrist` has two profiles and they
+The flag belongs to a profile, not to a channel: `@lordchrist` has multiple profiles and they
 disagree on purpose — the legacy quote queue is closed, the historical rich editorial is open.
 Read the row for the exact profile a workflow loads.
 
