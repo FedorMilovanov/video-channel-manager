@@ -87,3 +87,28 @@ Publishing still must happen only when the precise due window opens, through
 the existing GitHub Actions single-writer workflow after fresh checks of
 protected state and current main, with durable intent and one attempt.
 **Merge and validate are not Telegram publication**.
+
+
+## Fifteen audio-free video candidates, 8-22 November (provider-inert)
+
+All remaining 15 of original 16 transports were individually verified by
+exact source SHA256, unchanged H.264 video stream and zero audio streams.
+Signed Nov 7 v12-muted stays unchanged.
+
+- Permanent ref agent/milovi-video-muted15-80ee7f9fea.
+- Immutable artifact commit 9331af0c6015404bfda0cd2c6392066b78dc68b3.
+- Frozen media provenance SHA256 c62a03c876dfee047f39890d8837056a95f96d2f2a34062db7e5fa5f83ef31ba.
+- Binary files stored on ref under artifacts/milovi-telegram/video-muted15/.
+- Additive variant registry accepted-video-variants-2026-11.json maps each
+  media ID to its distinct SHA256, Git blob, original parent SHA, zero-audio
+  proof and immutable evidence commit.
+- Fifteen exact provider-inert candidate, runtime/video and execution-authority
+  bundles prepared for November 8-22 at 19:00 Moscow, one per day.
+- Caption integrity verified as proper Unicode. No rewritten legacy video.
+- Explicit rights proof for other fifteen and exact historical native-video
+  duplicate reconciliation are not complete; older Telegram post #19 was
+  inaccessible on public archive contact sheet.
+- All fifteen: release_authorized=false, execution_authorized=false,
+  provider_mutation_allowed=false, scheduling_active=false and zero provider sends.
+- Proposed dates are not activated server-side Telegram schedules or GitHub
+  cron triggers. The separate previously blocked scheduler is NOT bypassed.

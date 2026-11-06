@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20261121-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_publication_id": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20261121-001",
+      "scheduled_at": "2026-11-21T19:00:00+03:00",
+      "source_sha256": "sha256:d49c0dced716363b963c142cc763d67d85a1e40d0f1b4553bc17d1fb0c379cab",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20261121-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:9216935168db9cadaeab006b7cddc06d63f0986645639df921ff0a278496b360",
+        "caption": "НОВАЯ РАБОТА MILOVI CAKE\n\n3D-торт «Баскетбол»\nСпортивный торт с баскетбольной тематикой.\n\nБольше наших работ: https://milovicake.ru/\n\n#MiloviCake #ТортыСПб",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261121-001/milovi-v15-muted.mp4",
+        "media_sha256": "sha256:d49c0dced716363b963c142cc763d67d85a1e40d0f1b4553bc17d1fb0c379cab",
+        "media_byte_size": 3564352,
+        "media_filename": "milovi-v15-muted.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    }
+  ]
+}
