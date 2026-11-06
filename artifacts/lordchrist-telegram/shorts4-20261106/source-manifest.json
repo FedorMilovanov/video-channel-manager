@@ -1,0 +1,50 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-shorts4-source-evidence",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "target": "@lordchrist",
+  "user_publication_request_recorded": true,
+  "source": "Fedor's already-public YouTube excerpts and exact local accepted transport from 2026-11-06",
+  "count": 4,
+  "provider_access_performed": false,
+  "provider_write_performed": false,
+  "rights_assertions_not_automatically_granted": true,
+  "items": [
+    {
+      "youtube_video_id": "ba4ZahiY-U0",
+      "path": "artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-ba4ZahiY-U0.mp4",
+      "sha256": "sha256:7e8101677e8dc9514d01c864beddea3b6c96e8dd0c083f1274175d3bf789c64c",
+      "byte_size": 19849330,
+      "owner_youtube_url": "https://www.youtube.com/watch?v=ba4ZahiY-U0",
+      "telegram_posted": false,
+      "telegram_scheduled": false
+    },
+    {
+      "youtube_video_id": "_aDIR0D7rSk",
+      "path": "artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-_aDIR0D7rSk.mp4",
+      "sha256": "sha256:e57d3cfe26f9c88b21b60f45919294e432383987ed9c58e92cced3eb792c93b7",
+      "byte_size": 4966959,
+      "owner_youtube_url": "https://www.youtube.com/watch?v=_aDIR0D7rSk",
+      "telegram_posted": false,
+      "telegram_scheduled": false
+    },
+    {
+      "youtube_video_id": "tELrnM71TQA",
+      "path": "artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-tELrnM71TQA.mp4",
+      "sha256": "sha256:052e9d6a4f6c4d92ed8a750ad65f5ca4ab68f5efdc1641f512ea2e0887d42e8f",
+      "byte_size": 16558893,
+      "owner_youtube_url": "https://www.youtube.com/watch?v=tELrnM71TQA",
+      "telegram_posted": false,
+      "telegram_scheduled": false
+    },
+    {
+      "youtube_video_id": "VeY1tpoLUJU",
+      "path": "artifacts/lordchrist-telegram/shorts4-20261106/lordchrist-short-VeY1tpoLUJU.mp4",
+      "sha256": "sha256:b021cbec8e6495e7fec49107492a39781323060618cbdc31d05a63b297aa93e3",
+      "byte_size": 45099071,
+      "owner_youtube_url": "https://www.youtube.com/watch?v=VeY1tpoLUJU",
+      "telegram_posted": false,
+      "telegram_scheduled": false
+    }
+  ]
+}
