@@ -17,8 +17,11 @@ from video_channel_manager.editorial.youtube_copy import (
     validate_youtube_description,
 )
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
+from video_channel_manager.platforms.youtube.lord_god_source_preservation import (
+    LORD_GOD_OWNER_CHANNEL,
+    source_preservation_issues,
+)
 
-LORD_GOD_OWNER_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
 
 _RETIRED_CONTENT: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("obsolete_shelf_navigation", re.compile(r"(?:[?&]shelf_id=)", re.I)),
@@ -97,6 +100,7 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
     if operation.get("channel_id") != LORD_GOD_OWNER_CHANNEL:
         raise ValueError("Lord God presentation gate: operation owner mismatch")
     problems = presentation_issues(str(operation.get("after_description", "")))
+    problems.extend(source_preservation_issues(operation["before_description"], operation["after_description"]))
     if problems:
         raise ValueError(
             "Lord God YouTube description is NOT cleanly formatted or retains obsolete content: " + ", ".join(problems)
