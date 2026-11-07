@@ -60,6 +60,13 @@
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
+      "module": "video_channel_manager.milovi_telegram_due_dispatch",
+      "status": "archived_canary",
+      "evidence": "tests/test_milovi_telegram_due_dispatch.py",
+      "statements": 73,
+      "note": "The exact owner-approved Nov 7 v12 window expired without provider dispatch; its one-time GitHub Actions workflow was retired. Preserve this read-only module and historical fail-closed/terminal-state tests as evidence only. It is not a current release entrypoint or authorization to backfill the pending v12 release."
+    },
+    {
       "module": "video_channel_manager.milovi_telegram_follow_on_readiness",
       "status": "pending_owner_decision",
       "owning_tests": [
