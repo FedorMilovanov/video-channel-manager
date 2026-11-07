@@ -662,6 +662,16 @@
       "status": "independent_tool"
     },
     {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/milovi_history_vk_schedule_20261108.py",
+      "private_imports": [],
+      "project_owner": "milovi-cake",
+      "provider_write_capable": true,
+      "sha256": "ab2be3b699a28eaa3b694c1b8b197b499b8d3597fa19596ad294a42bb322bbcb",
+      "status": "independent_tool"
+    },
+    {
       "callers": [
         ".github/workflows/milovi-history-article-due-20261107.yml"
       ],
