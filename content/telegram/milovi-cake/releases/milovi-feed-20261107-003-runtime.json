@@ -12,15 +12,15 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:7f987eb51da14a24a5c54c825d0dd633bfb69feacfe30f1535025de2b8ffc817",
+  "reviewed_candidate_sha256": "sha256:0c8d5e4708af7ea01decae0a6f7465bc101b4b87e29c629477d18b4fc6c05748",
   "reviewed_publication_id": "milovi-feed-20261107-003",
-  "reviewed_by": "Owner explicitly chose the vintage pastry cover used in VK and requested identical Telegram post",
-  "reviewed_at": "2026-11-07T07:28:48.720696+03:00",
+  "reviewed_by": "Owner 2026-11-07 at 16:49 Moscow: publish this exact existing illustrated history Telegram post immediately today instead of Nov 8",
+  "reviewed_at": "2026-11-07T16:57:35.937121+03:00",
   "items": [
     {
       "sequence": 1,
       "publication_id": "milovi-feed-20261107-003",
-      "scheduled_at": "2026-11-08T14:00:00+03:00",
+      "scheduled_at": "2026-11-07T16:49:00+03:00",
       "source_sha256": "sha256:2bf4ec0e537fcb3c8349267ade1992d779e12ef832c9497a62a10c014d003328",
       "payload": {
         "schema_name": "video-channel-manager.telegram-generic-photo-payload",

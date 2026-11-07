@@ -1,12 +1,10 @@
-name: Milovi Cake illustrated history article Nov 8 2026
+name: Milovi Cake history owner immediate Nov 7 state revision
 
 on:
   workflow_run:
     workflows: [Milovi Telegram feed quality]
     types: [completed]
     branches: [main]
-  schedule:
-    - cron: "0 11 8 11 *"
   workflow_dispatch:
 
 permissions:
@@ -85,30 +83,8 @@ jobs:
             echo "Already exact and initialized; no modification"
             exit 0
           fi
-          git -C "$STATE_DIR" commit -m "Reschedule one exact researched Milovi history article to Nov8 14MSK"
+          git -C "$STATE_DIR" commit -m "Owner-approved exact Milovi history same-day pending release revision"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || exit 3
-
-      - name: Exact 2026-11-08 14 MSK due, year and no provider effect check
-        if: github.event_name == 'schedule'
-        id: due
-        run: |
-          set -euo pipefail
-          [[ "$(TZ=Europe/Moscow date +%Y-%m-%d)" == "2026-11-08" ]] || exit 3
-          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
-          python scripts/milovi_history_release_20261108.py due --state-checkout "$STATE_DIR" --output "$GITHUB_OUTPUT"
-
-      - name: Call one existing canonical publisher only
-        if: github.event_name == 'schedule' && steps.due.outputs.dispatch == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          remote_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
-          [[ "$remote_sha" == "$GITHUB_SHA" ]] || exit 3
-          gh workflow run milovi-telegram-feed-publisher.yml \
-            --repo "$GITHUB_REPOSITORY" --ref main \
-            -f operation=publish -f publication_id="$PUBLICATION_ID" \
-            -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"

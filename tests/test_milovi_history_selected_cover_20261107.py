@@ -64,7 +64,7 @@ def test_same_existing_article_id_schedule_unchanged_caption_and_links(
     release = load_release(RELEASE)
     candidate = json.loads(CANDIDATE.read_text(encoding="utf-8"))
     media = MiloviFeedMediaBinding.model_validate_json(MEDIA.read_text(encoding="utf-8"))
-    assert release.items[0].scheduled_at.isoformat() == "2026-11-08T14:00:00+03:00"
+    assert release.items[0].scheduled_at.isoformat() == "2026-11-07T16:49:00+03:00"
     assert release.channel_username == "@MiloviCake"
     assert release.chat_id == -1002215328390
     assert release.bot_id == 8716602202
