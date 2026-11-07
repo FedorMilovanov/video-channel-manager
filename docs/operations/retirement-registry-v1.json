@@ -32,6 +32,21 @@
   ],
   "retired_families": [
     {
+      "id": "milovi-v12-nov07-expired-one-time-scheduled-dispatch",
+      "kind": "per_publication_scheduled_dispatch_workflow",
+      "issues": [
+        809
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-feed-publisher.yml (new exact reviewed release, never expired v12 cron)",
+      "historical_evidence": [
+        "github-actions:run/42383430183/attempt/1",
+        "state/milovi-cake-telegram:content/telegram/milovi-cake/feed/milovi-feed-20261107-002.json"
+      ],
+      "reason": "Owner-approved Nov 7 11:00 Moscow window expired without a provider dispatch; GitHub schedule arrived at 17:49 Moscow, and the exact time window gate failed closed. Durable v12 remains pending/provider_effect=impossible, NOT published. Annual historical cron is consumed; no automatic backfill or restoration of v12 publish authority."
+    },
+    {
       "id": "milovi-history-20261107-consumed-one-shot-state-migration",
       "kind": "per_publication_state_migration_workflow",
       "issues": [
