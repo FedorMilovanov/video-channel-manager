@@ -129,7 +129,9 @@ def login(
         )
         raise typer.Exit(code=2)
 
-    scopes = (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE) if write else (YOUTUBE_READONLY_SCOPE,)
+    # force-ssl already permits owner reads and writes; requesting a second
+    # optional read-only consent can silently produce an unusable partial grant.
+    scopes = (YOUTUBE_FORCE_SSL_SCOPE,) if write else (YOUTUBE_READONLY_SCOPE,)
     flow = InstalledOAuthFlow(config, scopes=scopes)
     console.print("[bold]Opening Google authorization in your browser…[/bold]")
     if write:
