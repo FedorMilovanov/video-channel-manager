@@ -79,8 +79,9 @@ def test_denied_write_scope_fails_without_replacing_existing_token_or_registry(
     result = RUNNER.invoke(app, ["youtube", "login", "--account", "milovi-cake", "--write", "--force"])
 
     assert result.exit_code == 2, (result.stdout, result.exception)
-    assert "did not grant the requested YouTube write access" in result.stdout
-    assert "No account token was saved or replaced" in result.stdout
+    normalized_output = " ".join(result.stdout.split())
+    assert "did not grant the requested YouTube write access" in normalized_output
+    assert "No account token was saved or replaced" in normalized_output
     assert "Authorized YouTube account alias" not in result.stdout
     assert store.load_token("milovi-cake").access_token == "existing-readonly"
     assert not store.registry_path.exists()
@@ -104,9 +105,7 @@ def test_full_write_consent_persists_and_confirms_expected_channel(
     assert calls["requested_scopes"] == (YOUTUBE_FORCE_SSL_SCOPE,)
 
 
-def test_read_only_consent_remains_compatible(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_read_only_consent_remains_compatible(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store, calls = _install(monkeypatch, tmp_path, _token("new-readonly", [YOUTUBE_READONLY_SCOPE]))
     result = RUNNER.invoke(app, ["youtube", "login", "--account", "milovi-cake", "--force"])
 
