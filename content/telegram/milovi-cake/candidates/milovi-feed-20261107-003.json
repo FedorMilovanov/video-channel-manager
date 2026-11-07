@@ -13,14 +13,14 @@
   "operation": "sendPhoto",
   "media": {
     "media_id": "patisserie-profession-history-cover",
-    "source_path": "public/images/articles/careme-first-celebrity-chef.webp",
-    "source_git_blob_sha1": "694eebc3824852eb29340506ed961af421f72f4c",
-    "source_sha256": "sha256:7f3c130139f187edf93745a742ed4506c57a6c2f8490a28b60575e7fd7946592",
+    "source_path": "content/telegram/milovi-cake/assets/patisserie-history-cover-20261107.webp",
+    "source_git_blob_sha1": "b8a0303742e20f3b231d3bcd019029793a495a3a",
+    "source_sha256": "sha256:2bf4ec0e537fcb3c8349267ade1992d779e12ef832c9497a62a10c014d003328",
     "transport_format": "image/jpeg",
-    "transport_byte_size": 330101,
-    "transport_sha256": "sha256:3d1477b5b3bf424c848fc827ee28c25d5ed24418523c4a13d432d01da54a8f97",
-    "pixel_width": 1280,
-    "pixel_height": 800
+    "transport_byte_size": 802491,
+    "transport_sha256": "sha256:e41c5cf2c7ad87af1b6a949fde4c5a91776cc9af73f835e95d4b743543409b5d",
+    "pixel_width": 1672,
+    "pixel_height": 941
   },
   "caption_sha256": "sha256:cb5cb042b2dc7e02421f902623f24550745dbe6f99637ef5a0a747f6474676a4",
   "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2\">Иллюстрированная история кондитерской профессии</a>\n\n🎂 Нужен торт к празднику или десерты для гостей? Загляните в <a href=\"https://milovicake.ru/\">MILOVI CAKE</a>.\n\n#MiloviCake #ИсторияКондитерскогоДела\n",
@@ -45,5 +45,14 @@
   "publication_target_date": "2026-11-08",
   "editorial_review": "Fact-checked 12 primary/source lines; original Telegraph URL revised in place; tomorrow owner requested exact 14:00 Moscow",
   "delayed_original_slot_cancelled": true,
-  "no_new_publication_id_created": true
+  "no_new_publication_id_created": true,
+  "selected_cover": {
+    "editorial_selection": "same original vintage dessert cover as owner posted in VK",
+    "source_original_sha256": "sha256:eea0a795c5b45b3503a9bb6475e82dd633b1002060c6c142405a43309de2599a",
+    "webp_asset_sha256": "sha256:2bf4ec0e537fcb3c8349267ade1992d779e12ef832c9497a62a10c014d003328",
+    "asset": "content/telegram/milovi-cake/assets/patisserie-history-cover-20261107.webp",
+    "origin": "owner_selected_generated_editorial_art",
+    "not_customer_order_photo": true,
+    "used_in": "Telegram historical article at Nov8 14MSK"
+  }
 }

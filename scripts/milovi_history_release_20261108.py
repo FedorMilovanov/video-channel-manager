@@ -1,8 +1,8 @@
-"""One-date owner reschedule of a never-attempted Milovi Cake Telegram photo.
+"""Owner-selected cover replacement for one never-attempted Milovi Cake photo.
 
-Strictly migrates ONE protected pending ledger and its index row from the
-pre-approved November 7 release to the owner-approved November 8 14:00 MSK.
-No provider calls, no retry, and no second Telegram publisher.
+Only migrates the exact old Nov 8 pending ledger/index pair to a cover updated
+with the original selected image also used in VK. Preserves date and caption.
+No Telegram provider calls, blind retries, or new release IDs.
 """
 
 from __future__ import annotations
@@ -31,9 +31,10 @@ PUB = "milovi-feed-20261107-003"
 STATE = Path("content/telegram/milovi-cake/feed")
 RELEASE = Path("content/telegram/milovi-cake/releases") / f"{PUB}-runtime.json"
 EXPECTED_TIME = datetime(2026, 11, 8, 14, 0, tzinfo=ZoneInfo("Europe/Moscow"))
-OLD_RELEASE_DIGEST = "sha256:48f7f60ae53ae66572ea25f70dc3f495001f322fd7fbfc59888f99a444cf61b7"
-OLD_CANDIDATE_DIGEST = "sha256:244fba0fb8098817eefe54fe8ba63b0fad6e1a50079b86be64e200ce36a26433"
+OLD_RELEASE_DIGEST = "sha256:0abafa80c67cb4dcebd12a267ac437cd8c5899ec833a670bd7048a41c165e62b"
+OLD_CANDIDATE_DIGEST = "sha256:e466ad7008f8afe639beebbb3b8fd80477915625da3b384f33c9f41a85b3a72e"
 OLD_PROVIDER_PAYLOAD = "sha256:92fe82f4400eeaf56acc46e087bb0e21b4a81d782f74831efd127d65098fed1e"
+NEW_PROVIDER_PAYLOAD = "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b"
 
 
 def reviewed_release():
@@ -43,7 +44,7 @@ def reviewed_release():
         release.release_id != PUB
         or len(release.items) != 1
         or release.items[0].scheduled_at != EXPECTED_TIME
-        or release.items[0].payload.provider_payload_sha256 != OLD_PROVIDER_PAYLOAD
+        or release.items[0].payload.provider_payload_sha256 != NEW_PROVIDER_PAYLOAD
         or release.channel_username != "@MiloviCake"
         or release.chat_id != -1002215328390
         or release.bot_id != 8716602202
@@ -76,7 +77,7 @@ def migrate_pending(checkout: Path) -> dict[str, str]:
         load_ledger(ledger_path, release)
         if (
             row.release_candidate_sha256 != release.candidate_digest()
-            or row.provider_payload_sha256 != OLD_PROVIDER_PAYLOAD
+            or row.provider_payload_sha256 != NEW_PROVIDER_PAYLOAD
             or row.state != "pending"
             or row.provider_effect != "impossible"
             or row.intent_id is not None
@@ -120,7 +121,7 @@ def migrate_pending(checkout: Path) -> dict[str, str]:
     save_ledger(ledger_path, replacement)
     _save_index(index_path, index)
     load_ledger(ledger_path, release)
-    return {"migrated": "true", "reason": "exact_original_pending_release_only"}
+    return {"migrated": "true", "reason": "exact_pending_image_revision_only"}
 
 
 def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:

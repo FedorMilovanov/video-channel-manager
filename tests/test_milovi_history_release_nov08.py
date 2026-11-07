@@ -27,6 +27,7 @@ def legacy_fixture(tmp_path: Path) -> tuple[Path, Path]:
     row["release_candidate_sha256"] = scheduled.OLD_CANDIDATE_DIGEST
     row["provider_payload_sha256"] = scheduled.OLD_PROVIDER_PAYLOAD
     ledger_record["release_digest"] = scheduled.OLD_RELEASE_DIGEST
+    ledger_record["entries"][scheduled.PUB]["provider_payload_sha256"] = scheduled.OLD_PROVIDER_PAYLOAD
     assert ledger_record["entries"][scheduled.PUB]["provider_payload_sha256"] == scheduled.OLD_PROVIDER_PAYLOAD
     index.write_text(json.dumps(i, ensure_ascii=False) + "\n", encoding="utf-8")
     ledger.write_text(json.dumps(ledger_record, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -52,12 +53,12 @@ def test_protected_old_pending_exact_digest_migrates_without_provider_attempt(tm
     }
     orig_i["entries"]["milovi-feed-20261106-001"] = other
     index.write_text(json.dumps(orig_i, ensure_ascii=False) + "\n", encoding="utf-8")
-    assert scheduled.migrate_pending(tmp_path) == {"migrated": "true", "reason": "exact_original_pending_release_only"}
+    assert scheduled.migrate_pending(tmp_path) == {"migrated": "true", "reason": "exact_pending_image_revision_only"}
     migrated = json.loads(index.read_text(encoding="utf-8"))
     assert migrated["entries"]["milovi-feed-20261106-001"] == other
     release = load_release(RELEASE)
     assert migrated["entries"][scheduled.PUB]["release_candidate_sha256"] == release.candidate_digest()
-    assert migrated["entries"][scheduled.PUB]["provider_payload_sha256"] == scheduled.OLD_PROVIDER_PAYLOAD
+    assert migrated["entries"][scheduled.PUB]["provider_payload_sha256"] == scheduled.NEW_PROVIDER_PAYLOAD
     ledger_record = load_ledger(ledger, release).entries[scheduled.PUB]
     assert ledger_record.state == "pending" and ledger_record.provider_effect == "impossible"
     assert ledger_record.message_id is None and ledger_record.intent_id is None
@@ -94,6 +95,6 @@ def test_future_owner_date_and_hard_freshness_window(tmp_path: Path):
 
 def test_publication_provider_photo_bytes_and_target_unchanged():
     release = scheduled.reviewed_release()
-    assert release.items[0].payload.provider_payload_sha256 == scheduled.OLD_PROVIDER_PAYLOAD
+    assert release.items[0].payload.provider_payload_sha256 == scheduled.NEW_PROVIDER_PAYLOAD
     assert release.items[0].scheduled_at == scheduled.EXPECTED_TIME
     assert release.chat_id == -1002215328390 and release.bot_id == 8716602202

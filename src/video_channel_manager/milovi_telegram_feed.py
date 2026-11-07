@@ -132,6 +132,26 @@ class MiloviMediaSource(BaseModel):
     pixel_height: int = Field(gt=0)
 
 
+class MiloviOwnedCoverSource(BaseModel):
+    """Exactly one owner-selected art asset, from this very immutable checked-out repository.
+
+    Git blob and SHA256 are verified before conversion. No external file or
+    ephemeral Git commit is trusted for this first-party cover.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    repository: Literal["FedorMilovanov/video-channel-manager"]
+    provenance: Literal["owner_selected_original_vintage_pastry_cover_20261107"]
+    path: Literal["content/telegram/milovi-cake/assets/patisserie-history-cover-20261107.webp"]
+    git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    byte_size: int = Field(gt=0, le=10_000_000)
+    sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    media_type: Literal["image/webp"]
+    pixel_width: Literal[1672]
+    pixel_height: Literal[941]
+
+
 class MiloviMediaTransport(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -153,7 +173,7 @@ class MiloviFeedMediaBinding(BaseModel):
     media_id: str
     candidate_path: str
     caption_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    source: MiloviMediaSource
+    source: MiloviMediaSource | MiloviOwnedCoverSource
     transport: MiloviMediaTransport
     provider_write_performed: Literal[False]
 
