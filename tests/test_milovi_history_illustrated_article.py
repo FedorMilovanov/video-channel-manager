@@ -39,8 +39,14 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     assert nodes[0]["tag"] == "figure"
     assert nodes[0]["children"][0]["attrs"]["src"] == m["image_urls"][0]
     assert "source patch awaiting authorized editPage" in m["publication_status"]
-    section3 = next(i for i, item in enumerate(nodes) if item.get("tag") == "h3" and "3. Одна гравюра" in item["children"][0])
-    old_engraving = next(i for i, item in enumerate(nodes) if item.get("tag") == "figure" and item["children"][0]["attrs"]["src"].endswith("DP818745.jpg"))
+    section3 = next(
+        i for i, item in enumerate(nodes) if item.get("tag") == "h3" and "3. Одна гравюра" in item["children"][0]
+    )
+    old_engraving = next(
+        i
+        for i, item in enumerate(nodes)
+        if item.get("tag") == "figure" and item["children"][0]["attrs"]["src"].endswith("DP818745.jpg")
+    )
     assert old_engraving == section3 + 2
     assert m["nodes_bytes"] == len(json.dumps(nodes, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
     assert "мясной и рыбной начинкой" in html
