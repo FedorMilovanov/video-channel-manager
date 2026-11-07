@@ -22,9 +22,9 @@
     "pixel_width": 1280,
     "pixel_height": 800
   },
-  "caption_sha256": "sha256:5b52934d76987c38b53cf3e242a19811f3f95791e6700a7245f1650b3ed65947",
-  "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07\">Иллюстрированная история кондитерской профессии</a>\n\n#MiloviCake #ИсторияКондитерскогоДела",
-  "article_url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07",
+  "caption_sha256": "sha256:cb5cb042b2dc7e02421f902623f24550745dbe6f99637ef5a0a747f6474676a4",
+  "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2\">Иллюстрированная история кондитерской профессии</a>\n\n🎂 Нужен торт к празднику или десерты для гостей? Загляните в <a href=\"https://milovicake.ru/\">MILOVI CAKE</a>.\n\n#MiloviCake #ИсторияКондитерскогоДела\n",
+  "article_url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2",
   "editorial_style": "historical fact first, native bold/italic/source link, 2 hashtags",
   "editorial_guards": {
     "school_separate_educational_content": true,
@@ -39,5 +39,7 @@
     "school_article_id": "careme-first-celebrity-chef",
     "school_article_url": "https://french.milovicake.ru/articles/careme-first-celebrity-chef/"
   },
-  "execution_note": "Owner Nov7 explicit new historical confectionery long-read promotion in MILOVI CAKE Telegram and VK"
+  "execution_note": "Owner Nov7 explicit new historical confectionery long-read promotion in MILOVI CAKE Telegram and VK",
+  "cake_business_cta_url": "https://milovicake.ru/",
+  "cake_business_cta_kind": "real cakes and desserts for order; historical article recipes NOT implied for sale"
 }

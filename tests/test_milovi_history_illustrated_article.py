@@ -17,7 +17,7 @@ MANIFEST = BASE / "patisserie-profession-history-20261107.manifest.json"
 HTML = BASE / "patisserie-profession-history-20261107.html"
 NODES = BASE / "patisserie-profession-history-20261107.telegraph-nodes.json"
 YAML = ROOT / ".github/workflows/milovi-history-article-due-20261107.yml"
-ARTICLE_URL = "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07"
+ARTICLE_URL = "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2"
 
 
 def test_researched_history_source_is_complete_and_live_telegraph_readback_recorded() -> None:
@@ -26,6 +26,8 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     nodes = json.loads(NODES.read_text(encoding="utf-8"))
     assert m["telegraph_url"] == ARTICLE_URL
     assert m["telegraph_page_images_verified"] == 5
+    assert m["telegraph_promotion_verified"] is True
+    assert m["promotional_link"] == "https://milovicake.ru/"
     assert m["telegraph_page_nodes_verified"] >= 50
     assert m["words"] >= 1400 and m["sections"] >= 9
     assert len(m["image_urls"]) == 5
@@ -33,6 +35,7 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     assert len(m["source_urls"]) >= 10
     assert html.count("<figure>") == 5 and html.count("</figure>") == 5
     assert len(nodes) >= 45
+    assert m["nodes_bytes"] == len(json.dumps(nodes, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
     assert "мясной и рыбной начинкой" in html
     assert "1815" in html
     assert m["html_sha256"] == "sha256:" + hashlib.sha256(HTML.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
@@ -56,9 +59,10 @@ def test_exact_telegram_caption_points_at_existing_telegraph_page_with_five_imag
     assert item.payload.schema_version == 2
     assert item.payload.parse_mode == "HTML"
     assert ARTICLE_URL in item.payload.caption
+    assert "https://milovicake.ru/" in item.payload.caption
     assert "Иллюстрация" not in item.payload.expected_plain_caption
     assert len(item.payload.expected_plain_caption) < 1024
-    assert sum(e.type == "text_link" for e in item.payload.expected_caption_entities) == 1
+    assert sum(e.type == "text_link" for e in item.payload.expected_caption_entities) == 2
     assert any(e.type == "bold" for e in item.payload.expected_caption_entities)
     assert any(e.type == "italic" for e in item.payload.expected_caption_entities)
     assert validate_bundle(release.release_id, require_execution_authorized=True)["valid"]
@@ -82,4 +86,6 @@ def test_workflow_is_single_writer_date_gated_not_provider_client() -> None:
     assert "workflow_run.head_sha == github.sha" in data
     assert "state/milovi-cake-telegram" in data
     assert "sendPhoto" not in data
+    assert "milovi_telegram_feed state-init" in data
+    assert "milovi_telegram_feed initialize-state" not in data
     assert "curl" not in data

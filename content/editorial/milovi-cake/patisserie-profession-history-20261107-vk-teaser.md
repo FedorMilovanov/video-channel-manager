@@ -7,4 +7,6 @@
 Пять иллюстраций, документы музеев и библиотек, без вымышленных «первых изобретателей».
 
 📖 Полная история:
-https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07
+https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2
+
+🎂 Нужен торт к празднику или десерты для гостей? Загляните в **[MILOVI CAKE](https://milovicake.ru/)** — здесь можно выбрать и заказать подходящий вариант.

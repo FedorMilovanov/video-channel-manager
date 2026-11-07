@@ -12,9 +12,9 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:416df4270253cedab8531661456978d35e308c948807c98be1da28ea4a6b8271",
+  "reviewed_candidate_sha256": "sha256:244fba0fb8098817eefe54fe8ba63b0fad6e1a50079b86be64e200ce36a26433",
   "reviewed_publication_id": "milovi-feed-20261107-003",
-  "reviewed_by": "Owner 2026-11-07: «Давай в Телеграм и ВК загрузим статью ... можно через Телеграф»",
+  "reviewed_by": "Owner Nov7 explicit correction and real cake/dessert order CTA, revised verified Telegraph page",
   "reviewed_at": "2026-11-07T04:51:07.653870+03:00",
   "items": [
     {
@@ -29,14 +29,14 @@
         "channel_username": "@MiloviCake",
         "publication_id": "milovi-feed-20261107-003",
         "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
-        "provider_payload_sha256": "sha256:ab41c6c35ea1670d6e963376f68d008430a2a4a5c172d944a0292c80247b5a42",
-        "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07\">Иллюстрированная история кондитерской профессии</a>\n\n#MiloviCake #ИсторияКондитерскогоДела",
+        "provider_payload_sha256": "sha256:92fe82f4400eeaf56acc46e087bb0e21b4a81d782f74831efd127d65098fed1e",
+        "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2\">Иллюстрированная история кондитерской профессии</a>\n\n🎂 Нужен торт к празднику или десерты для гостей? Загляните в <a href=\"https://milovicake.ru/\">MILOVI CAKE</a>.\n\n#MiloviCake #ИсторияКондитерскогоДела\n",
         "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261107-003.jpg",
         "media_sha256": "sha256:3d1477b5b3bf424c848fc827ee28c25d5ed24418523c4a13d432d01da54a8f97",
         "media_byte_size": 330101,
         "media_filename": "milovi-feed-20261107-003.jpg",
         "media_mime_type": "image/jpeg",
-        "expected_plain_caption": "🍰 В XVII веке кондитеры продавали мясные пироги\n\nНа парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 Иллюстрированная история кондитерской профессии\n\n#MiloviCake #ИсторияКондитерскогоДела",
+        "expected_plain_caption": "🍰 В XVII веке кондитеры продавали мясные пироги\n\nНа парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 Иллюстрированная история кондитерской профессии\n\n🎂 Нужен торт к празднику или десерты для гостей? Загляните в MILOVI CAKE.\n\n#MiloviCake #ИсторияКондитерскогоДела\n",
         "expected_caption_entities": [
           {
             "type": "bold",
@@ -54,7 +54,13 @@
             "type": "text_link",
             "offset": 364,
             "length": 47,
-            "url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07"
+            "url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2"
+          },
+          {
+            "type": "text_link",
+            "offset": 475,
+            "length": 11,
+            "url": "https://milovicake.ru/"
           }
         ],
         "parse_mode": "HTML"
