@@ -47,6 +47,8 @@ The only automatically exempt links are proven obsolete owner channel shelf/navi
 
 Use the current supported main code in a clean isolated worktree. Do not modify other agents' shared Windows checkout. For a code or documentation fix, use one focused PR, run tests, merge and retire the ephemeral work ref. Keep machine reports and signed plans on the authorized E: work area or the operator's explicitly selected folder; cite exact file paths and digests in the owning issue. Local scratch scripts alone are not a durable repository fix.
 
+Adding a new source module must also update docs/operations/coverage-ratchet.json with a measured module floor. The repository enforces exact package/file coverage; never lower existing floors.
+
 Regression tests (offline, no provider calls):
 
     python -m pytest -q tests/test_lord_god_presentation.py tests/test_lord_god_source_preservation.py
