@@ -77,8 +77,10 @@ def test_only_one_existing_provider_writer_and_no_competing_video_workflow() -> 
     text = WORKFLOW.read_text(encoding="utf-8")
     assert 'cron: "37 9 17,21,25 11 *"' in text
     assert "group: milovi-cake-telegram-publisher" in text
-    assert "Milovi Telegram feed quality" in text
-    assert "github.event.workflow_run.head_sha == github.sha" in text
+    assert "workflow_run:" not in text
+    assert "initialize-all" not in text
+    assert "contents: read" in text and "actions: write" in text
+    assert "git -C \"$STATE_DIR\" push" not in text
     assert "milovi-telegram-feed-publisher.yml" in text
     assert "-f operation=publish" in text
     assert "ten actual Cake receipts" in text
