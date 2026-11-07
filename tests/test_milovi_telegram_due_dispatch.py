@@ -97,16 +97,6 @@ def test_state_hash_change_refuses_dispatch() -> None:
         due.dispatch_decision(ledger, index, event="schedule", now=due.SLOT_UTC + timedelta(minutes=7))
 
 
-def test_one_shot_workflow_contains_no_direct_provider_dispatch() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
-    assert "cron:" in text and "7 8 7 11 *" in text
-    assert "on:" in text and "workflow_dispatch:" in text
-    assert "github.event_name == 'schedule'" in text
-    assert "steps.gate.outputs.dispatch == 'true'" in text
-    assert "milovi-telegram-feed-publisher.yml" in text
-    assert "operation=publish" in text
-    assert "PUBLISH:@MiloviCake:milovi-feed-20261107-002" in text
-    assert "state/milovi-cake-telegram" in text
-    assert "telegram_multichannel_cli send-once" not in text
-    assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in text
-    assert "curl api.telegram.org" not in text
+def test_consumed_nov7_one_shot_workflow_is_retired_not_replayable() -> None:
+    """An expired owner window must not leave an executable annual cron behind."""
+    assert not WORKFLOW.exists()
