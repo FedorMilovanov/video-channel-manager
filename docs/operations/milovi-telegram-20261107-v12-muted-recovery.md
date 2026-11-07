@@ -1,5 +1,7 @@
 # Milovi Telegram recovery: audio-free v12
 
+> **АРХИВ — окно публикации 7 ноября 2026 закрыто.** Запуск [GitHub Actions #42383430183](https://github.com/FedorMilovanov/video-channel-manager/actions/runs/42383430183) начался в 17:49 МСК, когда подтверждённое окно 11:00–13:00 МСК уже истекло; контроль времени остановил workflow до отправки в Telegram. Защищённый ledger `milovi-feed-20261107-002` по-прежнему `pending/provider_effect=impossible`, `message_id=null`; это **не опубликованный** выпуск. Отдельный одноразовый `.github/workflows/milovi-telegram-exact-due-20261107.yml` удалён из main, чтобы не создавать ежегодных бесполезных cron. Ни один приведённый ниже старый `schedule`/`dispatch` не является действующим разрешением; повторная попытка возможна только с новым согласованным слотом и новой точной проверкой дубликатов. 15 видео 8–22 ноября и три School-выпуска — независимые графики, не изменены.
+
 Owner: issue #809. Distinct from Milovi VK #792, Milovi Instagram #790,
 and all LordChrist Telegram publisher streams. This is a provider-inert
 preview, not a release authorization.
