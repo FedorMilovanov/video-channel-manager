@@ -39,9 +39,17 @@ The external source path may be overridden with `VCM_VK_SHARED_ENV_FILE` on anot
 
 ## YouTube OAuth
 
-YouTube does not use `VK_API_TOKEN`. It keeps two separate local OAuth aliases:
+YouTube does not use `VK_API_TOKEN`. It keeps three distinct local OAuth aliases:
 
 - `fedor-milovanov` — Господь Бог — Сила Моя;
-- `legendary-poet` — The Legendary Poet.
+- `legendary-poet` — The Legendary Poet;
+- `milovi-cake` — Milovi Cake.
 
-OAuth browser authorization and locally ignored token files remain separate from the shared VK token source.
+The authoritative alias-to-channel-ID mapping is
+[`project-identity-registry.md`](project-identity-registry.md). Alias names
+and local granted scopes do **not** prove the currently selected owner channel.
+OAuth browser authorization and locally ignored token files remain separate
+from the shared VK token source. The actual store depends on `VCM_DATA_DIR`;
+with the default relative `./data`, commands launched in different working
+directories can silently see different tokens. The current `youtube accounts`
+command prints the resolved directory without printing credential contents.

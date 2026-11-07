@@ -188,6 +188,48 @@ def test_cli_blocks_invalid_lord_god_copy_before_oauth_or_provider_call(
     assert failure.value.exit_code == 2
 
 
+def test_lord_god_cli_rejects_live_title_drift_before_any_write(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from types import SimpleNamespace
+
+    from video_channel_manager.cli import youtube as cli
+
+    plan = _plan()
+    monkeypatch.setattr(cli, "_load_copy_fix_plan", lambda _: plan)
+    monkeypatch.setattr(cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path))
+
+    class ReadOnlyWriter:
+        def read_description(self, _video_id: str) -> SimpleNamespace:
+            return SimpleNamespace(
+                channel_id=LORD_GOD_OWNER_CHANNEL,
+                title="A DIFFERENT LIVE TITLE",
+                description=plan["operations"][0]["before_description"],
+                revision=plan["operations"][0]["expected_revision"],
+            )
+
+        def replace_description(self, **_kwargs: object) -> None:
+            raise AssertionError("Provider mutation must not occur")
+
+    monkeypatch.setattr(
+        cli,
+        "_writer_components",
+        lambda *_args: (None, None, ReadOnlyWriter()),
+    )
+    with pytest.raises(typer.Exit) as failure:
+        cli.apply_copy_fixes(
+            plan=tmp_path / "signed.json",
+            account="fedor-milovanov",
+            confirm_channel=LORD_GOD_OWNER_CHANNEL,
+            execute=False,
+            max_operations=1,
+            backup_output=None,
+            result_output=None,
+            client_secret=None,
+        )
+    assert failure.value.exit_code == 2
+
+
 def test_sermon_about_offerings_is_not_mistaken_for_personal_payment_request() -> None:
     content = _DESCRIPTION + "\n1:05:00 Пожертвования и воскресное богослужение"
     assert "retired_fundraising_or_payment" not in presentation_issues(content)
