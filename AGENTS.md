@@ -26,6 +26,15 @@ For any task that researches, drafts, edits, formats, or hands off Telegram cont
 
 For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
 
+### Lord God YouTube description source-preservation routing
+
+For the lord-god-strength channel's YouTube description work, first read
+[docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
+In addition to signed copy-plan and project presentation validation, its
+non-deletion guard preserves original chapters, translation/source credits,
+primary links and relevant playlist IDs. A passing format check is not
+permission to discard source evidence or retry an uncertain provider write.
+
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
 ## Adaptive reasoning contract
