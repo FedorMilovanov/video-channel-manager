@@ -97,6 +97,17 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _show_oauth_storage(store: TokenStore) -> None:
+    """Expose the actual credential location without logging credential contents."""
+    console.print(f"[dim]YouTube OAuth token directory: {store.token_dir.resolve()}[/dim]")
+    if not store.data_dir.is_absolute():
+        console.print(
+            "[yellow]VCM_DATA_DIR is relative to the current working directory. "
+            "A command launched from another folder uses a DIFFERENT OAuth token store. "
+            "Pin VCM_DATA_DIR to an absolute path for operator workflows.[/yellow]"
+        )
+
+
 @youtube_app.command("login")
 def login(
     account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
@@ -122,6 +133,7 @@ def login(
         console.print(f"[red]YouTube configuration error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    _show_oauth_storage(store)
     if store.token_exists(account) and not force:
         console.print(
             f"[yellow]Account '{account}' is already authorized.[/yellow] "
@@ -195,6 +207,7 @@ def accounts() -> None:
 
     settings = get_settings()
     store = TokenStore(settings.data_dir)
+    _show_oauth_storage(store)
     try:
         registered = store.list_accounts()
     except (OSError, ValueError) as exc:
