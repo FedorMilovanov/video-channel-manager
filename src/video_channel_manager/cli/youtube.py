@@ -152,9 +152,7 @@ def login(
         missing_scopes = set(scopes).difference(token.scopes)
         if missing_scopes:
             requested_access = (
-                "YouTube write access"
-                if YOUTUBE_FORCE_SSL_SCOPE in missing_scopes
-                else "YouTube read access"
+                "YouTube write access" if YOUTUBE_FORCE_SSL_SCOPE in missing_scopes else "YouTube read access"
             )
             raise OAuthFlowError(
                 f"Google did not grant the requested {requested_access}. "
