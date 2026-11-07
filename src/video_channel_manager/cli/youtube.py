@@ -99,7 +99,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _show_oauth_storage(store: TokenStore) -> None:
     """Expose the actual credential location without logging credential contents."""
-    console.print(f"[dim]YouTube OAuth token directory: {store.token_dir.resolve()}[/dim]")
+    console.print(f"[dim]YouTube OAuth token directory: {store.token_dir.resolve()}[/dim]", soft_wrap=True)
     if not store.data_dir.is_absolute():
         console.print(
             "[yellow]VCM_DATA_DIR is relative to the current working directory. "
