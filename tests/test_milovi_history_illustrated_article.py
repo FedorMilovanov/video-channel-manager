@@ -87,19 +87,8 @@ def test_exact_telegram_caption_points_at_existing_telegraph_page_with_five_imag
     assert ledger["entries"][release.release_id]["message_id"] is None
 
 
-def test_workflow_is_single_writer_date_gated_not_provider_client() -> None:
-    data = YAML.read_text(encoding="utf-8")
-    assert "  schedule:" not in data
-    assert "TZ=Europe/Moscow date +%Y-%m-%d" not in data
-    assert "Nov 7" in data
-    assert "milovi-cake-telegram-publisher" in data
-    assert "milovi-telegram-feed-publisher.yml" not in data
-    assert "-f operation=publish" not in data
-    assert "PUBLISH:@MiloviCake:$PUBLICATION_ID" not in data
-    assert "workflow_run.head_sha == github.sha" in data
-    assert "state/milovi-cake-telegram" in data
-    assert "sendPhoto" not in data
-    assert "milovi_history_release_20261108.py migrate" in data
-    assert "milovi_history_release_20261108.py due" not in data
-    assert "milovi_telegram_feed initialize-state" not in data
-    assert "curl" not in data
+def test_consumed_history_workflow_is_retired_without_releasing_original_payload() -> None:
+    """Published Telegram #28 is terminal; the old state migrator is not executable."""
+    assert not YAML.exists()
+    assert MANIFEST.is_file() and RELEASE.is_file()
+    assert validate_bundle("milovi-feed-20261107-003", require_execution_authorized=True)["valid"]
