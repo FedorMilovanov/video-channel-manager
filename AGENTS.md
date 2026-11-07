@@ -55,6 +55,10 @@ Identity must be stable under irrelevant changes.
 - Content presented as a quotation must map to a contiguous source passage; synthesis/paraphrase must not be formatted as a quote.
 - Never select an artifact by newest file, broad wildcard, title-only match, or remembered path when exact identity is available.
 
+### YouTube OAuth credential-store identity
+
+The default `VCM_DATA_DIR=./data` is **relative to the process working directory**. A manual `youtube login` launched from the user's home and an agent's `youtube scan` in a repository checkout can silently read **different valid token files under the same alias**, with different scopes. For any YouTube provider write, use the **same verified absolute `VCM_DATA_DIR`** as the owner's successfully authorized session and confirm the `video-manager youtube accounts` storage path, actual granted scopes and exact owner channel ID independently. Set an absolute `VCM_YOUTUBE_CLIENT_SECRET_FILE` where needed. Never copy tokens between directories, silently switch to an older read-only token, print secrets, or infer permissions from an alias alone. Command output and audit records must identify the resolved storage directory (no token bytes).
+
 ## Provider mutation boundary
 
 Release/content approval and provider execution authority are separate gates.

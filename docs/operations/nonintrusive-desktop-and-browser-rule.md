@@ -24,6 +24,10 @@ Only a **fresh, explicit, task-specific request from the owner** to operate a pa
 
 If login, challenge, 2FA, or a new OAuth grant is required, offer **one** official URL or precise manual step, explain why, and then wait for the owner to complete it. Do not open it remotely or poll the visible browser. Never ask for passwords, session cookies, or verification codes.
 
+## YouTube OAuth working-directory trap
+
+When a program defaults to relative `./data`, **each current directory has its own token store**. OAuth can have write permission in one shell while a second shell sees only an older read-only token. The canonical signal is the **resolved token directory printed by `video-manager youtube accounts`**, the granted scope and exact channel ID, not the account alias or a remembered success message. For provider writes, set `VCM_DATA_DIR` to one verified **absolute path** (and `VCM_YOUTUBE_CLIENT_SECRET_FILE` to a verified absolute file if needed); do not copy, export, move or print credential files. Do not retroactively rewrite the user's credential stores or alter the project checkout to reconcile this without an explicit reviewed migration plan. No agent-opened OAuth/browser windows.
+
 ## Required preflight and reporting
 
 - Record the transport as `official_api_read`, `official_api_write`, `local_only`, `internal_web_read`, `isolated_headless_test`, or `explicit_visible_ui`; prove whether it touches the interactive desktop.

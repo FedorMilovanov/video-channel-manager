@@ -113,3 +113,36 @@ def test_read_only_consent_remains_compatible(tmp_path: Path, monkeypatch: pytes
     assert "read-only" in result.stdout
     assert store.load_token("milovi-cake").access_token == "new-readonly"
     assert calls["requested_scopes"] == (YOUTUBE_READONLY_SCOPE,)
+
+
+def test_accounts_reports_cwd_relative_store_location_and_cannot_silently_share_tokens(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two shells using ./data cannot be mistaken for one credential store."""
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    monkeypatch.setattr(youtube_cli, "get_settings", lambda: SimpleNamespace(data_dir=Path("./data")))
+
+    monkeypatch.chdir(first)
+    first_result = RUNNER.invoke(app, ["youtube", "accounts"])
+    assert first_result.exit_code == 0
+    assert str(first / "data" / "secrets" / "youtube") in first_result.stdout
+    assert "VCM_DATA_DIR is relative to the current working directory" in " ".join(first_result.stdout.split())
+
+    monkeypatch.chdir(second)
+    second_result = RUNNER.invoke(app, ["youtube", "accounts"])
+    assert second_result.exit_code == 0
+    assert str(second / "data" / "secrets" / "youtube") in second_result.stdout
+    assert str(first / "data" / "secrets" / "youtube") not in second_result.stdout
+    assert "No YouTube accounts are registered" in second_result.stdout
+
+
+def test_accounts_absolute_store_path_does_not_warn_about_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    store_path = tmp_path / "one-canonical-store"
+    monkeypatch.setattr(youtube_cli, "get_settings", lambda: SimpleNamespace(data_dir=store_path))
+    result = RUNNER.invoke(app, ["youtube", "accounts"])
+    assert result.exit_code == 0
+    assert str(store_path / "secrets" / "youtube") in result.stdout
+    assert "VCM_DATA_DIR is relative" not in result.stdout
