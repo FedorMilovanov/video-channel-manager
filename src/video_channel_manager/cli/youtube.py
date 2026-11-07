@@ -29,10 +29,8 @@ from video_channel_manager.platforms.youtube import (
     YouTubeInventoryService,
     YouTubeWriteError,
 )
-from video_channel_manager.platforms.youtube.lord_god_presentation import (
-    LORD_GOD_OWNER_CHANNEL,
-    require_lord_god_youtube_presentation,
-)
+from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
+from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     reconcile_copy_operations,

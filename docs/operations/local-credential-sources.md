@@ -1,6 +1,6 @@
 # Local credential sources
 
-Updated: 2026-08-01
+Updated: 2026-11-07
 
 This file records local credential locations and usage rules without storing any secret value.
 
