@@ -125,6 +125,35 @@ def test_non_owner_video_link_is_not_discarded_as_navigation() -> None:
     assert source_preservation_issues(before, _VALID_TEXT) == ["original_source_or_related_link_not_preserved"]
 
 
+@pytest.mark.parametrize(
+    "source_url",
+    [
+        "https://www.youtube.com/watch?v=ABCDEFGHIJK&shelf_id=8",
+        "https://www.youtube.com/channel/UC-other/playlists?shelf_id=8",
+        "https://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/videos",
+        "https://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/community?shelf_id=8",
+        "https://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYAX/playlists?shelf_id=8",
+        "https://www.youtube.com/playlist?list=PLnotlost&shelf_id=8",
+    ],
+)
+def test_only_exact_owner_legacy_shelf_navigation_is_disposable(
+    source_url: str,
+) -> None:
+    assert source_preservation_issues(source_url, _VALID_TEXT) == [
+        "original_source_or_related_link_not_preserved"
+        if "/playlist?" not in source_url
+        else "original_playlist_link_not_preserved"
+    ]
+
+
+def test_old_owner_video_shelf_navigation_is_disposable() -> None:
+    source_url = (
+        "http://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/"
+        "videos?sort=p&view=0&shelf_id=10"
+    )
+    assert source_preservation_issues(source_url, _VALID_TEXT) == []
+
+
 def test_no_global_effect_on_other_channel_description_plan() -> None:
     plan = _plan("00:00 Источник", _VALID_TEXT)
     foreign = deepcopy(plan)
