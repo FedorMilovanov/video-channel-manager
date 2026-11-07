@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -26,6 +27,19 @@ class Store:
         return SimpleNamespace(
             token_type="community", scopes=("wall",), access_token="secret", is_expired=lambda: False
         )
+
+
+@pytest.fixture
+def pre_release_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reproduce historical one-time publish tests without changing the live time gate."""
+
+    class BeforeCanary(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            frozen = datetime(2026, 11, 6, 12, 0, tzinfo=UTC)
+            return frozen.astimezone(tz) if tz is not None else frozen.replace(tzinfo=None)
+
+    monkeypatch.setattr(mp, "datetime", BeforeCanary)
 
 
 def test_exact_source_preview_loads_without_authorizing_provider_write() -> None:
@@ -107,7 +121,7 @@ def test_wrong_administrative_witness_blocks_before_network(tmp_path: Path) -> N
     assert not journal.exists()
 
 
-def test_duplicate_journal_requires_reconciliation(tmp_path: Path) -> None:
+def test_duplicate_journal_requires_reconciliation(tmp_path: Path, pre_release_clock: None) -> None:
     journal = tmp_path / "intent.json"
     journal.write_text('{"state":"unknown"}', encoding="utf-8")
     with pytest.raises(mp.MiloviCanaryBlocked, match="already exists"):
@@ -124,7 +138,7 @@ def test_duplicate_journal_requires_reconciliation(tmp_path: Path) -> None:
 
 
 def test_single_mocked_ack_creates_durable_journal_without_second_write(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pre_release_clock: None
 ) -> None:
     journal = tmp_path / "intent.json"
     network = []
@@ -191,7 +205,9 @@ def test_writer_rejects_legacy_shared_alias_without_loading_it() -> None:
         writer.assert_token_scopes("wall")
 
 
-def test_ambiguous_response_persists_journal_and_blocks_replay(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_ambiguous_response_persists_journal_and_blocks_replay(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pre_release_clock: None
+) -> None:
     from video_channel_manager.platforms.vk.writer import VkWriteError
 
     journal = tmp_path / "journal.json"
@@ -252,7 +268,9 @@ def test_ambiguous_response_persists_journal_and_blocks_replay(monkeypatch: pyte
     assert sends == [1]
 
 
-def test_final_journal_commit_failure_still_blocks_replay(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_final_journal_commit_failure_still_blocks_replay(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pre_release_clock: None
+) -> None:
     journal = tmp_path / "intent.json"
     dispatch_count: list[int] = []
     real_atomic_update = mp._atomic_update_journal
@@ -314,3 +332,29 @@ def test_final_journal_commit_failure_still_blocks_replay(monkeypatch: pytest.Mo
     with pytest.raises(mp.MiloviCanaryBlocked, match="already exists"):
         mp.schedule_canary_once(**args)
     assert dispatch_count == [1]
+
+
+def test_outdated_canary_still_blocks_before_any_provider_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A real expired slot must remain a production hard stop, regardless of historical tests."""
+
+    class AfterCanary(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            frozen = datetime(2026, 11, 8, 12, 0, tzinfo=UTC)
+            return frozen.astimezone(tz) if tz is not None else frozen.replace(tzinfo=None)
+
+    monkeypatch.setattr(mp, "datetime", AfterCanary)
+    journal = tmp_path / "expired-intent.json"
+    with pytest.raises(mp.MiloviCanaryBlocked, match="no longer safely in future"):
+        mp.schedule_canary_once(
+            store=Store(),
+            api_version="5.199",
+            preview_path=PREVIEW,
+            editorial_path=EDITORIAL,
+            journal_path=journal,
+            confirmation=mp.CONFIRMATION,
+            admin_queue_witness="OWNER_REPORTED_EMPTY_2026-11-05",
+        )
+    assert not journal.exists()
