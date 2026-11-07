@@ -102,6 +102,8 @@ For class 3: after its PR/scope closes, delete the ref where supported; if ref d
 
 ## Browser and wrapper rules
 
+**Non-disruptive desktop is the default.** Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
+
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.
 
 PowerShell and shell wrappers orchestrate one repository-owned implementation. They must not become a second provider client or duplicate retry, pagination, upload, publication, or postflight logic. Do not create generated `executor.py` files or v2/v3/v4 ZIP families as a shortcut; fix repository code and regress the defect.
