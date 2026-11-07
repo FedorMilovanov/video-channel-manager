@@ -280,7 +280,7 @@
     "milovi-feed-20261107-003": {
       "publication_id": "milovi-feed-20261107-003",
       "release_id": "milovi-feed-20261107-003",
-      "release_candidate_sha256": "sha256:244fba0fb8098817eefe54fe8ba63b0fad6e1a50079b86be64e200ce36a26433",
+      "release_candidate_sha256": "sha256:e466ad7008f8afe639beebbb3b8fd80477915625da3b384f33c9f41a85b3a72e",
       "provider_payload_sha256": "sha256:92fe82f4400eeaf56acc46e087bb0e21b4a81d782f74831efd127d65098fed1e",
       "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261107-003.json",
       "state": "pending",
@@ -288,7 +288,7 @@
       "intent_id": null,
       "message_id": null,
       "message_url": null,
-      "updated_at_utc": null
+      "updated_at_utc": "2026-11-07T03:11:05.446086Z"
     }
   }
 }

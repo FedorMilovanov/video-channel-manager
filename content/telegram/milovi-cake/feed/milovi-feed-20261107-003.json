@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.telegram-generic-publication-ledger",
   "schema_version": 1,
-  "release_digest": "sha256:48f7f60ae53ae66572ea25f70dc3f495001f322fd7fbfc59888f99a444cf61b7",
+  "release_digest": "sha256:0abafa80c67cb4dcebd12a267ac437cd8c5899ec833a670bd7048a41c165e62b",
   "release_id": "milovi-feed-20261107-003",
   "project_key": "milovi-cake",
   "channel_username": "@MiloviCake",
