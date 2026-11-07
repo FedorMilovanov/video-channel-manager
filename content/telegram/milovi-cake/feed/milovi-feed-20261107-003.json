@@ -10,8 +10,8 @@
     "milovi-feed-20261107-003": {
       "publication_id": "milovi-feed-20261107-003",
       "provider_payload_sha256": "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b",
-      "state": "unknown",
-      "provider_effect": "may_exist",
+      "state": "published",
+      "provider_effect": "verified",
       "intent_id": "6ffe1b9a58e53e26cbb33f4d313ac9cf",
       "dispatch_mode": "manual",
       "workflow_run_id": "42379928593",
@@ -19,14 +19,14 @@
       "github_sha": "1fb917088610e495a400392902e34d42fbcf4d72",
       "github_workflow_sha": "1fb917088610e495a400392902e34d42fbcf4d72",
       "attempted_at_utc": "2026-11-07T14:05:34.817748Z",
-      "published_at_utc": null,
-      "message_id": null,
-      "message_url": null,
+      "published_at_utc": "2026-11-07T14:05:40Z",
+      "message_id": 28,
+      "message_url": "https://t.me/MiloviCake/28",
       "actual_chat_id": -1002215328390,
       "actual_chat_username": "MiloviCake",
       "bot_id": 8716602202,
       "bot_username": "preaching_mp3_bot",
-      "last_error": "Telegram returned a caption that differs from the exact photo payload"
+      "last_error": "Provider response caption comparison differed; separately reconciled to published post 28 via public channel evidence at content/telegram/milovi-cake/feed-dispatches/42379928593-1/public-channel-reconciliation.json"
     }
   }
 }
