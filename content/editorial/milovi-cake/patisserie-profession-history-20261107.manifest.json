@@ -3,10 +3,10 @@
   "title": "Кто придумал кондитерское дело? От мясного пирога до искусства десертов — MILOVI CAKE",
   "article_html_path": "content/editorial/milovi-cake/patisserie-profession-history-20261107.html",
   "telegraph_nodes_path": "content/editorial/milovi-cake/patisserie-profession-history-20261107.telegraph-nodes.json",
-  "html_sha256": "sha256:88053d9d8bb10b80ad34ae215af280203645a04659d22bd5024dc8e603bda83e",
-  "nodes_sha256": "sha256:a2af9619cdc6c212b8492b6d800cfd3570e175332fe13f72a13f937aff221962",
-  "nodes_bytes": 23299,
-  "words": 1463,
+  "html_sha256": "sha256:a04a51f5a05fddc8b5d62b9daa73eecabadd0681bb83f09d2803f362fe2015e7",
+  "nodes_sha256": "sha256:4e8c4c755674f6d3a61649eda001d4d2e64f7a5bb33ad04a5cfefd17f7b6ee69",
+  "nodes_bytes": 23565,
+  "words": 1464,
   "sections": 10,
   "image_urls": [
     "https://images.metmuseum.org/CRDImages/dp/original/DP818745.jpg",
@@ -20,13 +20,16 @@
     "https://app.ckbk.com/reference/swee13396c03s001e011se001/indian-beginnings",
     "https://app.ckbk.com/reference/swee13396c09s001e008se001/historical-background",
     "https://catalogue.bnf.fr/ark:/12148/cb37208514p",
+    "https://fr.wikisource.org/wiki/L%E2%80%99Encyclop%C3%A9die/1re_%C3%A9dition/PATISSIER",
     "https://french.milovicake.ru/",
     "https://gallica.bnf.fr/accueil/fr/html/surprenante-patisserie",
+    "https://milovicake.ru/",
     "https://pop.culture.gouv.fr/notice/merimee/PA00086069",
     "https://stohrer.fr/notre-maison/",
     "https://www.histoires-de-paris.fr/patissiers/",
     "https://www.history.com/articles/history-of-chocolate",
-    "https://www.metmuseum.org/art/collection/search/390804"
+    "https://www.metmuseum.org/art/collection/search/390804",
+    "https://www.si.edu/object/nmah_1362395"
   ],
   "telegraph_url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2",
   "vk_article_url": null,
@@ -52,5 +55,8 @@
   "telegraph_promotion_verified": true,
   "telegraph_editor_secret": "%LOCALAPPDATA%/MiloviCake/telegraph-history-editor-20261107.dpapi (encrypted and round-trip verified; not in git)",
   "promotional_link": "https://milovicake.ru/",
-  "promotional_link_purpose": "order actual MILOVI CAKE cakes and desserts; article's historical products are editorial subject, not advertised stock"
+  "promotional_link_purpose": "order actual MILOVI CAKE cakes and desserts; article's historical products are editorial subject, not advertised stock",
+  "fact_check_registry": "docs/research/2026-11-07-milovi-confectionery-facts.md",
+  "telegraph_fact_revision_pending": false,
+  "telegraph_revision": "2026-11-07 primary-source correction, exact same URL"
 }

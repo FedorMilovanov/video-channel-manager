@@ -663,6 +663,18 @@
     },
     {
       "callers": [
+        ".github/workflows/milovi-history-article-due-20261107.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/milovi_history_release_20261108.py",
+      "private_imports": [],
+      "project_owner": "milovi-cake",
+      "provider_write_capable": false,
+      "sha256": "51a34a0e2c19055d176970c8f894dbaedc1d63bb2c811159ce79c51613899ab7",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [
         ".github/workflows/milovi-telegram-muted15-due-20261108.yml"
       ],
       "direct_entrypoint": true,

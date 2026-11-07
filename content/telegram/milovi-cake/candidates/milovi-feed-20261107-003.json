@@ -8,7 +8,7 @@
   "execution_authorized": false,
   "provider_mutation_allowed": false,
   "publication_id": "milovi-feed-20261107-003",
-  "scheduled_at": "2026-11-07T15:00:00+03:00",
+  "scheduled_at": "2026-11-08T14:00:00+03:00",
   "timezone": "Europe/Moscow",
   "operation": "sendPhoto",
   "media": {
@@ -41,5 +41,9 @@
   },
   "execution_note": "Owner Nov7 explicit new historical confectionery long-read promotion in MILOVI CAKE Telegram and VK",
   "cake_business_cta_url": "https://milovicake.ru/",
-  "cake_business_cta_kind": "real cakes and desserts for order; historical article recipes NOT implied for sale"
+  "cake_business_cta_kind": "real cakes and desserts for order; historical article recipes NOT implied for sale",
+  "publication_target_date": "2026-11-08",
+  "editorial_review": "Fact-checked 12 primary/source lines; original Telegraph URL revised in place; tomorrow owner requested exact 14:00 Moscow",
+  "delayed_original_slot_cancelled": true,
+  "no_new_publication_id_created": true
 }
