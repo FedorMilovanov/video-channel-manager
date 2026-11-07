@@ -445,3 +445,124 @@ def test_legacy_photo_class_rejects_fake_v2_without_typed_html_proof(
     raw["schema_version"] = 2
     with pytest.raises(ValidationError, match="masquerade"):
         GenericPhotoPayload.model_validate(raw)
+
+
+def test_rich_photo_accepts_single_trailing_newline_omitted_by_provider(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Telegram HTML caption echo may omit its final LF without changing content or links."""
+    from video_channel_manager.telegram_multichannel_transport import render_rich_photo_payload
+
+    profile = _profile()
+    media = b"rich-photo-terminal-newline"
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
+    html = '<b>История кондитеров</b>\n<a href="https://milovicake.ru/">MILOVI CAKE</a>\n'
+    payload = render_rich_photo_payload(
+        profile,
+        publication_id="svodka-rich-photo-terminal-newline",
+        html_caption=html,
+        media_path=str(media_path),
+        media_sha256="sha256:" + hashlib.sha256(media).hexdigest(),
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    assert payload.expected_plain_caption.endswith("\n")
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        response = _photo_result(payload, caption=payload.expected_plain_caption[:-1])
+        response["result"]["caption_entities"] = [
+            entity.model_dump(mode="json", exclude_none=True) for entity in payload.expected_caption_entities
+        ]
+        return httpx.Response(200, json=response, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        receipt = send_photo_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+    assert receipt.message_id == 91
+    assert receipt.provider_effect == "verified"
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize("drift", ["internal_text", "two_newlines"])
+def test_rich_photo_never_ignores_body_or_multiple_newline_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str
+) -> None:
+    from video_channel_manager.telegram_multichannel_transport import render_rich_photo_payload
+
+    profile = _profile()
+    media = b"rich-photo-drift-guard"
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
+    html = '<b>История кондитеров</b>\n<a href="https://milovicake.ru/">MILOVI CAKE</a>\n'
+    payload = render_rich_photo_payload(
+        profile,
+        publication_id="svodka-rich-photo-drift-guard",
+        html_caption=html,
+        media_path=str(media_path),
+        media_sha256="sha256:" + hashlib.sha256(media).hexdigest(),
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+    returned = (
+        payload.expected_plain_caption.replace("История", "Другая", 1)
+        if drift == "internal_text"
+        else payload.expected_plain_caption[:-2]
+    )
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        response = _photo_result(payload, caption=returned)
+        response["result"]["caption_entities"] = [
+            entity.model_dump(mode="json", exclude_none=True) for entity in payload.expected_caption_entities
+        ]
+        return httpx.Response(200, json=response, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError, match="caption that differs") as info:
+            send_photo_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+    assert info.value.provider_effect == "may_exist"
+    assert len(calls) == 1
+
+
+def test_rich_photo_terminal_newline_never_weakens_source_link_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from video_channel_manager.telegram_multichannel_transport import render_rich_photo_payload
+
+    profile = _profile()
+    media = b"newline-link-identity"
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
+    payload = render_rich_photo_payload(
+        profile,
+        publication_id="svodka-rich-photo-link-identity",
+        html_caption='<b>История</b>\n<a href="https://milovicake.ru/">Заказать</a>\n',
+        media_path=str(media_path),
+        media_sha256="sha256:" + hashlib.sha256(media).hexdigest(),
+        media_byte_size=len(media),
+        media_filename="proof.jpg",
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        response = _photo_result(payload, caption=payload.expected_plain_caption[:-1])
+        entities = [e.model_dump(mode="json", exclude_none=True) for e in payload.expected_caption_entities]
+        for entity in entities:
+            if entity["type"] == "text_link":
+                entity["url"] = "https://example.com/wrong"
+        response["result"]["caption_entities"] = entities
+        return httpx.Response(200, json=response, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError, match="formatting/source link") as info:
+            send_photo_once(profile, _target(profile), payload, token="test-token", client=client, now=NOW)
+    assert info.value.provider_effect == "may_exist"
+
+
+def test_original_milovi_history_caption_has_exactly_one_terminal_lf() -> None:
+    """Bound this compatibility case to the original owner-published release, without sending it again."""
+    runtime = ROOT / "content/telegram/milovi-cake/releases/milovi-feed-20261107-003-runtime.json"
+    payload = json.loads(runtime.read_text(encoding="utf-8"))["items"][0]["payload"]
+    assert payload["schema_version"] == 2
+    assert payload["expected_plain_caption"].endswith("\n")
+    assert not payload["expected_plain_caption"].endswith("\n\n")
+    assert len(payload["expected_caption_entities"]) == 4
