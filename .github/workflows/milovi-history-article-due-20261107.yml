@@ -1,4 +1,4 @@
-name: Milovi Cake illustrated history article Nov 7 2026
+name: Milovi Cake illustrated history article Nov 8 2026
 
 on:
   workflow_run:
@@ -6,7 +6,7 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    - cron: "7 12 7 11 *"
+    - cron: "0 11 8 11 *"
   workflow_dispatch:
 
 permissions:
@@ -69,11 +69,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Provider-inert bootstrap of exact single article
+      - name: Provider-inert digest-pinned reschedule of existing exact article
         if: github.event_name != 'schedule'
-        run: python -m video_channel_manager.milovi_telegram_feed state-init --publication-id "$PUBLICATION_ID" --state-checkout "$STATE_DIR"
+        run: python scripts/milovi_history_release_20261108.py migrate --state-checkout "$STATE_DIR"
 
-      - name: Persist one exact article entry and original shared index
+      - name: Persist migrated exact article entry and shared index atomically
         if: github.event_name != 'schedule'
         run: |
           set -euo pipefail
@@ -85,37 +85,20 @@ jobs:
             echo "Already exact and initialized; no modification"
             exit 0
           fi
-          git -C "$STATE_DIR" commit -m "Initialize one exact researched Milovi history article"
+          git -C "$STATE_DIR" commit -m "Reschedule one exact researched Milovi history article to Nov8 14MSK"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || exit 3
 
-      - name: Exact 2026-11-07 due, year and no provider effect check
+      - name: Exact 2026-11-08 14 MSK due, year and no provider effect check
         if: github.event_name == 'schedule'
         id: due
         run: |
           set -euo pipefail
-          [[ "$(TZ=Europe/Moscow date +%Y-%m-%d)" == "2026-11-07" ]] || exit 3
+          [[ "$(TZ=Europe/Moscow date +%Y-%m-%d)" == "2026-11-08" ]] || exit 3
           [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
-          python - <<'PY'
-          import os
-          from datetime import datetime,timedelta
-          from pathlib import Path
-          from zoneinfo import ZoneInfo
-          from video_channel_manager.milovi_telegram_feed import state_check
-          from video_channel_manager.telegram_multichannel_release import load_release
-          release=load_release(Path("content/telegram/milovi-cake/releases/milovi-feed-20261107-003-runtime.json"))
-          item=release.items[0]
-          now=datetime.now(ZoneInfo("Europe/Moscow"))
-          if now<item.scheduled_at or now>=item.scheduled_at+timedelta(minutes=120):
-              raise SystemExit("History article outside original owner-approved exact slot")
-          state=state_check(item.publication_id,state_checkout=Path(".state/milovi"),require_publishable=True)
-          if state["state"]!="pending" or state["provider_effect"]!="impossible":
-              raise SystemExit("Original history article not pending/provider-inert")
-          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as f:
-              f.write("dispatch=true\n")
-          PY
+          python scripts/milovi_history_release_20261108.py due --state-checkout "$STATE_DIR" --output "$GITHUB_OUTPUT"
 
       - name: Call one existing canonical publisher only
         if: github.event_name == 'schedule' && steps.due.outputs.dispatch == 'true'

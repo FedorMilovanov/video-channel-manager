@@ -12,15 +12,15 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:244fba0fb8098817eefe54fe8ba63b0fad6e1a50079b86be64e200ce36a26433",
+  "reviewed_candidate_sha256": "sha256:e466ad7008f8afe639beebbb3b8fd80477915625da3b384f33c9f41a85b3a72e",
   "reviewed_publication_id": "milovi-feed-20261107-003",
-  "reviewed_by": "Owner Nov7 explicit correction and real cake/dessert order CTA, revised verified Telegraph page",
-  "reviewed_at": "2026-11-07T04:51:07.653870+03:00",
+  "reviewed_by": "Owner November 7 2026: re-verify research and publish exactly once November 8 2026 14:00 Moscow in VK and Telegram",
+  "reviewed_at": "2026-11-07T05:33:32.038066+03:00",
   "items": [
     {
       "sequence": 1,
       "publication_id": "milovi-feed-20261107-003",
-      "scheduled_at": "2026-11-07T15:00:00+03:00",
+      "scheduled_at": "2026-11-08T14:00:00+03:00",
       "source_sha256": "sha256:7f3c130139f187edf93745a742ed4506c57a6c2f8490a28b60575e7fd7946592",
       "payload": {
         "schema_name": "video-channel-manager.telegram-generic-photo-payload",
