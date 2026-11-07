@@ -276,6 +276,19 @@
       "message_id": 27,
       "message_url": "https://t.me/MiloviCake/27",
       "updated_at_utc": "2026-11-06T19:34:59.123269Z"
+    },
+    "milovi-feed-20261107-003": {
+      "publication_id": "milovi-feed-20261107-003",
+      "release_id": "milovi-feed-20261107-003",
+      "release_candidate_sha256": "sha256:244fba0fb8098817eefe54fe8ba63b0fad6e1a50079b86be64e200ce36a26433",
+      "provider_payload_sha256": "sha256:92fe82f4400eeaf56acc46e087bb0e21b4a81d782f74831efd127d65098fed1e",
+      "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261107-003.json",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "intent_id": null,
+      "message_id": null,
+      "message_url": null,
+      "updated_at_utc": null
     }
   }
 }
