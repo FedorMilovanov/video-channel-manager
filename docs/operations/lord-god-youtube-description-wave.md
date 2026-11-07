@@ -2,6 +2,44 @@
 
 This is the durable operating guide for the lord-god-strength YouTube project. It does not grant standing provider write permission. Resolve the user's current request and the exact operation's authorization first. Owning legacy-description issue: https://github.com/FedorMilovanov/video-channel-manager/issues/795. Older issue comments are evidence, never current state.
 
+## Runtime provenance, OAuth directory and agent handoff
+
+- Resolve the exact current remote `main` SHA; inspect the source checkout's
+  `git rev-parse HEAD` and `git status --short` before importing the program.
+  A dirty, behind-main shared Windows checkout is **not** an execution source.
+  Create a fresh isolated read-only/working clone or clean worktree and confirm
+  that `video_channel_manager.cli.youtube.__file__` resolves to its `src`.
+  A globally installed editable `video-manager` may still import code from
+  a much older local directory even when the current repository is correct.
+- `VCM_DATA_DIR=./data` is **relative to process CWD**. First identify the
+  established owner's token directory without reading or copying secret bytes,
+  then set `VCM_DATA_DIR` to its verified absolute parent data directory for
+  all agents/CLI calls that need the same OAuth identity **and write lock**.
+  Set `VCM_YOUTUBE_CLIENT_SECRET_FILE` to the verified absolute client JSON
+  path only when necessary. The current `youtube accounts` command prints
+  its resolved storage location; older locally installed versions may not.
+  Never launch another Google login as a shortcut for a missing relative store.
+- Only the canonical `fedor-milovanov` alias and a fresh owner
+  `channels.list(mine=true)` proof bind this channel. Local `write` scope is
+  necessary but is **not** proof of a matching channel or live mutation.
+- Read the latest independent owner evidence and terminal receipts from issue
+  #795 and the exact E: paths and SHA256 digests in its newest handoff.
+  Historical clean counts, offline QA, staged correction drafts, receipts and
+  unsigned plans are different evidence classes. A `shelf_id`-clean video can
+  still be missing source credits and old contact cleanup.
+- The historical source audit of the last 89 completed description edits
+  found omissions requiring a separate **retrospective** review. Never treat
+  the 53 community-link drafts, 19 other source drafts, or 10 Spurgeon drafts
+  as provider-ready; no draft may update an already edited video without a
+  fresh owner/title/before-description match and its own newly signed plan.
+  Preserve malformed/truncated historical links as HOLD instead of inventing
+  the omitted URL, and verify external channel attribution and playlist
+  owner/membership before adding or removing links.
+- `quotaExceeded` is a hard stop, not a reason to rotate OAuth accounts or
+  projects. Use an offline-only review until the documented Pacific quota
+  date changes, then run a bounded owner GET once; never repeatedly poll the
+  provider to discover that the quota is still exhausted.
+
 ## Exact target and identity
 
 - Project key and link profile: lord-god-strength.
@@ -13,6 +51,14 @@ This is the durable operating guide for the lord-god-strength YouTube project. I
 ## Recurring agent bugs and their fixes
 
 **Raw versus prefixed SHA-256:** Python hashlib.sha256(text.encode("utf-8")).hexdigest() returns 64 hexadecimal characters. The signed-plan helper video_channel_manager.platforms.youtube.copy_plan.sha256_text(text) returns the literal prefix "sha256:" plus those characters. Validate archival raw digests using hashlib; validate signed plan before_sha256 and after_sha256 using sha256_text. Never disable hashes to overcome a representation mismatch.
+
+**Read-only recovery is not publication:** `youtube reconcile-copy-fixes`
+must accept structurally valid, hash-bound historical plans even when they
+violate today's stricter formatting or source-preservation publication policy.
+It does not write, approve, or authorize replay. `apply-copy-fixes` still
+fails closed on the current publication gate. Lord God write preflight also
+checks the frozen video title against the current owner title before any PUT;
+other projects retain their general title semantics.
 
 **Script restart:** Before anything, inspect exact plan IDs, existing immutable backups, terminal receipts and active processes. A stopped script that signed 20 plans but did not write must resume from those exact validated plans, not sign over them. After any provider dispatch, reconcile each video by an independent owner GET before resuming. An ambiguous or rolled-back write is not authorization for another PUT.
 
@@ -51,4 +97,4 @@ Adding a new source module must also update docs/operations/coverage-ratchet.jso
 
 Regression tests (offline, no provider calls):
 
-    python -m pytest -q tests/test_lord_god_presentation.py tests/test_lord_god_source_preservation.py
+    python -m pytest -q tests/test_lord_god_presentation.py tests/test_lord_god_source_preservation.py tests/test_youtube_copy_execution.py tests/test_youtube_copy_reconciliation_cli.py tests/test_youtube_login_scope_guard.py

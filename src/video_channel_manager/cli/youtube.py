@@ -30,6 +30,7 @@ from video_channel_manager.platforms.youtube import (
     YouTubeWriteError,
 )
 from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
+from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     reconcile_copy_operations,
@@ -372,6 +373,10 @@ def apply_copy_fixes(
                         operations,
                         confirm_channel=confirm_channel,
                         writer=writer,
+                        require_plan_title=(
+                            payload.get("target_channel_id") == LORD_GOD_OWNER_CHANNEL
+                            and payload.get("project_key") == "lord-god-strength"
+                        ),
                     )
             except (ValueError, YouTubeWriteError) as exc:
                 console.print(f"[red]Preflight failed; nothing was changed:[/red] {exc}")
@@ -597,7 +602,10 @@ def reconcile_copy_fixes(
     try:
         payload = _load_copy_fix_plan(plan)
         validate_copy_plan(payload)
-        require_lord_god_youtube_presentation(payload)
+        # Historical signed plans may predate today's publication/source-preservation
+        # gate. They must remain readable for no-replay incident reconciliation.
+        # This command performs owner GET only; the apply command retains the
+        # strict publication guard before any provider preflight or mutation.
         if not confirm_channel or payload["target_channel_id"] != confirm_channel:
             raise ValueError("Signed plan target_channel_id differs from --confirm-channel.")
         if len({plan.resolve(), backup.resolve(), result.resolve()}) != 3:

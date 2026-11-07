@@ -78,6 +78,42 @@ def test_preflight_tolerates_revision_drift_only_when_before_text_matches() -> N
     assert result.revision_drift_tolerated == 1
 
 
+def test_owner_title_drift_is_blocked_when_frozen_plan_title_is_required() -> None:
+    operation = _operation()
+    operation["title"] = "Archived owner title"
+    writer = FakeWriter(
+        {
+            "video-1": Snapshot(
+                video_id="video-1",
+                channel_id="channel-1",
+                title="Different current title",
+                description="Before",
+                revision="rev-1",
+            )
+        }
+    )
+    with pytest.raises(YouTubeRevisionConflictError, match="title differs"):
+        preflight_copy_operations(
+            [operation],
+            confirm_channel="channel-1",
+            writer=writer,
+            require_plan_title=True,
+        )
+    # Preserve documented backward compatibility for generic copy plans.
+    assert len(preflight_copy_operations([operation], confirm_channel="channel-1", writer=writer).prepared) == 1
+
+
+def test_owner_title_lock_requires_nonempty_plan_title() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Before", "rev-1")})
+    with pytest.raises(ValueError, match="title"):
+        preflight_copy_operations(
+            [_operation()],
+            confirm_channel="channel-1",
+            writer=writer,
+            require_plan_title=True,
+        )
+
+
 def test_preflight_refuses_third_description_state() -> None:
     writer = FakeWriter(
         {

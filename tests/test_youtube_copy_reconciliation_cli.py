@@ -10,6 +10,10 @@ import typer
 
 from video_channel_manager.cli import youtube as youtube_cli
 from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text
+from video_channel_manager.platforms.youtube.lord_god_presentation import (
+    LORD_GOD_OWNER_CHANNEL,
+    require_lord_god_youtube_presentation,
+)
 
 
 class ReadOnlyWriter:
@@ -140,6 +144,46 @@ def test_readonly_completed_receipt_and_live_after_verified(tmp_path: Path, monk
     assert report["rows"][0]["state"] == "live_after"
     assert writer.read_count == 1
     assert plan_path.exists() and backup_path.exists() and result_path.exists()
+
+
+def test_readonly_reconciles_valid_archived_lord_god_plan_rejected_by_new_publish_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan_path, backup_path, result_path, report_path = _evidence_paths(tmp_path)
+    plan = _plan(plan_path)
+    operation = plan["operations"][0]
+    plan["target_channel_id"] = LORD_GOD_OWNER_CHANNEL
+    plan["project_key"] = "lord-god-strength"
+    plan["link_profile"] = "lord-god-strength"
+    operation["channel_id"] = LORD_GOD_OWNER_CHANNEL
+    operation["before_description"] = "Original material: https://t.me/lordchrist/626"
+    operation["after_description"] = "The old published text omitted the archival source."
+    operation["before_sha256"] = sha256_text(operation["before_description"])
+    operation["after_sha256"] = sha256_text(operation["after_description"])
+    finalize_copy_plan(plan, checked_video_ids=["video-1"])
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    with pytest.raises(ValueError, match="original_source_or_related_link_not_preserved"):
+        require_lord_god_youtube_presentation(plan)
+
+    writer = ReadOnlyWriter(operation["after_description"], channel_id=LORD_GOD_OWNER_CHANNEL)
+    monkeypatch.setattr(youtube_cli, "_writer_components", lambda *_args: (None, None, writer))
+    with pytest.raises(typer.Exit) as outcome:
+        youtube_cli.reconcile_copy_fixes(
+            plan_path,
+            backup=backup_path,
+            result=result_path,
+            account="reader",
+            confirm_channel=LORD_GOD_OWNER_CHANNEL,
+            report_output=report_path,
+            client_secret=None,
+        )
+    assert outcome.value.exit_code == 2
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["outcome"] == "live_after_receipt_not_terminally_verified"
+    assert report["rows"][0]["state"] == "live_after"
+    assert report["safe_to_replay"] is False
+    assert report["provider_writes"] == 0
+    assert writer.read_count == 1
 
 
 def test_missing_result_and_live_before_is_unknown_not_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

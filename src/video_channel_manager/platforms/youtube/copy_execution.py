@@ -29,6 +29,7 @@ def preflight_copy_operations(
     *,
     confirm_channel: str,
     writer: Any,
+    require_plan_title: bool = False,
 ) -> CopyPreflight:
     """Classify every operation by live description state.
 
@@ -36,7 +37,8 @@ def preflight_copy_operations(
     other server-managed fields while the description remains unchanged. A
     mutation is allowed only when the live description canonically matches the
     plan's before-state; a live after-state is idempotently counted as already
-    applied. Any third state is a hard conflict.
+    applied. Any third state is a hard conflict. Lord God description edits can
+    additionally require the exact title frozen in their signed source plan.
     """
 
     prepared: list[dict[str, Any]] = []
@@ -60,6 +62,13 @@ def preflight_copy_operations(
             raise YouTubeRevisionConflictError(
                 f"Live video {video_id} belongs to {current.channel_id}, not {confirm_channel}."
             )
+
+        if require_plan_title:
+            planned_title = required_text(operation, "title")
+            if current.title != planned_title:
+                raise YouTubeRevisionConflictError(
+                    f"Live video {video_id} title differs from its signed plan; stop and re-review the original source."
+                )
 
         if descriptions_equivalent(current.description, after):
             already_applied += 1
