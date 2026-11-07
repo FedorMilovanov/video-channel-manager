@@ -238,6 +238,7 @@
     "src/video_channel_manager/platforms/youtube/lord_god_presentation.py": 90.0,
     "src/video_channel_manager/platforms/youtube/lord_god_retired_appeal.py": 90.0,
     "src/video_channel_manager/platforms/youtube/lord_god_scoped.py": 80.0,
+    "src/video_channel_manager/platforms/youtube/lord_god_source_preservation.py": 90.0,
     "src/video_channel_manager/platforms/youtube/models.py": 83.75,
     "src/video_channel_manager/platforms/youtube/oauth.py": 54.83,
     "src/video_channel_manager/platforms/youtube/renderers.py": 80.51,
