@@ -875,7 +875,20 @@ def send_photo_once(
         expected_caption = (
             payload.expected_plain_caption if isinstance(payload, GenericRichPhotoPayload) else payload.caption
         )
-        if str(message.get("caption") or "") != expected_caption:
+        actual_caption = message.get("caption")
+        # Telegram may omit a single terminal LF after parsing a rich HTML caption.
+        # Accept only that one-byte echo difference, not changed body text, links,
+        # embedded whitespace, or legacy plaintext photo captions.
+        caption_matches = isinstance(actual_caption, str) and (
+            actual_caption == expected_caption
+            or (
+                isinstance(payload, GenericRichPhotoPayload)
+                and expected_caption.endswith("\n")
+                and not expected_caption.endswith("\n\n")
+                and actual_caption == expected_caption[:-1]
+            )
+        )
+        if not caption_matches:
             raise TelegramApiError(
                 "Telegram returned a caption that differs from the exact photo payload",
                 provider_effect="may_exist",
