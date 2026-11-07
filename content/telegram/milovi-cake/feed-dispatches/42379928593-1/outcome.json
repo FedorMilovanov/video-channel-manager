@@ -1,0 +1,10 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "milovi-feed-20261107-003",
+  "provider_payload_sha256": "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b",
+  "provider_effect": "may_exist",
+  "retryable": false,
+  "error": "Telegram returned a caption that differs from the exact photo payload",
+  "receipt": null
+}

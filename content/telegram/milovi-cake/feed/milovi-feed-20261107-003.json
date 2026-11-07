@@ -10,7 +10,7 @@
     "milovi-feed-20261107-003": {
       "publication_id": "milovi-feed-20261107-003",
       "provider_payload_sha256": "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b",
-      "state": "dispatching",
+      "state": "unknown",
       "provider_effect": "may_exist",
       "intent_id": "6ffe1b9a58e53e26cbb33f4d313ac9cf",
       "dispatch_mode": "manual",
@@ -26,7 +26,7 @@
       "actual_chat_username": "MiloviCake",
       "bot_id": 8716602202,
       "bot_username": "preaching_mp3_bot",
-      "last_error": null
+      "last_error": "Telegram returned a caption that differs from the exact photo payload"
     }
   }
 }

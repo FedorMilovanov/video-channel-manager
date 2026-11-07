@@ -283,12 +283,12 @@
       "release_candidate_sha256": "sha256:0c8d5e4708af7ea01decae0a6f7465bc101b4b87e29c629477d18b4fc6c05748",
       "provider_payload_sha256": "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b",
       "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261107-003.json",
-      "state": "dispatching",
+      "state": "unknown",
       "provider_effect": "may_exist",
       "intent_id": "6ffe1b9a58e53e26cbb33f4d313ac9cf",
       "message_id": null,
       "message_url": null,
-      "updated_at_utc": "2026-11-07T14:05:35.002243Z"
+      "updated_at_utc": "2026-11-07T14:05:41.977968Z"
     }
   }
 }
