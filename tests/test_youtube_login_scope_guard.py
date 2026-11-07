@@ -84,23 +84,24 @@ def test_denied_write_scope_fails_without_replacing_existing_token_or_registry(
     assert "Authorized YouTube account alias" not in result.stdout
     assert store.load_token("milovi-cake").access_token == "existing-readonly"
     assert not store.registry_path.exists()
-    assert calls["requested_scopes"] == (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE)
+    assert calls["requested_scopes"] == (YOUTUBE_FORCE_SSL_SCOPE,)
     assert calls["clients"] == 0
 
 
 def test_full_write_consent_persists_and_confirms_expected_channel(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    granted = _token("new-write", [YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE])
+    granted = _token("new-write", [YOUTUBE_FORCE_SSL_SCOPE])
     store, calls = _install(monkeypatch, tmp_path, granted)
     result = RUNNER.invoke(app, ["youtube", "login", "--account", "milovi-cake", "--write", "--force"])
 
     assert result.exit_code == 0, (result.stdout, result.exception)
     assert "guarded write" in result.stdout
     assert MILOVI_CHANNEL in result.stdout
-    assert store.load_token("milovi-cake").scopes == [YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE]
+    assert store.load_token("milovi-cake").scopes == [YOUTUBE_FORCE_SSL_SCOPE]
     assert store.get_account("milovi-cake").channels[0].channel_id == MILOVI_CHANNEL
     assert calls["clients"] == 1
+    assert calls["requested_scopes"] == (YOUTUBE_FORCE_SSL_SCOPE,)
 
 
 def test_read_only_consent_remains_compatible(
