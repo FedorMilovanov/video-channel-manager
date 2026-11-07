@@ -30,6 +30,9 @@ ALIAS = "vk-milovi-cake-community-key"
 SERVICE = "vk-milovi-cake-service-key"
 SLOT = datetime(2026, 11, 8, 14, 0, tzinfo=ZoneInfo("Europe/Moscow"))
 CONFIRM = "SCHEDULE:MILOVI-CAKE:68859909:2026-11-08T14:00+03:00"
+ADMIN_WITNESS = Path(
+    r"C:\Users\Fedor\Projects\video-channel-manager\operator-output\milovi_history_vk_admin_postponed_preflight_20261107.json"
+)
 SOURCE = "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07-2"
 CAKE = "https://milovicake.ru/"
 
@@ -115,6 +118,49 @@ def _read_public_duplicate_guard(store: VkTokenStore, api_version: str, source_u
     }
 
 
+def verify_owner_admin_postponed_witness(path: Path, *, now: datetime) -> dict[str, Any]:
+    """Demand a fresh actual 100% authorized-admin queue read, not service-key guesses."""
+    if not path.is_file():
+        raise VkHistoryReleaseBlocked("No current owner-admin complete postponed-wall audit")
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        checked_at = datetime.fromisoformat(record["checked_utc"]).astimezone(UTC)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise VkHistoryReleaseBlocked("Unparseable owner-admin postponed-wall audit") from exc
+    rows = record.get("items")
+    if (
+        record.get("schema") != "milovi-history-vk-admin-postponed-preflight-v1"
+        or record.get("community_id") != COMMUNITY
+        or record.get("owner_id") != OWNER
+        or record.get("read_only") is not True
+        or record.get("provider_writes") != 0
+        or record.get("status") != "ok"
+        or record.get("completed_read") is not True
+        or type(record.get("postponed_total")) is not int
+        or not isinstance(rows, list)
+        or len(rows) != record["postponed_total"]
+        or record.get("exact_story_postponed") != []
+        or record.get("exact_slot_other_posts") != []
+        or not all(
+            isinstance(row, dict)
+            and type(row.get("post_id")) is int
+            and row.get("exact_history_url_present") is False
+            and row.get("occupies_requested_exact_slot") is False
+            and isinstance(row.get("scheduled_utc"), str)
+            for row in rows
+        )
+    ):
+        raise VkHistoryReleaseBlocked("Owner-admin queue unreadable or existing exact story/time conflict")
+    if checked_at > now + timedelta(minutes=2) or now - checked_at > timedelta(minutes=60):
+        raise VkHistoryReleaseBlocked("Owner-admin full postponed queue audit is stale or future-dated")
+    return {
+        "verified_admin_queue_utc": checked_at.isoformat(),
+        "postponed_total": len(rows),
+        "same_article_in_postponed": 0,
+        "requested_exact_slot_occupants": 0,
+    }
+
+
 def schedule_once(
     *, plan_path: Path, journal_path: Path, data_dir: Path, confirmation: str, now: datetime | None = None
 ) -> dict[str, Any]:
@@ -138,6 +184,7 @@ def schedule_once(
     ):
         if journal_path.exists():
             raise VkHistoryReleaseBlocked("VK history release already started in another process")
+        admin = verify_owner_admin_postponed_witness(ADMIN_WITNESS, now=clock)
         live = _read_public_duplicate_guard(store, get_settings().vk_api_version, SOURCE)
         inspector = VkApiClient(
             token_store=store, account_alias=ALIAS, api_version=get_settings().vk_api_version, max_attempts=1
@@ -164,7 +211,7 @@ def schedule_once(
             credential_scopes_verified=["wall"],
             current_token_permission_mask=perm_mask,
             preflight_public_wall=live,
-            admin_postponed_queue="not_api_verified; provider acceptance is not native VK article",
+            admin_postponed_queue=admin,
             native_article_created=False,
             provider_writes_attempted=0,
             post_id=None,

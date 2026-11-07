@@ -91,6 +91,27 @@ def _mock_provider(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, response: di
         def close(self):
             pass
 
+    witness = tmp_path / "admin_snapshot.json"
+    witness.write_text(
+        json.dumps(
+            {
+                "schema": "milovi-history-vk-admin-postponed-preflight-v1",
+                "community_id": vk.COMMUNITY,
+                "owner_id": vk.OWNER,
+                "read_only": True,
+                "provider_writes": 0,
+                "status": "ok",
+                "completed_read": True,
+                "checked_utc": "2026-11-07T12:00:00+00:00",
+                "postponed_total": 0,
+                "exact_story_postponed": [],
+                "exact_slot_other_posts": [],
+                "items": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(vk, "ADMIN_WITNESS", witness)
     monkeypatch.setattr(vk, "VkTokenStore", FakeStore)
     monkeypatch.setattr(vk, "VkApiClient", lambda **kwargs: FakeRead())
     monkeypatch.setattr(vk, "MiloviCommunitySchoolWriter", lambda **kwargs: FakeWriter())
