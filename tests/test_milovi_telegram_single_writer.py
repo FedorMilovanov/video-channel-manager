@@ -26,6 +26,7 @@ RETIRED = {
     "milovi-telegram-follow-on-media-proof.yml",
     "milovi-telegram-follow-on-readiness.yml",
     "milovi-history-article-due-20261107.yml",
+    "milovi-telegram-exact-due-20261107.yml",
 }
 
 
