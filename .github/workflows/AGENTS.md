@@ -32,6 +32,8 @@ The August `@deep_info_life` rollout is historical completed work. Its exact rel
 The production dependency surface includes the shared `telegram_models.py` / `telegram_transport.py` modules and `requirements/telegram-publisher.txt`; Svodka quality must continue to test those dependencies rather than only files whose names contain `svodka` or `multichannel`.
 
 ## Milovi permanent feed invariants
+**Consumed historical workflow guard (2026-11-07):** `.github/workflows/milovi-history-article-due-20261107.yml` was deliberately retired after `milovi-feed-20261107-003` reached durable `published/verified` (Telegram #28; VK #563). It was an *exact one-shot state migration*, not a permanent due scheduler. Re-running its `workflow_run`-triggered `migrate` against terminal state produced a safe failure, not a new publish. Do **not** restore the workflow, re-arm it via another workflow, relax `migrate_pending`'s pending-only checks, or copy the old Nov 8 approval. `tests/test_milovi_telegram_single_writer.py` and `docs/operations/retirement-registry-v1.json` protect this retirement. **Do not retire or modify** the independently approved 15-video and three School future schedules as part of this history cleanup.
+
 
 Milovi Telegram Issue #353 has one permanent provider-mutation path: `.github/workflows/milovi-telegram-feed-publisher.yml`.
 
