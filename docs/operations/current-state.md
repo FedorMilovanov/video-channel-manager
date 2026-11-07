@@ -1,9 +1,7 @@
 # Current operational state
-Updated: 2026-10-21
-
+Updated: 2026-11-07
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
-
 ## Completion and authority model
 Repository implementation, artifact production and provider rollout are separate completion states.
 - Implementation completion does not itself authorize execution.
