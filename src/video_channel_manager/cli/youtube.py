@@ -129,7 +129,9 @@ def login(
         )
         raise typer.Exit(code=2)
 
-    scopes = (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE) if write else (YOUTUBE_READONLY_SCOPE,)
+    # force-ssl already permits owner reads and writes; requesting a second
+    # optional read-only consent can silently produce an unusable partial grant.
+    scopes = (YOUTUBE_FORCE_SSL_SCOPE,) if write else (YOUTUBE_READONLY_SCOPE,)
     flow = InstalledOAuthFlow(config, scopes=scopes)
     console.print("[bold]Opening Google authorization in your browser…[/bold]")
     if write:
@@ -147,6 +149,16 @@ def login(
                 f"If the browser does not open, copy this URL:\n[link={url}]{url}[/link]"
             ),
         )
+        missing_scopes = set(scopes).difference(token.scopes)
+        if missing_scopes:
+            requested_access = (
+                "YouTube write access" if YOUTUBE_FORCE_SSL_SCOPE in missing_scopes else "YouTube read access"
+            )
+            raise OAuthFlowError(
+                f"Google did not grant the requested {requested_access}. "
+                "Review the requested permissions on the Google consent screen. "
+                "No account token was saved or replaced."
+            )
         store.save_token(account, token)
         client = YouTubeApiClient(client_config=config, token_store=store, account_alias=account)
         channels = client.list_my_channels()
