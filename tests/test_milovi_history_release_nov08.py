@@ -53,7 +53,10 @@ def test_protected_old_pending_exact_digest_migrates_without_provider_attempt(tm
     }
     orig_i["entries"]["milovi-feed-20261106-001"] = other
     index.write_text(json.dumps(orig_i, ensure_ascii=False) + "\n", encoding="utf-8")
-    assert scheduled.migrate_pending(tmp_path) == {"migrated": "true", "reason": "exact_pending_image_revision_only"}
+    assert scheduled.migrate_pending(tmp_path) == {
+        "migrated": "true",
+        "reason": "owner_exact_immediate_date_revision_only",
+    }
     migrated = json.loads(index.read_text(encoding="utf-8"))
     assert migrated["entries"]["milovi-feed-20261106-001"] == other
     release = load_release(RELEASE)
@@ -87,10 +90,10 @@ def test_future_owner_date_and_hard_freshness_window(tmp_path: Path):
     legacy_fixture(tmp_path)
     scheduled.migrate_pending(tmp_path)
     zone = ZoneInfo("Europe/Moscow")
-    assert scheduled.due(tmp_path, now=datetime(2026, 11, 7, 15, 10, tzinfo=zone))["dispatch"] == "false"
-    assert scheduled.due(tmp_path, now=datetime(2026, 11, 8, 13, 59, tzinfo=zone))["dispatch"] == "false"
-    assert scheduled.due(tmp_path, now=datetime(2026, 11, 8, 14, 7, tzinfo=zone))["dispatch"] == "true"
-    assert scheduled.due(tmp_path, now=datetime(2026, 11, 8, 16, 1, tzinfo=zone))["dispatch"] == "false"
+    assert scheduled.due(tmp_path, now=datetime(2026, 11, 6, 15, 10, tzinfo=zone))["dispatch"] == "false"
+    assert scheduled.due(tmp_path, now=datetime(2026, 11, 7, 16, 48, tzinfo=zone))["dispatch"] == "false"
+    assert scheduled.due(tmp_path, now=datetime(2026, 11, 7, 16, 55, tzinfo=zone))["dispatch"] == "true"
+    assert scheduled.due(tmp_path, now=datetime(2026, 11, 7, 18, 51, tzinfo=zone))["dispatch"] == "false"
 
 
 def test_publication_provider_photo_bytes_and_target_unchanged():

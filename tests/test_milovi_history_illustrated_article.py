@@ -54,7 +54,7 @@ def test_exact_telegram_caption_points_at_existing_telegraph_page_with_five_imag
     assert release.daily_verified_limit == 2
     assert len(release.items) == 1
     item = release.items[0]
-    assert item.scheduled_at == datetime(2026, 11, 8, 14, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+    assert item.scheduled_at == datetime(2026, 11, 7, 16, 49, tzinfo=ZoneInfo("Europe/Moscow"))
     assert isinstance(item.payload, GenericRichPhotoPayload)
     assert item.payload.schema_version == 2
     assert item.payload.parse_mode == "HTML"
@@ -76,17 +76,17 @@ def test_exact_telegram_caption_points_at_existing_telegraph_page_with_five_imag
 
 def test_workflow_is_single_writer_date_gated_not_provider_client() -> None:
     data = YAML.read_text(encoding="utf-8")
-    assert 'cron: "0 11 8 11 *"' in data
-    assert "TZ=Europe/Moscow date +%Y-%m-%d" in data
-    assert "2026-11-08" in data
+    assert "  schedule:" not in data
+    assert "TZ=Europe/Moscow date +%Y-%m-%d" not in data
+    assert "Nov 7" in data
     assert "milovi-cake-telegram-publisher" in data
-    assert "milovi-telegram-feed-publisher.yml" in data
-    assert "-f operation=publish" in data
-    assert "PUBLISH:@MiloviCake:$PUBLICATION_ID" in data
+    assert "milovi-telegram-feed-publisher.yml" not in data
+    assert "-f operation=publish" not in data
+    assert "PUBLISH:@MiloviCake:$PUBLICATION_ID" not in data
     assert "workflow_run.head_sha == github.sha" in data
     assert "state/milovi-cake-telegram" in data
     assert "sendPhoto" not in data
     assert "milovi_history_release_20261108.py migrate" in data
-    assert "milovi_history_release_20261108.py due" in data
+    assert "milovi_history_release_20261108.py due" not in data
     assert "milovi_telegram_feed initialize-state" not in data
     assert "curl" not in data
