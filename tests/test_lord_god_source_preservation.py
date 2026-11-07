@@ -147,10 +147,7 @@ def test_only_exact_owner_legacy_shelf_navigation_is_disposable(
 
 
 def test_old_owner_video_shelf_navigation_is_disposable() -> None:
-    source_url = (
-        "http://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/"
-        "videos?sort=p&view=0&shelf_id=10"
-    )
+    source_url = "http://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/videos?sort=p&view=0&shelf_id=10"
     assert source_preservation_issues(source_url, _VALID_TEXT) == []
 
 
