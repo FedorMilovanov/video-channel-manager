@@ -32,6 +32,24 @@
   ],
   "retired_families": [
     {
+      "id": "milovi-history-20261107-consumed-one-shot-state-migration",
+      "kind": "per_publication_state_migration_workflow",
+      "issues": [
+        792,
+        809
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-feed-publisher.yml (only for separately reviewed future publication IDs)",
+      "historical_evidence": [
+        "github-actions:run/42386784554/attempt/1",
+        "state/milovi-cake-telegram:content/telegram/milovi-cake/feed/milovi-feed-20261107-003.json",
+        "https://t.me/MiloviCake/28",
+        "https://vk.com/wall-68859909_563"
+      ],
+      "reason": "The Nov 7 history article was published and independently verified; the one-shot workflow_run listener continued to call pending-only migration on the terminal published/verified ledger at every quality success, causing red CI (safe fail-closed). Removed the consumed workflow, retaining code, durable ledger and source history only."
+    },
+    {
       "id": "legendary-poet-shorts-sync-v1-v4",
       "kind": "operational_package_family",
       "issues": [32, 38],
