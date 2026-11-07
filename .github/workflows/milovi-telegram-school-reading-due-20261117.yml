@@ -1,20 +1,13 @@
 name: Milovi School three exact reading posts (single Milovi publisher)
 
 on:
-  workflow_run:
-    workflows:
-      - Milovi Telegram feed quality
-    types:
-      - completed
-    branches:
-      - main
   schedule:
     # 09:37 UTC = 12:37 Moscow. Exact Nov 17/21/25 2026; year-gated.
     - cron: "37 9 17,21,25 11 *"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   actions: write
 
 concurrency:
@@ -24,11 +17,7 @@ concurrency:
 
 jobs:
   school-three-single-dispatcher:
-    if: >-
-      github.ref == 'refs/heads/main' &&
-      (github.event_name != 'workflow_run' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_sha == github.sha))
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -71,31 +60,7 @@ jobs:
           ref: state/milovi-cake-telegram
           path: .state/milovi
           fetch-depth: 0
-          persist-credentials: true
-
-      - name: Initialize three exact provider-inert photo ledgers and shared channel index
-        if: github.event_name == 'workflow_run'
-        run: python -m scripts.milovi_school_reading_due initialize-all --state-checkout "$STATE_DIR"
-
-      - name: Persist initialization atomically, no Telegram provider contact
-        if: github.event_name == 'workflow_run'
-        run: |
-          set -euo pipefail
-          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
-          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- content/telegram/milovi-cake/feed/index.json \
-            content/telegram/milovi-cake/feed/milovi-feed-20261117-002.json \
-            content/telegram/milovi-cake/feed/milovi-feed-20261121-002.json \
-            content/telegram/milovi-cake/feed/milovi-feed-20261125-001.json
-          if git -C "$STATE_DIR" diff --cached --quiet; then
-            echo "All three School ledgers already initialized; no writes."
-            exit 0
-          fi
-          git -C "$STATE_DIR" commit -m "Initialize Milovi School three exact owner-approved reading-photo ledgers"
-          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
-          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
-          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+          persist-credentials: false
 
       - name: Verify exact due school item and ten actual Cake receipts before dispatch
         if: github.event_name == 'schedule'

@@ -1,20 +1,13 @@
 name: Milovi Telegram exact approved 15-video November schedule
 
 on:
-  workflow_run:
-    workflows:
-      - Milovi Telegram feed quality
-    types:
-      - completed
-    branches:
-      - main
   schedule:
     # 16:07 UTC = 19:07 Moscow; exact 2026 Nov 8-22 only in the Python gate.
     - cron: "7 16 8-22 11 *"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   actions: write
 
 concurrency:
@@ -24,11 +17,7 @@ concurrency:
 
 jobs:
   exact-owner-video-control:
-    if: >-
-      github.ref == 'refs/heads/main' &&
-      (github.event_name != 'workflow_run' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_sha == github.sha))
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -71,29 +60,7 @@ jobs:
           ref: state/milovi-cake-telegram
           path: .state/milovi
           fetch-depth: 0
-          persist-credentials: true
-
-      - name: Initialize all fifteen ledgers and channel index as one transaction
-        if: github.event_name == 'workflow_run'
-        run: python -m scripts.milovi_muted15_due initialize-all --state-checkout "$STATE_DIR"
-
-      - name: Persist provider-inert initialization with one commit
-        if: github.event_name == 'workflow_run'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
-          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- content/telegram/milovi-cake/feed
-          if git -C "$STATE_DIR" diff --cached --quiet; then
-            echo "All fifteen protected state entries already initialized."
-            exit 0
-          fi
-          git -C "$STATE_DIR" commit -m "Initialize 15 exact Milovi owner-approved November video ledgers"
-          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
-          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
-          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+          persist-credentials: false
 
       - name: Compute exact scheduled day and state gate without mutation
         if: github.event_name == 'schedule'

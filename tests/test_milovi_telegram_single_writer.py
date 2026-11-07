@@ -90,3 +90,20 @@ def test_consumed_history_migration_is_not_rearmed_from_any_active_workflow() ->
     assert not (WORKFLOWS / "milovi-history-article-due-20261107.yml").exists()
     for workflow in WORKFLOWS.glob("*.yml"):
         assert "milovi_history_release_20261108.py migrate" not in workflow.read_text(encoding="utf-8"), workflow.name
+
+
+def test_november_due_workflows_are_read_only_after_protected_state_initialized() -> None:
+    """Remove consumed quality listeners without removing future date-scoped publisher dispatches."""
+    for filename in ("milovi-telegram-muted15-due-20261108.yml", "milovi-telegram-school-reading-due-20261117.yml"):
+        content = (WORKFLOWS / filename).read_text(encoding="utf-8")
+        assert "workflow_run:" not in content, filename
+        assert "initialize-all" not in content, filename
+        assert "contents: read" in content and "actions: write" in content, filename
+        assert "contents: write" not in content, filename
+        assert "persist-credentials: true" not in content, filename
+        assert 'git -C "$STATE_DIR" push' not in content, filename
+        assert "group: milovi-cake-telegram-publisher" in content, filename
+        assert "cancel-in-progress: false" in content, filename
+        assert "milovi-telegram-feed-publisher.yml" in content, filename
+        assert "steps.due.outputs.dispatch == 'true'" in content, filename
+        assert MUTATION_MARKER not in content, filename
