@@ -2,7 +2,7 @@
 
 `AGENTS.md` is the repository operating contract. This file adds only Windows/operator-handoff details and never authorizes provider writes.
 
-Also follow `docs/operations/operator-output-handoff-rule.md`.
+Also follow `docs/operations/operator-output-handoff-rule.md` and the mandatory [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](../docs/operations/nonintrusive-desktop-and-browser-rule.md). Do not open/focus/click/type in the owner's interactive desktop or browser, spawn browser profiles, or access owner browser cookies without fresh, explicit, scoped consent; use API/CLI or isolated noninteractive CI instead.
 
 ## Canonical local paths
 
