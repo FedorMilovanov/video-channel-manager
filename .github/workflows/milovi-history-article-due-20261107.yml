@@ -71,7 +71,7 @@ jobs:
 
       - name: Provider-inert bootstrap of exact single article
         if: github.event_name != 'schedule'
-        run: python -m video_channel_manager.milovi_telegram_feed initialize-state --publication-id "$PUBLICATION_ID" --state-checkout "$STATE_DIR"
+        run: python -m video_channel_manager.milovi_telegram_feed state-init --publication-id "$PUBLICATION_ID" --state-checkout "$STATE_DIR"
 
       - name: Persist one exact article entry and original shared index
         if: github.event_name != 'schedule'
