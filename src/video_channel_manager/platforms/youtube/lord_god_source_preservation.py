@@ -16,9 +16,7 @@ from urllib.parse import parse_qs, urlsplit
 LORD_GOD_OWNER_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
-_CHAPTER_RE = re.compile(
-    r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M
-)
+_CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
 _CREDIT_RE = re.compile(
     r"(?:"
     r"перевод(?:чик(?:и|ом)?)?\s*[:—-]|"

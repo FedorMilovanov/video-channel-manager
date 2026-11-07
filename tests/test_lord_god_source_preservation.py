@@ -1,4 +1,5 @@
 """Regression tests: Lord God YouTube copy cannot lose original provenance."""
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -19,10 +20,7 @@ from video_channel_manager.platforms.youtube.lord_god_source_preservation import
 
 _SOURCE = "https://www.desiringgod.org/messages/when-suffering-is-for-gods-glory"
 _PLAYLIST = "PLu2Bhoh2caiUqCagDLyFH4v40eBSKJCdL"
-_SHELF = (
-    "https://www.youtube.com/channel/"
-    "UCeSJsC6go2c9pdJCuUI1BYA/playlists?shelf_id=8"
-)
+_SHELF = "https://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/playlists?shelf_id=8"
 _VALID_TEXT = (
     "Историческая проповедь об избрании и Божьей благодати. "
     "Тема рассматривается через текст Священного Писания.\n\n"
