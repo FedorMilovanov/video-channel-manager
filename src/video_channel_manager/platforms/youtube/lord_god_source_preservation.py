@@ -50,9 +50,13 @@ def _obsolete_owner_navigation_or_contact(url: str) -> bool:
     host = (parsed.hostname or "").lower().removeprefix("www.")
     path = parsed.path.rstrip("/")
     if host in {"youtube.com", "m.youtube.com"}:
-        if path.startswith(f"/channel/{LORD_GOD_OWNER_CHANNEL}"):
-            return True
-        if "shelf_id" in parse_qs(parsed.query):
+        owner_path = f"/channel/{LORD_GOD_OWNER_CHANNEL}"
+        owner_navigation_paths = {
+            owner_path,
+            f"{owner_path}/playlists",
+            f"{owner_path}/videos",
+        }
+        if path in owner_navigation_paths and "shelf_id" in parse_qs(parsed.query):
             return True
     if host == "t.me" and path == "/fedormilovanov":
         return True
