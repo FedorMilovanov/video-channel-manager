@@ -139,7 +139,7 @@ def test_unknown_result_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyP
 def test_workflow_serializes_shared_state_and_does_not_send_directly() -> None:
     src = Path(".github/workflows/milovi-telegram-muted15-due-20261108.yml").read_text(encoding="utf-8")
     assert "7 16 8-22 11 *" in src
-    assert "Milovi Telegram feed quality" in src
+    assert "Milovi Telegram feed quality" not in src
     assert "workflow_run:" not in src
     assert "group: milovi-cake-telegram-publisher" in src
     assert "milovi-telegram-feed-publisher.yml" in src
