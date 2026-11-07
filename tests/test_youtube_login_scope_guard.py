@@ -139,9 +139,7 @@ def test_accounts_reports_cwd_relative_store_location_and_cannot_silently_share_
     assert "No YouTube accounts are registered" in second_result.stdout
 
 
-def test_accounts_absolute_store_path_does_not_warn_about_cwd(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_accounts_absolute_store_path_does_not_warn_about_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store_path = tmp_path / "one-canonical-store"
     monkeypatch.setattr(youtube_cli, "get_settings", lambda: SimpleNamespace(data_dir=store_path))
     result = RUNNER.invoke(app, ["youtube", "accounts"])
