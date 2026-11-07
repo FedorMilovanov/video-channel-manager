@@ -334,9 +334,7 @@ def test_final_journal_commit_failure_still_blocks_replay(
     assert dispatch_count == [1]
 
 
-def test_outdated_canary_still_blocks_before_any_provider_call(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_outdated_canary_still_blocks_before_any_provider_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A real expired slot must remain a production hard stop, regardless of historical tests."""
 
     class AfterCanary(datetime):
