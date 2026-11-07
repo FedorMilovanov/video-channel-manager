@@ -146,7 +146,7 @@ def test_workflow_serializes_shared_state_and_does_not_send_directly() -> None:
     assert "initialize-all" not in src
     assert "state/milovi-cake-telegram" in src
     assert "contents: read" in src and "actions: write" in src
-    assert "git -C \"$STATE_DIR\" push" not in src
+    assert 'git -C "$STATE_DIR" push' not in src
     assert "steps.due.outputs.dispatch == " + "'true'" in src
     assert "operation=publish" in src
     assert "sendVideo" not in src

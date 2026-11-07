@@ -80,7 +80,7 @@ def test_only_one_existing_provider_writer_and_no_competing_video_workflow() -> 
     assert "workflow_run:" not in text
     assert "initialize-all" not in text
     assert "contents: read" in text and "actions: write" in text
-    assert "git -C \"$STATE_DIR\" push" not in text
+    assert 'git -C "$STATE_DIR" push' not in text
     assert "milovi-telegram-feed-publisher.yml" in text
     assert "-f operation=publish" in text
     assert "ten actual Cake receipts" in text

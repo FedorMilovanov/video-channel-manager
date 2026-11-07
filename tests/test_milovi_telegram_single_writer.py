@@ -101,7 +101,7 @@ def test_november_due_workflows_are_read_only_after_protected_state_initialized(
         assert "contents: read" in content and "actions: write" in content, filename
         assert "contents: write" not in content, filename
         assert "persist-credentials: true" not in content, filename
-        assert "git -C \"$STATE_DIR\" push" not in content, filename
+        assert 'git -C "$STATE_DIR" push' not in content, filename
         assert "group: milovi-cake-telegram-publisher" in content, filename
         assert "cancel-in-progress: false" in content, filename
         assert "milovi-telegram-feed-publisher.yml" in content, filename
