@@ -1,5 +1,7 @@
 # MILOVI CAKE — VK schedule 8 November 2026 at 14:00 Moscow
 
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ — НЕ ИНСТРУКЦИЯ К ИСПОЛНЕНИЮ.** Владелец перенёс выпуск с 8 ноября на **7 ноября 2026**. Фактически опубликовано: [VK wall #563](https://vk.com/wall-68859909_563) и [Telegram #28](https://t.me/MiloviCake/28); исходная отложенная VK #561 более не актуальна. Одноразовая миграция состояния состоялась и стала `published/verified`. Все команды `execute`, Nov 8 `publish_date`, исходные JSON и аутентификационные свидетельства ниже сохранены **для аудита старой подготовки**, их нельзя повторно запускать или использовать как разрешение публикации. Одноразовый GitHub Actions workflow `milovi-history-article-due-20261107.yml` удалён после подтверждённого потребления; он оставался подписан на `workflow_run` и ошибочно пробовал повторить *pending-only* миграцию уже опубликованного выпуска. Исторический отказ не означал новой отправки. Статья Telegraph обновлена в прежнем URL: 56 нод / 6 изображений, выбранная обложка первой; см. [live acceptance](milovi-telegraph-cover-instantview-20261107.md). Ни VK #563, ни Telegram #28 не переотправлять.
+
 Owner approved source-verified publication in Telegram and VK at the same time.
 
 Long read, live and source-checked, 55 Telegraph nodes and five images:

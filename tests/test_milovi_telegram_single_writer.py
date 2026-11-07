@@ -25,6 +25,8 @@ RETIRED = {
     "milovi-feed-20260819-001-quality.yml",
     "milovi-telegram-follow-on-media-proof.yml",
     "milovi-telegram-follow-on-readiness.yml",
+    "milovi-history-article-due-20261107.yml",
+    "milovi-telegram-exact-due-20261107.yml",
 }
 
 
@@ -81,3 +83,10 @@ def test_read_only_target_discovery_does_not_become_a_second_writer() -> None:
         "deleteMessage",
     ):
         assert forbidden_method not in implementation
+
+
+def test_consumed_history_migration_is_not_rearmed_from_any_active_workflow() -> None:
+    """A verified historical publication must never re-enter its one-shot state migration."""
+    assert not (WORKFLOWS / "milovi-history-article-due-20261107.yml").exists()
+    for workflow in WORKFLOWS.glob("*.yml"):
+        assert "milovi_history_release_20261108.py migrate" not in workflow.read_text(encoding="utf-8"), workflow.name
