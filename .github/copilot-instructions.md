@@ -75,7 +75,7 @@ if (-not (Test-Path -LiteralPath $Result -PathType Leaf)) {
     throw "Expected output was not created: $Result"
 }
 Write-Host "OPEN/SEND THIS FILE: $Result"
-Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
+# No Explorer/browser/window launch: the exact printed path completes the handoff.
 ```
 
 ## Handoff declaration

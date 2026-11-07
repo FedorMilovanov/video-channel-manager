@@ -7,6 +7,7 @@ This is the default operating contract for agents, operator scripts, local tools
 - The owner is actively using the machine. Treat the visible desktop, mouse, keyboard, clipboard, active window, browser tabs, logged-in profiles, notifications, and session state as **owner-owned, not automation infrastructure**.
 - Do **not** open Chrome/Edge/Firefox windows or tabs, switch or focus windows, click/scroll/type in visible applications, move the pointer, inject keystrokes, attach DevTools/CDP to the owner's interactive browser, open a browser with `Start-Process`, or dismiss dialogs as a side effect of investigation.
 - Do **not** use screen scraping, screenshots, global shortcuts, cookie/profile extraction, or foreground UI automation to work around missing API authorization. Existing `focus_*`, `click_*`, browser-probe and other ad-hoc scripts are **not** standing permission to run them.
+- Do not automatically open File Explorer or another visible application as an output handoff convenience. Printing the verified exact file path is sufficient; the owner decides when to open it.
 - Do not close, restart, kill, or reconfigure any owner browser or browser profile to finish an agent task. Do not create proliferating profiles, browser installations, logins, or account sessions.
 - A tool being capable of acting on the desktop, an old successful browser session, or an earlier login instruction does not supersede this rule.
 

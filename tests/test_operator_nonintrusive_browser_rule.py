@@ -33,6 +33,16 @@ class NonintrusiveDesktopRuleTest(unittest.TestCase):
             with self.subTest(phrase=required):
                 self.assertIn(required, rule)
 
+    def test_old_handoff_instructions_never_launch_explorer(self):
+        for relative in (
+            ".github/copilot-instructions.md",
+            "docs/operations/operator-output-handoff-rule.md",
+        ):
+            with self.subTest(path=relative):
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                self.assertNotIn("Start-Process explorer.exe", text)
+                self.assertIn('Write-Host "OPEN/SEND THIS FILE: $Result"', text)
+
     def test_noninteractive_ci_remains_permitted(self):
         rule = (ROOT / CANON).read_text(encoding="utf-8")
         self.assertIn("Headless browser tests", rule)

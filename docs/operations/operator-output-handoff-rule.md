@@ -95,10 +95,10 @@ if (-not (Test-Path -LiteralPath $Result -PathType Leaf)) {
     throw "Expected output was not created: $Result"
 }
 Write-Host "OPEN/SEND THIS FILE: $Result"
-Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
+# Keep the owner's visible desktop untouched; provide the exact path only.
 ```
 
-The Explorer convenience step is local UI only. It does not authorize or perform any provider mutation.
+The exact printed output path is the complete noninteractive handoff. Never launch Explorer or another visible application on the owner's desktop unless the owner separately requests that interaction. This handoff does not authorize any provider mutation.
 
 ## Copy/paste serialization contract
 
