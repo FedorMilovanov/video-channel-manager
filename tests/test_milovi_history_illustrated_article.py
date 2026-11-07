@@ -25,10 +25,10 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     html = HTML.read_text(encoding="utf-8")
     nodes = json.loads(NODES.read_text(encoding="utf-8"))
     assert m["telegraph_url"] == ARTICLE_URL
-    assert m["telegraph_page_images_verified"] == 5
+    assert m["telegraph_page_images_verified"] == 6
     assert m["telegraph_promotion_verified"] is True
     assert m["promotional_link"] == "https://milovicake.ru/"
-    assert m["telegraph_page_nodes_verified"] >= 50
+    assert m["telegraph_page_nodes_verified"] == 56
     assert m["words"] >= 1400 and m["sections"] >= 9
     assert len(m["image_urls"]) == 6
     assert len(set(m["image_urls"])) == 6
@@ -38,7 +38,7 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     assert m["telegraph_pending_cover_source"] == m["image_urls"][0]
     assert nodes[0]["tag"] == "figure"
     assert nodes[0]["children"][0]["attrs"]["src"] == m["image_urls"][0]
-    assert "source patch awaiting authorized editPage" in m["publication_status"]
+    assert "EDITPAGE_AND_GETPAGE_VERIFIED" in m["publication_status"]
     section3 = next(
         i for i, item in enumerate(nodes) if item.get("tag") == "h3" and "3. Одна гравюра" in item["children"][0]
     )

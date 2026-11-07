@@ -1,6 +1,6 @@
 # MILOVI CAKE — Telegraph cover / Instant View acceptance (2026-11-07)
 
-**State:** EDITORIAL PATCH PREPARED; LIVE TELEGRAPH NOT YET UPDATED OR CERTIFIED. Do not claim that the article preview already changed.
+**State: LIVE EDIT COMPLETED AND SOURCE VERIFIED 2026-11-07.** Existing Telegraph page was edited in place once, with a positive editPage reply and independent getPage readback confirming 56 nodes and 6 figures, including original selected cover as first image. Public HTML was separately read with TelegramBot user-agent: og:image and twitter:image both point to the selected cover. Telegram client Instant View and link preview cache refresh were not independently observed; don't claim client-side rendering/caching is guaranteed.
 
 ## Existing, immutable targets
 
@@ -34,3 +34,13 @@ When the authorized Telegraph editor is available:
 7. Document live update timestamp, full getPage readback and preview evidence in an audit; only then remove the manifest's pending-live status and close this task.
 
 **Important:** Telegram Instant View is available for Telegraph links in messages that have a proper link preview. Editing the page does **not** change the content type of the already published Telegram photo `/28` or make its image/photo attachment disappear. Do not delete or repost `/28` just to force an Instant View preview; owner has not authorized destructive replacement of published content.
+
+## Completed live-editor acceptance on 2026-11-07
+
+- Original page edited exactly once via owner-protected DPAPI credential on authorized newly reconnected Milovi Desktop Commander, no token exposed.
+- Provider positive editPage reply, independent getPage readback: 56 nodes, six images.
+- Selected cover first as figure/img, Bosse engraving moved to section 3, all five other historical images/paragraphs preserved; original article URL unchanged.
+- Independent public HTML GET 200, first image correct, og:image and twitter:image point to selected cover for newly generated previews.
+- Local audit (not committed): operator-output/milovi-telegraph-instantview-cover-live-20261107.json.
+- Existing Telegram photo post 28 and VK wall post 563 remain unchanged. Do not delete/repost to alter photo into a text-link post.
+- Telegram may display cached preview data; no claim that existing photo post automatically becomes Instant View.
