@@ -35,8 +35,8 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     assert len(nodes) >= 45
     assert "мясной и рыбной начинкой" in html
     assert "1815" in html
-    assert m["html_sha256"] == "sha256:" + hashlib.sha256(HTML.read_bytes()).hexdigest()
-    assert m["nodes_sha256"] == "sha256:" + hashlib.sha256(NODES.read_bytes()).hexdigest()
+    assert m["html_sha256"] == "sha256:" + hashlib.sha256(HTML.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    assert m["nodes_sha256"] == "sha256:" + hashlib.sha256(NODES.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     assert "https://www.metmuseum.org/art/collection/search/390804" in m["source_urls"]
     assert "https://gallica.bnf.fr/accueil/fr/html/surprenante-patisserie" in m["source_urls"]
 
