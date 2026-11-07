@@ -2,6 +2,7 @@
 
 This is a documentation/agent policy test; no browser is launched.
 """
+
 from pathlib import Path
 import unittest
 
