@@ -30,11 +30,18 @@ def test_researched_history_source_is_complete_and_live_telegraph_readback_recor
     assert m["promotional_link"] == "https://milovicake.ru/"
     assert m["telegraph_page_nodes_verified"] >= 50
     assert m["words"] >= 1400 and m["sections"] >= 9
-    assert len(m["image_urls"]) == 5
-    assert len(set(m["image_urls"])) == 5
+    assert len(m["image_urls"]) == 6
+    assert len(set(m["image_urls"])) == 6
     assert len(m["source_urls"]) >= 10
-    assert html.count("<figure>") == 5 and html.count("</figure>") == 5
-    assert len(nodes) >= 45
+    assert html.count("<figure>") == 6 and html.count("</figure>") == 6
+    assert len(nodes) == 56
+    assert m["telegraph_pending_cover_source"] == m["image_urls"][0]
+    assert nodes[0]["tag"] == "figure"
+    assert nodes[0]["children"][0]["attrs"]["src"] == m["image_urls"][0]
+    assert "source patch awaiting authorized editPage" in m["publication_status"]
+    section3 = next(i for i, item in enumerate(nodes) if item.get("tag") == "h3" and "3. Одна гравюра" in item["children"][0])
+    old_engraving = next(i for i, item in enumerate(nodes) if item.get("tag") == "figure" and item["children"][0]["attrs"]["src"].endswith("DP818745.jpg"))
+    assert old_engraving == section3 + 2
     assert m["nodes_bytes"] == len(json.dumps(nodes, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
     assert "мясной и рыбной начинкой" in html
     assert "1815" in html
