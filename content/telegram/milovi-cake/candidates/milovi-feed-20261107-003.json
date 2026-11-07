@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-next-publication-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_exact_candidate",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "publication_id": "milovi-feed-20261107-003",
+  "scheduled_at": "2026-11-07T15:00:00+03:00",
+  "timezone": "Europe/Moscow",
+  "operation": "sendPhoto",
+  "media": {
+    "media_id": "patisserie-profession-history-cover",
+    "source_path": "public/images/articles/careme-first-celebrity-chef.webp",
+    "source_git_blob_sha1": "694eebc3824852eb29340506ed961af421f72f4c",
+    "source_sha256": "sha256:7f3c130139f187edf93745a742ed4506c57a6c2f8490a28b60575e7fd7946592",
+    "transport_format": "image/jpeg",
+    "transport_byte_size": 330101,
+    "transport_sha256": "sha256:3d1477b5b3bf424c848fc827ee28c25d5ed24418523c4a13d432d01da54a8f97",
+    "pixel_width": 1280,
+    "pixel_height": 800
+  },
+  "caption_sha256": "sha256:5b52934d76987c38b53cf3e242a19811f3f95791e6700a7245f1650b3ed65947",
+  "caption": "🍰 <b>В XVII веке кондитеры продавали мясные пироги</b>\n\n<i>На парижской гравюре 1632 года рядом с печью и пирогами видны окорока и дичь.</i>\n\nКак из этого ремесла выросли эклеры, ромовая баба и сложные десерты? История ведёт от индийского сахара через парижские цехи к кондитерской Stohrer (1730) и Мари-Антуану Карему, проектировавшему сладкие композиции как архитектуру.\n\n📖 <a href=\"https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07\">Иллюстрированная история кондитерской профессии</a>\n\n#MiloviCake #ИсторияКондитерскогоДела",
+  "article_url": "https://telegra.ph/Kto-pridumal-konditerskoe-delo-Ot-myasnyh-pirogov-do-iskusstva-desertov-11-07",
+  "editorial_style": "historical fact first, native bold/italic/source link, 2 hashtags",
+  "editorial_guards": {
+    "school_separate_educational_content": true,
+    "contains_product_process_claim": false,
+    "contains_unverified_price_or_availability_claim": false,
+    "source_image_is_school_illustration": true,
+    "article_url_verified": true
+  },
+  "source_context": {
+    "school_repository": "FedorMilovanov/Milovi_School",
+    "school_commit": "f540e8d6fca89592a8394e0a707e6af0d85afc14",
+    "school_article_id": "careme-first-celebrity-chef",
+    "school_article_url": "https://french.milovicake.ru/articles/careme-first-celebrity-chef/"
+  },
+  "execution_note": "Owner Nov7 explicit new historical confectionery long-read promotion in MILOVI CAKE Telegram and VK"
+}

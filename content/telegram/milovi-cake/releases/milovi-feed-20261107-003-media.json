@@ -1,0 +1,29 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-feed-media",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20261107-003",
+  "media_id": "patisserie-profession-history-cover",
+  "candidate_path": "content/telegram/milovi-cake/candidates/milovi-feed-20261107-003.json",
+  "caption_sha256": "sha256:5b52934d76987c38b53cf3e242a19811f3f95791e6700a7245f1650b3ed65947",
+  "source": {
+    "repository": "FedorMilovanov/Milovi_School",
+    "commit": "f540e8d6fca89592a8394e0a707e6af0d85afc14",
+    "path": "public/images/articles/careme-first-celebrity-chef.webp",
+    "git_blob_sha1": "694eebc3824852eb29340506ed961af421f72f4c",
+    "byte_size": 143714,
+    "sha256": "sha256:7f3c130139f187edf93745a742ed4506c57a6c2f8490a28b60575e7fd7946592",
+    "media_type": "image/webp",
+    "pixel_width": 1280,
+    "pixel_height": 800
+  },
+  "transport": {
+    "format": "image/jpeg",
+    "byte_size": 330101,
+    "sha256": "sha256:3d1477b5b3bf424c848fc827ee28c25d5ed24418523c4a13d432d01da54a8f97",
+    "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20261107-003.jpg",
+    "filename": "milovi-feed-20261107-003.jpg",
+    "encoder": "Pillow/JPEG quality=95 subsampling=0 optimize=false progressive=false exif=empty"
+  },
+  "provider_write_performed": false
+}

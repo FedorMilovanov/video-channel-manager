@@ -1,0 +1,131 @@
+name: Milovi Cake illustrated history article Nov 7 2026
+
+on:
+  workflow_run:
+    workflows: [Milovi Telegram feed quality]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "7 12 7 11 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  exact-history-article:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_sha == github.sha))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src:.
+      PUBLICATION_ID: milovi-feed-20261107-003
+      STATE_DIR: .state/milovi
+      STATE_BRANCH: state/milovi-cake-telegram
+    steps:
+      - name: Checkout exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal exact publisher validators
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Exact current main and complete Milovi Telegram quality
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          remote_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_sha" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml --sha "$GITHUB_SHA"
+
+      - name: Verify original researched article and one authorized photo release
+        run: python -m video_channel_manager.milovi_telegram_feed validate --publication-id "$PUBLICATION_ID" --require-execution-authorized
+
+      - name: Checkout protected shared Milovi state branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Provider-inert bootstrap of exact single article
+        if: github.event_name != 'schedule'
+        run: python -m video_channel_manager.milovi_telegram_feed initialize-state --publication-id "$PUBLICATION_ID" --state-checkout "$STATE_DIR"
+
+      - name: Persist one exact article entry and original shared index
+        if: github.event_name != 'schedule'
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- content/telegram/milovi-cake/feed/index.json \
+            content/telegram/milovi-cake/feed/milovi-feed-20261107-003.json
+          if git -C "$STATE_DIR" diff --cached --quiet; then
+            echo "Already exact and initialized; no modification"
+            exit 0
+          fi
+          git -C "$STATE_DIR" commit -m "Initialize one exact researched Milovi history article"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
+      - name: Exact 2026-11-07 due, year and no provider effect check
+        if: github.event_name == 'schedule'
+        id: due
+        run: |
+          set -euo pipefail
+          [[ "$(TZ=Europe/Moscow date +%Y-%m-%d)" == "2026-11-07" ]] || exit 3
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          python - <<'PY'
+          import os
+          from datetime import datetime,timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          from video_channel_manager.milovi_telegram_feed import state_check
+          from video_channel_manager.telegram_multichannel_release import load_release
+          release=load_release(Path("content/telegram/milovi-cake/releases/milovi-feed-20261107-003-runtime.json"))
+          item=release.items[0]
+          now=datetime.now(ZoneInfo("Europe/Moscow"))
+          if now<item.scheduled_at or now>=item.scheduled_at+timedelta(minutes=120):
+              raise SystemExit("History article outside original owner-approved exact slot")
+          state=state_check(item.publication_id,state_checkout=Path(".state/milovi"),require_publishable=True)
+          if state["state"]!="pending" or state["provider_effect"]!="impossible":
+              raise SystemExit("Original history article not pending/provider-inert")
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as f:
+              f.write("dispatch=true\n")
+          PY
+
+      - name: Call one existing canonical publisher only
+        if: github.event_name == 'schedule' && steps.due.outputs.dispatch == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          remote_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_sha" == "$GITHUB_SHA" ]] || exit 3
+          gh workflow run milovi-telegram-feed-publisher.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f operation=publish -f publication_id="$PUBLICATION_ID" \
+            -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"
