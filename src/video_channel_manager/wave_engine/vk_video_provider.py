@@ -138,7 +138,9 @@ class VkNativeVideoUploadAdapter:
         if type(reviewed_short) is not bool:
             raise OperationRejectedError("Reviewed short-horizontal override must be a boolean")
         if duration <= 180 and not reviewed_short:
-            raise OperationRejectedError("VK video upload requires >180s or explicit reviewed short-horizontal approval")
+            raise OperationRejectedError(
+                "VK video upload requires >180s or explicit reviewed short-horizontal approval"
+            )
         if duration > 180 and reviewed_short:
             raise OperationRejectedError("Reviewed short-horizontal approval is only valid for <=180s sources")
         if payload.get("privacy_status") != "public":
