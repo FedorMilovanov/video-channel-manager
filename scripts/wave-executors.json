@@ -592,6 +592,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/lord_god_wave_checkpoint.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "3dfa47bf0f97601135662476ecfbb860ed1cac2a46649891355659cb60cf92ba",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/lordchrist_article_preflight.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
