@@ -357,3 +357,112 @@ def test_video_adapter_reconciliation_uses_exact_journaled_id_without_media_repl
     assert calls == 1
     assert evidence["remote_id"] == f"{OWNER_ID}_501"
     assert evidence["reconciliation"] == "exact_remote_id_verified"
+
+
+def _operation_with_payload(operation: WaveOperation, **updates: Any) -> WaveOperation:
+    return WaveOperation.build(
+        sequence=operation.sequence,
+        project=operation.project,
+        source_snapshot_id=operation.source_snapshot_id,
+        policy_version=operation.policy_version,
+        spec=WaveOperationSpec(
+            order_key=operation.order_key,
+            operation_kind=operation.operation_kind,
+            mutation_class=operation.mutation_class,
+            payload={**operation.payload, **updates},
+        ),
+    )
+
+
+def test_video_adapter_reviewed_179_seconds_requires_explicit_flag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, original = _inputs(tmp_path, monkeypatch)
+    adapter = _adapter(root, _FakeWriter())
+    short_unreviewed = _operation_with_payload(original, source_duration_seconds=179)
+    reviewed = _operation_with_payload(
+        original,
+        source_duration_seconds=179,
+        reviewed_short_horizontal_video=True,
+    )
+
+    with pytest.raises(OperationRejectedError, match="explicit reviewed short-horizontal approval"):
+        adapter._validate_operation(short_unreviewed)
+
+    assert adapter._validate_operation(reviewed)["reviewed_short_horizontal_video"] is True
+    assert reviewed.operation_id == short_unreviewed.operation_id
+
+    with pytest.raises(OperationRejectedError, match="only valid for <=180s"):
+        adapter._validate_operation(_operation_with_payload(original, reviewed_short_horizontal_video=True))
+
+    with pytest.raises(OperationRejectedError, match="must be a boolean"):
+        adapter._validate_operation(
+            _operation_with_payload(original, reviewed_short_horizontal_video="true")
+        )
+
+
+def test_video_adapter_reviewed_short_rejects_vertical_artifact_before_provider_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, media, original = _inputs(tmp_path, monkeypatch)
+    operation = _operation_with_payload(
+        original,
+        source_duration_seconds=179,
+        reviewed_short_horizontal_video=True,
+    )
+    artifact = _artifact(media)
+    artifact.probe = SimpleNamespace(
+        width=1080, height=1920, video_stream_count=1, audio_stream_count=1
+    )
+    monkeypatch.setattr(provider_module, "load_media_artifact_manifest", lambda _path: artifact)
+    adapter = _adapter(root, _FakeWriter())
+
+    def forbidden_dispatch(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("vertical media must never reach provider dispatch")
+
+    monkeypatch.setattr(provider_module, "execute_upload_operation", forbidden_dispatch)
+    with pytest.raises(OperationRejectedError, match="verified horizontal video"):
+        adapter.execute(operation)
+
+
+def test_video_adapter_reviewed_179_seconds_retains_video_only_no_wall_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, media, original = _inputs(tmp_path, monkeypatch)
+    operation = _operation_with_payload(
+        original,
+        source_duration_seconds=179,
+        reviewed_short_horizontal_video=True,
+    )
+    artifact = _artifact(media)
+    artifact.probe = SimpleNamespace(
+        width=1920, height=1080, video_stream_count=1, audio_stream_count=1
+    )
+    monkeypatch.setattr(provider_module, "load_media_artifact_manifest", lambda _path: artifact)
+    adapter = _adapter(root, _FakeWriter())
+    calls = 0
+
+    def fake_execute(record: dict[str, Any], **kwargs: Any) -> None:
+        nonlocal calls
+        calls += 1
+        assert kwargs["readiness"].allowed_types == ("video",)
+        assert kwargs["readiness"].minimum_duration_seconds > 0
+        assert kwargs["wall_before_snapshot"] is None
+        record["stage"] = UploadStage.VERIFIED.value
+        record["reservation"] = {
+            "remote_id": f"{OWNER_ID}_501",
+            "owner_id": OWNER_ID,
+            "video_id": 501,
+        }
+        record["verification"] = {"item_sha256": "sha256:" + "1" * 64}
+        kwargs["persist"]()
+
+    monkeypatch.setattr(provider_module, "execute_upload_operation", fake_execute)
+    evidence = adapter.execute(operation)
+
+    assert calls == 1
+    assert evidence["upload_stage"] == UploadStage.VERIFIED.value
+    assert evidence["remote_id"] == f"{OWNER_ID}_501"
