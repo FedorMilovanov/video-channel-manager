@@ -11,51 +11,6 @@ Repository implementation, artifact production and provider rollout are separate
 - Credentials authenticate; exact project identity, target binding, immutable operation/release identity, durable state and fresh explicit execution authority select the operation.
 - No blind provider retry is authorized by this document.
 
-## Legendary Poet VK source parity — 2026-11-08 provider checkpoint (Issue #774)
-
-This checkpoint **supersedes older statements in this document that the
-Legendary Poet VK transfer had not started**. It is not write authority, and
-the counts describe separately verified publication states, not completion
-of future scheduled releases.
-
-- Frozen source history: 165 YouTube IDs. The owner excluded the 9-second
-  Heroes III Short, so the active parity target is **164** sources. Do not
-  upload either Heroes III asset without new explicit authorization.
-- Before this day's rollout: 147/164 public. The latest exact owner VK
-  checkpoint in [Issue #774](https://github.com/FedorMilovanov/video-channel-manager/issues/774)
-  records **two additional original sources as public** and **15 original
-  sources scheduled, not yet public**. Do not conflate native Clips,
-  ordinary Videos, or their separate scheduled wall posts.
-- New full-length ordinary Video `-235216998_456239258` (179-second
-  Mavrin source `6JUXEhA-P-Y`): exact editor readback scheduled
-  **2026-11-19 19:00 MSK**; video and description verified. A separate
-  59-second Mavrin Clip already public is **not** this original.
-- New native Clip `-235216998_456239259` (Mayakovsky source
-  `qtYcjHi49Zs`): the owner scheduled **2026-11-10 16:25 MSK**.
-  Exact native Clips editor readback confirmed schedule and original/site
-  links. VK removed the five original hashtags while normalizing the
-  native caption; treat this as **editorial fidelity debt**, not exact
-  preservation of the full submitted caption.
-- All existing 8 postponed community-wall posts are a **separate surface**
-  and must not be re-created or counted as original-video publication.
-  No duplicate re-upload or immediate release is justified by these notes.
-- `#774` remains open until every in-scope scheduled original has an
-  independently verified public postcondition. Exact mapping and
-  provider-effect evidence control, not aggregate counts or this summary.
-  Desktop Commander usage quota can block remote inspection; do not
-  bypass it with another agent/profile or assume the remote is offline.
-
-See `docs/operations/vk-native-clip-golden-path.md` for the new
-native-Clip Creator editor boundary. The ordinary VK Video Wave keeps its
-existing >180s default; the reviewed short-horizontal exception is an
-**explicit preparation-only opt-in** with probed landscape media, not
-authorization to publish or to replay already uploaded originals.
-The existing ordinary-video API Wave verifies **public** video visibility;
-it is **not a deferred VK Creator scheduler** and does not itself prove absence
-of a private/scheduled/native Clip. The override must not be applied to the
-already accepted `456239258` or `456239259`; both are existing provider
-objects whose later publication must be checked read-only.
-
 ## Repository source of truth
 Only `main` is a supported repository code/runtime execution baseline.
 `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
@@ -67,7 +22,7 @@ Recent hardening now present on `main` includes:
 - LordChrist historical production: evidence-backed editorial foundation plus the separate archival-v3 recurring release, 16 media exhibits for eight recurring posts, reader-safe rendering, durable canary/editorial approval and pre-exhaustion successor guard (#556, #591).
 - Instagram: guarded production publisher, exact target binding, local resumable MP4 upload with durable no-replay state, phase-aware failure reconciliation, immediate terminalization of explicit non-retriable 4xx rejects, ruleset-v3 progressive/4:2:0/closed-GOP proof, secret-safe wire/correlation diagnostics, reviewed public-HTTPS `video_url` fallback, credential-free `validate-local` and `validate-public` boundaries that reuse production verification, plus legacy-Windows Unicode-safe CLI rendering (#569, #573, #585, #592, #599, #601, #606, #611, #617, #623, #627, #637, #644).
 - Repository/runtime hardening: provider-outcome/recovery cleanup, completed branch-hygiene deletion manifest, scheduled exact-main quality proof that waits up to 420 seconds while re-proving `main`, stale/divergent branch salvage classification, and non-executable preservation of the retired LordChrist v3 phase-1 acquisition provenance (#532, #536, #538, #540, #544, #550, #555, #595, #608, #616).
-- Legendary Poet VK long-form: #626 made native uploads durable and resumable under `vk-native-video-wave-v2`, and #629 retired the remaining legacy YouTube-to-VK writers, so there is **no** alternate historical provider-write path and no second snapshot-bound route to the same provider effect. #622 removed the accidental `wall.get` hard gate. The active follow-up hardening moves native upload to stable `vk-native-video-wave-v2` identity: one YouTube source per run, canonical provider state, community mutex, fresh video-only duplicate check, explicit zero wall-publication flags, exact-ID readiness verification, and no blind mutation retry. Live provider transfer is still pending.
+- Legendary Poet VK long-form: #626 made native uploads durable and resumable under `vk-native-video-wave-v2`, and #629 retired the remaining legacy YouTube-to-VK writers, so there is **no** alternate historical provider-write path and no second snapshot-bound route to the same provider effect. #622 removed the accidental `wall.get` hard gate. The active follow-up hardening moves native upload to stable `vk-native-video-wave-v2` identity: one YouTube source per run, canonical provider state, community mutex, fresh video-only duplicate check, explicit zero wall-publication flags, exact-ID readiness verification, and no blind mutation retry. Superseded by Issue #774's 2026-11-08 provider checkpoint: 149/164 original sources public, 15 scheduled (not yet public); excluded Heroes III is out of scope. Existing VK IDs 456239258 (Mavrin, Nov 19 19:00 MSK) and 456239259 (Mayakovsky Clip, Nov 10 16:25 MSK) must never be reuploaded; refer to the native-Clip golden path for caption and scheduling fidelity.
 - Dependencies and CI supply chain: the Milovi production runtime moved from Pillow 12.3.0 (24 known vulnerabilities) to Pillow 13.0.0, and the Telegram publisher runtime from certifi 2026.5.20 (PYSEC-2026-4320) to 2026.10.19; both hash-locks were reinstalled from scratch with `--require-hashes`/`--only-binary` and audited clean. The exact Pillow version is now declared only by the lock, the runtime range must admit it, and CI audits both production locks on every run (repository Dependabot security alerts are unavailable to the automation integration). GitHub Actions pins are enforced by `tests/_workflow_actions.py`: full 40-hex SHA, documented release, reviewed minimum version and a retired-ref denylist across all workflows.
 - VK native upload: an explicit `video.save` rejection that provably had no effect (`rejected`, no ticket, no bytes, no verification evidence) is no longer a permanent dead end. `reopen_known_rejection` lets a later separately invoked Wave reopen only that state, archives the rejected media/intent/error under `known_rejections` and returns to `planned`, so current media is re-hashed and re-verified before one new reservation. `retry_policy` remains `never_replay` and ambiguous or remote-bearing states remain non-replayable.
 - Repository/runtime hygiene: the LordChrist publisher no longer carries a redundant `timezone:` key next to UTC cron expressions (a double offset would stop publication silently), the unreachable `platforms/vk.py` shadowed module is removed with a guard test, and the PowerShell wrapper inventory ignores local development virtualenvs.
