@@ -102,6 +102,7 @@ def _validate_owner_absence_evidence(
         if (
             not isinstance(covered, list)
             or len(covered) != len(OWNER_ABSENCE_STATES)
+            or not all(isinstance(state, str) for state in covered)
             or set(covered) != OWNER_ABSENCE_STATES
         ):
             raise OperationRejectedError(f"VK owner {surface_name} inventory does not cover every state")
