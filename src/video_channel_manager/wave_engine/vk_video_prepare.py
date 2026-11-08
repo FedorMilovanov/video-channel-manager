@@ -631,6 +631,7 @@ def prepare_vk_video_wave(
         "candidate_ids": list(normalized_candidates),
         "canary_id": canary_id,
         "batch_ids": list(batch_ids),
+        "owner_creator_absence_evidence_attached": owner_absence_copy is not None,
         "provider_writes": 0,
         "canary": canary,
         "batch": batch,
