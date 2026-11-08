@@ -36,7 +36,7 @@ Historical `gospod_bog` vanity paths are not canonical output.
 
 ## YouTube description rules
 
-1. The first paragraph explains the exact sermon, lecture, biblical passage, speaker, series, translation, or historical material.
+1. The first paragraph explains the exact sermon, lecture, biblical passage, speaker, series, translation, or historical material. The first **two non-empty raw YouTube Studio lines** must be substantive plain sentences without any `*`, `_`, backticks, Markdown headings/list markers or URLs; otherwise share/repost surfaces can expose markup. Bold/italic may begin only afterward. Never equate a plain *first paragraph* with proof of two plain visible lines.
 2. Distinguish source claims, translator/editor notes, and application.
 3. Do not invent dates, speaker claims, quotations, Bible references, source provenance, or translation details.
 4. Use YouTube emphasis only where it improves readability; URLs remain plain text.

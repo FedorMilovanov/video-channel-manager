@@ -71,6 +71,15 @@ def presentation_issues(description: str) -> list[str]:
     if len(description) > 5000:
         issues.append("description_over_5000_characters")
     if len(description) >= 350:
+        # The two raw nonempty Studio lines are consumed by repost/share
+        # previews. A plain first *paragraph* alone is not sufficient:
+        # a later bold heading on line two can leak literal markup.
+        preview_lines = [line.strip() for line in description.splitlines() if line.strip()]
+        if len(preview_lines) < 2 or any(
+            len(line) < 15 or re.search(r"https?://|[*_`]", line, re.I) or line[0] in "#>-•‣◦⁃" or line.startswith("<")
+            for line in preview_lines[:2]
+        ):
+            issues.append("share_preview_first_two_lines_not_plain")
         # Normal-length sermons and lectures must have selective *bold* and
         # _italic_. Shorts/very short clips may intentionally remain plain.
         if BOLD_SPAN_RE.search(description) is None:

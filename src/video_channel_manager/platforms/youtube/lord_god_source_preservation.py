@@ -14,6 +14,13 @@ import re
 from urllib.parse import parse_qs, urlsplit
 
 LORD_GOD_OWNER_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
+# Exactly one registered community may be canonicalized. This does not
+# authorize deletion of VK media URLs, posts, query links or other communities.
+_OLD_OWNER_VK_COMMUNITY_URLS = {
+    "https://vk.com/the_lord_god_is_my_strength",
+    "http://vk.com/the_lord_god_is_my_strength",
+}
+_CANONICAL_OWNER_VK_COMMUNITY = "https://vk.ru/the_lord_god_is_my_strength"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
 _CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
@@ -92,6 +99,8 @@ def source_preservation_issues(before: str, after: str) -> list[str]:
     after_urls = _links(after)
     after_playlist_ids = {_owner_playlist_id(url) for url in after_urls}
     for url in sorted(_links(before)):
+        if url in _OLD_OWNER_VK_COMMUNITY_URLS and _CANONICAL_OWNER_VK_COMMUNITY in after_urls:
+            continue
         if _obsolete_owner_navigation_or_contact(url):
             continue
         playlist_id = _owner_playlist_id(url)

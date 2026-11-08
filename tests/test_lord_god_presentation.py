@@ -28,6 +28,7 @@ _BODY = (
 )
 _DESCRIPTION = (
     _FIRST
+    + "\nНа занятии также обсуждается ответственность супругов перед Богом и церковью."
     + "\n\n"
     + _BODY.replace("их общение и помощь друг другу,", "_их общение и помощь друг другу,_")
     + "\n\n*Все шесть занятий:* https://www.youtube.com/playlist?list=PLu2Bhoh2caiUqCagDLyFH4v40eBSKJCdL"
@@ -233,3 +234,35 @@ def test_lord_god_cli_rejects_live_title_drift_before_any_write(
 def test_sermon_about_offerings_is_not_mistaken_for_personal_payment_request() -> None:
     content = _DESCRIPTION + "\n1:05:00 Пожертвования и воскресное богослужение"
     assert "retired_fundraising_or_payment" not in presentation_issues(content)
+
+
+@pytest.mark.parametrize(
+    "bad_second",
+    [
+        "*На занятии также обсуждается ответственность супругов перед Богом и церковью.*",
+        "_На занятии также обсуждается ответственность супругов перед Богом и церковью._",
+        "На занятии *также обсуждается* ответственность супругов перед Богом.",
+        "Оригинал на английском: https://example.org/original",
+        "- На занятии также обсуждается ответственность супругов перед Богом.",
+        "# На занятии также обсуждается ответственность супругов перед Богом.",
+        "`На занятии также обсуждается ответственность супругов перед Богом.`",
+        "[На занятии также обсуждается ответственность супругов](https://example.org/)",
+    ],
+)
+def test_two_preview_lines_reject_markup_links_and_lists_before_oauth(bad_second: str) -> None:
+    original_second = "На занятии также обсуждается ответственность супругов перед Богом и церковью."
+    after = _DESCRIPTION.replace(original_second, bad_second, 1)
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(after)
+    with pytest.raises(ValueError, match="share_preview_first_two_lines_not_plain"):
+        require_lord_god_youtube_presentation(_plan(after))
+
+
+def test_one_plain_line_followed_by_formatted_body_does_not_fake_preview_pass() -> None:
+    original_second = "На занятии также обсуждается ответственность супругов перед Богом и церковью."
+    after = _DESCRIPTION.replace(original_second + "\n\n", "\n\n", 1)
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(after)
+    assert "youtube_share_preview_emphasis" not in presentation_issues(after)
+
+
+def test_two_plain_intro_lines_allow_emphasis_and_urls_in_later_paragraphs() -> None:
+    assert presentation_issues(_DESCRIPTION) == []
