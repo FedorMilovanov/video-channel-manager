@@ -568,3 +568,32 @@ def test_safe_read_preserves_existing_query_when_no_params(tmp_path: Path) -> No
     finally:
         provider.close()
     assert response.status_code == 200
+
+
+def test_safe_read_empty_explicit_params_preserve_resumable_url(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == SESSION
+        assert request.url.params["upload_id"] == "abc123"
+        return httpx.Response(200, json={"items": []}, request=request)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        response = provider._safe_request("GET", SESSION, resource="read-session", params={})
+    finally:
+        provider.close()
+    assert response.status_code == 200
+
+
+def test_mutation_empty_explicit_params_preserve_resumable_url(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == SESSION
+        assert request.url.params["upload_id"] == "abc123"
+        return httpx.Response(201, json={"id": "video123"}, request=request)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        response, failure = provider._mutation_request("PUT", SESSION, resource="write-session", params={}, content=b"")
+    finally:
+        provider.close()
+    assert failure is None
+    assert response is not None and response.status_code == 201

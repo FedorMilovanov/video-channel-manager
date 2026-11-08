@@ -356,6 +356,7 @@
     "src/video_channel_manager/youtube_album_description_cli.py": 65.71,
     "src/video_channel_manager/youtube_package_v31.py": 80.99,
     "src/video_channel_manager/youtube_provider_semantics.py": 95.45,
+    "src/video_channel_manager/youtube_public_render_proof.py": 60.0,
     "src/video_channel_manager/youtube_release_execution.py": 80.54,
     "src/video_channel_manager/youtube_release_operations.py": 87.0,
     "src/video_channel_manager/youtube_release_plan.py": 82.35,
