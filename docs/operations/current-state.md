@@ -50,6 +50,11 @@ native-Clip Creator editor boundary. The ordinary VK Video Wave keeps its
 existing >180s default; the reviewed short-horizontal exception is an
 **explicit preparation-only opt-in** with probed landscape media, not
 authorization to publish or to replay already uploaded originals.
+The existing ordinary-video API Wave verifies **public** video visibility;
+it is **not a deferred VK Creator scheduler** and does not itself prove absence
+of a private/scheduled/native Clip. The override must not be applied to the
+already accepted `456239258` or `456239259`; both are existing provider
+objects whose later publication must be checked read-only.
 
 ## Repository source of truth
 Only `main` is a supported repository code/runtime execution baseline.
