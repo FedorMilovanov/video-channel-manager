@@ -79,6 +79,14 @@ This is a preservation gate, not a rights grant. Original links must still be ch
 
 The only automatically exempt links are proven obsolete owner channel shelf/navigation URLs, retired personal contact URLs and retired donation endpoints. Every other URL needs preservation or a documented editorial decision. All third-party source/media rights remain separately reviewable.
 
+## Offline next-wave checkpoint (zero YouTube API calls)
+
+Use the supported `scripts/lord_god_wave_checkpoint.py` for **candidate discovery only** before drafting a new wave. It consumes an exact full owner-scan JSON, the SHA-verified original archive SQLite DB (read-only), and an explicit per-owner HOLD JSON ledger (`{"owner":"<exact channel ID>","ids":["<video ID>",...]}`). Provide `--owner-scan`, `--archive-db`, `--expected-archive-sha256`, `--holds-json`, `--output` and `--limit 25` (1-50). The output file must not exist; the tool will not overwrite evidence.
+
+It refuses a scan with duplicates, intersecting clean/dirty sets, missing IDs, regressions, wrong owner or inconsistent counts. It excludes known HOLDs and videos lacking substantial archived transcript evidence. It prioritizes the remaining candidates using **archived** views, carries exact source SHA and three real transcript excerpts, and writes a provenance-bound machine-readable editorial checkpoint. It imports no YouTube client and performs no network or browser operations. A historical owner scan is not a fresh live snapshot.
+
+**Safety boundary:** All emitted candidates are `EDITORIAL_REVIEW_ONLY`: no publication approval, no signed plan, no live owner proof, no rights grant. A HOLD ledger may be incomplete; independently reconcile the full editorial HOLD registry before any execution. Review original chapters, provenance, translator credits, external links and actual playlist membership. Only then perform a fresh official owner GET and proceed through the separately authorized guarded single-video workflow below. Never use headless YouTube Studio to evade provider quota or to replay uncertain writes.
+
 ## Bounded, evidence-led big waves
 
 1. GET-only owner inventory. Reconcile the exact original cohort; exclude already-clean, ambiguous-write, rollback and special-source/title/playlist-held IDs. Do not depend on an old list without checking fresh live state.
