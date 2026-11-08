@@ -505,3 +505,91 @@ def test_wave_reconcile_routes_lord_god_wall_plan_to_lord_god_adapter(
     )
 
     assert constructed == [{"account_alias": "legendary-poet", "repository_root": tmp_path}]
+
+
+@pytest.mark.parametrize("has_owner_proof", [False, True])
+def test_video_prepare_cli_explicit_owner_absence_attestation_routing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    has_owner_proof: bool,
+) -> None:
+    captured: list[dict[str, object]] = []
+
+    def fake_prepare_vk_video_wave(**kwargs: object) -> dict[str, object]:
+        captured.append(kwargs)
+        return {
+            "owner_creator_absence_evidence_attached": has_owner_proof,
+            "project_key": "legendary-poet",
+            "canary_id": "yt-1",
+            "provider_writes": 0,
+            "canary": {"request_path": "wave/canary/request.json", "request_sha256": "sha256:test"},
+            "batch": None,
+        }
+
+    monkeypatch.setattr(wave_cli, "prepare_vk_video_wave", fake_prepare_vk_video_wave)
+    args = [
+        "wave",
+        "video",
+        "prepare",
+        "--project",
+        "legendary-poet",
+        "--source-audit",
+        str(tmp_path / "youtube.json"),
+        "--candidate-id",
+        "yt-1",
+        "--canary-id",
+        "yt-1",
+        "--output-root",
+        str(tmp_path / "wave"),
+        "--repository-root",
+        str(tmp_path),
+    ]
+    if has_owner_proof:
+        args.extend(["--owner-absence-evidence", str(tmp_path / "owner-proof.json")])
+        args.append("--reviewed-short-horizontal-video")
+
+    result = runner.invoke(app, args)
+
+    assert result.exit_code == 0, result.output
+    assert len(captured) == 1
+    assert captured[0]["project_key"] == "legendary-poet"
+    assert captured[0]["candidate_ids"] == ["yt-1"]
+    assert captured[0]["owner_absence_evidence_path"] == (
+        tmp_path / "owner-proof.json" if has_owner_proof else None
+    )
+    assert captured[0]["reviewed_short_horizontal_video"] is has_owner_proof
+    assert "provider_writes=0" in result.output
+    assert ("BLOCKED FOR NEW PROVIDER UPLOAD" in result.output) is not has_owner_proof
+
+
+def test_video_prepare_cli_invalid_owner_evidence_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def forbidden_prepare(**_kwargs: object) -> None:
+        raise wave_cli.VkVideoPreparationError("incomplete native Creator inventory")
+
+    monkeypatch.setattr(wave_cli, "prepare_vk_video_wave", forbidden_prepare)
+    result = runner.invoke(
+        app,
+        [
+            "wave",
+            "video",
+            "prepare",
+            "--project",
+            "legendary-poet",
+            "--source-audit",
+            str(tmp_path / "youtube.json"),
+            "--candidate-id",
+            "yt-1",
+            "--canary-id",
+            "yt-1",
+            "--output-root",
+            str(tmp_path / "wave"),
+            "--owner-absence-evidence",
+            str(tmp_path / "incomplete-proof.json"),
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "incomplete native Creator inventory" in result.output
