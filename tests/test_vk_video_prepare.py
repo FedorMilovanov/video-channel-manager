@@ -303,7 +303,7 @@ def test_reviewed_short_horizontal_video_rejects_unproved_media(
         ),
     )
 
-    with pytest.raises(VkVideoPreparationError, match="verified horizontal media"):
+    with pytest.raises(VkVideoPreparationError, match="probed horizontal media"):
         prepare_vk_video_wave(
             project_key="legendary-poet",
             source_audit_path=source_file,
