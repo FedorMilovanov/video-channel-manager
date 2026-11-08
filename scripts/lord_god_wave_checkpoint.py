@@ -58,6 +58,35 @@ def archive_evidence(description: str) -> dict[str, list[str]]:
     }
 
 
+HISTORICAL_HOLDS_SCHEMA = "lordgod-next100-owner-readonly-provenance-after-reset-v3"
+
+
+def historical_review_holds(report: dict[str, Any]) -> set[str]:
+    """Preserve every previously blocked exact ID from the owner readback."""
+    if report.get("schema") != HISTORICAL_HOLDS_SCHEMA or report.get("exact_owner") != OWNER:
+        raise ValueError("wrong historical HOLD report schema or owner")
+    items = report.get("items")
+    if not isinstance(items, list) or not items or report.get("count_checked") != len(items):
+        raise ValueError("historical HOLD inventory count mismatch")
+    if report.get("provider_writes") != 0 or report.get("no_signed_mutation_plans") is not True:
+        raise ValueError("historical HOLD source is not read-only evidence")
+    ids: set[str] = set()
+    held: set[str] = set()
+    for row in items:
+        if not isinstance(row, dict):
+            raise ValueError("historical HOLD item is not a record")
+        video_id = row.get("id")
+        ready = row.get("candidate_valid_for_manual_editorial_review")
+        if not isinstance(video_id, str) or len(video_id) != 11 or video_id in ids or type(ready) is not bool:
+            raise ValueError("invalid or duplicate historical HOLD entry")
+        ids.add(video_id)
+        if not ready:
+            held.add(video_id)
+    if len(held) != report.get("hold_count"):
+        raise ValueError("historical HOLD count mismatch")
+    return held
+
+
 def validate_scan(scan: dict[str, Any]) -> tuple[set[str], set[str]]:
     if scan.get("schema") != SCAN_SCHEMA or scan.get("owner") != OWNER:
         raise ValueError("wrong scan schema or owner channel")
@@ -187,6 +216,8 @@ def main() -> int:
     parser.add_argument("--archive-db", type=Path, required=True)
     parser.add_argument("--expected-archive-sha256", required=True)
     parser.add_argument("--holds-json", type=Path, required=True)
+    parser.add_argument("--historical-holds-report", type=Path, required=True)
+    parser.add_argument("--expected-historical-holds-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=25)
     args = parser.parse_args()
@@ -197,6 +228,12 @@ def main() -> int:
     holds = set(hold_data["ids"])
     if len(holds) != len(hold_data["ids"]) or not all(isinstance(x, str) and len(x) == 11 for x in holds):
         raise ValueError("duplicate or invalid HOLD IDs")
+    historic_digest = sha256_file(args.historical_holds_report)
+    if historic_digest != args.expected_historical_holds_sha256.removeprefix("sha256:"):
+        raise ValueError("historical HOLD report SHA mismatch: STOP")
+    historic_report = json.loads(args.historical_holds_report.read_text(encoding="utf-8"))
+    historic_holds = historical_review_holds(historic_report)
+    holds.update(historic_holds)
     archive_digest = sha256_file(args.archive_db)
     if archive_digest != args.expected_archive_sha256.removeprefix("sha256:"):
         raise ValueError("archive database SHA mismatch: STOP")
@@ -210,6 +247,10 @@ def main() -> int:
             scan_digest=sha256_file(args.owner_scan),
             archive_digest=archive_digest,
         )
+    result["holds_ledger_sha256"] = sha256_file(args.holds_json)
+    result["historical_holds_report_sha256"] = historic_digest
+    result["historical_holds_count"] = len(historic_holds)
+    result["reconciled_known_holds_count"] = len(holds)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8") as output:
         json.dump(result, output, ensure_ascii=False, indent=2)

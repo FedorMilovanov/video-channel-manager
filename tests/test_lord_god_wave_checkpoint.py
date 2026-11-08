@@ -123,3 +123,56 @@ def test_real_owner_zero_anomalies_are_empty_arrays() -> None:
     snapshot["regressions"] = []
     snapshot["unexpected_clean"] = []
     assert checkpoint(snapshot, {C})["candidate_count"] == 1
+
+
+def historical_report() -> dict:
+    return {
+        "schema": module.HISTORICAL_HOLDS_SCHEMA,
+        "exact_owner": module.OWNER,
+        "count_checked": 2,
+        "hold_count": 1,
+        "provider_writes": 0,
+        "no_signed_mutation_plans": True,
+        "items": [
+            {"id": B, "candidate_valid_for_manual_editorial_review": False},
+            {"id": C, "candidate_valid_for_manual_editorial_review": True},
+        ],
+    }
+
+
+def test_historical_hold_report_excludes_previously_blocked_id() -> None:
+    assert module.historical_review_holds(historical_report()) == {B}
+    with archive() as db:
+        result = module.build_checkpoint(
+            scan(),
+            db,
+            {C} | module.historical_review_holds(historical_report()),
+            limit=25,
+            scan_digest="scan",
+            archive_digest="archive",
+        )
+    assert result["candidate_count"] == 0
+    assert result["hold_ids_excluded"] == [B, C]
+
+
+def test_historical_hold_report_fails_closed_on_wrong_owner_count_or_status() -> None:
+    report = historical_report()
+    report["exact_owner"] = "wrong"
+    with pytest.raises(ValueError, match="owner"):
+        module.historical_review_holds(report)
+    report = historical_report()
+    report["hold_count"] = 0
+    with pytest.raises(ValueError, match="count mismatch"):
+        module.historical_review_holds(report)
+    report = historical_report()
+    report["items"][1]["id"] = B
+    with pytest.raises(ValueError, match="duplicate"):
+        module.historical_review_holds(report)
+    report = historical_report()
+    report["provider_writes"] = 1
+    with pytest.raises(ValueError, match="read-only"):
+        module.historical_review_holds(report)
+    report = historical_report()
+    report["items"][0]["candidate_valid_for_manual_editorial_review"] = None
+    with pytest.raises(ValueError, match="invalid"):
+        module.historical_review_holds(report)
