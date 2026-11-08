@@ -26,6 +26,11 @@ from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YO
 from video_channel_manager.platforms.youtube.store import TokenStore
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
+# Observed official YouTube videos.update PUT ReadTimeouts clustered near the
+# previous 45-second response limit. Keep GET and other phases at their
+# existing default and only allow more time for one ambiguous mutation
+# response; NEVER resend a PUT when this longer deadline is exceeded.
+_MUTATION_RESPONSE_TIMEOUT = httpx.Timeout(45.0, read=120.0)
 QueryParam: TypeAlias = str | int
 QueryParams: TypeAlias = dict[str, QueryParam]
 
@@ -151,6 +156,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                     params=httpx.QueryParams(params),
                     headers={"Authorization": f"Bearer {access_token}"},
                     json=json_body,
+                    timeout=_MUTATION_RESPONSE_TIMEOUT if require_write else self._http_client.timeout,
                 ),
                 provider="YouTube",
                 operation=operation,

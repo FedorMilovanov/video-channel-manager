@@ -344,6 +344,71 @@ def test_description_safe_read_retries_transient_http(tmp_path: Path) -> None:
     assert sleeps == [0.3]
 
 
+def test_youtube_put_has_longer_read_timeout_but_reads_keep_client_default(tmp_path: Path) -> None:
+    raw = _raw_video("Before")
+    observed: list[tuple[str, float | None, float | None]] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        timeouts = request.extensions["timeout"]
+        observed.append((request.method, timeouts["read"], timeouts["connect"]))
+        if request.method == "PUT":
+            payload = __import__("json").loads(request.content)
+            raw = {**raw, "snippet": {**raw["snippet"], "description": payload["snippet"]["description"]}}
+            return httpx.Response(200, json=raw)
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    read_timeout = writer._http_client.timeout.read
+    snapshot = writer.read_description("video-1")
+    result = writer.replace_description(
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_revision=snapshot.revision,
+        expected_description="Before",
+        new_description="After",
+    )
+    assert result.description == "After"
+    assert observed == [
+        ("GET", read_timeout, writer._http_client.timeout.connect),
+        ("GET", read_timeout, writer._http_client.timeout.connect),
+        ("PUT", 120.0, 45.0),
+        ("GET", read_timeout, writer._http_client.timeout.connect),
+    ]
+
+
+def test_youtube_longer_timeout_never_retries_ambiguous_put(tmp_path: Path) -> None:
+    raw = _raw_video("Before")
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "PUT":
+            assert request.extensions["timeout"]["read"] == 120.0
+            raise httpx.ReadTimeout("simulated slow videos.update response", request=request)
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+        retry_policy=RetryPolicy(max_attempts=8),
+    )
+    with pytest.raises(YouTubeWriteError, match="ReadTimeout"):
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_revision="old",
+            expected_description="Before",
+            new_description="After",
+        )
+    assert methods == ["GET", "PUT"]
+
+
 def test_description_mutation_server_error_is_not_retried(tmp_path: Path) -> None:
     raw = _raw_video("Before")
     put_calls = 0
