@@ -132,6 +132,30 @@ def test_missing_social_and_invalid_pin_are_rejected() -> None:
     assert "pin_header" in codes
 
 
+def test_new_package_rejects_punctuation_that_breaks_public_bold_and_italic() -> None:
+    original = make_package()
+    for source, broken in (
+        ("*Чтение текста.*", "*Чтение текста*."),
+        ("*Стихотворный ритм.*", "*Стихотворный ритм*,"),
+        ("_Образ автора._", "_Образ автора_:"),
+        ("_Форма стиха._", "_Форма стиха_!"),
+    ):
+        assert source in original
+        issues = validate_five_block_package(original.replace(source, broken))
+        assert any(issue.block == "description" and issue.code == "emphasis_public_render" for issue in issues)
+
+
+def test_pin_and_safe_external_dashes_do_not_confuse_public_emphasis_gate() -> None:
+    original = make_package()
+    assert not validate_five_block_package(original)
+    assert "*«Поэтический цикл»* — Сергей Есенин" in original
+    assert not any(issue.code == "emphasis_public_render" for issue in validate_five_block_package(original))
+    broken = original.replace("_Строка оригинального стихотворения._", "_Строка оригинального стихотворения_.")
+    assert any(
+        issue.block == "pin" and issue.code == "emphasis_public_render" for issue in validate_five_block_package(broken)
+    )
+
+
 def test_no_facts_or_executors_in_copy_module() -> None:
     import inspect
     import video_channel_manager.youtube_package_v31 as module

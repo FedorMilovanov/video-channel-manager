@@ -24,6 +24,9 @@ _LINK_RE = re.compile(r"https?://[^\s<>]+")
 _FENCE_RE = re.compile(r"(?ms)^```[ \t]*\r?\n(.*?)\r?\n```[ \t]*$")
 _MARKER_RE = re.compile(r"(?:PASTE|INSERT|REPLACE|YOUR)(?:[-_][A-Z0-9]+){1,8}", re.I)
 _EMPHASIS_RE = re.compile(r"(?<!\w)([*_])([^\n*_]+)\1(?!\w)")
+# YouTube watch pages may display literal markers if punctuation touches the closing marker.
+# This applies to new copy packages only; legacy published text is never rewritten.
+_UNRENDERABLE_EMPHASIS_RE = re.compile(r"(?<!\w)([*_])([^\n*_]+)\1([,.:;!?])")
 _HASHTAG_RE = re.compile(r"(?<!\w)#[A-Za-zА-Яа-яЁё0-9_]+")
 
 
@@ -65,6 +68,25 @@ def _check_two_playlists(lines: Sequence[str], block: str, errors: list[CopyIssu
         errors.append(CopyIssue(block, "singers_playlist", "Вторая строка — точный плейлист «Поющие Поэты»."))
     if "Поющие Поэты" in first or "Эксперименты AI" in first:
         errors.append(CopyIssue(block, "not_author_playlist", "Первая ссылка должна вести на авторский плейлист."))
+
+
+def _check_public_emphasis_punctuation(body: str, block: str, errors: list[CopyIssue]) -> None:
+    """Fail the new-copy gate for punctuation that prevents YouTube watch-page styling.
+
+    Do not auto-move punctuation: a syntactically external colon can be valid prose,
+    but a copy-only package needs a manual typography resolution before release.
+    URLs are masked so underscores in opaque playlist IDs are never parsed as italics.
+    """
+    without_urls = _LINK_RE.sub("", body)
+    for match in _UNRENDERABLE_EMPHASIS_RE.finditer(without_urls):
+        sample = match.group(0)
+        errors.append(
+            CopyIssue(
+                block,
+                "emphasis_public_render",
+                f"YouTube может показать буквальные маркеры в {sample!r}: проверьте границу фразы и знак.",
+            )
+        )
 
 
 def validate_five_block_package(source: str) -> list[CopyIssue]:
@@ -117,6 +139,8 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     italic = sum(marker == "_" for marker, _ in emph)
     if not 3 <= bold <= 4 or not 2 <= italic <= 3 or "**" in description or "__" in description:
         errors.append(CopyIssue("description", "emphasis", "Нужно 3–4 *жирных* и 2–3 _курсива_."))
+    _check_public_emphasis_punctuation(description, "description", errors)
+    _check_public_emphasis_punctuation(pin, "pin", errors)
 
     if not 500 <= len(shorts) <= 600:
         errors.append(CopyIssue("shorts", "short_length", "SHORTS: 500–600 символов."))
