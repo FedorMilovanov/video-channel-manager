@@ -554,9 +554,7 @@ def test_video_prepare_cli_explicit_owner_absence_attestation_routing(
     assert len(captured) == 1
     assert captured[0]["project_key"] == "legendary-poet"
     assert captured[0]["candidate_ids"] == ["yt-1"]
-    assert captured[0]["owner_absence_evidence_path"] == (
-        tmp_path / "owner-proof.json" if has_owner_proof else None
-    )
+    assert captured[0]["owner_absence_evidence_path"] == (tmp_path / "owner-proof.json" if has_owner_proof else None)
     assert captured[0]["reviewed_short_horizontal_video"] is has_owner_proof
     assert "provider_writes=0" in result.output
     assert ("BLOCKED FOR NEW PROVIDER UPLOAD" in result.output) is not has_owner_proof
