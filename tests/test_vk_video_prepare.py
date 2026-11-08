@@ -120,6 +120,7 @@ def test_video_prepare_builds_digest_locked_canary_operator_bundle_without_provi
     assert summary["candidate_ids"] == ["yt-1"]
     assert summary["canary_id"] == "yt-1"
     assert summary["batch"] is None
+    assert summary["owner_creator_absence_evidence_attached"] is False
 
     request_path = root / summary["canary"]["request_path"]
     manifest_path = root / summary["canary"]["manifest_path"]
@@ -369,3 +370,117 @@ def test_reviewed_short_horizontal_video_accepts_179_seconds(
     assert payload["wallpost"] is False
     assert payload["auto_publish"] is False
     assert payload["repeat"] is False
+
+
+def _owner_absence_proof_for_prepare() -> dict[str, object]:
+    return {
+        "schema_name": "video-manager.vk-owner-creator-absence-v1",
+        "project_key": "legendary-poet",
+        "community_id": 235216998,
+        "owner_id": -235216998,
+        "source_channel_id": YT_CHANNEL,
+        "source_video_id": "yt-1",
+        "capture_method": "owner_authenticated_creator_read_only",
+        "read_only": True,
+        "provider_effect": "safe_read_only",
+        "verdict": "confirmed_absent",
+        "observed_at": datetime.now(UTC).isoformat(),
+        "surfaces": {
+            key: {
+                "pagination_complete": True,
+                "covered_states": [
+                    "published",
+                    "postponed",
+                    "draft",
+                    "private",
+                    "processing",
+                    "accepted",
+                ],
+                "exact_source_matches": [],
+                "unresolved_candidates": [],
+            }
+            for key in ("ordinary_video", "native_clip")
+        },
+    }
+
+
+def test_video_prepare_copies_bound_owner_creator_proof_without_provider_writes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+    source_path = root / "youtube.json"
+    _write_audit(
+        source_path,
+        _audit(
+            PlatformName.YOUTUBE,
+            YT_CHANNEL,
+            [_video(PlatformName.YOUTUBE, YT_CHANNEL, "yt-1", "Новый ролик", 305)],
+        ),
+    )
+    media = root / "yt-1.mp4"
+    media.write_bytes(b"video")
+    manifest = root / "media-manifest.json"
+    manifest.write_text('{"manifest":true}\n', encoding="utf-8")
+    _patch_reused_media(monkeypatch, media=media, manifest=manifest)
+    owner_proof = tmp_path / "owner-proof.json"
+    owner_proof.write_text(json.dumps(_owner_absence_proof_for_prepare()), encoding="utf-8")
+    output = root / "wave"
+
+    summary = prepare_vk_video_wave(
+        project_key="legendary-poet",
+        source_audit_path=source_path,
+        target_audit_path=None,
+        candidate_ids=["yt-1"],
+        canary_id="yt-1",
+        repository_root=root,
+        output_root=output,
+        reuse_media_manifests=[manifest],
+        owner_absence_evidence_path=owner_proof,
+    )
+
+    assert summary["provider_writes"] == 0
+    assert summary["owner_creator_absence_evidence_attached"] is True
+    copy = output / "evidence" / "owner-absence.json"
+    assert json.loads(copy.read_text(encoding="utf-8")) == json.loads(owner_proof.read_text(encoding="utf-8"))
+    from video_channel_manager.wave_engine.canonical import file_sha256
+
+    plan = json.loads((output / "canary" / "plan.json").read_text(encoding="utf-8"))
+    payload = plan["operations"][0]["payload"]
+    assert payload["owner_absence_evidence_path"] == "wave/evidence/owner-absence.json"
+    assert payload["owner_absence_evidence_sha256"] == file_sha256(copy)
+
+
+def test_video_prepare_rejects_incomplete_owner_creator_proof_before_creating_wave(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+    source_path = root / "youtube.json"
+    _write_audit(
+        source_path,
+        _audit(
+            PlatformName.YOUTUBE,
+            YT_CHANNEL,
+            [_video(PlatformName.YOUTUBE, YT_CHANNEL, "yt-1", "Новый ролик", 305)],
+        ),
+    )
+    owner_proof = tmp_path / "bad-proof.json"
+    evidence = _owner_absence_proof_for_prepare()
+    evidence["surfaces"]["native_clip"]["pagination_complete"] = False
+    owner_proof.write_text(json.dumps(evidence), encoding="utf-8")
+
+    with pytest.raises(VkVideoPreparationError, match="incomplete pagination"):
+        prepare_vk_video_wave(
+            project_key="legendary-poet",
+            source_audit_path=source_path,
+            target_audit_path=None,
+            candidate_ids=["yt-1"],
+            canary_id="yt-1",
+            repository_root=root,
+            output_root=root / "wave",
+            owner_absence_evidence_path=owner_proof,
+        )
+
+    assert not (root / "wave").exists()

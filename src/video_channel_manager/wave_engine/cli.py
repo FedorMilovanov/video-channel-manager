@@ -181,6 +181,13 @@ def video_prepare(
             help="Approved <=180s horizontal ordinary Video ONLY; not a native Clip or postponed scheduler",
         ),
     ] = False,
+    owner_absence_evidence: Annotated[
+        Path | None,
+        typer.Option(
+            "--owner-absence-evidence",
+            help="Fresh owner Creator all-state absence proof (required before any NEW VK upload)",
+        ),
+    ] = None,
 ) -> None:
     """Build one immutable native-video Wave + operator request without VK writes."""
 
@@ -198,10 +205,17 @@ def video_prepare(
             reuse_media_manifests=tuple(reuse_media_manifest or ()),
             processing_timeout_seconds=processing_timeout_seconds,
             reviewed_short_horizontal_video=reviewed_short_horizontal_video,
+            owner_absence_evidence_path=owner_absence_evidence,
         )
     except (OSError, ValueError, VkVideoPreparationError) as exc:
         console.print(f"[red]VK video wave preparation failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+
+    if not summary["owner_creator_absence_evidence_attached"]:
+        console.print(
+            "[yellow]BLOCKED FOR NEW PROVIDER UPLOAD:[/yellow] "
+            "no fresh complete owner Creator absence proof; prepare is provider-inert"
+        )
 
     console.print(
         f"[green]Prepared VK native-video wave:[/green] "
