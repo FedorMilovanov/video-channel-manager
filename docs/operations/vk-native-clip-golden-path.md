@@ -8,6 +8,58 @@ The Legendary Poet lineage accumulated practical batch/resume/native-Clip experi
 
 A future project must begin with a delta against this contract. Anything classified `SAME` is reused rather than reimplemented.
 
+## Creator UI surfaces: Clip is not an ordinary Video (Issue #774, 2026-11-08)
+
+Owner-verified incident: the same native Clip `-235216998_456239259` appeared in
+ordinary video analytics and in the Creator Clips surface. An ordinary Video
+editor could retain video metadata, but its postponed action called
+`video.publish` and returned `Invalid request`; reopening the exact editor
+proved that its date was still blank. **Do not retry that action, or infer
+native-Clip schedule from ordinary Video editor fields.** The owner scheduled
+the *existing* native Clip from Creator Clips; a separate read-only opening
+confirmed `Отложен` with the owner-selected slot on 2026-11-10 at 16:25 MSK.
+
+For any explicit, authorized Creator UI operation, use this contract:
+
+1. Resolve the exact canonical `project_key`, community, `owner_id`,
+   YouTube source ID, VK video ID, and **provider media type**. A vertical
+   aspect ratio, duration, familiar title, or successful upload alone does
+   not prove `type=short_video`; verify the native Clips object/surface.
+2. Before uploading a source, reconcile **published, scheduled, draft,
+   private, processing, and exact previously reserved IDs**. A missing
+   list row is not proof of a missing remote object. Never dispatch a
+   second upload for an accepted, processing, unknown, or scheduled item.
+3. Native Clip scheduling belongs to the **native Clips editor**, not the
+   ordinary Video editor or an ad-hoc `video.publish` call. Freeze the
+   owner-selected local date/time and an independently justified timezone;
+   do not substitute a proposed slot for the user's actual saved slot.
+   Disable separate wall-post creation unless it has its own approved
+   intent and exact attachment duplicate check.
+4. The native Clip **caption/description field** is authoritative for
+   that surface. Text seen in ordinary Video analytics is not a substitute.
+   Read the exact native caption and schedule on a **fresh editor opening**
+   after saving; the original source URL and project site URL must remain.
+5. Preserve text semantically and structurally. If the provider removes
+   hashtags, blank lines, or other text, record the **exact before/after
+   diff** and classify unapproved loss as `conflict`. The presence of the
+   site and original URL alone does **not** prove full caption fidelity.
+   Do not call a normalized or truncated caption `exact_verified`
+   unless a separately reviewed provider-normalization policy accepts
+   the precise change.
+6. A click, modal closing, HTTP 200, or success-looking toast is not
+   `verified`: only exact-ID, exact-type, exact scheduled-slot and
+   native-caption readback establishes the claimed state. Failed or
+   ambiguous writes remain `may_exist` until read-only reconciliation.
+   Do not retry `video.publish` or reselect the MP4 to resolve ambiguity.
+7. Browser writes must use the existing **community-scoped single-writer
+   lock and durable provider-effect journal**. A standalone Playwright
+   script with per-file local logs does not automatically satisfy that
+   contract. If these safeguards cannot be proven, use owner interaction
+   or read-only diagnosis rather than another browser mutation.
+
+This is an operational safeguard, not a new second VK Clip uploader, an API
+authorization, or a direction to retroactively edit existing content.
+
 ## Canonical kernel
 
 The reusable native-Clip kernel owns these semantics exactly once:

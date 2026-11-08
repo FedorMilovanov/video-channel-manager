@@ -132,8 +132,17 @@ class VkNativeVideoUploadAdapter:
             if not isinstance(value, str) or not value.strip():
                 raise OperationRejectedError(f"VK video payload field {field} is required")
         duration = payload.get("source_duration_seconds")
-        if type(duration) is not int or duration <= 180:
-            raise OperationRejectedError("VK video upload requires long-form duration > 180 seconds")
+        if type(duration) is not int or duration <= 0:
+            raise OperationRejectedError("VK video upload requires positive integer duration")
+        reviewed_short = payload.get("reviewed_short_horizontal_video", False)
+        if type(reviewed_short) is not bool:
+            raise OperationRejectedError("Reviewed short-horizontal override must be a boolean")
+        if duration <= 180 and not reviewed_short:
+            raise OperationRejectedError(
+                "VK video upload requires >180s or explicit reviewed short-horizontal approval"
+            )
+        if duration > 180 and reviewed_short:
+            raise OperationRejectedError("Reviewed short-horizontal approval is only valid for <=180s sources")
         if payload.get("privacy_status") != "public":
             raise OperationRejectedError("VK video upload source must be public")
         for field in ("wallpost", "auto_publish", "repeat"):
@@ -245,6 +254,18 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("Media artifact source ID does not match Wave operation")
         if artifact.manifest_sha256 != str(payload["media_artifact_manifest_sha256"]):
             raise OperationRejectedError("Media artifact internal digest does not match Wave operation")
+        if payload.get("reviewed_short_horizontal_video") is True:
+            probe = artifact.probe
+            if (
+                probe.width is None
+                or probe.height is None
+                or probe.width <= probe.height
+                or probe.video_stream_count != 1
+                or probe.audio_stream_count != 1
+            ):
+                raise OperationRejectedError(
+                    "Reviewed short ordinary Video must have verified horizontal video and audio streams"
+                )
 
         rendered = render_vk_video_description(
             str(payload["published_description"]),

@@ -174,6 +174,13 @@ def video_prepare(
         int,
         typer.Option("--processing-timeout-seconds", min=1),
     ] = 3600,
+    reviewed_short_horizontal_video: Annotated[
+        bool,
+        typer.Option(
+            "--reviewed-short-horizontal-video",
+            help="Approved <=180s horizontal ordinary Video ONLY; not a native Clip or postponed scheduler",
+        ),
+    ] = False,
 ) -> None:
     """Build one immutable native-video Wave + operator request without VK writes."""
 
@@ -190,6 +197,7 @@ def video_prepare(
             yt_dlp=yt_dlp,
             reuse_media_manifests=tuple(reuse_media_manifest or ()),
             processing_timeout_seconds=processing_timeout_seconds,
+            reviewed_short_horizontal_video=reviewed_short_horizontal_video,
         )
     except (OSError, ValueError, VkVideoPreparationError) as exc:
         console.print(f"[red]VK video wave preparation failed:[/red] {exc}")
