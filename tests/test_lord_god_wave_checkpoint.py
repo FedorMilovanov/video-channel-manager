@@ -94,6 +94,17 @@ def test_fail_closed_on_missing_hold_set_or_unreasonable_limit() -> None:
             module.build_checkpoint(scan(), db, {C}, limit=51, scan_digest="a", archive_digest="b")
 
 
+def test_archived_urls_chapters_and_credits_are_extracted_verbatim() -> None:
+    original = """00:00 Вступление
+Перевод: Иван. Источник: https://example.org/original
+01:23 Главная тема
+"""
+    evidence = module.archive_evidence(original)
+    assert evidence["original_urls_unverified"] == ["https://example.org/original"]
+    assert evidence["original_chapter_lines"] == ["00:00 Вступление", "01:23 Главная тема"]
+    assert evidence["possible_credit_lines_for_review"] == ["Перевод: Иван. Источник: https://example.org/original"]
+
+
 def test_archive_sha_is_raw_not_signed_plan_sha() -> None:
     assert module.raw_sha("A") == "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd"
     assert not module.raw_sha("A").startswith("sha256:")

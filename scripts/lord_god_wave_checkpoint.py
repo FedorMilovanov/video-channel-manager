@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,34 @@ def sha256_file(path: Path) -> str:
 
 def raw_sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+_URL = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
+_CHAPTER = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S")
+_CREDIT_WORDS = (
+    "перевод",
+    "перевёл",
+    "перевела",
+    "первоисточник",
+    "источник",
+    "автор",
+    "озвуч",
+    "copyright",
+    "original recording",
+    "source:",
+    "©",
+)
+
+
+def archive_evidence(description: str) -> dict[str, list[str]]:
+    lines = [line.strip() for line in description.splitlines() if line.strip()]
+    return {
+        "original_urls_unverified": sorted(set(_URL.findall(description))),
+        "original_chapter_lines": [line for line in lines if _CHAPTER.search(line)],
+        "possible_credit_lines_for_review": [
+            line for line in lines if any(word in line.lower() for word in _CREDIT_WORDS)
+        ],
+    }
 
 
 def validate_scan(scan: dict[str, Any]) -> tuple[set[str], set[str]]:
@@ -95,6 +124,7 @@ def build_checkpoint(
                 "video_id": video_id,
                 "archived_title": title,
                 "archived_description_sha256_raw": raw_sha(description),
+                "archived_source_evidence": archive_evidence(description),
                 "archived_transcript_sha256": transcript_sha,
                 "archived_transcript_chunks": int(chunks),
                 "archived_views": max(0, int(views or 0)),
