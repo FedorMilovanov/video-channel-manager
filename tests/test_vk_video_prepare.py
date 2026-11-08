@@ -443,9 +443,7 @@ def test_video_prepare_copies_bound_owner_creator_proof_without_provider_writes(
     assert summary["provider_writes"] == 0
     assert summary["owner_creator_absence_evidence_attached"] is True
     copy = output / "evidence" / "owner-absence.json"
-    assert json.loads(copy.read_text(encoding="utf-8")) == json.loads(
-        owner_proof.read_text(encoding="utf-8")
-    )
+    assert json.loads(copy.read_text(encoding="utf-8")) == json.loads(owner_proof.read_text(encoding="utf-8"))
     from video_channel_manager.wave_engine.canonical import file_sha256
 
     plan = json.loads((output / "canary" / "plan.json").read_text(encoding="utf-8"))
