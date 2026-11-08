@@ -406,7 +406,7 @@ def prepare_vk_video_wave(
         raise VkVideoPreparationError(f"Candidate has no positive duration: {source_id}")
     if video.duration_seconds <= 180 and not reviewed_short_horizontal_video:
         raise VkVideoPreparationError(
-            f"Candidate is not long-form (>180s); a short horizontal ordinary Video requires "
+            "Candidate is not long-form (>180s); a short horizontal ordinary Video requires "
             f"the explicit reviewed override: {source_id}"
         )
     if video.duration_seconds > 180 and reviewed_short_horizontal_video:
