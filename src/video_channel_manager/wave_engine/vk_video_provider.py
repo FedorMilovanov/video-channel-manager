@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from collections.abc import Mapping
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,79 @@ from video_channel_manager.wave_engine.models import MutationClass, WaveOperatio
 VK_VIDEO_OPERATION_KIND = "vk.video.upload"
 VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v2"
 VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
+
+# video.get covers public ordinary Videos, not the Creator's private, draft,
+# scheduled or in-flight media. A public-only absence is not upload authority.
+OWNER_ABSENCE_SCHEMA = "video-manager.vk-owner-creator-absence-v1"
+OWNER_ABSENCE_STATES = frozenset({"published", "postponed", "draft", "private", "processing", "accepted"})
+OWNER_ABSENCE_MAX_AGE_SECONDS = 3600
+
+
+def _validate_owner_absence_evidence(
+    evidence: object,
+    *,
+    project_key: str,
+    community_id: int,
+    source_channel_id: str,
+    source_video_id: str,
+) -> None:
+    """Fail closed unless an exact, fresh owner-reviewed all-surface proof exists.
+
+    The structured assertion records human/owner Creator review; it is not a
+    cryptographic provider signature. The live public video.get guard still
+    runs independently immediately before a new reservation.
+    """
+    if not isinstance(evidence, dict):
+        raise OperationRejectedError("VK owner absence evidence must be a JSON object")
+    expected = {
+        "schema_name": OWNER_ABSENCE_SCHEMA,
+        "project_key": project_key,
+        "community_id": community_id,
+        "owner_id": -community_id,
+        "source_channel_id": source_channel_id,
+        "source_video_id": source_video_id,
+        "capture_method": "owner_authenticated_creator_read_only",
+        "read_only": True,
+        "provider_effect": "safe_read_only",
+        "verdict": "confirmed_absent",
+    }
+    for key, expected_value in expected.items():
+        if type(evidence.get(key)) is not type(expected_value) or evidence.get(key) != expected_value:
+            raise OperationRejectedError(f"VK owner absence evidence has wrong or unproved {key}")
+
+    observed = evidence.get("observed_at")
+    if not isinstance(observed, str):
+        raise OperationRejectedError("VK owner absence evidence needs timezone-aware observed_at")
+    try:
+        observed_at = datetime.fromisoformat(observed.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise OperationRejectedError("VK owner absence evidence has invalid observed_at") from exc
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise OperationRejectedError("VK owner absence evidence needs timezone-aware observed_at")
+    age = (datetime.now(timezone.utc) - observed_at.astimezone(timezone.utc)).total_seconds()
+    if age < -300 or age > OWNER_ABSENCE_MAX_AGE_SECONDS:
+        raise OperationRejectedError("VK owner absence evidence is stale or from the future")
+
+    surfaces = evidence.get("surfaces")
+    if not isinstance(surfaces, dict) or set(surfaces) != {"ordinary_video", "native_clip"}:
+        raise OperationRejectedError("VK owner absence must cover ordinary Videos and native Clips")
+    for surface_name, surface in surfaces.items():
+        if not isinstance(surface, dict) or surface.get("pagination_complete") is not True:
+            raise OperationRejectedError(f"VK owner {surface_name} inventory has incomplete pagination")
+        covered = surface.get("covered_states")
+        if (
+            not isinstance(covered, list)
+            or len(covered) != len(OWNER_ABSENCE_STATES)
+            or not all(isinstance(state, str) for state in covered)
+            or set(covered) != OWNER_ABSENCE_STATES
+        ):
+            raise OperationRejectedError(f"VK owner {surface_name} inventory does not cover every state")
+        for field in ("exact_source_matches", "unresolved_candidates"):
+            items = surface.get(field)
+            if not isinstance(items, list) or items:
+                raise OperationRejectedError(
+                    f"VK owner {surface_name} inventory contains matches, uncertainty or missing evidence: {field}"
+                )
 
 
 def _minimum_duration_seconds(source_duration_seconds: int) -> int:
@@ -190,6 +264,33 @@ class VkNativeVideoUploadAdapter:
                 + ", ".join(sorted(set(matches)))
             )
 
+    def _assert_owner_absence_live(
+        self,
+        *,
+        operation: WaveOperation,
+        payload: Mapping[str, Any],
+    ) -> None:
+        path_value = payload.get("owner_absence_evidence_path")
+        digest = payload.get("owner_absence_evidence_sha256")
+        if not isinstance(path_value, str) or not path_value or not isinstance(digest, str) or not digest:
+            raise OperationRejectedError(
+                "New VK video upload blocked: fresh complete owner Creator absence evidence is required"
+            )
+        try:
+            path = resolve_repository_relative_path(self.repository_root, path_value, require_file=True)
+            if file_sha256(path) != digest:
+                raise OperationRejectedError("VK owner absence evidence SHA-256 differs from approved payload")
+            evidence = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            raise OperationRejectedError("VK owner absence evidence is unreadable or missing") from exc
+        _validate_owner_absence_evidence(
+            evidence,
+            project_key=operation.project.project_key,
+            community_id=operation.project.community_id,
+            source_channel_id=str(payload["source_channel_id"]),
+            source_video_id=str(payload["source_video_id"]),
+        )
+
     @staticmethod
     def _provider_dispatch_started(record: Mapping[str, Any]) -> bool:
         if bool(record.get("reservation_dispatch_started_at")):
@@ -299,6 +400,7 @@ class VkNativeVideoUploadAdapter:
                 operation=f"vk-video-upload:{payload['source_video_id']}",
             ):
                 if self._requires_new_reservation(record):
+                    self._assert_owner_absence_live(operation=operation, payload=payload)
                     self._assert_source_absent_live(payload=payload, community_id=community_id)
                 execute_upload_operation(
                     record,

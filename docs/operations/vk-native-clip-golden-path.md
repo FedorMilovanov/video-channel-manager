@@ -60,6 +60,83 @@ For any explicit, authorized Creator UI operation, use this contract:
 This is an operational safeguard, not a new second VK Clip uploader, an API
 authorization, or a direction to retroactively edit existing content.
 
+## Owner-wide absence gate for NEW ordinary VK Video uploads (Issue #774)
+
+The ordinary VK Video Wave previously checked `video.get` immediately before
+`video.save`. This is **public ordinary Video only**, not proof that the
+same original is absent from Creator's drafts, postponed queue, private or
+processing ordinary media, or native Clips. As demonstrated by Issue #774,
+a private original can coexist with an already-public or deferred *different
+VK ID* for the same YouTube source.
+
+**Effective guard:** every **new reservation** in
+`vk-native-video-wave-v2` requires both:
+
+1. a fresh independently reviewed complete owner Creator absence evidence
+   file, bound by path and SHA-256 to the individual source operation; and
+2. the existing fresh public `video.get` exact URL/title-duration guard
+   under the same community writer lock, immediately before dispatch.
+
+The owner-evidence gate is deliberately fail-closed when no valid file was
+supplied. Preparation without it remains **provider-inert** and reports
+`owner_creator_absence_evidence_attached=false`; it cannot initiate a
+new provider reservation. Existing journaled reservations are reconciled
+by their **exact known VK ID**, without fresh absence evidence and without
+any new media upload. The proof is never a publication authorization.
+
+The `--owner-absence-evidence` option of `wave video prepare` accepts a
+reviewed JSON file containing the following contract; fields below are a
+**schema illustration, not a fabricated or reusable owner snapshot**:
+
+```json
+{
+  "schema_name": "video-manager.vk-owner-creator-absence-v1",
+  "project_key": "legendary-poet",
+  "community_id": 235216998,
+  "owner_id": -235216998,
+  "source_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "source_video_id": "<EXACT_REVIEWED_YT_ID>",
+  "capture_method": "owner_authenticated_creator_read_only",
+  "read_only": true,
+  "provider_effect": "safe_read_only",
+  "verdict": "confirmed_absent",
+  "observed_at": "<CURRENT_TIME_WITH_UTC_OFFSET>",
+  "surfaces": {
+    "ordinary_video": {
+      "pagination_complete": true,
+      "covered_states": ["published", "postponed", "draft", "private", "processing", "accepted"],
+      "exact_source_matches": [],
+      "unresolved_candidates": []
+    },
+    "native_clip": {
+      "pagination_complete": true,
+      "covered_states": ["published", "postponed", "draft", "private", "processing", "accepted"],
+      "exact_source_matches": [],
+      "unresolved_candidates": []
+    }
+  }
+}
+```
+
+**The JSON is a reviewed owner/operator assertion, not cryptographically
+authenticated VK evidence.** Never set `pagination_complete=true` or
+`confirmed_absent` unless an authenticated owner session genuinely
+inspected the entire relevant surface and all relevant statuses and
+resolved every source/near-duplicate collision. Public APIs alone,
+partially loaded Creator lists, duration-only matching, and experimental
+`shortVideo.getOwnerVideos` are NOT sufficient. A known match or unknown
+candidate must remain explicit and block the upload; never delete it from
+the evidence to obtain a passing verdict. The proof expires after
+**60 minutes** and is revalidated at provider dispatch after preparation.
+If reliable complete owner observation is unavailable, the upload
+remains blocked instead of falling back to public-only absence.
+
+This additional gate is **not** retroactive approval to reupload Mavrin
+`456239258`, Mayakovsky `456239259`, or any historical duplicate;
+all belong to existing provider IDs. No new browser client, account,
+secondary VK uploader, scheduled-wall action, or automatic retrial is
+introduced.
+
 ## Canonical kernel
 
 The reusable native-Clip kernel owns these semantics exactly once:
