@@ -413,9 +413,7 @@ def test_video_adapter_reviewed_short_rejects_vertical_artifact_before_provider_
         reviewed_short_horizontal_video=True,
     )
     artifact = _artifact(media)
-    artifact.probe = SimpleNamespace(
-        width=1080, height=1920, video_stream_count=1, audio_stream_count=1
-    )
+    artifact.probe = SimpleNamespace(width=1080, height=1920, video_stream_count=1, audio_stream_count=1)
     monkeypatch.setattr(provider_module, "load_media_artifact_manifest", lambda _path: artifact)
     adapter = _adapter(root, _FakeWriter())
 
@@ -438,9 +436,7 @@ def test_video_adapter_reviewed_179_seconds_retains_video_only_no_wall_contract(
         reviewed_short_horizontal_video=True,
     )
     artifact = _artifact(media)
-    artifact.probe = SimpleNamespace(
-        width=1920, height=1080, video_stream_count=1, audio_stream_count=1
-    )
+    artifact.probe = SimpleNamespace(width=1920, height=1080, video_stream_count=1, audio_stream_count=1)
     monkeypatch.setattr(provider_module, "load_media_artifact_manifest", lambda _path: artifact)
     adapter = _adapter(root, _FakeWriter())
     calls = 0
