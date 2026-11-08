@@ -518,9 +518,7 @@ def test_video_upload_fails_closed_without_owner_creator_absence_evidence(
             operation_kind=original.operation_kind,
             mutation_class=original.mutation_class,
             payload={
-                key: value
-                for key, value in original.payload.items()
-                if not key.startswith("owner_absence_evidence_")
+                key: value for key, value in original.payload.items() if not key.startswith("owner_absence_evidence_")
             },
         ),
     )
@@ -557,9 +555,7 @@ def test_video_upload_owner_absence_evidence_rejects_untrusted_or_stale(
     evidence = _valid_owner_absence()
     evidence.update(change)
     proof.write_text(json.dumps(evidence) + "\n", encoding="utf-8")
-    operation = _operation_with_payload(
-        original, owner_absence_evidence_sha256=file_sha256(proof)
-    )
+    operation = _operation_with_payload(original, owner_absence_evidence_sha256=file_sha256(proof))
     adapter = _adapter(root, _FakeWriter())
 
     def forbidden_dispatch(*_args: Any, **_kwargs: Any) -> None:
@@ -591,9 +587,7 @@ def test_video_upload_owner_absence_never_ignores_hidden_duplicates(
     evidence = _valid_owner_absence()
     evidence["surfaces"][surface].update(mutated)
     proof.write_text(json.dumps(evidence) + "\n", encoding="utf-8")
-    operation = _operation_with_payload(
-        original, owner_absence_evidence_sha256=file_sha256(proof)
-    )
+    operation = _operation_with_payload(original, owner_absence_evidence_sha256=file_sha256(proof))
     adapter = _adapter(root, _FakeWriter())
 
     def forbidden_dispatch(*_args: Any, **_kwargs: Any) -> None:
