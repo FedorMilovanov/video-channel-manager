@@ -247,6 +247,10 @@ def test_sermon_about_offerings_is_not_mistaken_for_personal_payment_request() -
         "# На занятии также обсуждается ответственность супругов перед Богом.",
         "`На занятии также обсуждается ответственность супругов перед Богом.`",
         "[На занятии также обсуждается ответственность супругов](https://example.org/)",
+        "🎙️ На занятии также обсуждается ответственность супругов перед Богом.",
+        "На занятии обсуждаются взгляды супругов: www.example.org/library.",
+        "На занятии обсуждаются взгляды супругов: t.me/lordchrist.",
+        "На занятии обсуждаются взгляды супругов: vk.ru/the_lord_god_is_my_strength.",
     ],
 )
 def test_two_preview_lines_reject_markup_links_and_lists_before_oauth(bad_second: str) -> None:

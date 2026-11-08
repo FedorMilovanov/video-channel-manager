@@ -76,7 +76,13 @@ def presentation_issues(description: str) -> list[str]:
         # a later bold heading on line two can leak literal markup.
         preview_lines = [line.strip() for line in description.splitlines() if line.strip()]
         if len(preview_lines) < 2 or any(
-            len(line) < 15 or re.search(r"https?://|[*_`]", line, re.I) or line[0] in "#>-•‣◦⁃" or line.startswith("<")
+            len(line) < 15
+            or re.search(r"https?://|[*_`]", line, re.I)
+            or any(needle in line.lower() for needle in ("www.", "t.me/", "vk.com/", "vk.ru/"))
+            or line[0] in "#>-•‣◦⁃"
+            or 0x1F000 <= ord(line[0]) <= 0x1FAFF
+            or 0x2600 <= ord(line[0]) <= 0x27BF
+            or line.startswith("<")
             for line in preview_lines[:2]
         ):
             issues.append("share_preview_first_two_lines_not_plain")
