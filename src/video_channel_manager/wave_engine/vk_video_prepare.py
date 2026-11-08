@@ -347,6 +347,7 @@ def prepare_vk_video_wave(
     yt_dlp: str = "yt-dlp",
     reuse_media_manifests: Sequence[Path] = (),
     processing_timeout_seconds: int = 3600,
+    reviewed_short_horizontal_video: bool = False,
 ) -> dict[str, Any]:
     root = repository_root.resolve()
     output = output_root.resolve()
@@ -401,8 +402,15 @@ def prepare_vk_video_wave(
             raise VkVideoPreparationError(f"Candidate participates in an ambiguous/conflicting match: {source_id}")
     if video.privacy_status != "public":
         raise VkVideoPreparationError(f"Candidate is not public: {source_id}")
-    if video.duration_seconds is None or video.duration_seconds <= 180:
-        raise VkVideoPreparationError(f"Candidate is not long-form (>180s): {source_id}")
+    if video.duration_seconds is None or video.duration_seconds <= 0:
+        raise VkVideoPreparationError(f"Candidate has no positive duration: {source_id}")
+    if video.duration_seconds <= 180 and not reviewed_short_horizontal_video:
+        raise VkVideoPreparationError(
+            f"Candidate is not long-form (>180s); a short horizontal ordinary Video requires "
+            f"the explicit reviewed override: {source_id}"
+        )
+    if video.duration_seconds > 180 and reviewed_short_horizontal_video:
+        raise VkVideoPreparationError("Reviewed short-horizontal override is only for sources of 180s or less")
 
     output.mkdir(parents=True, exist_ok=False)
     evidence_directory = output / "evidence"
@@ -475,6 +483,19 @@ def prepare_vk_video_wave(
             )
 
         artifact = load_media_artifact_manifest(media_manifest_path)
+        if reviewed_short_horizontal_video:
+            probe = artifact.probe
+            if (
+                probe.width is None
+                or probe.height is None
+                or probe.width <= probe.height
+                or probe.video_stream_count != 1
+                or probe.audio_stream_count != 1
+            ):
+                raise VkVideoPreparationError(
+                    f"Reviewed short ordinary Video requires one video and audio stream "
+                    f"with independently probed horizontal media: {source_id}"
+                )
         rendered = render_vk_video_description(video.description, source_video_id=source_id)
         if rendered.has_errors:
             raise VkVideoPreparationError(
@@ -499,6 +520,7 @@ def prepare_vk_video_wave(
             "media_manifest_sha256": file_sha256(media_manifest_path),
             "media_artifact_manifest_sha256": artifact.manifest_sha256,
             "processing_timeout_seconds": processing_timeout_seconds,
+            **({"reviewed_short_horizontal_video": True} if reviewed_short_horizontal_video else {}),
             "wallpost": False,
             "auto_publish": False,
             "repeat": False,
