@@ -43,9 +43,7 @@ VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
 # video.get covers public ordinary Videos, not the Creator's private, draft,
 # scheduled or in-flight media. A public-only absence is not upload authority.
 OWNER_ABSENCE_SCHEMA = "video-manager.vk-owner-creator-absence-v1"
-OWNER_ABSENCE_STATES = frozenset(
-    {"published", "postponed", "draft", "private", "processing", "accepted"}
-)
+OWNER_ABSENCE_STATES = frozenset({"published", "postponed", "draft", "private", "processing", "accepted"})
 OWNER_ABSENCE_MAX_AGE_SECONDS = 3600
 
 
