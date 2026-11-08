@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-11-07
+Updated: 2026-11-08
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
 ## Completion and authority model
@@ -10,6 +10,46 @@ Repository implementation, artifact production and provider rollout are separate
 - An ambiguous provider effect remains blocking unless exact read-only reconciliation or a narrowly bound no-replay disposition resolves it.
 - Credentials authenticate; exact project identity, target binding, immutable operation/release identity, durable state and fresh explicit execution authority select the operation.
 - No blind provider retry is authorized by this document.
+
+## Legendary Poet VK source parity — 2026-11-08 provider checkpoint (Issue #774)
+
+This checkpoint **supersedes older statements in this document that the
+Legendary Poet VK transfer had not started**. It is not write authority, and
+the counts describe separately verified publication states, not completion
+of future scheduled releases.
+
+- Frozen source history: 165 YouTube IDs. The owner excluded the 9-second
+  Heroes III Short, so the active parity target is **164** sources. Do not
+  upload either Heroes III asset without new explicit authorization.
+- Before this day's rollout: 147/164 public. The latest exact owner VK
+  checkpoint in [Issue #774](https://github.com/FedorMilovanov/video-channel-manager/issues/774)
+  records **two additional original sources as public** and **15 original
+  sources scheduled, not yet public**. Do not conflate native Clips,
+  ordinary Videos, or their separate scheduled wall posts.
+- New full-length ordinary Video `-235216998_456239258` (179-second
+  Mavrin source `6JUXEhA-P-Y`): exact editor readback scheduled
+  **2026-11-19 19:00 MSK**; video and description verified. A separate
+  59-second Mavrin Clip already public is **not** this original.
+- New native Clip `-235216998_456239259` (Mayakovsky source
+  `qtYcjHi49Zs`): the owner scheduled **2026-11-10 16:25 MSK**.
+  Exact native Clips editor readback confirmed schedule and original/site
+  links. VK removed the five original hashtags while normalizing the
+  native caption; treat this as **editorial fidelity debt**, not exact
+  preservation of the full submitted caption.
+- All existing 8 postponed community-wall posts are a **separate surface**
+  and must not be re-created or counted as original-video publication.
+  No duplicate re-upload or immediate release is justified by these notes.
+- `#774` remains open until every in-scope scheduled original has an
+  independently verified public postcondition. Exact mapping and
+  provider-effect evidence control, not aggregate counts or this summary.
+  Desktop Commander usage quota can block remote inspection; do not
+  bypass it with another agent/profile or assume the remote is offline.
+
+See `docs/operations/vk-native-clip-golden-path.md` for the new
+native-Clip Creator editor boundary. The ordinary VK Video Wave keeps its
+existing >180s default; the reviewed short-horizontal exception is an
+**explicit preparation-only opt-in** with probed landscape media, not
+authorization to publish or to replay already uploaded originals.
 
 ## Repository source of truth
 Only `main` is a supported repository code/runtime execution baseline.
