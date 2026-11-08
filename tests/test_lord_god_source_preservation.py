@@ -22,7 +22,7 @@ _SOURCE = "https://www.desiringgod.org/messages/when-suffering-is-for-gods-glory
 _PLAYLIST = "PLu2Bhoh2caiUqCagDLyFH4v40eBSKJCdL"
 _SHELF = "https://www.youtube.com/channel/UCeSJsC6go2c9pdJCuUI1BYA/playlists?shelf_id=8"
 _VALID_TEXT = (
-    "Историческая проповедь об избрании и Божьей благодати. "
+    "Историческая проповедь об избрании и Божьей благодати.\n"
     "Тема рассматривается через текст Священного Писания.\n\n"
     "*Содержание:* весть Евангелия, Божье провидение и спасение.\n"
     "_Проповедь призывает доверять Христу и Его обетованиям._\n"
@@ -157,3 +157,38 @@ def test_no_global_effect_on_other_channel_description_plan() -> None:
     foreign["target_channel_id"] = "UC-another"
     # Presentation gate intentionally only applies to exact Lord God owner.
     require_lord_god_youtube_presentation(foreign)
+
+
+def test_exact_registered_vk_community_may_upgrade_to_canonical_route() -> None:
+    before = "Проект: https://vk.com/the_lord_god_is_my_strength\n" + _SHELF
+    after = _VALID_TEXT + "\n*Сообщество проекта VK:* https://vk.ru/the_lord_god_is_my_strength"
+    assert source_preservation_issues(before, after) == []
+    require_lord_god_youtube_presentation(_plan(before, after))
+
+
+@pytest.mark.parametrize(
+    "different_source",
+    [
+        "https://vk.com/the_lord_god_is_my_strength?z=video-60805374_456241762",
+        "https://vk.com/the_lord_god_is_my_strength/videos",
+        "https://vk.com/the_lord_god_is_my_strength2",
+        "https://vk.com/other_community",
+        "https://vkvideo.ru/@the_lord_god_is_my_strength",
+        "https://vk.com/the_lord_god_is_my_strength?source=original",
+        "https://vk.ru/the_lord_god_is_my_strength",
+    ],
+)
+def test_vk_community_canonicalization_does_not_drop_unrelated_media_or_query_links(different_source: str) -> None:
+    after = _VALID_TEXT + "\n*Сообщество проекта VK:* https://vk.ru/the_lord_god_is_my_strength"
+    if different_source == "https://vk.ru/the_lord_god_is_my_strength":
+        assert source_preservation_issues(different_source, after) == []
+    else:
+        assert source_preservation_issues(different_source, after) == ["original_source_or_related_link_not_preserved"]
+
+
+def test_vk_community_cannot_be_silently_deleted_or_replaced_by_another_vk_route() -> None:
+    legacy = "https://vk.com/the_lord_god_is_my_strength"
+    assert source_preservation_issues(legacy, _VALID_TEXT) == ["original_source_or_related_link_not_preserved"]
+    assert source_preservation_issues(legacy, _VALID_TEXT + "\nhttps://vk.ru/someone_else") == [
+        "original_source_or_related_link_not_preserved"
+    ]

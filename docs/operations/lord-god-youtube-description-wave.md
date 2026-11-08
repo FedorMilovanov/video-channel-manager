@@ -50,6 +50,9 @@ This is the durable operating guide for the lord-god-strength YouTube project. I
 
 ## Recurring agent bugs and their fixes
 
+**Two plain share-preview lines (8 Nov 2026 audit):** MP3Bot `docs/agent_direct_dubbing/CLIPS_SHORTS_AND_HANDOFF.md` and actual Lord God long-form videos establish that the first TWO nonempty raw Studio lines—not merely the first paragraph—must be unformatted substantive text, with no links or list headings. Some historical videos do not meet this standard; this is a future-publication gate, not permission to edit historical videos en masse. Use `presentation_issues()` on each exact proposed description before OAuth/API. Do not mark a copy ready if line two begins with a bold heading or has inline markers, even when the old generic `youtube_copy` first-paragraph check returned no errors.
+
+
 **Raw versus prefixed SHA-256:** Python hashlib.sha256(text.encode("utf-8")).hexdigest() returns 64 hexadecimal characters. The signed-plan helper video_channel_manager.platforms.youtube.copy_plan.sha256_text(text) returns the literal prefix "sha256:" plus those characters. Validate archival raw digests using hashlib; validate signed plan before_sha256 and after_sha256 using sha256_text. Never disable hashes to overcome a representation mismatch.
 
 **Read-only recovery is not publication:** `youtube reconcile-copy-fixes`
@@ -77,7 +80,7 @@ The Lord God project presentation gate now calls the pure function source_preser
 
 This is a preservation gate, not a rights grant. Original links must still be checked for relevance, availability and licensing. Actual playlist owner and exact video membership must be verified by official API, including several valid playlists in one video. Playlist mismatch or source uncertainty is a HOLD; do not silently delete an unverified link or invent membership.
 
-The only automatically exempt links are proven obsolete owner channel shelf/navigation URLs, retired personal contact URLs and retired donation endpoints. Every other URL needs preservation or a documented editorial decision. All third-party source/media rights remain separately reviewable.
+The only automatically exempt links are proven obsolete owner channel shelf/navigation URLs, retired personal contact URLs and retired donation endpoints. An **exact registered owner-community** link `https://vk.com/the_lord_god_is_my_strength` may also be replaced by its canonical `https://vk.ru/the_lord_god_is_my_strength` route. This does **not** apply to VK videos, posts, unknown communities, similarly named paths or links containing query parameters; they remain preservation HOLDs. Every other URL needs preservation or a documented editorial decision. All third-party source/media rights remain separately reviewable.
 
 ## Offline next-wave checkpoint (zero YouTube API calls)
 
