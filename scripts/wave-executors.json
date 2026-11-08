@@ -1025,6 +1025,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/verify_legendary_poet_public_description.py",
+      "private_imports": [],
+      "project_owner": "legendary-poet",
+      "provider_write_capable": false,
+      "sha256": "3e04dd8f417e0d586c59fa7e0b6382bd84e1ab7f455bda655a05f2a2e8147fa7",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/verify_operational_bundle.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",

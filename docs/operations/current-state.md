@@ -2,10 +2,6 @@
 Updated: 2026-11-07
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
-
-### 2026-11-08 scoped The Legendary Poet YouTube handoff
-
-The approved 15-video caption/comment/playlist correction wave is **provider-verified complete (15 PASS / 0 FAIL)** as of 2026-11-08, with one longform and 14 Shorts. Source-of-truth historical receipt: [`legendary-poet-youtube-2026-11-08-closeout.md`](legendary-poet-youtube-2026-11-08-closeout.md). Older `FINAL_CLOSEOUT_20261108` raw-marker-only status is superseded; no repeat writes. This checkpoint does **not** close ongoing #774 VK reconciliation, #778/#789 Instagram corrections, or #782 owner-comment decisions on unrelated videos. New v3.1 copy requires exact punctuation validation and independent public watch-page rendering proof; don't treat raw Studio marker counts as acceptance.
 ## Completion and authority model
 Repository implementation, artifact production and provider rollout are separate completion states.
 - Implementation completion does not itself authorize execution.
