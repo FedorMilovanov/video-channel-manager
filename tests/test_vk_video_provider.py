@@ -397,9 +397,7 @@ def test_video_adapter_reviewed_179_seconds_requires_explicit_flag(
         adapter._validate_operation(_operation_with_payload(original, reviewed_short_horizontal_video=True))
 
     with pytest.raises(OperationRejectedError, match="must be a boolean"):
-        adapter._validate_operation(
-            _operation_with_payload(original, reviewed_short_horizontal_video="true")
-        )
+        adapter._validate_operation(_operation_with_payload(original, reviewed_short_horizontal_video="true"))
 
 
 def test_video_adapter_reviewed_short_rejects_vertical_artifact_before_provider_dispatch(
