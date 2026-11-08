@@ -178,7 +178,7 @@ def video_prepare(
         bool,
         typer.Option(
             "--reviewed-short-horizontal-video",
-            help="Explicitly approved ordinary Video <=180s; requires independently verified horizontal media",
+            help="Approved <=180s horizontal ordinary Video ONLY; not a native Clip or postponed scheduler",
         ),
     ] = False,
 ) -> None:
