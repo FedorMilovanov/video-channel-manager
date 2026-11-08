@@ -571,6 +571,7 @@ def test_video_upload_owner_absence_evidence_rejects_untrusted_or_stale(
     [
         ("ordinary_video", {"pagination_complete": False}, "incomplete pagination"),
         ("native_clip", {"covered_states": ["published"]}, "does not cover every state"),
+        ("native_clip", {"covered_states": [["invalid"]] * 6}, "does not cover every state"),
         ("ordinary_video", {"exact_source_matches": ["-235216998_77"]}, "contains matches"),
         ("native_clip", {"unresolved_candidates": ["same title 179s"]}, "contains matches"),
     ],
