@@ -62,3 +62,24 @@ def test_golden_path_forbids_project_specific_upload_semantics() -> None:
         "Do not refactor an in-progress provider rollout",
     ):
         assert required in text
+
+
+def test_creator_clip_schedule_and_caption_contract_is_routed_from_agents() -> None:
+    golden_path = GOLDEN_PATH.read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    for required in (
+        "Creator UI surfaces: Clip is not an ordinary Video",
+        "`video.publish`",
+        "`Invalid request`",
+        "native Clips editor",
+        "caption/description field",
+        "original source URL",
+        "exact before/after",
+        "`conflict`",
+        "`may_exist`",
+        "community-scoped single-writer",
+    ):
+        assert required in golden_path
+    assert "docs/operations/vk-native-clip-golden-path.md" in agents
+    assert "ordinary Video editor" in agents
