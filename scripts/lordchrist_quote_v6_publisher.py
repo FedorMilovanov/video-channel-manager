@@ -137,7 +137,11 @@ def validate_schedule(mode: str, current: datetime) -> None:
     if local.date().isoformat() < "2026-11-08":
         raise ValueError("scheduled v6 posts cannot begin before 2026-11-08 in Moscow")
     start = datetime.combine(local.date(), time(10), tzinfo=MOSCOW)
-    if local < start or local > start + timedelta(hours=3):
+    # GitHub scheduled events are best-effort: the 2026-11-08 run arrived at
+    # 17:03 Moscow, beyond the former 3-hour lease. Accept one late run on
+    # the same Moscow date, but never an overnight catch-up or a re-run.
+    # prepare_next independently enforces one verified "morning" slot/day.
+    if local < start or local >= start + timedelta(minutes=660):
         raise ValueError("scheduled v6 slot is not due or is too late; no backfill")
     if os.environ.get("GITHUB_RUN_ATTEMPT") != "1":
         raise ValueError("scheduled re-run forbidden")

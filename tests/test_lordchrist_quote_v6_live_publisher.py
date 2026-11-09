@@ -122,11 +122,68 @@ def test_scheduled_start_has_no_early_send_or_backfill(monkeypatch: pytest.Monke
         validate_schedule("scheduled", datetime(2026, 11, 7, 10, 0, tzinfo=moscow))
     validate_schedule("scheduled", datetime(2026, 11, 8, 10, 0, tzinfo=moscow))
     validate_schedule("scheduled", datetime(2026, 11, 8, 12, 59, tzinfo=moscow))
+    # The observed Nov 8 GitHub event arrived seven hours after the cron.
+    validate_schedule("scheduled", datetime(2026, 11, 8, 17, 3, tzinfo=moscow))
+    validate_schedule("scheduled", datetime(2026, 11, 8, 20, 59, tzinfo=moscow))
+    with pytest.raises(ValueError, match="not due"):
+        validate_schedule("scheduled", datetime(2026, 11, 8, 9, 59, tzinfo=moscow))
     with pytest.raises(ValueError, match="late"):
-        validate_schedule("scheduled", datetime(2026, 11, 8, 13, 1, tzinfo=moscow))
+        validate_schedule("scheduled", datetime(2026, 11, 8, 21, 0, tzinfo=moscow))
     monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
     with pytest.raises(ValueError, match="re-run"):
         validate_schedule("scheduled", datetime(2026, 11, 8, 10, 0, tzinfo=moscow))
+
+
+def test_delayed_fallback_does_not_prepare_a_second_quote_same_day() -> None:
+    queue = release_and_queue(ROOT)
+    ledger = initialize_ledger(queue)
+    first = ledger.entries[queue.posts[0].publication_id]
+    first.state = "published"
+    first.provider_effect = "verified"
+    first.dispatch_mode = "manual"
+    first.published_at_utc = datetime(2026, 11, 6, 3, 50, tzinfo=UTC)
+    first.message_id = 1604
+    first.actual_chat_id = -1001295216957
+    first.bot_id = 8716602202
+    first.bot_username = "preaching_mp3_bot"
+
+    second = ledger.entries[queue.posts[1].publication_id]
+    second.state = "published"
+    second.provider_effect = "verified"
+    second.dispatch_mode = "scheduled"
+    second.scheduled_slot = "morning"
+    second.published_at_utc = datetime(2026, 11, 8, 14, 3, tzinfo=UTC)
+    second.message_id = 1605
+
+    proof = TargetProof(
+        schema_name="video-channel-manager.telegram-target-proof",
+        schema_version=2,
+        bot_id=8716602202,
+        bot_username="preaching_mp3_bot",
+        chat_id=-1001295216957,
+        chat_username="lordchrist",
+        chat_title="Господь Бог - Сила Моя",
+        chat_type="channel",
+        member_status="administrator",
+        can_post_messages=True,
+        checked_at_utc=datetime(2026, 11, 8, 14, 19, tzinfo=UTC),
+    )
+    result = prepare_next(
+        queue,
+        ledger,
+        run_id="delayed-fallback-123",
+        run_attempt="1",
+        github_sha="a" * 40,
+        github_workflow_sha="a" * 40,
+        mode="scheduled",
+        scheduled_slot="morning",
+        target=proof,
+        now=datetime(2026, 11, 8, 14, 20, tzinfo=UTC),
+    )
+    assert result.envelope is None
+    assert "already verified" in result.reason
+    assert ledger.entries[queue.posts[2].publication_id].state == "pending"
+    assert ledger.entries[queue.posts[2].publication_id].provider_effect == "impossible"
 
 
 def test_shared_writer_lock_and_state_first_send_last() -> None:
@@ -135,6 +192,7 @@ def test_shared_writer_lock_and_state_first_send_last() -> None:
     assert "cancel-in-progress: false" in workflow
     assert "queue: max" in workflow
     assert 'cron: "0 7 * * *"' in workflow
+    assert 'cron: "23 7 * * *"' in workflow
     assert "GITHUB_WORKFLOW_SHA" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert "Persist immutable pre-send intent" in workflow

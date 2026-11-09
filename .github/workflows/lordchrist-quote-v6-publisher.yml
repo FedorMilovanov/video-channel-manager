@@ -22,6 +22,9 @@ on:
     # 07:00 UTC = 10:00 Europe/Moscow, never add timezone here.
     # The exact release starts no earlier than Sunday 2026-11-08.
     - cron: "0 7 * * *"
+    # Offset fallback for GitHub top-of-hour congestion. Both triggers target
+    # the SAME morning slot and durable ledger; never two daily quotes.
+    - cron: "23 7 * * *"
 
 permissions:
   contents: write
