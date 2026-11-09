@@ -20,6 +20,11 @@ on:
     # 13:00 Moscow daily; the immutable release spaces quizzes two days apart
     # and the freshness gate publishes only when the next quiz is due.
     - cron: "0 10 * * *"
+    # Backup off-hour ticks counter GitHub schedule delays observed in Nov 2026.
+    # Probes may run early; the immutable 13:00 MSK release slot still gates
+    # dispatch, with a 360-minute stale cutoff and one durable state writer.
+    # Even a delayed tick must never backfill expired items or replay intent.
+    - cron: "17 4,6,8,10,12,14 * * *"
 
 permissions:
   actions: read
