@@ -13,7 +13,7 @@ on:
           - initialize-state
           - publish
       confirm:
-        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-01 or PUBLISH:@lordchrist:lordchrist-quiz-series-01; unused for validate
+        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02 or PUBLISH:@lordchrist:lordchrist-quiz-series-02; unused for validate
         required: false
         type: string
   schedule:
