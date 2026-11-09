@@ -140,6 +140,7 @@ def test_shared_writer_lock_and_state_first_send_last() -> None:
     assert "cancel-in-progress: false" in workflow
     assert "queue: max" in workflow
     assert 'cron: "0 7 * * *"' in workflow
+    assert 'cron: "23 7 * * *"' in workflow
     assert "GITHUB_WORKFLOW_SHA" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert "Persist immutable pre-send intent" in workflow
