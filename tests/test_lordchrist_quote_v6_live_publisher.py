@@ -134,7 +134,6 @@ def test_scheduled_start_has_no_early_send_or_backfill(monkeypatch: pytest.Monke
         validate_schedule("scheduled", datetime(2026, 11, 8, 10, 0, tzinfo=moscow))
 
 
-
 def test_delayed_fallback_does_not_prepare_a_second_quote_same_day() -> None:
     queue = release_and_queue(ROOT)
     ledger = initialize_ledger(queue)
@@ -185,7 +184,6 @@ def test_delayed_fallback_does_not_prepare_a_second_quote_same_day() -> None:
     assert "already verified" in result.reason
     assert ledger.entries[queue.posts[2].publication_id].state == "pending"
     assert ledger.entries[queue.posts[2].publication_id].provider_effect == "impossible"
-
 
 
 def test_shared_writer_lock_and_state_first_send_last() -> None:
