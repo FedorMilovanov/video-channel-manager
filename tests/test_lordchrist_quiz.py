@@ -195,6 +195,8 @@ def test_quiz_series_workflow_publishes_the_due_quiz_every_two_days() -> None:
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "INITIALIZE:@lordchrist:$SERIES_ID" in workflow
     assert "PUBLISH:@lordchrist:$SERIES_ID" in workflow
+    assert "description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02" in workflow
+    assert "PUBLISH:@lordchrist:lordchrist-quiz-series-01; unused for validate" not in workflow
     assert "validate-series" in workflow
     assert "telegram_multichannel_cli skip-expired" in workflow
     assert "telegram_publication_freshness next" in workflow
