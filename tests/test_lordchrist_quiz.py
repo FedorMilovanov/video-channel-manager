@@ -188,6 +188,9 @@ def test_quiz_series_runtime_is_the_authorized_build() -> None:
 def test_quiz_series_workflow_publishes_the_due_quiz_every_two_days() -> None:
     workflow = SERIES_WORKFLOW.read_text(encoding="utf-8")
     assert 'cron: "0 10 * * *"' in workflow  # 13:00 Moscow, daily tick
+    assert 'cron: "17 4,6,8,10,12,14 * * *"' in workflow  # off-hour recovery ticks
+    assert workflow.count("- cron:") == 2
+    assert 'MAX_PUBLICATION_LAG_MINUTES: "360"' in workflow
     assert workflow.count("queue: max") == 1
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "INITIALIZE:@lordchrist:$SERIES_ID" in workflow
