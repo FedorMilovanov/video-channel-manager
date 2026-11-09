@@ -122,8 +122,13 @@ def test_scheduled_start_has_no_early_send_or_backfill(monkeypatch: pytest.Monke
         validate_schedule("scheduled", datetime(2026, 11, 7, 10, 0, tzinfo=moscow))
     validate_schedule("scheduled", datetime(2026, 11, 8, 10, 0, tzinfo=moscow))
     validate_schedule("scheduled", datetime(2026, 11, 8, 12, 59, tzinfo=moscow))
+    # The observed Nov 8 GitHub event arrived seven hours after the cron.
+    validate_schedule("scheduled", datetime(2026, 11, 8, 17, 3, tzinfo=moscow))
+    validate_schedule("scheduled", datetime(2026, 11, 8, 20, 59, tzinfo=moscow))
+    with pytest.raises(ValueError, match="not due"):
+        validate_schedule("scheduled", datetime(2026, 11, 8, 9, 59, tzinfo=moscow))
     with pytest.raises(ValueError, match="late"):
-        validate_schedule("scheduled", datetime(2026, 11, 8, 13, 1, tzinfo=moscow))
+        validate_schedule("scheduled", datetime(2026, 11, 8, 21, 0, tzinfo=moscow))
     monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
     with pytest.raises(ValueError, match="re-run"):
         validate_schedule("scheduled", datetime(2026, 11, 8, 10, 0, tzinfo=moscow))
