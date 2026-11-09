@@ -21,6 +21,9 @@ _OLD_OWNER_VK_COMMUNITY_URLS = {
     "http://vk.com/the_lord_god_is_my_strength",
 }
 _CANONICAL_OWNER_VK_COMMUNITY = "https://vk.ru/the_lord_god_is_my_strength"
+# The presentation policy independently retires this exact former VK fundraising
+# widget. Do not drop any other owner-group link with unrelated query params.
+_RETIRED_OWNER_VK_FUNDRAISING_URL = "https://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
 _CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
@@ -53,6 +56,8 @@ def _owner_playlist_id(url: str) -> str | None:
 
 
 def _obsolete_owner_navigation_or_contact(url: str) -> bool:
+    if url == _RETIRED_OWNER_VK_FUNDRAISING_URL:
+        return True
     parsed = urlsplit(url)
     host = (parsed.hostname or "").lower().removeprefix("www.")
     path = parsed.path.rstrip("/")

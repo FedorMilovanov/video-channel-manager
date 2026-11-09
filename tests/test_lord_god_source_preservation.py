@@ -192,3 +192,28 @@ def test_vk_community_cannot_be_silently_deleted_or_replaced_by_another_vk_route
     assert source_preservation_issues(legacy, _VALID_TEXT + "\nhttps://vk.ru/someone_else") == [
         "original_source_or_related_link_not_preserved"
     ]
+
+
+def test_exact_retired_vk_fundraising_widget_drops_without_preserving_payment() -> None:
+    retired = "https://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374"
+    before = "Если кто хочет поддержать служение распространения и переводов: " + retired
+    assert source_preservation_issues(before, _VALID_TEXT) == []
+    require_lord_god_youtube_presentation(_plan(before, _VALID_TEXT))
+
+
+@pytest.mark.parametrize(
+    "still_protected",
+    [
+        "https://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374&post=123",
+        "https://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805375",
+        "https://vk.com/the_lord_god_is_my_strength?w=wall-60805374_123",
+        "https://vk.com/the_lord_god_is_my_strength?z=video-60805374_123",
+        "https://vk.com/another_group?w=app5727453_-60805374",
+        "https://www.vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374",
+        "http://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374",
+    ],
+)
+def test_retired_vk_widget_exception_does_not_drop_other_owner_or_external_references(still_protected: str) -> None:
+    assert source_preservation_issues(still_protected, _VALID_TEXT) == ["original_source_or_related_link_not_preserved"]
+    with pytest.raises(ValueError, match="original_source_or_related_link_not_preserved"):
+        require_lord_god_youtube_presentation(_plan(still_protected, _VALID_TEXT))
