@@ -68,7 +68,7 @@ def _check_two_playlists(lines: Sequence[str], block: str, errors: list[CopyIssu
         errors.append(CopyIssue(block, "singers_playlist", "Вторая строка — точный плейлист «Поющие Поэты»."))
     if "Поющие Поэты" in first or "Эксперименты AI" in first:
         errors.append(CopyIssue(block, "not_author_playlist", "Первая ссылка должна вести на авторский плейлист."))
-    match = re.fullmatch(r"Плейлист «([^»]+)»: (https://www[.]youtube[.]com/playlist[?]list=[^\\s]+)", first)
+    match = re.fullmatch(r"Плейлист «([^»]+)»: (https://www[.]youtube[.]com/playlist[?]list=[^\s]+)", first)
     if match:
         poet, url = match.groups()
         expected = LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet)
