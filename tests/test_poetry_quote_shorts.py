@@ -55,7 +55,7 @@ def packet() -> dict:
             "Тебе, горный край, я посвящаю строки,",
             "И осени́ вершиной белоснежной.",
         ],
-        "full_comment_lines": edition,
+        "full_comment_lines": list(edition),
         "pronunciation_notes": [{"token": "осени", "stressed": "осени́", "sense": "повелительное наклонение"}],
         "author_playlist": None,
         "other_playlists": ["https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"],
