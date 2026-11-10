@@ -10,7 +10,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from video_channel_manager.editorial._project_profiles import PROJECT_LINK_PROFILES
+from video_channel_manager.editorial._project_profiles import LEGENDARY_POET_AUTHOR_PLAYLISTS, PROJECT_LINK_PROFILES
 
 _PROJECT_LINKS = PROJECT_LINK_PROFILES["legendary-poet"]
 _SINGING_POETS = "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
@@ -68,6 +68,14 @@ def _check_two_playlists(lines: Sequence[str], block: str, errors: list[CopyIssu
         errors.append(CopyIssue(block, "singers_playlist", "Вторая строка — точный плейлист «Поющие Поэты»."))
     if "Поющие Поэты" in first or "Эксперименты AI" in first:
         errors.append(CopyIssue(block, "not_author_playlist", "Первая ссылка должна вести на авторский плейлист."))
+    match = re.fullmatch(r"Плейлист «([^»]+)»: (https://www[.]youtube[.]com/playlist[?]list=[^\\s]+)", first)
+    if match:
+        poet, url = match.groups()
+        expected = LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet)
+        if expected is None:
+            errors.append(CopyIssue(block, "unknown_author", f"Нет авторского плейлиста в реестре: {poet}"))
+        elif expected != url:
+            errors.append(CopyIssue(block, "author_playlist_mismatch", f"Плейлист {poet} не соответствует реестру."))
 
 
 def _check_public_emphasis_punctuation(body: str, block: str, errors: list[CopyIssue]) -> None:
@@ -148,8 +156,9 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     if "*" in shorts_without_urls or "_" in shorts_without_urls or any(link in shorts for link in _SOCIAL):
         errors.append(CopyIssue("shorts", "short_format", "SHORTS — без выделений и социальных ссылок."))
     short_lines = _normal_lines(shorts)
-    if not any(line.startswith("Плейлист «") for line in short_lines):
-        errors.append(CopyIssue("shorts", "short_playlists", "В SHORTS отсутствуют плейлисты."))
+    short_playlists = [line for line in short_lines if line.startswith("Плейлист «")]
+    if short_playlists != desc_lines[:2]:
+        errors.append(CopyIssue("shorts", "short_playlist_mismatch", "Плейлисты SHORTS должны совпадать с авторским и общим плейлистами Description."))
     short_hashes = _HASHTAG_RE.findall(short_lines[-1] if short_lines else "")
     if not 3 <= len(short_hashes) <= 5:
         errors.append(CopyIssue("shorts", "short_hashtags", "SHORTS: 3–5 хештегов в конце."))
@@ -163,8 +172,11 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         errors.append(CopyIssue("pin", "pin_hashtags", "В закрепе нельзя использовать хештеги."))
     if len([line for line in pin_lines if line.startswith("_") and line.endswith("_")]) not in (1, 2):
         errors.append(CopyIssue("pin", "pin_poem_lines", "Нужно 1–2 отдельные _точные строки стихотворения_."))
-    if len([line for line in pin_lines if line.startswith("Плейлист «")]) != 2:
-        errors.append(CopyIssue("pin", "pin_playlists", "В конце закрепа — две строки плейлистов."))
+    pin_playlists = [line for line in pin_lines if line.startswith("Плейлист «")]
+    if pin_playlists != desc_lines[:2]:
+        errors.append(CopyIssue("pin", "pin_playlist_mismatch", "Закреп должен ссылаться на те же проверенные авторский и общий плейлисты."))
+    if pin_lines[-2:] != pin_playlists:
+        errors.append(CopyIssue("pin", "pin_playlist_position", "Два плейлиста должны завершать закреп."))
 
     if "\n" in tags or not tags.startswith("ТЕГИ: ") or len(tags) > 480:
         errors.append(CopyIssue("tags", "tag_line", "ТЕГИ: — одна строка, максимум 480 символов."))
