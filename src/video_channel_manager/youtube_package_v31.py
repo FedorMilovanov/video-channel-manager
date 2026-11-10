@@ -158,7 +158,13 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     short_lines = _normal_lines(shorts)
     short_playlists = [line for line in short_lines if line.startswith("Плейлист «")]
     if short_playlists != desc_lines[:2]:
-        errors.append(CopyIssue("shorts", "short_playlist_mismatch", "Плейлисты SHORTS должны совпадать с авторским и общим плейлистами Description."))
+        errors.append(
+            CopyIssue(
+                "shorts",
+                "short_playlist_mismatch",
+                "Плейлисты SHORTS должны совпадать с авторским и общим плейлистами Description.",
+            )
+        )
     short_hashes = _HASHTAG_RE.findall(short_lines[-1] if short_lines else "")
     if not 3 <= len(short_hashes) <= 5:
         errors.append(CopyIssue("shorts", "short_hashtags", "SHORTS: 3–5 хештегов в конце."))
@@ -174,7 +180,13 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         errors.append(CopyIssue("pin", "pin_poem_lines", "Нужно 1–2 отдельные _точные строки стихотворения_."))
     pin_playlists = [line for line in pin_lines if line.startswith("Плейлист «")]
     if pin_playlists != desc_lines[:2]:
-        errors.append(CopyIssue("pin", "pin_playlist_mismatch", "Закреп должен ссылаться на те же проверенные авторский и общий плейлисты."))
+        errors.append(
+            CopyIssue(
+                "pin",
+                "pin_playlist_mismatch",
+                "Закреп должен ссылаться на те же проверенные авторский и общий плейлисты.",
+            )
+        )
     if pin_lines[-2:] != pin_playlists:
         errors.append(CopyIssue("pin", "pin_playlist_position", "Два плейлиста должны завершать закреп."))
 
