@@ -40,7 +40,7 @@ Project key: `legendary-poet`
 
 ## Канонические YouTube-плейлисты
 
-Эти URL предоставлены владельцем проекта. В конкретное описание добавляются только плейлисты, которые относятся к ролику; нельзя автоматически вставлять весь список.
+Эти зарегистрированные URL приведены в соответствии с `docs/youtube-editorial-standard.md` и общим allowlist; перед **реальным YouTube write** требуется свежая проверка ID и доступности у провайдера. В конкретное описание добавляются только плейлисты, которые относятся к ролику; нельзя автоматически вставлять весь список.
 
 - Эксперименты AI: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb
 - Поющие Поэты: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8
@@ -49,6 +49,13 @@ Project key: `legendary-poet`
 - Михаил Лермонтов: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5
 - Александр Пушкин: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE
 - Александр Блок: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU
+- Фёдор Тютчев: https://www.youtube.com/playlist?list=PLKzLtO0ERdzg
+- Афанасий Фет: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M
+- Николай Некрасов: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1Z_YrY59Rel3Rj4oSqu7W
+- Валерий Брюсов: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYmjpRWQuAWggJYJFyE3mcw
+- Анна Ахматова: https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-
+- Константин Симонов: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaWdwMlVOMIwx1ew5T6aQX8
+- Борис Пастернак: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaHu93i8dgtoWSZ2lyYxhSR
 
 Правило релевантности:
 
