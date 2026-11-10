@@ -35,7 +35,9 @@ def main() -> int:
     if issues:
         print(f"REVIEW REQUIRED: {len(issues)} structural defect(s). NO PROVIDER ACTION.")
         return 1
-    print("STRUCTURE ONLY: PASS. Source witness, spoken audio, links and provider write STILL require independent review.")
+    print(
+        "STRUCTURE ONLY: PASS. Source witness, spoken audio, links and provider write STILL require independent review."
+    )
     return 0
 
 
