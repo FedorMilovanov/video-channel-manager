@@ -197,12 +197,14 @@ def validate_poetry_quote_packet(
             fail("unknown_playlist", "Author playlist is not in the registered public link profile.")
         elif LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet) != author_playlist:
             fail("author_playlist_mismatch", "Playlist belongs to another author or the poet has no registered playlist.")
-    for url in packet.get("other_playlists", []) if isinstance(packet.get("other_playlists", []), list) else []:
+    raw_other_playlists = packet.get("other_playlists", [])
+    other_playlists = raw_other_playlists if isinstance(raw_other_playlists, list) else []
+    for url in other_playlists:
         if not isinstance(url, str) or url not in _LINKS or "/playlist?list=" not in url:
             fail("unknown_playlist", "Unregistered playlist in other_playlists.")
         elif url in LEGENDARY_POET_AUTHOR_PLAYLISTS.values() and url != LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet):
             fail("foreign_author_playlist", "A different poet's playlist is not relevant to this Short.")
-    if not isinstance(packet.get("other_playlists", []), list):
+    if not isinstance(raw_other_playlists, list):
         fail("playlist_schema", "other_playlists must be an array.")
 
     # Public-facing URL guard: academic primary-source URLs may appear in research,
