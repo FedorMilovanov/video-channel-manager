@@ -90,7 +90,8 @@ def validate_poetry_quote_packet(
         edition = {}
         fail("edition", "Edition record is required.")
     for field in ("citation", "version", "author", "work"):
-        if not isinstance(edition.get(field), str) or not edition[field].strip():
+        field_value = edition.get(field)
+        if not isinstance(field_value, str) or not field_value.strip():
             fail("edition_identity", f"Missing edition.{field}.")
     if edition.get("author") != poet or edition.get("work") != work:
         fail("edition_mismatch", "Exact author/work must match the selected edition.")
@@ -112,7 +113,7 @@ def validate_poetry_quote_packet(
             fail("source_record", f"Source #{index + 1} is not an object.")
             continue
         url, cls, citation = source.get("url"), source.get("class"), source.get("citation")
-        if not _web_url(url) or not isinstance(citation, str) or not citation.strip():
+        if not isinstance(url, str) or not _web_url(url) or not isinstance(citation, str) or not citation.strip():
             fail("source_record", f"Source #{index + 1} requires an HTTPS URL and citation.")
         else:
             valid_urls.append(url)
@@ -154,7 +155,11 @@ def validate_poetry_quote_packet(
             fail("pronunciation_note", f"Pronunciation note #{index + 1} is not an object.")
             continue
         token, marked, sense = note.get("token"), note.get("stressed"), note.get("sense")
-        if not all(isinstance(v, str) and v.strip() for v in (token, marked, sense)):
+        if (
+            not isinstance(token, str) or not token.strip()
+            or not isinstance(marked, str) or not marked.strip()
+            or not isinstance(sense, str) or not sense.strip()
+        ):
             fail("pronunciation_note", f"Note #{index + 1} needs token, stressed and sense.")
             continue
         decomposed = unicodedata.normalize("NFD", marked)
