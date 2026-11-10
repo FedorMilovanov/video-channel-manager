@@ -122,7 +122,10 @@ def validate_poetry_quote_packet(
         else:
             classes.append(cls)
     if len(set(valid_urls)) < 2:
-        fail("source_independence", "Two distinct source URLs are required; editorial independence must also be reviewed.")
+        fail(
+            "source_independence",
+            "Two distinct source URLs are required; editorial independence must also be reviewed.",
+        )
     if edition_url not in valid_urls or not _PROOF_TYPES.intersection(classes):
         fail("source_witness", "Selected edition URL and an archival/critical source class must be registered.")
 
@@ -146,7 +149,10 @@ def validate_poetry_quote_packet(
         fail("excerpt_start", "1-based excerpt_start_line is required.")
     elif text is not None and excerpt is not None:
         if text[start - 1 : start - 1 + len(excerpt)] != excerpt:
-            fail("excerpt_not_contiguous", "Quoted lines must exactly match one continuous passage of the chosen edition.")
+            fail(
+                "excerpt_not_contiguous",
+                "Quoted lines must exactly match one continuous passage of the chosen edition.",
+            )
     if text is None or full_comment_lines is None or full_comment_lines != text:
         fail("full_text_mismatch", "The full poem for the pinned comment must exactly equal edition_lines.")
     if tts is None or excerpt is None or len(tts) != len(excerpt):
@@ -165,9 +171,12 @@ def validate_poetry_quote_packet(
             continue
         token, marked, sense = note.get("token"), note.get("stressed"), note.get("sense")
         if (
-            not isinstance(token, str) or not token.strip()
-            or not isinstance(marked, str) or not marked.strip()
-            or not isinstance(sense, str) or not sense.strip()
+            not isinstance(token, str)
+            or not token.strip()
+            or not isinstance(marked, str)
+            or not marked.strip()
+            or not isinstance(sense, str)
+            or not sense.strip()
         ):
             fail("pronunciation_note", f"Note #{index + 1} needs token, stressed and sense.")
             continue
@@ -196,7 +205,9 @@ def validate_poetry_quote_packet(
         if not isinstance(author_playlist, str) or author_playlist not in _LINKS:
             fail("unknown_playlist", "Author playlist is not in the registered public link profile.")
         elif LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet) != author_playlist:
-            fail("author_playlist_mismatch", "Playlist belongs to another author or the poet has no registered playlist.")
+            fail(
+                "author_playlist_mismatch", "Playlist belongs to another author or the poet has no registered playlist."
+            )
     raw_other_playlists = packet.get("other_playlists", [])
     other_playlists = raw_other_playlists if isinstance(raw_other_playlists, list) else []
     for url in other_playlists:
@@ -224,10 +235,19 @@ def validate_poetry_quote_packet(
                     fail("foreign_or_admin_url", f"Foreign/administrative URL in {field}.")
                 elif "/playlist?list=" in url and url not in _LINKS:
                     fail("unknown_playlist", f"Unregistered public playlist in {field}.")
-                elif any(url.startswith(prefix) for prefix in (
-                    "https://vk.ru/", "https://vk.com/", "https://t.me/",
-                    "https://rutube.ru/channel/", "https://thelegendarypoet.ru/",
-                )) and url not in _LINKS:
+                elif (
+                    any(
+                        url.startswith(prefix)
+                        for prefix in (
+                            "https://vk.ru/",
+                            "https://vk.com/",
+                            "https://t.me/",
+                            "https://rutube.ru/channel/",
+                            "https://thelegendarypoet.ru/",
+                        )
+                    )
+                    and url not in _LINKS
+                ):
                     fail("unknown_public_link", f"Unknown social/project link in {field}.")
 
     mode = packet.get("format_mode")
