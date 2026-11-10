@@ -132,6 +132,15 @@ def validate_poetry_quote_packet(
     full_comment_lines = _lines(packet.get("full_comment_lines"))
     if text is None or excerpt is None:
         fail("poem_lines", "edition_lines and excerpt_lines must be non-empty arrays of non-blank lines.")
+    # OCR/HTML transcriptions can smuggle a Latin lookalike into a Cyrillic word
+    # (e.g. Latin 'c' in 'cнова'). Hold for edition-level review, never autocorrect.
+    for line in text or []:
+        for token in re.findall(r"[^\W\d_]+", line, re.UNICODE):
+            latin = any("A" <= char <= "Z" or "a" <= char <= "z" for char in token)
+            cyrillic = any("\u0400" <= char <= "\u052f" for char in token)
+            if latin and cyrillic:
+                fail("mixed_script_word", f"Latin/Cyrillic lookalike in source word {token!r}.")
+
     start = packet.get("excerpt_start_line")
     if type(start) is not int or start < 1:
         fail("excerpt_start", "1-based excerpt_start_line is required.")
