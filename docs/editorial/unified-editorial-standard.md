@@ -4,6 +4,8 @@
 
 YouTube and VK use one editorial record and one evidence boundary. Platform differences belong in renderers and guarded executors, not in duplicated authoring schemas.
 
+For the **Lord God long-form YouTube description repair** workflow, apply the channel-specific human-facing style and source-link labels in `docs/operations/lord-god-youtube-description-wave.md` before drafting or signing. In particular, do not add redundant `Выступающий:`, `Формат:` or `Тема:` cards; label a verified English original simply `Англоязычная запись:` with a bare URL on the next line (no duration); and use the playlist's actual subject (e.g. `Вопросы и ответы:`), never the misleading `Исторические плейлисты` merely because a URL was copied from an old description. This is prospective guidance only; it does not authorize mass retroactive edits.
+
 The canonical schema is `video-manager.editorial-content` version 1. Existing `video-manager.youtube-comment-content` version 2 records remain supported and are parsed as canonical records without reauthoring.
 
 ## Canonical record
