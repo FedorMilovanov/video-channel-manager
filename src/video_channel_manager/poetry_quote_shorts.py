@@ -45,8 +45,13 @@ def _lines(value: object) -> list[str] | None:
 def _web_url(value: object) -> bool:
     if not isinstance(value, str):
         return False
-    parsed = urlsplit(value)
-    return parsed.scheme == "https" and bool(parsed.hostname) and not parsed.username and not parsed.password
+    if any(char.isspace() for char in value):
+        return False
+    try:
+        parsed = urlsplit(value)
+        return parsed.scheme == "https" and bool(parsed.hostname) and not parsed.username and not parsed.password
+    except ValueError:
+        return False
 
 
 def _compact(value: str) -> str:
@@ -93,7 +98,7 @@ def validate_poetry_quote_packet(
     if not _web_url(edition_url):
         fail("edition_url", "An HTTPS edition URL is required.")
     edition_state = edition.get("state")
-    if edition_state not in _EDITION_STATES:
+    if not isinstance(edition_state, str) or edition_state not in _EDITION_STATES:
         fail("edition_state", "Edition state must be complete, draft or fragment.")
 
     sources = packet.get("sources")
@@ -181,8 +186,33 @@ def validate_poetry_quote_packet(
     for url in packet.get("other_playlists", []) if isinstance(packet.get("other_playlists", []), list) else []:
         if not isinstance(url, str) or url not in _LINKS or "/playlist?list=" not in url:
             fail("unknown_playlist", "Unregistered playlist in other_playlists.")
+        elif url in LEGENDARY_POET_AUTHOR_PLAYLISTS.values() and url != LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet):
+            fail("foreign_author_playlist", "A different poet's playlist is not relevant to this Short.")
     if not isinstance(packet.get("other_playlists", []), list):
         fail("playlist_schema", "other_playlists must be an array.")
+
+    # Public-facing URL guard: academic primary-source URLs may appear in research,
+    # but unknown playlists and other-project routing must never enter viewer copy.
+    if packet.get("format_mode") == "short_two_comments":
+        for field in ("short_description", "pinned_comment", "history_comment"):
+            value = packet.get(field)
+            if not isinstance(value, str):
+                continue
+            for raw in re.findall(r"https?://[^\s<>]+", value):
+                url = raw.rstrip(".,;!?)]")
+                if (
+                    url.startswith(("http://", "https://gospod-bog.ru", "https://t.me/lordchrist"))
+                    or "/the_lord_god_is_my_strength" in url
+                    or "cabinet.vkvideo.ru" in url
+                ):
+                    fail("foreign_or_admin_url", f"Foreign/administrative URL in {field}.")
+                elif "/playlist?list=" in url and url not in _LINKS:
+                    fail("unknown_playlist", f"Unregistered public playlist in {field}.")
+                elif any(url.startswith(prefix) for prefix in (
+                    "https://vk.ru/", "https://vk.com/", "https://t.me/",
+                    "https://rutube.ru/channel/", "https://thelegendarypoet.ru/",
+                )) and url not in _LINKS:
+                    fail("unknown_public_link", f"Unknown social/project link in {field}.")
 
     mode = packet.get("format_mode")
     if mode not in ("standard", "short_two_comments"):
