@@ -180,8 +180,7 @@ def test_short_playlist_cannot_point_to_a_different_author() -> None:
     ix = pkg.index(short, pkg.index(short) + 1)
     candidate = pkg[:ix] + pkg[ix:].replace(
         short,
-        "Плейлист «Михаил Лермонтов»: "
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        "Плейлист «Михаил Лермонтов»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
         1,
     )
     assert "short_playlist_mismatch" in {item.code for item in validate_five_block_package(candidate)}
