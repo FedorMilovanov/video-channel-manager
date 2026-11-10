@@ -101,6 +101,43 @@ def test_existing_translator_and_source_credit_cannot_be_silently_dropped() -> N
     assert source_preservation_issues(before, _VALID_TEXT + "\n" + credit) == []
 
 
+@pytest.mark.parametrize(
+    "credit_prefix",
+    [
+        "Original:",
+        "Оригинал:",
+        "Источник:",
+        "Перевод Виталия Хрущёва:",
+        "Перевод канала Виталия Хрущёва:",
+        "Вырезка взята с московской пасторской конференции 2004:",
+        "Видео с канала Wretched:",
+        "Produced by Desiring God:",
+        "Озвучка:",
+    ],
+)
+def test_exact_source_credit_label_cannot_be_lost_if_link_is_preserved(credit_prefix: str) -> None:
+    # The same URL without its original source/translator label is not enough.
+    url = "https://www.youtube.com/watch?v=ABCDEFGHIJK"
+    credit = f"{credit_prefix} {url}"
+    before = credit + "\n" + _SHELF
+    after = _VALID_TEXT + "\n*Связанная ссылка:* " + url
+    assert source_preservation_issues(before, after) == ["original_translation_or_source_credit_not_preserved"]
+    with pytest.raises(ValueError, match="original_translation_or_source_credit_not_preserved"):
+        require_lord_god_youtube_presentation(_plan(before, after))
+    restored = after + "\n" + credit
+    assert source_preservation_issues(before, restored) == []
+    require_lord_god_youtube_presentation(_plan(before, restored))
+
+
+def test_retired_general_recruitment_does_not_become_a_permanent_source_credit() -> None:
+    retired = (
+        "➡️ Некоторые проповеди получается перевести и озвучить самому, "
+        "если хотите помочь с переводами: https://t.me/fedormilovanov"
+    )
+    assert source_preservation_issues(retired, _VALID_TEXT) == []
+    require_lord_god_youtube_presentation(_plan(retired, _VALID_TEXT))
+
+
 def test_primary_source_and_related_telegram_post_are_preserved() -> None:
     before = _SOURCE + "\nhttps://t.me/lordchrist/123\n" + _SHELF
     missing = source_preservation_issues(before, _VALID_TEXT)
