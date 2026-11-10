@@ -120,9 +120,7 @@ def test_detects_inconsistent_pronunciation_note() -> None:
 
 def test_fails_when_full_pin_poem_omits_a_line() -> None:
     candidate = packet()
-    candidate["pinned_comment"] = candidate["pinned_comment"].replace(
-        "На высоте живут мои дороги.", ""
-    )
+    candidate["pinned_comment"] = candidate["pinned_comment"].replace("На высоте живут мои дороги.", "")
     assert "pin_text_missing" in codes(candidate)
 
 
