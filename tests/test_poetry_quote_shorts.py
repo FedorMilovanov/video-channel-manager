@@ -196,3 +196,35 @@ def test_not_mutating_user_input() -> None:
     before = deepcopy(candidate)
     validate_poetry_quote_packet(candidate)
     assert candidate == before
+
+
+def test_other_author_playlist_cannot_hide_under_secondary_links() -> None:
+    candidate = packet()
+    candidate["other_playlists"] = [LEGENDARY_POET_AUTHOR_PLAYLISTS["Михаил Лермонтов"]]
+    assert "foreign_author_playlist" in codes(candidate)
+
+
+def test_reject_foreign_project_url_hidden_in_pinned_comment() -> None:
+    candidate = packet()
+    candidate["pinned_comment"] += "\nhttps://gospod-bog.ru/"
+    assert "foreign_or_admin_url" in codes(candidate)
+
+
+def test_reject_unregistered_playlist_hidden_in_history() -> None:
+    candidate = packet()
+    candidate["history_comment"] += "\nhttps://www.youtube.com/playlist?list=UNKNOWN_PLAYLIST"
+    assert "unknown_playlist" in codes(candidate)
+
+
+def test_reject_malformed_edition_state_without_crashing() -> None:
+    candidate = packet()
+    candidate["edition"]["state"] = []
+    assert "edition_state" in codes(candidate)
+
+
+def test_stress_marker_must_be_on_vowel() -> None:
+    candidate = packet()
+    candidate["pronunciation_notes"][0]["stressed"] = "осе́ни"
+    assert "stress_not_in_tts" in codes(candidate)
+    candidate["pronunciation_notes"][0]["stressed"] = "осен́и"
+    assert "stress_mark" in codes(candidate)
