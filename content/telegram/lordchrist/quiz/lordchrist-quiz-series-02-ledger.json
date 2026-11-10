@@ -10,7 +10,7 @@
     "lordchrist-quiz-s02-hagar": {
       "publication_id": "lordchrist-quiz-s02-hagar",
       "provider_payload_sha256": "sha256:4cbbfca6d1fa23664e02be9e3fbff0273a9b2f3f831deed9e005b9e85219fc08",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -26,7 +26,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-11-10T16:00:00+00:00 before dispatch"
     },
     "lordchrist-quiz-s02-ahab": {
       "publication_id": "lordchrist-quiz-s02-ahab",
