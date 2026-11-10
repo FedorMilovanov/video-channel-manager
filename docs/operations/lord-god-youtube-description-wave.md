@@ -67,6 +67,28 @@ other projects retain their general title semantics.
 
 **Windows UTF-8:** Non-ASCII PowerShell here-strings sent over remote transport may turn Cyrillic into literal question marks. Write a UTF-8 Python/JSON file, verify the file content and SHA locally, then run python -X utf8. A malformed console display is not evidence that the underlying source document is corrupt.
 
+## Long-form editorial voice: natural language, not metadata labels (10 Nov 2026)
+
+These are **forward-looking authoring rules** for Lord God YouTube long-form descriptions, not an instruction to re-edit old live descriptions. Shorts have a separate unfinished workflow. Do not retrospectively republish approved videos solely to change their tone.
+
+- **No bureaucratic speaker/format/topic cards.** Do not append `*Выступающий:* Джон МакАртур`, `*Автор:*`, `*Формат: вопрос и ответ`, `*Тема:*`, or similar redundant administrative fields to a new description. The title and natural opening prose already establish who speaks and what the video is about. Preserve a genuine original translator/copyright/source attribution from the previous description when necessary: that is provenance, not an excuse to invent a speaker card.
+- **Original links stay simple.** For a confirmed English recording, use exactly the short human-facing label `Англоязычная запись:` followed by its plain URL on the next line, without extra platform, speaker, publisher, or runtime metadata. In particular, do **not** write `Англоязычная запись Grace to You, 3:14:` or `(17:33)`: these durations may be interpreted as clickable video timestamps. Keep genuine pre-existing chapter timestamps intact; do not introduce a duration as a chapter.
+- A Russian dub or translator's upload is **not** an English original: identify it accurately as `Русская версия:` or with the existing precise translator credit, followed by the URL. Never invent or mislabel primary recordings. Retain rights/source evidence and the original label when the preservation gate requires it, without layering unnecessary explanations into the viewer-facing copy.
+- **Playlist headings describe the *subject*, not the age of a link.** For verified Q&A collections use `Вопросы и ответы:` and the playlist URL(s). Never call them `Исторические плейлисты`, `Архивная навигация`, or imply they contain historical material merely because the URLs came from an old description. For other playlists use their verified real names when known; otherwise the neutral `Другие плейлисты:`. Do not claim the video belongs to a playlist unless the owner listing confirms its membership. A legacy link that must be preserved but has uncertain relevance remains under a truthful neutral label, not a fabricated category.
+- Avoid generic field-by-field summaries. Start with two plain, substantial preview lines, then write coherent, human-readable paragraphs, selective YouTube `*bold*` and `_italic_` emphasis, and only links that add value. Do not duplicate title metadata in a closing list.
+
+**Before signing any new copy plan:** check for all forbidden template labels and stray duration strings, verify exact playlist names and membership when asserted, verify that `Англоязычная запись:` really links to an English recording, and run both the source-preservation and presentation gates. The preservation gate is stronger than stylistic preferences: do not delete a historical credit or non-retired source URL just to make the copy shorter. Resolve any conflict editorially before signing a plan. Neither these rules nor this documentation change authorize new provider writes.
+
+Example, without a simulated runtime:
+
+```text
+Англоязычная запись:
+https://www.youtube.com/watch?v=X65vspiZLLA
+
+Вопросы и ответы:
+https://www.youtube.com/playlist?list=VERIFIED_PLAYLIST_ID
+```
+
 ## Editorial source retention
 
 Study the exact original video title and owner description and a meaningful portion of its transcript. Do not invent Bible references, historical quotes, timecodes or speakers from a few keyword hits. When reading an old historical sermon, distinguish its original author from a modern narrator or translator.
