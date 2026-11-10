@@ -29,6 +29,14 @@ _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
 _CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
 _CREDIT_RE = re.compile(
     r"(?:"
+    # Preserve full source/translator labels, even if the URL appears elsewhere.
+    # Anchors avoid treating ordinary prose as source attribution.
+    r"^(?:original|оригинал|источник)\s*[:—-]|"
+    r"^перевод\b|"
+    r"^озвуч(?:ка|ил|ено|ение)\b|"
+    r"^вырезка\s+взята\s+с\b|"
+    r"^видео\s+с\s+канала\b|"
+    r"^produced\s+by\b|"
     r"перевод(?:чик(?:и|ом)?)?\s*[:—-]|"
     r"перевод\s+(?:выполнил[аи]?|выполнен|осуществил[аи]?|с\s+испанского\s+взят)|"
     r"источник\s+(?:записи|видео|проповеди)|"
