@@ -228,3 +228,9 @@ def test_stress_marker_must_be_on_vowel() -> None:
     assert "stress_not_in_tts" in codes(candidate)
     candidate["pronunciation_notes"][0]["stressed"] = "осен́и"
     assert "stress_mark" in codes(candidate)
+
+
+def test_latin_lookalike_inside_cyrillic_source_word_is_held_for_review() -> None:
+    candidate = packet()
+    candidate["edition_lines"][0] = "Тебе, горный край, я поcвящаю строки,"  # Latin 'c'
+    assert "mixed_script_word" in codes(candidate)
