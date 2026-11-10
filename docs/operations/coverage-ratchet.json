@@ -247,6 +247,7 @@
     "src/video_channel_manager/platforms/youtube/store.py": 77.9,
     "src/video_channel_manager/platforms/youtube/write_lock.py": 69.12,
     "src/video_channel_manager/platforms/youtube/writer.py": 83.91,
+    "src/video_channel_manager/poetry_quote_shorts.py": 79.79,
     "src/video_channel_manager/resi_handoff.py": 93.91,
     "src/video_channel_manager/resi_watch.py": 71.27,
     "src/video_channel_manager/svodka_approval_cli.py": 73.52,

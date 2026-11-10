@@ -995,6 +995,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/validate_poetry_quote_shorts.py",
+      "private_imports": [],
+      "project_owner": "legendary-poet",
+      "provider_write_capable": false,
+      "sha256": "ba84c79557a9611ca30845591e296bc103e8657966e5c29fe359a744d686edf6",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/validate_video_article_sources.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",

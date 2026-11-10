@@ -8,7 +8,7 @@ It is not a second description, an advertising dump, a generic engagement prompt
 
 ## Manual pinned comments for The Legendary Poet packages
 
-When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a specific two-choice question and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification.
+When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a specific two-choice question and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification. For the owner's **quote-Shorts exception** (compact Shorts text, first full-edition pin candidate, second independent history comment), use [`youtube-metadata-package-master-v3.1.md` §5a](youtube-metadata-package-master-v3.1.md). A second reply/comment must not be mistaken for a second pin. A pinned label is not proof that the owner comment was pinned; independently verify exact IDs and Studio state after separate approval.
 
 ## Project identity
 
@@ -109,7 +109,7 @@ Each label and URL stay on the same line.
 ```text
 📌 *The Legendary Poet:* https://thelegendarypoet.ru/
 🎧 *Сергей Есенин — плейлист:* https://www.youtube.com/playlist?list=...
-*Сообщество проекта в VK:* https://vk.com/thelegendarypoet
+*Сообщество проекта в VK:* https://vk.ru/thelegendarypoet
 📚 _Полный текст:_ [source-backed URL]
 ```
 
@@ -176,7 +176,7 @@ The authoritative registry is `docs/operations/project-identity-registry.md`.
 
 ### `legendary-poet`
 
-- VK: https://vk.com/thelegendarypoet
+- VK: https://vk.ru/thelegendarypoet
 - Telegram: https://t.me/thelegendarypoet
 - Rutube: https://rutube.ru/channel/74579453/
 - Site: `https://thelegendarypoet.ru/` remains a legacy registered value pending a fresh operational check.

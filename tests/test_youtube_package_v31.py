@@ -163,3 +163,41 @@ def test_no_facts_or_executors_in_copy_module() -> None:
     code = inspect.getsource(module)
     for forbidden in ("youtube_client", "update_video", "create_comment", "requests.post"):
         assert forbidden not in code
+
+
+def test_registered_but_wrong_author_playlist_fails() -> None:
+    """Whitelisted link does not imply the link belongs to the named poet."""
+    pkg = make_package().replace(
+        "Плейлист «Сергей Есенин»: " + YESENIN,
+        "Плейлист «Сергей Есенин»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+    )
+    assert "author_playlist_mismatch" in {item.code for item in validate_five_block_package(pkg)}
+
+
+def test_short_playlist_cannot_point_to_a_different_author() -> None:
+    pkg = make_package()
+    short = "Плейлист «Сергей Есенин»: " + YESENIN
+    ix = pkg.index(short, pkg.index(short) + 1)
+    candidate = pkg[:ix] + pkg[ix:].replace(
+        short,
+        "Плейлист «Михаил Лермонтов»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        1,
+    )
+    assert "short_playlist_mismatch" in {item.code for item in validate_five_block_package(candidate)}
+
+
+def test_pinned_comment_must_end_with_same_two_playlists() -> None:
+    pkg = make_package()
+    line = "Плейлист «Поющие Поэты»: " + SINGING
+    ix = pkg.rfind(line) + len(line)
+    candidate = pkg[:ix] + "\nЛишний рекламный хвост." + pkg[ix:]
+    assert "pin_playlist_position" in {item.code for item in validate_five_block_package(candidate)}
+
+
+def test_author_registry_known_and_unsupported_names_are_rejected() -> None:
+    pkg = make_package()
+    candidate = pkg.replace(
+        "Плейлист «Сергей Есенин»: " + YESENIN,
+        "Плейлист «Несуществующий автор»: " + YESENIN,
+    )
+    assert "unknown_author" in {item.code for item in validate_five_block_package(candidate)}
