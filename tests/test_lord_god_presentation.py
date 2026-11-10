@@ -14,6 +14,7 @@ from video_channel_manager.platforms.youtube.copy_plan import (
 )
 from video_channel_manager.platforms.youtube.lord_god_presentation import (
     LORD_GOD_OWNER_CHANNEL,
+    forward_longform_editorial_issues,
     presentation_issues,
     require_lord_god_youtube_presentation,
 )
@@ -68,6 +69,68 @@ def _plan(after: str = _DESCRIPTION) -> dict:
     }
     finalize_copy_plan(plan, checked_video_ids=["al2wqoxaAjk"])
     return plan
+
+
+@pytest.mark.parametrize(
+    ("added", "issue"),
+    [
+        ("*Выступающий:* Джон МакАртур", "new_redundant_speaker_format_topic_field"),
+        ("*Формат:* вопрос и ответ", "new_redundant_speaker_format_topic_field"),
+        ("*Тема:* избрание", "new_redundant_speaker_format_topic_field"),
+        ("*Автор:* Джон МакАртур", "new_redundant_speaker_format_topic_field"),
+        (
+            "*Исторические плейлисты канала (не обязательно содержат этот выпуск):*",
+            "new_playlist_heading_misstates_subject",
+        ),
+        ("*Архивная навигация:*", "new_playlist_heading_misstates_subject"),
+        (
+            "*Англоязычная запись Grace to You, 3:14:*\nhttps://www.youtube.com/watch?v=X65vspiZLLA",
+            "new_english_recording_label_contains_metadata_or_duration",
+        ),
+        (
+            "*Англоязычная запись:* https://www.youtube.com/watch?v=X65vspiZLLA",
+            "new_english_recording_label_contains_metadata_or_duration",
+        ),
+        (
+            "*Англоязычная запись:*\n(17:33) https://www.youtube.com/watch?v=2NicrBbGWek",
+            "new_english_recording_url_not_on_own_line",
+        ),
+    ],
+)
+def test_future_longform_copy_rejects_new_bureaucratic_labels_and_false_playlist_headings(
+    added: str, issue: str
+) -> None:
+    proposed = _DESCRIPTION + "\n\n" + added
+    assert issue in forward_longform_editorial_issues("An original clean description", proposed)
+    with pytest.raises(ValueError, match=issue):
+        require_lord_god_youtube_presentation(_plan(proposed))
+
+
+def test_future_copy_accepts_plain_english_original_and_subject_matched_qa_playlist() -> None:
+    proposed = (
+        _DESCRIPTION
+        + "\n\n*Англоязычная запись:*\nhttps://www.youtube.com/watch?v=X65vspiZLLA"
+        + "\n\n*Вопросы и ответы:*\nhttps://www.youtube.com/playlist?list=PLu2Bhoh2caiUmmgHX01YgpbUtjfKxNnfg"
+    )
+    assert forward_longform_editorial_issues("An original clean description", proposed) == []
+    require_lord_god_youtube_presentation(_plan(proposed))
+
+
+def test_inherited_exact_archive_source_label_does_not_force_mass_rewrite() -> None:
+    legacy_credit = "*Автор:* Переводчик, указан в первоначальной публикации"
+    legacy_playlist = "*Исторические плейлисты канала:*"
+    assert (
+        forward_longform_editorial_issues(
+            "Existing lines:\n" + legacy_credit + "\n" + legacy_playlist,
+            _DESCRIPTION + "\n\n" + legacy_credit + "\n" + legacy_playlist,
+        )
+        == []
+    )
+    # New bad formatting remains rejected, even if old credits are retained.
+    assert "new_redundant_speaker_format_topic_field" in forward_longform_editorial_issues(
+        legacy_credit,
+        _DESCRIPTION + "\n\n" + legacy_credit + "\n*Формат:* вопрос и ответ",
+    )
 
 
 def test_formatted_project_description_is_accepted() -> None:
