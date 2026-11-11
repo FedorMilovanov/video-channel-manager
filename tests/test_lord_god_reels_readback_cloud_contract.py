@@ -189,6 +189,11 @@ def test_reels_meta_feed_paging_reads_next_page_with_encoded_cursor(proof, monke
         ({"data": {"invalid": "shape"}}, "did not return data array"),
         ({"data": ["unexpected scalar"]}, "malformed record"),
         ({"data": [{}], "paging": "invalid"}, "pagination malformed"),
+        ({"data": [{}], "paging": None}, "pagination malformed"),
+        ({"data": [{}], "paging": []}, "pagination malformed"),
+        ({"data": [{}], "paging": 0}, "pagination malformed"),
+        ({"data": [{}], "paging": {"next": ""}}, "pagination next malformed"),
+        ({"data": [{}], "paging": {"next": []}}, "pagination next malformed"),
         ({"data": [{}], "paging": {"next": "https://fake.example/p"}}, "incomplete or looping"),
         (
             {"data": [{}], "paging": {"next": "https://fake.example/p", "cursors": "not-a-dict"}},
@@ -256,3 +261,12 @@ def test_reels_meta_last_page_without_next_is_complete(proof, monkeypatch):
         },
     )
     assert proof.list_recent_media("offline-token") == [{"id": "first"}]
+
+
+def test_reels_meta_feed_without_paging_is_terminal(proof, monkeypatch):
+    monkeypatch.setattr(
+        proof,
+        "graph_get",
+        lambda token, path, *, params=None: {"data": [{"id": "only"}]},
+    )
+    assert proof.list_recent_media("offline-token") == [{"id": "only"}]
