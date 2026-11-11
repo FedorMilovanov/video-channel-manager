@@ -110,6 +110,7 @@ def test_single_publish_with_provider_readback(publisher, monkeypatch, capsys):
     assert len([data for _, data in calls if data is not None]) == 2
     assert "PUBLISHED_CONFIRMED" in capsys.readouterr().out
 
+
 @pytest.mark.parametrize(
     "bad_field,bad_value",
     [
