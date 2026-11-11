@@ -53,9 +53,10 @@ def plan_items() -> list[dict]:
             raise RuntimeError("Invalid frozen SHA-256")
         if not (0 < item["video_size_bytes"] <= 1_000_000_000):
             raise RuntimeError("Unexpected video size")
-        expected_key = f"lord-god-strength.{item['date']}.yt-{item['source_youtube_id']}.reel-v1"
-        if item["publication_key"] != expected_key:
-            raise RuntimeError("Publication key mismatch")
+        if set(item) != {"date", "source_youtube_id", "caption_sha256", "video_sha256", "video_size_bytes"}:
+            raise RuntimeError("Unexpected manifest fields")
+        if re.fullmatch(r"[A-Za-z0-9_-]{11}", item["source_youtube_id"]) is None:
+            raise RuntimeError("Invalid source ID")
     return items
 
 
