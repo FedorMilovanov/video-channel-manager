@@ -55,8 +55,11 @@ HASHTAG_RE = re.compile(r"#(?=[0-9A-Za-zА-Яа-яЁё_]*[A-Za-zА-Яа-яЁё])
 # Библиографическая пометка в конце статьи: книга, издание, источник цитат.
 # Начинается сразу с дела, без служебной фразы-заголовка и без значка:
 # с 22.10.2026 в серии не используются эмодзи вообще (решение оператора).
-SERVICE_NOTE_LEAD = "Цитаты Чарнока"
-SERVICE_NOTE_URL = "gutenberg.org"
+# Пометка не привязана к автору: серия «Чарнок» была первой, но не
+# единственной, поэтому проверяется форма («Цитаты … — из книги …»), а не имя.
+SERVICE_NOTE_LEAD_RE = re.compile(r"^Цитаты\b[^—]{0,120}—\s+из\s+(?:книг|книги)\b")
+# Ссылка на источник обязательна: без неё пометка не даёт читателю проверить цитату.
+SERVICE_NOTE_URL_RE = re.compile(r"https?://\S+")
 # Подпись цитаты в L2: обычная строка «— Автор, «Труд»» последней строкой блока.
 # Жирный и курсив в тексте разрешены (решение оператора 2026-10-22), но подпись
 # цитаты остаётся plain: это подпись, а не выделение.
@@ -316,15 +319,17 @@ def check(path: Path, allow_hashtags: bool = False) -> Report:
     note_blocks = [
         block_text
         for s0, e0 in spans
-        if (block_text := " ".join(stripped[s0:e0]).strip().removeprefix("© ").strip()).startswith(SERVICE_NOTE_LEAD)
+        if SERVICE_NOTE_LEAD_RE.match(
+            (block_text := " ".join(stripped[s0:e0]).strip().removeprefix("© ").strip())
+        )
     ]
     if not note_blocks:
         rep.error(
             "нет библиографической пометки в конце: последний абзац начинается словами "
-            "«© Цитаты Чарнока — из книги…» и называет книгу, издание и источник цитат"
+            "«© Цитаты <автора> — из книги…» и называет книгу, издание и источник цитат"
         )
-    elif SERVICE_NOTE_URL not in note_blocks[-1].casefold():
-        rep.error("в библиографической пометке нет ссылки на источник (gutenberg.org)")
+    elif not SERVICE_NOTE_URL_RE.search(note_blocks[-1]):
+        rep.error("в библиографической пометке нет ссылки на источник (URL издания или оцифровки)")
 
     # ---------- 6. хэштеги ----------
     all_tags = HASHTAG_RE.findall(text)

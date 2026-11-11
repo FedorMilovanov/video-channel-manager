@@ -6,10 +6,12 @@
 `content/telegram/lordchrist/RICH_EDITOR_ARTICLE_STANDARD.md`):
 
   * каждый блок цитаты статьи (эпиграф = блок 1) имеет ровно один якорь
-    `src-NN-charnock`, и номер якоря равен номеру блока;
+    `src-NN-<слаг>`, и номер якоря равен номеру блока (слаг серии —
+    `charnock`, `source`, … — задаётся флагом `--slug`);
   * подпись якоря совпадает с его номером («цитата NN»);
   * `source_id` уникальны;
-  * сводка стихов одна и стоит последней в списке;
+  * сводка стихов одна и стоит последней в списке (если она есть: статья
+    без блока Писания может её не иметь, и это не дефект);
   * если передан текст источника (`--source`, оцифровка Project Gutenberg
     #53527), EN-текст каждого якоря дословно лежит в блоке источника по
     указанному смещению.
@@ -34,7 +36,8 @@ import re
 import sys
 from pathlib import Path
 
-CHARNOCK_RE = re.compile(r"^src-(\d+)-charnock$")
+ANCHOR_RE = re.compile(r"^src-(\d+)-[a-z0-9]+$")
+SCRIPTURE_SUMMARY_ID = "src-scripture-synodal"
 LABEL_RE = re.compile(r"цитата (\d+)")
 OFFSET_RE = re.compile(r"\[смещение (\d+) в блоке")
 FOLD = {"‑": "-", "’": "'", "‘": "'", "“": '"', "”": '"'}
@@ -95,22 +98,33 @@ def check(markdown: Path, document: Path, source: Path | None, specs: list[str])
     for source_id in sorted({i for i in ids if ids.count(i) > 1}):
         errors.append(f"дубль source_id: {source_id}")
 
-    summary = [s for s in sources if not CHARNOCK_RE.match(s.get("source_id", ""))]
-    if len(summary) != 2:
-        errors.append(f"ожидались эпиграф и сводка стихов, получено записей: {len(summary)}")
-    elif sources[-1].get("source_id") != "src-scripture-synodal":
+    summary = [s for s in sources if not ANCHOR_RE.match(s.get("source_id", ""))]
+    # В серии «Чарнок» сводка стихов обязательна; в статьях других серий
+    # блока «Писание» может не быть вовсе — тогда записи-сводки нет.
+    if len(summary) > 2:
+        errors.append(f"ожидались записи-сводки (не более двух), получено: {len(summary)}")
+    scripture = [s for s in summary if s.get("source_id") == SCRIPTURE_SUMMARY_ID]
+    if scripture and sources[-1].get("source_id") != SCRIPTURE_SUMMARY_ID:
         errors.append("сводка стихов должна быть последней в списке")
 
     anchors: dict[int, tuple[str, int]] = {}
     for entry in sources:
         source_id = entry.get("source_id", "")
-        match = CHARNOCK_RE.match(source_id)
+        match = ANCHOR_RE.match(source_id)
         if not match:
             continue
         number = int(match.group(1))
         evidence = entry.get("evidence", "")
         offset_match = OFFSET_RE.search(evidence)
         if not offset_match:
+            if number == 1:
+                # Первый блок цитаты — эпиграф, и в этой серии он всегда
+                # цитата Писания: EN-якоря у него нет и быть не может,
+                # смещение в блоке источника к нему не относится.
+                if 1 in anchors:
+                    errors.append(f"{source_id}: номер якоря 1 уже использован")
+                anchors[1] = ("", 0)
+                continue
             errors.append(f"{source_id}: в evidence нет смещения в блоке источника")
             continue
         en = re.split(r"\s*\[", evidence[3:])[0].strip() if evidence.startswith("EN:") else ""

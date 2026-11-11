@@ -366,3 +366,52 @@ def test_reviewed_articles_have_synodal_scripture() -> None:
         article = charnock / f"lordchrist-rich-charnock-{number}.md"
         errors, _notes = scripture_check(article, corpus)
         assert not errors, f"{article.name}: {errors}"
+
+
+def test_preflight_accepts_bibliographic_note_of_another_series(tmp_path: Path) -> None:
+    """Пометка об источниках не привязана к Чарноку: важна форма, а не имя автора."""
+    note = (
+        "© Цитаты — из книг **«Свобода воли»** (*Freedom of the Will*) Джонатана Эдвардса "
+        "и **«Рабство воли»** (*De servo arbitrio*) Мартина Лютера; оцифровки: "
+        "https://ccel.org/ccel/edwards/works1 и https://ccel.org/ccel/luther/bondage."
+    )
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert not any("пометк" in err for err in rep.errors), rep.errors
+
+
+def test_preflight_rejects_note_without_any_source_url(tmp_path: Path) -> None:
+    """Пометка без ссылки на источник не даёт читателю проверить цитату."""
+    note = (
+        "© Цитаты — из книг **«Свобода воли»** (*Freedom of the Will*) Джонатана Эдвардса "
+        "и **«Рабство воли»** (*De servo arbitrio*) Мартина Лютера."
+    )
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел без маркера\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    rep = check(doc)
+    assert any("нет ссылки на источник" in err for err in rep.errors)
+
+
+def test_sources_check_accepts_scripture_epigraph_without_en_anchor(tmp_path: Path) -> None:
+    """Эпиграф-стих якоря EN не имеет: у него есть только ссылка на стих."""
+    article = ROOT / "content/telegram/lordchrist/rich-v1/freedom/lordchrist-rich-rabstvo-svobody.md"
+    document = article.with_suffix(".json")
+    from lordchrist_article_sources_check import check as sources_check
+
+    errors = sources_check(article, document, None, [])
+    assert not errors, errors
+
+
+def test_scripture_checker_knows_every_book_of_the_series() -> None:
+    """Книги, которые статья цитирует, должны быть в словаре проверки, иначе проверка молчит."""
+    from lordchrist_scripture_check import BOOKS
+
+    for abbr in ("Гал", "1 Цар", "Притч", "Прит", "Евр", "Тит", "Кол", "2 Пет", "Иер", "Пс", "Ин", "Мф", "Рим"):
+        assert abbr in BOOKS, f"в BOOKS нет сокращения «{abbr}»"
