@@ -79,8 +79,23 @@ def send_editor_login(
         ),
         "published page ownership verification",
     )
-    if page.get("can_edit") is not True or page.get("path") != TELEGRAPH_PAGE:
+    if page.get("path") != TELEGRAPH_PAGE or page.get("can_edit") is False:
         raise RuntimeError("Existing Telegraph account cannot edit the verified @lordchrist page")
+    if page.get("can_edit") is not True:
+        # The optional can_edit field is not returned by every API response.
+        # Prove ownership independently using this authenticated account's page list.
+        owned = _api_result(
+            post(
+                "https://api.telegra.ph/getPageList",
+                {"access_token": telegraph_token, "offset": "0", "limit": "200"},
+            ),
+            "account page ownership verification",
+        )
+        pages = owned.get("pages")
+        if not isinstance(pages, list) or not any(
+            isinstance(item, dict) and item.get("path") == TELEGRAPH_PAGE for item in pages
+        ):
+            raise RuntimeError("Verified @lordchrist page is not owned by the existing Telegraph account")
 
     account = _api_result(
         post(
