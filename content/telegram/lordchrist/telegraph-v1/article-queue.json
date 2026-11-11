@@ -728,7 +728,8 @@
     {
       "publication_id": "lordchrist-telegraph-jude-1-5-20261105",
       "ordinal": 16,
-      "scheduled_on_moscow": null,
+      "scheduled_on_moscow": "2026-11-15",
+      "slot_override_reason": "Оператор распорядился выпустить статью в воскресенье 15.11.2026 днём. Это вне полуденного слота вторник/пятница, поэтому дата помечена как осознанное исключение; cron в воскресенье не запускается, выпуск выполняет ручной workflow_dispatch по этой же дате.",
       "is_canary": false,
       "status": "ready",
       "vk_distribution": false,
