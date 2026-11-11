@@ -174,9 +174,23 @@ def preflight(token: str, items: list[dict], assets: dict[str, dict]) -> None:
     print("PREFLIGHT_OK_NO_POST", flush=True)
 
 
+
+def require_owner_approval() -> None:
+    """Hard gate: publishing is forbidden until the exact six-card wave is approved."""
+    plan = json.loads(PLAN.read_text(encoding="utf-8"))
+    approval = plan.get("publication_approval") or {}
+    if (
+        approval.get("status") != "OWNER_APPROVED"
+        or approval.get("owner_approved") is not True
+        or approval.get("provider_writes_authorized") is not True
+    ):
+        raise RuntimeError("OWNER_APPROVAL_REQUIRED: six carousel images have not been approved")
+
+
 def scheduled(token: str, items: list[dict], assets: dict[str, dict]) -> None:
     if os.getenv("GITHUB_EVENT_NAME") != "schedule":
         raise RuntimeError("Provider writes require genuine scheduled GitHub event")
+    require_owner_approval()
     now = datetime.now(MOSCOW)
     matches = [x for x in items if x["date"] == now.strftime("%Y-%m-%d")]
     if not matches:
