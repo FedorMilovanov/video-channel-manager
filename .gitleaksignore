@@ -96,3 +96,18 @@ f081442d046b48db22937a6e13487806d406319f:docs/operations/instagram-production-pu
 9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:90
 9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:98
 9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:106
+
+# Same 12 deterministic labels also entered main via the distinct squash merge
+# 2d81968e7be52259f70a0eddeaba8a2abfffb650; exact path and lines verified.
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:18
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:26
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:34
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:42
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:50
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:58
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:66
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:74
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:82
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:90
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:98
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:106
