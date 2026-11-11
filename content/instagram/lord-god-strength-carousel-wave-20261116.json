@@ -338,5 +338,12 @@
         }
       ]
     }
-  ]
+  ],
+  "publication_approval": {
+    "owner_approved": false,
+    "status": "PENDING_OWNER_VISUAL_REVIEW",
+    "scope": "16–21 ноября 2026; шесть пятислайдовых каруселей",
+    "provider_writes_authorized": false,
+    "note": "Не публиковать и не назначать в расписание без явного подтверждения владельца после проверки изображений и описаний"
+  }
 }
