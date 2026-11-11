@@ -103,11 +103,15 @@ def list_recent_media(token: str) -> list[dict]:
         if not all(isinstance(item, dict) for item in data):
             raise RuntimeError("Meta media GET returned malformed record")
         rows.extend(data)
-        paging = response.get("paging") or {}
+        if "paging" not in response:
+            return rows
+        paging = response["paging"]
         if not isinstance(paging, dict):
             raise RuntimeError("Meta media pagination malformed")
-        if not paging.get("next"):
+        if "next" not in paging:
             return rows
+        if not isinstance(paging["next"], str) or not paging["next"]:
+            raise RuntimeError("Meta media pagination next malformed")
         cursors = paging.get("cursors") or {}
         if not isinstance(cursors, dict):
             raise RuntimeError("Meta media pagination cursors malformed")
