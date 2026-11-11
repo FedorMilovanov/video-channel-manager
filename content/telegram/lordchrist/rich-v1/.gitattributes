@@ -1,0 +1,5 @@
+# Статьи rich-v1 попадают в очередь Telegraph-лейна и проверяются по точному
+# Git blob SHA. На Windows core.autocrlf=true молча меняет LF на CRLF и ломает
+# сверку байтов ещё до отправки, поэтому JSON в дереве фиксируется как LF.
+# JPEG и PNG остаются двоичными.
+*.json text eol=lf

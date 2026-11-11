@@ -88,21 +88,30 @@ def test_telegraph_queue_loads_charnock_cycle_and_separate_jude_manual_article()
     # Jude 1:5 is a separately approved manual-only special, not a scheduled
     # Charnock slot and not an automatic backfill.
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 16
-    assert [item.ordinal for item in items] == list(range(1, 17))
+    assert len(items) == 17
+    assert [item.ordinal for item in items] == list(range(1, 18))
     assert items[14].publication_id == "lordchrist-telegraph-charnock-history-02"
-    assert items[-1].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
-    assert items[-1].scheduled_on is None
+    assert items[-2].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
+    assert items[-2].scheduled_on is None
+    assert items[-2].is_canary is False
+    # The rich-v1 article «Рабство свободы» rides the same Telegraph lane as a
+    # separate series: its own reviewed bytes, its own cover, no VK wave.
+    assert items[-1].publication_id == "lordchrist-telegraph-rabstvo-svobody-20261111"
+    assert items[-1].scheduled_on is not None
     assert items[-1].is_canary is False
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
-    # Every edition is Telegraph-native: article and cover live in telegraph-v1,
-    # never borrowed from the rich-v1 lane.
+    # Every edition is Telegraph-native inside its own series directory, never
+    # borrowed from another series' folder.
     for item in items:
         assert item.article_path is not None
-        assert item.article_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
         assert item.cover_path is not None
+        if item.publication_id.endswith("-20261111"):
+            assert item.article_path.as_posix().startswith("content/telegram/lordchrist/rich-v1/rabstvo-svobody/")
+            assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/rich-v1/rabstvo-svobody/")
+            continue
+        assert item.article_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
         assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
 
 
