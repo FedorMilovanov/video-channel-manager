@@ -93,10 +93,10 @@ def read_plan() -> list[dict]:
         raise RuntimeError("Wrong project/account")
     rows = plan["items"]
     expected = [
-        ("01-charnock", "2026-11-11"),
-        ("02-owen", "2026-11-12"),
-        ("03-bunyan", "2026-11-13"),
-        ("04-watson", "2026-11-14"),
+        ("01-charnock", "2026-11-12"),
+        ("02-owen", "2026-11-13"),
+        ("03-bunyan", "2026-11-14"),
+        ("04-watson", "2026-11-15"),
     ]
     if len(rows) != 4 or [(x["id"], x["date"]) for x in rows] != expected:
         raise RuntimeError("Unexpected four-day schedule")
