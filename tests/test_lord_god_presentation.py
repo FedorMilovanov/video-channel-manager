@@ -298,6 +298,7 @@ def test_sermon_about_offerings_is_not_mistaken_for_personal_payment_request() -
     content = _DESCRIPTION + "\n1:05:00 Пожертвования и воскресное богослужение"
     assert "retired_fundraising_or_payment" not in presentation_issues(content)
 
+
 @pytest.mark.parametrize(
     "solicitation",
     [
@@ -330,7 +331,6 @@ def test_bank_card_removal_is_allowed_without_losing_genuine_source_credits() ->
 def test_unrelated_sixteen_digit_archive_identifier_is_not_called_a_donation() -> None:
     description = _DESCRIPTION + "\nАрхивный идентификатор рукописи: 1234567890123456."
     assert "retired_fundraising_or_payment" not in presentation_issues(description)
-
 
 
 @pytest.mark.parametrize(
