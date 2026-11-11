@@ -17,7 +17,8 @@ class FakeAPI:
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, str]]] = []
         self.chat_type = "private"
-        self.page_editable = True
+        self.page_editable: bool | None = True
+        self.owned_pages = [PAGE]
         self.auth_url = URL
         self.send_ok = True
 
@@ -26,7 +27,12 @@ class FakeAPI:
         if endpoint.endswith("/getChat"):
             return {"ok": True, "result": {"type": self.chat_type, "id": 1234567}}
         if endpoint.endswith(f"/getPage/{PAGE}"):
-            return {"ok": True, "result": {"path": PAGE, "can_edit": self.page_editable}}
+            result: dict[str, Any] = {"path": PAGE}
+            if self.page_editable is not None:
+                result["can_edit"] = self.page_editable
+            return {"ok": True, "result": result}
+        if endpoint.endswith("/getPageList"):
+            return {"ok": True, "result": {"pages": [{"path": path} for path in self.owned_pages]}}
         if endpoint.endswith("/getAccountInfo"):
             return {"ok": True, "result": {"short_name": "lordchrist", "auth_url": self.auth_url}}
         if endpoint.endswith("/sendMessage"):
@@ -84,6 +90,29 @@ def test_rejects_wrong_telegraph_account_before_minting_login() -> None:
     with pytest.raises(RuntimeError, match="cannot edit"):
         _send(fake)
     assert len(fake.calls) == 2
+
+
+def test_missing_optional_can_edit_uses_authenticated_account_pages() -> None:
+    fake = FakeAPI()
+    fake.page_editable = None
+    _send(fake)
+    assert [url.rsplit("/", 1)[-1] for url, _ in fake.calls] == [
+        "getChat",
+        PAGE,
+        "getPageList",
+        "getAccountInfo",
+        "sendMessage",
+    ]
+
+
+def test_missing_can_edit_and_unowned_page_fails_without_creating_login() -> None:
+    fake = FakeAPI()
+    fake.page_editable = None
+    fake.owned_pages = []
+    with pytest.raises(RuntimeError, match="is not owned"):
+        _send(fake)
+    assert len(fake.calls) == 3
+    assert all(not url.endswith("/getAccountInfo") for url, _ in fake.calls)
 
 
 @pytest.mark.parametrize(
