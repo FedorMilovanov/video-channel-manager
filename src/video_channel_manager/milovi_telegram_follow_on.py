@@ -495,7 +495,7 @@ def materialize_exact_photo(
     _exact_identity(blob_sha1, item["source_git_blob_sha1"], f"source Git blob for {media_id}")
 
     try:
-        from PIL import Image  # type: ignore[import-not-found]
+        from PIL import Image
     except ImportError as exc:
         raise ValueError("Pillow is required to materialize exact Milovi follow-on JPEG bytes") from exc
     with Image.open(io.BytesIO(source)) as image:
