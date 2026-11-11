@@ -155,3 +155,105 @@ def test_cloud_workflow_has_only_readonly_crons():
     assert "LORD_GOD_REELS_PROOF_MODE:" in text
     assert "cancel-in-progress: false" in text
     assert "/media_publish" not in text
+
+
+def test_reels_meta_feed_paging_reads_next_page_with_encoded_cursor(proof, monkeypatch):
+    requests = []
+
+    def fake_get(token, path, *, params=None):
+        assert token == "offline-token"
+        assert path == proof.INSTAGRAM_ID + "/media"
+        requests.append(dict(params))
+        if len(requests) == 1:
+            return {
+                "data": [{"id": "111"}],
+                "paging": {
+                    "next": "https://not-meta.example/untrusted-path?access_token=do-not-follow",
+                    "cursors": {"after": "opaque/+=="},
+                },
+            }
+        assert params["after"] == "opaque/+=="
+        return {"data": [{"id": "222"}], "paging": {"cursors": {"after": "not-next"}}}
+
+    monkeypatch.setattr(proof, "graph_get", fake_get)
+    result = proof.list_recent_media("offline-token")
+    assert [row["id"] for row in result] == ["111", "222"]
+    assert len(requests) == 2
+    assert "after" not in requests[0]
+
+
+@pytest.mark.parametrize(
+    "response,expected_error",
+    [
+        ({}, "did not return data array"),
+        ({"data": {"invalid": "shape"}}, "did not return data array"),
+        ({"data": ["unexpected scalar"]}, "malformed record"),
+        ({"data": [{}], "paging": "invalid"}, "pagination malformed"),
+        ({"data": [{}], "paging": {"next": "https://fake.example/p"}}, "incomplete or looping"),
+        (
+            {"data": [{}], "paging": {"next": "https://fake.example/p", "cursors": "not-a-dict"}},
+            "cursors malformed",
+        ),
+        (
+            {"data": [], "paging": {"next": "https://fake.example/p", "cursors": {"after": "cursor"}}},
+            "incomplete or looping",
+        ),
+    ],
+)
+def test_reels_meta_malformed_pagination_fails_closed(proof, monkeypatch, response, expected_error):
+    calls = []
+
+    def fake_get(token, path, *, params=None):
+        calls.append((path, params))
+        return response
+
+    monkeypatch.setattr(proof, "graph_get", fake_get)
+    with pytest.raises(RuntimeError, match=expected_error):
+        proof.list_recent_media("offline-token")
+    assert len(calls) == 1
+
+
+def test_reels_meta_repeated_cursor_never_becomes_false_negative(proof, monkeypatch):
+    calls = []
+
+    def fake_get(token, path, *, params=None):
+        calls.append(params)
+        return {
+            "data": [{"id": str(len(calls))}],
+            "paging": {"next": "https://not-meta.example/loop", "cursors": {"after": "repeated"}},
+        }
+
+    monkeypatch.setattr(proof, "graph_get", fake_get)
+    with pytest.raises(RuntimeError, match="incomplete or looping"):
+        proof.list_recent_media("offline-token")
+    assert len(calls) == 2
+
+
+def test_reels_meta_feed_over_five_pages_is_not_reported_as_missing(proof, monkeypatch):
+    requests = []
+
+    def fake_get(token, path, *, params=None):
+        requests.append(params)
+        number = len(requests)
+        return {
+            "data": [{"id": str(number)}],
+            "paging": {"next": "https://not-meta.example/next", "cursors": {"after": f"cursor{number}"}},
+        }
+
+    monkeypatch.setattr(proof, "graph_get", fake_get)
+    with pytest.raises(RuntimeError, match="exceeds five-page verification bound"):
+        proof.list_recent_media("offline-token")
+    assert len(requests) == 5
+
+
+def test_reels_meta_last_page_without_next_is_complete(proof, monkeypatch):
+    monkeypatch.setattr(
+        proof,
+        "graph_get",
+        lambda token, path, *, params=None: {
+            "data": [{"id": "first"}],
+            "paging": {"cursors": {"after": "opaque-no-next"}},
+        },
+    )
+    assert proof.list_recent_media("offline-token") == [{"id": "first"}]
+
