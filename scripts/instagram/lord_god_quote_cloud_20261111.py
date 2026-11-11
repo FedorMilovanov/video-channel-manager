@@ -6,6 +6,7 @@ Github workflow_dispatch is preflight only. Scheduled event allows one post for 
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import json
 import os
@@ -195,10 +196,30 @@ def main() -> None:
     media_id = str(result.get("id", ""))
     if not media_id.isdecimal():
         raise RuntimeError("Uncertain publish response; do not blindly retry")
-    detail = request_json(media_id + "?fields=id,caption,permalink,timestamp", token)
-    if detail.get("caption", "").strip() != item["caption"].strip():
-        raise RuntimeError("Published media exists, but caption readback mismatches")
-    print("PUBLISHED_CONFIRMED", item["id"], media_id, detail.get("permalink"), flush=True)
+    # This is only a container-publish response, not yet verified content.
+    # Preserve the returned ID for reconciliation if the provider readback is incomplete.
+    print("MEDIA_PUBLISH_ID_UNCONFIRMED", item["id"], media_id, flush=True)
+    detail = request_json(media_id + "?fields=id,caption,media_type,permalink,timestamp", token)
+    permalink = str(detail.get("permalink", ""))
+    parsed_url = urlparse(permalink)
+    timestamp = str(detail.get("timestamp", ""))
+    try:
+        published_at = dt.datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        if published_at.tzinfo is None:
+            raise ValueError("Missing timezone")
+        published_day = published_at.astimezone(MOSCOW).strftime("%Y-%m-%d")
+    except ValueError:
+        raise RuntimeError("Provider publication timestamp missing or invalid; do not retry") from None
+    if (
+        str(detail.get("id", "")) != media_id
+        or str(detail.get("caption", "")).strip() != item["caption"].strip()
+        or detail.get("media_type") != "IMAGE"
+        or parsed_url.scheme != "https"
+        or (parsed_url.hostname or "").lower() not in {"instagram.com", "www.instagram.com"}
+        or published_day != current
+    ):
+        raise RuntimeError("Provider photo media, date, caption or permalink not proven; do not retry")
+    print("PUBLISHED_CONFIRMED", item["id"], media_id, permalink, flush=True)
 
 
 if __name__ == "__main__":
