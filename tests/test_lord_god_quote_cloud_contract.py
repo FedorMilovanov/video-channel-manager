@@ -442,4 +442,3 @@ def test_workflow_has_actions_read_token_and_schedule_context():
     assert "LORD_GOD_CLOUD_GITHUB_TOKEN: ${{ github.token }}" in workflow
     assert "GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || 'manual' }}" in workflow
     assert "cancel-in-progress: false" in workflow
-
