@@ -77,6 +77,19 @@ re-sign it. Read-only `reconcile-copy-fixes` remains able to inspect older
 structurally valid signed plans, regardless of current publication styling.
 Source: https://developers.google.com/youtube/data/reference/rest/v3/videos .
 
+**Retired bank-card appeal regression (12 Nov 2026, issue #795):** A
+previously approved ShepCon 2020 paragraph solicited support using a
+16-digit bank-card number *before* a parenthetical Sberbank label. Earlier
+checks only caught bank-prefixed numbers and missed seven signed releases.
+A new Lord God description must reject a payment-solicitation line with
+a 16-digit card number irrespective of whether the bank appears before or
+after that number. Such a line is not a translator credit or sermon source
+and may be removed in a new independently signed one-video correction,
+while all genuine original credits, playlist IDs and links remain preserved.
+Do not reapply old signed plans or infer that any live video is already
+corrected; inspect a fresh exact owner readback first. Do not copy the
+personal card number into repository source, tests or issue comments.
+
 ## Long-form editorial voice: natural language, not metadata labels (10 Nov 2026)
 
 These are **forward-looking authoring rules** for Lord God YouTube long-form descriptions, not an instruction to re-edit old live descriptions. Shorts have a separate unfinished workflow. Do not retrospectively republish approved videos solely to change their tone.
