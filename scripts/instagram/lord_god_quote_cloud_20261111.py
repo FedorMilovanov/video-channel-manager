@@ -178,7 +178,6 @@ def find_published(token: str, caption: str) -> dict | None:
     return existing
 
 
-
 def first_scheduled_run_for_day(day: str) -> bool:
     """Select exactly one publisher run via GitHub's server-side run registry.
 
