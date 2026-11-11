@@ -125,14 +125,13 @@ def test_ambiguous_response_does_not_retry_in_same_run(publisher, monkeypatch):
         publisher.main()
     assert requests == [publisher.INSTAGRAM_ACCOUNT + "/media_publish"]
 
+
 def test_cloud_cron_primary_backup_and_no_manual_provider_writes():
     workflow = (
-        Path(__file__).resolve().parents[1]
-        / ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml"
+        Path(__file__).resolve().parents[1] / ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml"
     ).read_text(encoding="utf-8")
     assert workflow.count("    - cron:") == 2
     assert "cron: '45 9 12-15 11 *'" in workflow  # 12:45 Moscow, primary
     assert "cron: '10 10 12-15 11 *'" in workflow  # 13:10 Moscow, backup
     assert "cancel-in-progress: false" in workflow
     assert "github.event_name == 'schedule' && 'scheduled' || 'preflight'" in workflow
-
