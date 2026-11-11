@@ -47,7 +47,10 @@ def test_delivers_only_one_private_link_without_logging_it(capsys: pytest.Captur
     fake = FakeAPI()
     _send(fake)
     assert [endpoint.rsplit("/", 1)[-1] for endpoint, _ in fake.calls] == [
-        "getChat", PAGE, "getAccountInfo", "sendMessage"
+        "getChat",
+        PAGE,
+        "getAccountInfo",
+        "sendMessage",
     ]
     sent = fake.calls[-1][1]
     assert sent["chat_id"] == "1234567"
