@@ -113,7 +113,7 @@ def _closed_gop_probe(path: Path, expected_codec: str | None) -> InstagramClosed
     )
 
 
-def test_binary_upload_passes_complete_bytes_and_only_meta_sample_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_binary_upload_has_explicit_octet_stream_mime_and_complete_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
     config = _config()
     unused_transport = httpx.MockTransport(lambda request: _response(request, 500, {}))
     observed: dict[str, Any] = {}
@@ -142,6 +142,7 @@ def test_binary_upload_passes_complete_bytes_and_only_meta_sample_headers(monkey
     assert type(observed["content"]) is bytes
     assert observed["headers"] == {
         "Authorization": f"OAuth {TOKEN}",
+        "Content-Type": "application/octet-stream",
         "offset": "0",
         "file_size": str(len(VIDEO_BYTES)),
     }
@@ -178,7 +179,7 @@ def test_plain_text_http_400_detail_is_bounded_and_redacted() -> None:
     assert f"request_content_length={len(VIDEO_BYTES)}" in message
     assert f"request_file_size={len(VIDEO_BYTES)}" in message
     assert "request_offset=0" in message
-    assert "request_content_type=<absent>" in message
+    assert "request_content_type=application/octet-stream" in message
     assert len(message) < 900
 
 
@@ -222,7 +223,7 @@ def test_http_400_diagnostic_preserves_provider_correlation_headers_without_secr
     assert f"request_content_length={len(VIDEO_BYTES)}" in message
     assert f"request_file_size={len(VIDEO_BYTES)}" in message
     assert "request_offset=0" in message
-    assert "request_content_type=<absent>" in message
+    assert "request_content_type=application/octet-stream" in message
     assert TOKEN not in message
     assert UPLOAD_URI not in message
     assert "/ig-api-upload/" not in message
@@ -248,7 +249,7 @@ def test_transport_failure_keeps_safe_request_fingerprint() -> None:
     assert f"request_content_length={len(VIDEO_BYTES)}" in message
     assert f"request_file_size={len(VIDEO_BYTES)}" in message
     assert "request_offset=0" in message
-    assert "request_content_type=<absent>" in message
+    assert "request_content_type=application/octet-stream" in message
     assert TOKEN not in message
     assert UPLOAD_URI not in message
     assert "/ig-api-upload/" not in message

@@ -454,6 +454,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             target,
             headers={
                 "Authorization": f"OAuth {self.config.access_token}",
+                "Content-Type": "application/octet-stream",
                 "offset": "0",
                 "file_size": str(file_size),
             },
