@@ -1,0 +1,272 @@
+[
+  {
+    "id": "01-heart",
+    "slide": 1,
+    "name": "01-heart-slide-01.jpg",
+    "sha256": "f562794965c8b08ad253525e1945e2541aaa8f823a6a38ffe6274204e1a8f955",
+    "bytes": 171163,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "01-heart",
+    "slide": 2,
+    "name": "01-heart-slide-02.jpg",
+    "sha256": "d2377b1ec59197599cc8f41bfd0adf1b25aec536c5dba9c3657c66c5bc355bed",
+    "bytes": 155286,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "01-heart",
+    "slide": 3,
+    "name": "01-heart-slide-03.jpg",
+    "sha256": "96c40f1d349beccc54bd22ab65dfdfcee46f837487565d56095b914933d808c6",
+    "bytes": 159230,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "01-heart",
+    "slide": 4,
+    "name": "01-heart-slide-04.jpg",
+    "sha256": "b9e9e8674ceb008f51f65c2015d4d8fa64840ef4538c0280bb63958bce9a0837",
+    "bytes": 160021,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "01-heart",
+    "slide": 5,
+    "name": "01-heart-slide-05.jpg",
+    "sha256": "8419d90ace0e3e9bebd0f32b654adba0357772e31273b22f0ecfcacc00c65f53",
+    "bytes": 182313,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "02-congresses",
+    "slide": 1,
+    "name": "02-congresses-slide-01.jpg",
+    "sha256": "cd813b9c039f23da8a757bd369c78d64befa587a9dbfd29c85d3efde1558744d",
+    "bytes": 167156,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "02-congresses",
+    "slide": 2,
+    "name": "02-congresses-slide-02.jpg",
+    "sha256": "76ba52184070ce15364c93a14a525d85b5bd98e6b31fc1c5d9ecaf0f56f7402c",
+    "bytes": 143647,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "02-congresses",
+    "slide": 3,
+    "name": "02-congresses-slide-03.jpg",
+    "sha256": "6ec5284cc9449923d16a7ed237b20a362c3f8cab4b9395f6776c2dcde0a1f9c4",
+    "bytes": 151392,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "02-congresses",
+    "slide": 4,
+    "name": "02-congresses-slide-04.jpg",
+    "sha256": "cc3fcd9489edc46588be977fd54ea6320ac2d700f1c6d1b9030e1db180910c14",
+    "bytes": 156546,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "02-congresses",
+    "slide": 5,
+    "name": "02-congresses-slide-05.jpg",
+    "sha256": "c1cda0d7a3933e7c07fb3993cfa68f5acc0913b0da71e37d6e29f34fa32ca9a5",
+    "bytes": 166309,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "03-peter4",
+    "slide": 1,
+    "name": "03-peter4-slide-01.jpg",
+    "sha256": "74f0be9486547113ec1aa691fb7870e1719088c0922d701a522bac56e14ed37b",
+    "bytes": 197136,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "03-peter4",
+    "slide": 2,
+    "name": "03-peter4-slide-02.jpg",
+    "sha256": "9b28f6d4db4e2999eea615857fe6488377024609237b2cebdf9773d4a4cc4538",
+    "bytes": 174685,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "03-peter4",
+    "slide": 3,
+    "name": "03-peter4-slide-03.jpg",
+    "sha256": "9113ec1d659b2932d8cbd9676b83d2552430c33fee14fba7442cd61a96c28bae",
+    "bytes": 187359,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "03-peter4",
+    "slide": 4,
+    "name": "03-peter4-slide-04.jpg",
+    "sha256": "edc77fa8cdea74dd2c9351c6b2c3258b14807e1d23d6e3a8fb75aae895e67da7",
+    "bytes": 182920,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "03-peter4",
+    "slide": 5,
+    "name": "03-peter4-slide-05.jpg",
+    "sha256": "02e9b4d113164ccad8b280d7cd0e0e49e1ac7d41a4d3579388fd0cb6a07a0454",
+    "bytes": 194864,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "04-christ",
+    "slide": 1,
+    "name": "04-christ-slide-01.jpg",
+    "sha256": "586fe7c3e655173fa73bd86cf7c2683542fcdee8b5fe209c0b14f3f849d2b2b2",
+    "bytes": 206429,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "04-christ",
+    "slide": 2,
+    "name": "04-christ-slide-02.jpg",
+    "sha256": "7ac5e00aff7d750ddbd7cb802f2d6bf636bb6b6fdd6b2842845e5df479f4b244",
+    "bytes": 180310,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "04-christ",
+    "slide": 3,
+    "name": "04-christ-slide-03.jpg",
+    "sha256": "dbcca3163833c50bc7efed87bc237020c762e004ea39844e516b1bca6fb40553",
+    "bytes": 175851,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "04-christ",
+    "slide": 4,
+    "name": "04-christ-slide-04.jpg",
+    "sha256": "ab7b4398c22d2d7903389985b096cbfd414d610fd5d5655a95f9f1e98ea11ef9",
+    "bytes": 186205,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "04-christ",
+    "slide": 5,
+    "name": "04-christ-slide-05.jpg",
+    "sha256": "cac0e45b9c2f69e4484c1f3e987c2cd0fa9534f121429f9e480b88407ebda2d1",
+    "bytes": 181726,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "05-jude",
+    "slide": 1,
+    "name": "05-jude-slide-01.jpg",
+    "sha256": "d6fadc084c801dce67e25ecfe776c73c9792ed3467240fb5d9b19cafce99ac38",
+    "bytes": 187821,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "05-jude",
+    "slide": 2,
+    "name": "05-jude-slide-02.jpg",
+    "sha256": "78866bdb629c59f71e046e348a0234bf4d5f6e01b546960fba603b5443fff321",
+    "bytes": 171308,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "05-jude",
+    "slide": 3,
+    "name": "05-jude-slide-03.jpg",
+    "sha256": "d94cbe15bccad733c91b5b9465dff06814b5d6265236123d3854ce8a0fd476da",
+    "bytes": 165731,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "05-jude",
+    "slide": 4,
+    "name": "05-jude-slide-04.jpg",
+    "sha256": "feba5a70d7ba617acb21f0d6cd083162e86377943df307e8c72f91fff3bc739d",
+    "bytes": 178344,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "05-jude",
+    "slide": 5,
+    "name": "05-jude-slide-05.jpg",
+    "sha256": "8d68e83422f3ebdfba3c1bce947199a1acbefbe7e73e02645017e970321a3ee2",
+    "bytes": 171275,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "06-spirits",
+    "slide": 1,
+    "name": "06-spirits-slide-01.jpg",
+    "sha256": "a8443d4da7a4a84cd02c469cb3a0164211f67e216f133461252e0b673af8d28f",
+    "bytes": 194352,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "06-spirits",
+    "slide": 2,
+    "name": "06-spirits-slide-02.jpg",
+    "sha256": "dc730ef44140216d770cc230ba8e61d581d62afea08be89d244bb3c9e2c31a6f",
+    "bytes": 159953,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "06-spirits",
+    "slide": 3,
+    "name": "06-spirits-slide-03.jpg",
+    "sha256": "efb7ebfcb2f629ce33d7b5783cf73e1c3395c3f36ba80337933fce0b685b1e2e",
+    "bytes": 168407,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "06-spirits",
+    "slide": 4,
+    "name": "06-spirits-slide-04.jpg",
+    "sha256": "71900467843a5426d0f98ab86251362c313477f00ae2c44afa60199fb0550a41",
+    "bytes": 169384,
+    "width": 1080,
+    "height": 1350
+  },
+  {
+    "id": "06-spirits",
+    "slide": 5,
+    "name": "06-spirits-slide-05.jpg",
+    "sha256": "0481b2e7f994b15443ef699e55f61372909d8a8efb46266877fd6c003fc8f2a0",
+    "bytes": 166932,
+    "width": 1080,
+    "height": 1350
+  }
+]
