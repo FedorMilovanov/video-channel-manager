@@ -256,4 +256,3 @@ def test_reels_meta_last_page_without_next_is_complete(proof, monkeypatch):
         },
     )
     assert proof.list_recent_media("offline-token") == [{"id": "first"}]
-
