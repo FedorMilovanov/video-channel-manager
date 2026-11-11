@@ -1,7 +1,7 @@
 name: Lord God Instagram — cloud quote photo schedule (2026-11-11 to 14)
 on:
   schedule:
-    - cron: '30 9 11-14 11 *'
+    - cron: '45 9 11-14 11 *'
   workflow_dispatch:
 
 permissions:
