@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +34,7 @@ def configure(monkeypatch, module, mode="scheduled", hour=12, minute=46):
     monkeypatch.setattr(module, "datetime", FixedDateTime)
     monkeypatch.setattr(module, "verify_identity", lambda token: None)
     monkeypatch.setattr(module, "media_verified", lambda item: "https://example.invalid/safe-image.jpg")
+    monkeypatch.setattr(module, "first_scheduled_run_for_day", lambda day: True)
 
 
 def test_four_frozen_slots(publisher):
@@ -321,3 +323,123 @@ def test_repeated_provider_cursor_aborts(publisher, monkeypatch):
     with pytest.raises(RuntimeError, match="cursor invalid"):
         publisher.find_published("dummy-token", "caption")
     assert len(calls) == 2
+
+def _set_scheduled_github_context(monkeypatch, *, run_id="111", attempt="1", cron="45 9 12-15 11 *"):
+    monkeypatch.setenv("GITHUB_REPOSITORY", "FedorMilovanov/video-channel-manager")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", attempt)
+    monkeypatch.setenv("GITHUB_EVENT_SCHEDULE", cron)
+    monkeypatch.setenv("GITHUB_RUN_ID", run_id)
+    monkeypatch.setenv("LORD_GOD_CLOUD_GITHUB_TOKEN", "offline-test-github-token-1234567")
+
+
+def _gh_run(identifier, when):
+    return {
+        "id": identifier,
+        "event": "schedule",
+        "head_branch": "main",
+        "created_at": when,
+    }
+
+
+def test_first_github_run_may_attempt_once(publisher, monkeypatch, capsys):
+    _set_scheduled_github_context(monkeypatch, run_id="111")
+    runs = [
+        _gh_run(222, "2026-11-12T10:10:00Z"),
+        _gh_run(111, "2026-11-12T09:45:00Z"),
+    ]
+    requests = []
+
+    def offline_open(request, timeout):
+        assert timeout == 30
+        assert request.get_method() == "GET"
+        assert request.full_url.startswith("https://api.github.com/repos/")
+        assert "created=2026-11-12" in request.full_url
+        assert "event=schedule" in request.full_url
+        assert request.get_header("Authorization") == "Bearer offline-test-github-token-1234567"
+        requests.append(request)
+        return io.BytesIO(json.dumps({"total_count": 2, "workflow_runs": runs}).encode())
+
+    monkeypatch.setattr(publisher, "urlopen", offline_open)
+    assert publisher.first_scheduled_run_for_day("2026-11-12") is True
+    assert len(requests) == 1
+    assert "FIRST_SCHEDULED_RUN_WRITE_ELIGIBLE" in capsys.readouterr().out
+
+
+def test_backup_skips_if_primary_was_created_even_if_primary_failed(publisher, monkeypatch, capsys):
+    _set_scheduled_github_context(monkeypatch, run_id="222", cron="10 10 12-15 11 *")
+    runs = [
+        _gh_run(222, "2026-11-12T10:10:00Z"),
+        _gh_run(111, "2026-11-12T09:45:00Z"),
+    ]
+    monkeypatch.setattr(
+        publisher,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(json.dumps({"total_count": 2, "workflow_runs": runs}).encode()),
+    )
+    assert publisher.first_scheduled_run_for_day("2026-11-12") is False
+    assert "LATER_SCHEDULED_RUN_READ_ONLY_SKIP" in capsys.readouterr().out
+
+
+def test_backup_can_own_day_only_if_primary_run_never_existed(publisher, monkeypatch):
+    _set_scheduled_github_context(monkeypatch, run_id="222", cron="10 10 12-15 11 *")
+    runs = [_gh_run(222, "2026-11-12T10:10:00Z")]
+    monkeypatch.setattr(
+        publisher,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(json.dumps({"total_count": 1, "workflow_runs": runs}).encode()),
+    )
+    assert publisher.first_scheduled_run_for_day("2026-11-12") is True
+
+
+@pytest.mark.parametrize("attempt", ["2", "3", "", "0"])
+def test_rerunning_original_schedule_never_posts(publisher, monkeypatch, attempt):
+    _set_scheduled_github_context(monkeypatch, run_id="111", attempt=attempt)
+    monkeypatch.setattr(publisher, "urlopen", lambda *a, **k: pytest.fail("Unapproved GitHub API lookup"))
+    with pytest.raises(RuntimeError, match="Unapproved cloud workflow invocation"):
+        publisher.first_scheduled_run_for_day("2026-11-12")
+
+
+@pytest.mark.parametrize(
+    "listing",
+    [
+        {},
+        {"total_count": 0, "workflow_runs": []},
+        {"total_count": 101, "workflow_runs": []},
+        {"total_count": 2, "workflow_runs": [_gh_run(111, "2026-11-12T09:45:00Z")]},
+        {"total_count": 1, "workflow_runs": [_gh_run(222, "2026-11-12T10:10:00Z")]},
+        {"total_count": 1, "workflow_runs": [_gh_run(111, "2026-11-13T09:45:00Z")]},
+        {"total_count": 1, "workflow_runs": [dict(_gh_run(111, "2026-11-12T09:45:00Z"), event="push")]},
+    ],
+)
+def test_untrusted_or_incomplete_run_registry_blocks_provider_post(publisher, monkeypatch, listing):
+    _set_scheduled_github_context(monkeypatch, run_id="111")
+    monkeypatch.setattr(
+        publisher,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(json.dumps(listing).encode()),
+    )
+    with pytest.raises(RuntimeError, match="do not publish"):
+        publisher.first_scheduled_run_for_day("2026-11-12")
+
+
+def test_second_run_never_calls_provider_post_even_when_photo_missing(publisher, monkeypatch, capsys):
+    configure(monkeypatch, publisher)
+    monkeypatch.setattr(publisher, "find_published", lambda *a: None)
+    monkeypatch.setattr(publisher, "first_scheduled_run_for_day", lambda day: False)
+    monkeypatch.setattr(publisher, "request_json", lambda *a, **k: pytest.fail("No provider POST allowed"))
+    publisher.main()
+    assert "POST_START" not in capsys.readouterr().out
+
+
+def test_workflow_has_actions_read_token_and_schedule_context():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml"
+    ).read_text(encoding="utf-8")
+    assert "  actions: read" in workflow
+    assert "  contents: read" in workflow
+    assert "LORD_GOD_CLOUD_GITHUB_TOKEN: ${{ github.token }}" in workflow
+    assert "GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || 'manual' }}" in workflow
+    assert "cancel-in-progress: false" in workflow
+
