@@ -344,7 +344,6 @@ def test_lord_god_presentation_imports_strict_youtube_copy_validator() -> None:
     assert lord_god_presentation.validate_youtube_description is youtube_copy.validate_youtube_description
 
 
-
 def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:
     # Exact 5000-byte limit: Cyrillic uses two bytes and ASCII one byte.
     base = _DESCRIPTION + "\n"
@@ -363,10 +362,7 @@ def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:
             require_lord_god_youtube_presentation(_plan(over))
 
 
-
-def test_lord_god_oversize_utf8_fails_before_oauth_or_provider(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_lord_god_oversize_utf8_fails_before_oauth_or_provider(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     from types import SimpleNamespace
 
     from video_channel_manager.cli import youtube as cli
