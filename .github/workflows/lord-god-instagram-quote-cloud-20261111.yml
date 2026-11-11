@@ -1,0 +1,32 @@
+name: Lord God Instagram — cloud quote photo schedule (2026-11-11 to 14)
+on:
+  schedule:
+    - cron: '45 9 11-14 11 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lord-god-instagram-cloud-quotes-20261111
+  cancel-in-progress: false
+
+jobs:
+  quote-photo:
+    name: Cloud publisher (four exact dates only)
+    if: github.repository == 'FedorMilovanov/video-channel-manager'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LORD_GOD_PAGE_TOKEN: ${{ secrets.LORD_GOD_INSTAGRAM_PAGE_TOKEN }}
+      LORD_GOD_CLOUD_MODE: ${{ github.event_name == 'schedule' && 'scheduled' || 'preflight' }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Validate exact account and publish only today's approved slot
+        run: python scripts/instagram/lord_god_quote_cloud_20261111.py
