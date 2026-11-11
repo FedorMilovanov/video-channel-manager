@@ -443,3 +443,32 @@ def test_workflow_has_actions_read_token_and_schedule_context():
     assert "LORD_GOD_CLOUD_GITHUB_TOKEN: ${{ github.token }}" in workflow
     assert "GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || 'manual' }}" in workflow
     assert "cancel-in-progress: false" in workflow
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        None,
+        False,
+        [],
+        "",
+        {"next": None},
+        {"next": False},
+        {"next": 0},
+        {"next": ""},
+        {"next": []},
+        {"next": {}},
+        {"next": "https://example.invalid/p", "cursors": None},
+        {"next": "https://example.invalid/p", "cursors": []},
+    ],
+)
+def test_explicit_malformed_paging_must_fail_closed_without_post(publisher, monkeypatch, malformed):
+    monkeypatch.setattr(publisher, "request_json", lambda *args, **kwargs: {"data": [], "paging": malformed})
+    with pytest.raises(RuntimeError, match="do not publish"):
+        publisher.find_published("offline-token", "approved caption")
+
+
+@pytest.mark.parametrize("terminal", [{}, {"cursors": {"after": "unused"}}])
+def test_terminal_paging_without_next_is_accepted(publisher, monkeypatch, terminal):
+    monkeypatch.setattr(publisher, "request_json", lambda *args, **kwargs: {"data": [], "paging": terminal})
+    assert publisher.find_published("offline-token", "approved caption") is None
