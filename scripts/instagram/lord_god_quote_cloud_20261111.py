@@ -69,7 +69,7 @@ def media_verified(item: dict) -> str:
         raise RuntimeError("Media download failed (" + type(error).__name__ + ")") from None
     if len(payload) != item["size_bytes"] or hashlib.sha256(payload).hexdigest() != item["sha256"]:
         raise RuntimeError("Media SHA-256/size mismatch")
-    if not payload.startswith(b"\\xff\\xd8\\xff"):
+    if not payload.startswith(bytes((255, 216, 255))):
         raise RuntimeError("Media not JPEG")
     return url
 
