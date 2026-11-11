@@ -82,6 +82,41 @@ def test_only_old_owner_navigation_and_operator_contacts_may_be_dropped() -> Non
     require_lord_god_youtube_presentation(_plan(before, _VALID_TEXT))
 
 
+def test_single_historical_ok_profile_is_disposable_only_by_exact_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import hashlib
+
+    from video_channel_manager.platforms.youtube import lord_god_source_preservation as guard
+
+    example = "https://ok.ru/profile/000000000000000"
+    monkeypatch.setattr(
+        guard,
+        "_RETIRED_OWNER_OK_PROFILE_URL_SHA256",
+        hashlib.sha256(example.encode("utf-8")).hexdigest(),
+    )
+    before = (
+        "⚠️⚠️⚠️ Всегда есть нужда в переводах библейского материала. Пишите: "
+        "https://www.vk.com/curtmf "
+        "https://www.facebook.com/fedor.milovanov " + example
+    )
+    assert source_preservation_issues(before, _VALID_TEXT) == []
+    require_lord_god_youtube_presentation(_plan(before, _VALID_TEXT))
+
+    for protected in (
+        "https://ok.ru/profile/000000000000001",
+        "https://ok.ru/profile/000000000000000?from=source",
+        "https://ok.ru/group/000000000000000",
+        "http://ok.ru/profile/000000000000000",
+    ):
+        assert source_preservation_issues(protected, _VALID_TEXT) == ["original_source_or_related_link_not_preserved"]
+
+
+def test_unlisted_ok_profile_stays_protected_by_default() -> None:
+    unrelated = "https://ok.ru/profile/987654321000000"
+    assert source_preservation_issues(unrelated, _VALID_TEXT) == ["original_source_or_related_link_not_preserved"]
+
+
 def test_original_chapters_must_survive_exactly_including_hour_stamps() -> None:
     before = "00:00 Вступление\n1:04:37 Доверие Богу\n" + _SHELF
     assert "original_chapters_not_preserved" in source_preservation_issues(before, _VALID_TEXT)
