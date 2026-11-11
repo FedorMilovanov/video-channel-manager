@@ -132,7 +132,7 @@ def _identity_url_matches(*, platform: str, expected_id: str, raw_url: str) -> b
 
 def _load_pillow() -> Any:
     try:
-        from PIL import Image, ImageOps  # type: ignore[import-not-found]
+        from PIL import Image, ImageOps
     except ModuleNotFoundError as exc:
         raise RuntimeError(
             'Pillow is required; install current repo with: pip install -e ".[browser-read,milovi-gap-read]"'

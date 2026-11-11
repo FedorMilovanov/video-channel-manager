@@ -160,18 +160,7 @@ def _capture_with_direct_transports(
                         wait_ms=wait_ms,
                     )
                 except Exception as exc:
-                    capture = sequence.CaptureResult(
-                        status="capture_error",
-                        canonical_url=url,
-                        final_url=sequence._safe_url(str(page.url)),
-                        duration_s=None,
-                        video_width=None,
-                        video_height=None,
-                        frames=(),
-                        page_title="",
-                        block_hints=(),
-                        error=f"{type(exc).__name__}: {exc}"[:1000],
-                    )
+                    capture = stable_sequence._capture_error(canonical_url=url, page=page, exc=exc)
                 capture = stable_sequence._temporal_diversity_gate(capture)
                 last = capture
                 attempts.append(
@@ -190,10 +179,7 @@ def _capture_with_direct_transports(
                     selected_transport = transport
                     return capture, attempts, selected_transport
             finally:
-                try:
-                    page.close()
-                except Exception:
-                    pass
+                stable_sequence._close_capture_page(page)
 
     if last is None:
         raise RuntimeError("d48 fallback produced no capture result")

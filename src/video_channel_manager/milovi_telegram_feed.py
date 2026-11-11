@@ -657,7 +657,7 @@ def materialize_photo(publication_id: str, *, source_path: Path, output_path: Pa
     if _git_blob_sha1(source) != media.source.git_blob_sha1:
         raise ValueError("Milovi source Git blob differs from exact feed media binding")
     try:
-        from PIL import Image  # type: ignore[import-not-found]
+        from PIL import Image
     except ImportError as exc:
         raise ValueError("Pillow is required to materialize exact Milovi feed photo bytes") from exc
     with Image.open(io.BytesIO(source)) as image:

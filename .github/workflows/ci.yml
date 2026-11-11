@@ -186,7 +186,7 @@ jobs:
           if-no-files-found: error
       - name: Coverage ratchet gate
         id: coverage_ratchet
-        if: matrix.python-version == '3.11'
+        if: always() && matrix.python-version == '3.11' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         continue-on-error: true
         shell: bash
         run: |
@@ -202,12 +202,14 @@ jobs:
           if-no-files-found: warn
       - name: Enforce quality gates
         if: >-
-          steps.pip_audit.outcome == 'failure' ||
-          steps.ruff.outcome == 'failure' ||
-          steps.format.outcome == 'failure' ||
-          steps.mypy.outcome == 'failure' ||
-          steps.tests.outcome == 'failure' ||
-          steps.coverage_ratchet.outcome == 'failure'
+          always() && (
+            steps.pip_audit.outcome == 'failure' ||
+            steps.ruff.outcome == 'failure' ||
+            steps.format.outcome == 'failure' ||
+            steps.mypy.outcome == 'failure' ||
+            steps.tests.outcome == 'failure' ||
+            steps.coverage_ratchet.outcome == 'failure'
+          )
         run: exit 1
 
   powershell-windows-51:
