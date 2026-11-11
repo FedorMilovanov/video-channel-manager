@@ -45,7 +45,7 @@ def _meta_row(proof, *, date="2026-11-12", media_id="1234567890123456"):
     return item, media
 
 
-def test_frozen_source_manifest_and_pubkeys(proof):
+def test_frozen_source_manifest(proof):
     rows = proof.plan_items()
     assert len(rows) == 12
     assert rows[0]["date"] == "2026-11-10"
@@ -53,7 +53,7 @@ def test_frozen_source_manifest_and_pubkeys(proof):
     assert rows[2]["source_youtube_id"] == "SyioCn3HBTI"
     assert rows[-1]["date"] == "2026-11-21"
     assert len({row["caption_sha256"] for row in rows}) == 12
-    assert all(row["publication_key"].endswith(".reel-v1") for row in rows)
+    assert all("publication_key" not in row for row in rows)
 
 
 def test_readback_source_uses_get_only(proof, monkeypatch):
