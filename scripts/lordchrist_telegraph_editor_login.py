@@ -32,7 +32,7 @@ def post_form(url: str, fields: Mapping[str, str]) -> dict[str, Any]:
     try:
         with urlopen(request, timeout=12) as response:
             data = response.read(MAX_API_RESPONSE_BYTES + 1)
-    except (HTTPError, URLError, TimeoutError, OSError):
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError):
         # Telegram Bot API URLs contain a token in their path. Never include
         # that URL or the original exception in logs/tracebacks.
         raise RuntimeError("Telegraph editor login API request failed; no secrets logged") from None
@@ -68,9 +68,7 @@ def send_editor_login(
         raise RuntimeError("Editor recipient must be an explicitly configured private user chat ID")
 
     bot_api = f"https://api.telegram.org/bot{telegram_bot_token}"
-    recipient = _api_result(
-        post(f"{bot_api}/getChat", {"chat_id": editor_chat_id}), "private chat verification"
-    )
+    recipient = _api_result(post(f"{bot_api}/getChat", {"chat_id": editor_chat_id}), "private chat verification")
     if recipient.get("type") != "private" or recipient.get("id") != int(editor_chat_id):
         raise RuntimeError("Editor recipient is not the pinned private Telegram user chat")
 
