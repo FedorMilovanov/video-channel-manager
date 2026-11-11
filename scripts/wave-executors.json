@@ -447,6 +447,18 @@
       "status": "independent_tool"
     },
     {
+      "callers": [
+        ".github/workflows/lord-god-reels-cloud-readback-20261112.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_reels_readback_cloud_20261112.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "1c0f4b6721365f6168d9011de52e1d668290a0af8d6c7fbe81c57d13052b2548",
+      "status": "independent_tool"
+    },
+    {
       "callers": [],
       "direct_entrypoint": true,
       "path": "scripts/lint_youtube_comment_content.py",
