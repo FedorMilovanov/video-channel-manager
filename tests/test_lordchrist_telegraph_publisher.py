@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -86,14 +87,21 @@ class FakeTransport:
 def test_telegraph_queue_loads_charnock_cycle_and_separate_jude_manual_article() -> None:
     # Charnock's 15 releases retain their identities and chronology.
     # Jude 1:5 is a separately approved manual-only special, not a scheduled
-    # Charnock slot and not an automatic backfill.
+    # Charnock slot and not an automatic backfill. It now carries the operator's
+    # documented release date (Sunday 2026-11-15), which is deliberately off the
+    # lane's cron slots (`0 9 * * 2,5`): the schedule can never resolve it, so the
+    # date records intent while the release stays a manual dispatch.
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     assert len(items) == 17
     assert [item.ordinal for item in items] == list(range(1, 18))
     assert items[14].publication_id == "lordchrist-telegraph-charnock-history-02"
     assert items[-2].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
-    assert items[-2].scheduled_on is None
+    assert items[-2].scheduled_on == date(2026, 11, 15)
+    assert items[-2].scheduled_on.weekday() not in {1, 4}
     assert items[-2].is_canary is False
+    raw_items = json.loads((ROOT / DEFAULT_QUEUE_PATH).read_text(encoding="utf-8"))["items"]
+    jude_raw = next(item for item in raw_items if item["publication_id"] == "lordchrist-telegraph-jude-1-5-20261105")
+    assert jude_raw["slot_override_reason"].strip()
     # The rich-v1 article «Рабство свободы» rides the same Telegraph lane as a
     # separate series: its own reviewed bytes, its own cover, no VK wave.
     assert items[-1].publication_id == "lordchrist-telegraph-rabstvo-svobody-20261111"
