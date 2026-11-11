@@ -124,14 +124,58 @@ def verify_identity(token: str) -> None:
 
 
 def find_published(token: str, caption: str) -> dict | None:
-    data = request_json(
-        INSTAGRAM_ACCOUNT + "/media?fields=id,caption,permalink,timestamp&limit=100",
-        token,
-    )
-    for item in data.get("data", []):
-        if item.get("caption", "").strip() == caption.strip():
-            return item
-    return None
+    """Fail closed if the provider feed is incomplete or contains duplicate captions.
+
+    Only follow provider cursors on our own fixed Graph API endpoint: never
+    dereference untrusted paging.next URLs or put the Page token in a URL.
+    """
+    matches: list[dict] = []
+    after: str | None = None
+    seen_cursors: set[str] = set()
+    for page in range(5):
+        params = {"fields": "id,caption,media_type,permalink,timestamp", "limit": "100"}
+        if after:
+            params["after"] = after
+        listing = request_json(INSTAGRAM_ACCOUNT + "/media?" + urlencode(params), token)
+        media = listing.get("data")
+        if not isinstance(media, list):
+            raise RuntimeError("Meta media list incomplete; do not publish")
+        for item in media:
+            if not isinstance(item, dict):
+                raise RuntimeError("Unexpected Meta media record; do not publish")
+            if str(item.get("caption", "")).strip() == caption.strip():
+                matches.append(item)
+        paging = listing.get("paging") or {}
+        if not isinstance(paging, dict):
+            raise RuntimeError("Meta pagination malformed; do not publish")
+        if not paging.get("next"):
+            break
+        cursors = paging.get("cursors") or {}
+        if not isinstance(cursors, dict):
+            raise RuntimeError("Meta pagination cursors malformed; do not publish")
+        cursor = cursors.get("after")
+        if not isinstance(cursor, str) or not cursor or cursor in seen_cursors or not media:
+            raise RuntimeError("Meta pagination cursor invalid; do not publish")
+        if page == 4:
+            raise RuntimeError("Meta media listing exceeds safe verification limit; do not publish")
+        seen_cursors.add(cursor)
+        after = cursor
+    if len(matches) > 1:
+        raise RuntimeError("Duplicate approved photo caption in Meta feed; do not publish")
+    if not matches:
+        return None
+    existing = matches[0]
+    parsed = urlparse(str(existing.get("permalink", "")))
+    if (
+        not str(existing.get("id", "")).isdecimal()
+        or existing.get("media_type") != "IMAGE"
+        or parsed.scheme != "https"
+        or (parsed.hostname or "").lower() not in {"instagram.com", "www.instagram.com"}
+        or not isinstance(existing.get("timestamp"), str)
+        or not existing["timestamp"]
+    ):
+        raise RuntimeError("Matching photo has incomplete Meta proof; do not publish")
+    return existing
 
 
 def main() -> None:

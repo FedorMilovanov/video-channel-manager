@@ -189,3 +189,135 @@ def test_cloud_cron_primary_backup_and_no_manual_provider_writes():
     assert "cron: '10 10 12-15 11 *'" in workflow  # 13:10 Moscow, backup
     assert "cancel-in-progress: false" in workflow
     assert "github.event_name == 'schedule' && 'scheduled' || 'preflight'" in workflow
+
+
+def _valid_meta_photo(caption):
+    return {
+        "id": "123456789012345",
+        "caption": caption,
+        "media_type": "IMAGE",
+        "permalink": "https://www.instagram.com/p/approved-post/",
+        "timestamp": "2026-11-12T09:46:00+00:00",
+    }
+
+
+def test_paged_provider_feed_finds_existing_photo(publisher, monkeypatch):
+    caption = publisher.read_plan()[0]["caption"]
+    cursor = "opaque/+=="
+    calls = []
+
+    def provider(endpoint, token, *, data=None):
+        assert data is None
+        calls.append(endpoint)
+        if len(calls) == 1:
+            return {
+                "data": [{"id": "222", "caption": "Different post"}],
+                "paging": {
+                    "next": "https://example.invalid/ignore-this-untrusted-url?access_token=never-log",
+                    "cursors": {"after": cursor},
+                },
+            }
+        if len(calls) == 2:
+            return {"data": [_valid_meta_photo(caption)]}
+        pytest.fail("Unexpected third provider call")
+
+    monkeypatch.setattr(publisher, "request_json", provider)
+    result = publisher.find_published("dummy-token", caption)
+    assert result is not None
+    assert result["id"] == "123456789012345"
+    assert calls[0].startswith(publisher.INSTAGRAM_ACCOUNT + "/media?")
+    assert "after=opaque%2F%2B%3D%3D" in calls[1]
+    assert "example.invalid" not in calls[1]
+    assert "access_token=" not in calls[1]
+
+
+@pytest.mark.parametrize(
+    "first_response",
+    [
+        {},
+        {"data": {"not": "a list"}},
+        {"data": [False]},
+        {"data": [{}], "paging": "not a dictionary"},
+        {"data": [{}], "paging": {"next": "https://example.invalid"}},
+        {"data": [{}], "paging": {"next": "https://example.invalid", "cursors": "bad"}},
+        {"data": [], "paging": {"next": "https://example.invalid", "cursors": {"after": "cursor"}}},
+    ],
+)
+def test_incomplete_provider_feed_blocks_publishing(publisher, monkeypatch, first_response):
+    monkeypatch.setattr(publisher, "request_json", lambda *a, **kw: first_response)
+    with pytest.raises(RuntimeError, match="do not publish"):
+        publisher.find_published("dummy-token", "caption")
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("id", "invalid-media-id"),
+        ("media_type", "REELS"),
+        ("permalink", "http://www.instagram.com/p/post/"),
+        ("permalink", "https://evil.example/p/post/"),
+        ("timestamp", None),
+    ],
+)
+def test_existing_caption_requires_valid_provider_proof(publisher, monkeypatch, field, value):
+    photo = _valid_meta_photo("same caption")
+    photo[field] = value
+    monkeypatch.setattr(publisher, "request_json", lambda *a, **kw: {"data": [photo]})
+    with pytest.raises(RuntimeError, match="Matching photo has incomplete Meta proof"):
+        publisher.find_published("dummy-token", "same caption")
+
+
+def test_duplicate_caption_across_pages_blocks_all_provider_posts(publisher, monkeypatch):
+    configure(monkeypatch, publisher)
+    caption = publisher.read_plan()[0]["caption"]
+    calls = []
+
+    def provider(endpoint, token, *, data=None):
+        assert data is None, "Provider POST must never be sent on duplicates"
+        calls.append(endpoint)
+        if len(calls) == 1:
+            return {
+                "data": [_valid_meta_photo(caption)],
+                "paging": {"next": "https://example.invalid/page2", "cursors": {"after": "page2"}},
+            }
+        return {"data": [dict(_valid_meta_photo(caption), id="987654321012345")]}
+
+    monkeypatch.setattr(publisher, "request_json", provider)
+    with pytest.raises(RuntimeError, match="Duplicate approved photo caption"):
+        publisher.main()
+    assert len(calls) == 2
+
+
+def test_too_many_media_pages_aborts_without_publishing(publisher, monkeypatch):
+    calls = []
+
+    def provider(endpoint, token, *, data=None):
+        assert data is None
+        calls.append(endpoint)
+        n = len(calls)
+        return {
+            "data": [{"id": str(n), "caption": "another post"}],
+            "paging": {"next": "https://example.invalid/page", "cursors": {"after": f"cursor{n}"}},
+        }
+
+    monkeypatch.setattr(publisher, "request_json", provider)
+    with pytest.raises(RuntimeError, match="exceeds safe verification limit"):
+        publisher.find_published("dummy-token", "approved caption")
+    assert len(calls) == 5
+
+
+def test_repeated_provider_cursor_aborts(publisher, monkeypatch):
+    calls = []
+
+    def provider(endpoint, token, *, data=None):
+        assert data is None
+        calls.append(endpoint)
+        return {
+            "data": [{"id": "123", "caption": "other"}],
+            "paging": {"next": "https://example.invalid/p", "cursors": {"after": "repeated"}},
+        }
+
+    monkeypatch.setattr(publisher, "request_json", provider)
+    with pytest.raises(RuntimeError, match="cursor invalid"):
+        publisher.find_published("dummy-token", "caption")
+    assert len(calls) == 2
