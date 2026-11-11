@@ -178,6 +178,85 @@ def find_published(token: str, caption: str) -> dict | None:
     return existing
 
 
+
+def first_scheduled_run_for_day(day: str) -> bool:
+    """Select exactly one publisher run via GitHub's server-side run registry.
+
+    A failed or ambiguous first run still owns this day's write attempt.
+    A later backup may publish ONLY when no earlier scheduled run exists.
+    """
+    if (
+        os.environ.get("GITHUB_REPOSITORY") != "FedorMilovanov/video-channel-manager"
+        or os.environ.get("GITHUB_REF") != "refs/heads/main"
+        or os.environ.get("GITHUB_EVENT_NAME") != "schedule"
+        or os.environ.get("GITHUB_RUN_ATTEMPT") != "1"
+        or os.environ.get("GITHUB_EVENT_SCHEDULE")
+        not in {"45 9 12-15 11 *", "10 10 12-15 11 *"}
+    ):
+        raise RuntimeError("Unapproved cloud workflow invocation; do not publish")
+    current_run = os.environ.get("GITHUB_RUN_ID", "")
+    if not current_run.isdecimal():
+        raise RuntimeError("Current GitHub run ID missing; do not publish")
+    token = os.environ.get("LORD_GOD_CLOUD_GITHUB_TOKEN", "")
+    if len(token) < 20:
+        raise RuntimeError("GitHub read-only Actions token unavailable; do not publish")
+
+    params = urlencode({"event": "schedule", "created": day, "per_page": 100})
+    api = (
+        "https://api.github.com/repos/FedorMilovanov/video-channel-manager"
+        "/actions/workflows/lord-god-instagram-quote-cloud-20261111.yml/runs?"
+        + params
+    )
+    request = Request(
+        api,
+        method="GET",
+        headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    try:
+        with urlopen(request, timeout=30) as response:
+            listing = json.load(response)
+    except (HTTPError, URLError, ValueError) as exc:
+        raise RuntimeError("GitHub run registry unavailable; do not publish") from exc
+    if not isinstance(listing, dict):
+        raise RuntimeError("Invalid GitHub run registry; do not publish")
+    total = listing.get("total_count")
+    runs = listing.get("workflow_runs")
+    if type(total) is not int or total < 1 or total > 100 or not isinstance(runs, list) or len(runs) != total:
+        raise RuntimeError("Incomplete GitHub run registry; do not publish")
+
+    candidates = []
+    for run in runs:
+        if (
+            not isinstance(run, dict)
+            or run.get("event") != "schedule"
+            or run.get("head_branch") != "main"
+            or not str(run.get("id", "")).isdecimal()
+            or not isinstance(run.get("created_at"), str)
+        ):
+            raise RuntimeError("Unexpected GitHub scheduled run; do not publish")
+        created = run["created_at"]
+        try:
+            when = dt.datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if when.tzinfo is None or when.astimezone(MOSCOW).strftime("%Y-%m-%d") != day:
+                raise ValueError("Unexpected run date")
+        except ValueError:
+            raise RuntimeError("GitHub scheduled run date invalid; do not publish") from None
+        candidates.append((when, int(run["id"])))
+
+    if len(candidates) != total or int(current_run) not in {ident for _, ident in candidates}:
+        raise RuntimeError("Current GitHub run not proven in registry; do not publish")
+    winner = min(candidates)[1]
+    if int(current_run) != winner:
+        print("LATER_SCHEDULED_RUN_READ_ONLY_SKIP", day, current_run, "first", winner, flush=True)
+        return False
+    print("FIRST_SCHEDULED_RUN_WRITE_ELIGIBLE", day, current_run, flush=True)
+    return True
+
+
 def main() -> None:
     rows = read_plan()
     mode = os.environ.get("LORD_GOD_CLOUD_MODE", "")
@@ -213,6 +292,8 @@ def main() -> None:
     already = find_published(token, item["caption"])
     if already:
         print("ALREADY_PUBLISHED_SKIP", item["id"], already.get("id"), flush=True)
+        return
+    if not first_scheduled_run_for_day(current):
         return
     print("POST_START", item["id"], current, flush=True)
     created = request_json(
