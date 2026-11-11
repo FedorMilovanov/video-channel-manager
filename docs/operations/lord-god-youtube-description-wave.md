@@ -67,6 +67,16 @@ other projects retain their general title semantics.
 
 **Windows UTF-8:** Non-ASCII PowerShell here-strings sent over remote transport may turn Cyrillic into literal question marks. Write a UTF-8 Python/JSON file, verify the file content and SHA locally, then run python -X utf8. A malformed console display is not evidence that the underlying source document is corrupt.
 
+**UTF-8 limit (12 Nov 2026):** YouTube Data API `videos.update` limits
+`snippet.description` to **5000 UTF-8 bytes**, not 5000 Unicode characters.
+`presentation_issues()` rejects an after-description that exceeds
+`len(description.encode("utf-8")) > 5000` with
+`description_over_5000_utf8_bytes`, before OAuth/API access. Do not silently
+truncate or delete credits/chapters/source URLs to fit; rewrite the draft and
+re-sign it. Read-only `reconcile-copy-fixes` remains able to inspect older
+structurally valid signed plans, regardless of current publication styling.
+Source: https://developers.google.com/youtube/data/reference/rest/v3/videos .
+
 ## Long-form editorial voice: natural language, not metadata labels (10 Nov 2026)
 
 These are **forward-looking authoring rules** for Lord God YouTube long-form descriptions, not an instruction to re-edit old live descriptions. Shorts have a separate unfinished workflow. Do not retrospectively republish approved videos solely to change their tone.
