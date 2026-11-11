@@ -300,6 +300,40 @@ def test_sermon_about_offerings_is_not_mistaken_for_personal_payment_request() -
 
 
 @pytest.mark.parametrize(
+    "solicitation",
+    [
+        "Если есть желание поддержать данное служение, чтобы больше можно было уделить ему времени: 1234 5678 9012 3456 (Сбербанк)",
+        "Поддержать служение можно переводом на карту 1234567890123456.",
+        "Пожертвование на Сбербанк 1234-5678-9012-3456",
+    ],
+)
+def test_legacy_bank_card_solicitation_fails_closed_even_when_inherited(solicitation: str) -> None:
+    inherited = _DESCRIPTION + "\n" + solicitation
+    assert "retired_fundraising_or_payment" in presentation_issues(inherited)
+    with pytest.raises(ValueError, match="retired_fundraising_or_payment"):
+        require_lord_god_youtube_presentation(_plan(inherited))
+
+
+def test_bank_card_removal_is_allowed_without_losing_genuine_source_credits() -> None:
+    from video_channel_manager.platforms.youtube.lord_god_source_preservation import source_preservation_issues
+
+    original = _DESCRIPTION + "\nЕсли есть желание поддержать данное служение: 1234 5678 9012 3456 (Сбербанк)"
+    assert source_preservation_issues(original, _DESCRIPTION) == []
+    assert "retired_fundraising_or_payment" not in presentation_issues(_DESCRIPTION)
+
+    cleaned = _plan(_DESCRIPTION)
+    cleaned["operations"][0]["before_description"] = original
+    cleaned["operations"][0]["before_sha256"] = sha256_text(original)
+    finalize_copy_plan(cleaned, checked_video_ids=["al2wqoxaAjk"])
+    require_lord_god_youtube_presentation(cleaned)
+
+
+def test_unrelated_sixteen_digit_archive_identifier_is_not_called_a_donation() -> None:
+    description = _DESCRIPTION + "\nАрхивный идентификатор рукописи: 1234567890123456."
+    assert "retired_fundraising_or_payment" not in presentation_issues(description)
+
+
+@pytest.mark.parametrize(
     "bad_second",
     [
         "*На занятии также обсуждается ответственность супругов перед Богом и церковью.*",

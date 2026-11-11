@@ -48,7 +48,12 @@ _RETIRED_CONTENT: tuple[tuple[str, re.Pattern[str]], ...] = (
             r"app5727453_-60805374|"
             r"если\s+кто\s+хочет\s+поддержать\s+служение\s+"
             r"распространения\s+и\s+переводов|"
-            r"поддержать\s+служение\s+финансово",
+            r"поддержать\s+служение\s+финансово|"
+            # Retired bank-card appeals were inherited in seven approved
+            # ShepCon 2020 descriptions because the bank was named AFTER the
+            # 16-digit card number, not as a leading "Сбербанк:" label.
+            r"^(?=[^\n]*(?:сбербанк|поддержать|пожертвован\w*))"
+            r"[^\n]*(?<!\d)(?:\d[ -]?){15}\d(?!\d)[^\n]*$",
             re.I | re.M,
         ),
     ),
