@@ -727,6 +727,18 @@
     },
     {
       "callers": [
+        ".github/workflows/lordchrist-telegraph-editor-login.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_telegraph_editor_login.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "f6f91c314ff3390a1ba68b9d9716a66eec0f5d21bc65ed7e731bcaf9c895c58f",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [
         ".github/workflows/milovi-history-article-due-20261107.yml"
       ],
       "direct_entrypoint": true,
