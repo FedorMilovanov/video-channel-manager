@@ -375,6 +375,7 @@ def test_successful_local_resumable_publish_sends_exact_protocol_and_is_idempote
             assert request.headers["offset"] == "0"
             assert request.headers["file_size"] == str(len(VIDEO_BYTES))
             assert request.headers["content-length"] == str(len(VIDEO_BYTES))
+            assert request.headers["content-type"] == "application/octet-stream"
             assert request.content == VIDEO_BYTES
             timeout = request.extensions.get("timeout")
             assert isinstance(timeout, dict)
