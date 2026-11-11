@@ -3,6 +3,7 @@
 This script may only publish the four source-bound Lord God quote cards.
 Github workflow_dispatch is preflight only. Scheduled event allows one post for exact Moscow date.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -10,7 +11,8 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, time as clock
+from datetime import datetime
+from datetime import time as clock
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
@@ -23,15 +25,21 @@ INSTAGRAM_ACCOUNT = "17841433845016161"
 INSTAGRAM_USERNAME = "thelordgodismystrength"
 APP_ID = "1528850542618219"
 RELEASE = "https://github.com/FedorMilovanov/video-channel-manager/releases/download/lord-god-ig-quote-media-20261111/"
-PLAN = Path(__file__).resolve().parents[2] / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
+PLAN = (
+    Path(__file__).resolve().parents[2]
+    / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
+)
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 
 def request_json(endpoint: str, token: str, *, data: dict | None = None) -> dict:
     url = GRAPH + "/" + endpoint.lstrip("/")
     body = None if data is None else urlencode(data).encode("utf-8")
-    req = Request(url, data=body, headers={"Authorization": "Bearer " + token,
-                                          "Accept": "application/json"})
+    req = Request(
+        url,
+        data=body,
+        headers={"Authorization": "Bearer " + token, "Accept": "application/json"},
+    )
     try:
         with urlopen(req, timeout=35) as resp:
             obj = json.load(resp)
@@ -39,35 +47,47 @@ def request_json(endpoint: str, token: str, *, data: dict | None = None) -> dict
         try:
             payload = json.loads(error.read().decode("utf-8"))
             code = payload.get("error", {}).get("code", "unknown")
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             code = "unknown"
         raise RuntimeError(f"Meta HTTP {error.code}, code {code}") from None
     except URLError as error:
-        raise RuntimeError("Meta connection failed (" + type(error).__name__ + ")") from None
+        raise RuntimeError(
+            "Meta connection failed (" + type(error).__name__ + ")"
+        ) from None
     if not isinstance(obj, dict):
-        raise RuntimeError("Invalid Meta response shape")
+        raise TypeError("Invalid Meta response shape")
     return obj
 
 
 def media_verified(item: dict) -> str:
     filename = item["image"]
     if filename not in {
-        "01-charnock-4x5.jpg", "02-owen-4x5.jpg",
-        "03-bunyan-4x5.jpg", "04-watson-4x5.jpg"
+        "01-charnock-4x5.jpg",
+        "02-owen-4x5.jpg",
+        "03-bunyan-4x5.jpg",
+        "04-watson-4x5.jpg",
     }:
         raise RuntimeError("Image not in approved release")
     url = RELEASE + filename
     try:
-        with urlopen(Request(url, headers={"Accept": "image/jpeg"}), timeout=40) as resp:
+        with urlopen(
+            Request(url, headers={"Accept": "image/jpeg"}), timeout=40
+        ) as resp:
             final = urlparse(resp.url)
             if final.scheme != "https" or final.hostname not in {
-                "github.com", "release-assets.githubusercontent.com"
+                "github.com",
+                "release-assets.githubusercontent.com",
             }:
                 raise RuntimeError("Media downloaded from unexpected host")
             payload = resp.read(10_000_000)
     except (URLError, HTTPError) as error:
-        raise RuntimeError("Media download failed (" + type(error).__name__ + ")") from None
-    if len(payload) != item["size_bytes"] or hashlib.sha256(payload).hexdigest() != item["sha256"]:
+        raise RuntimeError(
+            "Media download failed (" + type(error).__name__ + ")"
+        ) from None
+    if (
+        len(payload) != item["size_bytes"]
+        or hashlib.sha256(payload).hexdigest() != item["sha256"]
+    ):
         raise RuntimeError("Media SHA-256/size mismatch")
     if not payload.startswith(bytes((255, 216, 255))):
         raise RuntimeError("Media not JPEG")
@@ -77,13 +97,18 @@ def media_verified(item: dict) -> str:
 def read_plan() -> list[dict]:
     plan = json.loads(PLAN.read_text(encoding="utf-8"))
     if (plan["project"], plan["account_id"], plan["page_id"], plan["tz"]) != (
-        "lord-god-strength", INSTAGRAM_ACCOUNT, FACEBOOK_PAGE, "Europe/Moscow"
+        "lord-god-strength",
+        INSTAGRAM_ACCOUNT,
+        FACEBOOK_PAGE,
+        "Europe/Moscow",
     ):
         raise RuntimeError("Wrong project/account")
     rows = plan["items"]
     expected = [
-        ("01-charnock", "2026-11-11"), ("02-owen", "2026-11-12"),
-        ("03-bunyan", "2026-11-13"), ("04-watson", "2026-11-14")
+        ("01-charnock", "2026-11-11"),
+        ("02-owen", "2026-11-12"),
+        ("03-bunyan", "2026-11-13"),
+        ("04-watson", "2026-11-14"),
     ]
     if len(rows) != 4 or [(x["id"], x["date"]) for x in rows] != expected:
         raise RuntimeError("Unexpected four-day schedule")
@@ -96,19 +121,28 @@ def verify_identity(token: str) -> None:
     owner = request_json("me?fields=id", token)
     if str(owner.get("id")) != FACEBOOK_PAGE:
         raise RuntimeError("Wrong Facebook PAGE token")
-    page = request_json(FACEBOOK_PAGE + "?fields=id,instagram_business_account{id,username}", token)
+    page = request_json(
+        FACEBOOK_PAGE + "?fields=id,instagram_business_account{id,username}", token
+    )
     instagram = page.get("instagram_business_account") or {}
-    if (str(page.get("id")) != FACEBOOK_PAGE
-            or str(instagram.get("id")) != INSTAGRAM_ACCOUNT
-            or instagram.get("username") != INSTAGRAM_USERNAME):
+    if (
+        str(page.get("id")) != FACEBOOK_PAGE
+        or str(instagram.get("id")) != INSTAGRAM_ACCOUNT
+        or instagram.get("username") != INSTAGRAM_USERNAME
+    ):
         raise RuntimeError("Wrong Instagram account linkage")
-    quota = request_json(INSTAGRAM_ACCOUNT + "/content_publishing_limit?fields=quota_usage,config", token)
+    quota = request_json(
+        INSTAGRAM_ACCOUNT + "/content_publishing_limit?fields=quota_usage,config", token
+    )
     if not quota.get("data"):
         raise RuntimeError("Instagram publishing quota unavailable")
 
 
 def find_published(token: str, caption: str) -> dict | None:
-    data = request_json(INSTAGRAM_ACCOUNT + "/media?fields=id,caption,permalink,timestamp&limit=100", token)
+    data = request_json(
+        INSTAGRAM_ACCOUNT + "/media?fields=id,caption,permalink,timestamp&limit=100",
+        token,
+    )
     for item in data.get("data", []):
         if item.get("caption", "").strip() == caption.strip():
             return item
@@ -129,8 +163,13 @@ def main() -> None:
         for item in rows:
             media_verified(item)
             found = find_published(token, item["caption"])
-            print("PREFLIGHT", item["id"], item["date"],
-                  "ALREADY_PUBLISHED" if found else "READY", flush=True)
+            print(
+                "PREFLIGHT",
+                item["id"],
+                item["date"],
+                "ALREADY_PUBLISHED" if found else "READY",
+                flush=True,
+            )
         print("PREFLIGHT_OK_NO_POST", flush=True)
         return
     current = today.strftime("%Y-%m-%d")
@@ -147,38 +186,49 @@ def main() -> None:
         print("ALREADY_PUBLISHED_SKIP", item["id"], already.get("id"), flush=True)
         return
     print("POST_START", item["id"], current, flush=True)
-    created = request_json(INSTAGRAM_ACCOUNT + "/media", token,
-                           data={"image_url": image_url, "caption": item["caption"]})
+    created = request_json(
+        INSTAGRAM_ACCOUNT + "/media",
+        token,
+        data={"image_url": image_url, "caption": item["caption"]},
+    )
     container = str(created.get("id", ""))
     if not container.isdecimal():
         raise RuntimeError("Media container ID unavailable, no publish call")
     print("CONTAINER_CREATED", container, flush=True)
-    for attempt in range(20):
+    for _ in range(20):
         stage = request_json(container + "?fields=status_code", token)
         status = stage.get("status_code")
         if status == "FINISHED":
             break
         if status in {"ERROR", "EXPIRED", "FAILED"}:
-            raise RuntimeError("Media container "+str(status))
+            raise RuntimeError("Media container " + str(status))
         time.sleep(3)
     else:
         raise RuntimeError("Media processing incomplete; do not blind retry")
     # No automatic action retry; an uncertain media_publish outcome requires reconciliation.
     print("PUBLISH_REQUESTING", item["id"], flush=True)
-    result = request_json(INSTAGRAM_ACCOUNT + "/media_publish", token,
-                          data={"creation_id": container})
+    result = request_json(
+        INSTAGRAM_ACCOUNT + "/media_publish", token, data={"creation_id": container}
+    )
     media_id = str(result.get("id", ""))
     if not media_id.isdecimal():
         raise RuntimeError("Uncertain publish response; do not blindly retry")
     detail = request_json(media_id + "?fields=id,caption,permalink,timestamp", token)
     if detail.get("caption", "").strip() != item["caption"].strip():
         raise RuntimeError("Published media exists, but caption readback mismatches")
-    print("PUBLISHED_CONFIRMED", item["id"], media_id, detail.get("permalink"), flush=True)
+    print(
+        "PUBLISHED_CONFIRMED", item["id"], media_id, detail.get("permalink"), flush=True
+    )
 
 
 if __name__ == "__main__":
     try:
         main()
-    except Exception as exc:
-        print("SAFE_FAILURE_NO_BLIND_RETRY", type(exc).__name__, str(exc)[:200], file=sys.stderr)
+    except (RuntimeError, ValueError, TypeError, KeyError, OSError) as exc:
+        print(
+            "SAFE_FAILURE_NO_BLIND_RETRY",
+            type(exc).__name__,
+            str(exc)[:200],
+            file=sys.stderr,
+        )
         sys.exit(1)
