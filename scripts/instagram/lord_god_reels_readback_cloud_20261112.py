@@ -114,8 +114,7 @@ def verify_item(item: dict, rows: list[dict]) -> dict:
     exact = [
         media
         for media in rows
-        if hashlib.sha256(str(media.get("caption", "")).encode("utf-8")).hexdigest()
-        == item["caption_sha256"]
+        if hashlib.sha256(str(media.get("caption", "")).encode("utf-8")).hexdigest() == item["caption_sha256"]
     ]
     if len(exact) > 1:
         raise RuntimeError("DUPLICATE_CAPTION: multiple Meta media records match one approved source")
@@ -173,7 +172,9 @@ def main() -> int:
         return 0
     result = verify_item(match[0], rows)
     if result["state"] == "PROVIDER_CONFIRMED":
-        print("REEL_PROVEN_BY_META", result["date"], result["source"], result["media_id"], result["permalink"], flush=True)
+        print(
+            "REEL_PROVEN_BY_META", result["date"], result["source"], result["media_id"], result["permalink"], flush=True
+        )
         return 0
     print("REEL_MISSING_ON_META", result["date"], result["source"], flush=True)
     return 2
