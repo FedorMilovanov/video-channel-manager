@@ -100,7 +100,7 @@ def read_plan() -> list[dict]:
     ]
     if len(rows) != 4 or [(x["id"], x["date"]) for x in rows] != expected:
         raise RuntimeError("Unexpected four-day schedule")
-    if any(x["time"] != "12:30" or len(x["caption"]) > 2200 for x in rows):
+    if any(x["time"] != "12:45" or len(x["caption"]) > 2200 for x in rows):
         raise RuntimeError("Unexpected scheduled time or caption length")
     return rows
 
@@ -161,8 +161,8 @@ def main() -> None:
     if len(matches) != 1:
         print("NO_SCHEDULED_POST_FOR_DATE", current, flush=True)
         return
-    if not (clock(12, 30) <= today.time() < clock(14, 0)):
-        raise RuntimeError("Outside 12:30-14:00 Moscow publication window")
+    if not (clock(12, 45) <= today.time() < clock(14, 0)):
+        raise RuntimeError("Outside 12:45-14:00 Moscow publication window")
     item = matches[0]
     image_url = media_verified(item)
     already = find_published(token, item["caption"])
