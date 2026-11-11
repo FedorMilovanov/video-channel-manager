@@ -1,10 +1,13 @@
 # GitHub-публикатор цитат для @lordchrist
 
-Дата актуализации: 2026-08-07  
+Дата актуализации расписания: 2026-11-11
+
 Проект: `lord-god-strength`  
 Канал: `@lordchrist`
 
-## Текущее production-состояние
+## Историческое состояние canary
+
+Следующие результаты и digest относятся к историческому canary; актуальное состояние и strict-next определяются действующей очередью и ledger в state-ветке, а не этим разделом.
 
 Проверенный manual canary:
 
@@ -19,14 +22,14 @@ provider_effect: verified
 
 Отдельный GitHub-hosted formatting/autonomy test John Owen также успешно опубликован как `message_id=1471`; он не входит в основную 30-постовую очередь и хранится отдельным one-off state evidence.
 
-Основная очередь остаётся immutable:
+Исторический digest очереди:
 
 ```text
 queue digest:
 sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20
 ```
 
-Strict-next item основной очереди после canary:
+Strict-next item на момент после исторического canary (не текущий статус):
 
 ```text
 lordchrist-bunyan-fire-grace
@@ -44,9 +47,12 @@ Production schedule включён в version control и не требует о�
 enabled: true
 not_before_moscow_date: 2026-08-08
 timezone: Europe/Moscow
-primary: 10:00
-catch-up: 21:00
-daily_verified_limit: 1
+morning: 10:00 ежедневно (cron 07:00 UTC)
+evening: 21:00 вт/пт/вс (cron 18:00 UTC)
+midday: 12:00 вт/пт (cron 09:00 UTC; ручной rich-article lane)
+max_verified_per_slot: 1
+max_verified_per_day: 2
+backfill_policy: none
 ```
 
 Scheduled-run разрешён только если checked-in production config совпадает с:
@@ -57,7 +63,7 @@ Scheduled-run разрешён только если checked-in production confi
 - exact bot username `preaching_mp3_bot`;
 - approved queue digest;
 - current reviewed presentation policy ID + SHA;
-- one-publication-per-Moscow-day contract.
+- лимиты подтверждённых публикаций на слот и московский день.
 
 Manual `publish` остаётся отдельно закрыт repository variable `LORDCHRIST_POSTING_ENABLED=true` и exact confirmation `PUBLISH:<publication_id>`. Scheduled production не зависит от этого manual toggle.
 
@@ -182,18 +188,11 @@ GitHub schedule on default main
 → persist exact result to state branch
 ```
 
-## Daily guard и два окна
+## Слоты и дневные ограничения
 
-Manual и scheduled используют один и тот же global guard:
+В конфиге три слота: утренний и вечерний для цитат, дневной — для ручного rich-article lane. Максимум — одна подтверждённая публикация на слот и две в день; `backfill_policy: none`. Вечерний слот не является универсальным ежедневным catch-up. Эти параметры не дают самостоятельного разрешения на публикацию: применяются проверки конкретного workflow, текущего состояния и отдельного execution gate.
 
-```text
-already published/verified on current Europe/Moscow date
-=> no second dispatch that date
-```
-
-Поэтому 21:00 — только catch-up. Если 10:00 успешно опубликовал пост, вечерний run не может отправить следующий.
-
-Scheduled workflow re-run (`GITHUB_RUN_ATTEMPT > 1`) запрещён. После infrastructure failure не использовать blind rerun; дождаться следующего normal schedule либо провести отдельную exact-bound manual operation только после проверки durable state.
+Scheduled workflow re-run (`GITHUB_RUN_ATTEMPT > 1`) запрещён. После infrastructure failure не использовать blind rerun; сначала проверить durable state и фактический эффект.
 
 ## Provider outcome policy
 
@@ -223,7 +222,7 @@ requirements/telegram-publisher.txt
 
 ## GitHub schedule caveat
 
-GitHub `schedule` работает только на default branch и использует latest default-branch commit. GitHub может задерживать scheduled events при высокой Actions-нагрузке и в редких случаях drop queued jobs; поэтому используются два разнесённых окна `10:00` и `21:00`, а не одна попытка в начале часа.
+GitHub `schedule` работает только на default branch и использует latest default-branch commit. GitHub может задерживать scheduled events при высокой Actions-нагрузке и в редких случаях drop queued jobs; поэтому время запуска не гарантируется. Слоты и допустимое опоздание задаются production config; просроченный выпуск не становится разрешённым автоматически.
 
 В публичном репозитории schedule может быть автоматически отключён после 60 дней repository inactivity. Для текущей 30-дневной кампании это не ожидаемый фактор, но правило нужно учитывать при будущих длительных паузах.
 

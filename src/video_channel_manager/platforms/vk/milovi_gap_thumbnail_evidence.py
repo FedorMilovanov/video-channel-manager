@@ -288,7 +288,7 @@ def _youtube_thumb_url(video_id: str, kind: str) -> str:
 
 def _load_pillow() -> Any:
     try:
-        from PIL import Image  # type: ignore[import-not-found]
+        from PIL import Image
     except ModuleNotFoundError as exc:
         raise RuntimeError(
             'Pillow is required; install current repo with: pip install -e ".[milovi-gap-read]"'
