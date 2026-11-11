@@ -68,8 +68,10 @@ def presentation_issues(description: str) -> list[str]:
         for finding in validate_youtube_description(description)
         if finding.severity == "error"
     ]
-    if len(description) > 5000:
-        issues.append("description_over_5000_characters")
+    # videos.update snippet.description is limited to 5000 UTF-8 BYTES,
+    # not 5000 Python characters (Cyrillic and emoji are multibyte).
+    if len(description.encode("utf-8")) > 5000:
+        issues.append("description_over_5000_utf8_bytes")
     if len(description) >= 350:
         # The two raw nonempty Studio lines are consumed by repost/share
         # previews. A plain first *paragraph* alone is not sufficient:
