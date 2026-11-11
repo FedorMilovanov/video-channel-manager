@@ -150,7 +150,10 @@ def find_published(token: str, caption: str) -> dict | None:
             raise RuntimeError("Meta pagination malformed; do not publish")
         if not paging.get("next"):
             break
-        cursor = (paging.get("cursors") or {}).get("after")
+        cursors = paging.get("cursors") or {}
+        if not isinstance(cursors, dict):
+            raise RuntimeError("Meta pagination cursors malformed; do not publish")
+        cursor = cursors.get("after")
         if not isinstance(cursor, str) or not cursor or cursor in seen_cursors or not media:
             raise RuntimeError("Meta pagination cursor invalid; do not publish")
         if page == 4:
