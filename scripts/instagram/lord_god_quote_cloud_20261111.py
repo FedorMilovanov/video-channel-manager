@@ -145,12 +145,16 @@ def find_published(token: str, caption: str) -> dict | None:
                 raise RuntimeError("Unexpected Meta media record; do not publish")
             if str(item.get("caption", "")).strip() == caption.strip():
                 matches.append(item)
-        paging = listing.get("paging") or {}
+        if "paging" not in listing:
+            break
+        paging = listing["paging"]
         if not isinstance(paging, dict):
             raise RuntimeError("Meta pagination malformed; do not publish")
-        if not paging.get("next"):
+        if "next" not in paging:
             break
-        cursors = paging.get("cursors") or {}
+        if not isinstance(paging["next"], str) or not paging["next"]:
+            raise RuntimeError("Meta pagination next invalid; do not publish")
+        cursors = paging.get("cursors")
         if not isinstance(cursors, dict):
             raise RuntimeError("Meta pagination cursors malformed; do not publish")
         cursor = cursors.get("after")
