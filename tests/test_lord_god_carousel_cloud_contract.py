@@ -152,9 +152,7 @@ def test_ambiguous_publish_is_not_retried(publisher, monkeypatch):
 
 
 def test_only_two_crons_and_readonly_manual_dispatch():
-    yml = (ROOT / ".github/workflows/lord-god-instagram-carousel-cloud-20261116.yml").read_text(
-        encoding="utf-8"
-    )
+    yml = (ROOT / ".github/workflows/lord-god-instagram-carousel-cloud-20261116.yml").read_text(encoding="utf-8")
     assert yml.count("    - cron:") == 2
     assert "cron: '45 9 16-21 11 *'" in yml
     assert "cron: '10 10 16-21 11 *'" in yml
