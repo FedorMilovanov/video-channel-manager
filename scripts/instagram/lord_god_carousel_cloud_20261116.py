@@ -4,6 +4,7 @@ GitHub workflow_dispatch is GET-only preflight. Only approved schedule events in
 narrow Moscow date/time window may create five children, one parent and publish.
 No blind retries after an uncertain Meta provider outcome.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -137,11 +138,7 @@ def validate_identity(token: str) -> None:
         raise RuntimeError("Wrong Facebook Page token")
     page = api(token, PAGE + "?fields=id,instagram_business_account{id,username}")
     account = page.get("instagram_business_account") or {}
-    if (
-        str(page.get("id")) != PAGE
-        or str(account.get("id")) != INSTAGRAM
-        or account.get("username") != HANDLE
-    ):
+    if str(page.get("id")) != PAGE or str(account.get("id")) != INSTAGRAM or account.get("username") != HANDLE:
         raise RuntimeError("Wrong Instagram binding")
     quota = api(token, INSTAGRAM + "/content_publishing_limit?fields=quota_usage,config")
     if not quota.get("data"):
