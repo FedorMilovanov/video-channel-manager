@@ -542,3 +542,18 @@ python3 scripts/build_lordchrist_source_corpus.py --vault /tmp/ecl/vault --commi
 
 **Бюджет.** L3: 62 613 байт из 65 536 — свободно 2 923. L2 не менялся: 32 293 знака. Проверки:
 preflight «Всё чисто», Писание без расхождений, якоря в порядке, 34 теста, ruff чист.
+
+## Выпуск: статья упакована в очередь Telegraph-лейна
+
+Оператор распорядился выпустить статью 11.11.2026. Собран элемент очереди
+`content/telegram/lordchrist/telegraph-v1/article-queue.json` →
+`lordchrist-telegraph-rabstvo-svobody-20261111`: дата 2026-11-11 (среда, вне слота вт/пт — исключение
+по решению оператора), статья и обложка привязаны git-blob-хешами, пост в ленте взят из `-пост.json`
+(`channel_post`). Проверка без провайдера:
+`lordchrist_telegraph_publisher preview` → заголовок «Рабство свободы», 62 821 байт UTF-8
+(потолок Telegraph 65 536), пост 1 841 знак.
+
+Публикация выполняется workflow `lordchrist-telegraph-poster.yml` и требует трёх repository variables
+(`LORDCHRIST_TELEGRAPH_POSTING_ENABLED=true`, `..._APPROVED_PUBLICATION_ID`,
+`..._APPROVED_ARTICLE_BLOB_SHA=454387a04711b42f87b55b3fd7e564e7ec8ac722`) плюс merge в main с зелёным CI.
+Токен песочницы эти переменные не видит (403 на /actions/variables), поэтому последний шаг — за оператором.
