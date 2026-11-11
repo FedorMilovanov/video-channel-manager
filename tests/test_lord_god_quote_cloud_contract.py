@@ -96,15 +96,19 @@ def test_single_publish_with_provider_readback(publisher, monkeypatch, capsys):
         if endpoint.endswith("/media_publish"):
             return {"id": "67890"}
         if endpoint.startswith("67890?"):
-            return {"id": "67890", "caption": caption, "media_type": "IMAGE", "permalink": "https://instagram.com/p/test", "timestamp": "2026-11-12T09:46:00+00:00"}
+            return {
+                "id": "67890",
+                "caption": caption,
+                "media_type": "IMAGE",
+                "permalink": "https://instagram.com/p/test",
+                "timestamp": "2026-11-12T09:46:00+00:00",
+            }
         pytest.fail(f"Unexpected call {endpoint}")
 
     monkeypatch.setattr(publisher, "request_json", provider)
     publisher.main()
     assert len([data for _, data in calls if data is not None]) == 2
     assert "PUBLISHED_CONFIRMED" in capsys.readouterr().out
-
-
 
 @pytest.mark.parametrize(
     "bad_field,bad_value",
