@@ -122,9 +122,7 @@ def test_single_publish_with_provider_readback(publisher, monkeypatch, capsys):
         ("caption", "not the approved caption"),
     ],
 )
-def test_incomplete_provider_photo_readback_never_claims_success(
-    publisher, monkeypatch, capsys, bad_field, bad_value
-):
+def test_incomplete_provider_photo_readback_never_claims_success(publisher, monkeypatch, capsys, bad_field, bad_value):
     configure(monkeypatch, publisher)
     monkeypatch.setattr(publisher, "find_published", lambda *a: None)
     caption = publisher.read_plan()[0]["caption"]
