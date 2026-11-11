@@ -4,19 +4,19 @@
 
 | Файл | Знаков | Состояние | SHA-256 |
 |---|---|---|---|
-| `README.md` | 3 268 | готов | `3abdc4954fd3ddd2fa31955da2c885a8db38140135330cf1aa6ff87e1099aeff` |
+| `README.md` | 3855 | готов | `ae835d6f1198cc728a8804b20e2d2c8fb20fdc0a0ed935880596f87e8c3e0217` |
 | `01-audit.md` | 19 849 | готов | `8ad55149cd485f9fd623d7234a93c8ea94f27fb139f9914eb97200b271beda2a` |
-| `02-sources.md` | 21 886 | готов | `4857ed2a079329600f856ac057aa15d8f61897b95794cc46fb2cbe483e70d2dd` |
+| `02-sources.md` | 23 942 | готов | `441129ac6f09e39faf54ca3a8d2c3e4215a8b2a33bc98fef47b5c44fb6a34d11` |
 | `03-argument-map.md` | 12 288 | готов | `e717fea1066c3ea79fc15ea25deae2d4f5f36fdbe7be86d32042c19638ef5cb0` |
-| `04-site-article.md` | 61 704 | готов к интеграции | `9736f7222ce6e41c01c665a04d3509583d363e093fe2676daa08d096268f685e` |
-| `05-visual-plan.md` | 10 077 | готов, иллюстрации не создавались | `9824f13c8ec0c7dd68c5999f5443eb7631369daed710c2f7309b839fae67e71e` |
+| `04-site-article.md` | 62 025 | готов к интеграции | `b2dd6f054b4be6c10e8ecebf8cafd034781f70406175058201183276ec46b30c` |
+| `05-visual-plan.md` | 13 611 | готов, иллюстрации не создавались | `be9597fb989c46ace368cb1a1754d25dbb8e597b1a0f09b1edd87dcf696f4482` |
 | `06-handoff.md` | этот файл | хеш не указан (самоссылка) | — |
 
 Хеши считаны `sha256sum`; после любой правки их надо пересчитать:
 `sha256sum site-handoff/rabstvo-svobody/*.md`.
 
 **Статья:** 12 разделов `<h2>`, 8 подразделов `<h3>`, 22 блочные цитаты Писания и 19 блочных цитат
-авторов, ~9 900 слов, `readingTime: 43`.
+авторов, 9 952 слова, `readingTime: 43`.
 
 ## 2. Что сделано и в каком порядке
 
@@ -35,22 +35,29 @@
    финал по Августину.
 5. **Два прохода:** содержательный (что утверждается и на каком основании) и литературный (объём цитат,
    отсутствие эмодзи, единый голос, переходы).
-6. **Сжатие объёма:** 65,7 → 61,7 тыс. знаков за счёт служебных обзоров внутри текста; верхняя граница
-   задания (60 тыс.) превышена примерно на 3%. Сокращать дальше можно только за счёт содержания; если
-   нужен жёсткий лимит, первыми кандидатами идут раздел о ложной свободе и подглавка о бунте (без потери
-   аргументации, за счёт примеров).
+6. **Объём:** 62,0 тыс. знаков (62 025). Из первоначальных 65,7 тыс. убраны только доказательно избыточные
+   служебные обзоры внутри текста (таблица-дубль, повторы-пересказы); верхняя граница задания (60 тыс.)
+   превышена примерно на 3,3%. Механического сокращения ради лимита не делалось: дальше резать можно
+   только содержание (первыми кандидатами идут примеры в разделе о ложной свободе), и это решение
+   редактора, а не техническое.
 
 ## 3. Как проверить заново
 
 ```bash
-# 1) корпус Писания
-git clone --depth 1 https://github.com/bibleonline/rst.git /tmp/rst
+# 1) корпус Писания — закреплён на коммите
+git clone https://github.com/bibleonline/rst.git /tmp/rst
+git -C /tmp/rst checkout 00ae4ffbd7a4ac1fb70ebb941109439316e4f5c9
 # формат: parsed66/<номер-книги>.dat, строка: #глава:стих#текст
 
-# 2) первичные источники
+# 2) первичные источники — закреплены на коммите
 git clone --filter=blob:none --no-checkout \
   https://github.com/BenjaminPoole/Ecumenical-Christian-Library-Obsidian-Vault.git /tmp/ecl
-git -C /tmp/ecl show "HEAD:05 Reformers (1500–1600)/Martin Luther/The Bondage of the Will/Luther BW 29 Section XXV.md"
+git -C /tmp/ecl fetch --depth 1 origin d16898fa04838f1060219e25865b4df8709b2655
+git -C /tmp/ecl show "d16898fa04838f1060219e25865b4df8709b2655:05 Reformers (1500–1600)/Martin Luther/The Bondage of the Will/Luther BW 29 Section XXV.md"
+
+# 3) репозиторий сайта (только чтение) — для проверки маршрутов ссылок
+git clone --depth 1 https://github.com/FedorMilovanov/gb-is-my-strength.git /tmp/site
+git -C /tmp/site rev-parse HEAD   # ожидается ccb1e6cfe8a1324fd988260577bd61337f3ca74d
 ```
 
 Скрипт сверки блочных цитат (проверяет, что каждая цитата с подписью `> (Книга гл:ст)` дословно
@@ -59,56 +66,116 @@ git -C /tmp/ecl show "HEAD:05 Reformers (1500–1600)/Martin Luther/The Bondage 
 ```python
 import re
 from pathlib import Path
-BOOKS={'Исх':'02-exodus','1 Цар':'09-1samuel','3 Цар':'11-1kings','Пс':'23-psalms','Прит':'24-proverbs',
-'Иез':'34-ezekiel','Мал':'47-malachi','Мф':'52-matthew','Лк':'54-luke','Ин':'55-john','Деян':'56-acts',
-'Рим':'64-romans','1 Кор':'65-1corinthians','Гал':'67-galatians','Еф':'68-ephesians','Флп':'69-philippians',
-'Кол':'70-colossians','Евр':'77-hebrews','1 Ин':'60-1john','2 Пет':'59-2peter'}
+
+BOOKS = {
+    "Исх": "02-exodus",
+    "1 Цар": "09-1samuel",
+    "3 Цар": "11-1kings",
+    "Пс": "23-psalms",
+    "Прит": "24-proverbs",
+    "Иез": "34-ezekiel",
+    "Мал": "47-malachi",
+    "Мф": "52-matthew",
+    "Лк": "54-luke",
+    "Ин": "55-john",
+    "Деян": "56-acts",
+    "Рим": "64-romans",
+    "1 Кор": "65-1corinthians",
+    "Гал": "67-galatians",
+    "Еф": "68-ephesians",
+    "Флп": "69-philippians",
+    "Кол": "70-colossians",
+    "Евр": "77-hebrews",
+    "1 Ин": "60-1john",
+    "2 Пет": "59-2peter",
+}
+
+
 def load(n):
-    d={}
-    for line in Path('/tmp/rst/parsed66/%s.dat'%n).read_text(encoding='utf-8').splitlines():
-        m=re.match(r'^#(\d+):(\d+)#(.*)$',line)
-        if m: d[(int(m.group(1)),int(m.group(2)))]=m.group(3)
+    d = {}
+    for line in Path("/tmp/rst/parsed66/%s.dat" % n).read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^#(\d+):(\d+)#(.*)$", line)
+        if m:
+            d[(int(m.group(1)), int(m.group(2)))] = m.group(3)
     return d
+
+
 def norm(t):
-    t=t.replace('&mdash;','—').replace('<i>','').replace('</i>','').replace('&#769;','')
-    t=re.sub(r'[^А-Яа-яЁёA-Za-z0-9 ]',' ',t).lower().replace('ё','е')
-    return re.sub(r'\s+',' ',t).strip()
-lines=open('04-site-article.md',encoding='utf-8').read().split('\n')
-i=0; ok=fail=0
-while i<len(lines):
-    if lines[i].startswith('> ('):
-        ref=lines[i][3:-1]; j=i-1; b=[]
-        while j>=0 and lines[j].startswith('>'):
-            b.insert(0,lines[j][1:].strip()); j-=1
-        m=re.match(r'^(.+?)\s+(\d+):(\d+)(?:[–-](\d+))?$',ref); i+=1
-        if not m or m.group(1).rstrip('.') not in BOOKS: continue
-        d=load(BOOKS[m.group(1).rstrip('.')]); ch=int(m.group(2))
-        v1=int(m.group(3)); v2=int(m.group(4) or m.group(3))
-        N=norm(' '.join(d.get((ch,v),'') for v in range(v1,v2+1)))
-        bad=[s for s in re.split(r'…|\.\.\.',' '.join(b)) if norm(s) and norm(s) not in N]
-        ok,fail=(ok+1,fail) if not bad else (ok,fail+1)
-        if bad: print('FAIL',ref,norm(bad[0])[:60])
-    else: i+=1
-print('ok',ok,'fail',fail)
+    t = t.replace("&mdash;", "—").replace("<i>", "").replace("</i>", "").replace("&#769;", "")
+    t = re.sub(r"[^А-Яа-яЁёA-Za-z0-9 ]", " ", t).lower().replace("ё", "е")
+    return re.sub(r"\s+", " ", t).strip()
+
+
+lines = open("04-site-article.md", encoding="utf-8").read().split("\n")
+i = 0
+ok = fail = 0
+while i < len(lines):
+    if lines[i].startswith("> ("):
+        ref = lines[i][3:-1]
+        j = i - 1
+        b = []
+        while j >= 0 and lines[j].startswith(">"):
+            b.insert(0, lines[j][1:].strip())
+            j -= 1
+        m = re.match(r"^(.+?)\s+(\d+):(\d+)(?:[–-](\d+))?$", ref)
+        i += 1
+        if not m or m.group(1).rstrip(".") not in BOOKS:
+            continue
+        d = load(BOOKS[m.group(1).rstrip(".")])
+        ch = int(m.group(2))
+        v1 = int(m.group(3))
+        v2 = int(m.group(4) or m.group(3))
+        N = norm(" ".join(d.get((ch, v), "") for v in range(v1, v2 + 1)))
+        bad = [s for s in re.split(r"…|\.\.\.", " ".join(b)) if norm(s) and norm(s) not in N]
+        ok, fail = (ok + 1, fail) if not bad else (ok, fail + 1)
+        if bad:
+            print("FAIL", ref, norm(bad[0])[:60])
+    else:
+        i += 1
+print("ok", ok, "fail", fail)
 ```
 
-**Результат на момент передачи:** `ok 22 fail 0` (плюс 19 цитат авторов, сверенных вручную по
-оцифровкам, — локаторы в `02-sources.md`).
+**Что именно доказывает этот скрипт.** Только одно: 22 блочные цитаты Писания совпадают с корпусом
+после нормализации (снимаются разметка, ударения, пунктуация и регистр, `ё` → `е`). Это не побайтовое
+сличение и не проверка типографики. Короткие цитаты внутри абзацев скрипт не покрывает — они сверены
+вручную по тем же стихам (режим Б в `02-sources.md` §1.1).
+
+**Результат на финальном HEAD:** `ok 22 fail 0`.
+
+**Цитаты авторов** машинной сверке не подлежат: английские тексты сверены с оцифровками вручную (19
+блочных цитат, локаторы в `02-sources.md`), русские переводы сделаны с этих английских текстов, а
+определение Эразма известно только в передаче Лютера — независимого подтверждения по изданию Эразма
+нет.
 
 ## 4. Интеграция в `gb-is-my-strength`
 
 Репозиторий сайта в этой работе **не изменялся** (только чтение). Что нужно при переносе:
 
-**4.1. Шапка.** `04-site-article.md` уже оформлен по схеме соседней статьи (`svoboda-vo-hriste.mdx`):
+**4.1. Шапка.** `04-site-article.md` оформлен по схеме соседней статьи (`svoboda-vo-hriste.mdx`):
 `title`, `h1`, `description`, `slug: "rabstvo-svobody"`, `section: "articles"`, `publishedAt`/`updatedAt`,
 `author`, `series: "hard-texts"`, `tags`, `related`, `draft`, `noindex`, `sourcesRequired`, `readingTime`.
 Стоит `draft: true` — снимает оператор при публикации. Файл — Markdown; при переносе в `.mdx` ничего
 менять не нужно, кроме расширения.
 
-**4.2. Ссылки.** Внутренние ссылки проставлены на существующие слаги с завершающим слэшем:
-`svoboda-vo-hriste`, `strah-bozhij-rabskij-ili-synovnij`,
-`sovershennoletie-roditelskaya-vlast-chto-menyaetsya`, `cerkovnaya-disciplina-vlast-granicy-zashchita`.
-Все четыре статьи есть в `src/content/articles/` на дату проверки. Блок `related` повторяет первые три.
+**Даты не подтверждены.** `publishedAt` и `updatedAt` в шапке — черновые (`2026-11-11`): это дата
+подготовки текста, а не дата публикации. Реальные значения выставляются при редакционном выпуске на
+сайте; выводить их из этой работы нельзя.
+
+**4.2. Ссылки.** В этой папке ссылки на статьи сайта даны **абсолютными адресами** вида
+`https://gospod-bog.ru/articles/<слаг>/` — потому что файл лежит в чужом репозитории, а относительные
+маршруты вида `/articles/.../` там не разрешаются. Использованы четыре слага: `svoboda-vo-hriste`,
+`strah-bozhij-rabskij-ili-synovnij`, `sovershennoletie-roditelskaya-vlast-chto-menyaetsya`,
+`cerkovnaya-disciplina-vlast-granicy-zashchita`.
+
+Существование маршрутов проверено по репозиторию сайта, закреплённому на коммите
+`ccb1e6cfe8a1324fd988260577bd61337f3ca74d`: для каждого слага есть каталог `src/pages/articles/<слаг>/` и
+строка в `sitemap.xml` вида `https://gospod-bog.ru/articles/<слаг>/`. Публичный ответ сервера при этой
+работе не запрашивался (сетевой доступ ограничен), поэтому подтверждение — по исходникам сайта и
+карте сайта, а не по HTTP.
+
+**При интеграции в сам сайт** абсолютные адреса надо заменить на site-native локальные
+`/articles/<слаг>/`: тогда внутренняя навигация не зависит от домена. Блок `related` уже содержит слаги
+и правки не требует.
 
 **4.3. Обратная ссылка.** В «Свободе во Христе» стоит добавить упоминание новой статьи в разделе
 `slova-hrista` или в финале — там, где речь о свободе и сыновстве. Это правка в чужом файле, поэтому
@@ -162,3 +229,27 @@ print('ok',ok,'fail',fail)
 2. Сайт: перенести файл в `src/content/articles/rabstvo-svobody.mdx`, снять `draft`, добавить обратную
    ссылку в «Свободе во Христе».
 3. Telegram-выпуск остаётся отдельной задачей и этим пакетом не затрагивается.
+
+## 9. Журнал исправлений (корректирующая волна 2)
+
+Что было не так и что сделано — для независимой приёмки.
+
+| № | Дефект | Исправление | Где |
+|---|---|---|---|
+| 1 | CI падал: `ruff format --check` переформатировал Python-блок в `06-handoff.md` | блок приведён к текущему Ruff; `ruff format --check .` → `1350 files already formatted`; скрипт извлечён и запущен — `ok 22 fail 0` | `06-handoff.md` §3 |
+| 2 | CI падал: `test_local_markdown_links_resolve` — 4 ссылки `/articles/.../` указывали в несуществующие пути этого репозитория | ссылки переведены в абсолютные `https://gospod-bog.ru/articles/<слаг>/`; существование маршрутов подтверждено по исходникам сайта и `sitemap.xml` на закреплённом коммите; в handoff добавлено указание заменить их на site-native при интеграции | `04-site-article.md`, `06-handoff.md` §4.2 |
+| 3 | Хронология Исхода: жалоба стояла «после гибели армии фараона» | сцена переписана: народ у моря, колесницы позади и ещё не разбиты, переход и гибель войска — позже; добавлена оговорка «до перехода через море и до гибели египетского войска» | `04-site-article.md`, начало части I |
+| 4 | «Это первое в Библии описание…» — первенство недоказуемо | заменено на «один из самых ясных библейских примеров»; рядом указаны более ранняя и более поздняя жалобы (Исх. 5:21; 16:3) | `04-site-article.md` |
+| 5 | «Между этими двумя точками — сорок семь стихов» — неверный счёт | «двадцать девять стихов» (8:31–59), добавлена ссылка на 8:59 | `04-site-article.md` |
+| 6 | README выводил факт публикации из слияния PR #877 | статус: «подготовлена в Video Manager; состояние публикации в Telegram не подтверждено»; отдельный раздел о статусе; «слит в `main`; выпуск у провайдера не проверялся» | `README.md` |
+| 7 | Метод сверки назывался «побайтовым»; смешивались разные уровни доказательности | введены режимы А (машинная сверка 22 блочных цитат после нормализации) и Б (ручная сверка цитат в абзацах); отдельно оговорены переводы с английского и цитирование Эразма через Лютера; корпуса закреплены по SHA | `02-sources.md` §1, `06-handoff.md` §3 |
+| 8 | Художественный канон расходился с утверждённым владельцем | план переписан: тонкая музейная гравюра, точная линия, умеренная штриховка, гладкие акварельные заливки (кремовый, сепия, выцветший синий), без зерна и потёртостей; форматы 16:9 / 3:4 / одно 9:16; убраны повторы типажа, пустыни и темницы; у каждой сцены — якорь в тексте | `05-visual-plan.md` |
+| 9 | Даты статьи могли быть приняты за подтверждённые | в §4.1 сказано: `publishedAt`/`updatedAt` — черновые, выставляются при редакционном выпуске; `draft: true` сохранён | `06-handoff.md` |
+
+**Проверки на финальном HEAD:** `ruff check .` — passed; `ruff format --check .` — 1350 files already
+formatted; `mypy src` — success, 359 files; `python -m pytest -q` — весь набор зелёный; coverage ratchet —
+359 modules at or above floors (76,03%); `test_local_markdown_links_resolve` — passed; скрипт сверки
+цитат — `ok 22 fail 0` на закреплённом коммите корпуса.
+
+**Не делалось намеренно:** механическое сокращение статьи; изменение репозитория сайта; публикация,
+deploy, merge; правки в Telegram-пайплайне и очереди.
