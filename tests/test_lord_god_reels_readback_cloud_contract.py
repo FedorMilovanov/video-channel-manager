@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
-import json
 from datetime import datetime
 from pathlib import Path
 
