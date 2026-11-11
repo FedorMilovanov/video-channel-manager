@@ -23,7 +23,7 @@ def publisher():
     return mod
 
 
-def configure(monkeypatch, mod, *, day=16, hour=12, minute=47, mode="scheduled", event="schedule"):
+def configure(monkeypatch, mod, *, day=16, hour=12, minute=47, mode="scheduled", event="schedule", approved=True):
     class FixedDateTime:
         @staticmethod
         def now(tz):
@@ -35,6 +35,8 @@ def configure(monkeypatch, mod, *, day=16, hour=12, minute=47, mode="scheduled",
     monkeypatch.setenv("GITHUB_EVENT_NAME", event)
     monkeypatch.setattr(mod, "validate_identity", lambda token: None)
     monkeypatch.setattr(mod, "media_url", lambda data: "https://example.invalid/immutable.jpg")
+    if approved:
+        monkeypatch.setattr(mod, "require_owner_approval", lambda: None)
 
 
 def test_six_exact_days_and_thirty_frozen_assets(publisher):
@@ -151,10 +153,25 @@ def test_ambiguous_publish_is_not_retried(publisher, monkeypatch):
     assert attempts == [publisher.INSTAGRAM + "/media_publish"]
 
 
-def test_only_two_crons_and_readonly_manual_dispatch():
+def test_unapproved_wave_has_no_schedule_and_readonly_manual_dispatch():
     yml = (ROOT / ".github/workflows/lord-god-instagram-carousel-cloud-20261116.yml").read_text(encoding="utf-8")
-    assert yml.count("    - cron:") == 2
-    assert "cron: '45 9 16-21 11 *'" in yml
-    assert "cron: '10 10 16-21 11 *'" in yml
+    assert "  schedule:" not in yml
+    assert "    - cron:" not in yml
+    assert "  workflow_dispatch:" in yml
+    assert "LORD_GOD_CLOUD_MODE: preflight" in yml
     assert "cancel-in-progress: false" in yml
-    assert "github.event_name == 'schedule' && 'scheduled' || 'preflight'" in yml
+
+
+def test_unapproved_images_block_all_scheduled_provider_writes(publisher, monkeypatch):
+    configure(monkeypatch, publisher, approved=False)
+    monkeypatch.setattr(publisher, "api", lambda *a, **k: pytest.fail("Provider write under approval hold"))
+    with pytest.raises(RuntimeError, match="OWNER_APPROVAL_REQUIRED"):
+        publisher.main()
+
+
+def test_plan_approval_flags_refuse_posting(publisher):
+    plan = json.loads(publisher.PLAN.read_text(encoding="utf-8"))
+    approval = plan["publication_approval"]
+    assert approval["status"] == "PENDING_OWNER_VISUAL_REVIEW"
+    assert approval["owner_approved"] is False
+    assert approval["provider_writes_authorized"] is False

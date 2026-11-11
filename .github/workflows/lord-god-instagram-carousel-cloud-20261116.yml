@@ -1,8 +1,6 @@
-name: Lord God Instagram — six source-backed carousels (Nov 16–21)
+name: Lord God Instagram — unapproved carousel previews (READ ONLY)
+# OWNER APPROVAL HOLD: manual read-only validation only; no cron until approved.
 on:
-  schedule:
-    - cron: '45 9 16-21 11 *' # primary 12:45 Moscow
-    - cron: '10 10 16-21 11 *' # backup 13:10 Moscow; skips if published
   workflow_dispatch:
 
 permissions:
@@ -20,7 +18,7 @@ jobs:
     timeout-minutes: 15
     env:
       LORD_GOD_PAGE_TOKEN: ${{ secrets.LORD_GOD_INSTAGRAM_PAGE_TOKEN }}
-      LORD_GOD_CLOUD_MODE: ${{ github.event_name == 'schedule' && 'scheduled' || 'preflight' }}
+      LORD_GOD_CLOUD_MODE: preflight
       PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
