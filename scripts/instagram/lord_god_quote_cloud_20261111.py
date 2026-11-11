@@ -189,8 +189,7 @@ def first_scheduled_run_for_day(day: str) -> bool:
         or os.environ.get("GITHUB_REF") != "refs/heads/main"
         or os.environ.get("GITHUB_EVENT_NAME") != "schedule"
         or os.environ.get("GITHUB_RUN_ATTEMPT") != "1"
-        or os.environ.get("GITHUB_EVENT_SCHEDULE")
-        not in {"45 9 12-15 11 *", "10 10 12-15 11 *"}
+        or os.environ.get("GITHUB_EVENT_SCHEDULE") not in {"45 9 12-15 11 *", "10 10 12-15 11 *"}
     ):
         raise RuntimeError("Unapproved cloud workflow invocation; do not publish")
     current_run = os.environ.get("GITHUB_RUN_ID", "")
@@ -203,8 +202,7 @@ def first_scheduled_run_for_day(day: str) -> bool:
     params = urlencode({"event": "schedule", "created": day, "per_page": 100})
     api = (
         "https://api.github.com/repos/FedorMilovanov/video-channel-manager"
-        "/actions/workflows/lord-god-instagram-quote-cloud-20261111.yml/runs?"
-        + params
+        "/actions/workflows/lord-god-instagram-quote-cloud-20261111.yml/runs?" + params
     )
     request = Request(
         api,
