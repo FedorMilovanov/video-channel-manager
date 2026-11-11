@@ -25,10 +25,7 @@ INSTAGRAM_ACCOUNT = "17841433845016161"
 INSTAGRAM_USERNAME = "thelordgodismystrength"
 APP_ID = "1528850542618219"
 RELEASE = "https://github.com/FedorMilovanov/video-channel-manager/releases/download/lord-god-ig-quote-media-20261111/"
-PLAN = (
-    Path(__file__).resolve().parents[2]
-    / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
-)
+PLAN = Path(__file__).resolve().parents[2] / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 
@@ -51,9 +48,7 @@ def request_json(endpoint: str, token: str, *, data: dict | None = None) -> dict
             code = "unknown"
         raise RuntimeError(f"Meta HTTP {error.code}, code {code}") from None
     except URLError as error:
-        raise RuntimeError(
-            "Meta connection failed (" + type(error).__name__ + ")"
-        ) from None
+        raise RuntimeError("Meta connection failed (" + type(error).__name__ + ")") from None
     if not isinstance(obj, dict):
         raise TypeError("Invalid Meta response shape")
     return obj
@@ -70,9 +65,7 @@ def media_verified(item: dict) -> str:
         raise RuntimeError("Image not in approved release")
     url = RELEASE + filename
     try:
-        with urlopen(
-            Request(url, headers={"Accept": "image/jpeg"}), timeout=40
-        ) as resp:
+        with urlopen(Request(url, headers={"Accept": "image/jpeg"}), timeout=40) as resp:
             final = urlparse(resp.url)
             if final.scheme != "https" or final.hostname not in {
                 "github.com",
@@ -81,13 +74,8 @@ def media_verified(item: dict) -> str:
                 raise RuntimeError("Media downloaded from unexpected host")
             payload = resp.read(10_000_000)
     except (URLError, HTTPError) as error:
-        raise RuntimeError(
-            "Media download failed (" + type(error).__name__ + ")"
-        ) from None
-    if (
-        len(payload) != item["size_bytes"]
-        or hashlib.sha256(payload).hexdigest() != item["sha256"]
-    ):
+        raise RuntimeError("Media download failed (" + type(error).__name__ + ")") from None
+    if len(payload) != item["size_bytes"] or hashlib.sha256(payload).hexdigest() != item["sha256"]:
         raise RuntimeError("Media SHA-256/size mismatch")
     if not payload.startswith(bytes((255, 216, 255))):
         raise RuntimeError("Media not JPEG")
@@ -121,9 +109,7 @@ def verify_identity(token: str) -> None:
     owner = request_json("me?fields=id", token)
     if str(owner.get("id")) != FACEBOOK_PAGE:
         raise RuntimeError("Wrong Facebook PAGE token")
-    page = request_json(
-        FACEBOOK_PAGE + "?fields=id,instagram_business_account{id,username}", token
-    )
+    page = request_json(FACEBOOK_PAGE + "?fields=id,instagram_business_account{id,username}", token)
     instagram = page.get("instagram_business_account") or {}
     if (
         str(page.get("id")) != FACEBOOK_PAGE
@@ -131,9 +117,7 @@ def verify_identity(token: str) -> None:
         or instagram.get("username") != INSTAGRAM_USERNAME
     ):
         raise RuntimeError("Wrong Instagram account linkage")
-    quota = request_json(
-        INSTAGRAM_ACCOUNT + "/content_publishing_limit?fields=quota_usage,config", token
-    )
+    quota = request_json(INSTAGRAM_ACCOUNT + "/content_publishing_limit?fields=quota_usage,config", token)
     if not quota.get("data"):
         raise RuntimeError("Instagram publishing quota unavailable")
 
@@ -207,18 +191,14 @@ def main() -> None:
         raise RuntimeError("Media processing incomplete; do not blind retry")
     # No automatic action retry; an uncertain media_publish outcome requires reconciliation.
     print("PUBLISH_REQUESTING", item["id"], flush=True)
-    result = request_json(
-        INSTAGRAM_ACCOUNT + "/media_publish", token, data={"creation_id": container}
-    )
+    result = request_json(INSTAGRAM_ACCOUNT + "/media_publish", token, data={"creation_id": container})
     media_id = str(result.get("id", ""))
     if not media_id.isdecimal():
         raise RuntimeError("Uncertain publish response; do not blindly retry")
     detail = request_json(media_id + "?fields=id,caption,permalink,timestamp", token)
     if detail.get("caption", "").strip() != item["caption"].strip():
         raise RuntimeError("Published media exists, but caption readback mismatches")
-    print(
-        "PUBLISHED_CONFIRMED", item["id"], media_id, detail.get("permalink"), flush=True
-    )
+    print("PUBLISHED_CONFIRMED", item["id"], media_id, detail.get("permalink"), flush=True)
 
 
 if __name__ == "__main__":
