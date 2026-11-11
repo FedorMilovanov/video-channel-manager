@@ -174,7 +174,6 @@ def preflight(token: str, items: list[dict], assets: dict[str, dict]) -> None:
     print("PREFLIGHT_OK_NO_POST", flush=True)
 
 
-
 def require_owner_approval() -> None:
     """Hard gate: publishing is forbidden until the exact six-card wave is approved."""
     plan = json.loads(PLAN.read_text(encoding="utf-8"))
