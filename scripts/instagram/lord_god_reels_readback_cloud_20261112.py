@@ -92,7 +92,7 @@ def list_recent_media(token: str) -> list[dict]:
     rows: list[dict] = []
     after: str | None = None
     seen: set[str] = set()
-    for _ in range(5):
+    for page in range(5):
         params = {"fields": "id,caption,media_type,media_product_type,permalink,timestamp", "limit": "100"}
         if after:
             params["after"] = after
@@ -100,15 +100,25 @@ def list_recent_media(token: str) -> list[dict]:
         data = response.get("data")
         if not isinstance(data, list):
             raise RuntimeError("Meta media GET did not return data array")
-        for item in data:
-            if isinstance(item, dict):
-                rows.append(item)
-        cursor = ((response.get("paging") or {}).get("cursors") or {}).get("after")
+        if not all(isinstance(item, dict) for item in data):
+            raise RuntimeError("Meta media GET returned malformed record")
+        rows.extend(data)
+        paging = response.get("paging") or {}
+        if not isinstance(paging, dict):
+            raise RuntimeError("Meta media pagination malformed")
+        if not paging.get("next"):
+            return rows
+        cursors = paging.get("cursors") or {}
+        if not isinstance(cursors, dict):
+            raise RuntimeError("Meta media pagination cursors malformed")
+        cursor = cursors.get("after")
         if not data or not isinstance(cursor, str) or not cursor or cursor in seen:
-            break
+            raise RuntimeError("Meta media pagination incomplete or looping")
+        if len(rows) >= 500 or page == 4:
+            raise RuntimeError("Meta media feed exceeds five-page verification bound")
         seen.add(cursor)
         after = cursor
-    return rows
+    raise RuntimeError("Meta media pagination failed to terminate")
 
 
 def verify_item(item: dict, rows: list[dict]) -> dict:
