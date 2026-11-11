@@ -4,12 +4,12 @@
 
 | Файл | Знаков | Состояние | SHA-256 |
 |---|---|---|---|
-| `README.md` | 3855 | готов | `ae835d6f1198cc728a8804b20e2d2c8fb20fdc0a0ed935880596f87e8c3e0217` |
-| `01-audit.md` | 19 849 | готов | `8ad55149cd485f9fd623d7234a93c8ea94f27fb139f9914eb97200b271beda2a` |
-| `02-sources.md` | 23 942 | готов | `441129ac6f09e39faf54ca3a8d2c3e4215a8b2a33bc98fef47b5c44fb6a34d11` |
-| `03-argument-map.md` | 12 288 | готов | `e717fea1066c3ea79fc15ea25deae2d4f5f36fdbe7be86d32042c19638ef5cb0` |
-| `04-site-article.md` | 62 025 | готов к интеграции | `b2dd6f054b4be6c10e8ecebf8cafd034781f70406175058201183276ec46b30c` |
-| `05-visual-plan.md` | 13 611 | готов, иллюстрации не создавались | `be9597fb989c46ace368cb1a1754d25dbb8e597b1a0f09b1edd87dcf696f4482` |
+| `README.md` | 3871 | готов | `2139cd739facdc6b39335934e0b89df435cb894bf3eae8f0b4e93c2ad75f14ee` |
+| `01-audit.md` | 19935 | готов | `48bdea2f05450c354ffce880c74208c64e46e71dae4aea1a8dcc0a8cef3482f1` |
+| `02-sources.md` | 23942 | готов | `441129ac6f09e39faf54ca3a8d2c3e4215a8b2a33bc98fef47b5c44fb6a34d11` |
+| `03-argument-map.md` | 12288 | готов | `e717fea1066c3ea79fc15ea25deae2d4f5f36fdbe7be86d32042c19638ef5cb0` |
+| `04-site-article.md` | 62025 | готов к интеграции | `b2dd6f054b4be6c10e8ecebf8cafd034781f70406175058201183276ec46b30c` |
+| `05-visual-plan.md` | 13611 | готов, иллюстрации не создавались | `be9597fb989c46ace368cb1a1754d25dbb8e597b1a0f09b1edd87dcf696f4482` |
 | `06-handoff.md` | этот файл | хеш не указан (самоссылка) | — |
 
 Хеши считаны `sha256sum`; после любой правки их надо пересчитать:
