@@ -379,7 +379,7 @@
     },
     "lordchrist-telegraph-rabstvo-svobody-20261111": {
       "publication_id": "lordchrist-telegraph-rabstvo-svobody-20261111",
-      "state": "telegram_dispatch_claimed",
+      "state": "published",
       "provider_effect": "verified",
       "run_id": "43046978107",
       "run_attempt": 1,
@@ -391,8 +391,12 @@
       "telegraph_url": "https://telegra.ph/Rabstvo-svobody-11-11",
       "telegraph_path": "Rabstvo-svobody-11-11",
       "telegraph_updated_at_utc": "2026-11-11T15:18:26.355852+00:00",
-      "telegram_provider_effect": "unknown_until_reconciled",
-      "telegram_intent_at_utc": "2026-11-11T15:18:28.129598+00:00"
+      "telegram_provider_effect": "verified",
+      "telegram_intent_at_utc": "2026-11-11T15:18:28.129598+00:00",
+      "telegram_chat_id": -1001295216957,
+      "telegram_message_id": 1608,
+      "telegram_link_preview_large_media": true,
+      "telegram_published_at_utc": "2026-11-11T15:18:31.904090+00:00"
     }
   }
 }
