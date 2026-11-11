@@ -379,15 +379,18 @@
     },
     "lordchrist-telegraph-rabstvo-svobody-20261111": {
       "publication_id": "lordchrist-telegraph-rabstvo-svobody-20261111",
-      "state": "page_dispatch_claimed",
-      "provider_effect": "unknown_until_reconciled",
+      "state": "page_published",
+      "provider_effect": "verified",
       "run_id": "43046978107",
       "run_attempt": 1,
       "github_sha": "1768466e9c685121ccbb9f00f7637415a45eb139",
       "title": "Рабство свободы",
       "article_sha256": "sha256:820d5be03f2abf82156f11399e53ab9aaccf9c7189a3395a961286d99be3db53",
       "cover_sha256": "sha256:cf8c07de5f23bd20c5ba35dbc3009434efee43402b6a11529f5e4e8535a624fe",
-      "page_intent_at_utc": "2026-11-11T15:18:21.523749+00:00"
+      "page_intent_at_utc": "2026-11-11T15:18:21.523749+00:00",
+      "telegraph_url": "https://telegra.ph/Rabstvo-svobody-11-11",
+      "telegraph_path": "Rabstvo-svobody-11-11",
+      "telegraph_updated_at_utc": "2026-11-11T15:18:26.355852+00:00"
     }
   }
 }
