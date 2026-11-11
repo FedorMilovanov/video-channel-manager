@@ -704,8 +704,73 @@
       ]
     }
   ],
-  "media": [],
-  "media_slots": [],
+  "media": [
+    {
+      "media_id": "media-01-dva-vsadnika",
+      "path": "content/telegram/lordchrist/rich-v1/freedom/media/lordchrist-rich-rabstvo-01-dva-vsadnika.jpg",
+      "kind": "illustration",
+      "caption": "Воля как вьючное животное между двумя всадниками: ни один из них не спрашивает согласия.",
+      "alt": "Гравюра: вол стоит на тёмной равнине, два силуэта в плащах тянут в разные стороны натянутые вожжи.",
+      "purpose": "Иллюстрирует образ Лютера в разделе «Лютер: воля между двумя всадниками».",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; человека-автора и узнаваемых лиц нет."
+    },
+    {
+      "media_id": "media-02-ruka",
+      "path": "content/telegram/lordchrist/rich-v1/freedom/media/lordchrist-rich-rabstvo-02-ruka.jpg",
+      "kind": "illustration",
+      "caption": "Обличение и удержание: рука, которая не отпускает, и ребёнок, который уже тянется прочь.",
+      "alt": "Гравюра: взрослый силуэт держит ребёнка за запястье; ребёнок тянется к светлому горизонту, на земле лежит сброшенная цепь.",
+      "purpose": "Иллюстрирует раздел «Дети: обличение как форма любви».",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; человека-автора и узнаваемых лиц нет."
+    },
+    {
+      "media_id": "media-03-cepi",
+      "path": "content/telegram/lordchrist/rich-v1/freedom/media/lordchrist-rich-rabstvo-03-cepi.jpg",
+      "kind": "illustration",
+      "caption": "Рабская свобода: цепи, которые носят как украшение и показывают как наследство.",
+      "alt": "Гравюра: толпа людей в пальто, у каждого на шее и на руках тяжёлая цепь; один впереди поднимает цепь и разглядывает её с гордостью.",
+      "purpose": "Иллюстрирует раздел «Взрослые: та же сделка в масштабе жизни».",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; человека-автора и узнаваемых лиц нет."
+    }
+  ],
+  "media_slots": [
+    {
+      "slot_id": "media-01-dva-vsadnika",
+      "placement": {
+        "after": "razdel-lyuter"
+      },
+      "media_id": "media-01-dva-vsadnika",
+      "depicts": "Воля как вьючное животное между двумя всадниками",
+      "purpose": "Иллюстрирует образ Лютера в разделе «Лютер: воля между двумя всадниками».",
+      "preferred_source_type": "AI-generated engraving, single-pass, operator-requested",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; узнаваемых лиц нет.",
+      "caption": "Воля как вьючное животное между двумя всадниками: ни один из них не спрашивает согласия."
+    },
+    {
+      "slot_id": "media-02-ruka",
+      "placement": {
+        "after": "razdel-deti"
+      },
+      "media_id": "media-02-ruka",
+      "depicts": "Рука, удерживающая ребёнка, и сброшенная цепь",
+      "purpose": "Иллюстрирует раздел «Дети: обличение как форма любви».",
+      "preferred_source_type": "AI-generated engraving, single-pass, operator-requested",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; узнаваемых лиц нет.",
+      "caption": "Обличение и удержание: рука, которая не отпускает, и ребёнок, который уже тянется прочь."
+    },
+    {
+      "slot_id": "media-03-cepi",
+      "placement": {
+        "after": "razdel-vzroslye"
+      },
+      "media_id": "media-03-cepi",
+      "depicts": "Цепи, которые носят как украшение",
+      "purpose": "Иллюстрирует раздел «Взрослые: та же сделка в масштабе жизни».",
+      "preferred_source_type": "AI-generated engraving, single-pass, operator-requested",
+      "copyright_provenance": "Сгенерировано для канала @lordchrist 2026-11-11, свободно от сторонних прав; узнаваемых лиц нет.",
+      "caption": "Рабская свобода: цепи, которые носят как украшение и показывают как наследство."
+    }
+  ],
   "sources": [
     {
       "source_id": "src-01-source",
