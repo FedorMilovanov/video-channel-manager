@@ -334,6 +334,7 @@ def test_one_plain_line_followed_by_formatted_body_does_not_fake_preview_pass() 
 def test_two_plain_intro_lines_allow_emphasis_and_urls_in_later_paragraphs() -> None:
     assert presentation_issues(_DESCRIPTION) == []
 
+
 def test_lord_god_presentation_imports_strict_youtube_copy_validator() -> None:
     # A stale editable install once routed this gate through youtube_copy_safe.
     # That validator records some markup defects as warnings, not blocking errors.
@@ -341,6 +342,7 @@ def test_lord_god_presentation_imports_strict_youtube_copy_validator() -> None:
     from video_channel_manager.platforms.youtube import lord_god_presentation
 
     assert lord_god_presentation.validate_youtube_description is youtube_copy.validate_youtube_description
+
 
 
 def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:
@@ -359,6 +361,7 @@ def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:
         assert "description_over_5000_utf8_bytes" in presentation_issues(over)
         with pytest.raises(ValueError, match="description_over_5000_utf8_bytes"):
             require_lord_god_youtube_presentation(_plan(over))
+
 
 
 def test_lord_god_oversize_utf8_fails_before_oauth_or_provider(
