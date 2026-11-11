@@ -321,4 +321,3 @@ def test_repeated_provider_cursor_aborts(publisher, monkeypatch):
     with pytest.raises(RuntimeError, match="cursor invalid"):
         publisher.find_published("dummy-token", "caption")
     assert len(calls) == 2
-
