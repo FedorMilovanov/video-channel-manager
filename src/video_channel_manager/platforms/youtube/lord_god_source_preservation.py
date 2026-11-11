@@ -11,6 +11,7 @@ this guard does not itself authorize any source or rights claim.
 from __future__ import annotations
 
 import re
+from hashlib import sha256
 from urllib.parse import parse_qs, urlsplit
 
 LORD_GOD_OWNER_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
@@ -24,6 +25,10 @@ _CANONICAL_OWNER_VK_COMMUNITY = "https://vk.ru/the_lord_god_is_my_strength"
 # The presentation policy independently retires this exact former VK fundraising
 # widget. Do not drop any other owner-group link with unrelated query params.
 _RETIRED_OWNER_VK_FUNDRAISING_URL = "https://vk.com/the_lord_god_is_my_strength?w=app5727453_-60805374"
+# Exact old operator contact from a retired translation-recruitment paragraph.
+# SHA-256 avoids publishing the numeric personal profile identifier in source.
+# Unrelated Odnoklassniki profiles, groups and source links remain protected.
+_RETIRED_OWNER_OK_PROFILE_URL_SHA256 = "9e68cb068e9c95f0c8419f899537a3b4360860b53ed38b005c01b59937146894"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
 _CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
@@ -78,6 +83,12 @@ def _obsolete_owner_navigation_or_contact(url: str) -> bool:
         }
         if path in owner_navigation_paths and "shelf_id" in parse_qs(parsed.query):
             return True
+    if (
+        host == "ok.ru"
+        and path.startswith("/profile/")
+        and sha256(url.encode("utf-8")).hexdigest() == _RETIRED_OWNER_OK_PROFILE_URL_SHA256
+    ):
+        return True
     if host == "t.me" and path == "/fedormilovanov":
         return True
     if host == "facebook.com" and path == "/fedor.milovanov":
