@@ -96,13 +96,64 @@ def test_single_publish_with_provider_readback(publisher, monkeypatch, capsys):
         if endpoint.endswith("/media_publish"):
             return {"id": "67890"}
         if endpoint.startswith("67890?"):
-            return {"caption": caption, "permalink": "https://instagram.com/p/test"}
+            return {"id": "67890", "caption": caption, "media_type": "IMAGE", "permalink": "https://instagram.com/p/test", "timestamp": "2026-11-12T09:46:00+00:00"}
         pytest.fail(f"Unexpected call {endpoint}")
 
     monkeypatch.setattr(publisher, "request_json", provider)
     publisher.main()
     assert len([data for _, data in calls if data is not None]) == 2
     assert "PUBLISHED_CONFIRMED" in capsys.readouterr().out
+
+
+
+@pytest.mark.parametrize(
+    "bad_field,bad_value",
+    [
+        ("id", "99999"),
+        ("media_type", "VIDEO"),
+        ("permalink", ""),
+        ("permalink", "https://not-instagram.example/p/test"),
+        ("timestamp", "2026-11-13T09:46:00+00:00"),
+        ("timestamp", ""),
+        ("caption", "not the approved caption"),
+    ],
+)
+def test_incomplete_provider_photo_readback_never_claims_success(
+    publisher, monkeypatch, capsys, bad_field, bad_value
+):
+    configure(monkeypatch, publisher)
+    monkeypatch.setattr(publisher, "find_published", lambda *a: None)
+    caption = publisher.read_plan()[0]["caption"]
+    writes = []
+
+    def provider(endpoint, token, *, data=None):
+        if endpoint.endswith("/media") and data is not None:
+            writes.append("container")
+            return {"id": "12345"}
+        if endpoint == "12345?fields=status_code":
+            return {"status_code": "FINISHED"}
+        if endpoint.endswith("/media_publish"):
+            writes.append("publish")
+            return {"id": "67890"}
+        if endpoint.startswith("67890?"):
+            details = {
+                "id": "67890",
+                "caption": caption,
+                "media_type": "IMAGE",
+                "permalink": "https://www.instagram.com/p/test/",
+                "timestamp": "2026-11-12T09:46:00+00:00",
+            }
+            details[bad_field] = bad_value
+            return details
+        pytest.fail(f"Unexpected provider request {endpoint}")
+
+    monkeypatch.setattr(publisher, "request_json", provider)
+    with pytest.raises(RuntimeError, match="do not retry"):
+        publisher.main()
+    output = capsys.readouterr().out
+    assert "MEDIA_PUBLISH_ID_UNCONFIRMED" in output
+    assert "PUBLISHED_CONFIRMED" not in output
+    assert writes == ["container", "publish"]
 
 
 def test_ambiguous_response_does_not_retry_in_same_run(publisher, monkeypatch):
