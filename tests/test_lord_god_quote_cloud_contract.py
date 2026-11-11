@@ -324,6 +324,7 @@ def test_repeated_provider_cursor_aborts(publisher, monkeypatch):
         publisher.find_published("dummy-token", "caption")
     assert len(calls) == 2
 
+
 def _set_scheduled_github_context(monkeypatch, *, run_id="111", attempt="1", cron="45 9 12-15 11 *"):
     monkeypatch.setenv("GITHUB_REPOSITORY", "FedorMilovanov/video-channel-manager")
     monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
