@@ -13,6 +13,7 @@ import hashlib
 ROOT = pathlib.Path(r"E:\VideoChannelManager\Instagram\LordGod\20261110-daily-wave")
 REPO = pathlib.Path(r"C:\Users\Fedor\Projects\video-channel-manager")
 RELEASE = ROOT / "release-12-reels-OWNER-DIRECTED-v2.json"
+RELEASE_SHA256 = "2ff8b3e239ba082c3bf8209c1656befa666e70db568aa24f9cd12288401dcf45"
 ACCOUNT = "17841433845016161"
 PAGE = "1457892317403899"
 
@@ -143,11 +144,27 @@ def main():
     out = outdir / ("readback-" + today + ".json")
     if out.exists():
         raise RuntimeError("Today's readback already recorded; refuse overwrite")
-    data = json.loads(RELEASE.read_text(encoding="utf8"))
+    raw_release = RELEASE.read_bytes()
+    if hashlib.sha256(raw_release).hexdigest() != RELEASE_SHA256:
+        raise RuntimeError("Immutable approved Reel release SHA mismatch")
+    data = json.loads(raw_release)
     if data["instagram_account_id"] != ACCOUNT or len(data["items"]) != 12:
         raise RuntimeError("Wrong owner account/queue")
     rows = [x for x in data["items"] if x["scheduled_at_moscow"][:10] == today]
     if len(rows) != 1:
+        if "2026-11-10" <= today <= "2026-11-21":
+            report = {
+                "schema": "lord-god-instagram-postflight-readonly-v1",
+                "observed_at_moscow": now.isoformat(),
+                "target_instagram_account_id": ACCOUNT,
+                "provider_writes": 0,
+                "verification": "INVALID_DAILY_SLOT_NO_PUBLICATION_PROVEN",
+                "expected_date": today,
+                "matching_slot_count": len(rows),
+            }
+            out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
+            print(json.dumps({"status": report["verification"], "today": today, "report": str(out), "meta_writes": 0}))
+            raise SystemExit(2)
         print(json.dumps({"status": "NO_SCHEDULED_SLOT_TODAY", "today": today, "meta_posts": 0}))
         return
     row = rows[0]
