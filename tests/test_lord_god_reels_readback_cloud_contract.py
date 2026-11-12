@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -270,3 +271,13 @@ def test_reels_meta_feed_without_paging_is_terminal(proof, monkeypatch):
         lambda token, path, *, params=None: {"data": [{"id": "only"}]},
     )
     assert proof.list_recent_media("offline-token") == [{"id": "only"}]
+
+
+def test_whole_readback_plan_sha256_rejects_caption_digest_tamper(proof, monkeypatch, tmp_path):
+    plan = json.loads(proof.PLAN.read_text(encoding="utf8"))
+    plan["items"][0]["caption_sha256"] = "0" * 64
+    modified = tmp_path / "unapproved-plan.json"
+    modified.write_text(json.dumps(plan), encoding="utf8")
+    monkeypatch.setattr(proof, "PLAN", modified)
+    with pytest.raises(RuntimeError, match="Frozen approved Reels readback plan SHA-256 mismatch"):
+        proof.plan_items()
