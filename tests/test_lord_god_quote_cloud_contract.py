@@ -472,3 +472,13 @@ def test_explicit_malformed_paging_must_fail_closed_without_post(publisher, monk
 def test_terminal_paging_without_next_is_accepted(publisher, monkeypatch, terminal):
     monkeypatch.setattr(publisher, "request_json", lambda *args, **kwargs: {"data": [], "paging": terminal})
     assert publisher.find_published("offline-token", "approved caption") is None
+
+
+def test_approved_quote_plan_caption_tamper_blocked_by_whole_file_hash(publisher, monkeypatch, tmp_path):
+    plan = json.loads(publisher.PLAN.read_text(encoding="utf8"))
+    plan["items"][0]["caption"] += " unauthorized offline change"
+    path = tmp_path / "modified-caption.json"
+    path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf8")
+    monkeypatch.setattr(publisher, "PLAN", path)
+    with pytest.raises(RuntimeError, match="Frozen approved quote plan SHA-256 mismatch"):
+        publisher.read_plan()
