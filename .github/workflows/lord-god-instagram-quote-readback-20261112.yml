@@ -1,0 +1,34 @@
+name: Lord God Instagram ? independent GET-only quote photo receipts (Nov 12?15)
+
+on:
+  schedule:
+    - cron: '35 10 12-15 11 *' # 13:35 Moscow, after 12:45/13:10 approved attempts
+    - cron: '5 11 12-15 11 *' # 14:05 Moscow, second independent readback
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lord-god-instagram-quote-get-only-proof-20261112
+  cancel-in-progress: false
+
+jobs:
+  verify-photo:
+    name: Prove exact IMAGE receipt in Meta ? never POST
+    if: github.repository == 'FedorMilovanov/video-channel-manager'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      LORD_GOD_PAGE_TOKEN: ${{ secrets.LORD_GOD_INSTAGRAM_PAGE_TOKEN }}
+      LORD_GOD_QUOTE_RECEIPT_MODE: ${{ github.event_name == 'schedule' && 'scheduled' || 'preflight' }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: GET exact Meta IMAGE receipt ? never publish
+        run: python scripts/instagram/lord_god_quote_receipt_readonly_20261112.py
