@@ -24,6 +24,8 @@ def publisher():
 
 
 def configure(monkeypatch, module, mode="scheduled", hour=12, minute=46):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+
     class FixedDateTime:
         @staticmethod
         def now(tz):
@@ -186,11 +188,11 @@ def test_cloud_cron_primary_backup_and_no_manual_provider_writes():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml"
     ).read_text(encoding="utf-8")
-    assert workflow.count("    - cron:") == 2
-    assert "cron: '45 9 12-15 11 *'" in workflow  # 12:45 Moscow, primary
-    assert "cron: '10 10 12-15 11 *'" in workflow  # 13:10 Moscow, backup
+    assert "  schedule:" not in workflow
+    assert "    - cron:" not in workflow
+    assert "  workflow_dispatch:" in workflow
     assert "cancel-in-progress: false" in workflow
-    assert "github.event_name == 'schedule' && 'scheduled' || 'preflight'" in workflow
+    assert "LORD_GOD_CLOUD_MODE: preflight" in workflow
 
 
 def _valid_meta_photo(caption):
@@ -482,3 +484,117 @@ def test_approved_quote_plan_caption_tamper_blocked_by_whole_file_hash(publisher
     monkeypatch.setattr(publisher, "PLAN", path)
     with pytest.raises(RuntimeError, match="Frozen approved quote plan SHA-256 mismatch"):
         publisher.read_plan()
+
+
+def test_local_photo_claim_is_durable_and_unique(publisher, monkeypatch, tmp_path):
+    import hashlib
+    import sqlite3
+
+    database = tmp_path / "video_manager.db"
+    sqlite3.connect(database).close()
+    monkeypatch.setenv("LORD_GOD_LOCAL_LEDGER_DB", str(database))
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    item = publisher.read_plan()[1]
+    publisher.claim_local_photo_once(item, item["date"])
+    with sqlite3.connect(database) as conn:
+        rows = conn.execute("SELECT state,item_id,caption_sha256 FROM instagram_lord_god_quote_attempts").fetchall()
+    assert rows == [("CLAIMED", "02-owen", hashlib.sha256(item["caption"].encode()).hexdigest())]
+    with pytest.raises(RuntimeError, match="already claimed"):
+        publisher.claim_local_photo_once(item, item["date"])
+    publisher.finalize_local_photo(item, item["date"], "123456789", "https://www.instagram.com/p/offline/")
+    with sqlite3.connect(database) as conn:
+        assert conn.execute("SELECT state,media_id FROM instagram_lord_god_quote_attempts").fetchone() == (
+            "VERIFIED",
+            "123456789",
+        )
+    with pytest.raises(RuntimeError, match="already claimed"):
+        publisher.claim_local_photo_once(item, item["date"])
+
+
+def test_local_claim_refuses_nonexistent_ledger_and_github(publisher, monkeypatch, tmp_path):
+    import sqlite3
+
+    item = publisher.read_plan()[1]
+    database = tmp_path / "video_manager.db"
+    monkeypatch.setenv("LORD_GOD_LOCAL_LEDGER_DB", str(database))
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    with pytest.raises(RuntimeError, match="Local publisher ledger"):
+        publisher.claim_local_photo_once(item, item["date"])
+    sqlite3.connect(database).close()
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    with pytest.raises(RuntimeError, match="GitHub Actions"):
+        publisher.claim_local_photo_once(item, item["date"])
+
+
+def test_local_mode_claim_precedes_first_meta_post(publisher, monkeypatch):
+    configure(monkeypatch, publisher, mode="local_scheduled", hour=12, minute=47)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    monkeypatch.setattr(publisher, "find_published", lambda *args: None)
+    calls = []
+    monkeypatch.setattr(publisher, "claim_local_photo_once", lambda item, day: calls.append("CLAIM"))
+    monkeypatch.setattr(publisher, "finalize_local_photo", lambda *args: calls.append("VERIFIED"))
+    caption = publisher.read_plan()[0]["caption"]
+
+    def fake_request(endpoint, token, *, data=None):
+        if data is not None:
+            assert calls[0] == "CLAIM"
+        if endpoint.endswith("/media") and data is not None:
+            calls.append("CONTAINER")
+            return {"id": "12345"}
+        if endpoint == "12345?fields=status_code":
+            return {"status_code": "FINISHED"}
+        if endpoint.endswith("/media_publish"):
+            calls.append("PUBLISH")
+            return {"id": "67890"}
+        if endpoint.startswith("67890?"):
+            return {
+                "id": "67890",
+                "caption": caption,
+                "media_type": "IMAGE",
+                "permalink": "https://www.instagram.com/p/offline/",
+                "timestamp": "2026-11-12T09:47:00Z",
+            }
+        pytest.fail("Unexpected Meta API call")
+
+    monkeypatch.setattr(publisher, "request_json", fake_request)
+    publisher.main()
+    assert calls == ["CLAIM", "CONTAINER", "PUBLISH", "VERIFIED"]
+
+
+def test_ambiguous_local_post_never_retries(publisher, monkeypatch, tmp_path):
+    import sqlite3
+
+    database = tmp_path / "video_manager.db"
+    sqlite3.connect(database).close()
+    monkeypatch.setenv("LORD_GOD_LOCAL_LEDGER_DB", str(database))
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    configure(monkeypatch, publisher, mode="local_scheduled", hour=12, minute=48)
+    monkeypatch.setattr(publisher, "find_published", lambda *args: None)
+    attempts = []
+
+    def fake_request(endpoint, token, *, data=None):
+        if endpoint.endswith("/media") and data:
+            attempts.append(endpoint)
+            raise RuntimeError("Ambiguous Meta response")
+        pytest.fail("Unexpected Meta request")
+
+    monkeypatch.setattr(publisher, "request_json", fake_request)
+    with pytest.raises(RuntimeError, match="Ambiguous Meta response"):
+        publisher.main()
+    with sqlite3.connect(database) as conn:
+        assert conn.execute("SELECT state FROM instagram_lord_god_quote_attempts").fetchone() == ("CLAIMED",)
+    with pytest.raises(RuntimeError, match="already claimed"):
+        publisher.main()
+    assert len(attempts) == 1
+
+
+def test_github_actions_mode_is_read_only_even_on_legacy_schedule(publisher, monkeypatch):
+    configure(monkeypatch, publisher, mode="scheduled")
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setattr(publisher, "request_json", lambda *args, **kwargs: pytest.fail("Provider call"))
+    with pytest.raises(RuntimeError, match="retired"):
+        publisher.main()

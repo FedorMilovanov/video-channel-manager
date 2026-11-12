@@ -436,14 +436,25 @@
     },
     {
       "callers": [
-        ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml"
+        ".github/workflows/lord-god-instagram-quote-cloud-20261111.yml",
+        "scripts/instagram/lord_god_quote_windows_runner_20261113.py"
       ],
       "direct_entrypoint": true,
       "path": "scripts/instagram/lord_god_quote_cloud_20261111.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "9b1be0a511dc8691e5544c9ee4c92790c6a9f2e8833de18d868391ea8ebbe726",
+      "sha256": "45952da8bd074d42ea562ffd130dadb2ae40e1992aae3a38f1bd03953196f47c",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_quote_windows_runner_20261113.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "6f30f4d29641fd52235a4f65b10fa738102897658aa7068ef3306a2ecb20a208",
       "status": "independent_tool"
     },
     {

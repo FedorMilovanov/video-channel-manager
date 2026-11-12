@@ -10,6 +10,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import sqlite3
 import sys
 import time
 from datetime import datetime
@@ -262,11 +263,93 @@ def first_scheduled_run_for_day(day: str) -> bool:
     return True
 
 
+def claim_local_photo_once(item: dict, day: str) -> None:
+    if os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("GITHUB_EVENT_NAME"):
+        raise RuntimeError("Local photo publisher cannot run in GitHub Actions")
+    database = Path(os.environ.get("LORD_GOD_LOCAL_LEDGER_DB", ""))
+    if not database.is_absolute() or not database.is_file():
+        raise RuntimeError("Local publisher ledger must be the existing durable SQLite database")
+    digest = hashlib.sha256(item["caption"].encode("utf8")).hexdigest()
+    connection = sqlite3.connect(database, timeout=30, isolation_level=None)
+    try:
+        connection.execute("PRAGMA busy_timeout=30000")
+        connection.execute("PRAGMA synchronous=FULL")
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS instagram_lord_god_quote_attempts ("
+            "account_id TEXT NOT NULL, publication_day TEXT NOT NULL, item_id TEXT NOT NULL, "
+            "caption_sha256 TEXT NOT NULL, state TEXT NOT NULL CHECK(state IN ('CLAIMED','VERIFIED')), "
+            "claimed_utc TEXT NOT NULL, media_id TEXT, permalink TEXT, verified_utc TEXT, "
+            "PRIMARY KEY (account_id, publication_day))"
+        )
+        existing = connection.execute(
+            "SELECT item_id, caption_sha256 FROM instagram_lord_god_quote_attempts "
+            "WHERE account_id=? AND publication_day=?",
+            (INSTAGRAM_ACCOUNT, day),
+        ).fetchone()
+        if existing is not None:
+            connection.commit()
+            if existing != (item["id"], digest):
+                raise RuntimeError("Photo claim conflicts with approved caption")
+            raise RuntimeError("Local photo attempt already claimed; no blind retry")
+        connection.execute(
+            "INSERT INTO instagram_lord_god_quote_attempts "
+            "(account_id, publication_day, item_id, caption_sha256, state, claimed_utc) "
+            "VALUES (?,?,?,?,?,?)",
+            (INSTAGRAM_ACCOUNT, day, item["id"], digest, "CLAIMED", dt.datetime.now(dt.timezone.utc).isoformat()),
+        )
+        connection.commit()
+    except Exception:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    finally:
+        connection.close()
+    print("LOCAL_DURABLE_PHOTO_ATTEMPT_CLAIMED", day, item["id"], flush=True)
+
+
+def finalize_local_photo(item: dict, day: str, media_id: str, permalink: str) -> None:
+    database = Path(os.environ["LORD_GOD_LOCAL_LEDGER_DB"])
+    connection = sqlite3.connect(database, timeout=30, isolation_level=None)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        updated = connection.execute(
+            "UPDATE instagram_lord_god_quote_attempts "
+            "SET state='VERIFIED',media_id=?,permalink=?,verified_utc=? "
+            "WHERE account_id=? AND publication_day=? AND item_id=? "
+            "AND caption_sha256=? AND state='CLAIMED'",
+            (
+                media_id,
+                permalink,
+                dt.datetime.now(dt.timezone.utc).isoformat(),
+                INSTAGRAM_ACCOUNT,
+                day,
+                item["id"],
+                hashlib.sha256(item["caption"].encode("utf8")).hexdigest(),
+            ),
+        )
+        if updated.rowcount != 1:
+            raise RuntimeError("Existing photo claim not found for verified receipt")
+        connection.commit()
+    except Exception:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
 def main() -> None:
     rows = read_plan()
     mode = os.environ.get("LORD_GOD_CLOUD_MODE", "")
-    if mode not in {"preflight", "scheduled"}:
+    if mode not in {"preflight", "scheduled", "local_scheduled"}:
         raise RuntimeError("Requires approved preflight/scheduled mode")
+    if mode == "scheduled" and os.environ.get("GITHUB_ACTIONS") == "true":
+        raise RuntimeError("GitHub scheduled photo publisher retired; do not publish")
+    if mode == "local_scheduled" and (
+        os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("GITHUB_EVENT_NAME")
+    ):
+        raise RuntimeError("Local photo publishing forbidden in GitHub Actions")
     token = os.environ.get("LORD_GOD_PAGE_TOKEN", "")
     if len(token) < 35:
         raise RuntimeError("Cloud secret missing")
@@ -298,7 +381,9 @@ def main() -> None:
     if already:
         print("ALREADY_PUBLISHED_SKIP", item["id"], already.get("id"), flush=True)
         return
-    if not first_scheduled_run_for_day(current):
+    if mode == "local_scheduled":
+        claim_local_photo_once(item, current)
+    elif not first_scheduled_run_for_day(current):
         return
     print("POST_START", item["id"], current, flush=True)
     created = request_json(
@@ -349,6 +434,8 @@ def main() -> None:
         or published_day != current
     ):
         raise RuntimeError("Provider photo media, date, caption or permalink not proven; do not retry")
+    if mode == "local_scheduled":
+        finalize_local_photo(item, current, media_id, permalink)
     print("PUBLISHED_CONFIRMED", item["id"], media_id, permalink, flush=True)
 
 
