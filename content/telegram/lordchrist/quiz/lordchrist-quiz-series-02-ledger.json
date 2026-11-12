@@ -31,7 +31,7 @@
     "lordchrist-quiz-s02-ahab": {
       "publication_id": "lordchrist-quiz-s02-ahab",
       "provider_payload_sha256": "sha256:0e72183629b6ccc3c7b658cca4aeefcd33b72c4493ad9d9e95470ca74c28ff72",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -47,7 +47,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-11-12T16:00:00+00:00 before dispatch"
     },
     "lordchrist-quiz-s02-jephthah": {
       "publication_id": "lordchrist-quiz-s02-jephthah",
