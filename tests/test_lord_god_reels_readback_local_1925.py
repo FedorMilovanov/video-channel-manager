@@ -38,6 +38,7 @@ def monitor(tmp_path, monkeypatch):
     ]
     release = tmp_path / "release.json"
     release.write_text(json.dumps({"instagram_account_id": ACCOUNT, "items": rows}), encoding="utf8")
+    monkeypatch.setattr(module, "RELEASE_SHA256", hashlib.sha256(release.read_bytes()).hexdigest())
     conn = sqlite3.connect(repo / "data/video_manager.db")
     conn.execute(
         "CREATE TABLE instagram_publications (publication_key TEXT, account_id TEXT, status TEXT, "
@@ -213,3 +214,43 @@ def test_duplicate_caption_fails_closed(monitor, monkeypatch):
     )
     with pytest.raises(RuntimeError, match="Duplicate provider"):
         monitor.verify_provider_receipt("fake-token", "12345", row)
+
+
+def test_frozen_release_digest_mismatch_is_blocking(monitor):
+    plan = monitor.RELEASE
+    plan.write_bytes(plan.read_bytes() + b" ")
+    with pytest.raises(RuntimeError, match="Immutable approved Reel release SHA"):
+        monitor.main()
+    assert not (monitor.ROOT / "operator-logs/readback-2026-11-12.json").exists()
+
+
+@pytest.mark.parametrize("wrong_day,expected_count", [(12, 0), (11, 2)])
+def test_missing_or_duplicate_live_day_is_failure_with_report(monitor, monkeypatch, wrong_day, expected_count):
+    plan = json.loads(monitor.RELEASE.read_text(encoding="utf8"))
+    plan["items"][wrong_day - 10]["scheduled_at_moscow"] = (
+        "2026-11-13T19:00:00+03:00" if wrong_day == 12 else "2026-11-12T19:00:00+03:00"
+    )
+    payload = json.dumps(plan).encode("utf8")
+    monitor.RELEASE.write_bytes(payload)
+    monkeypatch.setattr(monitor, "RELEASE_SHA256", hashlib.sha256(payload).hexdigest())
+    with pytest.raises(SystemExit) as exc:
+        monitor.main()
+    assert exc.value.code == 2
+    report = json.loads((monitor.ROOT / "operator-logs/readback-2026-11-12.json").read_text())
+    assert report["verification"] == "INVALID_DAILY_SLOT_NO_PUBLICATION_PROVEN"
+    assert report["matching_slot_count"] == expected_count
+    assert report["provider_writes"] == 0
+
+
+def test_outside_approved_window_no_slot_is_normal_noop(monitor, monkeypatch, capsys):
+    class OutOfWindowClock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 11, 22, 19, 25, tzinfo=tz)
+
+    monkeypatch.setattr(
+        monitor, "dt", SimpleNamespace(datetime=OutOfWindowClock, timezone=dt.timezone, timedelta=dt.timedelta)
+    )
+    assert monitor.main() is None
+    assert "NO_SCHEDULED_SLOT_TODAY" in capsys.readouterr().out
+    assert not (monitor.ROOT / "operator-logs/readback-2026-11-22.json").exists()
