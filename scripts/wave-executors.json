@@ -447,6 +447,16 @@
       "status": "independent_tool"
     },
     {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_quote_receipt_readonly_20261112.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "dbae1ee14510ff5111e6850393ae70df2702c93139c822193473ebe6b4f1e0a0",
+      "status": "independent_tool"
+    },
+    {
       "callers": [
         ".github/workflows/lord-god-reels-cloud-readback-20261112.yml"
       ],
