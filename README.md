@@ -2,6 +2,8 @@
 
 [English README](README_EN.md) · [Кейс проекта](CASE_STUDY.md) · [Авторство и права](OWNER.md) · Русская документация — ниже.
 
+**YouTube API Services — Video Channel Manager.** Приложение использует [YouTube](https://www.youtube.com/) и YouTube Data API только для авторизованного управления видеоканалами. [Политика конфиденциальности приложения](PRIVACY.md) · [Условия использования](TERMS.md) · [Отзыв разрешений Google](https://security.google.com/settings/security/permissions).
+
 **Video Channel Manager** — safety-first инструмент для аудита, редакционной проверки, организации и синхронизации видеоканалов YouTube, VK и локального медиархива.
 
 Это не одноразовый YouTube → VK скрипт. Проект строится как платформенно-нейтральный модульный монолит:
