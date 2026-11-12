@@ -481,7 +481,8 @@
     },
     {
       "callers": [
-        ".github/workflows/lord-god-reels-cloud-readback-20261112.yml"
+        ".github/workflows/lord-god-reels-cloud-readback-20261112.yml",
+        "scripts/instagram/lord_god_reels_windows_readback_20261113.py"
       ],
       "direct_entrypoint": true,
       "path": "scripts/instagram/lord_god_reels_readback_cloud_20261112.py",
@@ -489,6 +490,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "20e16b938c59d354f0385cda9273797810fe8333f910d0b982f9934887feb94e",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_reels_windows_readback_20261113.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "340d9f51669f7e62c74c917df7858b3a8b2f8c4121b511237c2a847ced3a4428",
       "status": "independent_tool"
     },
     {
