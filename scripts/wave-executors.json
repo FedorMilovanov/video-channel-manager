@@ -461,6 +461,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_reels_readback_local_1925.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "55f002363537b492c020f2a213ff76ea2b463eed38317b99a8af509f67922aaf",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/lint_youtube_comment_content.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
