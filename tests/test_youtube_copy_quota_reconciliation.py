@@ -126,9 +126,7 @@ def test_quota_does_not_attempt_rollback_after_provider_dispatch(
     assert "quota" in result["error"].casefold()
 
 
-def test_nonquota_error_retains_existing_guarded_rollback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_nonquota_error_retains_existing_guarded_rollback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     writer, result, _, _, _ = _run_apply(tmp_path, monkeypatch, fail_at="nonquota")
     assert writer.replace_calls == 1
     assert writer.restore_calls == 1
@@ -146,9 +144,7 @@ def test_nonquota_error_retains_existing_guarded_rollback(
         (ValueError(QUOTA_ERROR), False),
     ],
 )
-def test_quota_detector_does_not_mask_other_provider_failures(
-    error: BaseException, expected: bool
-) -> None:
+def test_quota_detector_does_not_mask_other_provider_failures(error: BaseException, expected: bool) -> None:
     assert youtube_cli._is_youtube_quota_exhaustion(error) is expected
 
 

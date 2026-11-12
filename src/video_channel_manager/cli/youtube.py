@@ -563,12 +563,16 @@ def apply_copy_fixes(
                             )
                             console.print(f"[yellow]Rollback safe/original[/yellow] {video_id}")
                         except YouTubeWriteError as rollback_exc:
-                            rollback_results.append({"video_id": video_id, "status": "failed", "error": str(rollback_exc)})
+                            rollback_results.append(
+                                {"video_id": video_id, "status": "failed", "error": str(rollback_exc)}
+                            )
                             console.print(f"[red]Rollback failed[/red] {video_id}: {rollback_exc}")
                         result["summary"]["rollback_safe_original"] = sum(
                             item["status"] == "safe_original" for item in rollback_results
                         )
-                        result["summary"]["rollback_failed"] = sum(item["status"] == "failed" for item in rollback_results)
+                        result["summary"]["rollback_failed"] = sum(
+                            item["status"] == "failed" for item in rollback_results
+                        )
                         _write_json(result_output, result)
 
                     rollback_failed = int(result["summary"]["rollback_failed"])
