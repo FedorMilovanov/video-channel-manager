@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = ROOT / "content/instagram/lord-god-strength-reels-cloud-readback-20261112.json"
+PLAN_SHA256 = "7e55a4702d90daaca5e1a346718cca58eddaf0293880fc4439793e6d360f6d63"
 GRAPH = "https://graph.facebook.com/v26.0"
 PAGE_ID = "1457892317403899"
 INSTAGRAM_ID = "17841433845016161"
@@ -29,7 +30,10 @@ SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 def plan_items() -> list[dict]:
-    plan = json.loads(PLAN.read_text(encoding="utf-8"))
+    raw = PLAN.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != PLAN_SHA256:
+        raise RuntimeError("Frozen approved Reels readback plan SHA-256 mismatch")
+    plan = json.loads(raw)
     if (
         plan.get("schema") != "lord-god-instagram-reels-readback-plan-v1"
         or plan.get("project") != "lord-god-strength"
