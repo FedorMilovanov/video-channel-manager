@@ -44,6 +44,7 @@ Project key: `legendary-poet`
 
 - Эксперименты AI: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb
 - Поющие Поэты: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8
+- Ожившие Цитаты Поэтов: https://www.youtube.com/playlist?list=PLKcHOT3kiGT4
 - Владимир Маяковский: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM
 - Сергей Есенин: https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q
 - Михаил Лермонтов: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5
