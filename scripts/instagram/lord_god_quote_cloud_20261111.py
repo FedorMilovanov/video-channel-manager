@@ -27,6 +27,7 @@ INSTAGRAM_USERNAME = "thelordgodismystrength"
 APP_ID = "1528850542618219"
 RELEASE = "https://github.com/FedorMilovanov/video-channel-manager/releases/download/lord-god-ig-quote-media-20261111/"
 PLAN = Path(__file__).resolve().parents[2] / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
+PLAN_SHA256 = "529afa8711bc3fd5c071fb322bea90d13d85b2c3e49fc188cd34a62761e352b3"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 
@@ -84,7 +85,10 @@ def media_verified(item: dict) -> str:
 
 
 def read_plan() -> list[dict]:
-    plan = json.loads(PLAN.read_text(encoding="utf-8"))
+    raw = PLAN.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != PLAN_SHA256:
+        raise RuntimeError("Frozen approved quote plan SHA-256 mismatch; do not publish")
+    plan = json.loads(raw)
     if (plan["project"], plan["account_id"], plan["page_id"], plan["tz"]) != (
         "lord-god-strength",
         INSTAGRAM_ACCOUNT,
