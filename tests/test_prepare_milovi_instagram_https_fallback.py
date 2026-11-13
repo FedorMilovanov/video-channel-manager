@@ -219,3 +219,21 @@ def test_historical_day_is_never_eligible(release: dict[str, object]) -> None:
                 public_hosting_authorized=True,
                 media_client=client,
             )
+
+
+def test_underscore_in_youtube_id_is_not_a_sql_like_wildcard(
+    release: dict[str, object],
+) -> None:
+    with sqlite3.connect(release["db"]) as conn:
+        conn.execute(
+            "INSERT INTO instagram_publications VALUES (?, ?, ?, ?)",
+            (
+                "milovi-cake.2026-11-16.yt-1XSuzeQD_1g.original-audio-v1",
+                module.ACCOUNT_ID,
+                "published",
+                "12345",
+            ),
+        )
+    module._require_unused_source(release["db"], "1_SuzeQD_1g")
+    with pytest.raises(module.FallbackHold, match="reconcile manually"):
+        module._require_unused_source(release["db"], "1XSuzeQD_1g")
