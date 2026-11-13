@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
+from contextlib import closing
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -47,7 +48,7 @@ def _require_unused_source(database_path: Path, youtube_id: str) -> None:
     if not database_path.is_file():
         raise FallbackHold("Read-only publication ledger is missing")
     uri = database_path.resolve().as_uri().replace("file:///", "file:///") + "?mode=ro"
-    with sqlite3.connect(uri, uri=True) as db:
+    with closing(sqlite3.connect(uri, uri=True)) as db:
         records = db.execute(
             "SELECT publication_key, status, provider_media_id "
             "FROM instagram_publications WHERE account_id=? "
