@@ -733,3 +733,50 @@ def test_repeated_container_error_is_terminal_without_media_publish() -> None:
         assert result.publish_requested_at is None
         assert writes == ["container"]
         assert sleeps == [0.0]
+
+
+def test_public_url_container_detects_nested_oil_error_despite_in_progress() -> None:
+    """A hosted video_url must not hide OIL FILE_NOT_FOUND behind IN_PROGRESS."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.path.endswith("/container-url-oil")
+        assert request.url.params["fields"] == "status_code,status,video_status"
+        return _response(
+            request,
+            200,
+            {
+                "status_code": "IN_PROGRESS",
+                "video_status": {
+                    "uploading_phase": {
+                        "status": "error",
+                        "bytes_transferred": 0,
+                        "source_file_size": 0,
+                        "errors": [
+                            {
+                                "code": 1363008,
+                                "message": "OIL Error[FILE_NOT_FOUND: 6]",
+                            }
+                        ],
+                    }
+                },
+            },
+        )
+
+    config = _config()
+    with _provider_client(config, httpx.MockTransport(handler)) as client:
+        status, detail = client.get_container_status("container-url-oil")
+    assert status == "ERROR"
+    assert detail is not None
+    assert "provider_error_code=1363008" in detail
+    assert "bytes_transferred=0" in detail
+    assert "FILE_NOT_FOUND" in detail
+
+
+def test_public_url_container_without_phase_error_keeps_original_status() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["fields"] == "status_code,status,video_status"
+        return _response(request, 200, {"status_code": "FINISHED", "status": "ready"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-ready") == ("FINISHED", "ready")
