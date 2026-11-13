@@ -11,7 +11,17 @@ from typing import Any, cast
 import httpx
 import pytest
 
-from scripts import prepare_lord_god_instagram_https_handoff as handoff
+import importlib.util
+
+_MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "prepare_lord_god_instagram_https_handoff.py"
+)
+_SPEC = importlib.util.spec_from_file_location("lord_god_https_handoff", _MODULE_PATH)
+assert _SPEC is not None and _SPEC.loader is not None
+handoff = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(handoff)
 
 
 @pytest.fixture()
