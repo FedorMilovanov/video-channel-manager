@@ -154,8 +154,14 @@ def test_external_canary_does_not_open_a_future_quiz_slot():
 
 def test_production_workflow_uses_old_verified_ledger_without_changing_release():
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert '--verified-manual-canary-release "content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-runtime.json"' in workflow
-    assert '--verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json"' in workflow
+    assert (
+        '--verified-manual-canary-release "content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-runtime.json"'
+        in workflow
+    )
+    assert (
+        '--verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json"'
+        in workflow
+    )
     assert 'SERIES_ID: lordchrist-quiz-series-02' in workflow
     assert 'MAX_PUBLICATION_LAG_MINUTES: "360"' in workflow
     assert "Send exactly once through the canonical generic Telegram runtime" in workflow
