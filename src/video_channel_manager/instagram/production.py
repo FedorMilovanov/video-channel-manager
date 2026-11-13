@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from video_channel_manager.config.settings import AppSettings
+from video_channel_manager.instagram.provider_diagnostics import extract_resumable_phase_failure
 from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import InstagramPublicationEntity, utc_now
 
@@ -781,10 +782,15 @@ class InstagramProviderClient:
         return container_id
 
     def get_container_status(self, container_id: str) -> tuple[str, str | None]:
-        payload = self._request("GET", container_id, params={"fields": "status_code,status"})
+        payload = self._request("GET", container_id, params={"fields": "status_code,status,video_status"})
         raw_code = payload.get("status_code")
         if not isinstance(raw_code, str) or not raw_code:
             raise InstagramProviderError("Instagram container response did not include status_code")
+        # Public video_url ingestion can exhibit the same OIL phase failures as
+        # rupload while the top-level status remains stale IN_PROGRESS.
+        phase_failure = extract_resumable_phase_failure(payload)
+        if phase_failure is not None:
+            return "ERROR", phase_failure.durable_message()
         raw_status = payload.get("status")
         return raw_code.upper(), raw_status if isinstance(raw_status, str) else None
 
