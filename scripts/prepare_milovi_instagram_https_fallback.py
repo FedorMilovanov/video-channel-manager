@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from video_channel_manager.instagram.local_resumable import verify_local_reel
 from video_channel_manager.instagram.production import (
     InstagramPublishManifest,
     verify_instagram_public_object,
@@ -115,6 +116,12 @@ def prepare_verified_manifest(
     actual_hash, actual_size = _sha256(original)
     if actual_hash != expected_hash or actual_size != exact_manifest["media_size_bytes"]:
         raise FallbackHold("Original source bytes differ from frozen review")
+    # The same production media verifier must pass, not merely a checksum.
+    verify_local_reel(
+        original,
+        expected_sha256=f"sha256:{expected_hash}",
+        expected_size_bytes=actual_size,
+    )
     _require_unused_source(database_path, youtube_id)
 
     parsed = urlsplit(video_url)
