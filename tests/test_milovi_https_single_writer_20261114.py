@@ -62,7 +62,7 @@ def test_canary_does_not_create_a_second_writer_or_automatic_retry() -> None:
     assert "Any previous durable attempt blocks re-dispatch of this source" in source
     assert "instr(publication_key, ?) > 0" in source
     assert "mode=ro" in source
-    assert "single-writer OS file lock" in source
+    assert "one-writer OS file lock" in source
     assert "Start-ScheduledTask" not in source + runner
     assert "Register-ScheduledTask" not in source + runner
     assert "Invoke-RestMethod -Method POST" not in source + runner
