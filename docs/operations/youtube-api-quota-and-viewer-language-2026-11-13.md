@@ -127,7 +127,7 @@ Reply directly to Google's existing YouTube API Services thread, with:
 
 Do not send a reply claiming a completed demo until the file is recorded, reviewed, uploaded and the link has been tested. After sending, verify the Gmail thread contains the outgoing response and document the response date, without copying private mail addresses or support tracking tokens into a public repo.
 
-### 5.4 Current execution status
+### 5.4 Historical execution status before video delivery (superseded by §5.5)
 
 - Google request was **read and understood** from its full email body on November 13.
 - Previous four static/combined screenshots were insufficient for this review.
@@ -135,4 +135,20 @@ Do not send a reply claiming a completed demo until the file is recorded, review
 - Remote Desktop Commander **reported no connected devices** at the first attempt after receiving this email; the user's computer must reconnect before executing a screen recording on it.
 - Exact end-to-end workflow and file assets can be prepared from existing repo runbooks and local verification receipts; do not assume every 2026-11-12 credential/working directory state still applies.
 - Main technical blocker previously observed: `403 quotaExceeded` on a subsequent `videos.list`; no blind retries.
+
+
+### 5.5 Reviewer screencast delivered — 2026-11-13 (latest checkpoint)
+
+**The Google-specified additional screencast was recorded, published, directly downloaded by an unauthenticated HTTP client (status 200), and supplied by a reply in the existing Google API Services email thread on 13 November 2026.** This fulfills the owner's action of *sending evidence*, **not** Google review approval or acceptance of its sufficiency.
+
+- **Reviewer MP4:** [Video Channel Manager — real CLI metadata/subtitle workflow, 2:46](https://github.com/FedorMilovanov/video-channel-manager/releases/download/youtube-api-compliance-review-evidence-20261113/Video_Channel_Manager_Real_CLI_YouTube_API_Reviewer_20261113.mp4).
+- **Public evidence page:** [GitHub pre-release, compliance evidence only](https://github.com/FedorMilovanov/video-channel-manager/releases/tag/youtube-api-compliance-review-evidence-20261113). The MP4 is a release asset **outside Git history**, not a production software release or a published YouTube video.
+- **Integrity:** 1,413,349 bytes, MP4/H.264, 1520×870, 166.08 seconds. An unauthenticated download returned HTTP 200 with byte-for-byte SHA-256 equality to the approved local file.
+- **Origin:** The actual Windows `video_channel_manager.cli.app youtube` commands and existing `qa_packages.py` were executed from a real local working copy. All five offline locale/caption QA tests passed. The reviewed source/localization files, SRT timing/hashes and prior owner-verified API receipts were read from the 2026-11-12 local evidence directory. A separate **clearly labeled reviewer display** was used to capture authentic CLI stdout; **it is not the application's claimed public product UI**.
+- **Important limitation disclosed to Google:** the screencast did not initiate fresh YouTube provider changes or new OAuth grants. Provider mutations/readbacks shown through durable receipts occurred on **12 November 2026**. On **13 November** a bounded owner API read returned 403 `quotaExceeded`; no blind repeat or artificial publication was performed.
+- **Gmail:** A direct reply was sent and then independently verified **in the original API-services conversation thread** with label `SENT`; the message contains the tested reviewer MP4 link and chapter index. No new form was submitted.
+- **Privacy:** no access/refresh tokens, passwords, login codes, account cookies or secret OAuth callback URLs were included. A rejected first attempt recorded the unrelated desktop; that wrong MP4 and its associated preview frames were **deleted locally and never uploaded/shared**.
+- **Local file:** `%USERPROFILE%\Downloads\YouTube_API_Quota_Evidence_20261113\Video_Channel_Manager_Real_CLI_YouTube_API_Reviewer_20261113.mp4`; step log and SHA-checked evidence remain in the same local evidence directory (not Git).
+
+**Next owner-independent hinge:** await Google's explicit assessment of **screencast adequacy and quota increase**. An eventual reviewer request for a new live provider-writing segment would require a separate safe quota window, exact target and authorized write gate; the submitted read-only/historical recording cannot by itself prove new API writes in a quota-exhausted window. Do not state approval until Google confirms it and the granted project quota is verified. Do not re-send the same letter without a reason.
 
