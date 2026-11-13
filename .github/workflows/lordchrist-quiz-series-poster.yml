@@ -259,6 +259,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # The generic runtime requires an exact publication_id for manual dispatch,
+          # but explicitly rejects it for scheduled dispatch. Scheduled runs select
+          # the strict-next due item from the already-validated immutable release.
+          publication_args=()
+          case "${{ steps.gate.outputs.dispatch_mode }}" in
+            manual)
+              publication_args=(--publication-id "${{ steps.due.outputs.publication_id }}")
+              ;;
+            scheduled)
+              ;;
+            *)
+              echo "Unsupported QUIZ dispatch mode" >&2
+              exit 3
+              ;;
+          esac
           python -m video_channel_manager.telegram_multichannel_cli prepare \
             --profile "$PROFILE_PATH" \
             --release "${{ steps.gate.outputs.release_path }}" \
@@ -267,7 +282,7 @@ jobs:
             --verified-manual-canary-release "content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-runtime.json" \
             --verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json" \
             --mode "${{ steps.gate.outputs.dispatch_mode }}" \
-            --publication-id "${{ steps.due.outputs.publication_id }}" \
+            "${publication_args[@]}" \
             --run-id "$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" \
             --github-sha "$GITHUB_SHA" \
