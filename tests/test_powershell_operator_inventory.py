@@ -11,7 +11,7 @@ REGISTRY_PATH = ROOT / "scripts" / "operator" / "powershell-wrappers.json"
 SUPPORTED_PATH = "scripts/operator/Invoke-VideoManager.ps1"
 DELEGATING_SUPPORTED_PATH = "scripts/Invoke-VkPostponedTextEdit.ps1"
 PROVIDER_INERT_PATH = "scripts/operator/Invoke-InstagramDailyQueue.ps1"
-STATUSES = {"supported", "delegating_supported", "provider_inert", "compatibility_only", "retired"}
+STATUSES = {"supported", "delegating_supported", "provider_inert", "compatibility_only", "retired", "scoped_release"}
 RETIRED_GUARD = "Stop-VcmRetiredWrapper"
 RISK_MARKERS = (
     "apply_vk_editorial_cleanup_plan.py",
@@ -168,3 +168,35 @@ def test_compatibility_wrappers_are_explicitly_non_provider_write() -> None:
         "scripts/setup.ps1",
     }
     assert all(item["provider_write_capable"] is False for item in compatibility)
+
+
+def test_scoped_milovi_https_release_is_exactly_one_owner_authorized_slot() -> None:
+    """No broad second operator can hide behind the scoped-release inventory."""
+
+    wrappers = _registry()["wrappers"]
+    scoped = {str(item["path"]): item for item in wrappers if item["status"] == "scoped_release"}
+    expected_paths = {
+        "scripts/instagram/milovi_cake_due_slot_single_writer.ps1",
+        "scripts/instagram/milovi_cake_https_single_slot_20261114.ps1",
+    }
+    assert set(scoped) == expected_paths
+    assert all(item["project_key"] == "milovi-cake" for item in scoped.values())
+    assert all(item["provider_write_capable"] is True for item in scoped.values())
+    assert all("14 Nov" in item["reason"] for item in scoped.values())
+
+    runner = _code_without_comments(ROOT / "scripts/instagram/milovi_cake_due_slot_single_writer.ps1")
+    canary = _code_without_comments(ROOT / "scripts/instagram/milovi_cake_https_single_slot_20261114.ps1")
+    assert "milovi-reels-single-writer.lock" in runner
+    assert "[System.IO.FileShare]::None" in runner
+    assert "milovi_cake_https_single_slot_20261114.ps1" in runner
+    assert "milovi_original_audio_owner_risk_release.ps1" in runner
+    assert "2026-11-14T19:00:00" in runner
+    assert "fbGZYKS7byM" in runner
+    assert "if ($Execute -and ($Msk -lt $Slot -or $Msk -ge $Slot.AddMinutes(18)))" in canary
+    assert "milovi-cake.2026-11-14.yt-fbGZYKS7byM.public-https-v1" in canary
+    assert "Any previous durable attempt blocks re-dispatch of this source" in canary
+    assert "FRESH_INSTAGRAM_DUPLICATE_PREFLIGHT_PASS" in canary
+    assert "& $Cli instagram production publish $ManifestPath --execute" in canary
+    assert "Invoke-RestMethod -Method POST" not in (runner + canary)
+    assert "Register-ScheduledTask" not in (runner + canary)
+    assert "Start-ScheduledTask" not in (runner + canary)
