@@ -50,8 +50,9 @@ def _require_unused_source(database_path: Path, youtube_id: str) -> None:
     with sqlite3.connect(uri, uri=True) as db:
         records = db.execute(
             "SELECT publication_key, status, provider_media_id "
-            "FROM instagram_publications WHERE account_id=? AND publication_key LIKE ?",
-            (ACCOUNT_ID, f"milovi-cake.%.yt-{youtube_id}.%"),
+            "FROM instagram_publications WHERE account_id=? "
+            "AND publication_key LIKE 'milovi-cake.%' AND instr(publication_key, ?) > 0",
+            (ACCOUNT_ID, f".yt-{youtube_id}."),
         ).fetchall()
     if records:
         raise FallbackHold("Source already has a durable publication attempt; reconcile manually before new release")
