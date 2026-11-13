@@ -165,6 +165,32 @@ try {
     & $Cli instagram production preflight
     if ($LASTEXITCODE -ne 0) { throw 'Exact target/permission/quota preflight failed' }
 
+    # Fresh read-only account inventory, not just yesterday's SQLite/caption audit.
+    # Build each paginated URL ourselves: never trust/print opaque paging.next URLs.
+    $Cursor = ''
+    $PageHasNext = $false
+    $Inspected = 0
+    for ($Page = 1; $Page -le 10; $Page++) {
+        $MediaUrl = 'https://graph.facebook.com/v26.0/' + $Account +
+            '/media?fields=id,caption&limit=100'
+        if ($Cursor) { $MediaUrl += '&after=' + [uri]::EscapeDataString($Cursor) }
+        $Inventory = Invoke-RestMethod -Method GET -Uri $MediaUrl -Headers @{
+            Authorization = ('Bearer ' + $Token)
+        } -TimeoutSec 35
+        foreach ($Post in @($Inventory.data)) {
+            $Inspected++
+            if ([string]$Post.caption -ceq [string]$Manifest.caption) {
+                throw 'Exact reviewed caption is already present on the target Instagram account'
+            }
+        }
+        $PageHasNext = -not [string]::IsNullOrEmpty([string]$Inventory.paging.next)
+        if (!$PageHasNext) { break }
+        $Cursor = [string]$Inventory.paging.cursors.after
+        if (!$Cursor) { throw 'Provider paging lacked a safe after-cursor' }
+    }
+    if ($PageHasNext) { throw 'Instagram media inventory exceeded safe pagination cap' }
+    Write-Output ('FRESH_INSTAGRAM_DUPLICATE_PREFLIGHT_PASS POSTS_SCANNED=' + $Inspected)
+
     if (!$Execute) {
         Write-Output ('MILOVI_HTTPS_SINGLE_SLOT_PREFLIGHT_PASS NO_POST NO_PUBLISH '+ $UrlKey)
         return
