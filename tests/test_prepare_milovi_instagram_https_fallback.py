@@ -13,11 +13,7 @@ import pytest
 
 from video_channel_manager.instagram.production import InstagramMediaVerificationError
 
-SCRIPT = (
-    Path(__file__).resolve().parents[1]
-    / "scripts"
-    / "prepare_milovi_instagram_https_fallback.py"
-)
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "prepare_milovi_instagram_https_fallback.py"
 SPEC = importlib.util.spec_from_file_location("milovi_https_fallback_test", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 module = importlib.util.module_from_spec(SPEC)
@@ -45,18 +41,14 @@ def release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, object
         "share_to_feed": True,
         "thumb_offset_ms": 1500,
     }
-    (folder / "exact-local-publish-manifest.json").write_text(
-        json.dumps(manifest), encoding="utf-8"
-    )
+    (folder / "exact-local-publish-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     ack = {
         "publication_key": key,
         "project_key": module.PROJECT,
         "owner_directed_repost": True,
         "caption_editorially_reviewed": True,
     }
-    (folder / "OWNER_DIRECTED_RISK_ACCEPTED.json").write_text(
-        json.dumps(ack), encoding="utf-8"
-    )
+    (folder / "OWNER_DIRECTED_RISK_ACCEPTED.json").write_text(json.dumps(ack), encoding="utf-8")
     row = {
         "publication_key": key,
         "youtube_id": YOUTUBE_ID,
@@ -68,17 +60,11 @@ def release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, object
         "project_key": module.PROJECT,
         "target_instagram_id": module.ACCOUNT_ID,
         "meta_app_id": module.APP_ID,
-        "rows": [row]
-        + [
-            {"proposed_moscow_slot": f"2026-11-{n:02d}T19:00:00"}
-            for n in range(15, 34)
-        ],
+        "rows": [row] + [{"proposed_moscow_slot": f"2026-11-{n:02d}T19:00:00"} for n in range(15, 34)],
     }
     index_path = tmp_path / "frozen.json"
     index_path.write_text(json.dumps(index), encoding="utf-8")
-    monkeypatch.setattr(
-        module, "INDEX_SHA256", hashlib.sha256(index_path.read_bytes()).hexdigest()
-    )
+    monkeypatch.setattr(module, "INDEX_SHA256", hashlib.sha256(index_path.read_bytes()).hexdigest())
     observed_local: list[Path] = []
 
     def fake_local_validator(path: Path, **kwargs: object) -> None:
@@ -165,9 +151,7 @@ def test_public_staging_must_be_separately_authorized(release: dict[str, object]
         "https://fedormilovanov.github.io/media/instagram/milovi-cake/abc.mp4?token=x",
     ],
 )
-def test_wrong_url_is_refused_without_host_fetch(
-    release: dict[str, object], bad_url: str
-) -> None:
+def test_wrong_url_is_refused_without_host_fetch(release: dict[str, object], bad_url: str) -> None:
     with pytest.raises(module.FallbackHold, match="content-addressed"):
         run(release, video_url=bad_url)
 
