@@ -108,9 +108,15 @@ def prepare_verified_manifest(
         exact_manifest.get("publication_key") != row["publication_key"]
         or exact_manifest.get("account_id") != ACCOUNT_ID
         or exact_manifest.get("media_sha256") != f"sha256:{expected_hash}"
+        or owner_ack.get("schema") != "milovi-owner-directed-repost-risk-ack-v1"
         or owner_ack.get("publication_key") != row["publication_key"]
         or owner_ack.get("project_key") != PROJECT
+        or owner_ack.get("app_id") != APP_ID
+        or owner_ack.get("instagram_id") != ACCOUNT_ID
+        or owner_ack.get("media_sha256") != f"sha256:{expected_hash}"
         or owner_ack.get("owner_directed_repost") is not True
+        or owner_ack.get("accepts_unverified_crossplatform_audio_risk") is not True
+        or owner_ack.get("source_owned_youtube_channel_verified") is not True
         or owner_ack.get("caption_editorially_reviewed") is not True
     ):
         raise FallbackHold("Source manifest or owner-reviewed original-audio approval mismatch")

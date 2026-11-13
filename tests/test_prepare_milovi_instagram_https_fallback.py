@@ -43,9 +43,15 @@ def release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, object
     }
     (folder / "exact-local-publish-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     ack = {
+        "schema": "milovi-owner-directed-repost-risk-ack-v1",
         "publication_key": key,
         "project_key": module.PROJECT,
+        "app_id": module.APP_ID,
+        "instagram_id": module.ACCOUNT_ID,
+        "media_sha256": f"sha256:{sha}",
         "owner_directed_repost": True,
+        "accepts_unverified_crossplatform_audio_risk": True,
+        "source_owned_youtube_channel_verified": True,
         "caption_editorially_reviewed": True,
     }
     (folder / "OWNER_DIRECTED_RISK_ACCEPTED.json").write_text(json.dumps(ack), encoding="utf-8")
@@ -221,3 +227,28 @@ def test_underscore_in_youtube_id_is_not_a_sql_like_wildcard(
     module._require_unused_source(release["db"], "1_SuzeQD_1g")
     with pytest.raises(module.FallbackHold, match="reconcile manually"):
         module._require_unused_source(release["db"], "1XSuzeQD_1g")
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("schema", "unknown-version"),
+        ("app_id", "wrong-app"),
+        ("instagram_id", "wrong-account"),
+        ("media_sha256", "sha256:" + "0" * 64),
+        ("owner_directed_repost", False),
+        ("accepts_unverified_crossplatform_audio_risk", False),
+        ("source_owned_youtube_channel_verified", False),
+        ("caption_editorially_reviewed", False),
+    ],
+)
+def test_exact_owner_review_fields_are_mandatory_before_public_fetch(
+    release: dict[str, object], field: str, bad_value: object
+) -> None:
+    ack_path = release["folder"] / "OWNER_DIRECTED_RISK_ACCEPTED.json"
+    ack = json.loads(ack_path.read_text(encoding="utf-8"))
+    ack[field] = bad_value
+    ack_path.write_text(json.dumps(ack), encoding="utf-8")
+    with pytest.raises(module.FallbackHold, match="owner-reviewed original-audio"):
+        run(release)
+    assert release["calls"] == []
