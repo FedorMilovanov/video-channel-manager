@@ -228,7 +228,8 @@ def test_scheduled_workflow_omits_manual_only_publication_id_argument():
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert 'case "${{ steps.gate.outputs.dispatch_mode }}" in' in workflow
     assert 'publication_args=(--publication-id "${{ steps.due.outputs.publication_id }}")' in workflow
-    assert '            scheduled)\\n              ;;' in workflow
+    mode_case = workflow.split('case "${{ steps.gate.outputs.dispatch_mode }}" in', 1)[1].split("esac", 1)[0]
+    assert mode_case.split("scheduled)", 1)[1].split(";;", 1)[0].strip() == ""
     assert '"${publication_args[@]}" \\' in workflow
     assert workflow.count("--publication-id") == 1
     # This is a genuine fail-closed contract in the generic dispatch state machine.
