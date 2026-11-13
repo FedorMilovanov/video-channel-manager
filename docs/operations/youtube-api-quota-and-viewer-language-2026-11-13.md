@@ -83,3 +83,56 @@ This quota form concerned a combined API client used by multiple authorized chan
 **Local evidence (not committed):** `%LOCALAPPDATA%\TheLegendaryPoet\localization-wave-20261112\`, including `owner_inventory_20261112.json`, per-child release receipts and exact captions; application form evidence in the operator's Downloads. Treat these as historical observations until fresh provider reconciliation.
 
 This document does **not** direct another agent to modify existing `mp3telegrambot` dubbing/media assets. Its YouTube presentation notes may be linked from MP3Bot's separate presentation documentation **after** the active foreign-agent worktree changes are reconciled; do not overwrite those pending edits.
+
+
+## 5. Google reviewer requested a full screen recording — action required 2026-11-13
+
+**This section supersedes any prior "awaiting Google's response" summary for the next action.** The original compliance submission is acknowledged, but **Google has determined the evidence insufficient to conduct its full YouTube API compliance review**. This is a request for additional evidence, not an approval and not a final rejection.
+
+**Official reviewer email:** received Friday **2026-11-13 03:56:49 Pacific / 14:56:49 Moscow**, in the same Google YouTube API Services submission thread; email sender `YouTube API Quota`. Its request, paraphrased faithfully:
+
+> Provide a detailed, step-by-step **visual reference, i.e. a screencast**, showing the **complete end-to-end Video Channel Manager workflow**, specifically **YouTube video metadata management and subtitle translation**, for the owner's channels.
+
+Google requested all required supporting evidence and complete answers **within seven business days**. Working estimate **2026-11-24**, calculated starting with the next working day (November 16), with no holiday adjustments; **aim to respond by November 20** to avoid ambiguity. This is *not* a new submission deadline the API automatically enforces, nor confirmation Google accepted a late response.
+
+**Actual completion criterion:** a genuine, legible walkthrough of the real application's operations is recorded and inspected, a reachable video sharing link with reviewer access is placed in a reply **within the existing Google email thread**, and the reply is verified in Sent/thread. A draft, screenshots-only composite, code listing, form receipt, API quota estimate or fabricated browser UI does **not** satisfy the request by itself.
+
+### 5.1 Required evidence storyboard — show only real operations
+
+1. **Opening and identity (00:00–00:40):** real computer screen, repository/app name `Video Channel Manager`, current checkout/CLI version, explicit separate project keys `legendary-poet` and `lord-god-strength` and their owner-authorized YouTube channels. Do **not** display tokens, full OAuth client IDs, user email addresses, private browser tabs or local secrets.
+2. **OAuth (00:40–01:40):** app's actual authorization mechanism, its requested scope descriptions and how a channel owner grants/revokes permissions, using existing authorized context. A new consent prompt is *optional* and must not be approved, canceled, or used to revoke real access merely for filming. Do not show access or refresh tokens, authorization codes, cookies or callback query strings.
+3. **Read exact video (01:40–02:30):** demonstrate the supported owner-video selection and inventory/read-only `videos.list` workflow for an actual exact video ID, with `snippet.title/description/defaultLanguage` and `localizations` visibly distinct. The original RU content must remain unchanged. If quota returns `quotaExceeded`, show the genuine error once; do **not** retry to manufacture a success.
+4. **Translate metadata (02:30–04:00):** demonstrate the actual local editorial process from an existing Russian source through verified language-specific titles/descriptions, source checks, and an exact before/after *offline* change plan. Label offline stages as such. The producer must preserve existing RU and en-US and the full merged localization map.
+5. **Subtitle translation and alignment (04:00–05:40):** show original media timing/source text, actual translated SRT files with timing (not fabricated examples), validation of actual duration/Unicode/timecode and the per-language artifact directory. Prefer a previously verified `NZISwKGIzGI` child with 10 served captions, plus the relevant local hashes/journals.
+6. **Provider result and readback (05:40–07:10):** show the app's actual official YouTube API calls or its verified nonsecret receipts from a prior successfully completed run, including `videos.update part=localizations`, `captions.insert`, `captions.list/download` readback. Mark historical receipts **"Previously completed and verified on 2026-11-12"**, not as present-tense writes. If a fresh quota-safe call cannot execute, show the actual `403 quotaExceeded` and why the 100k/day request is needed. Do not publish/modify a video solely to create a compliance demo.
+7. **Result to viewer and privacy (07:10–08:20):** show real YouTube Studio or public video watch page for the same exact ID (if accessible) and the public app [Privacy Policy](https://github.com/FedorMilovanov/video-channel-manager/blob/main/PRIVACY.md), [Terms](https://github.com/FedorMilovanov/video-channel-manager/blob/main/TERMS.md), authorization revocation guidance and clear identification of the source Russian audio/metadata versus translated display.
+
+**A complete genuine screencast matters more than the suggested timestamps.** A terminal-based real local application is acceptable to demonstrate as terminal operation if that is truly its interface; do not present an HTML/mockup as a functioning production UI.
+
+### 5.2 Recording and handling contract
+
+- Capture a real continuous screen demonstration using a screen recorder (OBS, system capture or another legitimate recorder), with audible narration or legible explanatory subtitles. If edits are required to redact secrets, preserve the order of events and note the redaction.
+- Verify 1280×720 or better, readable terminal text, no private popups/notifications, no credentials, no private viewer identities, no full account IDs, no private customer information. Stop and redact if a token is exposed; do not put screenshots of secrets into Git, chat or a public cloud folder.
+- Keep raw recording, sanitized final MP4, checksums, a short step-to-timecode index and reviewer URL **outside Git**, in the operator's approved working folder. Prefer a restricted-link Google Drive file or an unlisted video with explicit reviewer view access; independently test link visibility before replying.
+- **Never** replay uncertain provider operations, reset a working OAuth account, create extra Cloud projects to evade quota, or force a test upload/publication just for this demonstration. Preserve other agents' worktrees and existing multi-project journal/lock rules.
+- If current quota or remote computer is unavailable, retain **blocked** status and make the next action restore authorized desktop access, record the current version and historic verified artifacts, then obtain the quota-safe live component. Do not assert the demonstration has been recorded or supplied in the interim.
+
+### 5.3 Response plan
+
+Reply directly to Google's existing YouTube API Services thread, with:
+- one accessible URL to the **actual** complete screencast;
+- an optional compact timestamp index and what part shows metadata, captions, OAuth and readback;
+- a transparent note that extra quota remains pending and the demonstration may show quota exhaustion;
+- the same API-client name and numeric project number **only after actual Cloud Console cross-check**; otherwise avoid claiming the Cloud project number was independently confirmed.
+
+Do not send a reply claiming a completed demo until the file is recorded, reviewed, uploaded and the link has been tested. After sending, verify the Gmail thread contains the outgoing response and document the response date, without copying private mail addresses or support tracking tokens into a public repo.
+
+### 5.4 Current execution status
+
+- Google request was **read and understood** from its full email body on November 13.
+- Previous four static/combined screenshots were insufficient for this review.
+- **Real screencast not yet recorded** and no reply supplying that screencast yet.
+- Remote Desktop Commander **reported no connected devices** at the first attempt after receiving this email; the user's computer must reconnect before executing a screen recording on it.
+- Exact end-to-end workflow and file assets can be prepared from existing repo runbooks and local verification receipts; do not assume every 2026-11-12 credential/working directory state still applies.
+- Main technical blocker previously observed: `403 quotaExceeded` on a subsequent `videos.list`; no blind retries.
+
