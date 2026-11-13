@@ -62,6 +62,11 @@ def test_canary_does_not_create_a_second_writer_or_automatic_retry() -> None:
     assert "Any previous durable attempt blocks re-dispatch of this source" in source
     assert "instr(publication_key, ?) > 0" in source
     assert "mode=ro" in source
+    assert "FRESH_INSTAGRAM_DUPLICATE_PREFLIGHT_PASS" in source
+    assert "'/media?fields=id,caption&limit=100'" in source
+    assert "Exact reviewed caption is already present" in source
+    assert "Instagram media inventory exceeded safe pagination cap" in source
+    assert "Invoke-RestMethod -Method GET" in source
     assert "one-writer OS file lock" in source
     assert "Start-ScheduledTask" not in source + runner
     assert "Register-ScheduledTask" not in source + runner
