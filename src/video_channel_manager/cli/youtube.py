@@ -47,6 +47,15 @@ console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
 
 
+def _is_youtube_quota_exhaustion(exc: BaseException) -> bool:
+    """Only classify an explicit YouTube 403 quota rejection; never infer from an arbitrary failure."""
+
+    if not isinstance(exc, YouTubeWriteError):
+        return False
+    message = str(exc).casefold()
+    return "youtube api 403" in message and ("quota" in message or "dailylimitexceeded" in message)
+
+
 def _components(
     account: str, client_secret: Path | None = None
 ) -> tuple[TokenStore, InstalledClientConfig, YouTubeApiClient]:
@@ -473,6 +482,7 @@ def apply_copy_fixes(
 
             failure: str | None = None
             interrupted: BaseException | None = None
+            quota_reconciliation_pending = False
             try:
                 for operation in preflight.prepared:
                     attempt_record = {
@@ -515,41 +525,59 @@ def apply_copy_fixes(
                     failed_ids = ", ".join(item["video_id"] for item in postflight_failures)
                     raise YouTubeWriteError(f"Final batch postflight failed for: {failed_ids}")
                 result["summary"]["postflight_verified"] = len(preflight.prepared)
-            except BaseException as exc:  # rollback must also run after Ctrl+C or an unexpected runtime error
+            except BaseException as exc:  # preserve journal even on Ctrl+C or unexpected runtime failures
                 interrupted = exc
                 failure = f"{type(exc).__name__}: {exc}"
-                console.print(f"[red]Apply failed; starting guarded rollback:[/red] {exc}")
+                # Quota may disappear AFTER YouTube has accepted and verified the PUT.
+                # An immediate rollback would use another quota-costly PUT and could
+                # undo a successful change. Persist the unknown terminal state instead.
+                quota_reconciliation_pending = bool(attempted) and _is_youtube_quota_exhaustion(exc)
+                if quota_reconciliation_pending:
+                    console.print(
+                        "[yellow]YouTube quota exhausted after a write attempt; "
+                        "no rollback or replay. Fresh owner reconciliation is required.[/yellow]"
+                    )
+                else:
+                    console.print(f"[red]Apply failed; starting guarded rollback:[/red] {exc}")
 
             if failure is not None:
-                for operation in reversed(preflight.prepared[: len(attempted)]):
-                    video_id = str(operation["video_id"])
-                    try:
-                        restored = writer.restore_description_if_current(
-                            video_id=video_id,
-                            expected_channel_id=str(operation["channel_id"]),
-                            expected_current_description=str(operation["after_description"]),
-                            restore_description=str(operation["before_description"]),
+                if quota_reconciliation_pending:
+                    result["status"] = "pending_reconciliation"
+                    result["error"] = failure
+                else:
+                    for operation in reversed(preflight.prepared[: len(attempted)]):
+                        video_id = str(operation["video_id"])
+                        try:
+                            restored = writer.restore_description_if_current(
+                                video_id=video_id,
+                                expected_channel_id=str(operation["channel_id"]),
+                                expected_current_description=str(operation["after_description"]),
+                                restore_description=str(operation["before_description"]),
+                            )
+                            rollback_results.append(
+                                {
+                                    "video_id": video_id,
+                                    "status": "safe_original",
+                                    "revision": restored.revision,
+                                }
+                            )
+                            console.print(f"[yellow]Rollback safe/original[/yellow] {video_id}")
+                        except YouTubeWriteError as rollback_exc:
+                            rollback_results.append(
+                                {"video_id": video_id, "status": "failed", "error": str(rollback_exc)}
+                            )
+                            console.print(f"[red]Rollback failed[/red] {video_id}: {rollback_exc}")
+                        result["summary"]["rollback_safe_original"] = sum(
+                            item["status"] == "safe_original" for item in rollback_results
                         )
-                        rollback_results.append(
-                            {
-                                "video_id": video_id,
-                                "status": "safe_original",
-                                "revision": restored.revision,
-                            }
+                        result["summary"]["rollback_failed"] = sum(
+                            item["status"] == "failed" for item in rollback_results
                         )
-                        console.print(f"[yellow]Rollback safe/original[/yellow] {video_id}")
-                    except YouTubeWriteError as rollback_exc:
-                        rollback_results.append({"video_id": video_id, "status": "failed", "error": str(rollback_exc)})
-                        console.print(f"[red]Rollback failed[/red] {video_id}: {rollback_exc}")
-                    result["summary"]["rollback_safe_original"] = sum(
-                        item["status"] == "safe_original" for item in rollback_results
-                    )
-                    result["summary"]["rollback_failed"] = sum(item["status"] == "failed" for item in rollback_results)
-                    _write_json(result_output, result)
+                        _write_json(result_output, result)
 
-                rollback_failed = int(result["summary"]["rollback_failed"])
-                result["status"] = "failed_rolled_back" if rollback_failed == 0 else "failed_partial_rollback"
-                result["error"] = failure
+                    rollback_failed = int(result["summary"]["rollback_failed"])
+                    result["status"] = "failed_rolled_back" if rollback_failed == 0 else "failed_partial_rollback"
+                    result["error"] = failure
             else:
                 result["status"] = "completed"
 
@@ -662,7 +690,13 @@ def reconcile_copy_fixes(
             if Path(str(receipt.get("backup", ""))).resolve() != backup.resolve():
                 raise ValueError("Result backup path differs from the supplied backup.")
             receipt_state = str(receipt.get("status") or "invalid_missing_status")
-            if receipt_state not in {"running", "completed", "failed_rolled_back", "failed_partial_rollback"}:
+            if receipt_state not in {
+                "running",
+                "completed",
+                "failed_rolled_back",
+                "failed_partial_rollback",
+                "pending_reconciliation",
+            }:
                 raise ValueError("Unsupported or missing result terminal/intermediate status.")
             for field in ("attempted", "applied"):
                 entries = receipt.get(field)
