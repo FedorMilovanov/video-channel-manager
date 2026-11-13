@@ -69,6 +69,8 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     prepare.add_argument("--publication-id")
     prepare.add_argument("--scheduled-canary-authorization", type=Path)
+    prepare.add_argument("--verified-manual-canary-release", type=Path)
+    prepare.add_argument("--verified-manual-canary-ledger", type=Path)
     prepare.add_argument(
         "--recover-stale-predecessors",
         action="store_true",
@@ -397,6 +399,13 @@ def main() -> int:
             if args.scheduled_canary_authorization is not None
             else None
         )
+        if (args.verified_manual_canary_release is None) != (args.verified_manual_canary_ledger is None):
+            raise ValueError("verified manual canary requires both a release and a durable ledger")
+        verified_canary = None
+        if args.mode == "scheduled" and args.verified_manual_canary_release is not None:
+            canary_release = load_release(args.verified_manual_canary_release)
+            canary_ledger = load_ledger(args.verified_manual_canary_ledger, canary_release)
+            verified_canary = (canary_release, canary_ledger)
         prepared = prepare_next(
             profile,
             release,
@@ -409,6 +418,7 @@ def main() -> int:
             target=target,
             expected_publication_id=args.publication_id,
             scheduled_canary_approval=owner_canary,
+            verified_canary=verified_canary,
         )
         if prepared.envelope is None:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))
