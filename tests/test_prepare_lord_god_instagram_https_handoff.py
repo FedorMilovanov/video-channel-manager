@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import sqlite3
 from pathlib import Path
@@ -10,8 +11,6 @@ from typing import Any, cast
 
 import httpx
 import pytest
-
-import importlib.util
 
 _MODULE_PATH = (
     Path(__file__).resolve().parents[1]
@@ -57,9 +56,15 @@ def case(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
     db_path = tmp_path / "ledger.sqlite"
     with sqlite3.connect(db_path) as db:
-        db.execute("CREATE TABLE instagram_publications (account_id TEXT, publication_key TEXT)")
+        db.execute(
+            "CREATE TABLE instagram_publications (account_id TEXT, publication_key TEXT)"
+        )
     verify_calls: list[str] = []
-    monkeypatch.setattr(handoff, "verify_local_reel", lambda *args, **kwargs: verify_calls.append("local"))
+    monkeypatch.setattr(
+        handoff,
+        "verify_local_reel",
+        lambda *args, **kwargs: verify_calls.append("local"),
+    )
     monkeypatch.setattr(
         handoff,
         "verify_instagram_public_object",
@@ -95,7 +100,9 @@ def edit_evidence(case: dict[str, Any], **changes: Any) -> None:
     case["evidence_path"].write_text(json.dumps(case["evidence"]), encoding="utf-8")
 
 
-def test_approved_owned_media_yields_new_distinct_key_without_graph(case: dict[str, Any]) -> None:
+def test_approved_owned_media_yields_new_distinct_key_without_graph(
+    case: dict[str, Any],
+) -> None:
     manifest = prepare(case)
     assert manifest.publication_key == (
         "lord-god-strength.2026-11-22.article-heart.public-https-v1"
