@@ -411,6 +411,28 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires exact GitHub SHA provenance")
 
 
+def _has_verified_manual_canary(
+    ledger: GenericPublicationLedger, target: GenericTargetProof, now: datetime
+) -> bool:
+    """Require a durable, provider-verified manual receipt for the exact bot and channel."""
+    return any(
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.dispatch_mode == "manual"
+        and entry.actual_chat_id == target.chat_id
+        and entry.actual_chat_username is not None
+        and entry.actual_chat_username.casefold() == target.chat_username.casefold()
+        and entry.bot_id == target.bot_id
+        and entry.bot_username is not None
+        and entry.bot_username.casefold() == target.bot_username.casefold()
+        and entry.message_id is not None
+        and entry.message_url == f"https://t.me/{target.chat_username}/{entry.message_id}"
+        and entry.published_at_utc is not None
+        and entry.published_at_utc <= now
+        for entry in ledger.entries.values()
+    )
+
+
 def prepare_next(
     profile: TelegramChannelProfile,
     release: GenericReleaseQueue,
@@ -425,6 +447,7 @@ def prepare_next(
     expected_publication_id: str | None = None,
     now: datetime | None = None,
     scheduled_canary_approval: OwnerScheduledCanaryApproval | None = None,
+    verified_canary: tuple[GenericReleaseQueue, GenericPublicationLedger] | None = None,
 ) -> PreparedGenericDispatch:
     prepared_at = now or utc_now()
     if prepared_at.tzinfo is None:
@@ -461,14 +484,26 @@ def prepare_next(
         )
 
     if mode == "scheduled":
-        manual_canary = any(
-            entry.state == "published"
-            and entry.provider_effect == "verified"
-            and entry.dispatch_mode == "manual"
-            and entry.actual_chat_id == target.chat_id
-            and entry.bot_id == target.bot_id
-            for entry in ledger.entries.values()
-        )
+        manual_canary = _has_verified_manual_canary(ledger, target, prepared_at)
+        if not manual_canary and verified_canary is not None:
+            canary_release, canary_ledger = verified_canary
+            # The read-only source must be a separately reviewed, immutable release
+            # with its own durable state. Never accept a bare receipt or a foreign bot.
+            if not canary_release.release_authorized:
+                raise ValueError("external manual canary release is not authorized")
+            verify_ledger_against_release(canary_ledger, canary_release)
+            if (
+                canary_release.release_id == release.release_id
+                or canary_release.project_key != release.project_key
+                or canary_release.channel_username.casefold() != release.channel_username.casefold()
+                or canary_release.profile_sha256 != release.profile_sha256
+                or canary_release.target_binding_sha256 != release.target_binding_sha256
+                or canary_release.chat_id != target.chat_id
+                or canary_release.bot_id != target.bot_id
+                or (canary_release.bot_username or "").casefold() != target.bot_username.casefold()
+            ):
+                raise ValueError("external manual canary release differs from the exact channel/bot binding")
+            manual_canary = _has_verified_manual_canary(canary_ledger, target, prepared_at)
         if not manual_canary:
             if scheduled_canary_approval is None:
                 return PreparedGenericDispatch(
