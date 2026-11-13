@@ -462,12 +462,33 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             timeout=_RESUMABLE_UPLOAD_TIMEOUT,
         )
 
-    def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
+    def upload_local_video(
+        self,
+        upload_uri: str,
+        stream: BinaryIO,
+        *,
+        file_size: int,
+        expected_sha256: str | None = None,
+    ) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
         body: bytes | None = None
         try:
             body = stream.read()
+            # Validate the exact bytes sent, not only the earlier filesystem probe.
+            # An asset may be truncated or changed between preflight and dispatch.
+            if len(body) != file_size:
+                raise InstagramMediaVerificationError(
+                    "Instagram local video byte count changed after preflight; upload not dispatched",
+                    error_code="local_video_upload_size_mismatch",
+                    retryable=False,
+                )
+            if expected_sha256 is not None and f"sha256:{hashlib.sha256(body).hexdigest()}" != expected_sha256:
+                raise InstagramMediaVerificationError(
+                    "Instagram local video SHA-256 changed after preflight; upload not dispatched",
+                    error_code="local_video_upload_sha256_mismatch",
+                    retryable=False,
+                )
             response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
         except (httpx.RequestError, OSError) as exc:
             detail = secret_safe_exception_detail(
@@ -932,7 +953,25 @@ class InstagramLocalResumableService(InstagramProductionService):
                             child.upload_uri,
                             stream,
                             file_size=manifest.media_size_bytes,
+                            expected_sha256=manifest.media_sha256,
                         )
+                    except InstagramMediaVerificationError as exc:
+                        # No provider POST was made; preserve a deterministic
+                        # terminal receipt instead of an ambiguous upload state.
+                        self.upload_ledger.mark_provider_failed(
+                            manifest.publication_key,
+                            error_code=exc.error_code,
+                            error_message=str(exc),
+                        )
+                        self.ledger.transition(
+                            manifest.publication_key,
+                            PublicationStatus.TERMINAL_FAILURE,
+                            expected_statuses={PublicationStatus.CONTAINER_CREATED},
+                            provider_status="ERROR",
+                            error_code=exc.error_code,
+                            error_message=str(exc),
+                        )
+                        raise
                     except InstagramProviderError as exc:
                         if exc.status_code is not None and 400 <= exc.status_code < 500 and exc.retryable is False:
                             self.upload_ledger.mark_provider_failed(
