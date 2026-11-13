@@ -411,9 +411,7 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires exact GitHub SHA provenance")
 
 
-def _has_verified_manual_canary(
-    ledger: GenericPublicationLedger, target: GenericTargetProof, now: datetime
-) -> bool:
+def _has_verified_manual_canary(ledger: GenericPublicationLedger, target: GenericTargetProof, now: datetime) -> bool:
     """Require a durable, provider-verified manual receipt for the exact bot and channel."""
     return any(
         entry.state == "published"
