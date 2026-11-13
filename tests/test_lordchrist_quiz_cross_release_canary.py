@@ -107,9 +107,7 @@ def _prepare(case, *, canary=True, now=None, canary_release=None, canary_ledger=
         mode="scheduled",
         target=_target(profile, binding, effective_now),
         now=effective_now,
-        verified_canary=(
-            (canary_release or old_release, canary_ledger or old_ledger) if canary else None
-        ),
+        verified_canary=((canary_release or old_release, canary_ledger or old_ledger) if canary else None),
     )
 
 
@@ -162,6 +160,6 @@ def test_production_workflow_uses_old_verified_ledger_without_changing_release()
         '--verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json"'
         in workflow
     )
-    assert 'SERIES_ID: lordchrist-quiz-series-02' in workflow
+    assert "SERIES_ID: lordchrist-quiz-series-02" in workflow
     assert 'MAX_PUBLICATION_LAG_MINUTES: "360"' in workflow
     assert "Send exactly once through the canonical generic Telegram runtime" in workflow
