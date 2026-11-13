@@ -22,6 +22,7 @@ from video_channel_manager.instagram.local_resumable import (
 )
 from video_channel_manager.instagram.production import (
     InstagramMediaVerificationError,
+    InstagramProductionError,
     InstagramProviderError,
     InstagramPublicationLedger,
     InstagramReconciliationRequired,
@@ -442,7 +443,7 @@ def test_pre_dispatch_integrity_failure_is_durable_and_cannot_publish(
             assert child.last_error_code == "local_video_upload_sha256_mismatch"
             assert child.attempt_count == 1
 
-            with pytest.raises(Exception, match="terminally failed"):
+            with pytest.raises(InstagramProductionError, match="terminally failed"):
                 service.publish_local(manifest, video, execute=True)
     finally:
         database.close()
