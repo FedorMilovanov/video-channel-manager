@@ -188,9 +188,9 @@ def test_future_slot_is_bounded(case: dict[str, Any], day: str) -> None:
 
 
 def test_ledger_unavailable_fails_closed(case: dict[str, Any]) -> None:
-    case["db_path"].unlink()
+    # SQLite may retain a handle on Windows; test an absent path instead of unlink.
     with pytest.raises(handoff.HandoffHold, match="SQLite"):
-        prepare(case)
+        prepare(case, db_path=case["db_path"].parent / "missing.sqlite")
 
 
 def test_hosted_object_verification_failure_propagates(
