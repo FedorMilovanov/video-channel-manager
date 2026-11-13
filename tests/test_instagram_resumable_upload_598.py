@@ -21,6 +21,7 @@ from video_channel_manager.instagram.local_resumable import (
     build_local_publish_manifest,
 )
 from video_channel_manager.instagram.production import (
+    InstagramMediaVerificationError,
     InstagramProviderError,
     InstagramPublicationLedger,
     InstagramReconciliationRequired,
@@ -342,4 +343,109 @@ def test_http_400_diagnostic_is_durable_and_does_not_reopen_binary_upload(tmp_pa
 
     assert container_calls == 1
     assert upload_calls == 1
+    assert publish_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("observed_bytes", "expected_error"),
+    [
+        (VIDEO_BYTES[:-1], "local_video_upload_size_mismatch"),
+        (b"x" + VIDEO_BYTES[1:], "local_video_upload_sha256_mismatch"),
+    ],
+)
+def test_changed_local_bytes_are_rejected_before_any_provider_request(
+    observed_bytes: bytes,
+    expected_error: str,
+) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        raise AssertionError("No provider write is permitted for changed video bytes")
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramMediaVerificationError) as caught:
+            client.upload_local_video(
+                UPLOAD_URI,
+                io.BytesIO(observed_bytes),
+                file_size=len(VIDEO_BYTES),
+                expected_sha256=f"sha256:{hashlib.sha256(VIDEO_BYTES).hexdigest()}",
+            )
+
+    assert caught.value.error_code == expected_error
+    assert caught.value.retryable is False
+    assert calls == []
+
+
+def test_pre_dispatch_integrity_failure_is_durable_and_cannot_publish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    video = tmp_path / "reel.mp4"
+    video.write_bytes(VIDEO_BYTES)
+    manifest = build_local_publish_manifest(
+        video,
+        publication_key="issue598.preupload_integrity",
+        account_id=ACCOUNT_ID,
+    )
+    container_calls = 0
+    publish_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal container_calls, publish_calls
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": [{"quota_usage": 0}]})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            container_calls += 1
+            return _response(request, 200, {"id": "container-598", "uri": UPLOAD_URI})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            publish_calls += 1
+        raise AssertionError("Unexpected or forbidden provider dispatch")
+
+    database = Database("sqlite:///:memory:")
+    database.create_schema()
+    ledger = InstagramPublicationLedger(database)
+    upload_ledger = InstagramResumableUploadLedger(database)
+    config = _config()
+    try:
+        with _client(config, httpx.MockTransport(handler)) as client:
+
+            def reject_pre_dispatch(*_args: object, **_kwargs: object) -> None:
+                raise InstagramMediaVerificationError(
+                    "Local file changed before binary dispatch",
+                    error_code="local_video_upload_sha256_mismatch",
+                    retryable=False,
+                )
+
+            monkeypatch.setattr(client, "upload_local_video", reject_pre_dispatch)
+            service = InstagramLocalResumableService(
+                config,
+                ledger,
+                upload_ledger,
+                client=client,
+                media_probe=_compatible_probe,
+                closed_gop_probe=_closed_gop_probe,
+            )
+            with pytest.raises(InstagramMediaVerificationError, match="changed"):
+                service.publish_local(manifest, video, execute=True)
+
+            publication = ledger.get(manifest.publication_key)
+            child = upload_ledger.get(manifest.publication_key)
+            assert publication is not None
+            assert publication.status == PublicationStatus.TERMINAL_FAILURE
+            assert publication.last_error_code == "local_video_upload_sha256_mismatch"
+            assert publication.provider_media_id is None
+            assert child is not None
+            assert child.state == ResumableUploadState.PROVIDER_FAILED
+            assert child.last_error_code == "local_video_upload_sha256_mismatch"
+            assert child.attempt_count == 1
+
+            with pytest.raises(Exception, match="terminally failed"):
+                service.publish_local(manifest, video, execute=True)
+    finally:
+        database.close()
+
+    assert container_calls == 1
     assert publish_calls == 0
