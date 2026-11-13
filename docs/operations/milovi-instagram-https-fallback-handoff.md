@@ -69,7 +69,11 @@ authorization to stage these exact video bytes on a direct public HTTPS origin:
    a new output filename. The tool checks old owner/caption review,
    original bytes, full production local MP4/GOP validation,
    existing durable state, full hosted bytes and HTTP MIME with the common
-   production media verifier. It refuses any source that already has an
+   production media verifier. Its owner-risk acknowledgment must match the
+   original release's **exact schema, Meta App ID, Instagram account ID,
+   publication key, SHA-256, explicit repost approval, unverified-audio-risk
+   acceptance, source-channel ownership evidence and reviewed caption**.
+   A plausible file with only a few matching fields is insufficient. It refuses any source that already has an
    Instagram publication attempt on that account.
 3. Review the resulting **new** `public-https-v1` publication key, the
    caption, rights, current Instagram inventory, the scheduler's competing
