@@ -863,3 +863,29 @@ def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -
         assert child.state == ResumableUploadState.PROVIDER_FAILED
         assert child.last_error_message == result.last_error_message
         assert child.attempt_count == 1
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [{}, {"success": None}, {"success": "true"}, {"success": 1}, {"success": []}],
+)
+def test_http_200_without_explicit_boolean_success_cannot_complete_upload(payload: dict[str, object]) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _response(request, 200, payload)
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramProviderError, match="no explicit boolean success=true") as error:
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
+    assert error.value.error_code == "resumable_upload_ack_unverified"
+    assert error.value.retryable is None
+    assert TOKEN not in str(error.value)
+    assert UPLOAD_URI not in str(error.value)
+
+
+def test_http_200_with_non_json_body_is_not_upload_success() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, request=request, text="<html>accepted?</html>")
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramProviderError, match="no explicit boolean success=true"):
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
