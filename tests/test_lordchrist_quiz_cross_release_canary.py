@@ -172,7 +172,7 @@ def test_production_workflow_uses_old_verified_ledger_without_changing_release()
 
 def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(monkeypatch, tmp_path, capsys):
     case = _case()
-    profile, binding, old_release, old_ledger, release, new_ledger, due = case
+    profile, binding, _old_release, old_ledger, release, new_ledger, due = case
     old_path = tmp_path / "old-ledger.json"
     new_path = tmp_path / "series-ledger.json"
     target_path = tmp_path / "target.json"
