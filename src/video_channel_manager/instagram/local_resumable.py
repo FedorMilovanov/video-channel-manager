@@ -523,6 +523,19 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 retryable=provider_http_retryable(response),
             )
 
+        # A 2xx response is not itself proof that Meta accepted the bytes.
+        # Anything other than the literal JSON boolean true is ambiguous and
+        # must not transition the durable upload ledger to UPLOADED.
+        if not isinstance(payload, dict) or payload.get("success") is not True:
+            raise InstagramProviderError(
+                "Instagram resumable upload returned no explicit boolean success=true "
+                "acknowledgement; manual provider reconciliation required; "
+                f"{fingerprint}",
+                status_code=response.status_code,
+                error_code="resumable_upload_ack_unverified",
+                retryable=None,
+            )
+
 
 ClosedGopProbe = Callable[[Path, str | None], InstagramClosedGopEvidence]
 
