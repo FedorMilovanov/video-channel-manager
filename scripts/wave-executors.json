@@ -448,16 +448,6 @@
       "status": "independent_tool"
     },
     {
-      "callers": [],
-      "direct_entrypoint": true,
-      "path": "scripts/instagram/lord_god_quote_windows_runner_20261113.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": true,
-      "sha256": "6f30f4d29641fd52235a4f65b10fa738102897658aa7068ef3306a2ecb20a208",
-      "status": "independent_tool"
-    },
-    {
       "callers": [
         "scripts/instagram/lord_god_quote_windows_readback_20261113.py"
       ],
@@ -480,6 +470,16 @@
       "status": "independent_tool"
     },
     {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_quote_windows_runner_20261113.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "6f30f4d29641fd52235a4f65b10fa738102897658aa7068ef3306a2ecb20a208",
+      "status": "independent_tool"
+    },
+    {
       "callers": [
         ".github/workflows/lord-god-reels-cloud-readback-20261112.yml",
         "scripts/instagram/lord_god_reels_windows_readback_20261113.py"
@@ -495,21 +495,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/instagram/lord_god_reels_windows_readback_20261113.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": false,
-      "sha256": "340d9f51669f7e62c74c917df7858b3a8b2f8c4121b511237c2a847ced3a4428",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/instagram/lord_god_reels_readback_local_1925.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "7f9b4c889cb25a23c3ddfb33bd89f373b973ee19fc93efc2032bfc0539693d38",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/instagram/lord_god_reels_windows_readback_20261113.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "340d9f51669f7e62c74c917df7858b3a8b2f8c4121b511237c2a847ced3a4428",
       "status": "independent_tool"
     },
     {
@@ -902,6 +902,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "53f0957eab9c9b81cf0a70d492be8703cbb8edd2de50d9bbb4befbd8e607b606",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/prepare_milovi_instagram_https_fallback.py",
+      "private_imports": [],
+      "project_owner": "milovi-cake",
+      "provider_write_capable": false,
+      "sha256": "2ff1c379bf05c16388cea487c68110a59489f73ddceda22f8ae302b47a1db56a",
       "status": "independent_tool"
     },
     {
