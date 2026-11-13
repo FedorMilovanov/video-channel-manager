@@ -3,18 +3,23 @@
 Provider-inert regression coverage: never send a Telegram poll from these tests.
 """
 
+import json
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_multichannel_cli import main
 from video_channel_manager.telegram_multichannel_release import load_release
 from video_channel_manager.telegram_multichannel_state import (
     initialize_ledger,
     mark_published,
     prepare_next,
     skip_expired_pending,
+    load_ledger,
+    save_ledger,
 )
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
 from video_channel_manager.telegram_target_binding import load_target_binding
@@ -163,3 +168,57 @@ def test_production_workflow_uses_old_verified_ledger_without_changing_release()
     assert "SERIES_ID: lordchrist-quiz-series-02" in workflow
     assert 'MAX_PUBLICATION_LAG_MINUTES: "360"' in workflow
     assert "Send exactly once through the canonical generic Telegram runtime" in workflow
+
+
+def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(monkeypatch, tmp_path, capsys):
+    case = _case()
+    profile, binding, old_release, old_ledger, release, new_ledger, due = case
+    old_path = tmp_path / "old-ledger.json"
+    new_path = tmp_path / "series-ledger.json"
+    target_path = tmp_path / "target.json"
+    envelope_path = tmp_path / "dispatch.json"
+    save_ledger(old_path, old_ledger)
+    save_ledger(new_path, new_ledger)
+    target_path.write_text(_target(profile, binding, due).model_dump_json(indent=2), encoding="utf-8")
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_state.utc_now", lambda: due)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram_multichannel_cli",
+            "prepare",
+            "--profile",
+            str(PROFILE_PATH),
+            "--release",
+            str(QUIZ_DIR / "lordchrist-quiz-series-02-runtime.json"),
+            "--ledger",
+            str(new_path),
+            "--target-proof",
+            str(target_path),
+            "--mode",
+            "scheduled",
+            "--verified-manual-canary-release",
+            str(QUIZ_DIR / "lordchrist-quiz-city-of-palms-runtime.json"),
+            "--verified-manual-canary-ledger",
+            str(old_path),
+            "--run-id",
+            "456",
+            "--run-attempt",
+            "1",
+            "--github-sha",
+            GITHUB_SHA,
+            "--github-workflow-sha",
+            WORKFLOW_SHA,
+            "--envelope-output",
+            str(envelope_path),
+        ],
+    )
+
+    assert main() == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["prepared"] is True
+    assert result["publication_id"] == "lordchrist-quiz-s02-jephthah"
+    assert envelope_path.is_file()
+    verified_new = load_ledger(new_path, release)
+    assert verified_new.entries["lordchrist-quiz-s02-jephthah"].state == "dispatching"
+    assert old_ledger.entries["lordchrist-quiz-city-of-palms"].state == "published"
