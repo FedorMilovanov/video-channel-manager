@@ -179,12 +179,28 @@ try {
         } -TimeoutSec 35
         foreach ($Post in @($Inventory.data)) {
             $Inspected++
-            if ([string]$Post.caption -ceq [string]$Manifest.caption) {
+            # A real Instagram media item may omit caption entirely.
+            $PostCaption = ''
+            if ($Post.PSObject.Properties.Name -contains 'caption') {
+                $PostCaption = [string]$Post.caption
+            }
+            if ($PostCaption -ceq [string]$Manifest.caption) {
                 throw 'Exact reviewed caption is already present on the target Instagram account'
             }
         }
-        $PageHasNext = -not [string]::IsNullOrEmpty([string]$Inventory.paging.next)
+        # StrictMode also requires us to test optional paging members.
+        $PageHasNext = $false
+        if ($Inventory.PSObject.Properties.Name -contains 'paging' -and
+            $null -ne $Inventory.paging -and
+            $Inventory.paging.PSObject.Properties.Name -contains 'next') {
+            $PageHasNext = -not [string]::IsNullOrEmpty([string]$Inventory.paging.next)
+        }
         if (!$PageHasNext) { break }
+        if ($Inventory.paging.PSObject.Properties.Name -notcontains 'cursors' -or
+            $null -eq $Inventory.paging.cursors -or
+            $Inventory.paging.cursors.PSObject.Properties.Name -notcontains 'after') {
+            throw 'Provider paging lacked a safe after-cursor'
+        }
         $Cursor = [string]$Inventory.paging.cursors.after
         if (!$Cursor) { throw 'Provider paging lacked a safe after-cursor' }
     }
