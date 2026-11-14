@@ -14,9 +14,12 @@
   "local_storage": {
     "review_root_relative": "E:/VideoChannelManager/TheLegendaryPoet/_AUDIO_FOR_REVIEW/БЛОК_ПО_ПРОИЗВЕДЕНИЯМ_СЛУШАТЬ/",
     "html": "ОТКРЫТЬ_БЛОК_СЛУШАТЬ.html",
-    "priority_playlist": "01_ПРИОРИТЕТНЫЕ_6.m3u8",
+    "priority_playlist": "01_ПРИОРИТЕТНЫЕ_7.m3u8",
     "alternate_playlist": "02_ДОП_ДЛЯ_СРАВНЕНИЯ_2.m3u8",
-    "master_selection_rule": "owner review + full audition, first and last 30s and any unexpected bridge, no changes to source bytes"
+    "master_selection_rule": "owner review + full audition, first and last 30s and any unexpected bridge, no changes to source bytes",
+    "review_total": 9,
+    "priority_total": 7,
+    "alternate_total": 2
   },
   "artwork": {
     "site_face": "TheLegendaryPoet/public/images/blok.jpg",
@@ -26,8 +29,8 @@
     "youtube_verified_thumbnails": 6
   },
   "cover_policy": "One coherent Blok identity reference from website; per distinct published musical release an original square 1400x1400 cover and wide 1920x1080, except Rossiya reuse existing verified assets. Existing YouTube thumbnails are unchanged REFERENCES, not automatically approved site artwork.",
-  "audio_technical_fact": "Local selected MP3 candidates are 48 kHz stereo. Existing website's text-only codec declaration and validator enforce '44.1 kHz stereo'; do not fake the manifest or gratuitously transcode. Correct the codec contract based on real media before publishing. MP3 bitrates are VBR/metadata estimates and do not prove quality.",
-  "site_release_gate": "No new published entry before full listening, approved images, waveform from selected master, SHA256, manifest, stable URL and public readback. WAV/FLAC original preferred but absent from this eight-track local subset.",
+  "audio_technical_fact": "Actual selected MP3 files are 48 kHz stereo; website PR #577 corrects the old inaccurate manifest declaration of 44.1 kHz for Russia and Tucha. Do not transcode merely to match metadata; verify codec and file at publication.",
+  "site_release_gate": "No new published entry before full owner listening, approved images, waveform from selected master, SHA256, manifest, stable URL and public readback. WAV/FLAC preferred for archival originals. MP3 derived from YouTube is a provisional candidate only.",
   "platform_gate": "Do not infer Telegram/VK/Instagram/Rutube post success from plan. Read existing provider IDs and posts; never POST duplicate. Native 9:16 source needed for Instagram Reels.",
   "releases": [
     {
@@ -49,7 +52,10 @@
       "youtube_url": "https://www.youtube.com/watch?v=aX878S3PGn4",
       "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
       "cover_reference_youtube_id": "aX878S3PGn4",
-      "cover_final_status": "needs_visual_approval_and_final_cover"
+      "cover_final_status": "needs_visual_approval_and_final_cover",
+      "music_style_short": "Кинематографический дабстеп, мрачный эмбиент и даб",
+      "music_style_source": "Owner-provided Suno Style text, 2026-11-14: Cinematic dubstep crossed with ritual dark ambient and spacious dub; Russian male baritone; 140 BPM / 70 BPM halftime.",
+      "music_style_verified_for": "current Night Loop edition only; not older May recording"
     },
     {
       "id": "blok-kulikovo-part-1",
@@ -155,6 +161,44 @@
       "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
       "cover_reference_youtube_id": "8g_4EVWFb1g",
       "cover_final_status": "needs_visual_approval_and_final_cover"
+    },
+    {
+      "id": "blok-oh-i-want-to-live-youtube-audio-candidate",
+      "work": "О, я хочу безумно жить…",
+      "unit": "complete-poem",
+      "label": "YouTube audio extraction — candidate only (original Suno master not found)",
+      "file": "09_О_я_хочу_безумно_жить_YouTube_КАНДИДАТ.mp3",
+      "sha256": "726180baf14d097fd8a8de82c1ba39794a4b7848f9b6eab2f5dc5ecda91ac6f7",
+      "bytes": 5780727,
+      "seconds": 204.568,
+      "youtube_id": "lXwlZt1v97U",
+      "youtube_video_seconds": 205,
+      "identification": "verified_owner_youtube_video_audio_extracted_by_other_agent_local_bytes_and_sha256_verified",
+      "source_type": "youtube_derived_mp3_not_original_suno_master",
+      "website_status": "not_published__needs_full_listening_and_cover",
+      "telegram_status": "unverified",
+      "local_review_file": "09_О_я_хочу_безумно_жить_YouTube_КАНДИДАТ.mp3",
+      "local_review_sha256": "726180baf14d097fd8a8de82c1ba39794a4b7848f9b6eab2f5dc5ecda91ac6f7",
+      "youtube_url": "https://www.youtube.com/watch?v=lXwlZt1v97U",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "lXwlZt1v97U",
+      "cover_final_status": "needs_visual_approval_and_final_cover",
+      "audio_quality_note": "~226 kbps MP3, no provenance of an original Suno WAV/FLAC; do not upgrade merely by re-encoding",
+      "tail_review": {
+        "asr_last_spoken": "repeated 'воплотить' around 145–153 sec; ASR not proof of absence of other music",
+        "silence_intervals_seconds": [
+          [
+            173.64,
+            177.31
+          ],
+          [
+            187.11,
+            188.64
+          ]
+        ],
+        "human_listen_pending": true,
+        "local_last_35sec_review": "C:/Users/Fedor/Downloads/БЛОК — АУДИО С YOUTUBE/ПРОСЛУШАТЬ_ФИНАЛ_35_СЕК.mp3"
+      }
     }
   ],
   "compared_not_release": [
@@ -163,7 +207,8 @@
       "purpose": "alternative_not_NightLoop",
       "file": "07_Ночь_улица_ДРУГАЯ_ВЕРСИЯ.mp3",
       "sha256": "a95096693cb8b02e1261920c1e99fe4ea1b3384d0d771afe80c68ca90382f6bb",
-      "seconds": 290.9
+      "seconds": 290.9,
+      "music_style_status": "old_reggae_hypothesis_unverified_do_not_publish"
     },
     {
       "work": "Россия",
