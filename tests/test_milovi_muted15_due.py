@@ -138,7 +138,9 @@ def test_unknown_result_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
 def test_workflow_serializes_shared_state_and_does_not_send_directly() -> None:
     src = Path(".github/workflows/milovi-telegram-muted15-due-20261108.yml").read_text(encoding="utf-8")
-    assert "7 16 8-22 11 *" in src
+    assert "7,27,47 16,17 8-22 11 *" in src
+    assert "audit-expired" in src
+    assert "always() && github.event_name == 'schedule'" in src
     assert "Milovi Telegram feed quality" not in src
     assert "workflow_run:" not in src
     assert "group: milovi-cake-telegram-publisher" in src
@@ -151,3 +153,62 @@ def test_workflow_serializes_shared_state_and_does_not_send_directly() -> None:
     assert "operation=publish" in src
     assert "sendVideo" not in src
     assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in src
+
+
+def test_expired_windows_report_only_elapsed_pending_items(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    rows = due.reviewed_items()
+    calls: list[str] = []
+
+    def fake_check(pid: str, *, state_checkout: Path) -> dict[str, object]:
+        assert state_checkout == tmp_path
+        calls.append(pid)
+        if pid.endswith("08-001"):
+            return {"state": "published", "provider_effect": "verified"}
+        return {"state": "pending", "provider_effect": "impossible"}
+
+    monkeypatch.setattr(due, "state_check", fake_check)
+    moment = datetime(2026, 11, 10, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
+    assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == ["milovi-feed-20261109-001"]
+    assert calls == ["milovi-feed-20261108-001", "milovi-feed-20261109-001"]
+
+
+def test_all_verified_elapsed_windows_have_no_false_missed_alert(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rows = due.reviewed_items()
+    monkeypatch.setattr(
+        due,
+        "state_check",
+        lambda pid, *, state_checkout: {"state": "published", "provider_effect": "verified"},
+    )
+    moment = datetime(2026, 11, 14, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
+    assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    ("state", "effect"),
+    [("unknown", "may_exist"), ("dispatching", "may_exist"), ("skipped", "impossible")],
+)
+def test_overdue_window_with_unresolved_or_inconsistent_state_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, state: str, effect: str
+) -> None:
+    rows = due.reviewed_items()
+    monkeypatch.setattr(due, "state_check", lambda pid, *, state_checkout: {"state": state, "provider_effect": effect})
+    moment = datetime(2026, 11, 10, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
+    with pytest.raises(ValueError, match="unsafe or inconsistent"):
+        due.missed_delivery_windows(moment, rows, checkout=tmp_path)
+
+
+def test_no_lookahead_and_no_timezone_free_overdue_audit(tmp_path: Path) -> None:
+    rows = due.reviewed_items()
+    with pytest.raises(ValueError, match="timezone-aware"):
+        due.missed_delivery_windows(datetime(2026, 11, 10, 0, 53), rows, checkout=tmp_path)
+    # Before the very first two-hour boundary, no past publication may be inspected.
+    assert (
+        due.missed_delivery_windows(
+            datetime(2026, 11, 8, 20, 59, tzinfo=ZoneInfo("Europe/Moscow")),
+            rows,
+            checkout=tmp_path,
+        )
+        == []
+    )

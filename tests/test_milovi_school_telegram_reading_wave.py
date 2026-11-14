@@ -89,7 +89,7 @@ def test_only_one_existing_provider_writer_and_no_competing_video_workflow() -> 
     assert "python -m scripts.milovi_school_reading_due due" in text
     video = (ROOT / ".github/workflows/milovi-telegram-muted15-due-20261108.yml").read_text(encoding="utf-8")
     assert "group: milovi-cake-telegram-publisher" in video
-    assert 'cron: "7 16 8-22 11 *"' in video
+    assert 'cron: "7,27,47 16,17 8-22 11 *"' in video
 
 
 def test_school_publications_start_pending_and_not_sent(tmp_path: Path) -> None:
