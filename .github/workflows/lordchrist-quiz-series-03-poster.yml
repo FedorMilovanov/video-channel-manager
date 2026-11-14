@@ -276,7 +276,7 @@ jobs:
             --release "${{ steps.gate.outputs.release_path }}" \
             --ledger "${{ steps.gate.outputs.ledger_path }}" \
             --target-proof "$TARGET_PROOF_PATH" \
-            --verified-manual-canary-release "content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-runtime.json" \
+            --verified-manual-canary-release "content/telegram/lordchrist/quiz/archived-old-queues/lordchrist-quiz-city-of-palms-runtime.json" \
             --verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json" \
             --mode "${{ steps.gate.outputs.dispatch_mode }}" \
             "${publication_args[@]}" \
