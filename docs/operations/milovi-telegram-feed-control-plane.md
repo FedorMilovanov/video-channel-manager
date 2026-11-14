@@ -1,10 +1,27 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-21  
+Updated: 2026-11-14 (November schedule and historical-status clarification)  
 Owning workstream: Issue #353  
 Provider target: `@MiloviCake`
 
 This runbook defines the permanent Milovi Telegram feed path. It is an implementation and safety contract; it is **not** provider execution authority.
+
+## November 2026 operational checkpoint (evidence, not authority)
+
+The canonical November 8–22 muted15 owner-approved video schedule lives in
+`.github/workflows/milovi-telegram-muted15-due-20261108.yml` and
+`scripts/milovi_muted15_due.py`. The schedule delegates to the **one** permanent
+publisher and never sends to Telegram itself. The gate is exactly 19:00–21:00
+Moscow; neither a delayed GitHub cron nor a green `due/dispatch=false` run
+proves delivery. The hardened controller adds six checks during that window and
+an independent `audit-expired` alarm for older pending/impossible items, **not**
+backfill or a second provider writer.
+
+Read-only 14 November checkpoint: 15/15 state ledgers were `pending/impossible`;
+the 8–13 November approved windows had expired without verified Telegram
+receipts. Past release IDs cannot be re-sent or extended automatically. Only
+`state/milovi-cake-telegram` and fresh exact Telegram receipts determine
+current results; this dated text is never a replacement for protected state.
 
 ## One writer
 
@@ -68,7 +85,7 @@ The sole writer supports three exact payload kinds through the same generic one-
 
 - `sendPhoto` — exact candidate caption plus reviewed source/transport bytes; deterministic JPEG materialization happens before `send-once`;
 - `sendMessage` — exact candidate text plus SHA-256 binding; no fake media is required;
-- `sendVideo` — exact candidate caption plus an MP4 identity from the accepted 16/16 reservoir only.
+- `sendVideo` — exact candidate caption plus an MP4 from the accepted 16/16 reservoir **or** a separately approved November muted-video variant pinned to immutable media SHA-256, reviewed release, and exact authorized date; no broad media substitution.
 
 All three pass the same current-main gate, release/content authorization, separate execution authorization, explicit state initialization, duplicate guard, freshness check, exact target preflight, durable intent-before-send, exactly one mutation attempt and exact outcome reconciliation.
 
@@ -146,9 +163,9 @@ These identities remain immutable history. The timestamp is part of each publica
 - `milovi-feed-20260820-001` — scheduled `2026-08-20T10:30:00+03:00`; `release_authorized=false` / `execution_authorized=false`; frozen `p16` bytes only; no durable intent.
 - `milovi-feed-20260820-002` — scheduled `2026-08-20T20:00:00+03:00`; PR #500 set `release_authorized=true` and `execution_authorized=true` for marathon position 1 (`sendPhoto` / `p06`); the permanent publisher had no initialize-state or publish run; durable feed state was not initialized; the 120-minute lag gate has expired. Do not publish this identity now.
 
-## Current exact photo publication
+## Historical August 21 exact photo publication (expired)
 
-`milovi-feed-20260821-001` is the current exact photo publication: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. Publish is due only in the 10:30–12:30 Europe/Moscow window via `.github/workflows/milovi-telegram-feed-publisher.yml`. No successor identity is authorized here.
+`milovi-feed-20260821-001` was an August 2026 exact photo publication, not a current executable release: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. That historical 10:30–12:30 Europe/Moscow window has expired. Do not use this old record as present execution authority or silently catch it up; later November schedules have their own separately reviewed identities.
 
 ## Marathon editorial source
 
