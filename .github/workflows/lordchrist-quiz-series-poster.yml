@@ -16,15 +16,6 @@ on:
         description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02 or PUBLISH:@lordchrist:lordchrist-quiz-series-02; unused for validate
         required: false
         type: string
-  schedule:
-    # 13:00 Moscow daily; the immutable release spaces quizzes two days apart
-    # and the freshness gate publishes only when the next quiz is due.
-    - cron: "0 10 * * *"
-    # Backup off-hour ticks counter GitHub schedule delays observed in Nov 2026.
-    # Probes may run early; the immutable 13:00 MSK release slot still gates
-    # dispatch, with a 360-minute stale cutoff and one durable state writer.
-    # Even a delayed tick must never backfill expired items or replay intent.
-    - cron: "17 4,6,8,10,12,14 * * *"
 
 permissions:
   actions: read
@@ -112,6 +103,14 @@ jobs:
                 --require-release-authorized
               ;;
             publish)
+              # EDITORIAL HOLD: 2026-11-14 owner rejected the content quality
+              # after the Jephthah poll was published and then deleted.
+              # Historical release approval is not standing permission to publish
+              # the seven remaining unreviewed polls. Never replay the deleted poll.
+              # This guard MUST remain until a new separately reviewed, immutable
+              # release and an explicit new owner publication authorization exist.
+              echo "::error::Series 02 publication on editorial hold after owner rejection; no Telegram send." >&2
+              exit 3
               if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
                 [[ "$CONFIRM" == "PUBLISH:@lordchrist:$SERIES_ID" ]] || {
                   echo "exact publication confirmation is missing" >&2
