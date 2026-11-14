@@ -27,16 +27,20 @@ def _profile_binding():
     return profile, load_target_binding(quiz.BINDING_PATH, profile)
 
 
-def test_series_and_trial_accept_exact_reviewed_release_without_provider_call() -> None:
-    series = quiz.validate_series(SERIES, require_release_authorized=True, require_execution_authorized=True)
+def test_historical_quiz_releases_remain_reviewable_but_never_executable() -> None:
+    series = quiz.validate_series(SERIES, require_release_authorized=True)
     assert series["series_id"] == SERIES
     assert series["items"] == 10
     assert series["release_authorized"] is True
+    with pytest.raises(ValueError, match="retired quiz series"):
+        quiz.validate_series(SERIES, require_execution_authorized=True)
 
-    single = quiz.validate_quiz(ONE, require_release_authorized=True, require_execution_authorized=True)
+    single = quiz.validate_quiz(ONE, require_release_authorized=True)
     assert single["publication_id"] == ONE
     assert single["payload_kind"] == "quiz"
     assert single["release_authorized"] is True
+    with pytest.raises(ValueError, match="retired one-off quiz"):
+        quiz.validate_quiz(ONE, require_execution_authorized=True)
 
 
 def test_series_state_init_is_local_idempotent_and_checked(tmp_path: Path) -> None:
