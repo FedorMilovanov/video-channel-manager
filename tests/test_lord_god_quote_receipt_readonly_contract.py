@@ -147,7 +147,9 @@ def test_scheduled_missing_receipt_returns_nonzero(reader, monkeypatch):
         def now(cls, tz=None):
             return cls(2026, 11, 12, 13, 40, tzinfo=tz)
 
-    monkeypatch.setattr(reader, "dt", SimpleNamespace(datetime=Clock, time=dt.time))
+    monkeypatch.setattr(
+        reader, "dt", SimpleNamespace(datetime=Clock, date=dt.date, time=dt.time, timedelta=dt.timedelta)
+    )
     monkeypatch.setenv("LORD_GOD_QUOTE_RECEIPT_MODE", "scheduled")
     monkeypatch.setenv("LORD_GOD_PAGE_TOKEN", "X" * 40)
     monkeypatch.setattr(reader, "verify_identity", lambda token: None)
