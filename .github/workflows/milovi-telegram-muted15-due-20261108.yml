@@ -2,8 +2,10 @@ name: Milovi Telegram exact approved 15-video November schedule
 
 on:
   schedule:
-    # 16:07 UTC = 19:07 Moscow; exact 2026 Nov 8-22 only in the Python gate.
-    - cron: "7 16 8-22 11 *"
+    # 19:07, 19:27, 19:47, 20:07, 20:27, 20:47 Moscow.
+    # Independent due checks protect against GitHub scheduled-event delays;
+    # all six remain inside the strict 19:00-21:00 verified window.
+    - cron: "7,27,47 16,17 8-22 11 *"
   workflow_dispatch:
 
 permissions:
@@ -83,3 +85,10 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --ref main \
             -f operation=publish -f publication_id="$PUBLICATION_ID" \
             -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"
+
+      - name: Detect expired approved slots and fail visibly without replay
+        if: ${{ always() && github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.milovi_muted15_due audit-expired \
+            --state-checkout "$STATE_DIR"
