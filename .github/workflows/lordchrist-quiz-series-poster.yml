@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Provider-free validate, explicit durable state initialization, or publish the next due series quiz
+        description: Validation and state inspection; publishing on editorial hold (Nov 14 quality rejection)
         required: true
         default: validate
         type: choice
@@ -13,7 +13,7 @@ on:
           - initialize-state
           - publish
       confirm:
-        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02 or PUBLISH:@lordchrist:lordchrist-quiz-series-02; unused for validate
+        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02; publish is blocked pending new owner editorial approval
         required: false
         type: string
 
