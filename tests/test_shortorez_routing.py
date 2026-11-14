@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from video_channel_manager.shortorez_routing import ClipInterval, plan_routes, validate_render_handoff
+from video_channel_manager.shortorez_routing import ClipInterval, main, plan_routes, validate_render_handoff
 
 
 def _clip(duration_ms: int = 210_000) -> ClipInterval:
@@ -117,3 +119,30 @@ def test_caption_surface_limits_do_not_silently_truncate_text() -> None:
         audible_result_reviewed=True,
     )
     assert "telegram_video_caption_over_limit" in errors
+
+
+def test_cli_preview_is_json_provider_inert(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(
+        [
+            "--youtube-id",
+            "5nKCs4bkoxE",
+            "--start-ms",
+            "10000",
+            "--end-ms",
+            "220000",
+            "--allow-speedup",
+        ]
+    ) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["release_authorized"] is False
+    assert payload["provider_write_performed"] is False
+    assert payload["full_video_url"] == "https://www.youtube.com/watch?v=5nKCs4bkoxE"
+    assert payload["routes"][0]["speed_percent"] == 120
+    assert payload["routes"][1]["speed_percent"] == 100
+
+
+def test_cli_refuses_invalid_source_with_no_preview(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["--youtube-id", "5nKCs4bkoxE", "--start-ms", "80000", "--end-ms", "80000"])
+    assert exc.value.code == 2
+    assert capsys.readouterr().out == ""
