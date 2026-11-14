@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+WORKFLOW = ROOT / ".github/retired-workflows/lordchrist-quiz-series-02-poster.yml"
 REVIEW = ROOT / "content/telegram/lordchrist/quiz/QUIZ_EDITORIAL_REAUDIT_20261114.md"
 SPEC = ROOT / "content/telegram/lordchrist/quiz/lordchrist-quiz-series-02.json"
 RUNTIME = ROOT / "content/telegram/lordchrist/quiz/lordchrist-quiz-series-02-runtime.json"
