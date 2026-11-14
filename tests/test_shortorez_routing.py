@@ -87,6 +87,7 @@ def test_handoff_requires_actual_media_review_and_exact_full_link() -> None:
     invalid = dict(base, actual_duration_ms=180_001, media_sha256="x", source_rights_reviewed=False)
     assert set(validate_render_handoff(route, **invalid)) == {
         "actual_duration_exceeds_surface",
+        "actual_duration_differs_from_reviewed_interval",
         "invalid_media_fingerprint",
         "source_rights_not_reviewed",
     }
