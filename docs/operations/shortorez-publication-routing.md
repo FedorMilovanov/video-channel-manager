@@ -4,16 +4,16 @@ Status: **provider-inert planning only**, no rendered MacArthur media and no pub
 
 ## Exact first source
 
-Project \`lord-god-strength\`, owner YouTube channel \`UCeSJsC6go2c9pdJCuUI1BYA\`, video \`5nKCs4bkoxE\`, «Познание Божьей воли без тайн (Джон МакАртур)». Full URL: https://www.youtube.com/watch?v=5nKCs4bkoxE. Do not invent cut boundaries from the title. The media/master and authoritative Russian speech transcript need actual readback and listening.
+Project `lord-god-strength`, owner YouTube channel `UCeSJsC6go2c9pdJCuUI1BYA`, video `5nKCs4bkoxE`, «Познание Божьей воли без тайн (Джон МакАртур)». Full URL: https://www.youtube.com/watch?v=5nKCs4bkoxE. Do not invent cut boundaries from the title. The media/master and authoritative Russian speech transcript need actual readback and listening.
 
 ## Distinct surfaces
 
-- VK native Clip: \`<= 180s\`, native Clips publisher/Creator surface only. Never substitute ordinary VK Video or \`video.publish\`, and never silently create a wall duplicate.
+- VK native Clip: `<= 180s`, native Clips publisher/Creator surface only. Never substitute ordinary VK Video or `video.publish`, and never silently create a wall duplicate.
 - Telegram native video: no arbitrary three- or five-minute maximum in this planning module. Separate transport file-size and duration checks stay with the existing Telegram publisher.
-- Instagram Reels through Meta API: \`<= 900s\`. The \`<=180s\` discoverability preference is editorial, NOT a provider limit. The official Meta spec and actual account/quota must be rechecked before any provider effect.
+- Instagram Reels through Meta API: `<= 900s`. The `<=180s` discoverability preference is editorial, NOT a provider limit. The official Meta spec and actual account/quota must be rechecked before any provider effect.
 - TikTok: future, no implementation, account, token or publisher in this wave.
 
-\`shortorez_routing.py\` takes exact millisecond semantic boundaries and proposes one route per surface; it does **not** render, upload, schedule, edit, or send. Sped-up VK proposals use the smallest allowed rate 1.05/1.10/1.15/1.20 that fits the fully preserved interval, only with opt-in. Telegram and Instagram keep 1.00x by default. Projected runtime is NOT the final measured runtime. Ineligible is a real stop, not a request to cut an argument or quietly raise the rate. Audio pitch preservation and tempo must be proven on the rendered file.
+`shortorez_routing.py` takes exact millisecond semantic boundaries and proposes one route per surface; it does **not** render, upload, schedule, edit, or send. Sped-up VK proposals use the smallest allowed rate 1.05/1.10/1.15/1.20 that fits the fully preserved interval, only with opt-in. Telegram and Instagram keep 1.00x by default. Projected runtime is NOT the final measured runtime. Ineligible is a real stop, not a request to cut an argument or quietly raise the rate. Audio pitch preservation and tempo must be proven on the rendered file.
 
 ## Required staged handoff
 
@@ -23,7 +23,7 @@ Project \`lord-god-strength\`, owner YouTube channel \`UCeSJsC6go2c9pdJCuUI1BYA\
 4. Produce approved 9:16 files in the operator-output handoff location, with readable faces and subtitles outside platform safe-zone overlays. Preserve both participants in horizontal Q&A rather than cropping a speaker out.
 5. Check start/end syllables, scriptural references, theology, postmix language, pitch/tempo, visual sample frames, FFprobe, bytes and SHA-256. A 1.20x file requires listening to the **final encoded MP4**, not an ASR-only verdict.
 6. Prepare separate captions per platform with an exact, labelled full YouTube source URL. Instagram caption links may be unclickable; verify a real profile/Story link route rather than promising a click.
-7. Respect exact project/account/native-media-type binding, real target readback, stable source/interval/variant IDs, lock + journal, prior publishing queues, approval and separate write authority in Video Manager. A passing \`validate_render_handoff\` is NOT release authorization. No blind retries.
+7. Respect exact project/account/native-media-type binding, real target readback, stable source/interval/variant IDs, lock + journal, prior publishing queues, approval and separate write authority in Video Manager. A passing `validate_render_handoff` is NOT release authorization. No blind retries.
 8. TikTok only after later owner consent, rights and independently verified account/API capability.
 
 ## Limit evidence checked 2026-11-14
@@ -34,4 +34,4 @@ TikTok official: https://developers.tiktok.com/docs/en/content-posting-api-media
 
 ## What is blocked right now
 
-The OldPoet remote computer \`DESKTOP-O3FDOA4\` returned offline on 2026-11-14. No source master, genuine listening, cut selection, MP4 render, rights assessment or live provider delivery has been performed in this wave. Resume from exact source and media evidence when available; do not fabricate a ready count.
+The OldPoet remote computer `DESKTOP-O3FDOA4` returned offline on 2026-11-14. No source master, genuine listening, cut selection, MP4 render, rights assessment or live provider delivery has been performed in this wave. Resume from exact source and media evidence when available; do not fabricate a ready count.
