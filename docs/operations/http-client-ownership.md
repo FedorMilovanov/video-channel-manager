@@ -5,7 +5,7 @@ Owner: Wave 3 / issue #69
 
 This inventory is enforced by `tests/test_http_client_inventory.py` in both directions: the test fails when a constructor appears in a file this document does not record, and it fails when this document records a file whose constructor count no longer matches the code. A direct `httpx.Client()` constructor is allowed only when its lifecycle and operation semantics are recorded below, with a count. Reusable provider classes must use `HttpClientOwner`; they may own one persistent client or borrow an injected client, but may not construct a client per request.
 
-The inventory is 29 reviewed constructors: 17 in `src/` across 12 modules and 12 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
+The inventory is 30 reviewed constructors: 17 in `src/` across 12 modules and 13 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
 
 ## Reusable library paths
 
