@@ -126,6 +126,35 @@ def exact_state_decision(row: dict, *, checkout: Path) -> bool:
     raise ValueError("provider state is unresolved; refusing repeat or blind send")
 
 
+
+def missed_delivery_windows(now: datetime, rows: list[dict], *, checkout: Path) -> list[str]:
+    """Audit expired owner-approved windows without granting catch-up authority.
+
+    GitHub scheduled events may arrive well after the 19:00-21:00 Moscow
+    window. A green due-gate with dispatch=false is not delivery evidence.
+    Only previously elapsed exact slots are checked; upcoming items remain
+    untouched and the result never authorizes replay.
+    """
+    if now.tzinfo is None:
+        raise ValueError("overdue audit clock must be timezone-aware")
+    clock = now.astimezone(MOSCOW)
+    missed: list[str] = []
+    for row in rows:
+        slot = datetime.fromisoformat(row["scheduled_at_proposal"]).astimezone(MOSCOW)
+        if clock < slot + MAX_LAG:
+            continue
+        pid = row["publication_id"]
+        receipt = state_check(pid, state_checkout=checkout)
+        state, effect = receipt["state"], receipt["provider_effect"]
+        if state == "published" and effect == "verified":
+            continue
+        if state == "pending" and effect == "impossible":
+            missed.append(pid)
+            continue
+        raise ValueError(f"expired Milovi slot has unsafe or inconsistent provider state: {pid}")
+    return missed
+
+
 def initialize_all(checkout: Path) -> list[str]:
     """Atomic transaction is committed by the caller only after all 15 succeed."""
     rows = reviewed_items()
@@ -142,7 +171,7 @@ def initialize_all(checkout: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("validate", "initialize-all", "due"))
+    parser.add_argument("operation", choices=("validate", "initialize-all", "due", "audit-expired"))
     parser.add_argument("--state-checkout", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -155,6 +184,23 @@ def main() -> int:
         return 0
     if args.operation == "validate":
         print(json.dumps({"verified": True, "releases": len(rows), "provider_access": False}))
+        return 0
+    if args.operation == "audit-expired":
+        if args.state_checkout is None:
+            raise ValueError("expired-window audit requires exact state checkout")
+        missed = missed_delivery_windows(datetime.now(UTC), rows, checkout=args.state_checkout)
+        print(
+            json.dumps(
+                {"missed_windows": missed, "count": len(missed), "provider_access": False, "provider_mutation": False}
+            )
+        )
+        if missed:
+            print(
+                "::error::MILOVI_TELEGRAM_MISSED_DUE_WINDOWS "
+                + str(len(missed))
+                + " owner-approved slots expired without verified publication; never replay automatically"
+            )
+            return 2
         return 0
     if args.state_checkout is None or args.output is None:
         raise ValueError("due validation needs exact state checkout and output")
