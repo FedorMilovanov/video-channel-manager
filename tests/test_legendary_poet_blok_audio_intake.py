@@ -66,7 +66,5 @@ def test_blok_mp3_inventory_hashes_are_complete_and_source_bound() -> None:
         assert entry["local_review_sha256"] == entry["sha256"]
         assert entry["bytes"] > 0
     scythians_2 = next(entry for entry in data["releases"] if entry["id"] == "blok-scythians-version-2")
-    assert scythians_2["sha256"] == (
-        "ff7d795173a49eb8f9e568c38db2ec89f9d4dd2f2d4f6f4ba4b88e4bb237ca7b"
-    )
+    assert scythians_2["sha256"] == ("ff7d795173a49eb8f9e568c38db2ec89f9d4dd2f2d4f6f4ba4b88e4bb237ca7b")
     assert scythians_2["youtube_id"] == "8g_4EVWFb1g"
