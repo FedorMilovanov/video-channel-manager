@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT = ROOT / ".github/workflows/lordchrist-quote-v4-preflight.yml"
-QUIZ = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+QUIZ = ROOT / ".github/workflows/lordchrist-quiz-series-03-poster.yml"
 
 
 def test_quote_v4_preflight_exports_digest_to_following_steps() -> None:

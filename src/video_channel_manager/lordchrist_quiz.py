@@ -37,6 +37,11 @@ QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
 PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist-rich.json"
 BINDING_PATH = ROOT / "content/telegram/channels/lordchrist-target-binding.json"
 STATE_LEDGER_PREFIX = "content/telegram/lordchrist/quiz"
+# Frozen evidence is still loadable for historical tests and the verified
+# 2026-10-29 manual canary. It is NOT an executable/current release source.
+ARCHIVED_QUIZ_DIR = QUIZ_DIR / "archived-old-queues"
+RETIRED_SERIES_IDS = frozenset({"lordchrist-quiz-series-01", "lordchrist-quiz-series-02"})
+RETIRED_ONE_OFF_IDS = frozenset({"lordchrist-quiz-city-of-palms", "lordchrist-quiz-book-without-gods-name"})
 
 
 class LordchristQuizSpec(BaseModel):
@@ -78,11 +83,13 @@ class LordchristQuizSpec(BaseModel):
 
 
 def series_spec_path(series_id: str) -> Path:
-    return QUIZ_DIR / f"{series_id}.json"
+    directory = ARCHIVED_QUIZ_DIR if series_id in RETIRED_SERIES_IDS else QUIZ_DIR
+    return directory / f"{series_id}.json"
 
 
 def series_runtime_path(series_id: str) -> Path:
-    return QUIZ_DIR / f"{series_id}-runtime.json"
+    directory = ARCHIVED_QUIZ_DIR if series_id in RETIRED_SERIES_IDS else QUIZ_DIR
+    return directory / f"{series_id}-runtime.json"
 
 
 def series_ledger_relative_path(series_id: str) -> str:
@@ -220,6 +227,8 @@ def validate_series(
     if require_release_authorized or require_execution_authorized:
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and series_id in RETIRED_SERIES_IDS:
+        raise ValueError("retired quiz series is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     return {
@@ -258,11 +267,13 @@ def series_state_check(series_id: str, state_checkout: Path) -> dict[str, int]:
 
 
 def spec_path(publication_id: str) -> Path:
-    return QUIZ_DIR / f"{publication_id}.json"
+    directory = ARCHIVED_QUIZ_DIR if publication_id in RETIRED_ONE_OFF_IDS else QUIZ_DIR
+    return directory / f"{publication_id}.json"
 
 
 def runtime_path(publication_id: str) -> Path:
-    return QUIZ_DIR / f"{publication_id}-runtime.json"
+    directory = ARCHIVED_QUIZ_DIR if publication_id in RETIRED_ONE_OFF_IDS else QUIZ_DIR
+    return directory / f"{publication_id}-runtime.json"
 
 
 def ledger_relative_path(publication_id: str) -> str:
@@ -418,6 +429,8 @@ def validate_quiz(
         candidate = build_quiz_candidate(profile, spec, binding)
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and publication_id in RETIRED_ONE_OFF_IDS:
+        raise ValueError("retired one-off quiz is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     payload = release.items[0].payload

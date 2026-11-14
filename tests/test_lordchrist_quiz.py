@@ -13,8 +13,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
-WORKFLOW = ROOT / ".github/workflows/lordchrist-quiz-poster.yml"
+QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz/archived-old-queues"
+WORKFLOW = ROOT / ".github/retired-workflows/lordchrist-quiz-poster.yml"
 PUBLICATION_ID = "lordchrist-quiz-city-of-palms"
 
 
@@ -124,7 +124,7 @@ def test_state_init_reinitializes_only_a_provably_untouched_stale_ledger(tmp_pat
 
 
 SERIES_ID = "lordchrist-quiz-series-01"
-SERIES_WORKFLOW = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+SERIES_WORKFLOW = ROOT / ".github/retired-workflows/lordchrist-quiz-series-02-poster.yml"
 EXPECTED_SERIES_ANSWERS = {
     "lordchrist-quiz-s01-esther": "Есфирь",
     "lordchrist-quiz-s01-belshazzar": "Валтасар",
