@@ -11,7 +11,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
@@ -169,6 +169,24 @@ def verify_item(item: dict, rows: list[dict]) -> dict:
     }
 
 
+def scheduled_receipt_date(now: datetime) -> str | None:
+    """Select the last verification slot that has STARTED, never an upcoming Reel.
+
+    GitHub schedule invocations can be hours late or cross Moscow midnight.
+    The intended check starts at 19:40 Moscow, after the 19:00 release.
+    This cannot reconstruct an original event date if GitHub delays by a full day.
+    """
+    if now.tzinfo is None:
+        raise ValueError("Reel readback clock must be timezone-aware")
+    local = now.astimezone(MOSCOW)
+    day = local.date()
+    if local.time() < time(19, 40):
+        day -= timedelta(days=1)
+    if not date(2026, 11, 12) <= day <= date(2026, 11, 21):
+        return None
+    return day.isoformat()
+
+
 def main() -> int:
     items = plan_items()
     mode = os.getenv("LORD_GOD_REELS_PROOF_MODE", "")
@@ -184,11 +202,13 @@ def main() -> int:
         print("CLOUD_READBACK_READY_NO_PROVIDER_WRITES", flush=True)
         return 0
 
-    today = datetime.now(MOSCOW).strftime("%Y-%m-%d")
-    match = [item for item in items if item["date"] == today]
-    if len(match) != 1 or today < "2026-11-12" or today > "2026-11-21":
-        print("NO_EXPECTED_RELEASE_FOR_DATE", today, flush=True)
+    today = scheduled_receipt_date(datetime.now(MOSCOW))
+    if today is None:
+        print("NO_STARTED_REEL_RECEIPT_WINDOW", flush=True)
         return 0
+    match = [item for item in items if item["date"] == today]
+    if len(match) != 1:
+        raise RuntimeError("Frozen Reel manifest missing exact started receipt date")
     result = verify_item(match[0], rows)
     if result["state"] == "PROVIDER_CONFIRMED":
         print(

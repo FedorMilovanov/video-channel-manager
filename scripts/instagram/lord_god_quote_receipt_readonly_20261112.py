@@ -142,6 +142,23 @@ def exact_receipt(item: dict, media: list[dict]) -> dict | None:
     return {"id": media_id, "permalink": permalink}
 
 
+def scheduled_receipt_date(now: dt.datetime) -> str | None:
+    """Use the most recent STARTED 13:35 Moscow photo receipt window.
+
+    An overdue GitHub cron after local midnight must not silently switch to
+    tomorrow's approved image, nor report a future image as missing.
+    """
+    if now.tzinfo is None:
+        raise ValueError("Photo readback clock must be timezone-aware")
+    local = now.astimezone(MOSCOW)
+    day = local.date()
+    if local.time() < dt.time(13, 35):
+        day -= dt.timedelta(days=1)
+    if not dt.date(2026, 11, 12) <= day <= dt.date(2026, 11, 15):
+        return None
+    return day.isoformat()
+
+
 def main() -> int:
     items = read_plan()
     mode = os.getenv("LORD_GOD_QUOTE_RECEIPT_MODE", "")
@@ -153,19 +170,19 @@ def main() -> int:
     verify_identity(token)
     feed = list_media(token)
     now = dt.datetime.now(MOSCOW)
-    today = now.strftime("%Y-%m-%d")
     if mode == "preflight":
         for row in items:
             evidence = exact_receipt(row, feed)
             print("IMAGE_RECEIPT_PREFLIGHT", row["id"], "PROVEN" if evidence else "NOT_YET_PUBLISHED", flush=True)
         print("QUOTE_READBACK_PREFLIGHT_OK_NO_POST", flush=True)
         return 0
-    matches = [x for x in items if x["date"] == today]
-    if not matches:
-        print("NO_APPROVED_IMAGE_ON_DAY", today, flush=True)
+    today = scheduled_receipt_date(now)
+    if today is None:
+        print("NO_STARTED_IMAGE_RECEIPT_WINDOW", flush=True)
         return 0
-    if now.time() < dt.time(13, 20):
-        raise RuntimeError("Scheduled image verification before 13:20 Moscow")
+    matches = [x for x in items if x["date"] == today]
+    if len(matches) != 1:
+        raise RuntimeError("Frozen photo manifest missing exact started receipt date")
     result = exact_receipt(matches[0], feed)
     if result is None:
         print("IMAGE_MISSING_ON_META", matches[0]["id"], today, flush=True)
