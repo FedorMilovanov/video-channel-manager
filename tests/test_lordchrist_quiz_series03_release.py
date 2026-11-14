@@ -131,6 +131,7 @@ def test_series03_is_not_historical_release_or_deleted_poll() -> None:
     assert "lordchrist-quiz-s02-jephthah" not in new_ids
     assert all(x.scheduled_at > datetime.fromisoformat("2026-11-14T16:05:00+03:00") for x in new.items)
 
+
 def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
     """Exercise the first scheduled Series 03 prepare, not just workflow text.
 
