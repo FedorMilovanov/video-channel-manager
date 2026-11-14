@@ -6,7 +6,6 @@ Do not use this module as another Telegram/VK/Instagram writer.
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass
 from typing import Literal
@@ -89,9 +88,9 @@ def plan_routes(clip: ClipInterval, *, allow_speedup: bool = False) -> tuple[Var
         rates = _SPEED_PERCENTS if surface == "vk_native_clip" and allow_speedup else (100,)
         selected = next(
             (
-                (rate, math.ceil(clip.duration_ms * 100 / rate))
+                (rate, (clip.duration_ms * 100 + rate - 1) // rate)
                 for rate in rates
-                if max_ms is None or math.ceil(clip.duration_ms * 100 / rate) <= max_ms
+                if max_ms is None or (clip.duration_ms * 100 + rate - 1) // rate <= max_ms
             ),
             None,
         )
