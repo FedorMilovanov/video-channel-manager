@@ -191,7 +191,7 @@ def test_quiz_series_workflow_is_on_explicit_editorial_hold_not_scheduled() -> N
     # No future Series 02 quiz can be automatically published or replayed.
     assert "  schedule:" not in workflow
     assert "- cron:" not in workflow
-    assert "if [[ \"$OPERATION\" == \"publish\" ]]; then" in workflow
+    assert 'if [[ "$OPERATION" == "publish" ]]; then' in workflow
     assert "::error::Series 02 publication on editorial hold" in workflow
     assert workflow.index("publication on editorial hold") < workflow.index('case "$OPERATION" in')
     assert 'MAX_PUBLICATION_LAG_MINUTES: "360"' in workflow
