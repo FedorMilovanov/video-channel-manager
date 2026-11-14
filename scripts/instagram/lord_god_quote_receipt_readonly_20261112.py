@@ -141,8 +141,6 @@ def exact_receipt(item: dict, media: list[dict]) -> dict | None:
         raise RuntimeError("IMAGE receipt not proven for exact account/day")
     return {"id": media_id, "permalink": permalink}
 
-
-
 def scheduled_receipt_date(now: dt.datetime) -> str | None:
     """Use the most recent STARTED 13:35 Moscow photo receipt window.
 
