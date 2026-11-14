@@ -463,6 +463,7 @@ def test_upload_transport_ambiguity_blocks_blind_binary_replay(tmp_path: Path) -
         assert child.last_error_message is not None
         assert "ReadTimeout" in child.last_error_message
         assert "upload response lost" in child.last_error_message
+        assert "; upload_dispatch_elapsed_ms=" in child.last_error_message
         assert TOKEN not in child.last_error_message
         assert container_calls == 1
         assert upload_calls == 1
