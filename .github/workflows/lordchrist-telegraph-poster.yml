@@ -21,13 +21,9 @@ on:
         required: false
         default: ""
         type: string
-  schedule:
-    # GitHub cron fires in UTC. 09:00 UTC = 12:00 Moscow — the midday article
-    # slot, Tuesday and Friday (2 articles per week). The publisher resolves
-    # the due article from telegraph-v1/article-queue.json in Europe/Moscow
-    # and refuses duplicates via the state-branch ledger. Do NOT add a
-    # `timezone:` key: the expression is already the UTC form of 12:00 MSK.
-    - cron: "0 9 * * 2,5"
+  # Automated Charnock reissues are exclusively owned by
+  # lordchrist-charnock-scheduled-reissue.yml. This publisher now handles
+  # only explicitly confirmed manual Telegraph actions (including Jude).
 
 permissions:
   actions: read
