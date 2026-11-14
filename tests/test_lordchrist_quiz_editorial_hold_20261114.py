@@ -79,6 +79,13 @@ def test_editorial_document_covers_all_old_questions_and_seven_provider_inert_dr
     for declared, explanation in explanations:
         assert len(explanation) == int(declared)
         assert 100 <= len(explanation) <= 200
+    commentaries = [
+        line.split(":** ", 1)[1]
+        for line in before_rules.splitlines()
+        if line.startswith("**Пример развёрнутого разбора после голосования (черновик):** ")
+    ]
+    assert len(commentaries) == 7
+    assert all(350 <= len(text) <= 1200 for text in commentaries)
     # Editorial reviews are text-only and carry no runnable release/publish commands.
     assert "sendPoll(" not in source
     assert "gh workflow run" not in source
