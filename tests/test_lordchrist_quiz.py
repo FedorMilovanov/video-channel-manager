@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
+QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz/archived-old-queues"
 WORKFLOW = ROOT / ".github/retired-workflows/lordchrist-quiz-poster.yml"
 PUBLICATION_ID = "lordchrist-quiz-city-of-palms"
 
