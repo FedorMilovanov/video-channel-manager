@@ -10,8 +10,7 @@ RICH_CANARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-canary.yml"
 RICH_CONTROLLER_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-controller.yml"
 RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-poster.yml"
-QUIZ_SERIES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-poster.yml"
+QUIZ_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quiz-series-03-poster.yml"
 TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
 QUOTE_V6_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quote-v6-publisher.yml"
 SHORTS4_WORKFLOW = WORKFLOWS_DIR / "lordchrist-shorts4-publisher.yml"
@@ -22,7 +21,6 @@ EXPECTED_LOCK_PARTICIPANTS = {
     RECOVERY_WORKFLOW,
     APPROVAL_WORKFLOW,
     QUIZ_WORKFLOW,
-    QUIZ_SERIES_WORKFLOW,
     TELEGRAPH_WORKFLOW,
     QUOTE_V6_WORKFLOW,
     SHORTS4_WORKFLOW,
