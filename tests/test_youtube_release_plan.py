@@ -225,3 +225,32 @@ def test_release_plan_requires_private_initial_status(tmp_path: Path) -> None:
     )
     with pytest.raises(UploadPlanError, match="initial_status must be private"):
         validate_release_plan(tampered, verify_files=False)
+
+
+@pytest.mark.parametrize(
+    "replacement",
+    [
+        "My archive: PASTE-SOURCE-URL",
+        "PUBLICATION_BLOCKED: approval has not arrived.",
+        "Письменное разрешение не подтверждено.",
+    ],
+)
+def test_resigned_release_plan_rejects_draft_or_rights_hold_copy(tmp_path: Path, replacement: str) -> None:
+    plan = _plan(tmp_path)
+    plan["snippet"]["description"] = replacement
+    plan["release_plan_sha256"] = canonical_sha256(
+        {key: value for key, value in plan.items() if key != "release_plan_sha256"}
+    )
+
+    with pytest.raises(UploadPlanError, match="Unresolved metadata|Publication hold marker"):
+        validate_release_plan(plan, verify_files=False)
+
+
+def test_resigned_release_plan_requires_string_description(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    plan["snippet"]["description"] = None
+    plan["release_plan_sha256"] = canonical_sha256(
+        {key: value for key, value in plan.items() if key != "release_plan_sha256"}
+    )
+    with pytest.raises(UploadPlanError, match="Release description must be a string"):
+        validate_release_plan(plan, verify_files=False)

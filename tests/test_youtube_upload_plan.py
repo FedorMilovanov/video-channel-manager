@@ -202,3 +202,35 @@ def test_resigned_upload_intent_rejects_invalid_metadata_structure(
 
     with pytest.raises(UploadPlanError, match=expected_message):
         validate_intent(intent)
+
+
+@pytest.mark.parametrize(
+    "blocked_copy",
+    [
+        "This is REVIEW_ONLY_NO_UPLOAD; not a YouTube description.",
+        "SOURCE_DATE_CORRECTED_REVIEW_ONLY_NO_UPLOAD",
+        "NOT_FOR_PUBLICATION: awaiting owner approval.",
+        "PUBLICATION_BLOCKED: legal review.",
+        "Письменное разрешение пока не подтверждено.",
+    ],
+)
+def test_internal_publication_hold_never_becomes_public_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, blocked_copy: str
+) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["description"] = blocked_copy
+
+    def forbidden_digest(_path: Path) -> str:
+        pytest.fail("An internal release hold must be rejected before reading media bytes.")
+
+    monkeypatch.setattr("video_channel_manager.youtube_upload_plan.sha256_file", forbidden_digest)
+    with pytest.raises(UploadPlanError, match="Publication hold marker in public metadata description"):
+        build_intent(spec, media)
+
+
+def test_public_source_attribution_not_confused_with_internal_hold(tmp_path: Path) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["description"] = "Paul Washer preaching; original source and credit appear below."
+    validate_intent(build_intent(spec, media))

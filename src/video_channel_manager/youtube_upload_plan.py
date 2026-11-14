@@ -26,6 +26,20 @@ _UNRESOLVED_METADATA_TOKEN = re.compile(
 )
 
 
+# Internal approval/rights status belongs to review evidence, not a public
+# YouTube title, description, or tag. This is a copy-hygiene guard only:
+# successful validation never proves that copyright permission exists.
+_PUBLICATION_HOLD_RE = re.compile(
+    r"(?:REVIEW_ONLY_NO_UPLOAD|NOT_FOR_PUBLICATION|PUBLICATION_BLOCKED|RIGHTS_UNVERIFIED)",
+    flags=re.IGNORECASE,
+)
+_RU_PERMISSION_LABEL = "письменное разрешение"
+_RU_PERMISSION_UNCONFIRMED = (
+    "не подтверждено",
+    "пока не получено",
+)
+
+
 class UploadPlanError(RuntimeError):
     pass
 
@@ -38,6 +52,11 @@ def require_resolved_metadata(*, title: str, description: str, tags: list[str]) 
         match = _UNRESOLVED_METADATA_TOKEN.search(value)
         if match:
             raise UploadPlanError(f"Unresolved metadata placeholder in {field_name}: {match.group(0)}")
+        if _PUBLICATION_HOLD_RE.search(value):
+            raise UploadPlanError(f"Publication hold marker in public metadata {field_name}.")
+        normalized = " ".join(value.casefold().split())
+        if _RU_PERMISSION_LABEL in normalized and any(phrase in normalized for phrase in _RU_PERMISSION_UNCONFIRMED):
+            raise UploadPlanError(f"Publication hold marker in public metadata {field_name}.")
 
 
 def canonical_sha256(payload: object) -> str:
