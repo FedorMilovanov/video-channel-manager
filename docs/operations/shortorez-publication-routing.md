@@ -15,6 +15,16 @@ Project `lord-god-strength`, owner YouTube channel `UCeSJsC6go2c9pdJCuUI1BYA`, v
 
 `shortorez_routing.py` takes exact millisecond semantic boundaries and proposes one route per surface; it does **not** render, upload, schedule, edit, or send. Sped-up VK proposals use the smallest allowed rate 1.05/1.10/1.15/1.20 that fits the fully preserved interval, only with opt-in. Telegram and Instagram keep 1.00x by default. Projected runtime is NOT the final measured runtime. Ineligible is a real stop, not a request to cut an argument or quietly raise the rate. Audio pitch preservation and tempo must be proven on the rendered file.
 
+## Preview without any platform call
+
+After genuine RU source listening fixes the millisecond boundaries, prepare a preview:
+
+```powershell
+python -m video_channel_manager.shortorez_routing --youtube-id 5nKCs4bkoxE --start-ms <verified-start> --end-ms <verified-end> --allow-speedup
+```
+
+This prints `provider_write_performed=false`, `release_authorized=false` and proposed independent routes. CLI cut values MUST be observed, never guessed; `<verified-start>` and `<verified-end>` above are placeholders, not real video times.
+
 ## Required staged handoff
 
 1. Reconcile exact rights, approved local master + SHA256, and any already-produced full Russian mixed audio.
