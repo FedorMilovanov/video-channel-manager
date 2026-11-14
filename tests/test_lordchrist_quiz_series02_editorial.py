@@ -24,7 +24,7 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
 SERIES_ID = "lordchrist-quiz-series-02"
-SERIES_WORKFLOW = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+SERIES_WORKFLOW = ROOT / ".github/retired-workflows/lordchrist-quiz-series-02-poster.yml"
 IDENTITY_CONTEXT = {
     "lordchrist-quiz-s02-hagar",
     "lordchrist-quiz-s02-ahab",
