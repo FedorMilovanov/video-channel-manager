@@ -26,3 +26,14 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     assert 'now.hour not in (12,13)' in data
     assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
     assert 'cancel-in-progress: false' in data
+
+
+def test_retired_rich_and_telegraph_jobs_do_not_resolve_scheduled_articles() -> None:
+    rich = (WORKFLOWS / "lordchrist-telegram-poster.yml").read_text(encoding="utf-8")
+    rich_job = rich.split("\n  charnock-rich:", 1)[1]
+    assert "github.event.schedule == '0 9 * * 2,5'" not in rich_job
+    assert "github.event_name == 'workflow_dispatch'" in rich_job
+    telegraph = (WORKFLOWS / "lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
+    assert "steps.resolve.outputs" not in telegraph
+    assert "github.event_name == 'schedule'" not in telegraph
+    assert "if: inputs.action == 'publish'" in telegraph
