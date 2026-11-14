@@ -6,6 +6,8 @@ Do not use this module as another Telegram/VK/Instagram writer.
 
 from __future__ import annotations
 
+import argparse
+import json
 import re
 from dataclasses import dataclass
 from typing import Literal
@@ -40,7 +42,7 @@ class ClipInterval:
     def __post_init__(self) -> None:
         if (self.project_key, self.source_channel_id) != (_PILOT_PROJECT, _PILOT_CHANNEL):
             raise ValueError("SHORTOREZ pilot requires the exact registered source project and channel")
-        if not _YOUTUBE_ID.fullmatch(self.source_video_id):
+        if not isinstance(self.source_video_id, str) or not _YOUTUBE_ID.fullmatch(self.source_video_id):
             raise ValueError("An exact eleven-character YouTube video ID is required")
         if type(self.start_ms) is not int or type(self.end_ms) is not int:
             raise ValueError("Cut boundaries must be integer milliseconds")
@@ -145,3 +147,48 @@ def validate_render_handoff(
     if audible_result_reviewed is not True:
         issues.append("encoded_audio_not_listened")
     return tuple(issues)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Produce a read-only JSON preview after exact RU listening set the boundaries."""
+    parser = argparse.ArgumentParser(description="SHORTOREZ provider-inert route preview (no uploads)")
+    parser.add_argument("--youtube-id", required=True, help="Exact owner-channel video ID")
+    parser.add_argument("--start-ms", required=True, type=int, help="Verified Russian-speech cut start")
+    parser.add_argument("--end-ms", required=True, type=int, help="Verified Russian-speech cut end")
+    parser.add_argument("--allow-speedup", action="store_true", help="Propose up to 1.20x for native VK Clip only")
+    args = parser.parse_args(argv)
+    try:
+        clip = ClipInterval(_PILOT_PROJECT, _PILOT_CHANNEL, args.youtube_id, args.start_ms, args.end_ms)
+    except ValueError as exc:
+        parser.error(str(exc))
+    print(
+        json.dumps(
+            {
+                "provider_write_performed": False,
+                "release_authorized": False,
+                "source_project": clip.project_key,
+                "source_channel": clip.source_channel_id,
+                "full_video_url": clip.full_video_url,
+                "source_start_ms": clip.start_ms,
+                "source_end_ms": clip.end_ms,
+                "routes": [
+                    {
+                        "key": route.key,
+                        "surface": route.surface,
+                        "speed_percent": route.speed_percent,
+                        "projected_duration_ms": route.projected_duration_ms,
+                        "status": route.status,
+                        "audio_listening_required": route.audio_listening_required,
+                    }
+                    for route in plan_routes(clip, allow_speedup=args.allow_speedup)
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
