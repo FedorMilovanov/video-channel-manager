@@ -264,8 +264,32 @@
       },
       {
         "youtube_id": "xqRJU9DS2cc",
-        "category": "music_alternate_unconfirmed_audio_match",
-        "reference": "older Ночь, улица… / Пульс Мёртвого Города; local compared audio likely, fingerprint not verified"
+        "category": "music_alternate_confirmed_audio_match",
+        "reference": "Former Night Pharmacy recording, local 07_Ночь_улица_ДРУГАЯ_ВЕРСИЯ.mp3, SHA-256 a95096693cb8b02e1261920c1e99fe4ea1b3384d0d771afe80c68ca90382f6bb",
+        "audio_comparison": {
+          "method": "FFmpeg 8-kHz decoded mono waveform; log-magnitude STFT cosine similarity across four 30-second segments of own YouTube bestaudio versus local MP3",
+          "spectral_cosine_by_segment_start_seconds": [
+            {
+              "start": 15,
+              "similarity": 0.99755
+            },
+            {
+              "start": 90,
+              "similarity": 0.99743
+            },
+            {
+              "start": 160,
+              "similarity": 0.99799
+            },
+            {
+              "start": 240,
+              "similarity": 0.99769
+            }
+          ],
+          "youtube_duration_seconds": 290.961,
+          "local_duration_seconds": 290.9,
+          "assessment": "same musical recording in different encodings; do not upload duplicate"
+        }
       },
       {
         "youtube_id": "lXwlZt1v97U",
@@ -283,7 +307,7 @@
         "reference": "blok-scythians-version-1"
       }
     ],
-    "conclusion": "Seven primary candidate MP3s cover seven musical videos; one older Night music video is kept as an alternate, with audio fingerprint still pending. The ninth is a short four-line poetry excerpt, not a missing full musical master. A nine-item YouTube playlist is not a nine-master site-audio release backlog.",
+    "conclusion": "All nine playlist videos matched by content category: seven primary musical candidates, one older Night Pharmacy arrangement now independently verified by multi-segment spectral audio comparison, and one short four-line poetry excerpt. A nine-item playlist is not a nine-master site-audio backlog.",
     "publication_effect": "none — metadata-only audit; no website or provider writes"
   }
 }
