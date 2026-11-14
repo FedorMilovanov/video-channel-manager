@@ -1,0 +1,28 @@
+"""One scheduled owner for Charnock reissues; old renderers stay manual/inert."""
+
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOWS = ROOT / ".github" / "workflows"
+
+
+def _cron_triggers(filename: str) -> list[str]:
+    data = (WORKFLOWS / filename).read_text(encoding="utf-8")
+    triggers = data.split("\npermissions:", 1)[0]
+    return re.findall(r'^\s*- cron: "([^"]+)"$', triggers, flags=re.MULTILINE)
+
+
+def test_only_charnock_reissue_owns_tuesday_friday_midday_schedule() -> None:
+    assert _cron_triggers("lordchrist-charnock-scheduled-reissue.yml") == ["0 9 * * 2,5"]
+    assert _cron_triggers("lordchrist-telegraph-poster.yml") == []
+    assert _cron_triggers("lordchrist-telegram-poster.yml") == ["17 16 * * 1,3,6"]
+
+
+def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -> None:
+    data = (WORKFLOWS / "lordchrist-charnock-scheduled-reissue.yml").read_text(encoding="utf-8")
+    assert "LORDCHRIST_CHARNOCK_RECOVERY_ENABLED" in data
+    assert "LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256" in data
+    assert 'now.hour not in (12,13)' in data
+    assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
+    assert 'cancel-in-progress: false' in data
