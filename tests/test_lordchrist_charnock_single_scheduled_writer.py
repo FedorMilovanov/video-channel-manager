@@ -1,7 +1,7 @@
 """One scheduled owner for Charnock reissues; old renderers stay manual/inert."""
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
