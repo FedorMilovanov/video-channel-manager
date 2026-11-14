@@ -229,8 +229,6 @@ def validate_series(
             raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
     if require_execution_authorized and series_id in RETIRED_SERIES_IDS:
         raise ValueError("retired quiz series is historical evidence only; execution forbidden")
-    if require_execution_authorized and publication_id in RETIRED_ONE_OFF_IDS:
-        raise ValueError("retired one-off quiz is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     return {
@@ -431,6 +429,8 @@ def validate_quiz(
         candidate = build_quiz_candidate(profile, spec, binding)
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and publication_id in RETIRED_ONE_OFF_IDS:
+        raise ValueError("retired one-off quiz is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     payload = release.items[0].payload
