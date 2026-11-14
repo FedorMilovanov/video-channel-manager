@@ -14,6 +14,7 @@ from video_channel_manager.platforms.youtube.comments import (
     YouTubeCommentWriter,
     YouTubeCommentsDisabledError,
     comments_equivalent,
+    validate_comment_text,
 )
 from video_channel_manager.platforms.http import RetryPolicy
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
@@ -101,6 +102,45 @@ def _thread(
             ),
         },
     }
+
+
+@pytest.mark.parametrize(
+    "damaged",
+    [
+        "?????? ?????: https://www.youtube.com/watch?v=jys4x8T_sYg",
+        "broken\ufffdtext",
+    ],
+)
+def test_validate_comment_text_rejects_damaged_unicode(damaged: str) -> None:
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        validate_comment_text(damaged)
+
+
+def test_validate_comment_text_keeps_normal_question_marks_and_cyrillic() -> None:
+    label = "".join(chr(c) for c in (0x41F, 0x43E, 0x43B, 0x43D, 0x43E, 0x435))
+    assert validate_comment_text(label + "???") == label + "???"
+
+
+def test_comment_create_and_update_fail_before_http_on_encoding_damage(tmp_path: Path) -> None:
+    def no_http(request: httpx.Request) -> httpx.Response:
+        pytest.fail("Damaged Unicode must not reach the YouTube HTTP client.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(no_http))
+    damaged = "?????? ?????: https://www.youtube.com/watch?v=jys4x8T_sYg"
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text=damaged,
+        )
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        writer.update_top_level_comment(
+            comment_id="comment-1",
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_text="previous text",
+            new_text=damaged,
+        )
 
 
 def test_list_comments_paginates_reads_moderation_views_and_deduplicates(tmp_path: Path) -> None:
