@@ -5,7 +5,7 @@ Owner: Wave 3 / issue #69
 
 This inventory is enforced by `tests/test_http_client_inventory.py` in both directions: the test fails when a constructor appears in a file this document does not record, and it fails when this document records a file whose constructor count no longer matches the code. A direct `httpx.Client()` constructor is allowed only when its lifecycle and operation semantics are recorded below, with a count. Reusable provider classes must use `HttpClientOwner`; they may own one persistent client or borrow an injected client, but may not construct a client per request.
 
-The inventory is 29 reviewed constructors: 17 in `src/` across 12 modules and 12 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
+The inventory is 30 reviewed constructors: 17 in `src/` across 12 modules and 13 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
 
 ## Reusable library paths
 
@@ -51,6 +51,7 @@ These scripts are historical or bounded operator entrypoints rather than reusabl
 | Path | Count | Reviewed lifecycle and reason |
 |---|---:|---|
 | `scripts/lordchrist_quote_v6_publisher.py` | 1 | One ephemeral `httpx.Client` for exactly one Telegram `sendMessage` POST, closed on return; no HTTP retries, explicit exact target and text/entity receipt; unresolved outcomes lock the v6 ledger and are never replayed. |
+| `scripts/prepare_lord_god_instagram_https_handoff.py` | 1 | One short-lived read-only HTTPX client verifying a single original/owner-reviewed content-addressed HTTPS video object by exact byte count/MIME/SHA before handing a new-key manifest to production. It makes no Meta requests and cannot post; review, hosting authorization, and SQLite duplicate gate precede the GET. |
 | `scripts/prepare_milovi_instagram_https_fallback.py` | 1 | Exactly one scoped HTTPX client for content-addressed, approved public HTTPS **GET** object verification; closes when the one-file validation finishes. No Meta token, Graph API, publication method or retry. Source/ledger/host checks precede the GET. |
 | `scripts/complete_vk_longform_tail.py` | 1 | `thumbnail_candidates()` owns one client for the bounded thumbnail-candidate loop, then closes it. Read-only. |
 | `scripts/lord_god_article_wave_v3/mutations.py` | 1 | `upload_photo_bytes()` owns one client for one ephemeral upload-server mutation and closes it. Ambiguous outcome is not retried. |

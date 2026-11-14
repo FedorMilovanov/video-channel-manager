@@ -22,6 +22,7 @@ EXPECTED_CONSTRUCTORS = Counter(
         "src/video_channel_manager/telegram_research_public_permalink_probe.py": 1,
         "src/video_channel_manager/telegram_research_update_probe.py": 1,
         "scripts/lordchrist_quote_v6_publisher.py": 1,
+        "scripts/prepare_lord_god_instagram_https_handoff.py": 1,
         "scripts/prepare_milovi_instagram_https_fallback.py": 1,
         "scripts/complete_vk_longform_tail.py": 1,
         "scripts/lord_god_article_wave_v3/mutations.py": 1,
