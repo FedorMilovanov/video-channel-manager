@@ -11,6 +11,7 @@ import json
 import re
 from dataclasses import dataclass
 from typing import Literal
+from urllib.parse import parse_qs, urlsplit
 
 from video_channel_manager.editorial._project_profiles import LORD_GOD_STRENGTH, PROJECT_CHANNEL_IDS
 
@@ -108,6 +109,24 @@ def plan_routes(clip: ClipInterval, *, allow_speedup: bool = False) -> tuple[Var
     return tuple(routes)
 
 
+def _source_link_position(caption: str, source_video_id: str) -> int | None:
+    """Locate a genuinely exact HTTPS watch URL, not a lookalike substring."""
+    for match in re.finditer(r"https://[^\\s<>()\\[\\]]+", caption):
+        candidate = match.group().rstrip(".,!?;:")
+        try:
+            parsed = urlsplit(candidate)
+        except ValueError:
+            continue
+        if (
+            parsed.scheme == "https"
+            and parsed.hostname in {"www.youtube.com", "youtube.com"}
+            and parsed.path == "/watch"
+            and parse_qs(parsed.query).get("v") == [source_video_id]
+        ):
+            return match.start()
+    return None
+
+
 def validate_render_handoff(
     route: VariantRoute,
     *,
@@ -141,12 +160,22 @@ def validate_render_handoff(
             issues.append("actual_duration_differs_from_reviewed_interval")
     if not isinstance(media_sha256, str) or not _SHA256.fullmatch(media_sha256):
         issues.append("invalid_media_fingerprint")
-    if not isinstance(caption, str) or route.clip.full_video_url not in caption:
+    if not isinstance(caption, str):
         issues.append("missing_exact_full_video_link")
-    elif route.surface == "telegram_native_video" and len(caption) > 1_024:
-        issues.append("telegram_video_caption_over_limit")
-    elif route.surface == "instagram_reel_api" and len(caption) > 2_200:
-        issues.append("instagram_caption_over_limit")
+    else:
+        link_position = _source_link_position(caption, route.clip.source_video_id)
+        if link_position is None:
+            issues.append("missing_exact_full_video_link")
+        elif not re.search(
+            r"полная проповедь|полную проповедь|полное видео|полный выпуск|смотреть полностью",
+            caption[max(0, link_position - 120) : link_position],
+            flags=re.IGNORECASE,
+        ):
+            issues.append("missing_full_video_link_label")
+        if route.surface == "telegram_native_video" and len(caption) > 1_024:
+            issues.append("telegram_video_caption_over_limit")
+        elif route.surface == "instagram_reel_api" and len(caption) > 2_200:
+            issues.append("instagram_caption_over_limit")
     if source_rights_reviewed is not True:
         issues.append("source_rights_not_reviewed")
     if editorial_reviewed is not True:
