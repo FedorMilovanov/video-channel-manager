@@ -228,5 +228,62 @@
     "scythians_v2_internal_quiet_segment_seconds": 1.13,
     "manual_audition_required": true
   },
-  "change_policy": "Provider inert: no cross-platform writes; human review and permission check before uploads. No duplicate Russia. A music arrangement v2 is not automatically the second poem in an original cycle."
+  "change_policy": "Provider inert: no cross-platform writes; human review and permission check before uploads. No duplicate Russia. A music arrangement v2 is not automatically the second poem in an original cycle.",
+  "youtube_playlist_audit": {
+    "source_feed": "https://www.youtube.com/feeds/videos.xml?playlist_id=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
+    "playlist_url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
+    "checked_date": "2026-11-14",
+    "playlist_video_count": 9,
+    "music_video_count": 8,
+    "excerpt_video_count": 1,
+    "entries_in_playlist_order": [
+      {
+        "youtube_id": "aX878S3PGn4",
+        "category": "music_principal",
+        "reference": "blok-night-pharmacy-night-loop"
+      },
+      {
+        "youtube_id": "nFNtFHYNBiM",
+        "category": "short_poetry_excerpt_not_music_master",
+        "reference": "first four lines of Мне страшно с Тобой встречаться"
+      },
+      {
+        "youtube_id": "RuTmtXUuxm8",
+        "category": "music_principal",
+        "reference": "blok-kulikovo-part-2"
+      },
+      {
+        "youtube_id": "U4D40EQg10U",
+        "category": "music_principal",
+        "reference": "blok-kulikovo-part-1"
+      },
+      {
+        "youtube_id": "GVMafWIYPpI",
+        "category": "music_principal",
+        "reference": "blok-rossiya"
+      },
+      {
+        "youtube_id": "xqRJU9DS2cc",
+        "category": "music_alternate_unconfirmed_audio_match",
+        "reference": "older Ночь, улица… / Пульс Мёртвого Города; local compared audio likely, fingerprint not verified"
+      },
+      {
+        "youtube_id": "lXwlZt1v97U",
+        "category": "music_principal",
+        "reference": "blok-oh-i-want-to-live-youtube-audio-candidate"
+      },
+      {
+        "youtube_id": "8g_4EVWFb1g",
+        "category": "music_principal",
+        "reference": "blok-scythians-version-2"
+      },
+      {
+        "youtube_id": "ib2ehg2__sg",
+        "category": "music_principal",
+        "reference": "blok-scythians-version-1"
+      }
+    ],
+    "conclusion": "Seven primary candidate MP3s cover seven musical videos; one older Night music video is kept as an alternate, with audio fingerprint still pending. The ninth is a short four-line poetry excerpt, not a missing full musical master. A nine-item YouTube playlist is not a nine-master site-audio release backlog.",
+    "publication_effect": "none — metadata-only audit; no website or provider writes"
+  }
 }
