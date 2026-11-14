@@ -97,7 +97,9 @@ def plan_routes(clip: ClipInterval, *, allow_speedup: bool = False) -> tuple[Var
             ),
             None,
         )
-        if selected is None:
+        # VK native Clips and Meta Reels both require at least three seconds.
+        # A synthetic one-second route must not look render-ready.
+        if selected is None or (surface in ("vk_native_clip", "instagram_reel_api") and selected[1] < 3_000):
             routes.append(VariantRoute(clip, surface, 100, clip.duration_ms, "duration_ineligible"))
         else:
             rate, projected_ms = selected
@@ -133,6 +135,10 @@ def validate_render_handoff(
             issues.append("actual_duration_exceeds_surface")
         if route.surface in ("vk_native_clip", "instagram_reel_api") and actual_duration_ms < 3_000:
             issues.append("actual_duration_below_surface_minimum")
+        # Reject truncated/recomposed output even when it incidentally fits the
+        # provider maximum. This cannot replace listening/semantic QA.
+        if abs(actual_duration_ms - route.projected_duration_ms) > 1_500:
+            issues.append("actual_duration_differs_from_reviewed_interval")
     if not isinstance(media_sha256, str) or not _SHA256.fullmatch(media_sha256):
         issues.append("invalid_media_fingerprint")
     if not isinstance(caption, str) or route.clip.full_video_url not in caption:
