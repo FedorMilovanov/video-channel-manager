@@ -175,3 +175,42 @@ def test_rendered_media_must_retain_reviewed_interval_duration() -> None:
     assert "actual_duration_differs_from_reviewed_interval" in validate_render_handoff(
         route, actual_duration_ms=160_000, **base
     )
+
+
+def test_exact_source_url_must_be_labelled_not_bare_or_spoofed() -> None:
+    route = _route(210_000, "telegram_native_video")
+    base = dict(
+        actual_duration_ms=210_000,
+        media_sha256="sha256:" + "f" * 64,
+        source_rights_reviewed=True,
+        editorial_reviewed=True,
+        audible_result_reviewed=True,
+    )
+    link = route.clip.full_video_url
+    assert validate_render_handoff(route, caption="Полное видео: " + link, **base) == ()
+    assert validate_render_handoff(route, caption="Смотреть полную проповедь: " + link, **base) == ()
+    assert "missing_full_video_link_label" in validate_render_handoff(route, caption=link, **base)
+    for bad in (
+        link + "W",
+        "https://www.youtube.com.evil.example/watch?v=5nKCs4bkoxE",
+        "https://www.youtube.com/watch?v=AAAAAAAAAAA&ref=5nKCs4bkoxE",
+        "http://www.youtube.com/watch?v=5nKCs4bkoxE",
+    ):
+        assert "missing_exact_full_video_link" in validate_render_handoff(
+            route, caption="Полная проповедь: " + bad, **base
+        )
+
+
+def test_actual_video_duration_and_caption_contract_are_independent() -> None:
+    route = _route(210_000, "vk_native_clip")
+    issues = validate_render_handoff(
+        route,
+        actual_duration_ms=165_000,
+        media_sha256="sha256:" + "d" * 64,
+        caption="Полная проповедь: " + route.clip.full_video_url,
+        source_rights_reviewed=True,
+        editorial_reviewed=True,
+        audible_result_reviewed=True,
+    )
+    assert "actual_duration_differs_from_reviewed_interval" in issues
+    assert "missing_exact_full_video_link" not in issues
