@@ -907,6 +907,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/prepare_lord_god_instagram_https_handoff.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "409c343e341ddf207131d18da3eaab5244cb9d064e87f0a8d88a37c7efb66293",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/prepare_milovi_instagram_https_fallback.py",
       "private_imports": [],
       "project_owner": "milovi-cake",
