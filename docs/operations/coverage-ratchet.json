@@ -250,6 +250,7 @@
     "src/video_channel_manager/poetry_quote_shorts.py": 79.79,
     "src/video_channel_manager/resi_handoff.py": 93.91,
     "src/video_channel_manager/resi_watch.py": 71.27,
+    "src/video_channel_manager/shortorez_routing.py": 60.0,
     "src/video_channel_manager/svodka_approval_cli.py": 73.52,
     "src/video_channel_manager/svodka_native_rich_canary.py": 73.16,
     "src/video_channel_manager/svodka_queue.py": 84.68,
