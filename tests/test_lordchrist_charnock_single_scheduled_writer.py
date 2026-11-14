@@ -17,6 +17,12 @@ def test_only_charnock_reissue_owns_tuesday_friday_midday_schedule() -> None:
     assert _cron_triggers("lordchrist-charnock-scheduled-reissue.yml") == ["0 9 * * 2,5"]
     assert _cron_triggers("lordchrist-telegraph-poster.yml") == []
     assert _cron_triggers("lordchrist-telegram-poster.yml") == ["17 16 * * 1,3,6"]
+    all_midday_owners = {
+        workflow.name
+        for workflow in WORKFLOWS.glob("lordchrist-*.yml")
+        if "0 9 * * 2,5" in _cron_triggers(workflow.name)
+    }
+    assert all_midday_owners == {"lordchrist-charnock-scheduled-reissue.yml"}
 
 
 def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -> None:
