@@ -147,3 +147,30 @@ def test_cli_refuses_invalid_source_with_no_preview(capsys: pytest.CaptureFixtur
         main(["--youtube-id", "5nKCs4bkoxE", "--start-ms", "80000", "--end-ms", "80000"])
     assert exc.value.code == 2
     assert capsys.readouterr().out == ""
+
+
+def test_three_second_minimum_is_a_planning_gate() -> None:
+    assert _route(2_999, "vk_native_clip").status == "duration_ineligible"
+    assert _route(2_999, "instagram_reel_api").status == "duration_ineligible"
+    assert _route(3_000, "vk_native_clip").status == "render_qc_required"
+    assert _route(3_000, "instagram_reel_api").status == "render_qc_required"
+    assert _route(2_999, "telegram_native_video").status == "render_qc_required"
+
+
+def test_rendered_media_must_retain_reviewed_interval_duration() -> None:
+    route = _route(210_000, "vk_native_clip")
+    base = dict(
+        media_sha256="sha256:" + "a" * 64,
+        caption=f"Полная проповедь: {route.clip.full_video_url}",
+        source_rights_reviewed=True,
+        editorial_reviewed=True,
+        audible_result_reviewed=True,
+    )
+    assert validate_render_handoff(route, actual_duration_ms=174_100, **base) == ()
+    assert "actual_duration_differs_from_reviewed_interval" in validate_render_handoff(
+        route, actual_duration_ms=171_000, **base
+    )
+    # Meeting the VK maximum by silently deleting a sentence is not valid.
+    assert "actual_duration_differs_from_reviewed_interval" in validate_render_handoff(
+        route, actual_duration_ms=160_000, **base
+    )
