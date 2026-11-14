@@ -168,8 +168,6 @@ def verify_item(item: dict, rows: list[dict]) -> dict:
         "permalink": permalink,
     }
 
-
-
 def scheduled_receipt_date(now: datetime) -> str | None:
     """Select the last verification slot that has STARTED, never an upcoming Reel.
 
