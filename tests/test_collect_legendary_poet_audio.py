@@ -1,4 +1,5 @@
 """Offline regression tests: never alter originals; hash duplicate vs distinct versions."""
+
 import importlib.util
 import pathlib
 
@@ -7,6 +8,7 @@ spec = importlib.util.spec_from_file_location("tlp_audio_collector", SCRIPT)
 assert spec and spec.loader
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+
 
 def test_audio_collection_is_idempotent_and_preserves_alternate_versions(tmp_path):
     source_a = tmp_path / "Downloads"
@@ -32,6 +34,7 @@ def test_audio_collection_is_idempotent_and_preserves_alternate_versions(tmp_pat
     assert (source_a / "Ночь.mp3").read_bytes() == b"version one"
     assert (source_b / "Ночь.mp3").read_bytes() == b"version TWO"
     assert (source_b / "End card.mp4").exists()
+
 
 def test_target_excluded_from_recursive_rescan(tmp_path):
     root = tmp_path / "root"
