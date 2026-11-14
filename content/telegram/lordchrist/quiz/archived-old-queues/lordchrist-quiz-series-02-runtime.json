@@ -1,0 +1,341 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "lordchrist-quiz-series-02-v1",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 1,
+  "target_binding_sha256": "sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:e8bb34452127f7ef7baa9343b9b338428931717ec329446a4d90d9ef0a777a15",
+  "reviewed_publication_id": null,
+  "reviewed_by": "Fedor Milovanov (user editorial approval, 2026-11-03)",
+  "reviewed_at": "2026-11-03T20:18:26.100827+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-quiz-s02-hagar",
+      "scheduled_at": "2026-11-10T13:00:00+03:00",
+      "source_sha256": "sha256:06027d45d9aa88809ed67f1f2f62cd77f2d88f599710e3dd232460a4aa40a170",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-hagar",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:4cbbfca6d1fa23664e02be9e3fbff0273a9b2f3f831deed9e005b9e85219fc08",
+        "question": "Какую женщину Ангел Господень нашёл у источника, после чего она назвала Бога «Ты Бог, видящий меня»?",
+        "options": [
+          "Ревекка",
+          "Сарра",
+          "Агарь",
+          "Лия"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Агарь бежала от Сары. Ангел Господень встретил её в пустыне и возвестил о сыне. Она назвала Господа Богом, видящим её (Быт. 16:7-13).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-quiz-s02-ahab",
+      "scheduled_at": "2026-11-12T13:00:00+03:00",
+      "source_sha256": "sha256:d9da54e74908b212106b5d3289432388d10292bc8667961f5f554d9a25e7a7d0",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-ahab",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:0e72183629b6ccc3c7b658cca4aeefcd33b72c4493ad9d9e95470ca74c28ff72",
+        "question": "Какой царь переоделся перед битвой, но был смертельно ранен стрелой, пущенной наудачу?",
+        "options": [
+          "Иосафат",
+          "Ахав",
+          "Охозия",
+          "Иеровоам"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Ахав переоделся, однако случайная стрела поразила его. Так исполнилось предостережение пророка Михея, которому царь не поверил (3 Цар. 22:17, 30-35).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-quiz-s02-jephthah",
+      "scheduled_at": "2026-11-14T13:00:00+03:00",
+      "source_sha256": "sha256:a6da723de4be5d614dcf089075be1c83bff5a8b2f88028234d3167a1f0715880",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-jephthah",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:e027dac4dcc79cf358dc967fa2d44823fb15c29990b88f9700b4ffadd276c4f7",
+        "question": "Какой судья дал обет перед битвой с аммонитянами, а после победы навстречу ему вышла единственная дочь?",
+        "options": [
+          "Варак",
+          "Гедеон",
+          "Самсон",
+          "Иеффай"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          3
+        ],
+        "explanation": "Иеффай связал победу необдуманным обетом. Первой из дома вышла его единственная дочь. Рассказ показывает трагические последствия этих слов (Суд. 11:30-40).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-quiz-s02-sardis",
+      "scheduled_at": "2026-11-16T13:00:00+03:00",
+      "source_sha256": "sha256:9e8681773103f82b01ff4f3179ba5e7af00014585f152ea8b41aeabf6c4677d7",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-sardis",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:0bbbcdf72aa5dea854dcaa9ac4ea1a76a3b6e93224fb544d707b029027edf14a",
+        "question": "Какой церкви Христос сказал: «ты носишь имя, будто жив, но ты мёртв»?",
+        "options": [
+          "Сардийской",
+          "Ефесской",
+          "Фиатирской",
+          "Лаодикийской"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          0
+        ],
+        "explanation": "Сардийская церковь имела репутацию живой, но Христос обличил её духовное состояние и призвал бодрствовать, хранить слово и покаяться (Откр. 3:1-3).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 5,
+      "publication_id": "lordchrist-quiz-s02-melchizedek",
+      "scheduled_at": "2026-11-18T13:00:00+03:00",
+      "source_sha256": "sha256:9b18d5b15434741911c7ef5855774071ba1f4750e1c7905dd1caabc5b5340a18",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-melchizedek",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:b9a31012e754bf0e09677aed4689783ec3b98dd780e9d75dfe7343496317941d",
+        "question": "Каким поступком Авраама автор Евр. 7 подтверждает величие Мелхиседека?",
+        "options": [
+          "Авраам построил для него жертвенник после победы",
+          "Авраам попросил его судить побеждённых царей",
+          "Авраам дал ему десятину и принял благословение",
+          "Авраам поставил его священником в Салиме"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Авраам отдал Мелхиседеку десятину и принял его благословение. На этом автор строит довод о превосходстве священства по его чину (Евр. 7:4-10).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 6,
+      "publication_id": "lordchrist-quiz-s02-bronze-serpent",
+      "scheduled_at": "2026-11-20T13:00:00+03:00",
+      "source_sha256": "sha256:8d29467c4724253edc0ba3690d8d9ca5cce8df984ed5e9d94d83574b0812a90d",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-bronze-serpent",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:a6c7edea7b2f412657b759b9d63b4ce821ce01f273b39ef27e4a754eeed12f79",
+        "question": "Какой образ пустынного странствия Иисус использует, говоря о Своём вознесении и вечной жизни верующих?",
+        "options": [
+          "Манна с неба",
+          "Медный змей",
+          "Жезл Аарона",
+          "Облачный столп"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Моисей поднял медного змея: взглянувшие на него оставались живы. Иисус применяет этот образ к Своему вознесению и вере в Него (Чис. 21:8-9; Ин. 3:14-15).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 7,
+      "publication_id": "lordchrist-quiz-s02-isaac-resurrection",
+      "scheduled_at": "2026-11-22T13:00:00+03:00",
+      "source_sha256": "sha256:34234cbfe8a909a228e06bc5410f1e83a601fd5d8f275334b8b9796de0642770",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-isaac-resurrection",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:20a8dfff2ec3f065e4542c2e7571e607e0b4b10d5373eb6d681c39a9330b37d4",
+        "question": "Что, согласно Евр. 11, объясняет готовность Авраама принести в жертву Исаака, сына обетования?",
+        "options": [
+          "Он считал обещание об Исааке отменённым",
+          "Он ожидал переноса обетования на Измаила",
+          "Он знал, что испытание вообще не состоится",
+          "Он верил, что Бог может воскресить Исаака"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          3
+        ],
+        "explanation": "Авраам знал обетование об Исааке и рассуждал, что Бог силён воскресить мёртвых. Его послушание опиралось на верность Бога Своему слову (Евр. 11:17-19).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 8,
+      "publication_id": "lordchrist-quiz-s02-david-sabbath",
+      "scheduled_at": "2026-11-24T13:00:00+03:00",
+      "source_sha256": "sha256:fd9a18d736fedc3dcce1ef7add179512849484232fd140291a0ed97a8088facf",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-david-sabbath",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:f9bee9016b9d72e15f55c7a77ab6e770c6b2eaadb04da06f81240ea48d51b993",
+        "question": "Какой случай Иисус напомнил фарисеям, когда те упрекали учеников за сорванные в субботу колосья?",
+        "options": [
+          "Давид и спутники ели хлебы предложения",
+          "Гедеон молотил пшеницу в точиле",
+          "Елисей накормил сто человек хлебами",
+          "Илия получал пищу у потока Хораф"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          0
+        ],
+        "explanation": "Иисус напомнил, как голодный Давид с людьми ел хлебы предложения. Он показал значение человеческой нужды и Свою власть над субботой (Мк. 2:23-28).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 9,
+      "publication_id": "lordchrist-quiz-s02-faith-and-works",
+      "scheduled_at": "2026-11-26T13:00:00+03:00",
+      "source_sha256": "sha256:2c0e0fafc1bc5116d3e1a6254316d2464d0d310dea4cefd77066446edcbcd045",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-faith-and-works",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:683f5fff792a607b7ba15ed2e95729b099204396ec4012e6d5593af93f8a1b19",
+        "question": "Какой вывод делает Иаков, напоминая, что даже бесы «веруют и трепещут»?",
+        "options": [
+          "Правильное учение само по себе спасает",
+          "Страх перед судом уже равнозначен покаянию",
+          "Признание истины без дел ещё не живая вера",
+          "Знание о Боге всегда означает любовь к Нему"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          2
+        ],
+        "explanation": "Бесы признают истину о едином Боге, но это не живая вера. Иаков противопоставляет голое согласие с истиной вере, проявляющейся в делах (Иак. 2:18-20).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    },
+    {
+      "sequence": 10,
+      "publication_id": "lordchrist-quiz-s02-adam-christ",
+      "scheduled_at": "2026-11-28T13:00:00+03:00",
+      "source_sha256": "sha256:2230859db44cced518e00d883f3f01a44914722699468ab6bfbc32ac04b98159",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-poll-payload",
+        "schema_version": 4,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-quiz-s02-adam-christ",
+        "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+        "provider_payload_sha256": "sha256:167e0e54d88e102bd4a2c5f2a34b0e5de4fb83b40202196dfaa0a4da9763d1b1",
+        "question": "Как Павел сопоставляет поступки Адама и Христа, объясняя оправдание в Рим. 5?",
+        "options": [
+          "Оба под законом показали одинаковую верность Богу",
+          "Непослушание одного ведёт к осуждению, послушание Другого — к оправданию",
+          "Праведность Христа названа только примером для подражания",
+          "Поступок Адама затронул многих, а послушание Христа — лишь Его Самого"
+        ],
+        "poll_type": "quiz",
+        "correct_option_ids": [
+          1
+        ],
+        "explanation": "Непослушание Адама привело многих к состоянию грешников; послушание Христа открывает оправдание и жизнь. Павел сопоставляет действия двух представителей (Рим. 5:18-19).",
+        "description": null,
+        "is_anonymous": true,
+        "allows_multiple_answers": false,
+        "allows_revoting": false,
+        "members_only": false
+      }
+    }
+  ]
+}
