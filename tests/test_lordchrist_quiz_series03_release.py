@@ -153,8 +153,7 @@ def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
     profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
     binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
     canary = load_release(
-        ROOT
-        / "content/telegram/lordchrist/quiz/archived-old-queues/lordchrist-quiz-city-of-palms-runtime.json"
+        ROOT / "content/telegram/lordchrist/quiz/archived-old-queues/lordchrist-quiz-city-of-palms-runtime.json"
     )
     release = load_release(series_runtime_path(SERIES))
     canary_ledger = initialize_ledger(canary)
