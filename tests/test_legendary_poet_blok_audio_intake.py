@@ -53,3 +53,20 @@ def test_youtube_blok_playlist_is_not_nine_audio_masters() -> None:
         "short_poetry_excerpt_not_music_master"
     )
     assert {release["youtube_id"] for release in data["releases"]}.issubset(ids)
+
+
+def test_blok_mp3_inventory_hashes_are_complete_and_source_bound() -> None:
+    data = json.loads(INTAKE.read_text(encoding="utf-8"))
+    records = data["releases"] + data["compared_not_release"]
+    assert len(records) == 9
+    digests = [record["sha256"] for record in records]
+    assert len(set(digests)) == len(records)
+    assert all(len(digest) == 64 and all(c in "0123456789abcdef" for c in digest) for digest in digests)
+    for entry in data["releases"]:
+        assert entry["local_review_sha256"] == entry["sha256"]
+        assert entry["bytes"] > 0
+    scythians_2 = next(entry for entry in data["releases"] if entry["id"] == "blok-scythians-version-2")
+    assert scythians_2["sha256"] == (
+        "ff7d795173a49eb8f9e568c38db2ec89f9d4dd2f2d4f6f4ba4b88e4bb237ca7b"
+    )
+    assert scythians_2["youtube_id"] == "8g_4EVWFb1g"
