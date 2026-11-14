@@ -44,9 +44,7 @@ def test_series03_is_independent_ten_item_semantic_release() -> None:
     source = load_quiz_series(series_spec_path(SERIES))
     assert source.series_id == SERIES
     assert len(source.items) == 10
-    assert [x.publication_id for x in source.items] == [
-        f"lordchrist-quiz-s03-{slug}" for slug in EXPECTED_SLUGS
-    ]
+    assert [x.publication_id for x in source.items] == [f"lordchrist-quiz-s03-{slug}" for slug in EXPECTED_SLUGS]
     assert source.items[0].scheduled_at.isoformat() == "2026-11-15T13:00:00+03:00"
     assert source.items[-1].scheduled_at.isoformat() == "2026-12-03T13:00:00+03:00"
     assert all(
