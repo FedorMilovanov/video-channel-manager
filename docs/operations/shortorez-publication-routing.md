@@ -42,6 +42,14 @@ VK official: https://vk-video.production.vklanding.ru/ (native Clips at most 3 m
 Meta official: https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api (Reels API 3s–15min)
 TikTok official: https://developers.tiktok.com/docs/en/content-posting-api-media-transfer-guide (conditional max by account; future only)
 
+## Known materialization gap and final-duration acceptance
+
+The existing MP3Bot `SHORTS FACTORY MAX` produces 35–177s semantic Shorts and 5–14:57 long-highlight candidates. It does **not** currently emit 3–5-minute semantic candidates. A Video Manager route for 3:30 is therefore only a proposal until a reviewed MP3Bot extraction-only interval/export interface closes this gap. Do not invent a second FFmpeg renderer or alter Factory's accepted Telegram-delivery path as a shortcut.
+
+`validate_render_handoff` rejects a final MP4 duration deviating by more than 1.5 seconds from the planned complete interval after its approved speed transform. This is a data-integrity guard, not listening proof: the reviewer must still check both ends for exact Russian words and all transitions. An actually required longer dubbing tail must be represented by a corrected, reviewed interval/render plan; never remove the tail to satisfy a duration assertion.
+
+VK Video officially supports a Clip-linked full VK video with a native **«Перейти к полному видео»** action. Use that only if a read-only, exact-ID VK full-video match is present and approved. Preserve the original YouTube full-version attribution in the caption; never guess a VK remote ID. Source: https://vk-video.production.vklanding.ru/.
+
 ## What is blocked right now
 
 The OldPoet remote computer `DESKTOP-O3FDOA4` returned offline on 2026-11-14. No source master, genuine listening, cut selection, MP4 render, rights assessment or live provider delivery has been performed in this wave. Resume from exact source and media evidence when available; do not fabricate a ready count.
