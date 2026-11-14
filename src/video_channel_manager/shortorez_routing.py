@@ -12,6 +12,8 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from video_channel_manager.editorial._project_profiles import LORD_GOD_STRENGTH, PROJECT_CHANNEL_IDS
+
 Surface = Literal["vk_native_clip", "telegram_native_video", "instagram_reel_api"]
 RouteStatus = Literal["render_qc_required", "speed_listening_required", "duration_ineligible"]
 
@@ -27,8 +29,7 @@ _MAX_MS: dict[Surface, int | None] = {
 _SPEED_PERCENTS = (100, 105, 110, 115, 120)
 _YOUTUBE_ID = re.compile(r"[A-Za-z0-9_-]{11}\Z")
 _SHA256 = re.compile(r"sha256:[a-f0-9]{64}\Z")
-_PILOT_PROJECT = "lord-god-strength"
-_PILOT_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
+_PILOT_PROJECT = LORD_GOD_STRENGTH
 
 
 @dataclass(frozen=True)
@@ -40,7 +41,7 @@ class ClipInterval:
     end_ms: int
 
     def __post_init__(self) -> None:
-        if (self.project_key, self.source_channel_id) != (_PILOT_PROJECT, _PILOT_CHANNEL):
+        if self.project_key != _PILOT_PROJECT or self.source_channel_id not in PROJECT_CHANNEL_IDS[_PILOT_PROJECT]:
             raise ValueError("SHORTOREZ pilot requires the exact registered source project and channel")
         if not isinstance(self.source_video_id, str) or not _YOUTUBE_ID.fullmatch(self.source_video_id):
             raise ValueError("An exact eleven-character YouTube video ID is required")
@@ -158,7 +159,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-speedup", action="store_true", help="Propose up to 1.20x for native VK Clip only")
     args = parser.parse_args(argv)
     try:
-        clip = ClipInterval(_PILOT_PROJECT, _PILOT_CHANNEL, args.youtube_id, args.start_ms, args.end_ms)
+        channels = PROJECT_CHANNEL_IDS[_PILOT_PROJECT]
+        if len(channels) != 1:
+            parser.error("Pilot project must have one unambiguous canonical owner-channel ID")
+        clip = ClipInterval(_PILOT_PROJECT, next(iter(channels)), args.youtube_id, args.start_ms, args.end_ms)
     except ValueError as exc:
         parser.error(str(exc))
     print(
