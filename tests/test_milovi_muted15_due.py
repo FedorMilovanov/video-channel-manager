@@ -155,9 +155,7 @@ def test_workflow_serializes_shared_state_and_does_not_send_directly() -> None:
     assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in src
 
 
-def test_expired_windows_report_only_elapsed_pending_items(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_expired_windows_report_only_elapsed_pending_items(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     rows = due.reviewed_items()
     calls: list[str] = []
 
@@ -170,9 +168,7 @@ def test_expired_windows_report_only_elapsed_pending_items(
 
     monkeypatch.setattr(due, "state_check", fake_check)
     moment = datetime(2026, 11, 10, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
-    assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == [
-        "milovi-feed-20261109-001"
-    ]
+    assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == ["milovi-feed-20261109-001"]
     assert calls == ["milovi-feed-20261108-001", "milovi-feed-20261109-001"]
 
 
@@ -197,9 +193,7 @@ def test_overdue_window_with_unresolved_or_inconsistent_state_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, state: str, effect: str
 ) -> None:
     rows = due.reviewed_items()
-    monkeypatch.setattr(
-        due, "state_check", lambda pid, *, state_checkout: {"state": state, "provider_effect": effect}
-    )
+    monkeypatch.setattr(due, "state_check", lambda pid, *, state_checkout: {"state": state, "provider_effect": effect})
     moment = datetime(2026, 11, 10, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
     with pytest.raises(ValueError, match="unsafe or inconsistent"):
         due.missed_delivery_windows(moment, rows, checkout=tmp_path)
@@ -210,8 +204,11 @@ def test_no_lookahead_and_no_timezone_free_overdue_audit(tmp_path: Path) -> None
     with pytest.raises(ValueError, match="timezone-aware"):
         due.missed_delivery_windows(datetime(2026, 11, 10, 0, 53), rows, checkout=tmp_path)
     # Before the very first two-hour boundary, no past publication may be inspected.
-    assert due.missed_delivery_windows(
-        datetime(2026, 11, 8, 20, 59, tzinfo=ZoneInfo("Europe/Moscow")),
-        rows,
-        checkout=tmp_path,
-    ) == []
+    assert (
+        due.missed_delivery_windows(
+            datetime(2026, 11, 8, 20, 59, tzinfo=ZoneInfo("Europe/Moscow")),
+            rows,
+            checkout=tmp_path,
+        )
+        == []
+    )
