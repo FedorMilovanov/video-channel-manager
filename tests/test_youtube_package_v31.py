@@ -225,6 +225,8 @@ def test_long_form_pin_can_be_informative_but_not_unbounded() -> None:
     marker = "\n_Строка оригинального стихотворения._"
     ix = pkg.index(marker, pin_start)
     expanded = pkg[:ix] + " Проверенный содержательный контекст для полного закрепа." * 10 + pkg[ix:]
-    assert not any(issue.block == "pin" and issue.code == "pin_length" for issue in validate_five_block_package(expanded))
+    assert not any(
+        issue.block == "pin" and issue.code == "pin_length" for issue in validate_five_block_package(expanded)
+    )
     oversized = pkg[:ix] + " Достоверный контекст." * 100 + pkg[ix:]
     assert "pin_length" in {issue.code for issue in validate_five_block_package(oversized) if issue.block == "pin"}
