@@ -130,3 +130,119 @@ def test_series03_is_not_historical_release_or_deleted_poll() -> None:
     assert "lordchrist-quiz-s02-jephthah" in old_ids
     assert "lordchrist-quiz-s02-jephthah" not in new_ids
     assert all(x.scheduled_at > datetime.fromisoformat("2026-11-14T16:05:00+03:00") for x in new.items)
+
+
+def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
+    """Exercise the first scheduled Series 03 prepare, not just workflow text.
+
+    Provider-inert: the historical manual receipt is reconstructed in memory.
+    No Telegram calls or protected-state modifications are possible here.
+    """
+    from datetime import UTC
+
+    from video_channel_manager.telegram_multichannel_release import load_release
+    from video_channel_manager.telegram_multichannel_state import (
+        initialize_ledger,
+        mark_published,
+        prepare_next,
+    )
+    from video_channel_manager.telegram_multichannel_transport import (
+        GenericSendReceipt,
+        GenericTargetProof,
+    )
+
+    profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
+    binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
+    canary = load_release(
+        ROOT / "content/telegram/lordchrist/quiz/archived-old-queues/lordchrist-quiz-city-of-palms-runtime.json"
+    )
+    release = load_release(series_runtime_path(SERIES))
+    canary_ledger = initialize_ledger(canary)
+    series_ledger = initialize_ledger(release)
+
+    def exact_target(when: datetime) -> GenericTargetProof:
+        return GenericTargetProof(
+            schema_name="video-channel-manager.telegram-generic-target-proof",
+            schema_version=1,
+            project_key=profile.project_key,
+            channel_username=profile.channel_username,
+            profile_sha256=profile.digest,
+            bot_id=binding.bot_id,
+            bot_username=binding.bot_username,
+            chat_id=binding.chat_id,
+            chat_username=binding.chat_username,
+            chat_title="LordChrist",
+            chat_type="channel",
+            member_status="administrator",
+            can_post_messages=True,
+            checked_at_utc=when,
+        )
+
+    old_time = datetime(2026, 10, 29, 17, 10, tzinfo=UTC)
+    manual = prepare_next(
+        profile,
+        canary,
+        canary_ledger,
+        run_id="historical-canary",
+        run_attempt="1",
+        github_sha="1" * 40,
+        github_workflow_sha="2" * 40,
+        mode="manual",
+        target=exact_target(old_time),
+        expected_publication_id="lordchrist-quiz-city-of-palms",
+        now=old_time,
+    )
+    assert manual.envelope is not None
+    mark_published(
+        canary_ledger,
+        manual.envelope,
+        GenericSendReceipt(
+            schema_name="video-channel-manager.telegram-generic-send-receipt",
+            schema_version=1,
+            project_key=profile.project_key,
+            publication_id=manual.envelope.publication_id,
+            provider_payload_sha256=manual.envelope.provider_payload_sha256,
+            chat_id=binding.chat_id,
+            chat_username=binding.chat_username,
+            message_id=1591,
+            message_url="https://t.me/lordchrist/1591",
+            verified_at_utc=datetime(2026, 10, 29, 17, 23, tzinfo=UTC),
+        ),
+    )
+
+    def scheduled(when: datetime, *, with_canary: bool):
+        return prepare_next(
+            profile,
+            release,
+            series_ledger,
+            run_id="series03-scheduled-test",
+            run_attempt="1",
+            github_sha="1" * 40,
+            github_workflow_sha="2" * 40,
+            mode="scheduled",
+            target=exact_target(when),
+            now=when,
+            verified_canary=(canary, canary_ledger) if with_canary else None,
+        )
+
+    early = scheduled(datetime(2026, 11, 15, 9, 59, tzinfo=UTC), with_canary=True)
+    assert early.envelope is None
+    assert "does not open until" in early.reason
+    assert all(item.state == "pending" for item in series_ledger.entries.values())
+
+    due_at = datetime(2026, 11, 15, 10, 17, tzinfo=UTC)
+    unverified = scheduled(due_at, with_canary=False)
+    assert unverified.envelope is None
+    assert unverified.reason == "scheduled execution requires a verified manual canary"
+    assert all(item.state == "pending" for item in series_ledger.entries.values())
+
+    eligible = scheduled(due_at, with_canary=True)
+    assert eligible.envelope is not None
+    assert eligible.envelope.publication_id == "lordchrist-quiz-s03-atonement-goat"
+    assert eligible.envelope.dispatch_mode == "scheduled"
+    assert series_ledger.entries["lordchrist-quiz-s03-atonement-goat"].state == "dispatching"
+    assert all(
+        item.state == "pending"
+        for publication_id, item in series_ledger.entries.items()
+        if publication_id != "lordchrist-quiz-s03-atonement-goat"
+    )
