@@ -88,6 +88,15 @@ jobs:
             OPERATION="publish"
             DISPATCH_MODE="scheduled"
           fi
+          # EDITORIAL HOLD (2026-11-14): after the owner rejected the
+          # Jephthah poll and deleted it, earlier Series 02 release approval
+          # does not grant authority to send any remaining unreviewed poll.
+          # Restore publishing only through a NEW independently reviewed
+          # candidate/release and explicit owner approval. Never replay 1613.
+          if [[ "$OPERATION" == "publish" ]]; then
+            echo "::error::Series 02 publication on editorial hold after owner rejection; no Telegram send." >&2
+            exit 3
+          fi
           case "$OPERATION" in
             validate)
               python -m video_channel_manager.lordchrist_quiz validate-series \
@@ -103,14 +112,6 @@ jobs:
                 --require-release-authorized
               ;;
             publish)
-              # EDITORIAL HOLD: 2026-11-14 owner rejected the content quality
-              # after the Jephthah poll was published and then deleted.
-              # Historical release approval is not standing permission to publish
-              # the seven remaining unreviewed polls. Never replay the deleted poll.
-              # This guard MUST remain until a new separately reviewed, immutable
-              # release and an explicit new owner publication authorization exist.
-              echo "::error::Series 02 publication on editorial hold after owner rejection; no Telegram send." >&2
-              exit 3
               if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
                 [[ "$CONFIRM" == "PUBLISH:@lordchrist:$SERIES_ID" ]] || {
                   echo "exact publication confirmation is missing" >&2
