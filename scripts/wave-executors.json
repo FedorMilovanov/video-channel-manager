@@ -375,6 +375,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/collect_legendary_poet_audio.py",
+      "private_imports": [],
+      "project_owner": "legendary-poet",
+      "provider_write_capable": false,
+      "sha256": "248cc62c59dd96e7eb11140709e4f5bcb4d394477e861318d1c75e90c21287cc",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/complete_vk_longform_tail.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
