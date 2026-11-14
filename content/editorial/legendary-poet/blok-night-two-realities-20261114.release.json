@@ -11,7 +11,9 @@
     "original_1914": "https://rvb.ru/20vek/blok/pss20/vol3/text/0593.html",
     "museum": "https://spbmuseum.ru/exhibits_and_exhibitions/temporary_exhibitions/53904/",
     "researched_site_change": "https://github.com/FedorMilovanov/TheLegendaryPoet/pull/575",
-    "youtube_copy": "content/youtube/legendary-poet/blok-night-two-realities-copy-review-20261114.md"
+    "youtube_copy": "content/youtube/legendary-poet/blok-night-two-realities-copy-review-20261114.md",
+    "website_music_workflow": "FedorMilovanov/TheLegendaryPoet/docs/MUSIC_RELEASE_WORKFLOW.md",
+    "website_audio_intake": "FedorMilovanov/TheLegendaryPoet/docs/AUDIO_CATALOG_INTAKE_2026-11-14.md"
   },
   "editorial_scope": "The 1912/1914 juxtaposition and happy DJ Blok are explicitly modern artistic fiction, not historical footage or autobiography.",
   "project_proof": {
@@ -30,7 +32,16 @@
       "sha256": null,
       "duration_seconds": null,
       "source": "final direct export, never 128 kbps downloader conversion",
-      "status": "not_bound"
+      "status": "not_bound",
+      "origin_kind": null,
+      "original_lossless_path": null,
+      "original_lossless_sha256": null,
+      "site_mp3_path": null,
+      "site_mp3_sha256": null,
+      "human_full_listen_review": null,
+      "intro_outro_review": null,
+      "audio_candidate_audit_json": null,
+      "notes": "Original Suno export / WAV / FLAC preferred. Video extraction is only an explicitly approved version after full listen; never reuse end-card audio or silence automatically."
     },
     "final_full_video_master": {
       "path": null,
@@ -93,6 +104,17 @@
       "target_public": "https://rutube.ru/channel/74579453/",
       "publication_status": "hold_provider_identity_and_master_not_verified",
       "idempotency_key": "tlp-blok-night-two-realities-rutube-20261114"
+    },
+    "website_music": {
+      "track_id": "blok-night-still-unassigned",
+      "availability": "hold_no_selected_original_master",
+      "is_existing_published_track": false,
+      "original_wav_or_flac_master_sha256": null,
+      "site_mp3_sha256": null,
+      "source_review": "human_full_listen_pending",
+      "planned_player": "existing_music_catalog_and_audio_player",
+      "no_placeholder_in_published_catalog": true,
+      "idempotency_key": "tlp-blok-night-two-realities-website-music-20261114"
     }
   },
   "release_policy": {
@@ -105,7 +127,12 @@
     "require_provider_receipt_and_public_readback": true,
     "ai_audio_video_disclosure": true,
     "preserve_original_poetry": true,
-    "do_not_modify_other_project_channels": true
+    "do_not_modify_other_project_channels": true,
+    "require_clean_audio_without_video_outro": true,
+    "require_intro_outro_and_full_listen": true,
+    "preserve_original_wav_flac": true,
+    "website_audio_published_only_after_verifiable_mp3_manifest": true,
+    "do_not_reencode_low_bitrate_audio_as_fake_premium_master": true
   },
   "audit_timestamp_utc": null,
   "note": "This document is a provider-inert release intake, not a workflow or API request. Edit status only from actual provider evidence. Never fill null IDs by guess."
