@@ -122,7 +122,7 @@ def test_caption_surface_limits_do_not_silently_truncate_text() -> None:
 
 
 def test_cli_preview_is_json_provider_inert(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(
+    result = main(
         [
             "--youtube-id",
             "5nKCs4bkoxE",
@@ -132,7 +132,8 @@ def test_cli_preview_is_json_provider_inert(capsys: pytest.CaptureFixture[str]) 
             "220000",
             "--allow-speedup",
         ]
-    ) == 0
+    )
+    assert result == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["release_authorized"] is False
     assert payload["provider_write_performed"] is False
