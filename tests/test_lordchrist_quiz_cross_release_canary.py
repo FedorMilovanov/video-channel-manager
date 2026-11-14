@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
 PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist-rich.json"
 BINDING_PATH = ROOT / "content/telegram/channels/lordchrist-target-binding.json"
-WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-quiz-series-poster.yml"
+WORKFLOW_PATH = ROOT / ".github/retired-workflows/lordchrist-quiz-series-02-poster.yml"
 GITHUB_SHA = "1" * 40
 WORKFLOW_SHA = "2" * 40
 
