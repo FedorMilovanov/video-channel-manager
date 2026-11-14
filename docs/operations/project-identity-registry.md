@@ -1,6 +1,6 @@
 # Project identity registry
 
-Updated: 2026-09-09
+Updated: 2026-11-14 (Instagram project identities refreshed; historical provider checkpoints retained)
 
 This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
@@ -73,6 +73,15 @@ A guarded write requires write scope and exact resolution to `UCeSJsC6go2c9pdJCu
 - Shared VK credential alias: `legendary-poet`
 
 Historical `gospod_bog` routes are operational references, not canonical viewer-facing links, unless freshly verified and registered.
+
+### Instagram
+
+- Professional username: `thelordgodismystrength`
+- Professional account ID: `17841433845016161`
+- Linked Facebook Page ID: `1457892317403899`
+- Verified Graph host: `https://graph.facebook.com`
+
+The exact Page-token owner and `instagram_business_account` binding were checked via independent GET-only Graph verification in November 2026 (Issue #869 and `scripts/instagram/lord_god_reels_readback_cloud_20261112.py`). This records **target identity only**, not Reel delivery, credential validity for future dates, approval of source rights, or authorization to publish. The Nov 11–13 failed Reels and the Nov 14 scheduled release remain subject to their individual immutable provider-effect and owner-authority gates.
 
 ### Other registered links
 
@@ -163,6 +172,14 @@ The read-only provider snapshot returned channel title `Milovi Cake`, `customUrl
 The shared VK credential is only authentication. The target is selected by `project_key=milovi-cake`, `community_id=68859909`, and `owner_id=-68859909`.
 
 The same VK browser session used for the other registered Fedor-managed communities is valid for Milovi Cake when that session has the required admin rights. Do not require a Milovi-specific browser login/profile solely because the target project is Milovi; prove the exact Milovi target immediately before any UI mutation instead.
+
+### Instagram
+
+- Professional username: `milovi_cake`
+- Professional account ID: `17841407843933779`
+- Linked Facebook Page ID: **not independently verified in the current registry checkpoint**; do not infer one from the Instagram account ID or from another project's Page.
+
+The exact Instagram Professional account/username were confirmed by read-only Graph preflight recorded in Issue #790 (November 2026). This identity checkpoint does **not** imply approval of every Reel, a successful Meta upload, a publishable video, or standing permission to write. Continue to use the separately reviewed immutable release and per-attempt provider guards.
 
 ### Other registered links
 
