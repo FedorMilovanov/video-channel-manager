@@ -39,3 +39,17 @@ def test_scythians_instagram_author_is_blok() -> None:
         assert "Александр Пушкин" not in item["caption"]
         assert "#АлександрПушкин" not in item["caption"]
         assert "#АлександрБлок" in item["caption"]
+
+
+def test_youtube_blok_playlist_is_not_nine_audio_masters() -> None:
+    data = json.loads(INTAKE.read_text(encoding="utf-8"))
+    audit = data["youtube_playlist_audit"]
+    entries = audit["entries_in_playlist_order"]
+    ids = {entry["youtube_id"] for entry in entries}
+    assert audit["playlist_video_count"] == len(entries) == len(ids) == 9
+    assert audit["music_video_count"] == sum(entry["category"].startswith("music_") for entry in entries) == 8
+    assert audit["excerpt_video_count"] == 1
+    assert next(entry for entry in entries if entry["youtube_id"] == "nFNtFHYNBiM")["category"] == (
+        "short_poetry_excerpt_not_music_master"
+    )
+    assert {release["youtube_id"] for release in data["releases"]}.issubset(ids)
