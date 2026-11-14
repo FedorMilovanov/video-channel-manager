@@ -59,16 +59,16 @@ def _check_two_playlists(lines: Sequence[str], block: str, errors: list[CopyIssu
     if len(lines) < 2:
         errors.append(CopyIssue(block, "missing_playlists", "Нужны два первых плейлиста."))
         return
-    prefix = "Плейлист «"
+    prefix = "*Плейлист «"
     first = lines[0]
-    if not first.startswith(prefix) or "»: https://www.youtube.com/playlist?list=" not in first:
+    if not first.startswith(prefix) or "»:* https://www.youtube.com/playlist?list=" not in first:
         errors.append(CopyIssue(block, "author_playlist", "Первая строка — авторский плейлист с открытым URL."))
-    second = f"Плейлист «Поющие Поэты»: {_SINGING_POETS}"
+    second = f"*Плейлист «Поющие Поэты»:* {_SINGING_POETS}"
     if lines[1] != second:
         errors.append(CopyIssue(block, "singers_playlist", "Вторая строка — точный плейлист «Поющие Поэты»."))
     if "Поющие Поэты" in first or "Эксперименты AI" in first:
         errors.append(CopyIssue(block, "not_author_playlist", "Первая ссылка должна вести на авторский плейлист."))
-    match = re.fullmatch(r"Плейлист «([^»]+)»: (https://www[.]youtube[.]com/playlist[?]list=[^\s]+)", first)
+    match = re.fullmatch(r"\*Плейлист «([^»]+)»:\* (https://www[.]youtube[.]com/playlist[?]list=[^\s]+)", first)
     if match:
         poet, url = match.groups()
         expected = LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet)
@@ -153,10 +153,12 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     if not 500 <= len(shorts) <= 600:
         errors.append(CopyIssue("shorts", "short_length", "SHORTS: 500–600 символов."))
     shorts_without_urls = _LINK_RE.sub("", shorts)
+    # The only emphasis permitted in Shorts is on the two registered playlist labels.
+    shorts_without_urls = re.sub(r"\*Плейлист «[^»]+»:\*", "", shorts_without_urls)
     if "*" in shorts_without_urls or "_" in shorts_without_urls or any(link in shorts for link in _SOCIAL):
         errors.append(CopyIssue("shorts", "short_format", "SHORTS — без выделений и социальных ссылок."))
     short_lines = _normal_lines(shorts)
-    short_playlists = [line for line in short_lines if line.startswith("Плейлист «")]
+    short_playlists = [line for line in short_lines if line.startswith("*Плейлист «")]
     if short_playlists != desc_lines[:2]:
         errors.append(
             CopyIssue(
@@ -169,8 +171,8 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     if not 3 <= len(short_hashes) <= 5:
         errors.append(CopyIssue("shorts", "short_hashtags", "SHORTS: 3–5 хештегов в конце."))
 
-    if not 500 <= len(pin) <= 900:
-        errors.append(CopyIssue("pin", "pin_length", "ЗАКРЕП: 500–900 символов."))
+    if not 500 <= len(pin) <= 1400:
+        errors.append(CopyIssue("pin", "pin_length", "ЗАКРЕП: 500–1400 символов."))
     pin_lines = _normal_lines(pin)
     if not pin_lines or not pin_lines[0].startswith("*«") or "»* — " not in pin_lines[0]:
         errors.append(CopyIssue("pin", "pin_header", "Закреп начинается с *«Названия»* — Автор, год."))
@@ -178,7 +180,7 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         errors.append(CopyIssue("pin", "pin_hashtags", "В закрепе нельзя использовать хештеги."))
     if len([line for line in pin_lines if line.startswith("_") and line.endswith("_")]) not in (1, 2):
         errors.append(CopyIssue("pin", "pin_poem_lines", "Нужно 1–2 отдельные _точные строки стихотворения_."))
-    pin_playlists = [line for line in pin_lines if line.startswith("Плейлист «")]
+    pin_playlists = [line for line in pin_lines if line.startswith("*Плейлист «")]
     if pin_playlists != desc_lines[:2]:
         errors.append(
             CopyIssue(
