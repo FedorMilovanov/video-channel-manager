@@ -371,14 +371,14 @@ def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
     assert out["due"] == "lordchrist-telegraph-charnock-03"
 
 
-def test_telegraph_workflow_has_midday_tue_fri_cron_without_timezone() -> None:
+def test_telegraph_workflow_is_manual_only_after_charnock_reissue_cutover() -> None:
     workflow = (ROOT / ".github/workflows/lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
-    assert '- cron: "0 9 * * 2,5"' in workflow  # 09:00 UTC = 12:00 Europe/Moscow
-    schedule_block = workflow.split("permissions:", 1)[0]
-    functional = [ln for ln in schedule_block.splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
-    assert not any("timezone:" in ln for ln in functional)
-    assert "lordchrist_telegraph_publisher due" in workflow
-    assert "steps.resolve.outputs.publication_id" in workflow
+    triggers = workflow.split("permissions:", 1)[0]
+    assert "workflow_dispatch:" in triggers
+    assert "\n  schedule:\n" not in triggers
+    assert '- cron: "0 9 * * 2,5"' not in triggers
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID" in workflow
+    assert "Manual public publication requires exact" in workflow
 
 
 def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
