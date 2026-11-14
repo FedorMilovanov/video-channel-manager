@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Provider-free validate, explicit durable state initialization, or publish the next due series quiz
+        description: Validation and state inspection; publishing on editorial hold (Nov 14 quality rejection)
         required: true
         default: validate
         type: choice
@@ -13,18 +13,9 @@ on:
           - initialize-state
           - publish
       confirm:
-        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02 or PUBLISH:@lordchrist:lordchrist-quiz-series-02; unused for validate
+        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02; publish is blocked pending new owner editorial approval
         required: false
         type: string
-  schedule:
-    # 13:00 Moscow daily; the immutable release spaces quizzes two days apart
-    # and the freshness gate publishes only when the next quiz is due.
-    - cron: "0 10 * * *"
-    # Backup off-hour ticks counter GitHub schedule delays observed in Nov 2026.
-    # Probes may run early; the immutable 13:00 MSK release slot still gates
-    # dispatch, with a 360-minute stale cutoff and one durable state writer.
-    # Even a delayed tick must never backfill expired items or replay intent.
-    - cron: "17 4,6,8,10,12,14 * * *"
 
 permissions:
   actions: read
@@ -96,6 +87,15 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             OPERATION="publish"
             DISPATCH_MODE="scheduled"
+          fi
+          # EDITORIAL HOLD (2026-11-14): after the owner rejected the
+          # Jephthah poll and deleted it, earlier Series 02 release approval
+          # does not grant authority to send any remaining unreviewed poll.
+          # Restore publishing only through a NEW independently reviewed
+          # candidate/release and explicit owner approval. Never replay 1613.
+          if [[ "$OPERATION" == "publish" ]]; then
+            echo "::error::Series 02 publication on editorial hold after owner rejection; no Telegram send." >&2
+            exit 3
           fi
           case "$OPERATION" in
             validate)

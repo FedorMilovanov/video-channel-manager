@@ -112,6 +112,9 @@ def test_workflow_targets_only_new_series_without_implicit_authorization() -> No
     workflow = SERIES_WORKFLOW.read_text(encoding="utf-8")
     assert "SERIES_ID: lordchrist-quiz-series-02" in workflow
     assert "SERIES_ID: lordchrist-quiz-series-01" not in workflow
+    assert "  schedule:" not in workflow
+    assert "publication on editorial hold" in workflow
+    assert workflow.index("publication on editorial hold") < workflow.index('case "$OPERATION" in')
     assert "if: github.ref == 'refs/heads/main'" in workflow
     assert "INITIALIZE:@lordchrist:$SERIES_ID" in workflow
     assert "PUBLISH:@lordchrist:$SERIES_ID" in workflow
