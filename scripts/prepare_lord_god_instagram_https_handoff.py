@@ -62,9 +62,7 @@ def _assert_unattempted(db_path: Path) -> None:
     except sqlite3.Error as exc:
         raise HandoffHold("Publication ledger cannot be verified read-only") from exc
     if attempts:
-        raise HandoffHold(
-            "Source has a previous Instagram attempt; manual reconcile required"
-        )
+        raise HandoffHold("Source has a previous Instagram attempt; manual reconcile required")
 
 
 def prepare_verified_handoff(
@@ -108,15 +106,11 @@ def prepare_verified_handoff(
         or evidence.get("approved_release_slot") != f"{day}T19:00:00+03:00"
         or not re.fullmatch(r"[0-9a-f]{40}", str(evidence.get("source_commit", "")))
     ):
-        raise HandoffHold(
-            "Owned media, final review, public hosting, or exact slot not approved"
-        )
+        raise HandoffHold("Owned media, final review, public hosting, or exact slot not approved")
 
     media_sha = str(evidence.get("video_sha256", "")).removeprefix("sha256:")
     caption_sha = str(evidence.get("caption_sha256", "")).removeprefix("sha256:")
-    if not re.fullmatch(r"[0-9a-f]{64}", media_sha) or not re.fullmatch(
-        r"[0-9a-f]{64}", caption_sha
-    ):
+    if not re.fullmatch(r"[0-9a-f]{64}", media_sha) or not re.fullmatch(r"[0-9a-f]{64}", caption_sha):
         raise HandoffHold("Invalid frozen media/caption SHA-256")
     video_path = Path(str(evidence["video_path"]))
     caption_path = Path(str(evidence["caption_path"]))
@@ -159,9 +153,7 @@ def prepare_verified_handoff(
         or parsed.fragment
         or not parsed.path.endswith(f"/{media_sha}.mp4")
     ):
-        raise HandoffHold(
-            "Expected exact-host HTTPS MP4 with content-addressed filename"
-        )
+        raise HandoffHold("Expected exact-host HTTPS MP4 with content-addressed filename")
 
     manifest = InstagramPublishManifest(
         publication_key=f"{PROJECT}.{day}.{SOURCE}.public-https-v1",
@@ -207,9 +199,7 @@ def main() -> int:
         )
     # Exclusive file creation prevents silent overrides of approval/handoff receipts.
     with args.output.open("x", encoding="utf-8") as stream:
-        json.dump(
-            manifest.model_dump(mode="json"), stream, ensure_ascii=False, indent=2
-        )
+        json.dump(manifest.model_dump(mode="json"), stream, ensure_ascii=False, indent=2)
         stream.write("\n")
     print(f"PROVIDER_INERT_OWNED_REEL_HANDOFF={manifest.publication_key}")
     print("META_POST=0 SCHEDULE_WRITES=0 PUBLISH_AUTHORITY=NOT_GRANTED")
