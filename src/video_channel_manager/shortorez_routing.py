@@ -111,7 +111,7 @@ def plan_routes(clip: ClipInterval, *, allow_speedup: bool = False) -> tuple[Var
 
 def _source_link_position(caption: str, source_video_id: str) -> int | None:
     """Locate a genuinely exact HTTPS watch URL, not a lookalike substring."""
-    for match in re.finditer(r"https://[^\s<>()\[\]]+", caption):
+    for match in re.finditer(r"https://[^\s<>()]+", caption):
         candidate = match.group().rstrip(".,!?;:")
         try:
             parsed = urlsplit(candidate)
