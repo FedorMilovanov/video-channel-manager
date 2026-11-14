@@ -6,6 +6,8 @@ These tests are provider-inert. Passing validation does NOT authorize delivery.
 from __future__ import annotations
 
 import json
+
+import pytest
 from datetime import timedelta
 from pathlib import Path
 
@@ -105,7 +107,8 @@ def test_series02_runtime_matches_user_approved_exact_candidate() -> None:
     assert all(item.payload.poll_type == "quiz" for item in committed.items)
     assert all(item.payload.explanation is not None for item in committed.items)
     assert validate_series(SERIES_ID, require_release_authorized=True)["release_authorized"] is True
-    assert validate_series(SERIES_ID, require_execution_authorized=True)["release_authorized"] is True
+    with pytest.raises(ValueError, match="retired quiz series"):
+        validate_series(SERIES_ID, require_execution_authorized=True)
 
 
 def test_workflow_targets_only_new_series_without_implicit_authorization() -> None:
