@@ -8,6 +8,7 @@ from video_channel_manager.editorial import require_youtube_project_identity
 from video_channel_manager.youtube_upload_plan import (
     UploadPlanError,
     canonical_sha256,
+    require_resolved_metadata,
     sha256_file,
     stable_upload_key,
     validate_intent,
@@ -165,6 +166,12 @@ def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) ->
     tags = snippet.get("tags")
     if not isinstance(tags, list) or not all(isinstance(item, str) and item.strip() for item in tags):
         raise UploadPlanError("Release tags must be non-empty strings.")
+    description = snippet.get("description")
+    if not isinstance(description, str):
+        raise UploadPlanError("Release description must be a string.")
+    # Revalidate public copy even if a review-only description is substituted
+    # and the release-plan digest is recomputed after an original clean intent.
+    require_resolved_metadata(title=str(snippet["title"]), description=description, tags=tags)
     if not isinstance(status, dict) or status.get("privacyStatus") != "private":
         raise UploadPlanError("Release initial_status must be private.")
 
