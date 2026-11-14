@@ -463,6 +463,7 @@ def test_upload_transport_ambiguity_blocks_blind_binary_replay(tmp_path: Path) -
         assert child.last_error_message is not None
         assert "ReadTimeout" in child.last_error_message
         assert "upload response lost" in child.last_error_message
+        assert "; upload_dispatch_elapsed_ms=" in child.last_error_message
         assert TOKEN not in child.last_error_message
         assert container_calls == 1
         assert upload_calls == 1
@@ -642,6 +643,7 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
     assert "body=" in message
     assert "request-123" in message
     assert "trace-456" in message
+    assert "; upload_dispatch_elapsed_ms=" in message
     assert "[REDACTED_TOKEN]" in message
     assert TOKEN not in message
 
@@ -711,6 +713,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         assert parent.last_error_code == "ProcessingFailedError"
         assert parent.last_error_message is not None
         assert "retriable" in parent.last_error_message
+        assert "; upload_dispatch_elapsed_ms=" in parent.last_error_message
         assert child is not None
         assert child.state == ResumableUploadState.PROVIDER_FAILED
         assert child.attempt_count == 1

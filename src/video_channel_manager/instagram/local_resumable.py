@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -473,6 +474,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
         body: bytes | None = None
+        dispatch_elapsed_ms: int | None = None
         try:
             body = stream.read()
             # Validate the exact bytes sent, not only the earlier filesystem probe.
@@ -489,7 +491,11 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                     error_code="local_video_upload_sha256_mismatch",
                     retryable=False,
                 )
-            response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
+            dispatch_started_ns = time.perf_counter_ns()
+            try:
+                response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
+            finally:
+                dispatch_elapsed_ms = max(0, (time.perf_counter_ns() - dispatch_started_ns) // 1_000_000)
         except (httpx.RequestError, OSError) as exc:
             detail = secret_safe_exception_detail(
                 exc,
@@ -502,8 +508,10 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 body_length=len(body) if body is not None else 0,
                 expected_file_size=file_size,
             )
+            timing = f"; upload_dispatch_elapsed_ms={dispatch_elapsed_ms}" if dispatch_elapsed_ms is not None else ""
             raise InstagramTransportError(
-                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}; {fingerprint}"
+                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}; "
+                f"{fingerprint}{timing}"
             ) from exc
 
         fingerprint = describe_resumable_upload_request(
@@ -512,6 +520,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             expected_file_size=file_size,
         )
         if response.is_error:
+            timing = f"; upload_dispatch_elapsed_ms={dispatch_elapsed_ms}" if dispatch_elapsed_ms is not None else ""
             message, error_code = describe_provider_http_error(
                 response,
                 secret=self.config.access_token,
@@ -519,7 +528,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 prefix="Instagram resumable upload",
             )
             raise InstagramProviderError(
-                f"{message}; {fingerprint}",
+                f"{message}; {fingerprint}{timing}",
                 status_code=response.status_code,
                 error_code=error_code,
                 retryable=provider_http_retryable(response),
