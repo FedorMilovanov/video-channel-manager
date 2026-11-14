@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "lordchrist-quiz-s02-jephthah",
+  "provider_payload_sha256": "sha256:e027dac4dcc79cf358dc967fa2d44823fb15c29990b88f9700b4ffadd276c4f7",
+  "provider_effect": "verified",
+  "retryable": false,
+  "error": null,
+  "receipt": {
+    "schema_name": "video-channel-manager.telegram-generic-send-receipt",
+    "schema_version": 1,
+    "project_key": "lord-god-strength",
+    "publication_id": "lordchrist-quiz-s02-jephthah",
+    "provider_payload_sha256": "sha256:e027dac4dcc79cf358dc967fa2d44823fb15c29990b88f9700b4ffadd276c4f7",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "message_id": 1613,
+    "message_url": "https://t.me/lordchrist/1613",
+    "verified_at_utc": "2026-11-14T11:35:56.700706Z",
+    "provider_effect": "verified"
+  }
+}
