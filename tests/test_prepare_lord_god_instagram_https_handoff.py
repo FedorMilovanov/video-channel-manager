@@ -12,11 +12,7 @@ from typing import Any, cast
 import httpx
 import pytest
 
-_MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "scripts"
-    / "prepare_lord_god_instagram_https_handoff.py"
-)
+_MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "prepare_lord_god_instagram_https_handoff.py"
 _SPEC = importlib.util.spec_from_file_location("lord_god_https_handoff", _MODULE_PATH)
 assert _SPEC is not None and _SPEC.loader is not None
 handoff = importlib.util.module_from_spec(_SPEC)
@@ -56,9 +52,7 @@ def case(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
     db_path = tmp_path / "ledger.sqlite"
     with sqlite3.connect(db_path) as db:
-        db.execute(
-            "CREATE TABLE instagram_publications (account_id TEXT, publication_key TEXT)"
-        )
+        db.execute("CREATE TABLE instagram_publications (account_id TEXT, publication_key TEXT)")
     verify_calls: list[str] = []
     monkeypatch.setattr(
         handoff,
@@ -104,9 +98,7 @@ def test_approved_owned_media_yields_new_distinct_key_without_graph(
     case: dict[str, Any],
 ) -> None:
     manifest = prepare(case)
-    assert manifest.publication_key == (
-        "lord-god-strength.2026-11-22.article-heart.public-https-v1"
-    )
+    assert manifest.publication_key == ("lord-god-strength.2026-11-22.article-heart.public-https-v1")
     assert manifest.account_id == handoff.ACCOUNT
     assert manifest.media_sha256 == "sha256:" + case["media_hash"]
     assert case["verify_calls"] == ["local", "hosted"]
@@ -126,9 +118,7 @@ def test_approved_owned_media_yields_new_distinct_key_without_graph(
         ("source_commit", "unverified"),
     ],
 )
-def test_any_missing_identity_or_approval_fails_closed(
-    case: dict[str, Any], field: str, invalid: Any
-) -> None:
+def test_any_missing_identity_or_approval_fails_closed(case: dict[str, Any], field: str, invalid: Any) -> None:
     edit_evidence(case, **{field: invalid})
     with pytest.raises(handoff.HandoffHold):
         prepare(case)
@@ -200,9 +190,7 @@ def test_ledger_unavailable_fails_closed(case: dict[str, Any]) -> None:
         prepare(case, db_path=case["db_path"].parent / "missing.sqlite")
 
 
-def test_hosted_object_verification_failure_propagates(
-    case: dict[str, Any], monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_hosted_object_verification_failure_propagates(case: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
     def reject_hosted(*args: Any, **kwargs: Any) -> None:
         raise RuntimeError("remote SHA mismatch")
 
