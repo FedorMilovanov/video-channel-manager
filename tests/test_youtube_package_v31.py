@@ -40,7 +40,7 @@ def make_package() -> str:
         ][i]
         paragraphs.append((body + emph)[:570])
     desc = (
-        f"Плейлист «Сергей Есенин»: {YESENIN}\nПлейлист «Поющие Поэты»: {SINGING}\n\n"
+        f"*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}\n\n"
         + social
         + "\n\n"
         + "\n\n".join(paragraphs)
@@ -49,7 +49,7 @@ def make_package() -> str:
     shorts = (
         "Поэтические образы Сергея Есенина и речь русского стиха в формате.\n"
         + "Год и редакция стихотворения устанавливаются по первичным источникам, а не по названию ролика. " * 3
-        + f"\nПлейлист «Сергей Есенин»: {YESENIN}\nПлейлист «Поющие Поэты»: {SINGING}\n"
+        + f"\n*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}\n"
         + "#СергейЕсенин #РусскаяПоэзия #Классика #Чтение"
     )
     pin = (
@@ -57,7 +57,7 @@ def make_package() -> str:
         + "Этот закреп демонстрирует проверку структуры, а не готовый к публикации факт. " * 6
         + "\n_Строка оригинального стихотворения._\n_Другая точная строка._\n"
         + "Какой образ заметнее: природа или человеческая память?\n"
-        + f"Плейлист «Сергей Есенин»: {YESENIN}\nПлейлист «Поющие Поэты»: {SINGING}"
+        + f"*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}"
     )
     tags = (
         "ТЕГИ: Есенин,Сергей Есенин,Русская Поэзия,Литература,Строка,Чтение,"
@@ -168,19 +168,19 @@ def test_no_facts_or_executors_in_copy_module() -> None:
 def test_registered_but_wrong_author_playlist_fails() -> None:
     """Whitelisted link does not imply the link belongs to the named poet."""
     pkg = make_package().replace(
-        "Плейлист «Сергей Есенин»: " + YESENIN,
-        "Плейлист «Сергей Есенин»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        "*Плейлист «Сергей Есенин»:* " + YESENIN,
+        "*Плейлист «Сергей Есенин»:* https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
     )
     assert "author_playlist_mismatch" in {item.code for item in validate_five_block_package(pkg)}
 
 
 def test_short_playlist_cannot_point_to_a_different_author() -> None:
     pkg = make_package()
-    short = "Плейлист «Сергей Есенин»: " + YESENIN
+    short = "*Плейлист «Сергей Есенин»:* " + YESENIN
     ix = pkg.index(short, pkg.index(short) + 1)
     candidate = pkg[:ix] + pkg[ix:].replace(
         short,
-        "Плейлист «Михаил Лермонтов»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        "*Плейлист «Михаил Лермонтов»:* https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
         1,
     )
     assert "short_playlist_mismatch" in {item.code for item in validate_five_block_package(candidate)}
@@ -188,7 +188,7 @@ def test_short_playlist_cannot_point_to_a_different_author() -> None:
 
 def test_pinned_comment_must_end_with_same_two_playlists() -> None:
     pkg = make_package()
-    line = "Плейлист «Поющие Поэты»: " + SINGING
+    line = "*Плейлист «Поющие Поэты»:* " + SINGING
     ix = pkg.rfind(line) + len(line)
     candidate = pkg[:ix] + "\nЛишний рекламный хвост." + pkg[ix:]
     assert "pin_playlist_position" in {item.code for item in validate_five_block_package(candidate)}
@@ -197,7 +197,36 @@ def test_pinned_comment_must_end_with_same_two_playlists() -> None:
 def test_author_registry_known_and_unsupported_names_are_rejected() -> None:
     pkg = make_package()
     candidate = pkg.replace(
-        "Плейлист «Сергей Есенин»: " + YESENIN,
-        "Плейлист «Несуществующий автор»: " + YESENIN,
+        "*Плейлист «Сергей Есенин»:* " + YESENIN,
+        "*Плейлист «Несуществующий автор»:* " + YESENIN,
     )
     assert "unknown_author" in {item.code for item in validate_five_block_package(candidate)}
+
+
+def test_plain_playlist_labels_fail_the_owner_bold_link_standard() -> None:
+    pkg = make_package()
+    bad = pkg.replace("*Плейлист «Сергей Есенин»:* ", "Плейлист «Сергей Есенин»: ", 1)
+    codes = {item.code for item in validate_five_block_package(bad)}
+    assert "author_playlist" in codes
+    assert not validate_five_block_package(pkg)
+
+
+def test_playlist_labels_allow_bold_only_in_shorts_and_pin() -> None:
+    pkg = make_package()
+    codes = {item.code for item in validate_five_block_package(pkg)}
+    assert "short_format" not in codes
+    assert "short_playlist_mismatch" not in codes
+    assert "pin_playlist_mismatch" not in codes
+
+
+def test_long_form_pin_can_be_informative_but_not_unbounded() -> None:
+    pkg = make_package()
+    pin_start = pkg.index("*«Поэтический цикл»*")
+    marker = "\n_Строка оригинального стихотворения._"
+    ix = pkg.index(marker, pin_start)
+    expanded = pkg[:ix] + " Проверенный содержательный контекст для полного закрепа." * 10 + pkg[ix:]
+    assert not any(
+        issue.block == "pin" and issue.code == "pin_length" for issue in validate_five_block_package(expanded)
+    )
+    oversized = pkg[:ix] + " Достоверный контекст." * 100 + pkg[ix:]
+    assert "pin_length" in {issue.code for issue in validate_five_block_package(oversized) if issue.block == "pin"}

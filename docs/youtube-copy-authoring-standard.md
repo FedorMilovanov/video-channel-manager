@@ -16,6 +16,12 @@ If rules differ, the more specific canonical document above wins.
 
 
 
+### 2026-11-14 — обязательные жирные подписи ссылок
+
+Во всех новых ручных пакетах The Legendary Poet подписи двух верхних плейлистов Description, четырёх соцссылок и ссылок в комментариях должны быть жирными: `*Подпись:* URL`. Двоеточие входит внутрь `*...*`; сам URL не выделяется. Требование не относится к основному литературному абзацу: он начинается без каких-либо маркеров. Исключение для SHORTS: только две жирные подписи плейлистов.
+
+Проверка `*«О, я хочу безумно жить…»*,` и аналогичных конструкций с пунктуацией после закрывающего маркера обязательна до выпуска. Нельзя автоматически сдвигать запятые и точки; нужно переписать предложение, сохраняя авторские цитаты и смысл, а затем проверить фактическое выделение на публичной странице YouTube.
+
 ## 1. Research before copy
 
 Any description or comment that states dates, publication history, biography, quotation, dedication, historical circumstances or an alleged authorial intention must be researched before it is called final.
