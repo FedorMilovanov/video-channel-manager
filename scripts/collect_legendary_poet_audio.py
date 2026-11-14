@@ -138,6 +138,17 @@ def collect(roots: list[Path], target: Path, copy: bool, extensions: set[str]) -
                 writer.writerow(dict(status=f"ERROR: {error}", format=source.suffix.lower().lstrip("."),
                                      bytes="", sha256="", original_path=str(source),
                                      collected_path="", original_name=source.name))
+    # Human audition playlist, using only verified files already present in target.
+    # Relative paths keep it portable when the collected folder is moved as a unit.
+    playlist_entries = sorted(
+        destination.name for destination in unique.values()
+        if destination.is_file()
+    )
+    (target / "_ВСЕ_НА_ПРОСЛУШИВАНИЕ.m3u8").write_text(
+        "#EXTM3U\n" + "\n".join(playlist_entries) + ("\n" if playlist_entries else ""),
+        encoding="utf-8-sig",
+    )
+    summary["playlist_count"] = len(playlist_entries)
     summary["completed_utc"] = datetime.now(timezone.utc).isoformat()
     (target / "_АУДИО_СВОДКА.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
