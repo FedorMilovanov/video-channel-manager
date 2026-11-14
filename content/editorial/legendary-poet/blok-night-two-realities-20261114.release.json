@@ -1,0 +1,112 @@
+{
+  "schema_name": "legendary-poet.cross-platform-release-intake",
+  "schema_version": 1,
+  "release_id": "tlp-blok-night-two-realities-20261114",
+  "project_key": "legendary-poet",
+  "purpose": "Source-locked Blok dual-realities publication across established platforms without duplicate uploads",
+  "state": "editorial_ready__provider_inert",
+  "source": {
+    "site_poet": "https://thelegendarypoet.ru/poets/alexander-blok",
+    "original_1912": "https://rvb.ru/20vek/blok/pss20/vol3/text/0548.html",
+    "original_1914": "https://rvb.ru/20vek/blok/pss20/vol3/text/0593.html",
+    "museum": "https://spbmuseum.ru/exhibits_and_exhibitions/temporary_exhibitions/53904/",
+    "researched_site_change": "https://github.com/FedorMilovanov/TheLegendaryPoet/pull/575",
+    "youtube_copy": "content/youtube/legendary-poet/blok-night-two-realities-copy-review-20261114.md"
+  },
+  "editorial_scope": "The 1912/1914 juxtaposition and happy DJ Blok are explicitly modern artistic fiction, not historical footage or autobiography.",
+  "project_proof": {
+    "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+    "vk_community_id": 235216998,
+    "vk_owner_id": -235216998,
+    "instagram_professional_id": "17841435926122104",
+    "instagram_username": "the.legendary.poet",
+    "telegram_public_channel": "https://t.me/thelegendarypoet",
+    "telegram_numeric_chat_id": null,
+    "rutube_public_channel": "https://rutube.ru/channel/74579453/"
+  },
+  "assets": {
+    "final_audio_master": {
+      "path": null,
+      "sha256": null,
+      "duration_seconds": null,
+      "source": "final direct export, never 128 kbps downloader conversion",
+      "status": "not_bound"
+    },
+    "final_full_video_master": {
+      "path": null,
+      "sha256": null,
+      "geometry": null,
+      "status": "not_bound"
+    },
+    "instagram_native_vertical": {
+      "path": null,
+      "sha256": null,
+      "geometry": "9:16",
+      "status": "not_bound"
+    },
+    "square_audio_cover": {
+      "path": null,
+      "sha256": null,
+      "status": "not_bound"
+    }
+  },
+  "destinations": {
+    "website": {
+      "content_status": "in_pr_575",
+      "publishing_status": "not_live_verified",
+      "idempotency_key": "tlp-blok-night-two-realities-website-20261114"
+    },
+    "youtube": {
+      "target_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+      "existing_video_id": null,
+      "publication_status": "unknown_requires_exact_owner_readback",
+      "idempotency_key": "tlp-blok-night-two-realities-youtube-20261114"
+    },
+    "telegram_audio": {
+      "target_public": "https://t.me/thelegendarypoet",
+      "target_chat_id": null,
+      "publication_status": "hold_missing_mp3_and_bot_target",
+      "idempotency_key": "tlp-blok-night-two-realities-tg-audio-20261114"
+    },
+    "vk_video": {
+      "target_owner_id": -235216998,
+      "publication_status": "hold_missing_master_and_provider_duplicate_check",
+      "historic_candidate": "content/policies/vk-wall-wave-202608.json / vk-wall-202608-05-blok-night",
+      "idempotency_key": "tlp-blok-night-two-realities-vk-video-20261114"
+    },
+    "vk_wall": {
+      "target_owner_id": -235216998,
+      "publication_status": "hold_previous_202608_05_wall_post_unverified",
+      "idempotency_key": "tlp-blok-night-two-realities-vk-wall-20261114"
+    },
+    "instagram_reel": {
+      "target_id": "17841435926122104",
+      "publication_status": "hold_missing_vertical_master_and_fresh_graph_readback",
+      "idempotency_key": "tlp-blok-night-two-realities-ig-reel-20261114"
+    },
+    "instagram_carousel": {
+      "target_id": "17841435926122104",
+      "publication_status": "hold_missing_reviewed_artwork_and_graph_readback",
+      "idempotency_key": "tlp-blok-night-two-realities-ig-carousel-20261114"
+    },
+    "rutube": {
+      "target_public": "https://rutube.ru/channel/74579453/",
+      "publication_status": "hold_provider_identity_and_master_not_verified",
+      "idempotency_key": "tlp-blok-night-two-realities-rutube-20261114"
+    }
+  },
+  "release_policy": {
+    "avoid_duplicate_uploads": true,
+    "do_not_infer_published_from_queue": true,
+    "do_not_infer_unpublished_from_old_queue": true,
+    "require_media_hash_and_original_master": true,
+    "require_exact_provider_target_and_live_preflight": true,
+    "do_not_replay_ambiguous_provider_effect": true,
+    "require_provider_receipt_and_public_readback": true,
+    "ai_audio_video_disclosure": true,
+    "preserve_original_poetry": true,
+    "do_not_modify_other_project_channels": true
+  },
+  "audit_timestamp_utc": null,
+  "note": "This document is a provider-inert release intake, not a workflow or API request. Edit status only from actual provider evidence. Never fill null IDs by guess."
+}
