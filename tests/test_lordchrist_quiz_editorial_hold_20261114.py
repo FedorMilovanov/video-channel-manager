@@ -7,7 +7,6 @@ The historical approved runtime/ledger remains immutable forensic evidence.
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,11 +60,21 @@ def test_editorial_document_covers_all_old_questions_and_seven_provider_inert_dr
     before_rules = after_drafts.split("## Новый минимальный стандарт", 1)[0]
     assert before_rules.count("**Вопрос:**") == 7
     assert before_rules.count("**Правильный:**") == 7
-    positions = [int(x) for x in re.findall(r"\\*\\*Правильный:\\*\\* ([1-4])\\.", before_rules)]
+    positions = [
+        int(line.split("**Правильный:** ", 1)[1][0])
+        for line in before_rules.splitlines()
+        if line.startswith("**Правильный:** ")
+    ]
     assert len(positions) == 7
     assert len(set(positions)) == 4
     assert max(positions.count(option) for option in (1, 2, 3, 4)) <= 2
-    explanations = re.findall(r"\\*\\*Пояснение quiz \\((\\d+)/200\\):\\*\\* (.+)", before_rules)
+    explanations = []
+    for line in before_rules.splitlines():
+        if not line.startswith("**Пояснение quiz ("):
+            continue
+        prefix, explanation = line.split("):** ", 1)
+        declared = int(prefix.split("(", 1)[1].split("/", 1)[0])
+        explanations.append((declared, explanation))
     assert len(explanations) == 7
     for declared, explanation in explanations:
         assert len(explanation) == int(declared)
