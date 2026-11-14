@@ -26,6 +26,7 @@ def test_audio_collection_is_idempotent_and_preserves_alternate_versions(tmp_pat
     assert (after["file_count"], after["exact_duplicates"], after["copied_count"]) == (4, 1, 3)
     assert len(list(target.glob("*.mp3"))) == 2
     assert len(list(target.glob("*.wav"))) == 1
+    assert len((target / "_ВСЕ_НА_ПРОСЛУШИВАНИЕ.m3u8").read_text(encoding="utf-8-sig").splitlines()) == 4
     again = module.collect([source_a, source_b], target, True, {".mp3", ".wav"})
     assert again["copied_count"] == 0
     assert (source_a / "Ночь.mp3").read_bytes() == b"version one"
