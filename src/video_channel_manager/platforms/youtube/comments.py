@@ -91,6 +91,8 @@ def validate_comment_text(value: str) -> str:
     normalized = canonicalize_comment_text(value)
     if not normalized:
         raise ValueError("YouTube comment text cannot be blank.")
+    if "\ufffd" in normalized or "????" in normalized:
+        raise ValueError("YouTube comment text contains probable Unicode encoding damage.")
     if len(normalized) > _COMMENT_TEXT_LIMIT:
         raise ValueError(
             f"YouTube comment text is {len(normalized)} characters; the project safety limit is {_COMMENT_TEXT_LIMIT}."
