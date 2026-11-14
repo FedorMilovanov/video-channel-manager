@@ -125,8 +125,6 @@ def exact_state_decision(row: dict, *, checkout: Path) -> bool:
         return True
     raise ValueError("provider state is unresolved; refusing repeat or blind send")
 
-
-
 def missed_delivery_windows(now: datetime, rows: list[dict], *, checkout: Path) -> list[str]:
     """Audit expired owner-approved windows without granting catch-up authority.
 
