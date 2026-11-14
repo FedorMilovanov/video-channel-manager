@@ -329,4 +329,5 @@ def test_poster_runs_the_quote_lane_only() -> None:
 
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert 'lane="quote"' in workflow
-    assert '"0 9 * * 2,5"' in workflow
+    assert '"0 9 * * 2,5"' not in workflow  # retired rich-v1 cron
+    assert '"17 16 * * 1,3,6"' in workflow  # independent history lane
