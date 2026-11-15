@@ -632,11 +632,11 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-        "git_blob_sha": "843a333ccb773c3be3b17e352f1c90844e3bc3f4"
+        "git_blob_sha": "e7767a1f265f28abb3c9917ac9815b1a806858a6"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/lordchrist-telegraph-charnock-history-01-cover.jpg",
-        "git_blob_sha": "d7681ad34d78440058a9e71ada90bcbf57ac0a0f",
+        "git_blob_sha": "a5c455e9200ca4060c1bbb5aa3130d2fcf390f82",
         "media_id": "media-cover"
       },
       "channel_post": {

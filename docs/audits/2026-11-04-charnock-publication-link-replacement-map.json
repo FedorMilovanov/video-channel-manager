@@ -39,7 +39,7 @@
       "previous_telegram_message_id": 1585,
       "previous_published_article_sha256": "sha256:267eadf21225c14f1bee0f09fc9e96c4841ee69684a6ea678c0418248c621ee7",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-      "corrected_document_git_blob_sha": "843a333ccb773c3be3b17e352f1c90844e3bc3f4",
+      "corrected_document_git_blob_sha": "e7767a1f265f28abb3c9917ac9815b1a806858a6",
       "corrected_document_branch": "editorial/charnock-history-theology-20261115",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
