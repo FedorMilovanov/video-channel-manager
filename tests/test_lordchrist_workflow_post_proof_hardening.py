@@ -15,6 +15,7 @@ TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
 QUOTE_V6_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quote-v6-publisher.yml"
 SHORTS4_WORKFLOW = WORKFLOWS_DIR / "lordchrist-shorts4-publisher.yml"
 CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
+PEASANTS1525_GLOSSARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-peasants1525-glossary-revision.yml"
 CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
     WORKFLOW,
@@ -25,6 +26,7 @@ EXPECTED_LOCK_PARTICIPANTS = {
     QUOTE_V6_WORKFLOW,
     SHORTS4_WORKFLOW,
     CHARNOCK_CORRECTION_WORKFLOW,
+    PEASANTS1525_GLOSSARY_WORKFLOW,
     CHARNOCK_SCHEDULE_WORKFLOW,
 }
 

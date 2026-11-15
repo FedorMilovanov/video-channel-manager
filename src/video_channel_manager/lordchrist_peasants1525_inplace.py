@@ -40,7 +40,7 @@ PAGE_PATH = "1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednik
 PAGE_URL = "https://telegra.ph/" + PAGE_PATH
 OLD_TITLE = "1525: почему немецкие крестьяне требовали права выбирать проповедника"
 MESSAGE_ID = 1619
-EXPECTED_ARTICLE_BLOB = "dfa35a8c11134905d62d0aee447ef1e4f01b616a"
+EXPECTED_ARTICLE_BLOB = "c223fff62512072f101b1d378dd4f1cad08450e4"
 EXPECTED_COVER_BLOB = "60a3e79ce0a7105b1e61844d2ea3b7fd785aaa4a"
 READBACK_DELAYS = (0, 2, 4, 8, 16, 30)
 
@@ -154,10 +154,8 @@ def _target(args: argparse.Namespace) -> tuple[Path, dict[str, Any], dict[str, A
         or entry.get("telegram_chat_id") != -1001295216957
         or entry.get("telegraph_url") != PAGE_URL
         or entry.get("telegraph_path") != PAGE_PATH
-        or entry.get("article_sha256")
-        != "sha256:aa2895347a90cc0e0699a5951204318726913d241b5ac313db914462ccab2a2f"
-        or entry.get("cover_sha256")
-        != "sha256:1c3a7cd2386645412e81097dc18481f7de8544fc1d21b28d943a0e5c204ab579"
+        or entry.get("article_sha256") != "sha256:aa2895347a90cc0e0699a5951204318726913d241b5ac313db914462ccab2a2f"
+        or entry.get("cover_sha256") != "sha256:1c3a7cd2386645412e81097dc18481f7de8544fc1d21b28d943a0e5c204ab579"
     ):
         raise RuntimeError("Previously published article or exact channel identity changed")
     items = load_telegraph_queue(args.repo_root / DEFAULT_QUEUE_PATH, args.repo_root)

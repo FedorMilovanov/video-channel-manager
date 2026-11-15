@@ -19,6 +19,7 @@ permissions:
 concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
+  queue: max
 
 jobs:
   revise-existing-page-and-post:
@@ -45,7 +46,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install canonical Telegram publication dependencies
-        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
       - name: In-place page and original Telegram message, each with durable intent
         shell: bash
         run: bash scripts/peasants1525-glossary-inplace-release.sh

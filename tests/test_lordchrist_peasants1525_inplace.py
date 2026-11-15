@@ -295,9 +295,9 @@ def test_1525_glossary_links_resolve_to_in_page_heading_ids():
     from urllib.parse import unquote, urlsplit
 
     root = Path(__file__).resolve().parents[1]
-    markdown = (
-        root / "content/telegram/lordchrist/telegraph-v1/history/peasants-1525-glossary-v2.md"
-    ).read_text(encoding="utf-8")
+    markdown = (root / "content/telegram/lordchrist/telegraph-v1/history/peasants-1525-glossary-v2.md").read_text(
+        encoding="utf-8"
+    )
     headings = set(re.findall(r"^## (.+)$", markdown, flags=re.M))
     glossary_links = re.findall(r"\]\((https://telegra.ph/[^)]*#[^)]*)\)", markdown)
     assert len(glossary_links) >= 10
@@ -312,15 +312,23 @@ def test_1525_original_identity_cannot_be_changed_by_revision(monkeypatch):
     args = _args("prepare-page")
     assert revision.MESSAGE_ID == 1619
     assert revision.PAGE_PATH.endswith("-11-15")
-    monkeypatch.setattr(revision, "_ledger", lambda *_: (
-        Path("ledger.json"),
-        {"entries": {revision.PUBLICATION_ID: {
-            "state": "published",
-            "provider_effect": "verified",
-            "telegram_provider_effect": "verified",
-            "telegram_message_id": revision.MESSAGE_ID + 1,
-        }}},
-    ))
+    monkeypatch.setattr(
+        revision,
+        "_ledger",
+        lambda *_: (
+            Path("ledger.json"),
+            {
+                "entries": {
+                    revision.PUBLICATION_ID: {
+                        "state": "published",
+                        "provider_effect": "verified",
+                        "telegram_provider_effect": "verified",
+                        "telegram_message_id": revision.MESSAGE_ID + 1,
+                    }
+                }
+            },
+        ),
+    )
     with pytest.raises(RuntimeError, match="identity changed"):
         revision._target(args)
 
