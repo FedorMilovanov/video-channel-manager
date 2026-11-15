@@ -57,6 +57,9 @@ def test_plan_is_provider_inert_without_instagram_credentials(
         "VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS",
     ):
         monkeypatch.delenv(variable, raising=False)
+    # The host's actual .env may contain a different Instagram account.
+    # Provider-inert planning must be tested without importing that file.
+    monkeypatch.chdir(tmp_path)
     get_settings.cache_clear()
 
     manifest_path = tmp_path / "plan.json"
@@ -107,6 +110,7 @@ def test_validate_public_is_credential_and_database_inert(
     ):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.setenv("VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS", '["cdn.example.com"]')
+    monkeypatch.chdir(tmp_path)
     get_settings.cache_clear()
 
     media = b"public exact bytes"
