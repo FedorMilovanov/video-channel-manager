@@ -75,7 +75,7 @@
         "site_binary_uploaded": false,
         "master_audio_approved": false,
         "selection_note_ru": "Владелец отдельно прислал и выбрал ночную сцену с аптекой и фонарём.",
-        "package_name": "Blok_MP3_Covers_2026-11-15.zip"
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     },
     {
@@ -117,7 +117,7 @@
         "site_binary_uploaded": false,
         "master_audio_approved": false,
         "selection_note_ru": "Владелец прямо подтвердил Куликово I со скачущей кобылицей.",
-        "package_name": "Blok_MP3_Covers_2026-11-15.zip"
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     },
     {
@@ -139,13 +139,27 @@
       "youtube_url": "https://www.youtube.com/watch?v=RuTmtXUuxm8",
       "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
       "cover_reference_youtube_id": "RuTmtXUuxm8",
-      "cover_final_status": "owner_selection_pending_not_approved",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
       "artwork_selection": {
-        "owner_explicit_approval": false,
-        "review_only": true,
-        "approved_wide": false,
+        "owner_explicit_approval": true,
+        "original_source_filename": "блок_у_непрядвы_под_лунным_светом.png",
+        "original_source_sha256": "c9dd9c9d3533eeb05821e109066f83d2ec9472e38e2870a13374d12ba0d98c8b",
+        "square_webp_filename": "blok-kulikovo-part-2-cover.webp",
+        "square_webp_sha256": "f2253d7b9b481792683bd92029f4c593ab804fc4310faf06e7376b3e4c872f3e",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
         "site_binary_uploaded": false,
-        "notes": "Волна с №4 и №9 не подтверждает однозначно обложку Куликово II. Не ставить candidate в production."
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец прямо выбрал вариант В (крупнее портрет поэта) в сравнении трёх обложек Непрядвы.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     },
     {
@@ -208,7 +222,7 @@
         "site_binary_uploaded": false,
         "master_audio_approved": false,
         "selection_note_ru": "Владелец повторно прислал ИСХОДНОЕ изображение с четырьмя дальними всадниками; густую конную атаку отклонил.",
-        "package_name": "Blok_MP3_Covers_2026-11-15.zip"
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     },
     {
@@ -251,7 +265,7 @@
         "site_binary_uploaded": false,
         "master_audio_approved": false,
         "selection_note_ru": "Реконструированное сопоставление с выбранным номером 9. Нумерация имела неоднозначность; перед публикацией нужен финальный визуальный контроль.",
-        "package_name": "Blok_MP3_Covers_2026-11-15.zip"
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     },
     {
@@ -310,7 +324,7 @@
         "site_binary_uploaded": false,
         "master_audio_approved": false,
         "selection_note_ru": "Владелец выбрал предпоследнюю кабинетную генерацию первой десятки.",
-        "package_name": "Blok_MP3_Covers_2026-11-15.zip"
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
       }
     }
   ],
