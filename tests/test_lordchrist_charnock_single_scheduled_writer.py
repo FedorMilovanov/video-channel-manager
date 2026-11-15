@@ -29,9 +29,9 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     data = (WORKFLOWS / "lordchrist-charnock-scheduled-reissue.yml").read_text(encoding="utf-8")
     assert "LORDCHRIST_CHARNOCK_RECOVERY_ENABLED" in data
     assert "LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256" in data
-    assert 'now.hour not in (12,13)' in data
+    assert "now.hour not in (12,13)" in data
     assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
-    assert 'cancel-in-progress: false' in data
+    assert "cancel-in-progress: false" in data
 
 
 def test_retired_rich_and_telegraph_jobs_do_not_resolve_scheduled_articles() -> None:
