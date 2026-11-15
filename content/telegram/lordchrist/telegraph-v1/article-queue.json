@@ -835,7 +835,7 @@
       "status": "ready",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/history/peasants-1525-article.json",
-        "git_blob_sha": "5496dfd02a577095d8b98d470a5f325429daf3ed"
+        "git_blob_sha": "0266bc01036c22c69d0127b02ac5768242fcb451"
       },
       "cover": {
         "path": "content/telegram/lordchrist/telegraph-v1/media/peasants-1525/peasants-1525-cover.jpg",
@@ -871,7 +871,8 @@
         ],
         "cta_prefix": "Полный документальный очерк с подлинными страницами 1525 года, архивными подписями и первоисточниками:",
         "cta_link_label": "Читать историческую статью"
-      }
+      },
+      "vk_distribution": false
     }
   ]
 }
