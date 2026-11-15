@@ -11,13 +11,14 @@ import html
 import json
 import os
 import re
+from urllib.parse import unquote, urlsplit
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
 
-from video_channel_manager.lordchrist_charnock_reschedule import _proof_page
+from video_channel_manager.lordchrist_charnock_reschedule import _normalized_telegraph_node
 from video_channel_manager.lordchrist_telegraph_publisher import (
     DEFAULT_BINDING_PATH,
     DEFAULT_PROFILE_PATH,
@@ -43,6 +44,9 @@ MESSAGE_ID = 1619
 EXPECTED_ARTICLE_BLOB = "c223fff62512072f101b1d378dd4f1cad08450e4"
 EXPECTED_COVER_BLOB = "60a3e79ce0a7105b1e61844d2ea3b7fd785aaa4a"
 READBACK_DELAYS = (0, 2, 4, 8, 16, 30)
+ORIGINAL_RUN_ID = "43734253855"
+ORIGINAL_GITHUB_SHA = "77b2087ac2e714af74fed19cb653b1a7c2ecfb68"
+ORIGINAL_TELEGRAM_HEADLINE = "1525 ГОД: КРЕСТЬЯНЕ ТРЕБОВАЛИ ПРАВА ВЫБИРАТЬ ПРОПОВЕДНИКА"
 
 
 def _now() -> str:
@@ -65,7 +69,7 @@ def _api_post(url: str, form: dict[str, str]) -> dict[str, Any]:
     return result
 
 
-def _prove_owner(token: str) -> None:
+def _prove_owner(token: str, *, expected_title: str = OLD_TITLE) -> None:
     if not token:
         raise RuntimeError("Existing Telegraph author secret required")
     page = _api_post(
@@ -74,8 +78,8 @@ def _prove_owner(token: str) -> None:
     )
     if page.get("path") != PAGE_PATH or page.get("url") != PAGE_URL:
         raise RuntimeError("Target Telegraph page identity differs")
-    if page.get("title") != OLD_TITLE:
-        raise RuntimeError("Telegraph page no longer has the approved prior title")
+    if page.get("title") != expected_title:
+        raise RuntimeError("Telegraph page title does not match the expected edition")
     if page.get("can_edit") is True:
         return
     if page.get("can_edit") is False:
@@ -97,6 +101,53 @@ def _prove_owner(token: str) -> None:
         if len(pages) < 200:
             break
     raise RuntimeError("Target page ownership not proved by retained account")
+
+
+def _normalize_telegraph_readback(value: Any) -> Any:
+    """Normalize only known Telegra.ph URL changes, never substantive content."""
+    if isinstance(value, list):
+        return [_normalize_telegraph_readback(child) for child in value]
+    if not isinstance(value, dict):
+        return value
+    normalized = {key: _normalize_telegraph_readback(child) for key, child in value.items()}
+    if normalized.get("tag") == "a":
+        attrs = normalized.get("attrs")
+        if isinstance(attrs, dict) and isinstance(attrs.get("href"), str):
+            parsed = urlsplit(attrs["href"])
+            if parsed.scheme == "https" and parsed.netloc not in ("", "telegra.ph"):
+                if attrs.get("target") == "_blank":
+                    attrs.pop("target")
+            if (
+                parsed.path == "/" + PAGE_PATH
+                and parsed.fragment
+                and not parsed.query
+                and (not parsed.netloc or parsed.netloc == "telegra.ph")
+                and parsed.scheme in ("", "https")
+            ):
+                attrs["href"] = PAGE_URL + "#" + unquote(parsed.fragment)
+    return normalized
+
+
+def _proof_reconciled_page(payload: Any) -> None:
+    """Read-only exact comparison after known Telegraph URL canonicalization."""
+    try:
+        response = httpx.get(
+            f"https://api.telegra.ph/getPage/{PAGE_PATH}?return_content=true",
+            timeout=20,
+        )
+        response.raise_for_status()
+        document = response.json()
+    except (httpx.HTTPError, ValueError):
+        raise RuntimeError("Unable to read back the existing Telegraph page") from None
+    page = document.get("result") if isinstance(document, dict) and document.get("ok") else None
+    if not isinstance(page, dict) or (
+        page.get("title") != payload.title or page.get("path") != PAGE_PATH or page.get("url") != PAGE_URL
+    ):
+        raise RuntimeError("Published Telegraph identity differs from reviewed revision")
+    live = _normalized_telegraph_node(_normalize_telegraph_readback(page.get("content")))
+    expected = _normalized_telegraph_node(payload.nodes)
+    if live != expected:
+        raise RuntimeError("Existing public Telegraph content differs from reviewed revision")
 
 
 def _post_readback(expected_headline: str | None = None) -> None:
@@ -175,11 +226,20 @@ def _claimed(args: argparse.Namespace, entry: dict[str, Any], expected: str, pay
     if not isinstance(receipt, dict) or receipt.get("state") != expected:
         raise RuntimeError("One-shot revision stage is not durably claimed")
     if (
-        receipt.get("run_id") != args.run_id
-        or receipt.get("run_attempt") != 1
-        or receipt.get("github_sha") != args.github_sha
-        or receipt.get("article_sha256") != payload.article_sha256
+        receipt.get("article_sha256") != payload.article_sha256
         or receipt.get("cover_sha256") != payload.cover_sha256
+        or receipt.get("run_attempt") != 1
+        or receipt.get("run_id") != ORIGINAL_RUN_ID
+        or receipt.get("github_sha") != ORIGINAL_GITHUB_SHA
+    ):
+        raise RuntimeError("Original revision claim identity or payload changed")
+    reconciliation = receipt.get("reconciliation")
+    owner = reconciliation if isinstance(reconciliation, dict) else receipt
+    if (
+        owner.get("run_id") != args.run_id
+        or owner.get("run_attempt") != args.run_attempt
+        or args.run_attempt != 1
+        or owner.get("github_sha") != args.github_sha
     ):
         raise RuntimeError("Revision claim belongs to another execution")
     return receipt
@@ -189,6 +249,43 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     _require_execution_context(args)
     path, ledger, entry, item, payload = _target(args)
     token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip()
+
+    if args.stage == "reconcile-page":
+        receipt = entry.get("peasants1525_glossary_v2_revision")
+        if not isinstance(receipt, dict) or (
+            receipt.get("state") != "page_claimed"
+            or receipt.get("page_provider_effect") != "unknown_until_reconciled"
+            or receipt.get("run_id") != ORIGINAL_RUN_ID
+            or receipt.get("run_attempt") != 1
+            or receipt.get("github_sha") != ORIGINAL_GITHUB_SHA
+            or receipt.get("page_url") != PAGE_URL
+            or receipt.get("message_id") != MESSAGE_ID
+            or receipt.get("article_sha256") != payload.article_sha256
+            or receipt.get("cover_sha256") != payload.cover_sha256
+            or "reconciliation" in receipt
+            or args.run_id == ORIGINAL_RUN_ID
+            or args.run_attempt != 1
+        ):
+            raise RuntimeError("No eligible single original page-claimed provider outcome")
+        _prove_owner(token, expected_title=payload.title)
+        _telegram_authority(args)
+        _post_readback(ORIGINAL_TELEGRAM_HEADLINE)
+        _proof_reconciled_page(payload)
+        receipt["reconciliation"] = {
+            "run_id": args.run_id,
+            "run_attempt": args.run_attempt,
+            "github_sha": args.github_sha,
+            "original_run_id": ORIGINAL_RUN_ID,
+            "page_verified_by": "exact_public_readback_with_known_telegraph_url_normalization",
+            "reconciled_at_utc": _now(),
+        }
+        receipt.update(
+            state="page_verified",
+            page_provider_effect="verified",
+            page_verified_at_utc=_now(),
+        )
+        save_ledger(path, ledger)
+        return {"stage": args.stage, "page_verified": True, "url": PAGE_URL}
 
     if args.stage == "prepare-page":
         if "peasants1525_glossary_v2_revision" in entry:
@@ -225,7 +322,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         )
         if (url, result_path) != (PAGE_URL, PAGE_PATH):
             raise RuntimeError("Telegraph returned a different page identity")
-        _proof_page({"verified_telegraph_url": PAGE_URL}, payload)
+        _proof_reconciled_page(payload)
         receipt.update(
             state="page_verified",
             page_provider_effect="verified",
@@ -236,7 +333,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.stage == "prepare-telegram":
         receipt = _claimed(args, entry, "page_verified", payload)
-        _proof_page({"verified_telegraph_url": PAGE_URL}, payload)
+        _proof_reconciled_page(payload)
         _telegram_authority(args)
         _post_readback()
         receipt.update(
@@ -249,7 +346,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.stage == "edit-telegram":
         receipt = _claimed(args, entry, "telegram_claimed", payload)
-        _proof_page({"verified_telegraph_url": PAGE_URL}, payload)
+        _proof_reconciled_page(payload)
         bot_token, binding = _telegram_authority(args)
         _post_readback()
         rendered = render_channel_post(item.channel_post, PAGE_URL)
@@ -304,7 +401,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("prepare-page", "edit-page", "prepare-telegram", "edit-telegram"))
+    parser.add_argument(
+        "stage", choices=("prepare-page", "edit-page", "reconcile-page", "prepare-telegram", "edit-telegram")
+    )
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--publication-id", default=PUBLICATION_ID)
