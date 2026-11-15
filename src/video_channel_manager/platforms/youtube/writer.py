@@ -95,6 +95,48 @@ def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, A
     return [item for item in value if isinstance(item, dict)]
 
 
+def _postwrite_metadata_drift(
+    before: VideoDescriptionSnapshot, after: VideoDescriptionSnapshot, new_description: str
+) -> list[str]:
+    """Compare the fields a description-only PUT must not silently change."""
+    old_snippet = _dict_field(before.raw, "snippet")
+    new_snippet = _dict_field(after.raw, "snippet")
+    drift = [
+        f"snippet.{field}"
+        for field in ("channelId", "title", "categoryId", "defaultLanguage", "defaultAudioLanguage")
+        if old_snippet.get(field) != new_snippet.get(field)
+    ]
+    if (old_snippet.get("tags") or []) != (new_snippet.get("tags") or []):
+        drift.append("snippet.tags")
+    if _dict_field(before.raw, "status").get("privacyStatus") != _dict_field(after.raw, "status").get("privacyStatus"):
+        drift.append("status.privacyStatus")
+
+    old_locales = _dict_field(before.raw, "localizations")
+    new_locales = _dict_field(after.raw, "localizations")
+    if old_locales.keys() != new_locales.keys():
+        drift.append("localizations.languages")
+    for language in old_locales.keys() & new_locales.keys():
+        original = old_locales[language]
+        observed = new_locales[language]
+        if not isinstance(original, dict) or not isinstance(observed, dict):
+            drift.append(f"localizations.{language}")
+            continue
+        if original.get("title") != observed.get("title"):
+            drift.append(f"localizations.{language}.title")
+        original_description = str(original.get("description") or "")
+        observed_description = str(observed.get("description") or "")
+        if language == old_snippet.get("defaultLanguage"):
+            # YouTube may synchronize the primary-language locale automatically.
+            accepted = descriptions_equivalent(observed_description, original_description) or (
+                descriptions_equivalent(observed_description, new_description)
+            )
+        else:
+            accepted = descriptions_equivalent(observed_description, original_description)
+        if not accepted:
+            drift.append(f"localizations.{language}.description")
+    return drift
+
+
 class YouTubeDescriptionWriter(HttpClientOwner):
     """Narrow YouTube writer for guarded description replacement only."""
 
@@ -205,7 +247,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             "GET",
             "videos",
             params={
-                "part": "snippet,contentDetails,status",
+                "part": "snippet,contentDetails,status,localizations",
                 "id": video_id,
                 "maxResults": 1,
             },
@@ -263,6 +305,12 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         verified = self.read_description(current.video_id)
         if not descriptions_equivalent(verified.description, new_description):
             raise YouTubeWriteError(f"Verification failed after updating description for {current.video_id}.")
+        drift = _postwrite_metadata_drift(current, verified, new_description)
+        if drift:
+            raise YouTubeWriteError(
+                f"Postflight metadata drift after updating description for {current.video_id}: "
+                f"{', '.join(drift)}. Reconcile the video before another write."
+            )
         return verified
 
     def replace_description(

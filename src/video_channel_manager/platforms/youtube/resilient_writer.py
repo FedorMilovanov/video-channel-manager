@@ -14,6 +14,7 @@ from video_channel_manager.platforms.youtube.writer import (
     YouTubeDescriptionWriter as BaseYouTubeDescriptionWriter,
     YouTubeRevisionConflictError,
     YouTubeWriteError,
+    _postwrite_metadata_drift,
     descriptions_equivalent,
 )
 
@@ -67,21 +68,29 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
             return super()._write_description(current=current, new_description=new_description)
         except YouTubeWriteError as exc:
             expected_message = f"Verification failed after updating description for {current.video_id}."
-            if str(exc) != expected_message:
+            drift_prefix = f"Postflight metadata drift after updating description for {current.video_id}:"
+            if str(exc) != expected_message and not str(exc).startswith(drift_prefix):
+                raise
+            if not self._verification_delays:
                 raise
 
         last_snapshot: VideoDescriptionSnapshot | None = None
+        last_drift: list[str] = []
         for delay in self._verification_delays:
             if delay:
                 self._sleep(delay)
             last_snapshot = self.read_description(current.video_id)
-            if descriptions_equivalent(last_snapshot.description, new_description):
+            if not descriptions_equivalent(last_snapshot.description, new_description):
+                continue
+            last_drift = _postwrite_metadata_drift(current, last_snapshot, new_description)
+            if not last_drift:
                 return last_snapshot
 
         observed = "unavailable" if last_snapshot is None else last_snapshot.revision
+        extra = f"; metadata drift: {', '.join(last_drift)}" if last_drift else ""
         raise YouTubeWriteError(
             f"Verification failed after updating description for {current.video_id} "
-            f"after {1 + len(self._verification_delays)} reads; last revision: {observed}."
+            f"after {1 + len(self._verification_delays)} reads; last revision: {observed}{extra}."
         )
 
     def restore_description_if_current(
