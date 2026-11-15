@@ -8,9 +8,17 @@ on:
         required: true
         type: string
       confirm:
-        description: Exact one-time consent REVISE_PEASANTS1525_GLOSSARY
+        description: Exact one-time consent for original edit or readback reconciliation
         required: true
         type: string
+      revision_mode:
+        description: Original one-shot or reconcile exact prior edit without re-editing page
+        required: true
+        type: choice
+        default: original
+        options:
+          - original
+          - reconcile-only
 
 permissions:
   contents: write
@@ -27,10 +35,14 @@ jobs:
       github.actor == 'FedorMilovanov' &&
       github.ref == 'refs/heads/main' &&
       inputs.publication_id == 'lordchrist-telegraph-peasants-1525-20261115' &&
-      inputs.confirm == 'REVISE_PEASANTS1525_GLOSSARY'
+      (
+        (inputs.revision_mode == 'original' && inputs.confirm == 'REVISE_PEASANTS1525_GLOSSARY') ||
+        (inputs.revision_mode == 'reconcile-only' && inputs.confirm == 'RECONCILE_PEASANTS1525_GLOSSARY')
+      )
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     env:
+      REVISION_MODE: ${{ inputs.revision_mode }}
       PYTHONPATH: src
       LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
       LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
