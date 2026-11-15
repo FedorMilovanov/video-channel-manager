@@ -63,8 +63,9 @@ def test_every_workflow_cron_is_either_a_configured_slot_or_the_historical_slot(
     crons = _workflow_crons()
 
     assert len(crons) == len(set(crons)), "a duplicated cron would run twice"
-    # Only independent midday-rich and historical-rich schedules remain.
-    assert set(crons) == {str(_schedule()["slots"]["midday"]["cron"]), HISTORICAL_CRON}  # type: ignore[index]
+    # Only the independent historical-rich schedule remains.
+    # The retired rich-v1 and Telegraph calendars no longer compete with Charnock reissue.
+    assert set(crons) == {HISTORICAL_CRON}
     assert "0 7 * * *" in configured - set(crons)
     assert "0 18 * * 2,5,0" in configured - set(crons)
     assert HISTORICAL_CRON not in configured
