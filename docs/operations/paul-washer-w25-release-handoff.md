@@ -56,3 +56,19 @@ Still **OPEN**: full ~51-minute human listening, review of all ten clips' ends/c
 - MP3Bot [handoff/presentation PR #457](https://github.com/FedorMilovanov/mp3telegrambot/pull/457) already covers general Russian-file naming and video descriptions; do not duplicate that unfinished PR in another unrelated branch.
 
 No action in this checklist is standing authorization for uploading or changing YouTube content.
+
+
+## Owner verification checkpoint — 2026-11-15 (after prior publication)
+
+This section is a later read-only snapshot, not a retroactive modification of W25's original publication hold or approval ledger. The user's direct request was to audit the already published video and repair metadata where safe.
+
+- Exact owner: YouTube UCeSJsC6go2c9pdJCuUI1BYA / account alias fedor-milovanov.
+- **Public** Russian/postmixed video: Ba-1IHVz3H8, 51:28, file size 332187297; 19 source-anchored chapters recognized publicly; custom thumbnail present; Russian and en-US localized title/description exist.
+- **Unlisted** predecessor: 5bQDzxVM40g, 51:28, separate English-audio-serving upload; do not confuse or overwrite either URL.
+- Owner captions.list returned **one auto-generated ru ASR track** on the public release and **one auto-generated en ASR track** on the unlisted predecessor. **No uploaded, human-edited RU SRT or other language track** was reported on the public release. contentDetails.caption=false does not supersede caption-track API evidence.
+- The ten derived W25 clips remain local; no exact filename/title match was found among the owner inventory of 1870 videos on Nov 14. Do not infer publication or permission from an old tentative schedule.
+- Three owner playlists contain both video IDs: Проповеди, Открой глаза, Пол Вошер | Paul Washer. Removing the unlisted predecessor from public playlists is a separate owner mutation, requiring an exact guarded plan and readback; never delete the source video by default.
+- **Cross-speaker metadata bug:** the public Paul Washer video retained 25 tags, including irrelevant John MacArthur / Shepherds Conference entries. Its license was creativeCommon despite no documented onward relicensing authority. The narrowly scoped scripts/youtube_exact_video_metadata_repair.py can fix only that one existing video's frozen tags/license, without touching title, description, 19 chapters, privacy or localizations. It requires exact source state, dry run, local lock, immutable backup and verified provider readback. Standard YouTube license is a platform setting and **does not confer or establish source rights**.
+- W25 human review, SRT QA, original/translation rights, ten-clip listening and full-bleed visual checks remain distinct release gates. **Do not upload new W25 media or multilingual subtitle tracks solely to make a dashboard show zero.** Refer to MP3Bot AGENTS.md and docs/agent_direct_dubbing/README.md for the editorial lock.
+
+Never print OAuth secrets, automate the owner's interactive browser or silently promote REVIEW_ONLY artifacts to public-ready.
