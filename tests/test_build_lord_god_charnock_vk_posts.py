@@ -50,8 +50,9 @@ def test_charnock_series_splits_all_fourteen_articles_into_vk_sized_parts(tmp_pa
         assert all(post["cover_path"] == article["cover_path"] for post in parts)
     for post in posts:
         assert 0 < len(post["message"]) <= 15_000
-        if "-history-" in post["article_publication_id"]:
-            # Biographical specials are not discourses from «О бытии Бога».
+        if post["article_publication_id"].endswith("-history-01"):
+            assert post["message"].startswith("📖 Стивен Чарнок. Познание Бога и жизнь христианина")
+        elif "-history-" in post["article_publication_id"]:
             assert post["message"].startswith("📖 Стивен Чарнок. Биографический очерк")
         else:
             assert post["message"].startswith("📖 Стивен Чарнок. «О бытии Бога»")
