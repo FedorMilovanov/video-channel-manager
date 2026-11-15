@@ -92,20 +92,23 @@ def test_telegraph_queue_loads_charnock_cycle_and_separate_jude_manual_article()
     # lane's cron slots (`0 9 * * 2,5`): the schedule can never resolve it, so the
     # date records intent while the release stays a manual dispatch.
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 17
-    assert [item.ordinal for item in items] == list(range(1, 18))
+    assert len(items) == 18
+    assert [item.ordinal for item in items] == list(range(1, 19))
     assert items[14].publication_id == "lordchrist-telegraph-charnock-history-02"
-    assert items[-2].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
-    assert items[-2].scheduled_on == date(2026, 11, 15)
-    assert items[-2].scheduled_on.weekday() not in {1, 4}
-    assert items[-2].is_canary is False
+    assert items[-3].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
+    assert items[-3].scheduled_on == date(2026, 11, 15)
+    assert items[-3].scheduled_on.weekday() not in {1, 4}
+    assert items[-3].is_canary is False
     raw_items = json.loads((ROOT / DEFAULT_QUEUE_PATH).read_text(encoding="utf-8"))["items"]
     jude_raw = next(item for item in raw_items if item["publication_id"] == "lordchrist-telegraph-jude-1-5-20261105")
     assert jude_raw["slot_override_reason"].strip()
     # The rich-v1 article «Рабство свободы» rides the same Telegraph lane as a
     # separate series: its own reviewed bytes, its own cover, no VK wave.
-    assert items[-1].publication_id == "lordchrist-telegraph-rabstvo-svobody-20261111"
-    assert items[-1].scheduled_on is not None
+    assert items[-2].publication_id == "lordchrist-telegraph-rabstvo-svobody-20261111"
+    assert items[-1].publication_id == "lordchrist-telegraph-peasants-1525-20261115"
+    assert items[-1].scheduled_on is None
+    assert items[-1].is_canary is False
+    assert items[-2].scheduled_on is not None
     assert items[-1].is_canary is False
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
