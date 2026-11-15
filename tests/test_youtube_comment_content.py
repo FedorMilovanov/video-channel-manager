@@ -186,7 +186,7 @@ def test_v2_sourced_comment_does_not_require_an_engagement_question() -> None:
     assert validate_comment_content(record, expected_channel_id="channel-1") == []
     rendered = render_comment_content(record)
     assert "История публикации" in rendered
-    assert "Плейлист" in rendered
+    assert "youtube.com/playlist?list=" in rendered
     assert "Вопрос к слушателю" not in rendered
     assert not rendered.endswith("?")
 
