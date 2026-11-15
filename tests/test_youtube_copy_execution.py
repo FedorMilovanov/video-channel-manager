@@ -41,6 +41,51 @@ def _operation(*, before: str = "Before", after: str = "After", revision: str = 
     }
 
 
+def test_preflight_accepts_exact_empty_before_description() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-1")})
+    result = preflight_copy_operations(
+        [_operation(before="", after="Verified new description")],
+        confirm_channel="channel-1",
+        writer=writer,
+    )
+    assert len(result.prepared) == 1
+    assert result.prepared[0]["before_description"] == ""
+    assert result.already_applied == 0
+
+
+def test_preflight_empty_before_rejects_nonempty_live_description() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Manual description", "rev-2")})
+    with pytest.raises(YouTubeRevisionConflictError, match="neither"):
+        preflight_copy_operations(
+            [_operation(before="", after="Verified new description")],
+            confirm_channel="channel-1",
+            writer=writer,
+        )
+
+
+def test_preflight_rejects_missing_before_and_empty_after_even_for_empty_live_video() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-1")})
+    missing = _operation(before="", after="New description")
+    del missing["before_description"]
+    with pytest.raises(ValueError, match="before_description"):
+        preflight_copy_operations([missing], confirm_channel="channel-1", writer=writer)
+    with pytest.raises(ValueError, match="after_description"):
+        preflight_copy_operations([_operation(before="", after="")], confirm_channel="channel-1", writer=writer)
+
+
+def test_reconcile_handles_exact_empty_before_without_retry_authority() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-2")})
+    rows = reconcile_copy_operations(
+        [_operation(before="", after="Proposed description")],
+        confirm_channel="channel-1",
+        writer=writer,
+    )
+    assert len(rows) == 1
+    assert rows[0]["state"] == "live_before"
+    assert rows[0]["safe_to_replay"] is False
+    assert rows[0]["provider_mutations"] == 0
+
+
 def test_preflight_is_idempotent_after_youtube_normalization() -> None:
     writer = FakeWriter(
         {
