@@ -39,12 +39,12 @@
       "previous_telegram_message_id": 1585,
       "previous_published_article_sha256": "sha256:267eadf21225c14f1bee0f09fc9e96c4841ee69684a6ea678c0418248c621ee7",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-      "corrected_document_git_blob_sha": "e7767a1f265f28abb3c9917ac9815b1a806858a6",
+      "corrected_document_git_blob_sha": "a774af22a06992c85d2516b4745435ffde1febe6",
       "corrected_document_branch": "main",
       "replacement_telegraph_url": "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
       "replacement_telegram_message_url": "https://t.me/lordchrist/1585",
       "provider_edit_status": "verified_in_place",
-      "replacement_state": "current_history01_content_verified_at_existing_11_05_page",
+      "replacement_state": "previous_history01_revision_still_live; new_editorial_revision_staged",
       "provider_writes_authorized": false,
       "notes": "15.11.2026: утверждённая редакция history-01 и символическая обложка опубликованы через editPage на существующей странице 11-05, без createPage; прежнее сообщение Telegram №1585 исправлено через editMessageText, без sendMessage. Оба публичных URL проверены, состояние verified подтверждено в state/lordchrist-telegram. Страница 10-25 остаётся историческим архивом; новых внешних операций не разрешать.",
       "previous_public_page_title_readback": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
@@ -53,7 +53,10 @@
       "revised_public_page_title_readback": "Как познание Бога, о Котором писал Чарнок, меняет веру, поклонение и повседневную жизнь христианина в XXI веке?",
       "inplace_revision_run_id": "43729686598",
       "inplace_revision_state_commit_sha": "9b697234e7c249328f02d6b61a927921d8676baa",
-      "inplace_revision_verified_at_utc": "2026-11-15T15:25:50.967841+00:00"
+      "inplace_revision_verified_at_utc": "2026-11-15T15:25:50.967841+00:00",
+      "prior_verified_document_git_blob_sha": "e7767a1f265f28abb3c9917ac9815b1a806858a6",
+      "editorial_revision_status": "staged_not_yet_published",
+      "editorial_revision_notes": "Editorial polish is in repository only; the public page still serves the last verified edition until an authorized in-place editPage run succeeds. Keep original URL and Telegram message; no duplicate."
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-02",
