@@ -17,9 +17,9 @@ class CopyPreflight:
     revision_drift_tolerated: int
 
 
-def required_text(operation: dict[str, Any], field: str) -> str:
+def required_text(operation: dict[str, Any], field: str, *, allow_empty: bool = False) -> str:
     value = operation.get(field)
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or (not value and not allow_empty):
         raise ValueError(f"Copy-fix operation is missing required string field: {field}")
     return value
 
@@ -49,7 +49,7 @@ def preflight_copy_operations(
         video_id = required_text(operation, "video_id")
         channel_id = required_text(operation, "channel_id")
         expected_revision = required_text(operation, "expected_revision")
-        before = required_text(operation, "before_description")
+        before = required_text(operation, "before_description", allow_empty=True)
         after = required_text(operation, "after_description")
 
         if channel_id != confirm_channel:
@@ -158,7 +158,7 @@ def reconcile_copy_operations(
     for operation in operations:
         video_id = required_text(operation, "video_id")
         channel_id = required_text(operation, "channel_id")
-        before = required_text(operation, "before_description")
+        before = required_text(operation, "before_description", allow_empty=True)
         after = required_text(operation, "after_description")
         if video_id in seen:
             raise ValueError(f"Duplicate YouTube copy video ID in reconciliation: {video_id}")
