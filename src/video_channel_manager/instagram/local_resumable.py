@@ -983,10 +983,28 @@ class InstagramLocalResumableService(InstagramProductionService):
                         raise
                     except InstagramProviderError as exc:
                         if exc.status_code is not None and 400 <= exc.status_code < 500 and exc.retryable is False:
+                            diagnostic = str(exc)
+                            # A rupload HTTP 400 can conceal a phase-level 1363008
+                            # behind Meta's top-level IN_PROGRESS. One GET may add
+                            # useful evidence, but can never retry or publish.
+                            try:
+                                phase_status, phase_detail = self.resumable_client.get_container_status(container_id)
+                            except (InstagramProductionError, httpx.RequestError, OSError, TypeError, ValueError):
+                                # Preserve the original terminal 4xx even when
+                                # the optional readback is unavailable.
+                                pass
+                            else:
+                                if phase_status == "ERROR" and phase_detail:
+                                    safe_detail = secret_safe_exception_detail(
+                                        RuntimeError(phase_detail),
+                                        secret=self.config.access_token,
+                                        upload_uri=child.upload_uri,
+                                    )
+                                    diagnostic += f"; provider_phase_readback={safe_detail[:400]}"
                             self.upload_ledger.mark_provider_failed(
                                 manifest.publication_key,
                                 error_code=exc.error_code or type(exc).__name__,
-                                error_message=str(exc),
+                                error_message=diagnostic,
                             )
                             self.ledger.transition(
                                 manifest.publication_key,
@@ -994,7 +1012,7 @@ class InstagramLocalResumableService(InstagramProductionService):
                                 expected_statuses={PublicationStatus.CONTAINER_CREATED},
                                 provider_status="ERROR",
                                 error_code=exc.error_code or type(exc).__name__,
-                                error_message=str(exc),
+                                error_message=diagnostic,
                             )
                             raise
                         self.upload_ledger.mark_unknown(manifest.publication_key, exc)

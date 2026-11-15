@@ -17,3 +17,13 @@ The wrapper imports the verified dedicated Page token reader and source integrit
 5. Inspect state Ready, exact dates and next run; do not start scheduled mode manually.
 
 The existing late cloud readback remains GET-only but is not the authoritative on-time check. A missing receipt must be investigated before any new manually approved slot. The computer must stay on and logged in for native tasks; this is not cloud high availability.
+
+## Corrective immutable readback deployment — 15 November 2026
+
+The original isolated `20261113-photo-schedule` execution registry was held open by the Desktop Commander service. Attempting to replace that registry returned Windows `WinError 5` even though the script files themselves were unlocked. **Never stop Desktop Commander, delete the active registry, or partially replace scripts without their SHA entries.** The previous failed attempt was rolled back byte-for-byte.
+
+The reviewed solution is a **versioned, immutable GET-only readback mirror**, not another publisher. The `readback-20261115-v2` root was assembled from one GitHub main commit `db3083b476734c3527e2cc93bebe18893dbb5828` containing the executor registry, source publisher *for SHA validation only*, credential helper, both independent quote/Reel readback engines, both wrappers and their two frozen manifests. Verify every registry entry and each plan SHA against that same commit. Both `--preflight` scripts must return 0 with real GET-only Meta evidence.
+
+Before activation, export both original readback task XML files and capture their exact actions and `NextRunTime`. Atomically move the verified mirror into its final immutable root, then **repoint only the two existing readback task actions** and assert the prior interpreter, triggers, next run, user, and settings are unchanged. On any partial failure, restore those exact two actions. The quote *publisher* task must continue pointing to the original approved `20261113-photo-schedule` root; do not migrate or duplicate it. The Reel *publisher* and MILOVI CAKE task must also remain untouched.
+
+Verified 15 November at approximately 06:22 Moscow: quote readback `--preflight` 0 (Owen and Bunyan proven; Charnock missed; Watson pending), Reel readback `--preflight` 0 (no published Reels). Both native readback tasks pointed to the new mirror with exact old future run times (photo 14:05, Reel 20:10) and status Ready. This does not assert any future release succeeded. The old root was retained for byte-exact rollback and active photo publishing.
