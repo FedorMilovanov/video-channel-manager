@@ -67,6 +67,8 @@ other projects retain their general title semantics.
 
 **Windows UTF-8:** Non-ASCII PowerShell here-strings sent over remote transport may turn Cyrillic into literal question marks. Write a UTF-8 Python/JSON file, verify the file content and SHA locally, then run python -X utf8. A malformed console display is not evidence that the underlying source document is corrupt.
 
+**YouTube language/localization side effects (15 Nov 2026, issue #795):** A past `videos.update(part=snippet,localizations)` changed a Russian video's `defaultAudioLanguage` from `ru` to `en-US`, and an explicit follow-up `videos.update` returned HTTP 200 without restoring it. A correct description SHA or successful API response alone does **not** prove that metadata is intact. Before a scoped canary, record `defaultLanguage`, `defaultAudioLanguage`, localized titles/descriptions, locale keys, source URLs, title and privacy. Verify them via independent owner GET after the change **and again after Studio's delayed localization updates**. A native Studio save has also automatically paraphrased an `en-US` description after an initially successful Russian postflight. Stop on any drift or uncertain result; reconcile that exact video's language/locale state instead of blindly replaying the write. Never start a bulk API description wave without a same-channel canary proving no language/localization drift.
+
 **UTF-8 limit (12 Nov 2026):** YouTube Data API `videos.update` limits
 `snippet.description` to **5000 UTF-8 bytes**, not 5000 Unicode characters.
 `presentation_issues()` rejects an after-description that exceeds
@@ -142,7 +144,7 @@ It refuses a scan with duplicates, intersecting clean/dirty sets, missing IDs, r
 3. Fresh official owner preflight: channels.mine, videos.list in up to 50 IDs per call, owner/public/current title, exact original-before raw SHA, and every archived playlist's channel ownership and actual membership. A title or SHA drift blocks that video.
 4. For each approved video generate one signed v3 plan, exact current before/after text and hashes, unique immutable backup and receipt filenames. Run the project presentation and source preservation validators.
 5. Dry-run ALL approved plans before the first mutation. Require Ready: 1 and no unexpected revision drift. Do not relax the rules to force a green run.
-6. Execute only one video at a time using official protected CLI. On ReadTimeout, ambiguous outcome or failed postflight STOP. Independently reconcile exact after, exact safe-original rollback or never-attempted state. Never blindly repeat a timed-out upload/write.
+6. Execute one video at a time using the official protected CLI **only after a same-channel language/localization no-drift canary**. If that API path is not proven safe, use authenticated native YouTube Studio with the same signed one-video plan, exclusive write owner, journal-before-save and independent owner GET. On ReadTimeout, ambiguous outcome, delayed locale drift or failed postflight STOP. Independently reconcile exact after, exact safe-original rollback or never-attempted state. Never blindly repeat a timed-out upload/write.
 7. Independently read back all attempted IDs and the full original video cohort; report observed clean/dirty, old shelf link occurrences, old operator contacts, missing IDs, unexpected clean IDs, regressions and remaining editorial holds. A wave is complete only after reconciliation.
 
 ## Agent handoff and branches
