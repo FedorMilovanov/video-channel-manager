@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from argparse import Namespace
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -71,9 +72,9 @@ def test_footnote_builder_fails_closed_when_editorial_text_changes():
 
 def test_node_rewriter_fails_closed_if_links_are_not_exact():
     _, baseline = _real_item_and_page()
-    baseline.nodes = [dict(tag="p", children=["No glossary here"])]
+    broken = replace(baseline, nodes=[dict(tag="p", children=["No glossary here"])])
     with pytest.raises(ValueError, match="Glossary link count drifted"):
-        ux.improve_nodes(baseline)
+        ux.improve_nodes(broken)
 
 
 def test_claimed_page_state_does_not_perform_any_provider_mutation(monkeypatch):
