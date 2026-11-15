@@ -180,6 +180,7 @@ def test_unsafe_repository_source_path_is_rejected() -> None:
     errors = validate_comment_content(record)
     assert "source editorial-links has an unsafe repository path" in errors
 
+
 def test_v2_sourced_comment_does_not_require_an_engagement_question() -> None:
     record = deepcopy(_v2_record())
     record.pop("question")
