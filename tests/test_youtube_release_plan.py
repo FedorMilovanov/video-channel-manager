@@ -254,3 +254,109 @@ def test_resigned_release_plan_requires_string_description(tmp_path: Path) -> No
     )
     with pytest.raises(UploadPlanError, match="Release description must be a string"):
         validate_release_plan(plan, verify_files=False)
+
+
+def test_dubbed_intent_and_release_plan_propagate_audio_review_gate(tmp_path: Path) -> None:
+    intent = _intent(tmp_path)
+    intent["audio_review_required"] = True
+    intent["intent_sha256"] = canonical_sha256({k: v for k, v in intent.items() if k != "intent_sha256"})
+    plan = build_release_plan(intent)
+    assert plan["audio_review_required"] is True
+    validate_release_plan(plan, verify_files=False)
+
+    approval = _approval(plan, children=["upload"])
+    with pytest.raises(UploadPlanError, match="Final audio review"):
+        validate_execution_approval(approval, plan=plan, child_id="upload")
+
+    approval["final_audio_review"] = {
+        "verdict": "PASS",
+        "media_sha256": plan["media"]["sha256"],
+        "listened_from_final_mp4": True,
+        "reviewer": "audio-qa-agent",
+        "reviewed_at": "2026-11-15T05:00:00+00:00",
+    }
+    approval["approval_sha256"] = execution_approval_digest(approval)
+    validate_execution_approval(approval, plan=plan, child_id="upload")
+
+
+@pytest.mark.parametrize(
+    "review",
+    [
+        None,
+        {"verdict": "FAIL", "media_sha256": "correct", "listened_from_final_mp4": True},
+        {"verdict": "PASS", "media_sha256": "sha256:" + "0" * 64, "listened_from_final_mp4": True},
+        {"verdict": "PASS", "media_sha256": "correct", "listened_from_final_mp4": "yes"},
+    ],
+)
+def test_dubbed_audio_review_must_be_pass_for_exact_final_media(tmp_path: Path, review: dict | None) -> None:
+    intent = _intent(tmp_path)
+    intent["audio_review_required"] = True
+    intent["intent_sha256"] = canonical_sha256({k: v for k, v in intent.items() if k != "intent_sha256"})
+    plan = build_release_plan(intent)
+    approval = _approval(plan, children=["upload"])
+    if review is not None:
+        approval["final_audio_review"] = {
+            k: (plan["media"]["sha256"] if v == "correct" else v) for k, v in review.items()
+        } | {"reviewer": "audio-qa-agent", "reviewed_at": "2026-11-15T05:00:00+00:00"}
+    approval["approval_sha256"] = execution_approval_digest(approval)
+    with pytest.raises(UploadPlanError, match="Final audio review"):
+        validate_execution_approval(approval, plan=plan, child_id="upload")
+
+
+def test_apj1159_explicit_unlistened_approval_is_rejected_even_for_legacy_plan(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    assert "audio_review_required" not in plan
+    approval = _approval(plan, children=["upload", "visibility-publication"])
+    approval["human_audio_listening_certified"] = False
+    approval["approval_sha256"] = execution_approval_digest(approval)
+    for child in ("upload", "visibility-publication"):
+        with pytest.raises(UploadPlanError, match="Final audio listening is explicitly uncertified"):
+            validate_execution_approval(approval, plan=plan, child_id=child)
+
+
+def test_legacy_approval_without_audio_review_fields_stays_valid(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    approval = _approval(plan, children=["upload"])
+    validate_execution_approval(approval, plan=plan, child_id="upload")
+
+
+def test_resigned_release_plan_must_not_invent_false_audio_review_gate(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    plan["audio_review_required"] = False
+    plan["release_plan_sha256"] = canonical_sha256({k: v for k, v in plan.items() if k != "release_plan_sha256"})
+    with pytest.raises(UploadPlanError, match="audio_review_required must be true"):
+        validate_release_plan(plan, verify_files=False)
+
+
+def test_explicit_failed_audio_review_blocks_legacy_plan(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    approval = _approval(plan, children=["upload"])
+    approval["final_audio_review"] = {
+        "verdict": "FAIL",
+        "media_sha256": plan["media"]["sha256"],
+        "listened_from_final_mp4": True,
+    }
+    approval["approval_sha256"] = execution_approval_digest(approval)
+    with pytest.raises(UploadPlanError, match="Final audio review"):
+        validate_execution_approval(approval, plan=plan, child_id="upload")
+
+
+@pytest.mark.parametrize("missing_field", ["reviewer", "reviewed_at"])
+def test_final_audio_review_requires_actual_listening_reviewer(tmp_path: Path, missing_field: str) -> None:
+    intent = _intent(tmp_path)
+    intent["audio_review_required"] = True
+    intent["intent_sha256"] = canonical_sha256({k: v for k, v in intent.items() if k != "intent_sha256"})
+    plan = build_release_plan(intent)
+    approval = _approval(plan, children=["upload"])
+    record = {
+        "verdict": "PASS",
+        "media_sha256": plan["media"]["sha256"],
+        "listened_from_final_mp4": True,
+        "reviewer": "audio-qa-agent",
+        "reviewed_at": "2026-11-15T05:00:00+00:00",
+    }
+    record.pop(missing_field)
+    approval["final_audio_review"] = record
+    approval["approval_sha256"] = execution_approval_digest(approval)
+    with pytest.raises(UploadPlanError, match="Final audio review"):
+        validate_execution_approval(approval, plan=plan, child_id="upload")

@@ -121,6 +121,8 @@ def validate_spec(spec: dict[str, Any]) -> None:
     if not isinstance(tags, list) or not all(isinstance(item, str) and item.strip() for item in tags):
         raise UploadPlanError("Spec tags must contain non-empty strings.")
     require_resolved_metadata(title=spec["title"], description=spec["description"], tags=tags)
+    if not isinstance(spec.get("audio_review_required", False), bool):
+        raise UploadPlanError("Spec audio_review_required must be boolean.")
 
 
 def intent_digest(intent: dict[str, Any]) -> str:
@@ -186,6 +188,9 @@ def build_intent(
         "provider_write_authorized": False,
         "provider_effect": "not_dispatched",
     }
+    # Set only on neural-dubbed/spoken-audio packages; old specs keep identical hashes.
+    if spec.get("audio_review_required") is True:
+        intent["audio_review_required"] = True
     intent["intent_sha256"] = intent_digest(intent)
     return intent
 
@@ -204,6 +209,8 @@ def validate_intent(intent: dict[str, Any]) -> None:
     if not isinstance(tags, list) or not all(isinstance(tag, str) and tag.strip() for tag in tags):
         raise UploadPlanError("Upload intent tags must contain non-empty strings.")
     require_resolved_metadata(title=title, description=description, tags=tags)
+    if "audio_review_required" in intent and intent["audio_review_required"] is not True:
+        raise UploadPlanError("Intent audio_review_required must be true when present.")
     project_key = str(intent.get("project_key") or "")
     account_alias = str(intent.get("account_alias") or "")
     target_channel_id = str(intent.get("target_channel_id") or "")
