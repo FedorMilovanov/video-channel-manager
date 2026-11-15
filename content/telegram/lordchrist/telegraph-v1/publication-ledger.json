@@ -397,6 +397,18 @@
       "telegram_message_id": 1608,
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-11T15:18:31.904090+00:00"
+    },
+    "lordchrist-telegraph-peasants-1525-20261115": {
+      "publication_id": "lordchrist-telegraph-peasants-1525-20261115",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "43728273385",
+      "run_attempt": 1,
+      "github_sha": "3802c0f24126f66ab940c1c3adc0cd674d4fb4b5",
+      "title": "1525: почему немецкие крестьяне требовали права выбирать проповедника",
+      "article_sha256": "sha256:aa2895347a90cc0e0699a5951204318726913d241b5ac313db914462ccab2a2f",
+      "cover_sha256": "sha256:1c3a7cd2386645412e81097dc18481f7de8544fc1d21b28d943a0e5c204ab579",
+      "page_intent_at_utc": "2026-11-15T15:09:31.508699+00:00"
     }
   }
 }
