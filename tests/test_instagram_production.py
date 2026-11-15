@@ -436,6 +436,35 @@ def test_trusted_github_release_redirect_is_verified_by_exact_bytes() -> None:
     }
 
 
+def test_allowlisted_redirect_chain_above_three_hops_is_refused_before_provider_post() -> None:
+    graph_posts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "cdn.example.com":
+            hop = int(request.url.params.get("hop", "0"))
+            return httpx.Response(
+                302,
+                request=request,
+                headers={"Location": f"https://cdn.example.com/reel.mp4?hop={hop + 1}"},
+            )
+        if request.method == "POST":
+            graph_posts.append(request.url.path)
+        if request.method == "GET" and request.url.path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and request.url.path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
+        with pytest.raises(InstagramMediaVerificationError) as error:
+            service.publish(_manifest(key="redirect-over-limit"), execute=True)
+        assert error.value.error_code == "video_redirect_refused"
+        assert graph_posts == []
+
+
 def test_media_redirect_is_refused_before_provider_post() -> None:
     graph_posts: list[str] = []
 

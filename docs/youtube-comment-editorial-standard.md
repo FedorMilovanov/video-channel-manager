@@ -2,13 +2,15 @@
 
 ## Purpose
 
-A top-level channel comment must add something that is not already obvious from the title or description: a documented fact about the text, publication, manuscript, structure, performance, sermon, translation, or adaptation, followed by a precise invitation to respond.
+A top-level channel comment must add something that is not already obvious from the title or description: a documented fact about the text, publication, manuscript, structure, performance, sermon, translation, or adaptation, with a self-contained, substantive conclusion. No response invitation or closing question is required.
 
-It is not a second description, an advertising dump, a generic engagement prompt, or a place for unsupported claims.
+It is not a second description, an advertising dump, a generic engagement prompt, or a place for unsupported claims. Do not append invented questions, two-choice polls, "what do you think?", "leave a comment", "write Amen", like/subscribe appeals, or other engagement bait. Preserve intentional paragraph breaks and the owner's edits.
+
+Questions belong only where they are the actual subject (a quiz, a documented interpretive dispute) or the owner expressly requests one; never generate a question merely to finish a public comment.
 
 ## Manual pinned comments for The Legendary Poet packages
 
-When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a specific two-choice question and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification. For the owner's **quote-Shorts exception** (compact Shorts text, first full-edition pin candidate, second independent history comment), use [`youtube-metadata-package-master-v3.1.md` §5a](youtube-metadata-package-master-v3.1.md). A second reply/comment must not be mistaken for a second pin. A pinned label is not proof that the owner comment was pinned; independently verify exact IDs and Studio state after separate approval.
+When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a documented interpretive or historical insight and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification. For the owner's **quote-Shorts exception** (compact Shorts text, first full-edition pin candidate, second independent history comment), use [`youtube-metadata-package-master-v3.1.md` §5a](youtube-metadata-package-master-v3.1.md). A second reply/comment must not be mistaken for a second pin. A pinned label is not proof that the owner comment was pinned; independently verify exact IDs and Studio state after separate approval.
 
 ## Project identity
 
@@ -45,7 +47,7 @@ New records contain separate editorial blocks rather than a hand-built advertisi
 - `profile` — content type;
 - `variation_key` — a unique editorial variation identifier;
 - `fact` — heading, factual paragraph, fact type, and exact evidence sources;
-- `question` — optional emphasized lead and one specific question;
+- `question` — optional and normally omitted; only a genuine content-driven or expressly requested question, never a default engagement ending;
 - `links` — compact inline links from the selected project profile or named sources.
 
 The bot renders these blocks into the final YouTube comment, validates the layout, rejects duplicated `variation_key` values, and places the exact rendered text into the signed plan.
@@ -84,7 +86,7 @@ The style is compact and readable on desktop and mobile.
 - `🎧` for a relevant playlist;
 - `📚` for a primary text or source;
 - restrained `*bold*` and `_italic_` emphasis;
-- one blank line between the fact, the question, and the compact link block;
+- one blank line between meaningful paragraphs and the compact link block (and around any genuinely needed question);
 - no blank lines inside the link block.
 
 ### Forbidden
@@ -134,7 +136,7 @@ Rules:
 
 ## Variable composition, not templates
 
-Comments must share standards, not sentences. Variation comes from a different fact family, a work-specific or sermon-specific heading, sentence rhythm, a precise question, and links appropriate to the exact target.
+Comments must share standards, not sentences. Variation comes from a different fact family, a work-specific or sermon-specific heading, sentence rhythm, an independently useful conclusion, and links appropriate to the exact target.
 
 Do not mechanically begin every comment with “Интересный факт”.
 
@@ -142,7 +144,7 @@ Do not mechanically begin every comment with “Интересный факт”
 
 ### Full poetry or cycle
 
-Use composition history, first publication, manuscript history, or a demonstrable structural fact. Ask about a specific line, image, transition, refrain, or part of the cycle.
+Use composition history, first publication, manuscript history, or a demonstrable structural fact. Explain a specific line, image, transition, refrain, or part of the cycle, with attribution where interpretation is contested.
 
 Typical links: registered project route, relevant playlist, VK, and optionally a primary text.
 
@@ -154,7 +156,7 @@ Typical links: exact full material or series playlist, registered theological pr
 
 ### Historical or literary essay
 
-Use one documented detail and one precise question about the presented material. Add the article or primary source when it improves verification.
+Use one documented detail and a precise source-backed insight about the presented material. Add the article or primary source when it improves verification.
 
 ### Cover or musical reinterpretation
 
