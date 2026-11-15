@@ -648,18 +648,49 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
     assert TOKEN not in message
 
 
-def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(tmp_path: Path) -> None:
+@pytest.mark.parametrize("phase_readback", ["nested_error", "no_phase_error", "provider_unavailable"])
+def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(
+    tmp_path: Path, phase_readback: str
+) -> None:
     video = tmp_path / "reel.mp4"
     _write_video(video)
     manifest = build_local_publish_manifest(
         video,
-        publication_key="local.nonretriable-400",
+        publication_key=f"local.nonretriable-400-{phase_readback}",
         account_id=ACCOUNT_ID,
     )
     writes: list[str] = []
+    phase_reads: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if request.method == "GET" and path.endswith("/container-local-1"):
+            phase_reads.append("container-local-1")
+            if phase_readback == "provider_unavailable":
+                return _response(request, 503, {"error": {"message": "phase readback unavailable", "code": 2}})
+            if phase_readback == "no_phase_error":
+                return _response(request, 200, {"id": "container-local-1", "status_code": "IN_PROGRESS"})
+            return _response(
+                request,
+                200,
+                {
+                    "id": "container-local-1",
+                    "status_code": "IN_PROGRESS",
+                    "video_status": {
+                        "uploading_phase": {
+                            "status": "error",
+                            "bytes_transferred": 0,
+                            "source_file_size": 0,
+                            "errors": [
+                                {
+                                    "code": 1363008,
+                                    "message": f"OIL Error[FILE_NOT_FOUND: 6]; OAuth {TOKEN}; {UPLOAD_URI}",
+                                }
+                            ],
+                        }
+                    },
+                },
+            )
         if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
             return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
         if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
@@ -704,6 +735,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         assert error.value.error_code == "ProcessingFailedError"
         assert error.value.retryable is False
         assert writes == ["container", "upload"]
+        assert phase_reads == ["container-local-1"]
 
         parent = ledger.get(manifest.publication_key)
         child = upload_ledger.get(manifest.publication_key)
@@ -714,6 +746,15 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         assert parent.last_error_message is not None
         assert "retriable" in parent.last_error_message
         assert "; upload_dispatch_elapsed_ms=" in parent.last_error_message
+        if phase_readback == "nested_error":
+            assert "provider_phase_readback=" in parent.last_error_message
+            assert "provider_error_code=1363008" in parent.last_error_message
+            assert "OIL Error[FILE_NOT_FOUND: 6]" in parent.last_error_message
+            assert "bytes_transferred=0" in parent.last_error_message
+            assert TOKEN not in parent.last_error_message
+            assert UPLOAD_URI not in parent.last_error_message
+        else:
+            assert "provider_phase_readback=" not in parent.last_error_message
         assert child is not None
         assert child.state == ResumableUploadState.PROVIDER_FAILED
         assert child.attempt_count == 1
@@ -723,6 +764,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         with pytest.raises(InstagramProductionError, match="terminally failed"):
             service.publish_local(manifest, video, execute=True)
         assert writes == ["container", "upload"]
+        assert phase_reads == ["container-local-1"]
 
 
 def test_http_500_remains_ambiguous_even_when_debug_info_says_nonretriable(tmp_path: Path) -> None:
