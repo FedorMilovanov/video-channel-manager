@@ -2,35 +2,35 @@
   "document_id": "lordchrist-telegraph-charnock-history-01",
   "project_key": "lordchrist",
   "metadata": {
-    "title": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
+    "title": "Как познание Бога, о Котором писал Чарнок, меняет веру, поклонение и повседневную жизнь христианина в XXI веке?",
     "language": "ru",
-    "summary": "Исторический воскресный выпуск вне цикла бесед: биография Стивена Чарнока (1628–1680), устройство его богословского ума по беседам о бытии и атрибутах Бога, честный разбор эпохи быстрых ответов (эффект Google, чтение с экрана, генеративные модели) и практика тренировки глубокой богословской мысли сегодня.",
+    "summary": "Историко-богословская статья о Стивене Чарноке: познание Бога во Христе, поклонение, практический атеизм, вечность, всеведение, премудрость, неизменность; повседневная жизнь, молитва и конкретные практические советы для христианина XXI века.",
     "author": "Господь Бог",
     "tags": [
-      "Чарнок",
-      "биография",
-      "глубина мысли",
-      "внимание",
-      "богословие",
-      "история"
+      "Стивен Чарнок",
+      "познание Бога",
+      "поклонение",
+      "вера",
+      "молитва",
+      "повседневная жизнь"
     ],
     "created_at": "2026-10-26",
-    "updated_at": "2026-11-04"
+    "updated_at": "2026-11-15"
   },
-  "verified_on": "2026-11-04",
+  "verified_on": "2026-11-15",
   "epigraph_source": {
     "source_id": "src-01-ps89-3",
     "label": "Книга Псалмов 89:3 — эпиграф статьи",
     "url": "https://bible.by/syn/19/89/",
-    "verified_on": "2026-11-04",
+    "verified_on": "2026-11-15",
     "evidence": "Синодальный перевод, Пс. 89:3: «Прежде нежели родились горы, и Ты образовал землю и вселенную, и от века и до века Ты — Бог». Сверено по https://bible.by/syn/19/89/ (стих 3); в английской нумерации KJV Psalm 90:2."
   },
   "scripture_source": {
     "source_id": "src-scripture-synodal",
     "label": "Синодальный перевод: стихи в тексте статьи",
     "url": "https://github.com/bibleonline/rst",
-    "verified_on": "2026-10-26",
-    "evidence": "Пс. 89:3; Рим. 1:28; Откр. 4:8; Пс. 5:2 — дословно по корпусу bibleonline/rst (parsed66); нумерация псалмов синодальная (у Чарнока по английской Библии: Ps. v. 1 = Пс. 5:2)."
+    "verified_on": "2026-11-15",
+    "evidence": "Пс. 89:3; Иак. 2:19; Ин. 1:18; Евр. 1:1–3; Ин. 17:3; 1 Пет. 1:15–16; Пс. 5:2; Иак. 4:15; 1 Кор. 10:31. Дословные русские цитаты и эпиграф сверены с bibleonline/rst parsed66 2026-11-15; остальные ссылки являются пересказами либо богословскими отсылками. Нумерация псалмов синодальная."
   },
   "quotes": [
     {
@@ -44,44 +44,9 @@
       "end": "spring from the ill dispositions of the heart"
     },
     {
-      "discourse": "беседа II",
-      "start": "Whosoever thinks the notion of a Deity unfit",
-      "end": "sapless and useless thing"
-    },
-    {
-      "discourse": "беседа II",
-      "start": "Men in their travels are frequently thinking",
-      "end": "flitting thoughts of a durable and eternal good"
-    },
-    {
-      "discourse": "беседа V",
-      "start": "Eternity is a perpetual duration, which hath neither beginning nor end",
-      "end": "perfect possession of life without any variation"
-    },
-    {
-      "discourse": "беседа V",
-      "start": "A man is not the same at night that he was in the morning",
-      "end": "in the same infiniteness as ever"
-    },
-    {
-      "discourse": "беседа V",
-      "start": "God is always vigorous and flourishing",
-      "end": "and never putrefies"
-    },
-    {
       "discourse": "беседа V",
       "start": "Often meditate on the eternity of God",
-      "end": "which was, and is, and is to come"
-    },
-    {
-      "discourse": "беседа V",
-      "start": "since nothing but God is eternal, nothing but God is worth the loving",
-      "end": "by a dissolution"
-    },
-    {
-      "discourse": "беседа VIII",
-      "start": "He knows what angels know, what man knows",
-      "end": "viewing and piercing all things"
+      "end": "support of faith and hope"
     },
     {
       "discourse": "беседа VIII",
@@ -90,18 +55,16 @@
     },
     {
       "discourse": "беседа IX",
-      "start": "He is counted a wise man that lays hold of the fittest opportunities",
-      "end": "miss of the due season of bringing about his own purposes"
-    },
-    {
-      "discourse": "беседа IX",
       "start": "As his will wills all things, and his power effects all things",
       "end": "agreeable to so excellent a Being"
-    },
+    }
+  ],
+  "inline_quotes": [
     {
       "discourse": "беседа VI",
-      "start": "He wants nothing; he loses nothing",
-      "end": "equal to itself in all its dimensions"
+      "original": "He wants nothing; he loses nothing",
+      "translation": "Он ни в чём не нуждается; Он ничего не теряет",
+      "location": "Неизменность Бога: верность, не зависящая от перемен"
     }
   ]
 }

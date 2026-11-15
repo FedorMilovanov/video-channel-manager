@@ -186,9 +186,14 @@ def build_posts(root: Path, queue_path: Path, max_chars: int) -> dict[str, Any]:
         )
         for index, chunk in enumerate(chunks, start=1):
             body = "\n\n".join(chunk)
-            # Special (non-cycle) items such as the biographical history-01
-            # are not discourses from «О бытии Бога»; do not label them so.
-            if "-history-" in publication_id:
+            # Optional per-item editorial label avoids misclassifying
+            # historical-theological articles as biographical essays.
+            custom_label = str(item.get("vk_editorial_label") or "").strip()
+            if custom_label and (chr(10) in custom_label or len(custom_label) > 100):
+                raise ValueError(f"{publication_id}: invalid VK editorial label")
+            if custom_label:
+                header_top = f"📖 Стивен Чарнок. {custom_label}"
+            elif "-history-" in publication_id:
                 header_top = "📖 Стивен Чарнок. Биографический очерк"
             else:
                 header_top = "📖 Стивен Чарнок. «О бытии Бога»"
