@@ -435,7 +435,7 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-15T15:09:42.996132+00:00",
       "peasants1525_glossary_v2_revision": {
-        "state": "page_verified",
+        "state": "telegram_claimed",
         "run_id": "43734253855",
         "run_attempt": 1,
         "github_sha": "77b2087ac2e714af74fed19cb653b1a7c2ecfb68",
@@ -453,7 +453,9 @@
           "page_verified_by": "exact_public_readback_with_known_telegraph_url_normalization",
           "reconciled_at_utc": "2026-11-15T16:38:49.329268+00:00"
         },
-        "page_verified_at_utc": "2026-11-15T16:38:49.329291+00:00"
+        "page_verified_at_utc": "2026-11-15T16:38:49.329291+00:00",
+        "telegram_provider_effect": "unknown_until_reconciled",
+        "telegram_claimed_at_utc": "2026-11-15T16:38:53.062376+00:00"
       }
     }
   }
