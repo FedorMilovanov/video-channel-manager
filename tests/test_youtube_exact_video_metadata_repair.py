@@ -222,3 +222,21 @@ def test_ambiguous_mutation_not_retried_and_journal_kept(tmp_path: Path):
     state = __import__("json").loads(receipt.read_text(encoding="utf-8"))
     assert state["status"] == "pending_reconciliation"
     assert state["provider_writes_attempted"] == 1
+
+
+def test_youtube_reorders_tags_without_changing_membership() -> None:
+    source = raw()
+    plan = plan_from(source)
+    live = copy.deepcopy(source)
+    live["snippet"]["tags"] = sorted(plan["after"]["tags"], key=str.casefold)
+    live["status"]["license"] = "youtube"
+    assert live["snippet"]["tags"] != plan["after"]["tags"]
+    module.validate_live(plan, live, after=True)
+    # Real metadata drift must still fail: no extra, dropped or duplicated tags.
+    live["snippet"]["tags"] = live["snippet"]["tags"][:-1]
+    with pytest.raises(ValueError, match="tags"):
+        module.validate_live(plan, live, after=True)
+    live["snippet"]["tags"] = list(plan["after"]["tags"])
+    live["snippet"]["tags"][-1] = live["snippet"]["tags"][0]
+    with pytest.raises(ValueError, match="tags"):
+        module.validate_live(plan, live, after=True)
