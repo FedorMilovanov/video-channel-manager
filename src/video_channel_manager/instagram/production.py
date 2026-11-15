@@ -20,6 +20,11 @@ from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import InstagramPublicationEntity, utc_now
 
 
+# Two real large-Reel media_publish calls exceeded the default 30s response window.
+# This extends only the response read wait; ambiguous effects still fail closed.
+_MEDIA_PUBLISH_READ_TIMEOUT_SECONDS = 120.0
+
+
 class InstagramProductionError(RuntimeError):
     """Base error for production Instagram publishing."""
 
@@ -689,6 +694,15 @@ class InstagramProviderClient:
                 f"Instagram {method.upper()} {path!r} must declare an explicit provider resource"
             )
         headers = {"Authorization": f"Bearer {self.config.access_token}"}
+        # The final publish response can exceed the normal Graph read timeout
+        # after Meta has already committed the Reel. Keep the normal connect/
+        # write limits, and do not retry if even this bounded read times out.
+        request_timeout = httpx.Timeout(
+            self.config.timeout_seconds,
+            read=max(self.config.timeout_seconds, _MEDIA_PUBLISH_READ_TIMEOUT_SECONDS)
+            if resource == "media_publish"
+            else self.config.timeout_seconds,
+        )
         try:
             response = self._client.request(
                 method,
@@ -696,6 +710,7 @@ class InstagramProviderClient:
                 headers=headers,
                 data=data,
                 params=params,
+                timeout=request_timeout,
             )
         except httpx.RequestError as exc:
             raise InstagramTransportError(f"Instagram provider transport failure: {exc}") from exc
