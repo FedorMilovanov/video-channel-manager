@@ -1,26 +1,26 @@
 """Editorial and mutation-safety acceptance tests for existing Telegram message 1619."""
+
 from __future__ import annotations
 
 from argparse import Namespace
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-import json
 import re
 
 import pytest
 
 from video_channel_manager.lordchrist_telegraph_publisher import (
-    DEFAULT_QUEUE_PATH, _find_item, build_telegraph_payload, load_telegraph_queue,
+    DEFAULT_QUEUE_PATH,
+    _find_item,
+    build_telegraph_payload,
+    load_telegraph_queue,
 )
 from video_channel_manager import lordchrist_peasants1525_inplace as old
 from video_channel_manager import lordchrist_peasants1525_readability as ux
 
 ROOT = Path(__file__).resolve().parents[1]
-MEDIA_BASE = (
-    "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"
-    + ux.BASE_MEDIA_SHA
-)
+MEDIA_BASE = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + ux.BASE_MEDIA_SHA
 
 
 def _real_item_and_page():
@@ -80,21 +80,25 @@ def test_node_rewriter_fails_closed_if_links_are_not_exact():
 def test_claimed_page_state_does_not_perform_any_provider_mutation(monkeypatch):
     item, baseline = _real_item_and_page()
     args = Namespace(
-        stage="prepare-page", repo_root=ROOT, ledger=Path("state.json"),
-        publication_id=old.PUBLICATION_ID, media_base_url=MEDIA_BASE,
-        run_id="445566", run_attempt=1, github_sha="f" * 40,
+        stage="prepare-page",
+        repo_root=ROOT,
+        ledger=Path("state.json"),
+        publication_id=old.PUBLICATION_ID,
+        media_base_url=MEDIA_BASE,
+        run_id="445566",
+        run_attempt=1,
+        github_sha="f" * 40,
     )
     entry = {
         "peasants1525_glossary_v2_revision": {
-            "state": "verified", "page_provider_effect": "verified",
+            "state": "verified",
+            "page_provider_effect": "verified",
             "telegram_provider_effect": "verified",
         }
     }
     ledger = {"entries": {old.PUBLICATION_ID: entry}}
     monkeypatch.setattr(ux, "_require_execution_context", lambda args: None)
-    monkeypatch.setattr(
-        old, "_target", lambda args: (Path("state.json"), ledger, entry, item, baseline)
-    )
+    monkeypatch.setattr(old, "_target", lambda args: (Path("state.json"), ledger, entry, item, baseline))
     checks = []
     monkeypatch.setattr(old, "_proof_reconciled_page", lambda page: checks.append("page"))
     monkeypatch.setattr(old, "_post_readback", lambda *args: checks.append("post"))
@@ -115,36 +119,45 @@ def test_exact_message_edit_is_rich_and_never_sends_new_message(monkeypatch):
     target, _ = ux.improve_nodes(baseline)
     rich = ux.rich_html_for_existing_post(item.channel_post)
     args = Namespace(
-        stage="edit-telegram", repo_root=ROOT, ledger=Path("state.json"),
-        publication_id=old.PUBLICATION_ID, media_base_url=MEDIA_BASE,
-        run_id="445566", run_attempt=1, github_sha="f" * 40,
+        stage="edit-telegram",
+        repo_root=ROOT,
+        ledger=Path("state.json"),
+        publication_id=old.PUBLICATION_ID,
+        media_base_url=MEDIA_BASE,
+        run_id="445566",
+        run_attempt=1,
+        github_sha="f" * 40,
     )
     entry = {
         "peasants1525_glossary_v2_revision": {
-            "state": "verified", "page_provider_effect": "verified",
+            "state": "verified",
+            "page_provider_effect": "verified",
             "telegram_provider_effect": "verified",
         },
         ux.RECEIPT_KEY: {
-            "state": "telegram_claimed", "run_id": args.run_id,
-            "run_attempt": args.run_attempt, "github_sha": args.github_sha,
-            "page_url": old.PAGE_URL, "message_id": old.MESSAGE_ID,
+            "state": "telegram_claimed",
+            "run_id": args.run_id,
+            "run_attempt": args.run_attempt,
+            "github_sha": args.github_sha,
+            "page_url": old.PAGE_URL,
+            "message_id": old.MESSAGE_ID,
             "target_page_sha256": ux._digest(target.compact_content_json),
             "target_post_sha256": ux._digest(rich),
         },
     }
     ledger = {"entries": {old.PUBLICATION_ID: entry}}
     monkeypatch.setattr(ux, "_require_execution_context", lambda args: None)
-    monkeypatch.setattr(
-        old, "_target", lambda args: (Path("state.json"), ledger, entry, item, baseline)
-    )
+    monkeypatch.setattr(old, "_target", lambda args: (Path("state.json"), ledger, entry, item, baseline))
     monkeypatch.setattr(old, "_proof_reconciled_page", lambda page: None)
     monkeypatch.setattr(old, "_post_readback", lambda *args: None)
     monkeypatch.setattr(
-        old, "_telegram_authority",
+        old,
+        "_telegram_authority",
         lambda args: ("fake-token", SimpleNamespace(chat_id=ux.CHAT_ID)),
     )
     monkeypatch.setattr(ux, "save_ledger", lambda path, data: None)
     calls = []
+
     class FakeTransport:
         def post_json(self, url, payload):
             calls.append((url, payload))
@@ -155,15 +168,19 @@ def test_exact_message_edit_is_rich_and_never_sends_new_message(monkeypatch):
                     "chat": {"id": ux.CHAT_ID},
                     "rich_message": {
                         "blocks": [
-                            {"type": "paragraph", "text": [
-                                {"type": "reference_link", "reference_name": "swabia"},
-                                {"type": "reference", "name": "articles"},
-                                {"type": "reference_link", "reference_name": "dependency"},
-                            ]}
+                            {
+                                "type": "paragraph",
+                                "text": [
+                                    {"type": "reference_link", "reference_name": "swabia"},
+                                    {"type": "reference", "name": "articles"},
+                                    {"type": "reference_link", "reference_name": "dependency"},
+                                ],
+                            }
                         ]
                     },
                 },
             }
+
     monkeypatch.setattr(ux, "HttpxLiveTransport", FakeTransport)
     result = ux.execute(args)
     assert result["message_id"] == 1619
