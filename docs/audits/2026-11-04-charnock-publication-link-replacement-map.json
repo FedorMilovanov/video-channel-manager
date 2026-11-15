@@ -44,9 +44,9 @@
       "replacement_telegraph_url": "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
       "replacement_telegram_message_url": "https://t.me/lordchrist/1585",
       "provider_edit_status": "verified_in_place",
-      "replacement_state": "previous_history01_revision_still_live; new_editorial_revision_staged",
+      "replacement_state": "history01_final_editorial_polish_live_verified_at_original_11_05_url",
       "provider_writes_authorized": false,
-      "notes": "15.11.2026: утверждённая редакция history-01 и символическая обложка опубликованы через editPage на существующей странице 11-05, без createPage; прежнее сообщение Telegram №1585 исправлено через editMessageText, без sendMessage. Оба публичных URL проверены, состояние verified подтверждено в state/lordchrist-telegram. Страница 10-25 остаётся историческим архивом; новых внешних операций не разрешать.",
+      "notes": "15.11.2026: утверждённая редакция history-01 и символическая обложка опубликованы через editPage на существующей странице 11-05, без createPage; прежнее сообщение Telegram №1585 исправлено через editMessageText, без sendMessage. Оба публичных URL проверены, состояние verified подтверждено в state/lordchrist-telegram. Страница 10-25 остаётся историческим архивом; новых внешних операций не разрешать.\n15.11.2026: final editorial polish verified by run #43739913629 at existing URL; no Telegram write.",
       "previous_public_page_title_readback": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
       "previous_public_page_still_uncorrected": true,
       "telegram_message_revision_required": false,
@@ -55,8 +55,13 @@
       "inplace_revision_state_commit_sha": "9b697234e7c249328f02d6b61a927921d8676baa",
       "inplace_revision_verified_at_utc": "2026-11-15T15:25:50.967841+00:00",
       "prior_verified_document_git_blob_sha": "e7767a1f265f28abb3c9917ac9815b1a806858a6",
-      "editorial_revision_status": "staged_not_yet_published",
-      "editorial_revision_notes": "Editorial polish is in repository only; the public page still serves the last verified edition until an authorized in-place editPage run succeeds. Keep original URL and Telegram message; no duplicate."
+      "editorial_revision_status": "verified_in_place",
+      "editorial_revision_notes": "15.11.2026: editorial polish verified by authenticated editPage and complete public readback at the existing Telegraph 11-05 URL. Telegram #1585 unchanged, no duplicate. Temporary writer retired.",
+      "editorial_polish_run_id": "43739913629",
+      "editorial_polish_article_sha256": "sha256:e63da7455c161eec8aa2aa07f9a7c7a89a1f3a74fca0d579bca1f98aa10ed66e",
+      "editorial_polish_cover_sha256": "sha256:3910ace77cd68083868d6801649273f56bd731dbe09fa06b2e1676c793eccae2",
+      "editorial_polish_verified_at_utc": "2026-11-15T17:14:04.098437+00:00",
+      "editorial_polish_state_commit_sha": "978882ab8afca1a594505468f02d79d88abc4087"
     },
     {
       "publication_id": "lordchrist-telegraph-charnock-02",
