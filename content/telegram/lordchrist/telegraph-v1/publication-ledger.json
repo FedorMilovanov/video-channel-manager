@@ -433,7 +433,19 @@
       "telegram_chat_id": -1001295216957,
       "telegram_message_id": 1619,
       "telegram_link_preview_large_media": true,
-      "telegram_published_at_utc": "2026-11-15T15:09:42.996132+00:00"
+      "telegram_published_at_utc": "2026-11-15T15:09:42.996132+00:00",
+      "peasants1525_glossary_v2_revision": {
+        "state": "page_claimed",
+        "run_id": "43734253855",
+        "run_attempt": 1,
+        "github_sha": "77b2087ac2e714af74fed19cb653b1a7c2ecfb68",
+        "page_url": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
+        "message_id": 1619,
+        "article_sha256": "sha256:3c608d66618855d872e0483b613fea7110521ac41c25189b7bdce1574bc9a82c",
+        "cover_sha256": "sha256:1c3a7cd2386645412e81097dc18481f7de8544fc1d21b28d943a0e5c204ab579",
+        "page_provider_effect": "unknown_until_reconciled",
+        "claimed_at_utc": "2026-11-15T16:13:38.153042+00:00"
+      }
     }
   }
 }
