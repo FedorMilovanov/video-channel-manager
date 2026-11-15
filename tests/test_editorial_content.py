@@ -144,6 +144,7 @@ def test_collection_rejects_duplicate_variation_keys() -> None:
     assert f"duplicate variation_key: {record.variation_key}" in errors
     assert f"duplicate content_id: {record.content_id}" in errors
 
+
 def test_canonical_comment_without_question_keeps_sourced_facts_and_links() -> None:
     payload = deepcopy(_lord_god_payload())
     payload.pop("question")
