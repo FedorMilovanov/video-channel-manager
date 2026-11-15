@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.coverage-ratchet",
   "schema_version": 1,
-  "updated_at_utc": "2026-11-15T16:03:42.689160+00:00",
+  "updated_at_utc": "2026-11-15T21:08:00Z",
   "measured_python": "3.11",
   "command": "python -m pytest --cov=video_channel_manager --cov-report=json:coverage.json",
   "total_floor": 75.01,
@@ -117,6 +117,7 @@
     "src/video_channel_manager/lordchrist_charnock_reschedule.py": 60.0,
     "src/video_channel_manager/lordchrist_cross_track_effect_guard.py": 77.2,
     "src/video_channel_manager/lordchrist_peasants1525_inplace.py": 75.8,
+    "src/video_channel_manager/lordchrist_peasants1525_readability.py": 60.0,
     "src/video_channel_manager/lordchrist_quiz.py": 93.79,
     "src/video_channel_manager/lordchrist_quote_quality_hold.py": 87.5,
     "src/video_channel_manager/lordchrist_research_retirement.py": 90.47,
