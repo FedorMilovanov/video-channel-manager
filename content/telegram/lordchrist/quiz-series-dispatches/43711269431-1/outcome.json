@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "lordchrist-quiz-s03-atonement-goat",
+  "provider_payload_sha256": "sha256:4324ced13e782c396903e20d5c6b8e3a23ceff261e6777a05033e112163f9a57",
+  "provider_effect": "verified",
+  "retryable": false,
+  "error": null,
+  "receipt": {
+    "schema_name": "video-channel-manager.telegram-generic-send-receipt",
+    "schema_version": 1,
+    "project_key": "lord-god-strength",
+    "publication_id": "lordchrist-quiz-s03-atonement-goat",
+    "provider_payload_sha256": "sha256:4324ced13e782c396903e20d5c6b8e3a23ceff261e6777a05033e112163f9a57",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "message_id": 1617,
+    "message_url": "https://t.me/lordchrist/1617",
+    "verified_at_utc": "2026-11-15T11:56:08.556132Z",
+    "provider_effect": "verified"
+  }
+}
