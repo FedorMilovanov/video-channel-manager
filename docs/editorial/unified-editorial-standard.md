@@ -16,7 +16,7 @@ A record contains:
 - `profile`: `long_form_poetry`, `short_form`, `essay`, `historical`, `music_cover`, or a supported legacy equivalent;
 - `variation_key`: a stable, work-specific editorial angle;
 - `fact.heading`, `fact.text`, `fact.fact_type`, and evidence `fact.source_ids`;
-- a concrete `question` about the presented text, performance, structure, or documented context;
+- an optional `question` only when genuinely called for by the material or expressly requested by the owner (never needed to manufacture engagement);
 - compact semantic `links` (`site`, `playlist`, `vk`, `vk_album`, `primary_text`, `full_version`, and related kinds);
 - a complete `sources` ledger;
 - `rendering_metadata`, `platform_suitability`, and optional `platform_targets`.
@@ -41,7 +41,7 @@ Interpretation may appear only when clearly framed as an editorial reading and w
 
 ## Editorial quality
 
-A record must provide a substantial, work-specific fact rather than a replaceable compliment. The question must be answerable from the material and must not be a generic engagement prompt. Links must be relevant to the work and must not become a fixed spam footer.
+A record must provide a substantial, work-specific fact rather than a replaceable compliment. A question is optional, must be answerable from the material when present, and must never be appended as a generic engagement prompt. Links must be relevant to the work and must not become a fixed spam footer.
 
 Variation is controlled by `variation_key`. A batch is invalid when it repeats a variation key, content ID, or final rendered text.
 
