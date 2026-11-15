@@ -229,7 +229,7 @@
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
-      "sha256": "529da6d0a17b36b509eec9afe76b40a515e501ab3286611f8cb893b9751e4cbb",
+      "sha256": "f8426acbed51c60c261ff7fa57c43593ffdeea0861dc7cceb45bdee86afcf37f",
       "status": "independent_tool"
     },
     {
@@ -371,6 +371,21 @@
       "provider_write_capable": true,
       "sha256": "571ae1ca8ee1a30d47d2f763474ea6bd3e44fffd085c55aa10ab38799774e20d",
       "status": "independent_tool"
+    },
+    {
+      "callers": [
+        ".github/workflows/lordchrist-history01-final-polish.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/charnock_history01_polish_release.py",
+      "private_imports": [
+        "video_channel_manager.lordchrist_charnock_reschedule._proof_page",
+        "video_channel_manager.lordchrist_telegraph_publisher._find_item"
+      ],
+      "project_owner": "lordchrist",
+      "provider_write_capable": true,
+      "sha256": "a4cfb7403fb7fe177a4df900f6729735a49ec54cfd88e1910139e3effee36036",
+      "status": "compatibility_adapter"
     },
     {
       "callers": [],

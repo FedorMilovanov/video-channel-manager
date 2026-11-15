@@ -1,0 +1,95 @@
+name: Lordchrist Charnock history-01 editorial polish (one shot)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Exact confirmation REVISE_HISTORY01_FINAL_POLISH
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  revise-in-place:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'REVISE_HISTORY01_FINAL_POLISH'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: src
+      GH_TOKEN: ${{ github.token }}
+      STATE_BRANCH: state/lordchrist-telegram
+      MEDIA_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}
+      LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+    steps:
+      - name: Checkout reviewed main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Install publisher dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Verify exact main and required CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" && "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+
+      - name: Check out existing durable state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$STATE_BRANCH:refs/remotes/origin/$STATE_BRANCH"
+          git worktree add .state/lordchrist "origin/$STATE_BRANCH"
+          test -f "$LEDGER_PATH"
+          git -C .state/lordchrist config user.name "lordchrist-history01-polish[bot]"
+          git -C .state/lordchrist config user.email "lordchrist-history01-polish@users.noreply.github.com"
+
+      - name: Verify author rights and commit one-time intent
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          python scripts/charnock_history01_polish_release.py prepare --ledger "$LEDGER_PATH" --media-base-url "$MEDIA_BASE_URL"
+          git -C .state/lordchrist add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C .state/lordchrist diff --cached --quiet && exit 3
+          git -C .state/lordchrist commit -m "Claim one-shot Charnock history-01 editorial polish [skip ci]"
+          git -C .state/lordchrist push origin "HEAD:$STATE_BRANCH"
+          [[ "$(git -C .state/lordchrist rev-parse HEAD)" == "$(git ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" ]] || exit 3
+
+      - name: Edit existing Telegraph page exactly once
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          [[ "$(git -C .state/lordchrist rev-parse HEAD)" == "$(git ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" ]] || exit 3
+          python scripts/charnock_history01_polish_release.py apply --ledger "$LEDGER_PATH" --media-base-url "$MEDIA_BASE_URL"
+          git -C .state/lordchrist add -- content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          git -C .state/lordchrist diff --cached --quiet && exit 3
+          git -C .state/lordchrist commit -m "Verify in-place Charnock history-01 editorial polish [skip ci]"
+          git -C .state/lordchrist push origin "HEAD:$STATE_BRANCH"
+          [[ "$(git -C .state/lordchrist rev-parse HEAD)" == "$(git ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" ]] || exit 3

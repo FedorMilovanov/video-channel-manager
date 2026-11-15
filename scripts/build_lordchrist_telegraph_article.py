@@ -136,6 +136,7 @@ def build_document(markdown: str, spec: dict[str, Any], source_text: str) -> tup
     if len(quote_blocks) != len(quotes) + 1:
         raise ValueError(f"Markdown has {len(quote_blocks)} quote blocks, expected epigraph + {len(quotes)} quotes")
     sources: list[dict[str, Any]] = [spec["epigraph_source"]]
+    work_title = spec.get("work_title", "О бытии Бога")
     block_specs: list[str] = []
     for number, ((discourse, offset, span), _block) in enumerate(zip(spans, quote_blocks[1:], strict=True), start=2):
         name = f"H{number:02d}"
@@ -143,7 +144,7 @@ def build_document(markdown: str, spec: dict[str, Any], source_text: str) -> tup
         sources.append(
             {
                 "source_id": f"src-{number:02d}-charnock",
-                "label": f"Стивен Чарнок, «О бытии Бога» ({discourse}), цитата {number}",
+                "label": f"Стивен Чарнок, «{work_title}» ({discourse}), цитата {number}",
                 "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
                 "verified_on": spec["verified_on"],
                 "evidence": (
