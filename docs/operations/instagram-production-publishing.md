@@ -107,6 +107,8 @@ VCM_INSTAGRAM_POLL_ATTEMPTS=5
 
 The 60-second / five-attempt polling defaults intentionally match Meta's current recommendation to query a container status once per minute for no more than five minutes. Do not lower the interval merely to make a live run appear faster; an explicit override should be reviewed against current provider guidance and rate-limit pressure.
 
+The final `POST /media_publish` keeps the configured connect/write/pool timeout but uses a **bounded read timeout of at least 120 seconds** rather than the default 30-second Graph read timeout. This is based on two 16 November 2026 large-Reel calls which both timed out at the client after Meta had actually published the media (issue #869). A longer response wait prevents avoidable ambiguous outcomes; it is **not** a retry. If the response is still lost, the ledger remains `publish_unknown` with zero automatic replays. Reconcile the existing container and unique exact-caption `REELS` media ID/permalink before binding `--published-media-id`; never create a second container/key merely because the HTTP response was lost.
+
 For Facebook Login compatibility mode, set both:
 
 ```text

@@ -222,6 +222,33 @@ def test_publish_claim_has_one_winner_across_database_clients(tmp_path: Path) ->
         assert current.attempt_count == 2
 
 
+def test_media_publish_extended_read_wait_keeps_other_graph_timeouts_short() -> None:
+    observed: dict[str, dict[str, float | None]] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        timeout = request.extensions.get("timeout")
+        assert isinstance(timeout, dict)
+        observed[request.url.path] = timeout
+        if request.method == "GET" and request.url.path.endswith("/container-timeout"):
+            return _response(request, 200, {"status_code": "FINISHED"})
+        if request.method == "POST" and request.url.path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            return _response(request, 200, {"id": "media-timeout"})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _provider_client(config, transport) as client:
+        assert client.get_container_status("container-timeout")[0] == "FINISHED"
+        assert client.publish_container("container-timeout") == "media-timeout"
+
+    normal = observed["/v25.0/container-timeout"]
+    publish = observed[f"/v25.0/{ACCOUNT_ID}/media_publish"]
+    assert normal["read"] == 1.0
+    assert normal["connect"] == normal["write"] == 1.0
+    assert publish["read"] == 120.0
+    assert publish["connect"] == publish["write"] == 1.0
+
+
 def test_successful_reel_publish_is_durable_and_idempotent() -> None:
     writes: list[str] = []
 
