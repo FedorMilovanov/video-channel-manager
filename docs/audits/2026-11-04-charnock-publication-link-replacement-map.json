@@ -39,14 +39,14 @@
       "previous_telegram_message_id": 1585,
       "previous_published_article_sha256": "sha256:267eadf21225c14f1bee0f09fc9e96c4841ee69684a6ea678c0418248c621ee7",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-      "corrected_document_git_blob_sha": "f0e6b6e01adeae9e600afaf75f0f1698f69e3127",
-      "corrected_document_branch": "agent/charnock-telegraph-context-20261104",
+      "corrected_document_git_blob_sha": "f3c1bd772e9d403d198ed6a36bfa7b93163daaba",
+      "corrected_document_branch": "editorial/charnock-history-theology-20261115",
       "replacement_telegraph_url": null,
       "replacement_telegram_message_url": null,
       "provider_edit_status": "not_attempted",
-      "replacement_state": "source_review_in_pr_not_live",
+      "replacement_state": "reviewed_content_candidate_not_live",
       "provider_writes_authorized": false,
-      "notes": "Old Telegraph and Telegram URLs remain historical links; do not infer a replacement URL from a GitHub file. Confirm revision rights and create a real public URL before changing any old Telegram message.",
+      "notes": "В PR #957 подготовлена новая редакция history-01. Старые Telegra.ph и Telegram URL остаются историческими; исправления источника не изменяют живую страницу. До отдельной проверки прав автора, независимой приёмки и одобренной операции не менять URL и не повторять отправку.",
       "previous_public_page_title_readback": "Ум, который не торопился: Стивен Чарнок и глубина мысли в эпоху быстрых ответов",
       "previous_public_page_still_uncorrected": true,
       "telegram_message_revision_required": true
@@ -111,5 +111,6 @@
   ],
   "public_readback_on": "2026-11-04",
   "public_readback_status": "five_previous_pages_successfully_read_with_original_contents; no in_place_edits performed",
-  "reference_correction_note": "2026-11-04: 14 biblical epigraph source URLs now address their actual Synodal chapter; 02 was incorrectly linked to Haggai 1, 03 to Hebrews 10; history-01 epigraph reference corrected from Psalm 89:2 to Psalm 89:3. Historical public URLs remain unchanged until authorized provider edits."
+  "reference_correction_note": "2026-11-04: 14 biblical epigraph source URLs now address their actual Synodal chapter; 02 was incorrectly linked to Haggai 1, 03 to Hebrews 10; history-01 epigraph reference corrected from Psalm 89:2 to Psalm 89:3. Historical public URLs remain unchanged until authorized provider edits.",
+  "last_editorial_review_on": "2026-11-15"
 }
