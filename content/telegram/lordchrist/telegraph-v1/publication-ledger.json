@@ -72,7 +72,7 @@
         "telegram_link_preview_large_media": true
       },
       "history01_inplace_revision": {
-        "state": "page_verified",
+        "state": "telegram_claimed",
         "run_id": "43729686598",
         "run_attempt": 1,
         "github_sha": "2eec69d53a9886faec2e1889445a6fa7132279f0",
@@ -82,7 +82,9 @@
         "cover_sha256": "sha256:3910ace77cd68083868d6801649273f56bd731dbe09fa06b2e1676c793eccae2",
         "page_provider_effect": "verified",
         "claimed_at_utc": "2026-11-15T15:24:31.565510+00:00",
-        "page_verified_at_utc": "2026-11-15T15:24:38.362134+00:00"
+        "page_verified_at_utc": "2026-11-15T15:24:38.362134+00:00",
+        "telegram_provider_effect": "unknown_until_reconciled",
+        "telegram_claimed_at_utc": "2026-11-15T15:24:42.949670+00:00"
       }
     },
     "lordchrist-telegraph-charnock-02": {
