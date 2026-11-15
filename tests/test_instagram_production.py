@@ -735,48 +735,44 @@ def test_repeated_container_error_is_terminal_without_media_publish() -> None:
         assert sleeps == [0.0]
 
 
-def test_public_url_container_detects_nested_oil_error_despite_in_progress() -> None:
-    """A hosted video_url must not hide OIL FILE_NOT_FOUND behind IN_PROGRESS."""
+def test_public_url_container_status_omits_unsupported_video_status() -> None:
+    """Meta returns HTTP 400 / 2207065 if a video_url container GET asks for video_status."""
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"
-        assert request.url.path.endswith("/container-url-oil")
-        assert request.url.params["fields"] == "status_code,status,video_status"
-        return _response(
-            request,
-            200,
-            {
-                "status_code": "IN_PROGRESS",
-                "video_status": {
-                    "uploading_phase": {
-                        "status": "error",
-                        "bytes_transferred": 0,
-                        "source_file_size": 0,
-                        "errors": [
-                            {
-                                "code": 1363008,
-                                "message": "OIL Error[FILE_NOT_FOUND: 6]",
-                            }
-                        ],
+        assert request.url.path.endswith("/container-url-finished")
+        if "video_status" in request.url.params["fields"]:
+            return _response(
+                request,
+                400,
+                {
+                    "error": {
+                        "code": 100,
+                        "error_subcode": 2207065,
+                        "message": "video_status is invalid for this media type",
                     }
                 },
-            },
-        )
-
-    config = _config()
-    with _provider_client(config, httpx.MockTransport(handler)) as client:
-        status, detail = client.get_container_status("container-url-oil")
-    assert status == "ERROR"
-    assert detail is not None
-    assert "provider_error_code=1363008" in detail
-    assert "bytes_transferred=0" in detail
-    assert "FILE_NOT_FOUND" in detail
-
-
-def test_public_url_container_without_phase_error_keeps_original_status() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.params["fields"] == "status_code,status,video_status"
+            )
+        assert request.url.params["fields"] == "status_code,status"
         return _response(request, 200, {"status_code": "FINISHED", "status": "ready"})
 
     with _provider_client(_config(), httpx.MockTransport(handler)) as client:
-        assert client.get_container_status("container-ready") == ("FINISHED", "ready")
+        assert client.get_container_status("container-url-finished") == ("FINISHED", "ready")
+
+
+def test_public_url_container_in_progress_preserves_pending_without_unsupported_fields() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["fields"] == "status_code,status"
+        return _response(request, 200, {"status_code": "IN_PROGRESS", "status": "still processing"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-url-pending") == ("IN_PROGRESS", "still processing")
+
+
+def test_public_url_container_error_uses_official_status_text() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["fields"] == "status_code,status"
+        return _response(request, 200, {"status_code": "ERROR", "status": "Video fetch failed"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-url-error") == ("ERROR", "Video fetch failed")
