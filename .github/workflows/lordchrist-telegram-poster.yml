@@ -24,12 +24,12 @@ on:
   schedule:
     # UTC only. The old quote-v4 morning 07:00 and evening 18:00 UTC
     # schedules were retired on 2026-11-06 together with publish-next.
-    # Retain only 09:00 UTC Tue/Fri (12:00 Moscow, Charnock rich article)
-    # and 16:17 UTC Mon/Wed/Sat (19:17 Moscow, historical rich article).
-    # Neither remaining trigger authorizes or selects the old quote queue.
-    # Do not add a timezone key: both remaining expressions are UTC.
+    # The Charnock rich-v1 calendar was superseded by the reviewed
+    # lordchrist-charnock-scheduled-reissue.yml. Keep only the independent
+    # 16:17 UTC Mon/Wed/Sat historical article calendar.
+    # This trigger never authorizes the retired quote-v4 queue.
+    # Do not add a timezone key: the expression is already UTC.
     # tests/test_lordchrist_schedule_cron_contract.py enforces this.
-    - cron: "0 9 * * 2,5"
     - cron: "17 16 * * 1,3,6"
 
 permissions:
@@ -1267,15 +1267,12 @@ jobs:
             --ledger "$HISTORICAL_LEDGER_PATH"
 
   charnock-rich:
-    # Long L2 articles: one article per midday slot (12:00 Moscow, Tue/Fri).
-    # The old quote-v4 publish-next job is permanently disabled.
-    # This job exclusively handles the retained midday article lane.
+    # Retained manual rich-v1 editorial compatibility only. Scheduled Charnock
+    # delivery belongs solely to lordchrist-charnock-scheduled-reissue.yml.
     if: >-
       github.ref == 'refs/heads/main' &&
-      (
-        (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 2,5') ||
-        (github.event_name == 'workflow_dispatch' && inputs.action == 'publish-article')
-      )
+      github.event_name == 'workflow_dispatch' &&
+      inputs.action == 'publish-article'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -1300,26 +1297,19 @@ jobs:
         shell: bash
         env:
           PYTHONPATH: src
-          EVENT_NAME: ${{ github.event_name }}
           REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
           CONFIRMATION: ${{ inputs.confirm }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "schedule" ]]; then
-            python -m video_channel_manager.lordchrist_rich_articles due > due.json
-            cat due.json
-            publication_id="$(python -c 'import json;print(json.load(open("due.json")).get("due") or "")')"
-          else
-            [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-rich-charnock-[0-9]{2}$ ]] || {
-              echo "Manual article run requires an exact queued publication_id." >&2
-              exit 2
-            }
-            [[ "$CONFIRMATION" == "PUBLISH:$REQUESTED_PUBLICATION_ID" ]] || {
-              echo "Manual article publication requires the exact confirmation: PUBLISH:$REQUESTED_PUBLICATION_ID" >&2
-              exit 2
-            }
-            publication_id="$REQUESTED_PUBLICATION_ID"
-          fi
+          [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-rich-charnock-[0-9]{2}$ ]] || {
+            echo "Manual article run requires an exact queued publication_id." >&2
+            exit 2
+          }
+          [[ "$CONFIRMATION" == "PUBLISH:$REQUESTED_PUBLICATION_ID" ]] || {
+            echo "Manual article publication requires the exact confirmation: PUBLISH:$REQUESTED_PUBLICATION_ID" >&2
+            exit 2
+          }
+          publication_id="$REQUESTED_PUBLICATION_ID"
           echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
 
       - name: Preview the exact rich document
