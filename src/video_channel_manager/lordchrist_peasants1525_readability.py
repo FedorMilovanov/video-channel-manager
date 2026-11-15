@@ -4,6 +4,7 @@ This tool NEVER sends a new message or creates a new page. Each individual
 provider mutation is preceded by a durable ledger claim on the state branch.
 Unknown outcomes are not replayed.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -35,12 +36,30 @@ CHAT_ID = -1001295216957
 ANCHORED_LINKS = 11
 
 DEFINITIONS = (
-    ("swabia", "Швабия — историческая область Центральной Европы. В 1525 году её земли входили в Священную Римскую империю, преимущественно на юге современной Германии."),
-    ("articles", "«Двенадцать статей» — составленный в 1525 году свод двенадцати требований швабских крестьян к церковным и светским властям. Статья здесь означает пункт документа."),
-    ("pastor", "Пастор — служитель местной христианской общины, проповедующий и осуществляющий пастырское попечение. Первым требованием было право общины самой избирать и при необходимости отстранять его."),
-    ("dependency", "Личная зависимость — правовые ограничения свободы крестьянина в отношениях с господином. Её формы различались; это не точная копия позднейшего российского крепостного права."),
-    ("memmingen", "Мемминген — город на юге нынешней Германии (Бавария), в 1525 году вольный имперский город, где был составлен известный свод требований."),
-    ("luther", "Мартин Лютер — немецкий реформатор. В 1525 году сначала призвал к миру и осудил злоупотребления господ, а позднее резко выступил против вооружённых восставших."),
+    (
+        "swabia",
+        "Швабия — историческая область Центральной Европы. В 1525 году её земли входили в Священную Римскую империю, преимущественно на юге современной Германии.",
+    ),
+    (
+        "articles",
+        "«Двенадцать статей» — составленный в 1525 году свод двенадцати требований швабских крестьян к церковным и светским властям. Статья здесь означает пункт документа.",
+    ),
+    (
+        "pastor",
+        "Пастор — служитель местной христианской общины, проповедующий и осуществляющий пастырское попечение. Первым требованием было право общины самой избирать и при необходимости отстранять его.",
+    ),
+    (
+        "dependency",
+        "Личная зависимость — правовые ограничения свободы крестьянина в отношениях с господином. Её формы различались; это не точная копия позднейшего российского крепостного права.",
+    ),
+    (
+        "memmingen",
+        "Мемминген — город на юге нынешней Германии (Бавария), в 1525 году вольный имперский город, где был составлен известный свод требований.",
+    ),
+    (
+        "luther",
+        "Мартин Лютер — немецкий реформатор. В 1525 году сначала призвал к миру и осудил злоупотребления господ, а позднее резко выступил против вооружённых восставших.",
+    ),
 )
 
 
@@ -121,10 +140,7 @@ def improve_nodes(baseline: Any) -> tuple[Any, int]:
                 )
     if (first, second) != (1, 1):
         raise ValueError(f"Expected both misleading scroll instructions, found {(first, second)}")
-    if any(
-        isinstance(node, dict) and old.PAGE_URL + "#" in json.dumps(node, ensure_ascii=False)
-        for node in nodes
-    ):
+    if any(isinstance(node, dict) and old.PAGE_URL + "#" in json.dumps(node, ensure_ascii=False) for node in nodes):
         raise ValueError("Same-page glossary links remain after rewrite")
     compact = json.dumps(nodes, ensure_ascii=False, separators=(",", ":"))
     length = len(compact.encode("utf-8"))
@@ -145,7 +161,10 @@ def rich_html_for_existing_post(spec: Any) -> str:
     substitutions = (
         ("Крестьяне Швабии", 'Крестьяне <a href="#swabia">Швабии</a>'),
         ("составили «Двенадцать статей»:", 'составили <a href="#articles">«Двенадцать статей»</a>:'),
-        ("Первым пунктом было право общины выбирать пастора.", 'Первым пунктом было право общины выбирать <a href="#pastor">пастора</a>.'),
+        (
+            "Первым пунктом было право общины выбирать пастора.",
+            'Первым пунктом было право общины выбирать <a href="#pastor">пастора</a>.',
+        ),
         ("личной зависимости", '<a href="#dependency">личной зависимости</a>'),
         ("архив Меммингена", 'архив <a href="#memmingen">Меммингена</a>'),
         ("Мартина Лютера", 'Мартина <a href="#luther">Лютера</a>'),
@@ -247,14 +266,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         old._prove_owner(token, expected_title=baseline.title)
         transport = HttpxLiveTransport()
         url, page_path = publish_telegraph_page(
-            transport, target, access_token=token, existing_path=old.PAGE_PATH, allow_split=False,
+            transport,
+            target,
+            access_token=token,
+            existing_path=old.PAGE_PATH,
+            allow_split=False,
         )
         if (url, page_path) != (old.PAGE_URL, old.PAGE_PATH):
             raise RuntimeError("The editing API returned a different Telegraph page")
         old._proof_reconciled_page(target)
-        receipt.update(
-            state="page_verified", page_provider_effect="verified", page_verified_at_utc=_now()
-        )
+        receipt.update(state="page_verified", page_provider_effect="verified", page_verified_at_utc=_now())
         save_ledger(path, ledger)
         return {"stage": args.stage, "page_url": old.PAGE_URL}
 
@@ -305,7 +326,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         if not all(x in serialized for x in ("reference", "reference_link", "swabia", "articles", "dependency")):
             raise RuntimeError("Rich response lacks expected footnote structures; do not retry")
         receipt.update(
-            state="verified", telegram_provider_effect="verified", verified_at_utc=_now(),
+            state="verified",
+            telegram_provider_effect="verified",
+            verified_at_utc=_now(),
         )
         save_ledger(path, ledger)
         return {"stage": args.stage, "message_id": old.MESSAGE_ID, "url": old.PAGE_URL}
@@ -315,9 +338,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "stage", choices=("prepare-page", "edit-page", "prepare-telegram", "edit-telegram")
-    )
+    parser.add_argument("stage", choices=("prepare-page", "edit-page", "prepare-telegram", "edit-telegram"))
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--publication-id", default=old.PUBLICATION_ID)
