@@ -195,4 +195,3 @@ def test_v2_explicit_question_is_still_validated_not_generated() -> None:
     record = deepcopy(_v2_record())
     record["question"] = {"lead": "_Вопрос:_", "text": "Интерпретация без знака вопроса"}
     assert any("question.text must be" in err for err in validate_comment_content(record))
-
