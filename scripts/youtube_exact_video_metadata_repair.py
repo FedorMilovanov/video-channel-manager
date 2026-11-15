@@ -90,7 +90,22 @@ def validate_live(plan: dict[str, Any], raw: dict[str, Any], *, after: bool = Fa
         expected["tags"] = plan["after"]["tags"]
         expected["license"] = plan["after"]["license"]
     current = observed(raw)
-    differences = [key for key in expected if current.get(key) != expected[key]]
+    differences = []
+    for key, value in expected.items():
+        actual = current.get(key)
+        if key == "tags":
+            # YouTube returns alphabetically normalized tag order after videos.update.
+            # The complete distinct tag membership, not array order, is the invariant.
+            same_tags = (
+                isinstance(actual, list)
+                and len(actual) == len(value)
+                and len(actual) == len(set(actual))
+                and set(actual) == set(value)
+            )
+            if not same_tags:
+                differences.append(key)
+        elif actual != value:
+            differences.append(key)
     if differences:
         raise ValueError(f"Owner state mismatch ({'after' if after else 'before'}): {differences}")
 
