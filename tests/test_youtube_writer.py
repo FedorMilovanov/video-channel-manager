@@ -603,3 +603,74 @@ def test_description_mutation_server_error_is_not_retried(tmp_path: Path) -> Non
         )
 
     assert put_calls == 1
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "expected_detail"),
+    [
+        ("persistent_locale_drift", "localizations.en-US.description"),
+        ("persistent_stale_description", "after 3 reads"),
+    ],
+)
+def test_exhausted_postwrite_reads_fail_closed_without_replaying_put(
+    tmp_path: Path, failure_kind: str, expected_detail: str
+) -> None:
+    raw = _localized_raw_video()
+    methods: list[str] = []
+    sleeps: list[float] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        methods.append(request.method)
+        if request.method == "PUT":
+            raw = copy.deepcopy(raw)
+            if failure_kind == "persistent_locale_drift":
+                raw["snippet"]["description"] = "After"
+                raw["localizations"]["en-US"]["description"] = "Unexpected translation"
+            return httpx.Response(200, json=raw)
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+        verification_delays=(0.1, 0.0),
+        sleep=sleeps.append,
+    )
+    with pytest.raises(YouTubeWriteError, match="Verification failed") as failure:
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_revision="old",
+            expected_description="Before",
+            new_description="After",
+        )
+
+    assert expected_detail in str(failure.value)
+    assert methods == ["GET", "PUT", "GET", "GET", "GET"]
+    assert sleeps == [0.1]
+
+
+def test_recovery_rejects_other_channel_before_mutation(tmp_path: Path) -> None:
+    raw = _raw_video("After")
+    raw["snippet"]["channelId"] = "different-channel"
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        assert request.method == "GET"
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    with pytest.raises(YouTubeRevisionConflictError, match="Channel mismatch"):
+        writer.restore_description_if_current(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_current_description="After",
+            restore_description="Before",
+        )
+    assert methods == ["GET"]
