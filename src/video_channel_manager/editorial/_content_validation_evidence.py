@@ -90,28 +90,29 @@ def validate_evidence(payload: dict[str, Any]) -> tuple[list[str], set[str]]:
             errors.append(f"generic or unsupported phrase is forbidden: {phrase}")
 
     question_raw = payload.get("question")
-    question = _object(question_raw)
-    if not isinstance(question_raw, dict):
-        errors.append("question must be an object")
-    lead = _string_field(
-        question,
-        "lead",
-        location="question",
-        errors=errors,
-        optional=True,
-    )
-    question_text = _string_field(
-        question,
-        "text",
-        location="question",
-        errors=errors,
-    )
-    if lead and (len(lead) > 100 or not balanced_emphasis(lead)):
-        errors.append("question.lead must be short and have balanced emphasis")
-    if not 25 <= len(question_text) <= 320 or not question_text.endswith("?"):
-        errors.append("question.text must be a specific 25-320 character question ending with ?")
-    if contains_banned_circle(lead + question_text):
-        errors.append("colored circle markers are not allowed")
+    if question_raw is not None:
+        question = _object(question_raw)
+        if not isinstance(question_raw, dict):
+            errors.append("question must be an object")
+        lead = _string_field(
+            question,
+            "lead",
+            location="question",
+            errors=errors,
+            optional=True,
+        )
+        question_text = _string_field(
+            question,
+            "text",
+            location="question",
+            errors=errors,
+        )
+        if lead and (len(lead) > 100 or not balanced_emphasis(lead)):
+            errors.append("question.lead must be short and have balanced emphasis")
+        if not 25 <= len(question_text) <= 320 or not question_text.endswith("?"):
+            errors.append("question.text must be a specific 25-320 character question ending with ?")
+        if contains_banned_circle(lead + question_text):
+            errors.append("colored circle markers are not allowed")
     return errors, source_urls
 
 
