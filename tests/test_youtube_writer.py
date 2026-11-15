@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -159,6 +161,169 @@ def test_revision_drift_with_same_description_is_safe(tmp_path: Path) -> None:
     )
     assert verified.description == "After"
     assert methods == ["GET", "PUT", "GET"]
+
+
+def _localized_raw_video() -> dict[str, Any]:
+    raw = _raw_video("Before")
+    raw["snippet"]["defaultAudioLanguage"] = "ru"
+    raw["localizations"] = {
+        "ru": {"title": "Russian title", "description": "Before"},
+        "en-US": {"title": "English title", "description": "English before"},
+    }
+    return raw
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_field"),
+    [
+        ("audio", "snippet.defaultAudioLanguage"),
+        ("default_language", "snippet.defaultLanguage"),
+        ("title", "snippet.title"),
+        ("category", "snippet.categoryId"),
+        ("tags", "snippet.tags"),
+        ("channel", "snippet.channelId"),
+        ("privacy", "status.privacyStatus"),
+        ("english_description", "localizations.en-US.description"),
+        ("english_title", "localizations.en-US.title"),
+        ("missing_locale", "localizations.languages"),
+        ("added_locale", "localizations.languages"),
+        ("russian_locale_mismatch", "localizations.ru.description"),
+    ],
+)
+def test_description_success_is_not_enough_if_other_metadata_drifts(
+    tmp_path: Path, mutation: str, expected_field: str
+) -> None:
+    raw = _localized_raw_video()
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        methods.append(request.method)
+        if request.method == "GET":
+            assert "localizations" in request.url.params["part"].split(",")
+            return httpx.Response(200, json={"items": [raw]})
+        assert request.method == "PUT"
+        payload = json.loads(request.content)
+        assert payload["snippet"]["defaultAudioLanguage"] == "ru"
+        raw = copy.deepcopy(raw)
+        raw["snippet"]["description"] = payload["snippet"]["description"]
+        if mutation == "audio":
+            raw["snippet"]["defaultAudioLanguage"] = "en-US"
+        elif mutation == "default_language":
+            raw["snippet"]["defaultLanguage"] = "en"
+        elif mutation == "title":
+            raw["snippet"]["title"] = "Unexpected title"
+        elif mutation == "category":
+            raw["snippet"]["categoryId"] = "10"
+        elif mutation == "tags":
+            raw["snippet"]["tags"] = ["different"]
+        elif mutation == "channel":
+            raw["snippet"]["channelId"] = "other-channel"
+        elif mutation == "privacy":
+            raw["status"]["privacyStatus"] = "unlisted"
+        elif mutation == "english_description":
+            raw["localizations"]["en-US"]["description"] = "Unexpected English translation"
+        elif mutation == "english_title":
+            raw["localizations"]["en-US"]["title"] = "Unexpected English title"
+        elif mutation == "missing_locale":
+            del raw["localizations"]["en-US"]
+        elif mutation == "added_locale":
+            raw["localizations"]["de"] = {"title": "German", "description": "German translation"}
+        elif mutation == "russian_locale_mismatch":
+            raw["localizations"]["ru"]["description"] = "Unexpected Russian localization"
+        else:
+            pytest.fail(f"Unknown case: {mutation}")
+        return httpx.Response(200, json=raw)
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+        verification_delays=(),
+    )
+    with pytest.raises(YouTubeWriteError, match="metadata drift") as failure:
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_revision="old",
+            expected_description="Before",
+            new_description="After",
+        )
+    assert expected_field in str(failure.value)
+    assert methods == ["GET", "PUT", "GET"]  # NEVER silently retry a dangerous PUT.
+
+
+def test_description_preserves_translations_and_accepts_primary_locale_sync(tmp_path: Path) -> None:
+    raw = _localized_raw_video()
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        methods.append(request.method)
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": [raw]})
+        payload = json.loads(request.content)
+        raw = copy.deepcopy(raw)
+        raw["snippet"]["description"] = payload["snippet"]["description"]
+        raw["localizations"]["ru"]["description"] = "After"
+        return httpx.Response(200, json=raw)
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    result = writer.replace_description(
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_revision="old",
+        expected_description="Before",
+        new_description="After",
+    )
+    assert result.description == "After"
+    assert result.raw["localizations"]["en-US"]["description"] == "English before"
+    assert result.raw["localizations"]["ru"]["description"] == "After"
+    assert methods == ["GET", "PUT", "GET"]
+
+
+def test_metadata_postflight_retry_reads_again_but_does_not_repeat_put(tmp_path: Path) -> None:
+    raw = _localized_raw_video()
+    methods: list[str] = []
+    saved = False
+    reads_after_save = 0
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw, saved, reads_after_save
+        methods.append(request.method)
+        if request.method == "PUT":
+            payload = json.loads(request.content)
+            raw = copy.deepcopy(raw)
+            raw["snippet"]["description"] = payload["snippet"]["description"]
+            saved = True
+            return httpx.Response(200, json=raw)
+        if saved:
+            reads_after_save += 1
+            if reads_after_save == 1:
+                stale = copy.deepcopy(raw)
+                stale["localizations"]["en-US"]["description"] = "Temporary translation drift"
+                return httpx.Response(200, json={"items": [stale]})
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+        verification_delays=(0.0,),
+    )
+    result = writer.replace_description(
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_revision="old",
+        expected_description="Before",
+        new_description="After",
+    )
+    assert result.description == "After"
+    assert methods == ["GET", "PUT", "GET", "GET"]
 
 
 def test_write_preserves_mutable_snippet_fields_and_verifies(tmp_path: Path) -> None:
