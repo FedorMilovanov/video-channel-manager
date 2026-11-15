@@ -16,15 +16,15 @@ def _args(stage: str) -> Namespace:
         ledger=Path("ledger.json"),
         publication_id=revision.PUBLICATION_ID,
         media_base_url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + "a" * 40,
-        run_id="1234",
+        run_id=revision.ORIGINAL_RUN_ID,
         run_attempt=1,
-        github_sha="a" * 40,
+        github_sha=revision.ORIGINAL_GITHUB_SHA,
     )
 
 
 def _fixture(stage: str):
     args = _args(stage)
-    payload = SimpleNamespace(article_sha256="sha256:article", cover_sha256="sha256:cover")
+    payload = SimpleNamespace(article_sha256="sha256:article", cover_sha256="sha256:cover", title="Reviewed glossary")
     item = SimpleNamespace(channel_post=SimpleNamespace(headline="НОВЫЙ ЗАГОЛОВОК"))
     entry = {
         "peasants1525_glossary_v2_revision": {
@@ -63,7 +63,7 @@ def test_page_ownership_fails_closed_on_wrong_title(monkeypatch):
             "can_edit": True,
         },
     )
-    with pytest.raises(RuntimeError, match="prior title"):
+    with pytest.raises(RuntimeError, match="expected edition"):
         revision._prove_owner("retained-secret")
 
 
@@ -104,7 +104,7 @@ def test_page_revision_always_targets_existing_path(monkeypatch):
     monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "temporary-secret")
     monkeypatch.setattr(revision, "_prove_owner", lambda _: None)
     monkeypatch.setattr(revision, "_post_readback", lambda *_: None)
-    monkeypatch.setattr(revision, "_proof_page", lambda *_: None)
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: None)
     monkeypatch.setattr(revision, "HttpxLiveTransport", lambda: object())
     called = []
 
@@ -124,7 +124,7 @@ def test_telegram_stage_uses_edit_message_text_only(monkeypatch):
     args, ledger, entry, item, payload = _fixture("edit-telegram")
     entry["peasants1525_glossary_v2_revision"]["state"] = "telegram_claimed"
     _patch_base(monkeypatch, args, ledger, entry, item, payload)
-    monkeypatch.setattr(revision, "_proof_page", lambda *_: None)
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: None)
     monkeypatch.setattr(revision, "_post_readback", lambda *_: None)
     monkeypatch.setattr(
         revision,
@@ -162,7 +162,7 @@ def test_claim_must_match_run_exactly(monkeypatch):
     args, ledger, entry, item, payload = _fixture("edit-page")
     entry["peasants1525_glossary_v2_revision"]["github_sha"] = "b" * 40
     _patch_base(monkeypatch, args, ledger, entry, item, payload)
-    with pytest.raises(RuntimeError, match="another execution"):
+    with pytest.raises(RuntimeError, match="Original revision claim identity"):
         revision.execute(args)
 
 
@@ -279,7 +279,7 @@ def test_prepare_telegram_requires_verified_page_and_persists_claim(monkeypatch)
     entry["peasants1525_glossary_v2_revision"]["state"] = "page_verified"
     saved = _patch_base(monkeypatch, args, ledger, entry, item, payload)
     checks = []
-    monkeypatch.setattr(revision, "_proof_page", lambda *_: checks.append("page"))
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: checks.append("page"))
     monkeypatch.setattr(revision, "_telegram_authority", lambda *_: checks.append("telegram"))
     monkeypatch.setattr(revision, "_post_readback", lambda *_: checks.append("post"))
     result = revision.execute(args)
@@ -342,3 +342,142 @@ def test_existing_page_edit_never_uses_create_or_send_message():
     assert "lordchrist-telegraph-peasants-1525-20261115" in runner
     executable_lines = "\n".join(line for line in runner.splitlines() if not line.strip().startswith("#"))
     assert "sendMessage" not in executable_lines and "createPage" not in executable_lines
+
+
+def test_page_readback_normalizes_only_provider_link_rewrites(monkeypatch):
+    from urllib.parse import quote
+
+    internal = revision.PAGE_URL + "#Десятина"
+    external = "https://example.org/archive"
+    payload = SimpleNamespace(
+        title="Corrected German article",
+        nodes=[
+            {"tag": "h3", "children": ["Десятина"]},
+            {
+                "tag": "p",
+                "children": [
+                    {"tag": "a", "attrs": {"href": internal}, "children": ["подробнее"]},
+                    " и ",
+                    {"tag": "a", "attrs": {"href": external}, "children": ["источник"]},
+                ],
+            },
+        ],
+    )
+    returned = [
+        {"tag": "h3", "attrs": {"id": "Десятина"}, "children": ["Десятина"]},
+        {
+            "tag": "p",
+            "children": [
+                {
+                    "tag": "a",
+                    "attrs": {"href": "/" + revision.PAGE_PATH + "#" + quote("Десятина")},
+                    "children": ["подробнее"],
+                },
+                " и ",
+                {"tag": "a", "attrs": {"href": external, "target": "_blank"}, "children": ["источник"]},
+            ],
+        },
+    ]
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "ok": True,
+                "result": {
+                    "title": payload.title,
+                    "path": revision.PAGE_PATH,
+                    "url": revision.PAGE_URL,
+                    "content": returned,
+                },
+            }
+
+    monkeypatch.setattr(revision.httpx, "get", lambda *_a, **_k: FakeResponse())
+    revision._proof_reconciled_page(payload)
+
+    # Any substantive drift stays a hard rejection, even if URL rewrites match.
+    returned[1]["children"][0]["children"] = ["ПОДМЕНЁННЫЙ ТЕКСТ"]
+    with pytest.raises(RuntimeError, match="content differs"):
+        revision._proof_reconciled_page(payload)
+
+    # The existing page identity is protected, not merely its text.
+    returned[1]["children"][0]["children"] = ["подробнее"]
+    broken_title = SimpleNamespace(title="Different title", nodes=payload.nodes)
+    with pytest.raises(RuntimeError, match="identity differs"):
+        revision._proof_reconciled_page(broken_title)
+
+
+def test_reconcile_existing_page_claim_is_read_only_and_durable(monkeypatch):
+    args, ledger, entry, item, payload = _fixture("reconcile-page")
+    args.run_id = "new-reconcile-run"
+    args.github_sha = "b" * 40
+    receipt = entry["peasants1525_glossary_v2_revision"]
+    receipt.update(page_provider_effect="unknown_until_reconciled", page_url=revision.PAGE_URL, message_id=1619)
+    saved = _patch_base(monkeypatch, args, ledger, entry, item, payload)
+    actions = []
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "retained-secret")
+    monkeypatch.setattr(
+        revision, "_prove_owner", lambda token, *, expected_title: actions.append(("owner", expected_title))
+    )
+    monkeypatch.setattr(revision, "_telegram_authority", lambda _: actions.append(("bot", None)))
+    monkeypatch.setattr(revision, "_post_readback", lambda headline: actions.append(("telegram", headline)))
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda _: actions.append(("page-read-only", None)))
+    monkeypatch.setattr(revision, "publish_telegraph_page", lambda *_a, **_k: pytest.fail("MUST NOT editPage again"))
+    result = revision.execute(args)
+    assert result["page_verified"] is True
+    assert actions == [
+        ("owner", payload.title),
+        ("bot", None),
+        ("telegram", revision.ORIGINAL_TELEGRAM_HEADLINE),
+        ("page-read-only", None),
+    ]
+    assert receipt["state"] == "page_verified"
+    assert receipt["page_provider_effect"] == "verified"
+    assert receipt["reconciliation"]["original_run_id"] == revision.ORIGINAL_RUN_ID
+    assert receipt["reconciliation"]["run_id"] == args.run_id
+    assert saved == [ledger]
+
+    # A second/new reconciliation cannot claim the same prior provider effect.
+    with pytest.raises(RuntimeError, match="No eligible"):
+        revision.execute(args)
+
+
+def test_reconciled_page_claim_can_only_advance_in_same_new_run(monkeypatch):
+    args, ledger, entry, item, payload = _fixture("prepare-telegram")
+    args.run_id = "reconcile-run-id"
+    args.github_sha = "b" * 40
+    receipt = entry["peasants1525_glossary_v2_revision"]
+    receipt["state"] = "page_verified"
+    receipt["reconciliation"] = {
+        "run_id": args.run_id,
+        "run_attempt": 1,
+        "github_sha": args.github_sha,
+        "original_run_id": revision.ORIGINAL_RUN_ID,
+    }
+    saved = _patch_base(monkeypatch, args, ledger, entry, item, payload)
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: None)
+    monkeypatch.setattr(revision, "_telegram_authority", lambda *_: None)
+    monkeypatch.setattr(revision, "_post_readback", lambda *_: None)
+    result = revision.execute(args)
+    assert result["message_id"] == revision.MESSAGE_ID
+    assert receipt["state"] == "telegram_claimed"
+    assert len(saved) == 1
+    args.stage = "edit-telegram"
+    args.run_id = "wrong-run"
+    with pytest.raises(RuntimeError, match="another execution"):
+        revision.execute(args)
+
+
+def test_readback_cannot_erase_or_change_a_prior_claim(monkeypatch):
+    args, ledger, entry, item, payload = _fixture("reconcile-page")
+    args.run_id = "new-run"
+    args.github_sha = "b" * 40
+    receipt = entry["peasants1525_glossary_v2_revision"]
+    receipt.update(page_provider_effect="unknown_until_reconciled", page_url=revision.PAGE_URL, message_id=1619)
+    receipt["github_sha"] = "unexpected-original"
+    _patch_base(monkeypatch, args, ledger, entry, item, payload)
+    monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: pytest.fail("Must reject before network"))
+    with pytest.raises(RuntimeError, match="No eligible"):
+        revision.execute(args)

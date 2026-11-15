@@ -53,15 +53,22 @@ test -f "$ledger_path"
 git -C "$state_dir" config user.name "lordchrist-inplace-revision[bot]"
 git -C "$state_dir" config user.email "lordchrist-inplace-revision@users.noreply.github.com"
 
-# Commit a page-edit intent before any provider call.
-run_stage prepare-page
-persist page-claimed
-verify_main
-
-# editPage at the already existing 11-15 URL only.
-run_stage edit-page
-persist page-verified
-verify_main
+if [[ "${REVISION_MODE:-original}" == "reconcile-only" ]]; then
+  # A prior editPage already succeeded. Do not call it again.
+  run_stage reconcile-page
+  persist page-readback-reconciled
+  verify_main
+elif [[ "${REVISION_MODE:-original}" == "original" ]]; then
+  run_stage prepare-page
+  persist page-claimed
+  verify_main
+  run_stage edit-page
+  persist page-verified
+  verify_main
+else
+  echo "Unsupported glossary revision mode" >&2
+  exit 3
+fi
 
 # Claim the immutable original message 1619 separately.
 run_stage prepare-telegram
