@@ -8,17 +8,9 @@ on:
         required: true
         type: string
       confirm:
-        description: Exact confirmation CORRECT:<publication_id>, or REVISE_HISTORY01_IN_PLACE
+        description: Exact confirmation CORRECT:<publication_id>
         required: true
         type: string
-      revision_mode:
-        description: Keep existing correction method by default; in-place history-01 is a guarded alternative
-        required: true
-        type: choice
-        default: create-correction
-        options:
-          - create-correction
-          - revise-existing-history01
 
 permissions:
   actions: read
@@ -31,7 +23,6 @@ concurrency:
 
 jobs:
   correction:
-    if: inputs.revision_mode != 'revise-existing-history01'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -90,35 +81,3 @@ jobs:
           LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: bash scripts/charnock-corrective-release.sh
-
-  revise-history01-in-place:
-    # This job is manual and edits only existing provider resources.
-    if: >-
-      github.actor == 'FedorMilovanov' &&
-      github.ref == 'refs/heads/main' &&
-      inputs.revision_mode == 'revise-existing-history01' &&
-      inputs.publication_id == 'lordchrist-telegraph-charnock-history-01' &&
-      inputs.confirm == 'REVISE_HISTORY01_IN_PLACE'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      PYTHONPATH: src
-      LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
-      LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Checkout current reviewed main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 1
-          persist-credentials: true
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.11"
-      - name: Install the existing publisher dependencies
-        run: |
-          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
-      - name: Exact-head in-place revision with durable claims
-        shell: bash
-        run: bash scripts/charnock-history01-inplace-release.sh
