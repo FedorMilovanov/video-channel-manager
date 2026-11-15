@@ -1403,6 +1403,16 @@
       "provider_write_capable": true,
       "sha256": "372edd496806cc8fdba4e9c2e01833ccd93218b921f4000bfed398a5c92a7a2e",
       "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/youtube_exact_video_metadata_repair.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "c9ea6dddccaac4bc33cdb2c0caaca69a594b761c12dda3fa134552cb7978ddf7",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",
