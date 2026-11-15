@@ -1,7 +1,7 @@
 # Instagram production publishing runbook
 
-Updated: 2026-09-08
-Owner: issues #568 / #571, PRs #569 / #573
+Updated: 2026-11-15
+Owner: issues #568 / #571 / #869, PRs #569 / #573
 
 This runbook describes the repository-side Instagram production publishing capability. It does **not** authorize a provider mutation. A live Reel requires a fresh exact Instagram Professional account identity, external credentials/permissions, a reviewed immutable publish manifest, current durable ledger state, and explicit operation-specific execution authority.
 
@@ -32,7 +32,7 @@ Current Meta reference collection: https://www.postman.com/meta/instagram/docume
 6. `VCM_INSTAGRAM_GRAPH_API_VERSION` is mandatory. The runtime does not guess or silently upgrade API versions.
 7. A stable `publication_key` is bound permanently to one account and one canonical manifest content hash.
 8. Every provider-bound video/cover URL must use an exact hostname allowlisted by `VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS`.
-9. Before the first Meta provider POST for a logical publication, the runtime downloads the exact public media through an isolated unauthenticated client, refuses redirects, streams the bytes and verifies exact SHA-256, size and content type against the immutable manifest.
+9. Before the first Meta provider POST for a logical publication, the runtime fetches the public media with an isolated unauthenticated client, follows at most three redirects only through exact HTTPS-allowlisted hosts, and streams the complete bytes to verify SHA-256, size and content type against the immutable manifest. Only `release-assets.githubusercontent.com` may deliver expected `video/mp4` as `application/octet-stream`; integrity verification is still mandatory.
 10. The Meta Bearer token is sent only to the configured Graph host; it is never attached to public-media verification requests.
 11. Before `POST /media`, the durable ledger atomically claims `container_requested`; only one process can own container creation for that logical publication.
 12. Before `POST /media_publish`, the durable ledger atomically claims `publish_requested` for the exact known container; only one process can own final publication.
@@ -42,6 +42,16 @@ Current Meta reference collection: https://www.postman.com/meta/instagram/docume
 16. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
 17. Default container-status polling follows Meta's current recommendation: once per minute for no more than five minutes. A more aggressive override requires a separately reviewed operational reason.
 18. Provider writes never occur in CI tests.
+
+## Lord God scheduled HTTPS Reel operator boundary (verified 15 November 2026)
+
+Project `lord-god-strength` targets Instagram `17841433845016161` (`@thelordgodismystrength`) through Facebook Page `1457892317403899`; this is **not** the Poet or Milovi Instagram target. The owning operational evidence is [issue #869](https://github.com/FedorMilovanov/video-channel-manager/issues/869), not the historical `rupload` incident examples.
+
+- The **one** existing Windows scheduled writer is `VideoChannelManager-Instagram-LordGod-Daily-20261110`, 19:00 Moscow, wrapping `E:\\VideoChannelManager\\Instagram\\LordGod\\20261110-daily-wave\\lord_god_release_due_slot_v2.ps1`. The wrapper, due window, single-writer lock, exact-account Page-token check, approved 12-item manifest/SHA, and immutable publication keys remain the controlling gates. Do **not** create another scheduled writer for the same account.
+- The live writer invokes `video-manager instagram production publish <date/source HTTPS manifest> --execute`, **not** `publish-local` / direct `rupload`. The media manifest binds the original SHA-256, byte count, caption, stable GitHub Release URL and exact account; the publisher verifies the entire remote object before any Meta POST. A GET of the existing Instagram feed checks for a matching Reel before dispatch, followed by the durable SQLite ledger and a separate Meta readback.
+- The scheduled Windows launcher is an **operator-managed file outside this repository**, and thus is **not validated by GitHub CI**. Before any local modification, compare its exact deployed SHA with the receipt and backup under `E:\\VideoChannelManager\\Instagram\\LordGod\\diagnostics\\https-writer-migration-20261115\\`; require a byte-precise backup, PowerShell syntax validation, 12/12 media/caption dry run, the correct scheduled-task action and fresh Meta/SQLite postflight. Do not transplant stale operator scripts into a new schedule.
+- Older 11–14 November failed `rupload` publication keys remain terminal evidence; no blind replay or reuse. Any individually approved recovery uses a new reviewed HTTPS manifest/key and a fresh duplicate readback, never a second concurrent writer. Retain the separate distinction between owner-directed operational crossposting authority and independently documented source/translation redistribution rights.
+- **Point-in-time evidence, not standing approval:** the 11 November recovery and the 15 November unattended scheduled Reel were confirmed with `media_product_type=REELS`, a real `media_id`, permalink and `published` SQLite state. Future scheduled slots are not published until the same provider-visible postcondition is observed; see issue #869 for exact receipts.
 
 ## Runtime configuration
 
@@ -75,6 +85,8 @@ PowerShell example:
 ```powershell
 $env:VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS = '["media.example.net"]'
 ```
+
+For a pinned GitHub Release MP4, the reviewed hostname list is `["github.com","release-assets.githubusercontent.com"]`. A stable `github.com/.../releases/download/...` URL may redirect to a signed GitHub asset URL; both hosts must be explicitly allowed. `application/octet-stream` is accepted only for MP4 bytes delivered by the exact `release-assets.githubusercontent.com` hostname, and never bypasses length or SHA-256 verification.
 
 Do not allowlist `localhost`, private IP literals, URL schemes or paths.
 
@@ -161,9 +173,9 @@ A live publish accepts one immutable JSON manifest. Example:
 
 The URL must be HTTPS and publicly reachable by Meta; localhost and non-global IP targets are rejected. Its hostname must also match the explicit media-host allowlist. The publication key is an idempotency boundary, not a display label. Never reuse it for changed caption/media/account content.
 
-Before the first Graph POST, the publisher itself fetches the public object using a separate client with no Meta Authorization header. Redirects are refused. A non-2xx response, unexpected content type, wrong byte count or wrong SHA-256 fails closed before container creation. If `cover_url` is supplied, its SHA-256, byte size and content type are mandatory and receive the same verification.
+Before the first Graph POST, the publisher fetches the public object using a separate client with no Meta Authorization header. It follows at most three redirects only when every hop remains HTTPS and has an exactly allowlisted hostname; HTTP or untrusted redirects fail closed. A non-2xx response, unexpected content type (except the exact GitHub Release MP4 delivery-host exception above), wrong byte count or wrong SHA-256 fails closed before container creation. If `cover_url` is supplied, its SHA-256, byte size and content type are mandatory and receive the same verification.
 
-The public URL must therefore expose the **same immutable bytes** that were reviewed. Do not use an editor preview, mutable local tunnel, temporary authenticated URL that may expire during Meta ingestion, URL that redirects to another object, or an unreviewed source master.
+The public URL must therefore expose the **same immutable bytes** that were reviewed. Do not use an editor preview, mutable local tunnel, temporary authenticated URL that may expire during Meta ingestion, unallowlisted redirect target, HTML share page, or an unreviewed source master. An allowlisted stable GitHub Release URL is valid only if the full fetch passes every byte/MIME/redirect check.
 
 Meta's current Reels documentation should be re-read before a live rollout. At the time of this runbook sync the official Meta Postman collection documents MOV/MP4, H.264 or HEVC video, AAC audio, 23-60 FPS, maximum 1920 horizontal pixels, recommended 9:16, 3 seconds to 15 minutes duration, and a public server URL. Provider specifications can change; repository code deliberately does not freeze a speculative API version.
 
@@ -213,8 +225,8 @@ This command:
 - does not open or mutate the publication database;
 - does not call Meta Graph and cannot create a container or publish media;
 - uses the same isolated public-media verifier as the live publisher;
-- refuses redirects;
-- verifies the exact response content type;
+- accepts no more than three explicitly allowlisted HTTPS redirects and rejects all others;
+- verifies the exact response content type, except `application/octet-stream` for MP4 from the exact GitHub Release CDN host;
 - verifies `Content-Length` when supplied by the server;
 - streams the complete object and verifies the exact byte count and SHA-256;
 - applies the same checks to `cover_url` when a cover is present.
@@ -359,7 +371,7 @@ Tests use mocked HTTP only. CI must prove at minimum:
 - exact target mismatch fails closed;
 - untrusted media hosts fail closed before media fetch/provider POST;
 - media SHA-256 or size mismatch causes zero provider POSTs;
-- media redirects are refused before provider POST;
+- HTTP/unallowlisted redirects or chains longer than three hops are refused before provider POST; explicitly allowlisted GitHub Release redirects pass only with exact byte/MIME proof;
 - public-media verification never receives the Meta Authorization header;
 - only one database client can win the container-creation CAS claim;
 - only one database client can win the final-publish CAS claim;
