@@ -481,3 +481,14 @@ def test_readback_cannot_erase_or_change_a_prior_claim(monkeypatch):
     monkeypatch.setattr(revision, "_proof_reconciled_page", lambda *_: pytest.fail("Must reject before network"))
     with pytest.raises(RuntimeError, match="No eligible"):
         revision.execute(args)
+
+
+def test_recovery_pins_exact_original_cover_url_not_future_main():
+    root = Path(__file__).resolve().parents[1]
+    runner = (root / "scripts/peasants1525-glossary-inplace-release.sh").read_text(encoding="utf-8")
+    assert "REVISION_MODE:-original" in runner
+    assert "77b2087ac2e714af74fed19cb653b1a7c2ecfb68" in runner
+    assert runner.index('media_base_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/77b2087') < runner.index(
+        "verify_main()"
+    )
+    assert "run_stage reconcile-page" in runner

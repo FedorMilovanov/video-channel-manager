@@ -8,6 +8,11 @@ ledger_rel=content/telegram/lordchrist/telegraph-v1/publication-ledger.json
 ledger_path="$state_dir/$ledger_rel"
 publication_id=lordchrist-telegraph-peasants-1525-20261115
 media_base_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA"
+if [[ "${REVISION_MODE:-original}" == "reconcile-only" ]]; then
+  # editPage in run 43734253855 retained this exact earlier cover-image URL.
+  # The content and cover blob SHA are separately checked against current main.
+  media_base_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/77b2087ac2e714af74fed19cb653b1a7c2ecfb68"
+fi
 
 verify_main() {
   [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
