@@ -116,6 +116,8 @@ def build_release_plan(
         "manual_pin_evidence_required": bool(manual_pin_evidence_required),
         "provider_write_authorized": False,
     }
+    if intent.get("audio_review_required") is True:
+        plan["audio_review_required"] = True
     plan["release_plan_sha256"] = release_plan_digest(plan)
     validate_release_plan(plan)
     return plan
@@ -128,6 +130,8 @@ def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) ->
         raise UploadPlanError("Release plan SHA-256 does not match canonical content.")
     if plan.get("provider_write_authorized") is not False:
         raise UploadPlanError("Canonical release plans must remain provider_write_authorized=false.")
+    if "audio_review_required" in plan and plan["audio_review_required"] is not True:
+        raise UploadPlanError("Release audio_review_required must be true when present.")
     project_key = _required_text(plan, "project_key")
     account_alias = _required_text(plan, "account_alias")
     channel_id = _required_text(plan, "target_channel_id")
@@ -247,6 +251,22 @@ def validate_execution_approval(
         raise UploadPlanError("YouTube execution approval SHA-256 does not match canonical content.")
     if approval.get("provider_writes_authorized") is not True:
         raise UploadPlanError("Execution approval does not authorize provider writes.")
+    # A negative listening verdict must never authorize a provider write,
+    # even on historical plans which predate the explicit review requirement.
+    if "human_audio_listening_certified" in approval and approval["human_audio_listening_certified"] is not True:
+        raise UploadPlanError("Final audio listening is explicitly uncertified; publication blocked.")
+    if plan.get("audio_review_required") is True or "final_audio_review" in approval:
+        review = approval.get("final_audio_review")
+        if not isinstance(review, dict) or (
+            review.get("verdict") != "PASS"
+            or review.get("listened_from_final_mp4") is not True
+            or review.get("media_sha256") != plan["media"]["sha256"]
+            or not isinstance(review.get("reviewer"), str)
+            or not review["reviewer"].strip()
+            or not isinstance(review.get("reviewed_at"), str)
+            or not review["reviewed_at"].strip()
+        ):
+            raise UploadPlanError("Final audio review of exact MP4 media SHA is required before provider writes.")
     expected = {
         "release_plan_sha256": plan["release_plan_sha256"],
         "project_key": plan["project_key"],
