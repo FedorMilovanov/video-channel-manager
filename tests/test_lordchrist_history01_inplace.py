@@ -164,3 +164,126 @@ def test_claim_must_match_run_exactly(monkeypatch):
     _patch_base(monkeypatch, args, ledger, entry, item, payload)
     with pytest.raises(RuntimeError, match="another execution"):
         revision.execute(args)
+
+
+def test_authenticated_telegraph_read_accepts_valid_result_and_redacts_errors(monkeypatch):
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"ok": True, "result": {"path": revision.PAGE_PATH}}
+
+    calls = []
+
+    def post(url, *, data, timeout, follow_redirects):
+        calls.append((url, data, timeout, follow_redirects))
+        return FakeResponse()
+
+    monkeypatch.setattr(revision.httpx, "post", post)
+    assert revision._api_post("https://api.telegra.ph/getPage/test", {"access_token": "secret"}) == {
+        "path": revision.PAGE_PATH
+    }
+    assert len(calls) == 1 and calls[0][1]["access_token"] == "secret"
+
+    class DeniedResponse(FakeResponse):
+        def json(self):
+            return {"ok": False, "error": "MAY_INCLUDE_SECRET_TOKEN"}
+
+    monkeypatch.setattr(revision.httpx, "post", lambda *_args, **_kwargs: DeniedResponse())
+    with pytest.raises(RuntimeError, match="rejected") as excinfo:
+        revision._api_post("https://api.telegra.ph/getPage/test", {"access_token": "secret"})
+    assert "MAY_INCLUDE_SECRET_TOKEN" not in str(excinfo.value)
+
+
+def test_owner_proof_uses_account_page_list_when_can_edit_is_omitted(monkeypatch):
+    calls = []
+
+    def api(url, form):
+        calls.append(url)
+        if "/getPage/" in url:
+            return {
+                "path": revision.PAGE_PATH,
+                "url": revision.PAGE_URL,
+                "title": revision.OLD_TITLE,
+            }
+        return {"pages": [{"path": "unrelated"}, {"path": revision.PAGE_PATH}]}
+
+    monkeypatch.setattr(revision, "_api_post", api)
+    revision._prove_owner("secret")
+    assert len(calls) == 2 and calls[-1].endswith("/getPageList")
+
+
+def test_owner_proof_rejects_unlisted_page(monkeypatch):
+    def api(url, form):
+        if "/getPage/" in url:
+            return {
+                "path": revision.PAGE_PATH,
+                "url": revision.PAGE_URL,
+                "title": revision.OLD_TITLE,
+            }
+        return {"pages": [{"path": "other-article"}]}
+
+    monkeypatch.setattr(revision, "_api_post", api)
+    with pytest.raises(RuntimeError, match="ownership not proved"):
+        revision._prove_owner("secret")
+
+
+def test_public_post_readback_requires_same_id_link_and_headline(monkeypatch):
+    class Response:
+        def __init__(self, text):
+            self.text = text
+
+        def raise_for_status(self):
+            return None
+
+    text = (
+        f'<div data-post="lordchrist/{revision.MESSAGE_ID}">'
+        f'<b>НОВЫЙ ЗАГОЛОВОК</b><a href="{revision.PAGE_URL}">Читать статью</a></div>'
+    )
+    monkeypatch.setattr(revision.httpx, "get", lambda *_a, **_k: Response(text))
+    revision._post_readback("НОВЫЙ ЗАГОЛОВОК")
+    with pytest.raises(RuntimeError, match="headline"):
+        revision._post_readback("СТАРЫЙ ЗАГОЛОВОК")
+    monkeypatch.setattr(revision.httpx, "get", lambda *_a, **_k: Response(text.replace("1585", "1586")))
+    with pytest.raises(RuntimeError, match="identity"):
+        revision._post_readback()
+
+
+def test_telegram_authority_checks_bound_bot_and_channel(monkeypatch):
+    args = _args("prepare-page")
+    monkeypatch.setattr(revision, "load_channel_profile", lambda *_: SimpleNamespace(bot_token_env="FAKE_BOT_TOKEN"))
+    binding = SimpleNamespace(chat_id=-1001295216957, bot_id=8716602202)
+    monkeypatch.setattr(revision, "load_target_binding", lambda *_a, **_k: binding)
+    monkeypatch.setenv("FAKE_BOT_TOKEN", "not-a-real-token")
+
+    class Transport:
+        def read_json(self, url, params):
+            if url.endswith("/getMe"):
+                return {"ok": True, "result": {"id": 8716602202, "username": "preaching_mp3_bot"}}
+            return {
+                "ok": True,
+                "result": {"id": -1001295216957, "username": "lordchrist", "type": "channel"},
+            }
+
+    monkeypatch.setattr(revision, "HttpxLiveTransport", Transport)
+    token, found = revision._telegram_authority(args)
+    assert token == "not-a-real-token" and found.chat_id == -1001295216957
+    monkeypatch.delenv("FAKE_BOT_TOKEN")
+    with pytest.raises(RuntimeError, match="bot secret"):
+        revision._telegram_authority(args)
+
+
+def test_prepare_telegram_requires_verified_page_and_persists_claim(monkeypatch):
+    args, ledger, entry, item, payload = _fixture("prepare-telegram")
+    entry["history01_inplace_revision"]["state"] = "page_verified"
+    saved = _patch_base(monkeypatch, args, ledger, entry, item, payload)
+    checks = []
+    monkeypatch.setattr(revision, "_proof_page", lambda *_: checks.append("page"))
+    monkeypatch.setattr(revision, "_telegram_authority", lambda *_: checks.append("telegram"))
+    monkeypatch.setattr(revision, "_post_readback", lambda *_: checks.append("post"))
+    result = revision.execute(args)
+    assert result["message_id"] == revision.MESSAGE_ID
+    assert checks == ["page", "telegram", "post"]
+    assert entry["history01_inplace_revision"]["state"] == "telegram_claimed"
+    assert saved == [ledger]
