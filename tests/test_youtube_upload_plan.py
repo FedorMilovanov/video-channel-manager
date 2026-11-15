@@ -234,3 +234,37 @@ def test_public_source_attribution_not_confused_with_internal_hold(tmp_path: Pat
     spec = _spec(media_sha)
     spec["description"] = "Paul Washer preaching; original source and credit appear below."
     validate_intent(build_intent(spec, media))
+
+
+def test_neural_dub_review_required_propagates_into_exact_intent(tmp_path: Path) -> None:
+    media, sha = _media(tmp_path)
+    ordinary = build_intent(_spec(sha), media)
+    assert "audio_review_required" not in ordinary
+
+    spec = _spec(sha)
+    spec["audio_review_required"] = True
+    dubbed = build_intent(spec, media)
+    assert dubbed["audio_review_required"] is True
+    assert dubbed["upload_key_sha256"] == ordinary["upload_key_sha256"]
+    assert dubbed["intent_sha256"] != ordinary["intent_sha256"]
+    validate_intent(dubbed)
+
+
+@pytest.mark.parametrize("invalid", ["true", 1, None])
+def test_audio_review_flag_never_coerces_truthy_values(tmp_path: Path, invalid: object) -> None:
+    media, sha = _media(tmp_path)
+    spec = _spec(sha)
+    spec["audio_review_required"] = invalid
+    with pytest.raises(UploadPlanError, match="audio_review_required must be boolean"):
+        build_intent(spec, media)
+
+
+def test_resigned_intent_cannot_downgrade_audio_review_flag(tmp_path: Path) -> None:
+    media, sha = _media(tmp_path)
+    spec = _spec(sha)
+    spec["audio_review_required"] = True
+    intent = build_intent(spec, media)
+    intent["audio_review_required"] = False
+    intent["intent_sha256"] = intent_digest(intent)
+    with pytest.raises(UploadPlanError, match="audio_review_required must be true"):
+        validate_intent(intent)
