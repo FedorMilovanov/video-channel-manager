@@ -143,3 +143,19 @@ def test_collection_rejects_duplicate_variation_keys() -> None:
     errors = validate_content_collection([record, record])
     assert f"duplicate variation_key: {record.variation_key}" in errors
     assert f"duplicate content_id: {record.content_id}" in errors
+
+def test_canonical_comment_without_question_keeps_sourced_facts_and_links() -> None:
+    payload = deepcopy(_lord_god_payload())
+    payload.pop("question")
+    assert validate_content_record(payload, expected_project_key=LORD_GOD_STRENGTH) == []
+    record = parse_content_record(payload)
+    assert record.question.text == ""
+    assert record.project_key == LORD_GOD_STRENGTH
+
+
+def test_explicit_canonical_question_remains_subject_to_validation() -> None:
+    payload = deepcopy(_example_payload())
+    payload["question"] = {"lead": "", "text": "Generic engagement sentence"}
+    errors = validate_content_record(payload)
+    assert any("question.text must be" in error for error in errors)
+
