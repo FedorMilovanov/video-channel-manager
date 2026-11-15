@@ -16,7 +16,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from video_channel_manager.config.settings import AppSettings
-from video_channel_manager.instagram.provider_diagnostics import extract_resumable_phase_failure
 from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import InstagramPublicationEntity, utc_now
 
