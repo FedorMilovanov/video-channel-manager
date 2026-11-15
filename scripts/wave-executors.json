@@ -1413,6 +1413,16 @@
       "provider_write_capable": true,
       "sha256": "345c8aae04e3d38ff885c7c5cfbf1a9c0be85191b67349472dbf6c0c3aace8d2",
       "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/youtube_exact_playlist_cleanup.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "467cee58493c8c64d254bc4d7fec21938db508d6ca26a84f0b08236a91d06ee7",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",
