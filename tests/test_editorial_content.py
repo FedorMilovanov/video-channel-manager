@@ -158,4 +158,3 @@ def test_explicit_canonical_question_remains_subject_to_validation() -> None:
     payload["question"] = {"lead": "", "text": "Generic engagement sentence"}
     errors = validate_content_record(payload)
     assert any("question.text must be" in error for error in errors)
-
