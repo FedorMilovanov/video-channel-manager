@@ -86,6 +86,18 @@
         "telegram_provider_effect": "verified",
         "telegram_claimed_at_utc": "2026-11-15T15:24:42.949670+00:00",
         "verified_at_utc": "2026-11-15T15:25:50.967841+00:00"
+      },
+      "history01_editorial_polish_20261115": {
+        "state": "page_claimed",
+        "run_id": "43739913629",
+        "run_attempt": 1,
+        "github_sha": "120d139586bd9bc34ec104e1ff1954db0454bdca",
+        "article_sha256": "sha256:e63da7455c161eec8aa2aa07f9a7c7a89a1f3a74fca0d579bca1f98aa10ed66e",
+        "cover_sha256": "sha256:3910ace77cd68083868d6801649273f56bd731dbe09fa06b2e1676c793eccae2",
+        "url": "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05",
+        "message_id": 1585,
+        "provider_effect": "unknown_until_reconciled",
+        "claimed_at_utc": "2026-11-15T17:13:58.770173+00:00"
       }
     },
     "lordchrist-telegraph-charnock-02": {
