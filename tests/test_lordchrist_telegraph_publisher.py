@@ -139,9 +139,20 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
         old_url = entry["previous_telegraph_url"]
         assert old_url.startswith("https://telegra.ph/")
         assert entry["previous_public_page_still_uncorrected"] is True
-        assert entry["replacement_telegraph_url"] is None
-        assert entry["replacement_telegram_message_url"] is None
         assert entry["provider_writes_authorized"] is False
+        if publication_id == "lordchrist-telegraph-charnock-history-01":
+            assert entry["provider_edit_status"] == "verified_in_place"
+            assert entry["replacement_telegraph_url"] == (
+                "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-"
+                "v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05"
+            )
+            assert entry["replacement_telegram_message_url"] == entry["previous_telegram_message_url"]
+            assert entry["telegram_message_revision_required"] is False
+            assert entry["inplace_revision_run_id"] == "43729686598"
+            assert len(entry["inplace_revision_state_commit_sha"]) == 40
+        else:
+            assert entry["replacement_telegraph_url"] is None
+            assert entry["replacement_telegram_message_url"] is None
         item = queue[publication_id]
         assert item.article_path is not None
         assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
