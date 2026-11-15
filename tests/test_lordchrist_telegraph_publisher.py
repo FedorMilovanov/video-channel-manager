@@ -149,6 +149,9 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
             assert entry["replacement_telegram_message_url"] == entry["previous_telegram_message_url"]
             assert entry["telegram_message_revision_required"] is False
             assert entry["inplace_revision_run_id"] == "43729686598"
+            assert entry["editorial_revision_status"] == "verified_in_place"
+            assert entry["editorial_polish_run_id"] == "43739913629"
+            assert len(entry["editorial_polish_state_commit_sha"]) == 40
             assert len(entry["inplace_revision_state_commit_sha"]) == 40
         else:
             assert entry["replacement_telegraph_url"] is None
