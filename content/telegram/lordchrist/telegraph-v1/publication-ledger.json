@@ -400,7 +400,7 @@
     },
     "lordchrist-telegraph-peasants-1525-20261115": {
       "publication_id": "lordchrist-telegraph-peasants-1525-20261115",
-      "state": "page_published",
+      "state": "telegram_dispatch_claimed",
       "provider_effect": "verified",
       "run_id": "43728273385",
       "run_attempt": 1,
@@ -411,7 +411,9 @@
       "page_intent_at_utc": "2026-11-15T15:09:31.508699+00:00",
       "telegraph_url": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
       "telegraph_path": "1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
-      "telegraph_updated_at_utc": "2026-11-15T15:09:36.680750+00:00"
+      "telegraph_updated_at_utc": "2026-11-15T15:09:36.680750+00:00",
+      "telegram_provider_effect": "unknown_until_reconciled",
+      "telegram_intent_at_utc": "2026-11-15T15:09:38.690775+00:00"
     }
   }
 }
