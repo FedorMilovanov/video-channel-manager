@@ -8,6 +8,11 @@ ledger_rel=content/telegram/lordchrist/telegraph-v1/publication-ledger.json
 ledger_path="$state_dir/$ledger_rel"
 publication_id=lordchrist-telegraph-peasants-1525-20261115
 media_base_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA"
+if [[ "${REVISION_MODE:-original}" == "reconcile-only" ]]; then
+  # editPage in run 43734253855 retained this exact earlier cover-image URL.
+  # The content and cover blob SHA are separately checked against current main.
+  media_base_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/77b2087ac2e714af74fed19cb653b1a7c2ecfb68"
+fi
 
 verify_main() {
   [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
@@ -53,15 +58,22 @@ test -f "$ledger_path"
 git -C "$state_dir" config user.name "lordchrist-inplace-revision[bot]"
 git -C "$state_dir" config user.email "lordchrist-inplace-revision@users.noreply.github.com"
 
-# Commit a page-edit intent before any provider call.
-run_stage prepare-page
-persist page-claimed
-verify_main
-
-# editPage at the already existing 11-15 URL only.
-run_stage edit-page
-persist page-verified
-verify_main
+if [[ "${REVISION_MODE:-original}" == "reconcile-only" ]]; then
+  # A prior editPage already succeeded. Do not call it again.
+  run_stage reconcile-page
+  persist page-readback-reconciled
+  verify_main
+elif [[ "${REVISION_MODE:-original}" == "original" ]]; then
+  run_stage prepare-page
+  persist page-claimed
+  verify_main
+  run_stage edit-page
+  persist page-verified
+  verify_main
+else
+  echo "Unsupported glossary revision mode" >&2
+  exit 3
+fi
 
 # Claim the immutable original message 1619 separately.
 run_stage prepare-telegram
