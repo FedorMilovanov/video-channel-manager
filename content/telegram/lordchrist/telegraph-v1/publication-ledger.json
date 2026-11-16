@@ -500,6 +500,23 @@
         "verified_at_utc": "2026-11-16T07:09:20.663320+00:00",
         "rich_block_count": 9,
         "instant_view_button_url": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15"
+      },
+      "peasants1525_four_telegraph_definitions_v1": {
+        "schema": 1,
+        "run_id": "43885156976",
+        "run_attempt": 1,
+        "github_sha": "bb158d16ab5c190df459f5a3f80668f070ca3821",
+        "source_page": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
+        "state": "creating",
+        "pages": {
+          "swabia": {
+            "state": "claimed",
+            "content_sha256": "sha256:4a21dd05b757b9352b594f91920e75106bb3ba8b8efb56b8d99bdc41f080126d",
+            "provider_effect": "unknown_until_verified",
+            "claimed_at_utc": "2026-11-16T14:27:02.022989+00:00"
+          }
+        },
+        "created_at_utc": "2026-11-16T14:27:02.022903+00:00"
       }
     }
   }
