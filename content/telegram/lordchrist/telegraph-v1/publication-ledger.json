@@ -532,6 +532,12 @@
             "claimed_at_utc": "2026-11-16T16:42:42.938143+00:00",
             "url": "https://telegra.ph/Lichnaya-zavisimost-krestyan-chto-ehto-znachilo-11-16",
             "verified_at_utc": "2026-11-16T16:42:48.129894+00:00"
+          },
+          "memmingen": {
+            "state": "claimed",
+            "content_sha256": "sha256:55199ebaa09b0cc3adc698b047cb5613dddac965dfa09901a1899592c8965067",
+            "provider_effect": "unknown_until_verified",
+            "claimed_at_utc": "2026-11-16T16:42:50.830651+00:00"
           }
         },
         "created_at_utc": "2026-11-16T14:27:02.022903+00:00",
