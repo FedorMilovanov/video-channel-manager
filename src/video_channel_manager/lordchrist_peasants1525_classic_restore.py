@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import html
 import json
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import unquote
