@@ -25,8 +25,7 @@ def _button(label: str, key: str) -> str:
     if key not in TERM_KEYS:
         raise ValueError(f"Unknown glossary term: {key}")
     return (
-        '<tg-button type="callback_data" style="link" '
-        f'data="{CALLBACK_PREFIX}{key}">{html.escape(label)}</tg-button>'
+        f'<tg-button type="callback_data" style="link" data="{CALLBACK_PREFIX}{key}">{html.escape(label)}</tg-button>'
     )
 
 
@@ -89,11 +88,7 @@ def render(spec: Any) -> dict[str, Any]:
             + "<br><br>".join(digest)
             + "</blockquote>"
         ),
-        '<p><a href="'
-        + html.escape(PAGE_URL, quote=True)
-        + '">'
-        + html.escape(ARTICLE_CTA)
-        + "</a></p>",
+        '<p><a href="' + html.escape(PAGE_URL, quote=True) + '">' + html.escape(ARTICLE_CTA) + "</a></p>",
     ]
     markup = "".join(parts)
     if markup.count("<tg-button ") != 4:
