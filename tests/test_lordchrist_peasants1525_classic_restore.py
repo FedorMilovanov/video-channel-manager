@@ -33,8 +33,7 @@ def _args(stage: str):
         repo_root=ROOT,
         publication_id=original.PUBLICATION_ID,
         media_base_url=(
-            "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"
-            + original.ORIGINAL_GITHUB_SHA
+            "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + original.ORIGINAL_GITHUB_SHA
         ),
         run_id="438234",
         run_attempt=1,
@@ -136,10 +135,7 @@ def test_edit_replaces_rich_with_regular_html_and_requests_actual_preview(monkey
     class FakeTransport:
         def post_json(self, url, payload):
             calls.append((url, payload))
-            links = [
-                {"type": "text_link", "url": url}
-                for url in classic.term_links()
-            ]
+            links = [{"type": "text_link", "url": url} for url in classic.term_links()]
             links.append({"type": "text_link", "url": original.PAGE_URL})
             return {
                 "ok": True,
@@ -193,11 +189,7 @@ def test_percent_encoded_anchors_pass_provider_readback(monkeypatch):
             links = [
                 {
                     "type": "text_link",
-                    "url": (
-                        original.PAGE_URL
-                        + "#"
-                        + quote(fragment)
-                    ),
+                    "url": (original.PAGE_URL + "#" + quote(fragment)),
                 }
                 for _phrase, _prefix, _visible, fragment in classic.TERM_ANCHORS
             ]
@@ -206,10 +198,7 @@ def test_percent_encoded_anchors_pass_provider_readback(monkeypatch):
                 "result": {
                     "message_id": 1619,
                     "chat": {"id": glossary.CHAT_ID},
-                    "text": (
-                        "Швабии «Двенадцать статей» Меммингена"
-                        " Мартина Лютера. Читать полную историческую статью"
-                    ),
+                    "text": ("Швабии «Двенадцать статей» Меммингена Мартина Лютера. Читать полную историческую статью"),
                     "entities": links
                     + [
                         {"type": "text_link", "url": original.PAGE_URL},
@@ -240,13 +229,9 @@ def test_missing_native_expandable_quote_fails_closed(monkeypatch):
                 "result": {
                     "message_id": 1619,
                     "chat": {"id": glossary.CHAT_ID},
-                    "text": (
-                        "Швабии «Двенадцать статей» Меммингена"
-                        " Мартина Лютера. Читать полную историческую статью"
-                    ),
+                    "text": ("Швабии «Двенадцать статей» Меммингена Мартина Лютера. Читать полную историческую статью"),
                     "entities": [
-                        {"type": "text_link", "url": href}
-                        for href in classic.term_links() + (original.PAGE_URL,)
+                        {"type": "text_link", "url": href} for href in classic.term_links() + (original.PAGE_URL,)
                     ],
                 },
             }
