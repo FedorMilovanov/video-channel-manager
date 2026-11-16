@@ -1028,11 +1028,7 @@ class InstagramProductionService:
         paging = page.get("paging")
         if isinstance(paging, dict) and paging.get("next"):
             raise InstagramReconciliationRequired("Provider media feed was paginated; exact uniqueness is unproven")
-        matching = [
-            entry
-            for entry in records
-            if isinstance(entry, dict) and entry.get("caption") == manifest.caption
-        ]
+        matching = [entry for entry in records if isinstance(entry, dict) and entry.get("caption") == manifest.caption]
         if len(matching) != 1:
             raise InstagramReconciliationRequired(
                 f"Exact frozen-caption Reel match is not unique (found {len(matching)}); media ID remains unresolved"
