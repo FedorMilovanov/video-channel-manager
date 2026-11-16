@@ -488,15 +488,18 @@
         "verified_at_utc": "2026-11-15T21:20:13.744910+00:00"
       },
       "peasants1525_rich_layout_repair_v1": {
-        "state": "claimed",
+        "state": "verified",
         "run_id": "43821328795",
         "run_attempt": 1,
         "github_sha": "25ca3aa6b5b1fd5c4a852b6f227b4247136db329",
         "message_id": 1619,
         "page_url": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
         "post_sha256": "sha256:c9e1446157cd6150b448ed4af7a28fa1294a32e03246c7b7e2e49fbf5a710bd6",
-        "provider_effect": "unknown_until_verified",
-        "claimed_at_utc": "2026-11-16T07:09:16.623089+00:00"
+        "provider_effect": "verified",
+        "claimed_at_utc": "2026-11-16T07:09:16.623089+00:00",
+        "verified_at_utc": "2026-11-16T07:09:20.663320+00:00",
+        "rich_block_count": 9,
+        "instant_view_button_url": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15"
       }
     }
   }
