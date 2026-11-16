@@ -15,10 +15,6 @@ TELEGRAPH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegraph-poster.yml"
 QUOTE_V6_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quote-v6-publisher.yml"
 SHORTS4_WORKFLOW = WORKFLOWS_DIR / "lordchrist-shorts4-publisher.yml"
 CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
-PEASANTS1525_GLOSSARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-peasants1525-glossary-revision.yml"
-PEASANTS1525_READER_UX_WORKFLOW = WORKFLOWS_DIR / "lordchrist-peasants1525-reader-ux.yml"
-PEASANTS1525_REPAIR_WORKFLOW = WORKFLOWS_DIR / "lordchrist-peasants1525-rich-layout-repair.yml"
-PEASANTS1525_TERM_PAGES_WORKFLOW = WORKFLOWS_DIR / "lordchrist-peasants1525-term-pages.yml"
 CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
     WORKFLOW,
@@ -29,12 +25,23 @@ EXPECTED_LOCK_PARTICIPANTS = {
     QUOTE_V6_WORKFLOW,
     SHORTS4_WORKFLOW,
     CHARNOCK_CORRECTION_WORKFLOW,
-    PEASANTS1525_GLOSSARY_WORKFLOW,
-    PEASANTS1525_READER_UX_WORKFLOW,
-    PEASANTS1525_REPAIR_WORKFLOW,
-    PEASANTS1525_TERM_PAGES_WORKFLOW,
     CHARNOCK_SCHEDULE_WORKFLOW,
 }
+
+
+RETIRED_1525_WORKFLOWS = {
+    "lordchrist-peasants1525-glossary-revision.yml",
+    "lordchrist-peasants1525-reader-ux.yml",
+    "lordchrist-peasants1525-rich-layout-repair.yml",
+    "lordchrist-peasants1525-term-pages.yml",
+}
+
+
+def test_completed_1525_writers_are_archived_and_cannot_republish() -> None:
+    archive = ROOT / ".github" / "retired-workflows"
+    for name in RETIRED_1525_WORKFLOWS:
+        assert not (WORKFLOWS_DIR / name).exists()
+        assert (archive / name).is_file()
 
 
 def workflow_text() -> str:

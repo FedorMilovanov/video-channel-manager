@@ -23,6 +23,10 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
 )
 from video_channel_manager.lordchrist_telegraph_staged import _require_execution_context
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit("Retired: ordinary Telegraph glossary links replace the old RichMessage layout; never replay")
+
 RECEIPT_KEY = "peasants1525_rich_layout_repair_v1"
 REFERENCE_KEYS = ("swabia", "articles", "dependency", "memmingen")
 ARTICLE_LABEL = "⚡ ЧИТАТЬ ПОЛНУЮ СТАТЬЮ · INSTANT VIEW"

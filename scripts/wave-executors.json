@@ -870,16 +870,14 @@
       "status": "independent_tool"
     },
     {
-      "callers": [
-        ".github/workflows/lordchrist-peasants1525-rich-layout-repair.yml"
-      ],
+      "callers": [],
       "direct_entrypoint": true,
       "path": "scripts/peasants1525_rich_layout_repair.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "cc02c23b0dc916c66afb6fd62d65544439267beafd77f5055d79485fa05636e8",
-      "status": "independent_tool"
+      "sha256": "772b25b5b9a9a52e162b3f085c0dc344cd3e290fcd27541da994bcfb5485f109",
+      "status": "retired"
     },
     {
       "callers": [],

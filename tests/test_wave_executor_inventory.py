@@ -63,7 +63,7 @@ def test_retired_direct_executors_stop_before_historical_write_authority() -> No
     entries = _registry()["executors"]
     assert isinstance(entries, list)
     retired = [entry for entry in entries if entry["status"] == "retired"]
-    assert len(retired) == 27
+    assert len(retired) == 28
 
     for entry in retired:
         assert entry["direct_entrypoint"] is True
@@ -143,3 +143,12 @@ def test_historical_private_imports_are_confined_to_compatibility_adapters() -> 
     with_private_imports = [entry for entry in entries if entry["private_imports"]]
     assert with_private_imports
     assert all(entry["status"] == "compatibility_adapter" for entry in with_private_imports)
+
+
+def test_completed_lordchrist_1525_rich_script_is_not_a_live_writer() -> None:
+    by_path = {entry["path"]: entry for entry in _registry()["executors"]}
+    entry = by_path["scripts/peasants1525_rich_layout_repair.py"]
+    assert entry["status"] == "retired"
+    assert entry["callers"] == []
+    text = (ROOT / entry["path"]).read_text(encoding="utf-8")
+    assert "_WAVE6_RETIRED_EXECUTOR = True" in text
