@@ -656,6 +656,7 @@ def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: s
 
 def test_media_discovery_requires_known_ambiguous_final_publish() -> None:
     config = _config(writes_enabled=False)
+
     def handler(request: httpx.Request) -> httpx.Response:
         raise AssertionError(f"No provider call allowed: {request.method} {request.url}")
 
