@@ -135,8 +135,6 @@ def validate_page(key: str, url: str) -> bool:
     return original.PAGE_URL in links and SOURCE_URL in links
 
 
-
-
 ORIGINAL_FIRST_CLAIM = {
     "run_id": "43885156976",
     "github_sha": "bb158d16ab5c190df459f5a3f80668f070ca3821",
@@ -185,6 +183,7 @@ def _find_one_owned_page(token: str, key: str) -> str:
             "Refuse any new createPage until account ownership is reconciled."
         )
     return next(iter(candidates.values()))
+
 
 def render_post(spec: Any, urls: dict[str, str]) -> str:
     """Only ordinary Telegram HTML. Short side pages open via Instant View."""
@@ -285,7 +284,6 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     stage = args.stage
     key = args.key
     receipt = entry.get(RECEIPT_KEY)
-
 
     if stage == "reconcile-swabia":
         if (
@@ -489,7 +487,9 @@ def _longread_title() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("reconcile-swabia", "claim-page", "create-page", "claim-telegram", "edit-telegram"))
+    parser.add_argument(
+        "stage", choices=("reconcile-swabia", "claim-page", "create-page", "claim-telegram", "edit-telegram")
+    )
     parser.add_argument("--key", required=True, choices=(*PAGE_KEYS, "all"))
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--ledger", type=Path, required=True)

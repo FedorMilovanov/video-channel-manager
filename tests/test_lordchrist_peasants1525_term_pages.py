@@ -335,8 +335,11 @@ def test_reconcile_original_claim_without_second_page_create(monkeypatch):
     key = "swabia"
     url = "https://telegra.ph/Shvabiya-gde-zhili-krestyane-1525-11-16"
     args = Namespace(
-        stage="reconcile-swabia", key=key,
-        run_id="987654321", run_attempt=1, github_sha="f" * 40,
+        stage="reconcile-swabia",
+        key=key,
+        run_id="987654321",
+        run_attempt=1,
+        github_sha="f" * 40,
     )
     first = {
         "state": "claimed",
