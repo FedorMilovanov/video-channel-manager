@@ -117,6 +117,7 @@
     "src/video_channel_manager/lordchrist_charnock_reschedule.py": 60.0,
     "src/video_channel_manager/lordchrist_cross_track_effect_guard.py": 77.2,
     "src/video_channel_manager/lordchrist_peasants1525_inplace.py": 75.8,
+    "src/video_channel_manager/lordchrist_peasants1525_classic_restore.py": 60.0,
     "src/video_channel_manager/lordchrist_peasants1525_readability.py": 60.0,
     "src/video_channel_manager/lordchrist_quiz.py": 93.79,
     "src/video_channel_manager/lordchrist_quote_quality_hold.py": 87.5,
