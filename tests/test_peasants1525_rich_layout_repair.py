@@ -33,7 +33,8 @@ def _args(stage: str) -> Namespace:
         repo_root=ROOT,
         ledger=Path("state.json"),
         publication_id=old.PUBLICATION_ID,
-        media_base_url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + old.ORIGINAL_GITHUB_SHA,
+        media_base_url="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"
+        + old.ORIGINAL_GITHUB_SHA,
         run_id="123456789",
         run_attempt=1,
         github_sha="a" * 40,
@@ -162,10 +163,7 @@ def test_edit_uses_only_existing_message_and_requires_button_readback(monkeypatc
                             {"type": "paragraph", "text": "CTA"},
                             {
                                 "type": "paragraph",
-                                "text": (
-                                    "swabia articles dependency memmingen "
-                                    + old.PAGE_URL
-                                ),
+                                "text": ("swabia articles dependency memmingen " + old.PAGE_URL),
                             },
                         ]
                     },
@@ -206,9 +204,7 @@ def test_missing_article_button_never_records_success(monkeypatch):
                     "message_id": 1619,
                     "chat": {"id": previous.CHAT_ID},
                     "rich_message": {
-                        "blocks": [
-                            {"type": "paragraph", "text": "swabia articles dependency memmingen"}
-                        ] * 8
+                        "blocks": [{"type": "paragraph", "text": "swabia articles dependency memmingen"}] * 8
                     },
                     "reply_markup": {"inline_keyboard": []},
                 },
