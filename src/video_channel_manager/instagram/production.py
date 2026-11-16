@@ -1061,29 +1061,42 @@ class InstagramProductionService:
             raise InstagramReconciliationRequired("Provider media timestamp cannot be linked to the publish request")
         return media_id
 
+    def discover_published_media(self, publication_key: str) -> PublicationSnapshot:
+        """Explicit GET-only provider proof; never replay any Meta mutation."""
+        snapshot = self.ledger.get(publication_key)
+        if snapshot is None:
+            raise InstagramProductionError(f"Unknown publication key: {publication_key}")
+        if snapshot.account_id != self.config.account_id:
+            raise InstagramIdentityMismatchError("Ledger publication belongs to a different Instagram account")
+        if snapshot.status not in self._PUBLISH_AMBIGUOUS or snapshot.provider_container_id is None:
+            raise InstagramReconciliationRequired(
+                "Exact media discovery is limited to ambiguous final publish with a known container"
+            )
+        unresolved = self.reconcile(publication_key)
+        if unresolved.status != PublicationStatus.PUBLISHED_UNRESOLVED:
+            raise InstagramReconciliationRequired("Exact provider container has not proved PUBLISHED")
+        proven_media_id = self._discover_exact_reel_media_id(unresolved)
+        return self.ledger.transition(
+            publication_key,
+            PublicationStatus.PUBLISHED,
+            expected_statuses={PublicationStatus.PUBLISHED_UNRESOLVED},
+            media_id=proven_media_id,
+            provider_status="PUBLISHED",
+            published=True,
+        )
+
     def reconcile(
         self,
         publication_key: str,
         *,
         published_media_id: str | None = None,
         observed_container_id: str | None = None,
-        discover_published_media: bool = False,
     ) -> PublicationSnapshot:
         snapshot = self.ledger.get(publication_key)
         if snapshot is None:
             raise InstagramProductionError(f"Unknown publication key: {publication_key}")
         if snapshot.account_id != self.config.account_id:
             raise InstagramIdentityMismatchError("Ledger publication belongs to a different Instagram account")
-        if discover_published_media and (published_media_id is not None or observed_container_id is not None):
-            raise InstagramProductionError(
-                "Automatic media discovery cannot be combined with manual provider-ID overrides"
-            )
-        if discover_published_media and (
-            snapshot.status not in self._PUBLISH_AMBIGUOUS or snapshot.provider_container_id is None
-        ):
-            raise InstagramReconciliationRequired(
-                "Exact media discovery is limited to ambiguous final publish with a known container"
-            )
         if snapshot.status == PublicationStatus.PUBLISHED:
             if published_media_id is not None or observed_container_id is not None:
                 raise InstagramProductionError("Published publication does not accept reconciliation overrides")
@@ -1135,24 +1148,13 @@ class InstagramProductionService:
         status_code, status_message = self.client.get_container_status(container_id)
 
         if status_code == "PUBLISHED":
-            unresolved = self.ledger.transition(
+            return self.ledger.transition(
                 publication_key,
                 PublicationStatus.PUBLISHED_UNRESOLVED,
                 expected_statuses={snapshot.status},
                 provider_status=status_code,
                 error_code="published_media_id_required",
                 error_message="Provider confirms publication, but exact media id must be supplied from provider evidence",
-            )
-            if not discover_published_media:
-                return unresolved
-            proven_media_id = self._discover_exact_reel_media_id(unresolved)
-            return self.ledger.transition(
-                publication_key,
-                PublicationStatus.PUBLISHED,
-                expected_statuses={PublicationStatus.PUBLISHED_UNRESOLVED},
-                media_id=proven_media_id,
-                provider_status="PUBLISHED",
-                published=True,
             )
 
         if snapshot.status in self._PUBLISH_AMBIGUOUS:
