@@ -298,7 +298,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         pages_before = receipt.get("pages")
         first = pages_before.get("swabia") if isinstance(pages_before, dict) else None
         if (
-            not isinstance(first, dict)
+            not isinstance(pages_before, dict)
+            or not isinstance(first, dict)
             or set(pages_before) != {"swabia"}
             or first.get("state") != "claimed"
             or first.get("provider_effect") != "unknown_until_verified"
@@ -396,12 +397,12 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         response.raise_for_status()
         data = response.json()
         info = data.get("result") if data.get("ok") else None
-        url = info.get("url") if isinstance(info, dict) else None
-        if not isinstance(url, str) or not _wait_exact_page(key, url):
+        created_url = info.get("url") if isinstance(info, dict) else None
+        if not isinstance(created_url, str) or not _wait_exact_page(key, created_url):
             raise RuntimeError("One-shot Telegraph page effect uncertain; manual reconciliation required")
-        page.update(state="verified", provider_effect="verified", url=url, verified_at_utc=_now())
+        page.update(state="verified", provider_effect="verified", url=created_url, verified_at_utc=_now())
         _persist(path, ledger)
-        return {"stage": stage, "key": key, "url": url}
+        return {"stage": stage, "key": key, "url": created_url}
 
     if stage == "claim-telegram":
         if key != "all" or receipt.get("state") != "creating" or receipt.get("telegram"):
