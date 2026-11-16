@@ -524,6 +524,12 @@
             "claimed_at_utc": "2026-11-16T16:42:35.452377+00:00",
             "url": "https://telegra.ph/Dvenadcat-statej-chto-ehto-za-dokument-11-16",
             "verified_at_utc": "2026-11-16T16:42:40.267385+00:00"
+          },
+          "dependency": {
+            "state": "claimed",
+            "content_sha256": "sha256:bd6b4de78271744176da0eb38089c308ba16f3375cfd52474fe7d7f10261ca6d",
+            "provider_effect": "unknown_until_verified",
+            "claimed_at_utc": "2026-11-16T16:42:42.938143+00:00"
           }
         },
         "created_at_utc": "2026-11-16T14:27:02.022903+00:00",
