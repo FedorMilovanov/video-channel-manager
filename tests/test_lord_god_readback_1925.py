@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import importlib.util
 import json
@@ -120,7 +121,16 @@ def test_cli_timeout_preserves_no_retry(tmp_path, monkeypatch):
 
 
 def test_postflight_rereads_ledger_and_requires_meta_proof(tmp_path, monkeypatch):
-    today = postflight.dt.datetime.now(postflight.dt.timezone(postflight.dt.timedelta(hours=3))).date().isoformat()
+    today = "2026-11-16"
+
+    class FrozenClock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 11, 16, 19, 25, tzinfo=tz)
+
+    monkeypatch.setattr(
+        postflight, "dt", SimpleNamespace(datetime=FrozenClock, timezone=dt.timezone, timedelta=dt.timedelta)
+    )
     repo = tmp_path / "repo"
     root = tmp_path / "wave"
     root.mkdir()
