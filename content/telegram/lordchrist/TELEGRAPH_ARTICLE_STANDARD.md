@@ -188,12 +188,36 @@
   допускается точная `vk_editorial_label` в записи очереди. У history-01
   она соответствует теме «Познание Бога и жизнь христианина».
 
+## 14. Завершённый исторический выпуск 1525 года: обычный пост и мини-словарь
 
-## 14. Выпуск 1525 года — завершённый прецедент обычного Telegram и мини-словаря
+- **Канонический пост:** [@lordchrist/1619](https://t.me/lordchrist/1619).
+  Обычное HTML-сообщение Telegram с цитатой, абзацами и раскрываемым
+  историческим блоком; без Rich Messages, нижнего словаря и callback-кнопок.
+  Последняя строка ведёт к
+  [полному иллюстрированному очерку](https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15).
+- **Короткие пояснения:** четыре ссылки в тексте поста открывают отдельные
+  страницы Telegra.ph:
+  - [Швабия](https://telegra.ph/SHvabiya-gde-zhili-krestyane-1525-goda-11-16);
+  - [«Двенадцать статей»](https://telegra.ph/Dvenadcat-statej-chto-ehto-za-dokument-11-16);
+  - [Личная зависимость](https://telegra.ph/Lichnaya-zavisimost-krestyan-chto-ehto-znachilo-11-16);
+  - [Мемминген](https://telegra.ph/Memmingen-pochemu-on-vazhen-v-1525-godu-11-16).
+- **Поведение:** нажатие открывает справочную страницу, а не всплывающую
+  подсказку поверх обычного сообщения. Параметры `link_preview_options` и
+  `prefer_large_media` запрашивают крупный предпросмотр, но конкретный вид
+  карточки Instant View зависит от клиента Telegram. Callback-бот не нужен.
+- **Провенанс:** ветка `state/lordchrist-telegram`, запись
+  `lordchrist-telegraph-peasants-1525-20261115`, квитанция
+  `peasants1525_four_telegraph_definitions_v1`,
+  [успешный выпуск №43909802598](https://github.com/FedorMilovanov/video-channel-manager/actions/runs/43909802598).
+  Завершённый журнал не сбрасывать и не переписывать; повторные
+  `createPage`/`editMessageText` запрещены.
+- **Завершение:** четыре одноразовых workflow архивированы в
+  `.github/retired-workflows/`. Предыдущий RichMessage-скрипт сохранён
+  для истории и регрессионных тестов, но прямой запуск заблокирован;
+  в `scripts/wave-executors.json` исполнитель имеет статус `retired`.
+  Файлы `history/peasants-1525-glossary-v2.*` остаются материалом полной
+  статьи: внутристатейные якоря не являются текущими ссылками Telegram.
 
-- Канонический пост: https://t.me/lordchrist/1619. Это обычное сообщение Telegram с HTML-разметкой, цитатой и раскрываемым историческим блоком; без Rich Messages, нижнего словаря и кнопок callback. Внизу ровно одна ссылка на полный исторический очерк: https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15.
-- Четыре самостоятельных определения Telegra.ph встроены в слова краткого поста: Швабия — https://telegra.ph/SHvabiya-gde-zhili-krestyane-1525-goda-11-16; «Двенадцать статей» — https://telegra.ph/Dvenadcat-statej-chto-ehto-za-dokument-11-16; личная зависимость — https://telegra.ph/Lichnaya-zavisimost-krestyan-chto-ehto-znachilo-11-16; Мемминген — https://telegra.ph/Memmingen-pochemu-on-vazhen-v-1525-godu-11-16.
-- По нажатию открывается справочная страница в поддерживаемом средстве чтения Telegram, а не подсказка поверх самого обычного сообщения. Запрос крупного предпросмотра через link_preview_options и prefer_large_media не гарантирует одинаковую карточку Instant View на всех устройствах. Отдельный callback-бот не требуется.
-- Публикационные доказательства: защищённая ветка state/lordchrist-telegram, запись lordchrist-telegraph-peasants-1525-20261115, квитанция peasants1525_four_telegraph_definitions_v1, успешный GitHub Actions https://github.com/FedorMilovanov/video-channel-manager/actions/runs/43909802598. Не сбрасывать и не переписывать завершённый журнал; повторные операции editMessageText/createPage не разрешены.
-- Завершённые одноразовые workflow перенесены в .github/retired-workflows/ и больше не выполняются. Исторический сценарий RichMessage оставлен для проверок провенанса, но прямой запуск заблокирован и исполнитель зарегистрирован как retired. Редакционные history/peasants-1525-glossary-v2.* остаются в истории большой статьи: их внутренние якоря не являются ссылками текущего Telegram-поста.
-- Это пример подхода, а не обязательное требование создавать четыре определения в каждом новом выпуске: их количество определяется реальными трудностями читателя.
+Это **редакционный прецедент**, а не требование создавать ровно четыре
+определения в каждом новом выпуске: их количество определяется потребностями
+читателя.
