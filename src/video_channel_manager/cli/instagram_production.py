@@ -448,12 +448,9 @@ def reconcile(
                 raise InstagramProductionError(
                     "Exact media discovery applies only to public-HTTPS Reels, not local resumable uploads"
                 )
-            snapshot = service.reconcile(
-                publication_key,
-                published_media_id=published_media_id,
-                observed_container_id=observed_container_id,
-                discover_published_media=True,
-            )
+            if published_media_id is not None or observed_container_id is not None:
+                raise InstagramProductionError("Exact media discovery cannot be combined with manual ID overrides")
+            snapshot = service.discover_published_media(publication_key)
         else:
             # Preserve the legacy local-resumable reconcile signature.
             snapshot = service.reconcile(
