@@ -95,7 +95,7 @@ def render(spec: Any) -> str:
     for key in REFERENCE_KEYS:
         if markup.count(f'href="#{key}"') != 1 or markup.count(f'name="{key}"') != 1:
             raise ValueError(f"Rich reference count drifted: {key}")
-    if markup.count(original.PAGE_URL) != 1 or markup.count("</p>") != 7:
+    if markup.count(original.PAGE_URL) != 1 or markup.count("</p>") != 6:
         raise ValueError("Paragraph or article-CTA structure drifted")
     if markup.count("<br><br>") != 4 or markup.count("<blockquote") != 2:
         raise ValueError("Quoted text or digest spacing drifted")
