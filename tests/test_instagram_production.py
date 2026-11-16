@@ -587,7 +587,7 @@ def test_unknown_publish_result_never_reopens_ready_from_finished_status() -> No
 @pytest.mark.parametrize("variant", ["valid", "wrong-caption", "duplicate", "paged", "old-timestamp"])
 def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: str) -> None:
     requests: list[tuple[str, str]] = []
-    manifest = _manifest(key="discover-existing", caption="Frozen title\\nFull original caption")
+    manifest = _manifest(key="discover-existing", caption="Frozen title\nFull original caption")
     now = datetime.now(UTC).isoformat()
     matching = {
         "id": "18000000000000001",
@@ -608,11 +608,12 @@ def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: s
         if request.method == "GET" and path.endswith("/container-discover"):
             return _response(request, 200, {"status_code": "PUBLISHED"})
         if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/media"):
-            page = {"data": [matching.copy()]}
+            entries = [matching.copy()]
             if variant == "wrong-caption":
-                page["data"][0]["caption"] = "different original caption"
+                entries[0]["caption"] = "different original caption"
             if variant == "duplicate":
-                page["data"].append({**matching, "id": "18000000000000002"})
+                entries.append({**matching, "id": "18000000000000002"})
+            page: dict[str, object] = {"data": entries}
             if variant == "paged":
                 page["paging"] = {"next": "https://graph.instagram.com/page/2"}
             return _response(request, 200, page)
