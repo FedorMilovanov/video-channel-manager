@@ -1,4 +1,4 @@
-"""Read-only Lord God Instagram 19:25 Moscow postflight; never initiates any Meta POST."""
+"""Lord God 19:25 postflight: Meta GET only; optional evidence-bound SQLite reconciliation."""
 
 from __future__ import annotations
 import datetime as dt
@@ -9,6 +9,8 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import hashlib
+import os
+import subprocess
 
 ROOT = pathlib.Path(r"E:\VideoChannelManager\Instagram\LordGod\20261110-daily-wave")
 REPO = pathlib.Path(r"C:\Users\Fedor\Projects\video-channel-manager")
@@ -136,6 +138,97 @@ def verify_provider_receipt(token, expected_media_id, row):
     return {"permalink": permalink, "provider_timestamp": timestamp}
 
 
+def _ledger_row(db, publication_key):
+    """Read the exact durable publication row without creating a new record."""
+    con = sqlite3.connect("file:" + db.as_posix() + "?mode=ro", uri=True)
+    try:
+        return con.execute(
+            "SELECT account_id,status,provider_container_id,provider_media_id,attempt_count,last_error_code,published_at "
+            "FROM instagram_publications WHERE publication_key=?",
+            (publication_key,),
+        ).fetchone()
+    finally:
+        con.close()
+
+
+def reconcile_ambiguous_ledger(row, found, db):
+    """GET-only Meta reconciliation. Local SQLite may change; no Meta POST is permitted."""
+    if found is None or found[1] not in ("publish_requested", "publish_unknown", "published_unresolved"):
+        return "NOT_APPLICABLE"
+    if found[0] != ACCOUNT or not found[2] or found[3]:
+        return "REFUSED_LEDGER_IDENTITY_OR_CONTAINER"
+    caption = row.get("caption")
+    expected_digest = row.get("caption_sha256")
+    if (
+        not isinstance(caption, str)
+        or expected_digest != "sha256:" + hashlib.sha256(caption.encode("utf-8")).hexdigest()
+    ):
+        return "REFUSED_FROZEN_CAPTION_HASH"
+    token = get_token()
+    cli = REPO / ".venv" / "Scripts" / "video-manager.exe"
+    if not token or not cli.is_file() or not db.is_file():
+        return "RECONCILIATION_DEPENDENCY_MISSING"
+    env = dict(os.environ)
+    env.update(
+        {
+            "VCM_INSTAGRAM_WRITES_ENABLED": "false",
+            "VCM_INSTAGRAM_ACCESS_TOKEN": token,
+            "VCM_INSTAGRAM_ACCOUNT_ID": ACCOUNT,
+            "VCM_INSTAGRAM_ACCOUNT_USERNAME": "thelordgodismystrength",
+            "VCM_DATABASE_URL": "sqlite:///" + db.as_posix(),
+        }
+    )
+    command = [
+        str(cli),
+        "instagram",
+        "production",
+        "reconcile",
+        row["publication_key"],
+        "--discover-published-media",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(REPO),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "RECONCILIATION_UNAVAILABLE_NO_RETRY"
+    return "DISCOVERY_SUCCEEDED" if result.returncode == 0 else "PROVIDER_PROOF_INSUFFICIENT_NO_RETRY"
+
+
+def reconcile_due_slot(today):
+    """Late proof can reuse the exact frozen-date reconciliation without writing a second report."""
+    raw_release = RELEASE.read_bytes()
+    if hashlib.sha256(raw_release).hexdigest() != RELEASE_SHA256:
+        raise RuntimeError("Immutable approved Reel release SHA mismatch")
+    data = json.loads(raw_release)
+    if data.get("instagram_account_id") != ACCOUNT or len(data.get("items", [])) != 12:
+        raise RuntimeError("Wrong owner account/queue")
+    rows = [x for x in data["items"] if x["scheduled_at_moscow"][:10] == today]
+    if len(rows) != 1:
+        raise RuntimeError("Expected one and only one approved Reel slot")
+    row = rows[0]
+    db = REPO / "data" / "video_manager.db"
+    found = _ledger_row(db, row["publication_key"])
+    if found is None or found[0] != ACCOUNT:
+        return "REFUSED_MISSING_OR_WRONG_ACCOUNT_LEDGER"
+    if found[1] == "published" and found[3]:
+        token = get_token()
+        if not token:
+            return "PUBLISHED_LEDGER_META_READ_UNAVAILABLE"
+        try:
+            receipt = verify_provider_receipt(token, found[3], row)
+        except Exception:
+            return "PUBLISHED_LEDGER_META_UNVERIFIED"
+        return "ALREADY_PUBLISHED" if receipt is not None else "PUBLISHED_LEDGER_META_UNVERIFIED"
+    return reconcile_ambiguous_ledger(row, found, db)
+
+
 def main():
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=3)))
     today = now.date().isoformat()
@@ -154,7 +247,7 @@ def main():
     if len(rows) != 1:
         if "2026-11-10" <= today <= "2026-11-21":
             report = {
-                "schema": "lord-god-instagram-postflight-readonly-v1",
+                "schema": "lord-god-instagram-postflight-safe-reconcile-v2",
                 "observed_at_moscow": now.isoformat(),
                 "target_instagram_account_id": ACCOUNT,
                 "provider_writes": 0,
@@ -169,16 +262,9 @@ def main():
         return
     row = rows[0]
     db = REPO / "data" / "video_manager.db"
-    con = sqlite3.connect("file:" + db.as_posix() + "?mode=ro", uri=True)
-    try:
-        found = con.execute(
-            "SELECT account_id,status,provider_container_id,provider_media_id,attempt_count,last_error_code,published_at FROM instagram_publications WHERE publication_key=?",
-            (row["publication_key"],),
-        ).fetchone()
-    finally:
-        con.close()
+    found = _ledger_row(db, row["publication_key"])
     report = {
-        "schema": "lord-god-instagram-postflight-readonly-v1",
+        "schema": "lord-god-instagram-postflight-safe-reconcile-v2",
         "observed_at_moscow": now.isoformat(),
         "source_id": row["source_youtube_id"],
         "publication_key": row["publication_key"],
@@ -188,6 +274,15 @@ def main():
         "verification": "NOT_ATTEMPTED",
         "evidence": {"local_ledger_record_found": bool(found)},
     }
+    if found and found[0] == ACCOUNT and found[1] in ("publish_requested", "publish_unknown", "published_unresolved"):
+        outcome = reconcile_ambiguous_ledger(row, found, db)
+        report["evidence"]["safe_reconciliation"] = outcome
+        if outcome == "DISCOVERY_SUCCEEDED":
+            found = _ledger_row(db, row["publication_key"])
+            if found is None:
+                report["verification"] = "LEDGER_DISAPPEARED_AFTER_RECONCILIATION"
+                out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
+                raise SystemExit(2)
     if found:
         account, status, container, media, attempts, error, published = found
         report["evidence"].update(

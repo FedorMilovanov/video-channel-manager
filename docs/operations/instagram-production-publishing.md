@@ -328,7 +328,9 @@ For `container_created`, `processing` or `ready`, read-only reconciliation again
 
 For `publish_requested`, `publish_unknown` or `published_unresolved`, provider `FINISHED`, `IN_PROGRESS`, `ERROR` or `EXPIRED` is **not proof that the earlier `media_publish` had no effect**. These observations remain fail-closed as `publish_unknown`. In particular, `FINISHED` never reopens `ready` from an ambiguous publish state.
 
-Provider `PUBLISHED` becomes `published_unresolved`. If independent exact provider evidence proves the resulting media ID, bind it explicitly:
+Provider `PUBLISHED` becomes `published_unresolved`. The optional GET-only `reconcile <publication-key> --discover-published-media` may resolve that state **only** if the frozen ledger manifest matches the target account, the provider confirms the exact container as `PUBLISHED`, and the account feed contains exactly one full-caption `VIDEO / REELS` match with a valid permalink and publish timestamp. Missing, duplicated, paginated, mismatched or stale evidence leaves the row unresolved; the command never invokes `media_publish`. This mode must not be combined with manual ID overrides. It is not an authorization to republish.
+
+If separately verified provider evidence proves the media ID, it may instead be bound explicitly:
 
 ```powershell
 video-manager instagram production reconcile <publication-key> --published-media-id <exact-provider-media-id>

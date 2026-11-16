@@ -126,3 +126,85 @@ def test_missing_provider_receipt_is_nonzero(wrapper, monkeypatch):
         SimpleNamespace(main=lambda: 2 if wrapper.os.environ["LORD_GOD_REELS_PROOF_MODE"] == "scheduled" else 0),
     )
     assert wrapper.execute() == 2
+
+
+@pytest.mark.parametrize(
+    ("closeout", "expected"),
+    [
+        ("ALREADY_PUBLISHED", 0),
+        ("DISCOVERY_SUCCEEDED", 0),
+        ("PROVIDER_PROOF_INSUFFICIENT_NO_RETRY", 2),
+        ("NOT_APPLICABLE", 2),
+    ],
+)
+def test_scheduled_provider_success_requires_local_closeout(wrapper, monkeypatch, closeout, expected):
+    class Clock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 16, 20, 10, tzinfo=tz)
+
+    monkeypatch.setattr(wrapper.dt, "datetime", Clock)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    monkeypatch.setattr(wrapper, "validate_deployment", lambda: None)
+    monkeypatch.setattr(wrapper, "read_dedicated_token", lambda: "offline-secret")
+    calls = []
+    monkeypatch.setitem(
+        sys.modules,
+        "lord_god_reels_readback_cloud_20261112",
+        SimpleNamespace(main=lambda: calls.append("provider-proof") or 0),
+    )
+    monkeypatch.setattr(
+        wrapper,
+        "reconcile_existing_due_slot",
+        lambda day: calls.append("closeout:" + day) or closeout,
+    )
+    assert wrapper.execute() == expected
+    assert calls == ["provider-proof", "closeout:2026-11-16"]
+
+
+def test_failed_provider_proof_never_mutates_ledger(wrapper, monkeypatch):
+    class Clock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 16, 20, 10, tzinfo=tz)
+
+    monkeypatch.setattr(wrapper.dt, "datetime", Clock)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    monkeypatch.setattr(wrapper, "validate_deployment", lambda: None)
+    monkeypatch.setattr(wrapper, "read_dedicated_token", lambda: "offline-secret")
+    monkeypatch.setitem(
+        sys.modules,
+        "lord_god_reels_readback_cloud_20261112",
+        SimpleNamespace(main=lambda: 2),
+    )
+    monkeypatch.setattr(
+        wrapper,
+        "reconcile_existing_due_slot",
+        lambda day: pytest.fail("Reconciliation must not run after missing Meta evidence"),
+    )
+    assert wrapper.execute() == 2
+
+
+def test_late_reconcile_refuses_unpinned_source(wrapper, monkeypatch, tmp_path):
+    src = tmp_path / "postflight.py"
+    src.write_text("def reconcile_due_slot(today):\n    return 'ALREADY_PUBLISHED'\n", encoding="utf8")
+    monkeypatch.setattr(wrapper, "LOCAL_POSTFLIGHT", src)
+    monkeypatch.setattr(wrapper, "LOCAL_POSTFLIGHT_SHA256", "0" * 64)
+    with pytest.raises(RuntimeError, match="SHA-256 mismatch"):
+        wrapper.reconcile_existing_due_slot("2026-11-16")
+
+
+def test_late_reconcile_imports_pinned_helper_without_running_main(wrapper, monkeypatch, tmp_path):
+    src = tmp_path / "postflight.py"
+    src.write_text(
+        "def reconcile_due_slot(today):\n"
+        "    return 'ALREADY_PUBLISHED' if today == '2026-11-16' else 'NOT_APPLICABLE'\n"
+        "if __name__ == '__main__':\n"
+        "    raise RuntimeError('Must never execute postflight.main')\n",
+        encoding="utf8",
+    )
+    monkeypatch.setattr(wrapper, "LOCAL_POSTFLIGHT", src)
+    monkeypatch.setattr(wrapper, "LOCAL_POSTFLIGHT_SHA256", hashlib.sha256(src.read_bytes()).hexdigest())
+    assert wrapper.reconcile_existing_due_slot("2026-11-16") == "ALREADY_PUBLISHED"

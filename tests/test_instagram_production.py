@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, datetime
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -581,6 +582,91 @@ def test_unknown_publish_result_never_reopens_ready_from_finished_status() -> No
         assert reconciled.status == PublicationStatus.PUBLISH_UNKNOWN
         assert reconciled.provider_status == "FINISHED"
         assert publish_calls == 1
+
+
+@pytest.mark.parametrize("variant", ["valid", "wrong-caption", "duplicate", "paged", "old-timestamp"])
+def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: str) -> None:
+    requests: list[tuple[str, str]] = []
+    manifest = _manifest(key="discover-existing", caption="Frozen title\nFull original caption")
+    now = datetime.now(UTC).isoformat()
+    matching = {
+        "id": "18000000000000001",
+        "caption": manifest.caption,
+        "media_type": "VIDEO",
+        "media_product_type": "REELS",
+        "permalink": "https://www.instagram.com/reel/AbCdE_123/",
+        "timestamp": "2020-01-01T00:00:00+00:00" if variant == "old-timestamp" else now,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append((request.method, request.url.path))
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "GET" and path.endswith("/container-discover"):
+            return _response(request, 200, {"status_code": "PUBLISHED"})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            entries = [matching.copy()]
+            if variant == "wrong-caption":
+                entries[0]["caption"] = "different original caption"
+            if variant == "duplicate":
+                entries.append({**matching, "id": "18000000000000002"})
+            page: dict[str, object] = {"data": entries}
+            if variant == "paged":
+                page["paging"] = {"next": "https://graph.instagram.com/page/2"}
+            return _response(request, 200, page)
+        raise AssertionError(f"Unexpected provider call: {request.method} {request.url}")
+
+    config = _config(writes_enabled=False)
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        ledger.ensure_planned(manifest)
+        ledger.claim_container_request(manifest.publication_key)
+        ledger.transition(
+            manifest.publication_key,
+            PublicationStatus.READY,
+            expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
+            container_id="container-discover",
+            provider_status="FINISHED",
+        )
+        ledger.claim_publish_request(manifest.publication_key, "container-discover")
+        ledger.transition(
+            manifest.publication_key,
+            PublicationStatus.PUBLISH_UNKNOWN,
+            expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
+        )
+        service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
+        if variant == "valid":
+            proven = service.discover_published_media(manifest.publication_key)
+            assert proven.status == PublicationStatus.PUBLISHED
+            assert proven.provider_media_id == "18000000000000001"
+            assert proven.provider_container_id == "container-discover"
+            assert proven.last_error_code is None
+        else:
+            with pytest.raises(InstagramReconciliationRequired):
+                service.discover_published_media(manifest.publication_key)
+            current = ledger.get(manifest.publication_key)
+            assert current is not None
+            assert current.status == PublicationStatus.PUBLISHED_UNRESOLVED
+            assert current.provider_media_id is None
+        assert all(method == "GET" for method, _ in requests)
+
+
+def test_media_discovery_requires_known_ambiguous_final_publish() -> None:
+    config = _config(writes_enabled=False)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"No provider call allowed: {request.method} {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        manifest = _manifest(key="planned-discovery")
+        ledger.ensure_planned(manifest)
+        service = InstagramProductionService(config, ledger, client=client)
+        with pytest.raises(InstagramReconciliationRequired, match="ambiguous final publish"):
+            service.discover_published_media(manifest.publication_key)
 
 
 def test_manual_media_id_is_restricted_to_ambiguous_publish_with_known_container() -> None:
