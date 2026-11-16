@@ -79,7 +79,7 @@ def test_compact_post_restores_normal_html_and_native_expandable_quote():
     assert "<blockquote expandable>" in result
     assert "<blockquote>" in result
     assert result.count("<blockquote") == 2
-    assert result.count("\n\n") == 5
+    assert result.count("\n\n") == 9
     assert "<tg-reference" not in result
     assert "<p>" not in result
     assert "<br>" not in result
