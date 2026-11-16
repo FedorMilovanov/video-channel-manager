@@ -1046,7 +1046,7 @@ class InstagramProductionService:
             and media_id.isascii()
             and media_id.isdecimal()
             and isinstance(permalink, str)
-            and re.fullmatch(r"https://www\\.instagram\\.com/reel/[A-Za-z0-9_-]+/?", permalink)
+            and re.fullmatch(r"https://www\.instagram\.com/reel/[A-Za-z0-9_-]+/?", permalink)
             and item.get("media_type") == "VIDEO"
             and item.get("media_product_type") == "REELS"
             and isinstance(timestamp, str)
