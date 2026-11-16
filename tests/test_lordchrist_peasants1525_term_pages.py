@@ -1,4 +1,7 @@
-"""Accept four mini-articles and one classic, in-place Telegram edit (no Rich Messages)."""
+"""Archive evidence for video_channel_manager.lordchrist_peasants1525_term_pages.
+
+Acceptance of the completed one-shot four-page release; never re-publish.
+"""
 
 from __future__ import annotations
 
