@@ -443,12 +443,24 @@ def reconcile(
     database: Database | None = None
     try:
         service, database = _open_reconciliation_service(publication_key)
-        snapshot = service.reconcile(
-            publication_key,
-            published_media_id=published_media_id,
-            observed_container_id=observed_container_id,
-            discover_published_media=discover_published_media,
-        )
+        if discover_published_media:
+            if isinstance(service, InstagramLocalResumableService):
+                raise InstagramProductionError(
+                    "Exact media discovery applies only to public-HTTPS Reels, not local resumable uploads"
+                )
+            snapshot = service.reconcile(
+                publication_key,
+                published_media_id=published_media_id,
+                observed_container_id=observed_container_id,
+                discover_published_media=True,
+            )
+        else:
+            # Preserve the legacy local-resumable reconcile signature.
+            snapshot = service.reconcile(
+                publication_key,
+                published_media_id=published_media_id,
+                observed_container_id=observed_container_id,
+            )
         resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
         console.print(f"[red]Instagram reconciliation failed:[/red] {_console_safe_text(exc)}")
