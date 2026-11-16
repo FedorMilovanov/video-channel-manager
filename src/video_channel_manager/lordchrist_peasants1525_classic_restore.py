@@ -83,7 +83,7 @@ def render(spec: Any) -> str:
         raise RuntimeError("Rich-only markup leaked into ordinary Telegram HTML")
     if "<blockquote expandable>" not in body or body.count("<blockquote") != 2:
         raise RuntimeError("Native expandable quotation was lost")
-    if body.count("\n\n") != 5:
+    if body.count("\n\n") != 9:
         raise RuntimeError("Message paragraph spacing changed")
     if not body.endswith(html.escape(CTA_TEXT) + "</a>"):
         raise RuntimeError("Article must be the very last line")
