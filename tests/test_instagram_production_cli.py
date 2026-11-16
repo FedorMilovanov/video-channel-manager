@@ -13,11 +13,80 @@ import video_channel_manager.cli.instagram_production as instagram_cli
 from video_channel_manager.cli.instagram_production import instagram_production_app
 from video_channel_manager.config import get_settings
 from video_channel_manager.instagram.production import (
+    InstagramProductionError,
     InstagramPublicationLedger,
     InstagramRuntimeConfig,
     PublicationStatus,
 )
 from video_channel_manager.persistence import Database
+
+
+def test_reconcile_default_preserves_legacy_local_service_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str | None, str | None]] = []
+
+    def legacy_reconcile(
+        key: str, *, published_media_id: str | None = None, observed_container_id: str | None = None
+    ) -> object:
+        calls.append((key, published_media_id, observed_container_id))
+        return SimpleNamespace(status=PublicationStatus.PUBLISHED)
+
+    service = SimpleNamespace(reconcile=legacy_reconcile, close=lambda: None)
+    database = SimpleNamespace(close=lambda: None)
+    monkeypatch.setattr(instagram_cli, "_open_reconciliation_service", lambda key: (service, database))
+    monkeypatch.setattr(instagram_cli, "_resumable_upload_snapshot", lambda _db, _key: None)
+    monkeypatch.setattr(instagram_cli, "_render_snapshot", lambda _snapshot, _child: None)
+
+    result = CliRunner().invoke(instagram_production_app, ["reconcile", "local-legacy"])
+    assert result.exit_code == 0, result.output
+    assert calls == [("local-legacy", None, None)]
+
+
+@pytest.mark.parametrize("variant", ["success", "override", "local", "provider-error"])
+def test_reconcile_discovery_cli_is_opt_in_and_fail_closed(monkeypatch: pytest.MonkeyPatch, variant: str) -> None:
+    calls: list[str] = []
+
+    class FakeLocalResumableService:
+        def close(self) -> None:
+            calls.append("close-local")
+
+    class FakeHttpsService:
+        def discover_published_media(self, key: str) -> object:
+            calls.append("get-only-discovery:" + key)
+            if variant == "provider-error":
+                raise InstagramProductionError("Provider evidence is ambiguous")
+            return SimpleNamespace(status=PublicationStatus.PUBLISHED)
+
+        def close(self) -> None:
+            calls.append("close-https")
+
+    service = FakeLocalResumableService() if variant == "local" else FakeHttpsService()
+    database = SimpleNamespace(close=lambda: calls.append("close-db"))
+    monkeypatch.setattr(instagram_cli, "InstagramLocalResumableService", FakeLocalResumableService)
+    monkeypatch.setattr(instagram_cli, "_open_reconciliation_service", lambda _key: (service, database))
+    monkeypatch.setattr(instagram_cli, "_resumable_upload_snapshot", lambda _db, _key: None)
+    monkeypatch.setattr(instagram_cli, "_render_snapshot", lambda _snapshot, _child: calls.append("render"))
+
+    args = ["reconcile", "exact-frozen-key", "--discover-published-media"]
+    if variant == "override":
+        args.extend(["--published-media-id", "123"])
+    result = CliRunner().invoke(instagram_production_app, args)
+
+    assert result.exit_code == (0 if variant == "success" else 2), result.output
+    if variant in ("success", "provider-error"):
+        assert "get-only-discovery:exact-frozen-key" in calls
+    else:
+        assert not any(x.startswith("get-only-discovery:") for x in calls)
+    assert ("render" in calls) == (variant == "success")
+    assert "close-db" in calls
+    assert ("close-local" if variant == "local" else "close-https") in calls
+    if variant == "override":
+        assert "cannot be combined" in result.output
+    if variant == "local":
+        assert "public-HTTPS" in result.output
+    if variant == "provider-error":
+        assert "ambiguous" in result.output
 
 
 def test_runtime_config_repr_redacts_access_token() -> None:
