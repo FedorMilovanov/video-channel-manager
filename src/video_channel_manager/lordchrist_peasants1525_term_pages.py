@@ -135,7 +135,7 @@ def validate_page(key: str, url: str) -> bool:
                 attrs.pop("target")
         return item
 
-    return canonical(nodes) == page_nodes(key)
+    return bool(canonical(nodes) == page_nodes(key))
 
 
 ORIGINAL_FIRST_CLAIM = {
