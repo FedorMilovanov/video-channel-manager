@@ -429,6 +429,13 @@ def reconcile(
             help="Exact provider container ID from independently verified evidence after ambiguous creation",
         ),
     ] = None,
+    discover_published_media: Annotated[
+        bool,
+        typer.Option(
+            "--discover-published-media",
+            help="GET-only exact-caption Reel evidence lookup; never replays media_publish",
+        ),
+    ] = False,
 ) -> None:
     """Resolve an in-flight or ambiguous publication without blind republishing."""
 
@@ -440,6 +447,7 @@ def reconcile(
             publication_key,
             published_media_id=published_media_id,
             observed_container_id=observed_container_id,
+            discover_published_media=discover_published_media,
         )
         resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
