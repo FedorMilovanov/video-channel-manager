@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from argparse import Namespace
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -411,3 +412,37 @@ def test_public_page_can_take_a_short_consistency_window(monkeypatch):
     assert terms._wait_exact_page("swabia", "https://telegra.ph/History-1525-swabia-11-16")
     assert len(calls) == 3
     assert waits == [2, 5]
+
+
+
+def test_real_telegraph_link_transformations_preserve_verified_content(monkeypatch):
+    """Recorded 2026-11-16 provider proof: 4 identical nodes except link attrs."""
+    key = "swabia"
+    url = "https://telegra.ph/SHvabiya-gde-zhili-krestyane-1525-goda-11-16"
+    live_nodes = deepcopy(terms.page_nodes(key))
+    live_nodes[2]["children"][1]["attrs"]["href"] = "/" + original.PAGE_PATH
+    live_nodes[3]["children"][0]["attrs"]["target"] = "_blank"
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self):
+            return {
+                "ok": True,
+                "result": {
+                    "url": url,
+                    "title": terms.PAGES[key][0],
+                    "content": live_nodes,
+                },
+            }
+
+    monkeypatch.setattr(terms.httpx, "get", lambda *args, **kwargs: FakeResponse())
+    assert terms.validate_page(key, url)
+
+    # Fail closed on actual editorial drift rather than accepting any page
+    live_nodes[0]["children"][0] += " НЕСОГЛАСОВАННОЕ ДОПОЛНЕНИЕ"
+    assert not terms.validate_page(key, url)
+    live_nodes[0] = deepcopy(terms.page_nodes(key)[0])
+    live_nodes[3]["children"][0]["attrs"]["href"] = "https://other.example/incorrect"
+    assert not terms.validate_page(key, url)
