@@ -111,28 +111,31 @@ def validate_page(key: str, url: str) -> bool:
     result = data.get("result") if data.get("ok") else None
     if not isinstance(result, dict) or result.get("url") != url or result.get("title") != PAGES[key][0]:
         return False
-    # Telegraph may add target=_blank for external anchors. Verify visible
-    # text, node order, links and paragraph count instead of serialized bytes.
+    # Telegra.ph serializes its own absolute links as root-relative paths and
+    # adds target=_blank to external links. Normalize ONLY those two verified
+    # provider transformations; keep exact text, node structure and URLs.
     nodes = result.get("content")
     if not isinstance(nodes, list) or len(nodes) != 4:
         return False
 
-    def text_of(node: Any) -> str:
-        if isinstance(node, str):
-            return node
+    def canonical(node: Any) -> Any:
+        if isinstance(node, list):
+            return [canonical(child) for child in node]
         if not isinstance(node, dict):
-            return ""
-        return "".join(text_of(x) for x in node.get("children", []))
+            return node
+        item = {name: canonical(value) for name, value in node.items()}
+        if item.get("tag") == "a":
+            attrs = item.get("attrs")
+            if not isinstance(attrs, dict) or not isinstance(attrs.get("href"), str):
+                return item
+            href = attrs["href"]
+            if href.startswith("/") and not href.startswith("//"):
+                attrs["href"] = "https://telegra.ph" + href
+            if attrs["href"] == SOURCE_URL and attrs.get("target") == "_blank":
+                attrs.pop("target")
+        return item
 
-    if text_of(nodes[0]) != PAGES[key][1] or text_of(nodes[1]) != PAGES[key][2]:
-        return False
-    links = [
-        x.get("attrs", {}).get("href")
-        for node in nodes
-        for x in node.get("children", [])
-        if isinstance(x, dict) and x.get("tag") == "a"
-    ]
-    return original.PAGE_URL in links and SOURCE_URL in links
+    return bool(canonical(nodes) == page_nodes(key))
 
 
 ORIGINAL_FIRST_CLAIM = {
