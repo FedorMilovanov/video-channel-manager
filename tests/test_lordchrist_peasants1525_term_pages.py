@@ -414,7 +414,6 @@ def test_public_page_can_take_a_short_consistency_window(monkeypatch):
     assert waits == [2, 5]
 
 
-
 def test_real_telegraph_link_transformations_preserve_verified_content(monkeypatch):
     """Recorded 2026-11-16 provider proof: 4 identical nodes except link attrs."""
     key = "swabia"
