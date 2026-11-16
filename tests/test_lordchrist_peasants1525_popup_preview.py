@@ -38,8 +38,8 @@ def test_four_native_inline_callback_definitions_not_telegraph_links():
         assert html.count('data="lc1525:' + term + '"') == 1
     assert "<tg-reference" not in html
     assert "name=" not in html
-    assert "data=\"lc1525:pastor\"" not in html
-    assert "data=\"lc1525:luther\"" not in html
+    assert 'data="lc1525:pastor"' not in html
+    assert 'data="lc1525:luther"' not in html
     assert html.count(PAGE_URL) == 1
 
 
