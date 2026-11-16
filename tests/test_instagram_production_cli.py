@@ -20,6 +20,28 @@ from video_channel_manager.instagram.production import (
 from video_channel_manager.persistence import Database
 
 
+def test_reconcile_default_preserves_legacy_local_service_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str | None, str | None]] = []
+
+    def legacy_reconcile(
+        key: str, *, published_media_id: str | None = None, observed_container_id: str | None = None
+    ) -> object:
+        calls.append((key, published_media_id, observed_container_id))
+        return SimpleNamespace(status=PublicationStatus.PUBLISHED)
+
+    service = SimpleNamespace(reconcile=legacy_reconcile, close=lambda: None)
+    database = SimpleNamespace(close=lambda: None)
+    monkeypatch.setattr(instagram_cli, "_open_reconciliation_service", lambda key: (service, database))
+    monkeypatch.setattr(instagram_cli, "_resumable_upload_snapshot", lambda _db, _key: None)
+    monkeypatch.setattr(instagram_cli, "_render_snapshot", lambda _snapshot, _child: None)
+
+    result = CliRunner().invoke(instagram_production_app, ["reconcile", "local-legacy"])
+    assert result.exit_code == 0, result.output
+    assert calls == [("local-legacy", None, None)]
+
+
 def test_runtime_config_repr_redacts_access_token() -> None:
     token = "super-secret-instagram-token"
     config = InstagramRuntimeConfig(
