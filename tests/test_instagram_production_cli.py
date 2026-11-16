@@ -44,9 +44,7 @@ def test_reconcile_default_preserves_legacy_local_service_signature(
 
 
 @pytest.mark.parametrize("variant", ["success", "override", "local", "provider-error"])
-def test_reconcile_discovery_cli_is_opt_in_and_fail_closed(
-    monkeypatch: pytest.MonkeyPatch, variant: str
-) -> None:
+def test_reconcile_discovery_cli_is_opt_in_and_fail_closed(monkeypatch: pytest.MonkeyPatch, variant: str) -> None:
     calls: list[str] = []
 
     class FakeLocalResumableService:
