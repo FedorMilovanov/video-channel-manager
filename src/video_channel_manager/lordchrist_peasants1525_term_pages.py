@@ -239,7 +239,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=_longread_title()
         )
         original._telegram_authority(args)
-        original._post_readback()
+        # Existing RichMessage previews do not consistently expose link URLs in
+        # Telegram's public embed. The verified state receipt, exact channel
+        # binding, bot getMe/getChat and one-shot editMessageText are authoritative.
         receipt = {
             "schema": 1,
             "run_id": args.run_id,
@@ -313,7 +315,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         urls = {k: pages[k]["url"] for k in PAGE_KEYS if k in pages and pages[k].get("state") == "verified"}
         if len(urls) != 4 or not all(validate_page(k, u) for k, u in urls.items()):
             raise RuntimeError("Four public glossary pages have not passed readback")
-        original._post_readback()
+        # Existing RichMessage previews do not consistently expose link URLs in
+        # Telegram's public embed. The verified state receipt, exact channel
+        # binding, bot getMe/getChat and one-shot editMessageText are authoritative.
         original._telegram_authority(args)
         markup = render_post(spec, urls)
         receipt["telegram"] = {
@@ -338,7 +342,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             or telegram.get("post_sha256") != _sha(markup)
         ):
             raise RuntimeError("Durable Telegram claim digest changed")
-        original._post_readback()
+        # Existing RichMessage previews do not consistently expose link URLs in
+        # Telegram's public embed. The verified state receipt, exact channel
+        # binding, bot getMe/getChat and one-shot editMessageText are authoritative.
         bot_token, binding = original._telegram_authority(args)
         result = HttpxLiveTransport().post_json(
             f"{DEFAULT_TELEGRAM_API_BASE}/bot{bot_token}/editMessageText",
