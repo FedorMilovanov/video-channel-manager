@@ -77,9 +77,7 @@ def render(spec: Any) -> str:
         f"<p>— <i>{esc(spec.quote_attribution)}</i></p>",
         (
             "<blockquote expandable>"
-            f"<b>{esc(spec.expandable_header)}</b><br><br>"
-            + "<br><br>".join(digest)
-            + "</blockquote>"
+            f"<b>{esc(spec.expandable_header)}</b><br><br>" + "<br><br>".join(digest) + "</blockquote>"
         ),
         f"<p>{esc(QUOTE_LEAD)}</p>",
         f'<p><a href="{url}"><b>{esc(ARTICLE_LABEL)} →</b></a></p>',
@@ -105,11 +103,7 @@ def render(spec: Any) -> str:
 
 
 def article_button() -> dict[str, Any]:
-    return {
-        "inline_keyboard": [
-            [{"text": "⚡ ПОЛНАЯ СТАТЬЯ · INSTANT VIEW", "url": original.PAGE_URL}]
-        ]
-    }
+    return {"inline_keyboard": [[{"text": "⚡ ПОЛНАЯ СТАТЬЯ · INSTANT VIEW", "url": original.PAGE_URL}]]}
 
 
 def _context(args: argparse.Namespace) -> tuple[Path, dict[str, Any], dict[str, Any], str]:
@@ -207,11 +201,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         len(blocks) < 7
         or not all(key in serialized for key in REFERENCE_KEYS)
         or any(key in serialized for key in ('"pastor"', '"luther"'))
-        or not any(
-            button.get("url") == original.PAGE_URL
-            for row in keyboard
-            for button in row
-        )
+        or not any(button.get("url") == original.PAGE_URL for row in keyboard for button in row)
     ):
         raise RuntimeError("Rich paragraph, popup or article-button readback failed: no retry")
     receipt.update(
