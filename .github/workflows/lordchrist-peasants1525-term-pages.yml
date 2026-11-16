@@ -99,7 +99,13 @@ jobs:
             }
           }
 
-          for key in swabia articles dependency memmingen; do
+          # 2026-11-16 first createPage request was claimed and returned a URL,
+          # but the immediate public replica readback failed. Do not recreate it.
+          # Reconcile exclusively through authenticated page listing before moving on.
+          stage reconcile-swabia swabia
+          persist swabia-reconciled
+
+          for key in articles dependency memmingen; do
             stage claim-page "$key"
             persist "$key-claimed"
             stage create-page "$key"

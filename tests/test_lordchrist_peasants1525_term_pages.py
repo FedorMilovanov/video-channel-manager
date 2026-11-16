@@ -329,3 +329,85 @@ def test_telegram_edit_uses_only_existing_1619_and_returns_classic_entities(monk
     assert payload["reply_markup"] == {"inline_keyboard": []}
     assert payload["link_preview_options"]["url"] == original.PAGE_URL
     assert "rich_message" not in payload
+
+
+def test_reconcile_original_claim_without_second_page_create(monkeypatch):
+    key = "swabia"
+    url = "https://telegra.ph/Shvabiya-gde-zhili-krestyane-1525-11-16"
+    args = Namespace(
+        stage="reconcile-swabia",
+        key=key,
+        run_id="987654321",
+        run_attempt=1,
+        github_sha="f" * 40,
+    )
+    first = {
+        "state": "claimed",
+        "provider_effect": "unknown_until_verified",
+        "content_sha256": terms.ORIGINAL_FIRST_CLAIM["content_sha256"],
+        "claimed_at_utc": "2026-11-16T14:27:02.022989+00:00",
+    }
+    receipt = {
+        "schema": 1,
+        "state": "creating",
+        "run_id": terms.ORIGINAL_FIRST_CLAIM["run_id"],
+        "github_sha": terms.ORIGINAL_FIRST_CLAIM["github_sha"],
+        "run_attempt": 1,
+        "source_page": original.PAGE_URL,
+        "pages": {key: first},
+    }
+    entry = {terms.RECEIPT_KEY: receipt}
+    writes = []
+    monkeypatch.setattr(terms, "_require_execution_context", lambda _: None)
+    monkeypatch.setattr(terms, "_context", lambda _: (Path("ledger"), {}, entry, _spec()))
+    monkeypatch.setattr(original, "_prove_owner", lambda *a, **k: None)
+    monkeypatch.setattr(terms, "_find_one_owned_page", lambda *a: url)
+    monkeypatch.setattr(terms, "_wait_exact_page", lambda k, u: k == key and u == url)
+    monkeypatch.setattr(terms, "_persist", lambda *a: writes.append(True))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "retained-account")
+    out = terms.execute(args)
+    assert out == {"stage": "reconcile-swabia", "key": "swabia", "url": url}
+    assert first["state"] == "verified" and first["url"] == url
+    assert receipt["original_claim"]["run_id"] == terms.ORIGINAL_FIRST_CLAIM["run_id"]
+    assert receipt["run_id"] == args.run_id
+    assert receipt["github_sha"] == args.github_sha
+    assert len(writes) == 1
+    with pytest.raises(RuntimeError, match="Only the original"):
+        terms.execute(args)
+
+
+def test_authenticated_page_list_requires_exact_single_owner_page(monkeypatch):
+    key = "swabia"
+    url = "https://telegra.ph/Shvabiya-gde-zhili-krestyane-1525-11-16"
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "ok": True,
+                "result": {
+                    "pages": [
+                        {"title": terms.PAGES[key][0], "path": url.removeprefix("https://telegra.ph/"), "url": url}
+                    ]
+                },
+            }
+
+    monkeypatch.setattr(terms.httpx, "post", lambda *a, **k: FakeResponse())
+    assert terms._find_one_owned_page("retained-token", key) == url
+
+
+def test_public_page_can_take_a_short_consistency_window(monkeypatch):
+    calls = []
+    waits = []
+
+    def validate(key, url):
+        calls.append((key, url))
+        return len(calls) >= 3
+
+    monkeypatch.setattr(terms, "validate_page", validate)
+    monkeypatch.setattr(terms.time, "sleep", lambda seconds: waits.append(seconds))
+    assert terms._wait_exact_page("swabia", "https://telegra.ph/History-1525-swabia-11-16")
+    assert len(calls) == 3
+    assert waits == [2, 5]
