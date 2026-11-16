@@ -54,14 +54,18 @@ PAGES = {
     ),
 }
 
+
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
 def _sha(value: Any) -> str:
-    return "sha256:" + hashlib.sha256(
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    ).hexdigest()
+    return (
+        "sha256:"
+        + hashlib.sha256(
+            json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+    )
 
 
 def page_nodes(key: str) -> list[dict[str, Any]]:
@@ -73,7 +77,11 @@ def page_nodes(key: str) -> list[dict[str, Any]]:
             "tag": "p",
             "children": [
                 {"tag": "strong", "children": ["Подробнее: "]},
-                {"tag": "a", "attrs": {"href": original.PAGE_URL}, "children": ["большая статья и изображения документов 1525 года"]},
+                {
+                    "tag": "a",
+                    "attrs": {"href": original.PAGE_URL},
+                    "children": ["большая статья и изображения документов 1525 года"],
+                },
             ],
         },
         {
@@ -146,13 +154,11 @@ def render_post(spec: Any, urls: dict[str, str]) -> str:
             raise ValueError(f"Historical glossary term occurrence drifted: {old}")
         return body.replace(old, replace, 1)
 
+    lead1 = insert_exact(lead1, "Крестьяне Швабии", f'Крестьяне <a href="{esc(urls["swabia"], quote=True)}">Швабии</a>')
     lead1 = insert_exact(
-        lead1, "Крестьяне Швабии",
-        f'Крестьяне <a href="{esc(urls["swabia"], quote=True)}">Швабии</a>'
-    )
-    lead1 = insert_exact(
-        lead1, "составили «Двенадцать статей»:",
-        f'составили <a href="{esc(urls["articles"], quote=True)}">«Двенадцать статей»</a>:'
+        lead1,
+        "составили «Двенадцать статей»:",
+        f'составили <a href="{esc(urls["articles"], quote=True)}">«Двенадцать статей»</a>:',
     )
 
     points = []
@@ -160,13 +166,11 @@ def render_post(spec: Any, urls: dict[str, str]) -> str:
         value = esc(point.body)
         if i == 1:
             value = insert_exact(
-                value, "личной зависимости",
-                f'<a href="{esc(urls["dependency"], quote=True)}">личной зависимости</a>'
+                value, "личной зависимости", f'<a href="{esc(urls["dependency"], quote=True)}">личной зависимости</a>'
             )
         if i == 2:
             value = insert_exact(
-                value, "архив Меммингена",
-                f'архив <a href="{esc(urls["memmingen"], quote=True)}">Меммингена</a>'
+                value, "архив Меммингена", f'архив <a href="{esc(urls["memmingen"], quote=True)}">Меммингена</a>'
             )
         points.append("• <b>" + esc(point.lead) + "</b> " + value)
 
@@ -175,8 +179,7 @@ def render_post(spec: Any, urls: dict[str, str]) -> str:
         lead1,
         lead2,
         "<blockquote>" + esc(spec.quote_text) + "</blockquote>\n— <i>" + esc(spec.quote_attribution) + "</i>",
-        "<blockquote expandable><b>" + esc(spec.expandable_header) + "</b>\n\n" +
-        "\n\n".join(points) + "</blockquote>",
+        "<blockquote expandable><b>" + esc(spec.expandable_header) + "</b>\n\n" + "\n\n".join(points) + "</blockquote>",
         '📖 <a href="' + esc(original.PAGE_URL, quote=True) + '">Читать полную иллюстрированную статью</a>',
     ]
     rendered = "\n\n".join(lines)
@@ -210,7 +213,9 @@ def _context(args: argparse.Namespace) -> tuple[Path, dict[str, Any], dict[str, 
 def _owner(args: argparse.Namespace, entry: dict[str, Any]) -> dict[str, Any]:
     receipt = entry.get(RECEIPT_KEY)
     if not isinstance(receipt, dict) or (
-        receipt.get("run_id"), receipt.get("github_sha"), receipt.get("run_attempt")
+        receipt.get("run_id"),
+        receipt.get("github_sha"),
+        receipt.get("run_attempt"),
     ) != (args.run_id, args.github_sha, 1):
         raise RuntimeError("Revision belongs to another execution")
     if receipt.get("schema") != 1 or receipt.get("source_page") != original.PAGE_URL:
@@ -230,7 +235,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     receipt = entry.get(RECEIPT_KEY)
 
     if stage == "claim-page" and key == PAGE_KEYS[0] and receipt is None:
-        original._prove_owner(os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=_longread_title())
+        original._prove_owner(
+            os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=_longread_title()
+        )
         original._telegram_authority(args)
         original._post_readback()
         receipt = {
@@ -249,9 +256,13 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     pages = receipt["pages"]
     if stage == "claim-page":
-        if key not in PAGE_KEYS or key in pages or any(
-            previous not in pages or pages[previous].get("state") != "verified"
-            for previous in PAGE_KEYS[: PAGE_KEYS.index(key)]
+        if (
+            key not in PAGE_KEYS
+            or key in pages
+            or any(
+                previous not in pages or pages[previous].get("state") != "verified"
+                for previous in PAGE_KEYS[: PAGE_KEYS.index(key)]
+            )
         ):
             raise RuntimeError("Glossary creation order or idempotency mismatch")
         pages[key] = {
@@ -321,7 +332,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         telegram = receipt.get("telegram")
         urls = {k: pages[k]["url"] for k in PAGE_KEYS}
         markup = render_post(spec, urls)
-        if not isinstance(telegram, dict) or telegram.get("state") != "claimed" or telegram.get("post_sha256") != _sha(markup):
+        if (
+            not isinstance(telegram, dict)
+            or telegram.get("state") != "claimed"
+            or telegram.get("post_sha256") != _sha(markup)
+        ):
             raise RuntimeError("Durable Telegram claim digest changed")
         original._post_readback()
         bot_token, binding = original._telegram_authority(args)
@@ -342,13 +357,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             },
         )
         msg = result.get("result") if result.get("ok") is True else None
-        if not isinstance(msg, dict) or msg.get("message_id") != original.MESSAGE_ID or (msg.get("chat") or {}).get("id") != binding.chat_id:
+        if (
+            not isinstance(msg, dict)
+            or msg.get("message_id") != original.MESSAGE_ID
+            or (msg.get("chat") or {}).get("id") != binding.chat_id
+        ):
             raise RuntimeError("Telegram provider response uncertain; no retry")
         if msg.get("rich_message") is not None or not isinstance(msg.get("text"), str):
             raise RuntimeError("Expected ordinary Telegram text, not rich_message; no retry")
         urls_in_entities = {
-            e.get("url") for e in msg.get("entities", [])
-            if isinstance(e, dict) and e.get("type") == "text_link"
+            e.get("url") for e in msg.get("entities", []) if isinstance(e, dict) and e.get("type") == "text_link"
         }
         if not (set(urls.values()) | {original.PAGE_URL}).issubset(urls_in_entities):
             raise RuntimeError("Telegram provider failed to return five verified links; no retry")
