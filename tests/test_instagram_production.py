@@ -639,14 +639,14 @@ def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: s
         )
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         if variant == "valid":
-            proven = service.reconcile(manifest.publication_key, discover_published_media=True)
+            proven = service.discover_published_media(manifest.publication_key)
             assert proven.status == PublicationStatus.PUBLISHED
             assert proven.provider_media_id == "18000000000000001"
             assert proven.provider_container_id == "container-discover"
             assert proven.last_error_code is None
         else:
             with pytest.raises(InstagramReconciliationRequired):
-                service.reconcile(manifest.publication_key, discover_published_media=True)
+                service.discover_published_media(manifest.publication_key)
             current = ledger.get(manifest.publication_key)
             assert current is not None
             assert current.status == PublicationStatus.PUBLISHED_UNRESOLVED
@@ -666,7 +666,7 @@ def test_media_discovery_requires_known_ambiguous_final_publish() -> None:
         ledger.ensure_planned(manifest)
         service = InstagramProductionService(config, ledger, client=client)
         with pytest.raises(InstagramReconciliationRequired, match="ambiguous final publish"):
-            service.reconcile(manifest.publication_key, discover_published_media=True)
+            service.discover_published_media(manifest.publication_key)
 
 
 def test_manual_media_id_is_restricted_to_ambiguous_publish_with_known_container() -> None:
