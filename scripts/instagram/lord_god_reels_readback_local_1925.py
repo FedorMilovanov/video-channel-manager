@@ -201,6 +201,34 @@ def reconcile_ambiguous_ledger(row, found, db):
     return "DISCOVERY_SUCCEEDED" if result.returncode == 0 else "PROVIDER_PROOF_INSUFFICIENT_NO_RETRY"
 
 
+def reconcile_due_slot(today):
+    """Late proof can reuse the exact frozen-date reconciliation without writing a second report."""
+    raw_release = RELEASE.read_bytes()
+    if hashlib.sha256(raw_release).hexdigest() != RELEASE_SHA256:
+        raise RuntimeError("Immutable approved Reel release SHA mismatch")
+    data = json.loads(raw_release)
+    if data.get("instagram_account_id") != ACCOUNT or len(data.get("items", [])) != 12:
+        raise RuntimeError("Wrong owner account/queue")
+    rows = [x for x in data["items"] if x["scheduled_at_moscow"][:10] == today]
+    if len(rows) != 1:
+        raise RuntimeError("Expected one and only one approved Reel slot")
+    row = rows[0]
+    db = REPO / "data" / "video_manager.db"
+    found = _ledger_row(db, row["publication_key"])
+    if found is None or found[0] != ACCOUNT:
+        return "REFUSED_MISSING_OR_WRONG_ACCOUNT_LEDGER"
+    if found[1] == "published" and found[3]:
+        token = get_token()
+        if not token:
+            return "PUBLISHED_LEDGER_META_READ_UNAVAILABLE"
+        try:
+            receipt = verify_provider_receipt(token, found[3], row)
+        except Exception:
+            return "PUBLISHED_LEDGER_META_UNVERIFIED"
+        return "ALREADY_PUBLISHED" if receipt is not None else "PUBLISHED_LEDGER_META_UNVERIFIED"
+    return reconcile_ambiguous_ledger(row, found, db)
+
+
 def main():
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=3)))
     today = now.date().isoformat()

@@ -190,3 +190,43 @@ def test_postflight_rereads_ledger_and_requires_meta_proof(tmp_path, monkeypatch
     assert report["evidence"]["safe_reconciliation"] == "DISCOVERY_SUCCEEDED"
     assert report["provider_writes"] == 0
     assert proof_calls == [("private-test-token", "18012345678901234", row["publication_key"])]
+
+
+def test_late_due_slot_uses_same_evidence_gated_reconcile(tmp_path, monkeypatch):
+    row = {**approved_row(), "scheduled_at_moscow": "2026-11-16T19:00:00+03:00"}
+    all_rows = [row] + [
+        {**row, "scheduled_at_moscow": f"2026-11-{day:02d}T19:00:00+03:00"} for day in range(10, 22) if day != 16
+    ]
+    frozen = tmp_path / "release.json"
+    data = json.dumps({"instagram_account_id": postflight.ACCOUNT, "items": all_rows}).encode()
+    frozen.write_bytes(data)
+    monkeypatch.setattr(postflight, "RELEASE", frozen)
+    monkeypatch.setattr(postflight, "RELEASE_SHA256", hashlib.sha256(data).hexdigest())
+    monkeypatch.setattr(postflight, "REPO", tmp_path / "repo")
+    calls = []
+    monkeypatch.setattr(postflight, "_ledger_row", lambda db, key: ledger())
+    monkeypatch.setattr(
+        postflight,
+        "reconcile_ambiguous_ledger",
+        lambda item, status, db: calls.append((item["publication_key"], status[1])) or "DISCOVERY_SUCCEEDED",
+    )
+    assert postflight.reconcile_due_slot("2026-11-16") == "DISCOVERY_SUCCEEDED"
+    assert calls == [(row["publication_key"], "publish_unknown")]
+
+    monkeypatch.setattr(
+        postflight, "_ledger_row", lambda db, key: ledger(status="published", media="18000000000000001")
+    )
+    monkeypatch.setattr(postflight, "get_token", lambda: "offline-secret")
+    monkeypatch.setattr(
+        postflight,
+        "verify_provider_receipt",
+        lambda token, media, item: {"permalink": "https://www.instagram.com/reel/exact/"},
+    )
+    assert postflight.reconcile_due_slot("2026-11-16") == "ALREADY_PUBLISHED"
+    monkeypatch.setattr(postflight, "verify_provider_receipt", lambda token, media, item: None)
+    assert postflight.reconcile_due_slot("2026-11-16") == "PUBLISHED_LEDGER_META_UNVERIFIED"
+    assert len(calls) == 1
+    monkeypatch.setattr(postflight, "RELEASE_SHA256", "0" * 64)
+    with pytest.raises(RuntimeError, match="release SHA mismatch"):
+        postflight.reconcile_due_slot("2026-11-16")
+    assert len(calls) == 1
