@@ -230,7 +230,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     receipt = entry.get(RECEIPT_KEY)
 
     if stage == "claim-page" and key == PAGE_KEYS[0] and receipt is None:
-        original._prove_owner(os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=original.OLD_TITLE if False else _longread_title())
+        original._prove_owner(os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=_longread_title())
         original._telegram_authority(args)
         original._post_readback()
         receipt = {
@@ -364,7 +364,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def _longread_title() -> str:
     # The author-identity check must match the actual approved rewritten title.
-    return "1525: почему немецкие крестьяне требовали права выбирать проповедника"
+    return "Швабия, 1525: немецкие крестьяне потребовали права выбирать проповедника"
 
 
 def main() -> int:
