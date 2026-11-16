@@ -503,20 +503,28 @@
       },
       "peasants1525_four_telegraph_definitions_v1": {
         "schema": 1,
-        "run_id": "43885156976",
+        "run_id": "43909802598",
         "run_attempt": 1,
-        "github_sha": "bb158d16ab5c190df459f5a3f80668f070ca3821",
+        "github_sha": "bb36d6fdf99de402273c0b54169812d1ea2e11d5",
         "source_page": "https://telegra.ph/1525-pochemu-nemeckie-krestyane-trebovali-prava-vybirat-propovednika-11-15",
         "state": "creating",
         "pages": {
           "swabia": {
-            "state": "claimed",
+            "state": "verified",
             "content_sha256": "sha256:4a21dd05b757b9352b594f91920e75106bb3ba8b8efb56b8d99bdc41f080126d",
-            "provider_effect": "unknown_until_verified",
-            "claimed_at_utc": "2026-11-16T14:27:02.022989+00:00"
+            "provider_effect": "verified",
+            "claimed_at_utc": "2026-11-16T14:27:02.022989+00:00",
+            "url": "https://telegra.ph/SHvabiya-gde-zhili-krestyane-1525-goda-11-16",
+            "verified_at_utc": "2026-11-16T16:42:32.508666+00:00"
           }
         },
-        "created_at_utc": "2026-11-16T14:27:02.022903+00:00"
+        "created_at_utc": "2026-11-16T14:27:02.022903+00:00",
+        "original_claim": {
+          "run_id": "43885156976",
+          "github_sha": "bb158d16ab5c190df459f5a3f80668f070ca3821",
+          "claimed_at_utc": "2026-11-16T14:27:02.022989+00:00"
+        },
+        "reconciled_at_utc": "2026-11-16T16:42:32.508614+00:00"
       }
     }
   }
