@@ -1,0 +1,106 @@
+name: LordChrist 1525 restore compact post and real Instant View
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/video_channel_manager/lordchrist_peasants1525_classic_restore.py
+      - .github/workflows/lordchrist-peasants1525-classic-restore.yml
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  restore-original-post-1619:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.repository == 'FedorMilovanov/video-channel-manager' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: src
+      GH_TOKEN: ${{ github.token }}
+      LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+    steps:
+      - name: Checkout verified main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned publishing runtime
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Restore the single original post, preserving the existing article
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_branch=state/lordchrist-telegram
+          state_dir=.state/lordchrist
+          ledger_rel=content/telegram/lordchrist/telegraph-v1/publication-ledger.json
+          ledger="$state_dir/$ledger_rel"
+          media_base="https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/77b2087ac2e714af74fed19cb653b1a7c2ecfb68"
+
+          check_main() {
+            [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
+            [[ "$GITHUB_REF" == "refs/heads/main" && "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+            [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || {
+              echo "Main advanced while restoring the original post; stop" >&2
+              exit 3
+            }
+          }
+          stage() {
+            python -m video_channel_manager.lordchrist_peasants1525_classic_restore "$1" \
+              --repo-root . \
+              --ledger "$ledger" \
+              --publication-id lordchrist-telegraph-peasants-1525-20261115 \
+              --media-base-url "$media_base" \
+              --run-id "$GITHUB_RUN_ID" \
+              --run-attempt "$GITHUB_RUN_ATTEMPT" \
+              --github-sha "$GITHUB_SHA"
+          }
+          persist() {
+            git -C "$state_dir" add -- "$ledger_rel"
+            if git -C "$state_dir" diff --cached --quiet; then
+              echo "Missing expected durable state delta for $1" >&2
+              exit 3
+            fi
+            git -C "$state_dir" commit -m "chore(lordchrist): original #1619 compact preview $1 [skip ci]"
+            git -C "$state_dir" push origin "HEAD:$state_branch"
+            local local_sha remote_sha
+            local_sha="$(git -C "$state_dir" rev-parse HEAD)"
+            remote_sha="$(git ls-remote origin "refs/heads/$state_branch" | cut -f1)"
+            [[ "$local_sha" == "$remote_sha" ]] || {
+              echo "Unverified durable state write; stop without a provider retry" >&2
+              exit 3
+            }
+          }
+
+          check_main
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml --sha "$GITHUB_SHA" --wait-seconds 480
+          git fetch origin "$state_branch:refs/remotes/origin/$state_branch"
+          git worktree add "$state_dir" "origin/$state_branch"
+          test -f "$ledger"
+          git -C "$state_dir" config user.name "lordchrist-classic-restore[bot]"
+          git -C "$state_dir" config user.email "lordchrist-classic-restore@users.noreply.github.com"
+
+          check_main
+          stage claim
+          persist claimed
+          check_main
+          stage edit
+          persist verified
