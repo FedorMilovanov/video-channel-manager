@@ -16,6 +16,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import unquote
 from typing import Any
 
 from video_channel_manager import lordchrist_peasants1525_inplace as original
@@ -133,7 +134,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.stage == "claim":
         if RECEIPT_KEY in entry:
             raise RuntimeError("Restoration was already claimed; no replay")
-        original._post_readback(entry.get("title"))
+        original._post_readback()
         original._telegram_authority(args)
         entry[RECEIPT_KEY] = {
             "state": "claimed",
@@ -186,7 +187,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     # Full Instant View rendering is client-side and must be visually checked.
     rendered = message.get("text")
     entities = message.get("entities") or []
-    entity_urls = {x.get("url") for x in entities if x.get("type") == "text_link"}
+    entity_urls = {unquote(x.get("url", "")) for x in entities if x.get("type") == "text_link"}
     if (
         message.get("rich_message") is not None
         or not isinstance(rendered, str)
