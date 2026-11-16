@@ -3,9 +3,10 @@ from __future__ import annotations
 import hashlib
 import ipaddress
 import json
+import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Callable, Self, cast
 
@@ -462,6 +463,19 @@ class InstagramPublicationLedger:
             entity = session.get(InstagramPublicationEntity, publication_key)
             return None if entity is None else self._snapshot(entity)
 
+    def get_manifest(self, publication_key: str) -> InstagramPublishManifest:
+        """Read and validate the original frozen provider binding, not a guessed caption."""
+        with self.database.session() as session:
+            entity = session.get(InstagramPublicationEntity, publication_key)
+            if entity is None:
+                raise InstagramProductionError(f"Unknown publication key: {publication_key}")
+            try:
+                manifest = InstagramPublishManifest.model_validate(entity.manifest)
+            except ValueError as exc:
+                raise InstagramProductionError("Frozen Instagram publication manifest is invalid") from exc
+            self._assert_binding(entity, manifest)
+            return manifest
+
     @staticmethod
     def _assert_binding(entity: InstagramPublicationEntity, manifest: InstagramPublishManifest) -> None:
         if entity.account_id != manifest.account_id or entity.content_hash != manifest.content_hash():
@@ -795,6 +809,14 @@ class InstagramProviderClient:
             raise InstagramProviderError("Instagram container response did not include an id")
         return container_id
 
+    def get_account_media(self) -> dict[str, object]:
+        """Read one complete recent-media page from the exact configured Instagram account."""
+        return self._request(
+            "GET",
+            f"{self.config.account_id}/media",
+            params={"fields": "id,caption,media_type,media_product_type,permalink,timestamp", "limit": 100},
+        )
+
     def get_container_status(self, container_id: str) -> tuple[str, str | None]:
         # Public video_url containers reject the resumable-only video_status
         # field (Meta HTTP 400, code 100 / subcode 2207065). Keep this GET
@@ -992,18 +1014,80 @@ class InstagramProductionService:
             published=True,
         )
 
+    def _discover_exact_reel_media_id(self, snapshot: PublicationSnapshot) -> str:
+        """Fail closed unless Meta proves exactly one post matching frozen provider data."""
+        if snapshot.publish_requested_at is None or snapshot.provider_container_id is None:
+            raise InstagramReconciliationRequired("Missing durable final-publish intent/container evidence")
+        manifest = self.ledger.get_manifest(snapshot.publication_key)
+        if manifest.account_id != snapshot.account_id or manifest.content_hash() != snapshot.content_hash:
+            raise InstagramReconciliationRequired("Frozen source-to-publication binding is inconsistent")
+        page = self.client.get_account_media()
+        records = page.get("data")
+        if not isinstance(records, list):
+            raise InstagramReconciliationRequired("Provider media feed returned no verifiable item list")
+        paging = page.get("paging")
+        if isinstance(paging, dict) and paging.get("next"):
+            raise InstagramReconciliationRequired("Provider media feed was paginated; exact uniqueness is unproven")
+        matching = [
+            entry
+            for entry in records
+            if isinstance(entry, dict) and entry.get("caption") == manifest.caption
+        ]
+        if len(matching) != 1:
+            raise InstagramReconciliationRequired(
+                f"Exact frozen-caption Reel match is not unique (found {len(matching)}); media ID remains unresolved"
+            )
+        item = matching[0]
+        media_id = item.get("id")
+        permalink = item.get("permalink")
+        timestamp = item.get("timestamp")
+        if not (
+            isinstance(media_id, str)
+            and media_id.isascii()
+            and media_id.isdecimal()
+            and isinstance(permalink, str)
+            and re.fullmatch(r"https://www\\.instagram\\.com/reel/[A-Za-z0-9_-]+/?", permalink)
+            and item.get("media_type") == "VIDEO"
+            and item.get("media_product_type") == "REELS"
+            and isinstance(timestamp, str)
+        ):
+            raise InstagramReconciliationRequired("Provider media metadata failed exact Reel identity verification")
+        try:
+            observed_at = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise InstagramReconciliationRequired("Provider media timestamp is invalid") from exc
+        if observed_at.tzinfo is None:
+            raise InstagramReconciliationRequired("Provider media timestamp lacks a timezone")
+        requested_at = snapshot.publish_requested_at
+        if requested_at.tzinfo is None:
+            requested_at = requested_at.replace(tzinfo=UTC)
+        if not (requested_at - timedelta(minutes=5) <= observed_at <= utc_now() + timedelta(minutes=5)):
+            raise InstagramReconciliationRequired("Provider media timestamp cannot be linked to the publish request")
+        return media_id
+
     def reconcile(
         self,
         publication_key: str,
         *,
         published_media_id: str | None = None,
         observed_container_id: str | None = None,
+        discover_published_media: bool = False,
     ) -> PublicationSnapshot:
         snapshot = self.ledger.get(publication_key)
         if snapshot is None:
             raise InstagramProductionError(f"Unknown publication key: {publication_key}")
         if snapshot.account_id != self.config.account_id:
             raise InstagramIdentityMismatchError("Ledger publication belongs to a different Instagram account")
+        if discover_published_media and (published_media_id is not None or observed_container_id is not None):
+            raise InstagramProductionError(
+                "Automatic media discovery cannot be combined with manual provider-ID overrides"
+            )
+        if discover_published_media and (
+            snapshot.status not in self._PUBLISH_AMBIGUOUS or snapshot.provider_container_id is None
+        ):
+            raise InstagramReconciliationRequired(
+                "Exact media discovery is limited to ambiguous final publish with a known container"
+            )
         if snapshot.status == PublicationStatus.PUBLISHED:
             if published_media_id is not None or observed_container_id is not None:
                 raise InstagramProductionError("Published publication does not accept reconciliation overrides")
@@ -1055,13 +1139,24 @@ class InstagramProductionService:
         status_code, status_message = self.client.get_container_status(container_id)
 
         if status_code == "PUBLISHED":
-            return self.ledger.transition(
+            unresolved = self.ledger.transition(
                 publication_key,
                 PublicationStatus.PUBLISHED_UNRESOLVED,
                 expected_statuses={snapshot.status},
                 provider_status=status_code,
                 error_code="published_media_id_required",
                 error_message="Provider confirms publication, but exact media id must be supplied from provider evidence",
+            )
+            if not discover_published_media:
+                return unresolved
+            proven_media_id = self._discover_exact_reel_media_id(unresolved)
+            return self.ledger.transition(
+                publication_key,
+                PublicationStatus.PUBLISHED,
+                expected_statuses={PublicationStatus.PUBLISHED_UNRESOLVED},
+                media_id=proven_media_id,
+                provider_status="PUBLISHED",
+                published=True,
             )
 
         if snapshot.status in self._PUBLISH_AMBIGUOUS:
