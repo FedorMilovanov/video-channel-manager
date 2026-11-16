@@ -13,6 +13,7 @@ import hashlib
 import html
 import json
 import os
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -134,6 +135,57 @@ def validate_page(key: str, url: str) -> bool:
     return original.PAGE_URL in links and SOURCE_URL in links
 
 
+
+
+ORIGINAL_FIRST_CLAIM = {
+    "run_id": "43885156976",
+    "github_sha": "bb158d16ab5c190df459f5a3f80668f070ca3821",
+    "content_sha256": "sha256:4a21dd05b757b9352b594f91920e75106bb3ba8b8efb56b8d99bdc41f080126d",
+}
+
+
+def _wait_exact_page(key: str, url: str) -> bool:
+    """Telegra.ph may return createPage before its public getPage replica is ready."""
+    for delay in (0, 2, 5, 9, 15):
+        if delay:
+            time.sleep(delay)
+        if validate_page(key, url):
+            return True
+    return False
+
+
+def _find_one_owned_page(token: str, key: str) -> str:
+    """Authenticated GET-like account listing; NEVER create a second page."""
+    candidates: dict[str, str] = {}
+    for offset in range(0, 4000, 200):
+        response = httpx.post(
+            "https://api.telegra.ph/getPageList",
+            data={"access_token": token, "offset": str(offset), "limit": "200"},
+            timeout=25,
+        )
+        response.raise_for_status()
+        data = response.json()
+        result = data.get("result") if data.get("ok") else None
+        page_list = result.get("pages") if isinstance(result, dict) else None
+        if not isinstance(page_list, list):
+            raise RuntimeError("Publisher page listing unavailable; do not repeat createPage")
+        for item in page_list:
+            if not isinstance(item, dict) or item.get("title") != PAGES[key][0]:
+                continue
+            url = item.get("url")
+            path = item.get("path")
+            if not isinstance(url, str) or not isinstance(path, str) or url != "https://telegra.ph/" + path:
+                raise RuntimeError("Glossary page listing identity not canonical")
+            candidates[path] = url
+        if len(page_list) < 200:
+            break
+    if len(candidates) != 1:
+        raise RuntimeError(
+            f"Expected exactly one owned '{key}' page after claimed attempt; found {len(candidates)}. "
+            "Refuse any new createPage until account ownership is reconciled."
+        )
+    return next(iter(candidates.values()))
+
 def render_post(spec: Any, urls: dict[str, str]) -> str:
     """Only ordinary Telegram HTML. Short side pages open via Instant View."""
     if set(urls) != set(PAGE_KEYS):
@@ -234,6 +286,50 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     key = args.key
     receipt = entry.get(RECEIPT_KEY)
 
+
+    if stage == "reconcile-swabia":
+        if (
+            key != "swabia"
+            or not isinstance(receipt, dict)
+            or receipt.get("schema") != 1
+            or receipt.get("state") != "creating"
+            or (receipt.get("run_id"), receipt.get("github_sha"), receipt.get("run_attempt"))
+            != (ORIGINAL_FIRST_CLAIM["run_id"], ORIGINAL_FIRST_CLAIM["github_sha"], 1)
+        ):
+            raise RuntimeError("Only the original unconfirmed first page can be reconciled")
+        pages_before = receipt.get("pages")
+        first = pages_before.get("swabia") if isinstance(pages_before, dict) else None
+        if (
+            not isinstance(first, dict)
+            or set(pages_before) != {"swabia"}
+            or first.get("state") != "claimed"
+            or first.get("provider_effect") != "unknown_until_verified"
+            or first.get("content_sha256") != ORIGINAL_FIRST_CLAIM["content_sha256"]
+            or first.get("content_sha256") != _sha((PAGES[key], page_nodes(key)))
+        ):
+            raise RuntimeError("Original first-page intent or editorial content changed")
+        token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip()
+        original._prove_owner(token, expected_title=_longread_title())
+        url = _find_one_owned_page(token, "swabia")
+        if not _wait_exact_page("swabia", url):
+            raise RuntimeError(
+                "Original owner page exists but content readback differs; preserve claim and investigate manually"
+            )
+        receipt["original_claim"] = {
+            "run_id": receipt["run_id"],
+            "github_sha": receipt["github_sha"],
+            "claimed_at_utc": first["claimed_at_utc"],
+        }
+        receipt.update(
+            run_id=args.run_id,
+            github_sha=args.github_sha,
+            run_attempt=1,
+            reconciled_at_utc=_now(),
+        )
+        first.update(state="verified", provider_effect="verified", url=url, verified_at_utc=_now())
+        _persist(path, ledger)
+        return {"stage": stage, "key": "swabia", "url": url}
+
     if stage == "claim-page" and key == PAGE_KEYS[0] and receipt is None:
         original._prove_owner(
             os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip(), expected_title=_longread_title()
@@ -303,7 +399,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         data = response.json()
         info = data.get("result") if data.get("ok") else None
         url = info.get("url") if isinstance(info, dict) else None
-        if not isinstance(url, str) or not validate_page(key, url):
+        if not isinstance(url, str) or not _wait_exact_page(key, url):
             raise RuntimeError("One-shot Telegraph page effect uncertain; manual reconciliation required")
         page.update(state="verified", provider_effect="verified", url=url, verified_at_utc=_now())
         _persist(path, ledger)
@@ -393,7 +489,7 @@ def _longread_title() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("claim-page", "create-page", "claim-telegram", "edit-telegram"))
+    parser.add_argument("stage", choices=("reconcile-swabia", "claim-page", "create-page", "claim-telegram", "edit-telegram"))
     parser.add_argument("--key", required=True, choices=(*PAGE_KEYS, "all"))
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--ledger", type=Path, required=True)
