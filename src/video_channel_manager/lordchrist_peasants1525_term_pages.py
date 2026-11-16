@@ -285,7 +285,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("Existing Telegraph publisher secret missing")
         # Verify account can edit the original publication before every create.
         original._prove_owner(token, expected_title=_longread_title())
-        result = httpx.post(
+        response = httpx.post(
             "https://api.telegra.ph/createPage",
             data={
                 "access_token": token,
@@ -297,8 +297,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             },
             timeout=25,
         )
-        result.raise_for_status()
-        data = result.json()
+        response.raise_for_status()
+        data = response.json()
         info = data.get("result") if data.get("ok") else None
         url = info.get("url") if isinstance(info, dict) else None
         if not isinstance(url, str) or not validate_page(key, url):
