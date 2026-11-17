@@ -162,6 +162,12 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
         content = (ROOT / item.article_path).read_bytes()
         blob = hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
         assert entry["corrected_document_git_blob_sha"] == blob
+        if publication_id == "lordchrist-telegraph-charnock-03":
+            # The previous reviewed edition remains historical evidence, not a
+            # claim that the new article bytes are already live on Telegra.ph.
+            assert entry["prior_reviewed_document_git_blob_sha"] == "cac01a52dfce3a33062be0f1c1a47eb093cea21a"
+            assert entry["provider_edit_status"] == "not_attempted"
+            assert entry["provider_writes_authorized"] is False
 
 
 def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
