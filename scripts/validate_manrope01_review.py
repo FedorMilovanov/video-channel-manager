@@ -61,16 +61,45 @@ def check_ass(ass_content: str) -> list[str]:
         errors.append("Manrope font style missing")
     if "Body" not in styles or "Manrope" not in styles["Body"]:
         errors.append("Body must use selected Manrope font")
-    bodies = sorted((e for e in events if e[2] == "Body"), key=lambda x: (x[0], x[1]))
+    # "Body" means a spoken/active word. "BodyHold" freezes the same visible text
+    # in the selected pale color during a pause, without advancing a future word.
+    # Validate the UNION or an overlapping passive hold could evade the old gate.
+    lower = sorted(
+        (e for e in events if e[2] in {"Body", "BodyHold"}),
+        key=lambda x: (x[0], x[1]),
+    )
+    bodies = [e for e in lower if e[2] == "Body"]
+    holds = [e for e in lower if e[2] == "BodyHold"]
     if not bodies:
         errors.append("No Body subtitle events")
-    for previous, following in zip(bodies, bodies[1:], strict=False):
+    if holds and ("BodyHold" not in styles or styles["BodyHold"] != styles.get("Body")):
+        errors.append("BodyHold must have exactly the selected Body font")
+    for previous, following in zip(lower, lower[1:], strict=False):
         if previous[1] > following[0]:
             errors.append(
-                f"Overlapping Body subtitles at {previous[0] / 100:.2f}s:"
+                f"Overlapping Body/BodyHold subtitles at {previous[0] / 100:.2f}s:"
                 f" previous ends {previous[1] / 100:.2f}s,"
                 f" next begins {following[0] / 100:.2f}s"
             )
+    for index, (start, end, kind, payload) in enumerate(lower):
+        if kind != "BodyHold":
+            continue
+        if index == 0:
+            errors.append(f"BodyHold must follow a spoken Body word at {start / 100:.2f}s")
+        else:
+            previous = lower[index - 1]
+            if previous[2] != "Body" or previous[1] != start:
+                errors.append(f"BodyHold must immediately follow active Body at {start / 100:.2f}s")
+            visible_before = re.sub(r"\{[^}]*\}", "", previous[3])
+            visible_hold = re.sub(r"\{[^}]*\}", "", payload)
+            if visible_before != visible_hold:
+                errors.append(f"BodyHold must preserve the same on-screen text at {start / 100:.2f}s")
+        if _EXPECTED_ACTIVE_ASS.lower() in payload.lower():
+            errors.append(f"BodyHold may not keep an amber active word at {start / 100:.2f}s")
+        if r"\fad(" in payload or r"\fade(" in payload:
+            errors.append(f"BodyHold cannot restart a fade during pause at {start / 100:.2f}s")
+        if end - start > 1200:
+            errors.append(f"BodyHold cannot persist over 12 seconds at {start / 100:.2f}s")
     if not any(e[2] == "Kicker" for e in events):
         errors.append("Missing source attribution Kicker")
     if not any(e[2] == "Title" for e in events):
@@ -82,12 +111,12 @@ def check_ass(ass_content: str) -> list[str]:
         errors.append("Selected amber active-word highlighting missing")
     if _EXPECTED_PAPER_ASS.lower() not in body_payload.lower():
         errors.append("Selected pale inactive-word highlighting missing")
-    for start, end, _, payload in bodies:
+    for start, end, kind, payload in lower:
         if payload.count(r"\N") > 1:
             errors.append(f"More than two lines at {start / 100:.2f}s")
         if r"\pos(540,1426)" not in payload:
             errors.append(f"Manrope 01 Body anchor missing at {start / 100:.2f}s")
-        if end - start > 300:  # a hold longer than 3 seconds is stale karaoke
+        if kind == "Body" and end - start > 300:
             errors.append(f"Suspiciously long active-word event at {start / 100:.2f}s")
     return errors
 
