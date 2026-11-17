@@ -180,6 +180,20 @@ A known failure shape observed during the first canary investigation was Meta er
 
 **Rights and fallback gate:** The public-HTTPS `video_url` route may process a lengthy MP4 asynchronously, but *support in Meta's API does not grant distribution rights*. Never upload YouTube-derived or translated material to a new publicly accessible CDN without source/translation reupload permission. The separately prepared original article pilot also requires actual human listening/editorial approval before a public release. An OIL failure or a new publication key is not authorization to bypass either gate.
 
+### MILOVI CAKE: 18 November 2026 independent provider readback
+
+The owner-controlled `milovi-cake` production account was checked with **GET-only** Graph API v26.0 reads against the exact reviewed Instagram ID; no publish, new container, upload, retry, token disclosure, scheduling change or database mutation occurred. The original SQLite ledger had nine attempted dates (6, 10–17 November). Provider results, not merely local status strings, showed:
+
+- **6 and 11 November:** `status_code=PUBLISHED`, completed binary-upload phases. Both exact media IDs and normalized captions were independently matched in the account's returned Reels feed, with real permalinks.
+- **10 and 14 November:** `status_code=EXPIRED`. The 14 November human-readable `status` text misleadingly said *Finished*; **always trust the machine `status_code`**, not free-form status prose. Neither is publishable nor confirmed posted.
+- **12, 13, 15 and 16 November:** `EXPIRED` with nested `uploading_phase=error`, provider error `1363008`, `bytes_transferred=0` and `source_file_size=0`.
+- **17 November:** outer `IN_PROGRESS` but nested uploading and processing phases were already `error` with `1363008` and zero transferred bytes. Do not treat the outer status as permission to poll indefinitely or replay.
+- The reviewed feed response included 100 account items and reached back to June 2023. The newest item was from **11 November 2026**. Within the 6–17 November window, only the two known successful captions/IDs matched the nine proposed owner records. This is a scoped Graph readback, not a claim about manually edited or independently uploaded media outside the known records.
+
+An additional **GET-only** identity and quota diagnostic on the same account confirmed the expected Meta app ID and `quota_usage=0` at observation time. An unauthenticated GET to the **root** of `https://rupload.facebook.com/` returned HTTP `429`; this **is not the authenticated container-upload endpoint** and must not be treated as proof that the `1363008` binary failures were caused by a rate limit or solved by switching IPs or credentials.
+
+The separately verified 15 November owned **synthetic** transport A/B above showed public-HTTPS `video_url` can finish Meta processing while `rupload` failed on the same benign source. It does **not** automatically authorize placing the actual third-party-derived MILOVI media on a public host. A recovery must use an individually approved source, new properly reviewed immutable key, registered HTTPS-host allowlist, identical SHA-256 and byte count, rights gate, and independent Meta permalink/live readback. Do not silently bulk-switch or automatically re-key the existing daily Windows publisher. Full operational evidence and outstanding actions are tracked in [Issue #790](https://github.com/FedorMilovanov/video-channel-manager/issues/790).
+
 ## Operator checks
 
 Useful commands:
