@@ -2,6 +2,10 @@
 
 This file contains **durable rules**, not a history of old waves or commit SHAs. Historical audits remain evidence; they do not control new work.
 
+## SHORTOREZ / Manrope 01 / local media intake
+
+For work on Russian vertical Shorts, their audio/subtitles, local review assets, captions or video release metadata, read [docs/operations/shorts-manrope01-largev3-cpu-review.md](docs/operations/shorts-manrope01-largev3-cpu-review.md) before producing or accepting media. This operator-selected style requires **Manrope 800, yellow per-word highlighting, source-aware opening, Large-v3 CPU INT8** on the affected Windows machine, and independent ASS/FFprobe/listening gates. Existing 16:9 long-form masters do **not** receive burned subtitles in this workflow. No silent Small/CUDA fallback; TECH_QA never implies editorial, rights or provider write approval.
+
 ## Read order
 
 Before changing provider-facing, workflow, state, release, or artifact code, read only the sources relevant to the task, in this order:
