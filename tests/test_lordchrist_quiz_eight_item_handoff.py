@@ -52,3 +52,49 @@ def test_eight_item_series_schema_can_be_reviewed_without_padding_or_provider_wr
     assert len(LordchristQuizSeriesSpec.model_validate(historical).items) == 10
     with pytest.raises(ValidationError):
         LordchristQuizSeriesSpec.model_validate({**draft, "items": draft["items"][:7]})
+
+
+def test_future_release_cannot_be_signed_without_independent_exact_item_reviews(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Structural signoff gate, not evidence of an actual human's approval."""
+    from video_channel_manager import lordchrist_quiz as quiz
+
+    raw = json.loads(ORIGINAL.read_text(encoding="utf-8"))
+    series = LordchristQuizSeriesSpec.model_validate(
+        {**raw, "series_id": "lordchrist-quiz-series-04", "items": raw["items"][2:]}
+    )
+    monkeypatch.setattr(quiz, "QUIZ_DIR", tmp_path)
+    with pytest.raises(ValueError, match="requires per-item independent editorial signoff"):
+        quiz.require_future_series_editorial_signoff(series)
+    requirements = (
+        "scripture_context_checked",
+        "russian_reader_checked",
+        "single_correct_answer_checked",
+        "three_distractors_checked",
+        "post_vote_explanation_checked",
+    )
+    fake_review_fixture = {
+        "series_id": series.series_id,
+        "approval_state": "independent_human_approved",
+        "items": [
+            {
+                "publication_id": item.publication_id,
+                "source_sha256": quiz.spec_source_sha256(item),
+                "status": "approved",
+                "reviewer_type": "human",
+                "prepared_by": "Fixture Author",
+                "reviewed_by": "Fixture Reviewer",
+                "review_url": "https://github.com/FedorMilovanov/video-channel-manager/pull/123#pullrequestreview-456",
+                **{field: True for field in requirements},
+            }
+            for item in series.items
+        ],
+    }
+    signoff_file = tmp_path / "lordchrist-quiz-series-04-editorial-signoff.json"
+    signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
+    quiz.require_future_series_editorial_signoff(series)
+    fake_review_fixture["items"][0]["source_sha256"] = "sha256:wrong"
+    signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="missing exact independent evidence"):
+        quiz.require_future_series_editorial_signoff(series)
