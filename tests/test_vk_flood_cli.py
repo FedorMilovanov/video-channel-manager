@@ -46,9 +46,7 @@ def test_flood_cli_uses_credential_scope_across_equivalent_aliases(
 
 def test_community_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token(
-        "safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"])
-    )
+    store.save_token("safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"]))
     observed: dict[str, Any] = {}
 
     class FakeClient:
@@ -88,9 +86,7 @@ def test_community_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path:
 
 def test_wall_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token(
-        "safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"])
-    )
+    store.save_token("safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"]))
     observed: dict[str, Any] = {}
 
     class FakeWriter:
