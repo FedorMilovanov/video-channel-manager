@@ -1,0 +1,225 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quiz-editorial-candidates",
+  "schema_version": 1,
+  "origin_release_id": "lordchrist-quiz-series-03-v1",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_authorized": false,
+  "release_authorized": false,
+  "review_status": "DRAFT_HOLD",
+  "purpose": "Reader-facing rewrite proposals for eight pending quizzes; not an executable release. Requires independent verse-by-verse review, Russian copyedit, distractor audit, new reviewed immutable release and explicit separate provider authority.",
+  "preserve_published": [
+    "lordchrist-quiz-s03-atonement-goat",
+    "lordchrist-quiz-s03-sardis-vigil"
+  ],
+  "items": [
+    {
+      "source_publication_id": "lordchrist-quiz-s03-melchizedek-greater",
+      "source_sha256": "sha256:bdc8bd2e960680c352571d0afdd69d74a4dee42b22e4c8e9cf5b99c23f476198",
+      "review_status": "pending_independent_review",
+      "question": "Авраам дал Мелхиседеку десятину и получил от него благословение. Какой вывод из этого делает автор Евр. 7:4–10?",
+      "options": [
+        "Авраам передал Мелхиседеку все Божьи обетования",
+        "Мелхиседек в этом сравнении выше Авраама и Левия",
+        "Левиты получили священство благодаря десятине Авраама",
+        "Благословение делает левитское священство главным"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Авраам дал Мелхиседеку десятину и принял от него благословение. Больший благословляет меньшего; даже Левий, по мысли автора, дал десятину через Авраама. Евр. 7:4–10.",
+      "source_url": "https://www.bible-center.ru/ru/bibletext/synnew_ru/heb/7%3A1-10",
+      "editorial_findings": "Было двусмысленное «полученным им», не указано, над кем «превосходство»; прежние варианты о святости добычи и первородстве уводили от аргумента текста. Новый вариант тоже требует независимой проверки качества дистракторов.",
+      "editorial_metrics": {
+        "question_characters": 111,
+        "explanation_characters": 165,
+        "options_characters": [
+          47,
+          48,
+          53,
+          49
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-ark-right-order",
+      "source_sha256": "sha256:d9c51869455f0ffa72507672db07c01fbd5ad81dcafc35cc2957ee804f2eb414",
+      "review_status": "pending_independent_review",
+      "question": "Что Давид изменил при новом перенесении ковчега после гибели Озы, согласно 1 Пар. 15:13–15?",
+      "options": [
+        "Разрешил священникам везти ковчег на новой повозке",
+        "Велел левитам нести ковчег, касаясь его руками",
+        "Поручил левитам нести ковчег на шестах, на плечах",
+        "Оставил ковчег на повозке, но изменил путь шествия"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Давид признал, что прежде Господа не взыскали «как должно». Теперь левиты несли ковчег на плечах, на шестах, как было заповедано через Моисея. 1 Пар. 15:13–15.",
+      "source_url": "https://www.bible.com/bible/167/1CH.15.SYNOD",
+      "editorial_findings": "Старые дистракторы про нового судью и вооружённую охрану были карикатурными. Все новые варианты относятся к способу перенесения; проверить библейскую точность каждой альтернативы.",
+      "editorial_metrics": {
+        "question_characters": 91,
+        "explanation_characters": 159,
+        "options_characters": [
+          50,
+          46,
+          49,
+          50
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-bronze-serpent",
+      "source_sha256": "sha256:35a77aa6610f7a198d23b1f91c653f2ba1fe996749b220d03fc425a0406a78ae",
+      "review_status": "pending_independent_review",
+      "question": "В Ин. 3:14–15 Иисус сравнивает Своё вознесение с медным змеем, поднятым Моисеем. В чём смысл сопоставления?",
+      "options": [
+        "Жизнь получают через прикосновение к священному предмету",
+        "Оба события обещали только исцеление от болезни",
+        "Спасение достигается исполнением предписанных обрядов",
+        "По Божьему слову жизнь получают те, кто верует"
+      ],
+      "correct_option_index": 3,
+      "explanation": "В пустыне укушенные змеями получали жизнь, смотря на медного змея по Божьему слову. Иисус говорит о вечной жизни тех, кто верует в Сына Человеческого. Чис. 21:8–9; Ин. 3:14–15.",
+      "source_url": "https://azbyka.ru/biblia/?Jn.3%3A14=&ru=",
+      "editorial_findings": "«Через обращение веры» — неестественная конструкция; старый вопрос не различал земное избавление в Числах и вечную жизнь у Иоанна.",
+      "editorial_metrics": {
+        "question_characters": 107,
+        "explanation_characters": 176,
+        "options_characters": [
+          56,
+          47,
+          53,
+          46
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-isaac-return",
+      "source_sha256": "sha256:3a0781f750bfcfbe0f968f7b4a8ad8d35985dcb5e91b8d42e23052d993b45c6e",
+      "review_status": "pending_independent_review",
+      "question": "Почему Авраам мог идти на испытание с Исааком, хотя Божье обетование было связано именно с этим сыном (Евр. 11:17–19)?",
+      "options": [
+        "Он знал, что обетование больше не относится к Исааку",
+        "Он считал, что Бог может воскресить Исаака из мёртвых",
+        "Он рассчитывал, что обещанное исполнится через Измаила",
+        "Он решил отказаться от Божьего обетования ради жертвы"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Авраам доверял Божьему обещанию и считал, что Бог способен воскресить Исаака. Исаак не умер: Бог остановил жертвоприношение, и отец получил сына обратно «в предзнаменование». Евр. 11:17–19.",
+      "source_url": "https://bible.by/synu/65/11/",
+      "editorial_findings": "Прежнее «Как связана эта фраза с его верой?» недостаточно ясно для первого чтения. Новое задание явно указывает конфликт испытания и обетования, не утверждая, что Исаак умер.",
+      "editorial_metrics": {
+        "question_characters": 118,
+        "explanation_characters": 189,
+        "options_characters": [
+          52,
+          53,
+          54,
+          53
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-david-bread",
+      "source_sha256": "sha256:c93da0a9c44f614dcd77ed8bab0a4cf2d63d2a9e7aea9d0388ecb92bca2f8e57",
+      "review_status": "pending_independent_review",
+      "question": "Зачем Иисус упомянул голодного Давида и хлебы предложения, отвечая на упрёк ученикам за субботу (Мк. 2:23–28)?",
+      "options": [
+        "Чтобы объяснить, что храмовые хлебы не считались святыней",
+        "Чтобы признать за царями право отменять субботу",
+        "Чтобы обличить обвинение, не учитывающее нужду учеников",
+        "Чтобы установить новый порядок раздачи храмового хлеба"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Давид и его спутники в нужде ели хлебы, предназначенные священникам. Христос отвечает на обвинение учеников: суббота для человека, а Сын Человеческий — Господин субботы. Мк. 2:25–28.",
+      "source_url": "https://azbyka.org/biblia/?Mk.2%3A23-28=&r=",
+      "editorial_findings": "Исходный правильный вариант сообщал факт о хлебах, но недостаточно отвечал на вопрос о цели аргумента Христа; исправлен фокус, исходное приложение/интерпретацию нужно независимо утвердить.",
+      "editorial_metrics": {
+        "question_characters": 110,
+        "explanation_characters": 182,
+        "options_characters": [
+          57,
+          47,
+          55,
+          54
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-one-sacrifice",
+      "source_sha256": "sha256:524f6d4fecd7b2a59e69b91e535f8edf2d1e10c9d1183b45e4b007c393c32176",
+      "review_status": "pending_independent_review",
+      "question": "Почему Евр. 10:11–14 противопоставляет многократные жертвы священников единственной жертве Христа?",
+      "options": [
+        "Его жертва завершила то, чего не достигали повторные приношения",
+        "Его приношение дополняет ежедневные храмовые жертвы",
+        "Его жертва нуждается в ежегодном повторении",
+        "Его священство получает силу от левитского служения"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Повторные жертвы не могли уничтожить грех. Христос же принёс одну жертву за грехи и воссел одесную Бога; одним приношением Он навсегда сделал совершенными освящаемых. Евр. 10:11–14.",
+      "source_url": "https://www.bible-center.ru/ru/bibletext/synnew_ru/heb/10%3A14",
+      "editorial_findings": "Правильный ответ ранее выделялся наибольшей длиной, а один дистрактор нелогично утверждал, будто священники перестали нуждаться в Божьем прощении. Новые ответы спорят о достаточности приношения.",
+      "editorial_metrics": {
+        "question_characters": 98,
+        "explanation_characters": 181,
+        "options_characters": [
+          63,
+          51,
+          43,
+          51
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-faith-and-works",
+      "source_sha256": "sha256:a593a62593c0968c638d5393708d022db038366424b1fca3b6e174ea163ec8a5",
+      "review_status": "pending_independent_review",
+      "question": "Зачем Иаков напоминает, что даже бесы веруют в единого Бога и трепещут (Иак. 2:18–20)?",
+      "options": [
+        "Чтобы показать, что знание не может сопровождаться страхом",
+        "Чтобы поставить трепет бесов в образец верующим",
+        "Чтобы доказать, что добрые дела заменяют веру",
+        "Чтобы отличить одно исповедание от живой веры, проявляемой в делах"
+      ],
+      "correct_option_index": 3,
+      "explanation": "Даже бесы признают единого Бога и трепещут. Но Иаков говорит о вере, которая проявляется в делах, а не ограничивается правильными словами. Иак. 2:18–20.",
+      "source_url": "https://azbyka.ru/biblia/?Jac.2%3A14%2C26=&r=",
+      "editorial_findings": "Старый правильный вариант выделялся длиной; исходное пояснение «испытывает не объём знаний» было стилистически неудачным. Проверить, чтобы ответ не представлял дела независимым основанием оправдания.",
+      "editorial_metrics": {
+        "question_characters": 86,
+        "explanation_characters": 152,
+        "options_characters": [
+          58,
+          47,
+          45,
+          66
+        ]
+      }
+    },
+    {
+      "source_publication_id": "lordchrist-quiz-s03-adam-christ",
+      "source_sha256": "sha256:33859041bcf97a6b6b83d07a13875ff14655d1aaf447489bbe97d61fd8dce10b",
+      "review_status": "pending_independent_review",
+      "question": "Что Павел показывает через сопоставление непослушания Адама и послушания Христа (Рим. 5:17–19)?",
+      "options": [
+        "Поступки обоих стали лишь личным нравственным примером",
+        "Оба поступка имели одинаковые последствия для людей",
+        "Действия Адама и Христа не связаны с судьбой других",
+        "Через одного пришло осуждение, через Другого — оправдание"
+      ],
+      "correct_option_index": 3,
+      "explanation": "Непослушание Адама привело многих к состоянию грешников, послушание Христа — к оправданию многих. Павел говорит о последствиях действий двух представителей; см. также ст. 17. Рим. 5:17–19.",
+      "source_url": "https://bible.by/synu/52/5/",
+      "editorial_findings": "Старое объяснение «а не два совета для подражания» — авторская фраза без ясного основания в предложении; исходные дистракторы карикатурны. Нельзя выводить автоматическое оправдание всех людей.",
+      "editorial_metrics": {
+        "question_characters": 95,
+        "explanation_characters": 188,
+        "options_characters": [
+          54,
+          51,
+          51,
+          57
+        ]
+      }
+    }
+  ]
+}
