@@ -87,8 +87,8 @@
   "schedule_status": "NOT_SET; never backfill the historical 19-Nov to 3-Dec slots",
   "implementation_notes": [
     "This is a review handoff, not LordchristQuizSeriesSpec, runtime release or workflow source. The old v1 and protected state remain untouched.",
-    "Current code's LordchristQuizSeriesSpec requires exactly 10 items. Do not pad this set with filler questions or weaken a release gate merely to issue eight.",
-    "After a real independent editor accepts each exact item, implement a properly specified eight-item release with a separate identity and new schedule, signer, protected ledger, provider-free canary and exact target checks.",
+    "The series schema now accepts 8-10 genuine questions, without filler. This proposal remains provider-inert: no executable Series04 spec, runtime, scheduled publisher or ledger has been created.",
+    "After a real independent human editor signs each exact question/answer/explanation, construct a dedicated eight-item spec with a NEW future schedule, new immutable release identity, separate protected ledger and exact-target provider-free preflight.",
     "No workflow_dispatch publish or scheduled send may be run on this draft."
   ],
   "additional_safety": "Existing Series03 editorial HOLD remains active until explicit future replacement-release authorization. Assistant review is not independent human signature."
