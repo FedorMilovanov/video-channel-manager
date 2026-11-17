@@ -1,0 +1,95 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quiz-eight-item-editorial-handoff",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel": "@lordchrist",
+  "scope": "new_questions_only_never_replay",
+  "proposed_new_series_id": "lordchrist-quiz-series-04",
+  "original_release_id": "lordchrist-quiz-series-03-v1",
+  "original_published_publication_ids": [
+    "lordchrist-quiz-s03-atonement-goat",
+    "lordchrist-quiz-s03-sardis-vigil"
+  ],
+  "source_document": "content/telegram/lordchrist/quiz/SERIES_03_PENDING_EDITORIAL_CANDIDATES_20261117.json",
+  "source_blob_sha": "29e2bee6c2a472d65cc8aff9a4f218aec2862910",
+  "prepared_items": [
+    {
+      "from": "lordchrist-quiz-s03-melchizedek-greater",
+      "to": "lordchrist-quiz-s04-melchizedek-greater",
+      "reference": "Евр. 7:4–10",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 118,
+      "explanation_characters": 159
+    },
+    {
+      "from": "lordchrist-quiz-s03-ark-right-order",
+      "to": "lordchrist-quiz-s04-ark-right-order",
+      "reference": "1 Пар. 15:2,13–15",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 116,
+      "explanation_characters": 173
+    },
+    {
+      "from": "lordchrist-quiz-s03-bronze-serpent",
+      "to": "lordchrist-quiz-s04-bronze-serpent",
+      "reference": "Чис. 21:8–9; Ин. 3:14–15; Ин. 12:32–33",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 148,
+      "explanation_characters": 156
+    },
+    {
+      "from": "lordchrist-quiz-s03-isaac-return",
+      "to": "lordchrist-quiz-s04-isaac-return",
+      "reference": "Евр. 11:17–19; Быт. 22:11–12",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 133,
+      "explanation_characters": 181
+    },
+    {
+      "from": "lordchrist-quiz-s03-david-bread",
+      "to": "lordchrist-quiz-s04-david-bread",
+      "reference": "Мк. 2:23–28; 1 Цар. 21:1–6",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 135,
+      "explanation_characters": 171
+    },
+    {
+      "from": "lordchrist-quiz-s03-one-sacrifice",
+      "to": "lordchrist-quiz-s04-one-sacrifice",
+      "reference": "Евр. 10:11–14",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 102,
+      "explanation_characters": 171
+    },
+    {
+      "from": "lordchrist-quiz-s03-faith-and-works",
+      "to": "lordchrist-quiz-s04-faith-and-works",
+      "reference": "Иак. 2:14–26",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 103,
+      "explanation_characters": 172
+    },
+    {
+      "from": "lordchrist-quiz-s03-adam-christ",
+      "to": "lordchrist-quiz-s04-adam-christ",
+      "reference": "Рим. 5:12–21",
+      "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
+      "question_characters": 89,
+      "explanation_characters": 178
+    }
+  ],
+  "editorial_basis": "SYNODAL_BIBLE_PRIMARY_TEXT_AND_CONTEXT",
+  "assistant_substantive_pass": "completed",
+  "independent_human_signoff": "not_obtained",
+  "publication_authorized": false,
+  "release_authorized": false,
+  "provider_effect": "impossible",
+  "schedule_status": "NOT_SET; never backfill the historical 19-Nov to 3-Dec slots",
+  "implementation_notes": [
+    "This is a review handoff, not LordchristQuizSeriesSpec, runtime release or workflow source. The old v1 and protected state remain untouched.",
+    "Current code's LordchristQuizSeriesSpec requires exactly 10 items. Do not pad this set with filler questions or weaken a release gate merely to issue eight.",
+    "After a real independent editor accepts each exact item, implement a properly specified eight-item release with a separate identity and new schedule, signer, protected ledger, provider-free canary and exact target checks.",
+    "No workflow_dispatch publish or scheduled send may be run on this draft."
+  ],
+  "additional_safety": "Existing Series03 editorial HOLD remains active until explicit future replacement-release authorization. Assistant review is not independent human signature."
+}
