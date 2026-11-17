@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:a1d865277e794aa5d47ea8248bfab9406b05a44e0ec822400650ed3f580e06f0",
+  "publication_id": "lordchrist-murray-kept-by-power",
+  "sequence": 11,
+  "intent_id": "635dd90db0da04295bd4c6f545604bf6",
+  "workflow_run_id": "44128434354",
+  "workflow_run_attempt": "1",
+  "github_sha": "e3dc8b69362b38872ecf3d3275bfbbb1ac9ec4dd",
+  "github_workflow_sha": "e3dc8b69362b38872ecf3d3275bfbbb1ac9ec4dd",
+  "payload_sha256": "sha256:df5d26ba67bb4bb26da86a77792202462be9bfd234d38de84270c934a28e51d3",
+  "text": "«Здесь перед нами две чудесные, благословенные истины о том, как верующий сохраняется ко спасению. Первая: мы хранимы силой Божьей. Вторая: мы хранимы через веру.\n\nНужно видеть обе стороны: Божью — Его всемогущую силу, предлагаемую нам, чтобы Он хранил нас каждое мгновение дня, — и человеческую: нам остаётся верою дать Богу совершать Его дело хранения. Мы возрождены для наследия, которое сохраняется для нас на небесах; здесь же, на земле, мы сами хранимы силой Божьей. Итак, мы видим двойное хранение: на небе сберегается для меня наследие, а на земле я сберегаюсь для того наследия.\n\nЧто касается первой стороны, здесь нет сомнений и вопросов. Бог хранит небесное наследие удивительно и совершенно; оно надёжно ожидает нас. И тот же самый Бог хранит меня для этого наследия.»\n— Эндрю Мюррей, «Полная отдача Богу»\n\n#Эндрю_Мюррей #Хранение_Божие #Вера",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-11-17T16:40:51.514026Z"
+  },
+  "prepared_at_utc": "2026-11-17T16:40:50.809378Z"
+}
