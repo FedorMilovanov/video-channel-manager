@@ -38,7 +38,7 @@ def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
     assert sha1(blob).hexdigest() == "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
     joins = {
         "q-3": ("без прикрас. […] Молча подавляйте", "без прикрас. Молча подавляйте"),
-        "q-19": ("обращаться к Нему. […] Что за утешение", "обращаться к Нему. Что за утешение"),
+        "q-19": ("отражаться обратно к Богу. […] Что за утешение", "душ должна обращаться к Нему. Что за утешение"),
     }
     for block_id, (explicit, naked) in joins.items():
         block = next(block for block in data["blocks"] if block.get("block_id") == block_id)
@@ -46,3 +46,36 @@ def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
         assert explicit in text and naked not in text
         assert explicit in markdown and naked not in markdown
     assert "EDITORIAL/PUBLICATION_HOLD" in REVIEW.read_text(encoding="utf-8")
+
+
+def test_charnock_13_candidate_is_exactly_the_reviewed_delta() -> None:
+    """The sidecar cannot silently acquire unreviewed text or publication changes."""
+    candidate = ROOT / "content/research"
+    article = REVIEW.parent
+    originals = {
+        "json": (article / "lordchrist-telegraph-charnock-13.json").read_text(encoding="utf-8"),
+        "md": (article / "lordchrist-telegraph-charnock-13.md").read_text(encoding="utf-8"),
+    }
+    expected_replacements = [
+        ("без прикрас. Молча подавляйте", "без прикрас. […] Молча подавляйте"),
+        (
+            "Наши умы — луч от Бога; и потому, как лучи солнца, коснувшись земли, "
+            "должны отражаться обратно к Богу, так и активность наших душ должна "
+            "обращаться к Нему. Что за утешение",
+            "Наши умы — луч от Бога; поэтому они, подобно лучам солнца, "
+            "коснувшимся земли, должны отражаться обратно к Богу. […] Что за утешение",
+        ),
+    ]
+    for suffix, original in originals.items():
+        expected = original
+        if suffix == "json":
+            expected = expected.replace('"updated_at": "2026-11-04"', '"updated_at": "2026-11-17"')
+            expected = expected.replace(
+                '"revision": "charnock-13-v1"',
+                '"revision": "charnock-13-v2-editorial-candidate"',
+            )
+        for previous, correction in expected_replacements:
+            assert expected.count(previous) == 1
+            expected = expected.replace(previous, correction)
+        target = candidate / f"charnock-13-quotation-gap-candidate-20261117.{suffix}"
+        assert target.read_text(encoding="utf-8") == expected
