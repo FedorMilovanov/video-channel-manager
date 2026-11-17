@@ -1167,6 +1167,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/validate_manrope01_review.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "e35f52c3b6ff7e3545138c92693a055682e45b0d2cc6264a9370eb0c985e96be",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/validate_poetry_quote_shorts.py",
       "private_imports": [],
       "project_owner": "legendary-poet",
