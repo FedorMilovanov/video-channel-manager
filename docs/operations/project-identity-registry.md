@@ -1,6 +1,6 @@
 # Project identity registry
 
-Updated: 2026-11-14 (Instagram project identities refreshed; historical provider checkpoints retained)
+Updated: 2026-11-17 (VK legacy-credential quarantine and API/browser identity guidance aligned; historical checkpoints retained)
 
 This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
@@ -22,7 +22,7 @@ Every scan or write verifies the exact returned channel ID. Reauthorizing one al
 
 ### VK
 
-VK uses one user access token for all managed communities. The current local token alias is `legendary-poet`, but that alias only names the stored credential belonging to user `Федор Милованов`. It is not a project selector and does not mean each group needs a separate token.
+**Historical credential, not current authority:** one VK user access token was previously shared across the managed communities under local aliases `legendary-poet` and `default`. Both aliases refer to the **quarantined legacy credential** (issue [#662](https://github.com/FedorMilovanov/video-channel-manager/issues/662)); it must not be used for any API read/write, login/`--force`, flood retry, alias rotation, or as a fallback when another project's credential is unavailable. No valid successor **user** token is implied by this registry. A reviewed community access key may enable only its independently proven permissions/target: `vk-lord-god-community-key` is the Lord God **wall** credential, not generic VK Video or a user-token replacement. See [VK quarantine policy](vk-credential-quarantine.md).
 
 The same rule applies to browser authentication. The same already-authorized VK browser profile/session may be reused across all VK communities currently registered in this repository because they are managed by the same owner/admin account. In particular, a working VK session previously used for The Legendary Poet may also be used for Milovi Cake; a separate browser profile is not required merely to isolate projects.
 
@@ -70,7 +70,9 @@ A guarded write requires write scope and exact resolution to `UCeSJsC6go2c9pdJCu
 - VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
 - Community ID: `60805374`
 - API owner ID: `-60805374`
-- Shared VK credential alias: `legendary-poet`
+- Historical shared VK **user-token** alias: `legendary-poet` (**quarantined; no VK API calls**)
+
+- Separately reviewed **wall-only** community-key alias: `vk-lord-god-community-key` (exact community `60805374`; not a blanket video-upload permission)
 
 Historical `gospod_bog` routes are operational references, not canonical viewer-facing links, unless freshly verified and registered.
 
@@ -117,7 +119,7 @@ Every write binds exactly `UC-78ys2S3cQ3lpqgXfo-SvQ`. The Lord God alias/channel
 - Public Clips route: https://vkvideo.ru/@thelegendarypoet/clips
 - Community ID: `235216998`
 - API owner ID: `-235216998`
-- Shared VK credential alias: `legendary-poet`
+- Historical shared VK **user-token** alias: `legendary-poet` (**quarantined; no VK API calls**)
 
 Operational/admin routes are not public links:
 
@@ -167,9 +169,9 @@ The read-only provider snapshot returned channel title `Milovi Cake`, `customUrl
 - Compatibility URL: https://vk.com/milovi_cake
 - Community ID: `68859909`
 - API owner ID: `-68859909`
-- Shared VK credential alias: `legendary-poet`
+- Historical shared VK **user-token** alias: `legendary-poet` (**quarantined; no VK API calls**)
 
-The shared VK credential is only authentication. The target is selected by `project_key=milovi-cake`, `community_id=68859909`, and `owner_id=-68859909`.
+The former shared alias is historical and **must not be reused for API calls**. A separately reviewed credential is authentication only, never proof of the target. The target is selected by `project_key=milovi-cake`, `community_id=68859909`, and `owner_id=-68859909`. The Milovi Issue #323 resolver considers `milovi-cake` and `shared-vk-user` candidate aliases, but their names alone are **not** proof of provenance, current privileges or authority to mutate.
 
 The same VK browser session used for the other registered Fedor-managed communities is valid for Milovi Cake when that session has the required admin rights. Do not require a Milovi-specific browser login/profile solely because the target project is Milovi; prove the exact Milovi target immediately before any UI mutation instead.
 
@@ -199,7 +201,7 @@ Only cake content belongs to Milovi cake-transfer queues. Personal/family/non-ca
 6. Cross-project promotion is forbidden by default and requires an explicit per-operation exception.
 7. Unknown links, handles, routes, or IDs fail closed.
 8. Preflight prints/resolves the exact project/provider identities applicable to the operation and rejects mismatches.
-9. The shared VK alias `legendary-poet` and any shared VK browser session never determine the project.
+9. The quarantined **VK API token** aliases `legendary-poet` / `default` are never valid API authority. The existing, separately authorized **isolated VK browser session** may be reused across communities only after exact `project_key`/community/owner proof; authentication context alone never determines the project.
 10. Public and admin routes remain distinct.
 11. Source-code profiles and validators stay synchronized with this registry; documentation alone never authorizes writes.
 12. Only one exact project-bound owning issue may authorize the next operation.
@@ -243,4 +245,4 @@ VK community ID: 68859909
 VK owner ID: -68859909
 ```
 
-Shared credentials/sessions are authentication context only; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.
+Only separately reviewed, nonquarantined credentials or an already-authorized isolated browser session may authenticate supported operations. Exact numeric IDs and `project_key` still decide the target; no login, scan, write or account substitution is permitted when provenance/target cannot be proven.
