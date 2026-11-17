@@ -33,14 +33,14 @@ def test_raw_vk_token_does_not_claim_unverified_permissions() -> None:
 
 def test_vk_client_reads_and_validates_app_permission_mask(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret"))
+    store.save_token("synthetic-vk-metadata", VkAccessToken(access_token="secret"))
 
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"response": _FULL_MASK})
 
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
@@ -50,10 +50,10 @@ def test_vk_client_reads_and_validates_app_permission_mask(tmp_path: Path) -> No
 
 def test_vk_client_rejects_invalid_app_permission_mask(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret"))
+    store.save_token("synthetic-vk-metadata", VkAccessToken(access_token="secret"))
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(
             transport=httpx.MockTransport(lambda _request: httpx.Response(200, json={"response": True}))
         ),
@@ -67,7 +67,7 @@ def test_vk_client_rejects_invalid_app_permission_mask(tmp_path: Path) -> None:
 def test_wall_call_requires_verified_wall_scope_before_network(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-metadata",
         VkAccessToken(access_token="secret", scopes=["video"], permission_mask=16),
     )
     calls = 0
@@ -79,7 +79,7 @@ def test_wall_call_requires_verified_wall_scope_before_network(tmp_path: Path) -
 
     writer = VkVideoWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
