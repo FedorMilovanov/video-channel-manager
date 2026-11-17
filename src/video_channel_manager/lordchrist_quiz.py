@@ -106,7 +106,9 @@ class LordchristQuizSeriesSpec(BaseModel):
     schema_version: Literal[1]
     series_id: str = Field(pattern=r"^lordchrist-quiz-series-\d{2}$")
     title: str = Field(min_length=3, max_length=120)
-    items: tuple[LordchristQuizSpec, ...] = Field(min_length=10, max_length=10)
+    # Series can contain a complete, independently reviewed eight-to-ten item batch.
+    # Never pad a batch with weak questions merely to satisfy a fixed count.
+    items: tuple[LordchristQuizSpec, ...] = Field(min_length=8, max_length=10)
 
     @model_validator(mode="after")
     def validate_series(self) -> "LordchristQuizSeriesSpec":
@@ -176,6 +178,68 @@ def build_series_candidate(
     )
 
 
+def require_future_series_editorial_signoff(series: LordchristQuizSeriesSpec) -> None:
+    """Fail closed for new quiz releases until each exact item has a separate review.
+
+    Historical Series 01/02 are retired; Series 03 has an unconditional
+    execution HOLD. Their old sealed receipts must not be retroactively altered.
+    A signoff file is a necessary record, not cryptographic proof that a
+    person actually read the text; GitHub review provenance must be verified.
+    """
+    if series.series_id in {
+        "lordchrist-quiz-series-01",
+        "lordchrist-quiz-series-02",
+        "lordchrist-quiz-series-03",
+    }:
+        return
+    path = QUIZ_DIR / f"{series.series_id}-editorial-signoff.json"
+    try:
+        signoff = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("future quiz release requires per-item independent editorial signoff") from exc
+    if not isinstance(signoff, dict):
+        raise ValueError("future quiz editorial signoff must be a JSON object")
+    reviews = signoff.get("items")
+    if (
+        signoff.get("series_id") != series.series_id
+        or signoff.get("approval_state") != "independent_human_approved"
+        or not isinstance(reviews, list)
+        or len(reviews) != len(series.items)
+    ):
+        raise ValueError("future quiz editorial signoff has wrong series, state or item count")
+    requirements = (
+        "scripture_context_checked",
+        "russian_reader_checked",
+        "single_correct_answer_checked",
+        "three_distractors_checked",
+        "post_vote_explanation_checked",
+    )
+    for spec, review in zip(series.items, reviews, strict=True):
+        if not isinstance(review, dict):
+            raise ValueError("future quiz editorial item review must be an object")
+        reviewer = review.get("reviewed_by")
+        preparer = review.get("prepared_by")
+        review_url = review.get("review_url")
+        if (
+            review.get("publication_id") != spec.publication_id
+            or review.get("source_sha256") != spec_source_sha256(spec)
+            or review.get("status") != "approved"
+            or review.get("reviewer_type") != "human"
+            or not isinstance(reviewer, str)
+            or not reviewer.strip()
+            or not isinstance(preparer, str)
+            or not preparer.strip()
+            or reviewer.strip().casefold() == preparer.strip().casefold()
+            or not isinstance(review_url, str)
+            or not review_url.startswith("https://github.com/FedorMilovanov/video-channel-manager/pull/")
+            or "#pullrequestreview-" not in review_url
+            or any(review.get(field) is not True for field in requirements)
+        ):
+            raise ValueError(
+                f"future quiz editorial approval missing exact independent evidence for {spec.publication_id}"
+            )
+
+
 def build_series_runtime(
     profile: TelegramChannelProfile,
     series: LordchristQuizSeriesSpec,
@@ -184,6 +248,7 @@ def build_series_runtime(
     reviewed_by: str,
     reviewed_at: datetime,
 ) -> GenericReleaseQueue:
+    require_future_series_editorial_signoff(series)
     candidate = build_series_candidate(profile, series, binding)
     return authorize_release_candidate(
         candidate,
@@ -228,6 +293,7 @@ def validate_series(
     ):
         raise ValueError("quiz series runtime release target fields differ from the target binding")
     if require_release_authorized or require_execution_authorized:
+        require_future_series_editorial_signoff(series)
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
     if require_execution_authorized and series_id in EDITORIAL_HOLD_SERIES_IDS:
