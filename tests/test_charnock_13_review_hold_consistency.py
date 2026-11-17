@@ -1,5 +1,7 @@
 """Prevent a superseded Charnock #13 review from acting as a release grant."""
 
+import json
+from hashlib import sha1
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,8 +26,6 @@ def test_charnock_13_writer_hold_is_not_only_documentary() -> None:
 
 def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
     """Two documented jumps must never masquerade as uninterrupted Charnock quotations."""
-    import json
-
     candidate_directory = ROOT / "content/research"
     data = json.loads(
         (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.json").read_text(encoding="utf-8")
@@ -33,7 +33,6 @@ def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
     markdown = (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.md").read_text(encoding="utf-8")
     # Active canonical article remains byte-for-byte pinned to reviewed SHA.
     current = REVIEW.parent / "lordchrist-telegraph-charnock-13.json"
-    from hashlib import sha1
     payload = current.read_bytes()
     blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
     assert sha1(blob).hexdigest() == "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
