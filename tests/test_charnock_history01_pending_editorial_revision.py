@@ -29,7 +29,7 @@ def test_birth_claim_source_is_attributed_and_year_approximate() -> None:
 
 def test_historical_public_receipt_is_not_transferred_to_pending_revision() -> None:
     raw = ARTICLE.read_bytes()
-    current_blob = hashlib.sha1(f"blob {len(raw)}\\0".encode() + raw).hexdigest()
+    current_blob = hashlib.sha1(f"blob {len(raw)}".encode() + bytes([0]) + raw).hexdigest()
     queue = json.loads(QUEUE.read_text(encoding="utf-8"))
     item = next(row for row in queue["items"] if row["publication_id"] == PUBLICATION_ID)
     assert item["article"]["git_blob_sha"] == current_blob
