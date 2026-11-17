@@ -41,7 +41,7 @@
       "previous_telegram_message_id": 1585,
       "previous_published_article_sha256": "sha256:267eadf21225c14f1bee0f09fc9e96c4841ee69684a6ea678c0418248c621ee7",
       "corrected_canonical_document_path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-history-01.json",
-      "corrected_document_git_blob_sha": "dc9a48c2227aba8662e443ec0bce48ac4236663f",
+      "corrected_document_git_blob_sha": "31531a96ee0de38b8132a92c34dcdc38fb1649dd",
       "pending_editorial_change": "2026-11-17: history-01 birth claim reworded from unqualified 1628/London to Wood 1691 attributed place and approximate year. SOURCE ONLY; public 11-05 page has not been edited or read back in this revision.",
       "previous_publicly_verified_document_git_blob_sha": "a288b15d403fe2e261c1409c1f424a66c5d82548",
       "corrected_document_branch": "main",
