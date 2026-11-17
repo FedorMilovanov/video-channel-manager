@@ -35,9 +35,7 @@ def test_direct_provider_constructor_rejects_retired_alias_before_store(factory,
         (VkThumbnailWriter, lambda c: c._token_value()),
     ],
 )
-def test_mutated_alias_still_rejected_before_token_read(
-    tmp_path: Path, factory, operation
-) -> None:
+def test_mutated_alias_still_rejected_before_token_read(tmp_path: Path, factory, operation) -> None:
     client = factory(token_store=VkTokenStore(tmp_path), account_alias="safe-synthetic")
     try:
         client.account_alias = "DEFAULT"
