@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "lordchrist-quiz-s03-sardis-vigil",
+  "provider_payload_sha256": "sha256:a1a96f1f2366362519be499a62b9ea2895be35be29f60cf984ba4b4567283d32",
+  "provider_effect": "verified",
+  "retryable": false,
+  "error": null,
+  "receipt": {
+    "schema_name": "video-channel-manager.telegram-generic-send-receipt",
+    "schema_version": 1,
+    "project_key": "lord-god-strength",
+    "publication_id": "lordchrist-quiz-s03-sardis-vigil",
+    "provider_payload_sha256": "sha256:a1a96f1f2366362519be499a62b9ea2895be35be29f60cf984ba4b4567283d32",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "message_id": 1623,
+    "message_url": "https://t.me/lordchrist/1623",
+    "verified_at_utc": "2026-11-17T13:21:19.042899Z",
+    "provider_effect": "verified"
+  }
+}
