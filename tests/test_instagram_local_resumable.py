@@ -850,17 +850,14 @@ def test_resumable_status_phase_error_overrides_stale_in_progress() -> None:
     assert "FILE_NOT_FOUND" in message
 
 
-
-@pytest.mark.parametrize(
+@pytest.mark.parametrize
     ("status_code", "human_status"),
     [
         ("EXPIRED", "Finished: Media has been uploaded and it is ready to be published."),
         ("EXPIRED", "In Progress: Media is still being processed."),
     ],
 )
-def test_resumable_expired_machine_status_overrides_stale_human_status(
-    status_code: str, human_status: str
-) -> None:
+def test_resumable_expired_machine_status_overrides_stale_human_status(status_code: str, human_status: str) -> None:
     """The machine status wins even when Meta's prose contradicts it."""
 
     def handler(request: httpx.Request) -> httpx.Response:
