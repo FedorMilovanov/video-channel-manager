@@ -87,11 +87,18 @@ def test_four_one_date_tasks_with_wake_and_no_catchup() -> None:
     assert "Get-FileHash -LiteralPath $target" in content
     assert "Register-ScheduledTask" in content
     assert "Start-ScheduledTask" not in content
+    assert "param([switch]$Install, [switch]$Verify)" in content
+    assert "Choose either -Install or -Verify" in content
+    assert "if ($Verify)" in content
+    assert "Confirm-CharnockTasks" in content
+    assert "ownerName -ieq $env:USERNAME" in content
+    assert "task.Triggers[0].StartBoundary -cne $start" in content
+    assert "task.Triggers[0].Repetition.Interval -cne 'PT30M'" in content
 
 
 def test_installer_is_opt_in_and_requires_readonly_proof() -> None:
     content = _install()
-    assert "param([switch]$Install)" in content
+    assert "param([switch]$Install, [switch]$Verify)" in content
     assert "if (-not $Install)" in content
     assert "READ_ONLY_PLAN" in content
     assert "-ProbeAt $probe" in content

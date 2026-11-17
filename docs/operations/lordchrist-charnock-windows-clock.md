@@ -22,6 +22,7 @@ Issue [#997](https://github.com/FedorMilovanov/video-channel-manager/issues/997)
 ```powershell
 pwsh -NoProfile -File scripts/install_lordchrist_charnock_windows_backup.ps1
 pwsh -NoProfile -File scripts/install_lordchrist_charnock_windows_backup.ps1 -Install
+pwsh -NoProfile -File scripts/install_lordchrist_charnock_windows_backup.ps1 -Verify
 Get-ScheduledTask -TaskName 'Lordchrist-Charnock-Reissue-*' |
   Select-Object TaskName, State
 ```
@@ -29,3 +30,5 @@ Get-ScheduledTask -TaskName 'Lordchrist-Charnock-Reissue-*' |
 Первый вызов — только план, без изменений. Второй использует `Register-ScheduledTask`. Существующие одноимённые задания не перезаписываются. Установка копирует скрипт в `%LOCALAPPDATA%\LordchristCharnockScheduler` и удостоверяет SHA-256. Все команды используют уже существующую авторизацию `gh`, не сохраняют новый токен.
 
 **Ограничение надёжности:** установлен тип входа Windows `Interactive` (наименьшие права). Пользователь Windows должен оставаться вошедшим, ПК должен работать/пробуждаться и иметь интернет. `WakeToRun` не гарантирует срабатывания на любом оборудовании. Сам запрос `workflow_dispatch` **не** доказывает публикацию: для закрытия выпуска требуются новая `scheduled_reissue.state=verified` в защищённом реестре и публичный Telegram readback. После завершения серии — проверить все четыре квитанции и удалить только эти четыре задачи.
+
+**Учётная запись:** Планировщик Windows может отображать вход `DESKTOP-O3FDOA4\Fedor` как просто `Fedor`. Именно поэтому режим `-Verify` сверяет оба эквивалентных написания, а не объявляет установленную задачу ошибочной. Прочие параметры (точное время, число задач, hash, `WakeToRun`, action, `Interactive`, repetition) проверяются строго. Проверка не регистрирует и не меняет задания.
