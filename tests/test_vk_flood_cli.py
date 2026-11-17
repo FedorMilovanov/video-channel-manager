@@ -39,7 +39,7 @@ def test_flood_cli_uses_credential_scope_across_equivalent_aliases(
     )
 
     assert reset.exit_code == 0, reset.output
-    assert "Provider calls: 0" in reset.output
+    assert "Provider calls: 0" in " ".join(reset.output.split())
     assert VkFloodControlGate(tmp_path, "safe-first").get("wall.get") is None
     assert VkFloodControlGate(tmp_path, "safe-second").get("wall.get") is None
 
