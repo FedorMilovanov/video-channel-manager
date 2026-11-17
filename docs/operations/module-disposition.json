@@ -88,7 +88,7 @@
       "owning_tests": [
         "tests/test_vk_clips_evidence_pipeline.py"
       ],
-      "statements": 77,
+      "statements": 79,
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {

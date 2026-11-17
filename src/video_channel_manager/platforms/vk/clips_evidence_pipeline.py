@@ -15,6 +15,7 @@ from video_channel_manager.platforms.vk.clips_owner_probe import (
 )
 from video_channel_manager.platforms.vk.clips_owner_reconciliation import build_owner_clips_wall_reconciliation
 from video_channel_manager.platforms.vk.client import VkApiClient
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
 VK_OWNER_CLIPS_EVIDENCE_PIPELINE_SCHEMA = "vk-owner-clips-evidence-pipeline-v1"
@@ -171,6 +172,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = parser().parse_args()
+    reject_quarantined_legacy_alias(args.account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     client = VkApiClient(

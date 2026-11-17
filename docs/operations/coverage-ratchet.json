@@ -1,7 +1,7 @@
 {
   "schema_name": "video-channel-manager.coverage-ratchet",
   "schema_version": 1,
-  "updated_at_utc": "2026-11-15T21:08:00Z",
+  "updated_at_utc": "2026-11-17T08:45:00Z",
   "measured_python": "3.11",
   "command": "python -m pytest --cov=video_channel_manager --cov-report=json:coverage.json",
   "total_floor": 75.01,
@@ -210,6 +210,7 @@
     "src/video_channel_manager/platforms/vk/models.py": 78.16,
     "src/video_channel_manager/platforms/vk/postponed_text_edit.py": 77.18,
     "src/video_channel_manager/platforms/vk/publishing.py": 100.0,
+    "src/video_channel_manager/platforms/vk/quarantine.py": 100.0,
     "src/video_channel_manager/platforms/vk/renderers.py": 83.11,
     "src/video_channel_manager/platforms/vk/service.py": 100.0,
     "src/video_channel_manager/platforms/vk/store.py": 80.95,

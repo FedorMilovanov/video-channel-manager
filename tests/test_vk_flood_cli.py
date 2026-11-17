@@ -21,13 +21,13 @@ def test_flood_cli_uses_credential_scope_across_equivalent_aliases(
 ) -> None:
     store = VkTokenStore(tmp_path)
     shared = VkAccessToken(access_token="shared-token", user_id=42)
-    store.save_token("default", shared)
-    store.save_token("legendary-poet", shared)
-    VkFloodControlGate(tmp_path, "legendary-poet").record("wall.get")
+    store.save_token("safe-first", shared)
+    store.save_token("safe-second", shared)
+    VkFloodControlGate(tmp_path, "safe-second").record("wall.get")
 
     monkeypatch.setattr(vk_cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path))
 
-    status = runner.invoke(vk_app, ["flood-status", "--account", "default"])
+    status = runner.invoke(vk_app, ["flood-status", "--account", "safe-first"])
 
     assert status.exit_code == 0, status.output
     assert "wall.get" in status.output
@@ -35,20 +35,18 @@ def test_flood_cli_uses_credential_scope_across_equivalent_aliases(
 
     reset = runner.invoke(
         vk_app,
-        ["flood-reset", "--account", "default", "--method", "wall.get", "--confirm-code", "9"],
+        ["flood-reset", "--account", "safe-first", "--method", "wall.get", "--confirm-code", "9"],
     )
 
     assert reset.exit_code == 0, reset.output
-    assert "Provider calls: 0" in reset.output
-    assert VkFloodControlGate(tmp_path, "default").get("wall.get") is None
-    assert VkFloodControlGate(tmp_path, "legendary-poet").get("wall.get") is None
+    assert "Provider calls: 0" in " ".join(reset.output.split())
+    assert VkFloodControlGate(tmp_path, "safe-first").get("wall.get") is None
+    assert VkFloodControlGate(tmp_path, "safe-second").get("wall.get") is None
 
 
 def test_community_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token(
-        "legendary-poet", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"])
-    )
+    store.save_token("safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"]))
     observed: dict[str, Any] = {}
 
     class FakeClient:
@@ -72,13 +70,13 @@ def test_community_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path:
 
     result = runner.invoke(
         vk_app,
-        ["community-probe", "--account", "legendary-poet", "--community", "60805374"],
+        ["community-probe", "--account", "safe-probe", "--community", "60805374"],
     )
 
     assert result.exit_code == 0, result.output
     assert observed == {
         "max_attempts": 1,
-        "account_alias": "legendary-poet",
+        "account_alias": "safe-probe",
         "community": 60805374,
         "closed": True,
     }
@@ -88,9 +86,7 @@ def test_community_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path:
 
 def test_wall_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token(
-        "legendary-poet", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"])
-    )
+    store.save_token("safe-probe", VkAccessToken(access_token="shared-token", user_id=42, scopes=["groups", "wall"]))
     observed: dict[str, Any] = {}
 
     class FakeWriter:
@@ -117,13 +113,13 @@ def test_wall_probe_is_single_attempt_read_only(monkeypatch: Any, tmp_path: Path
 
     result = runner.invoke(
         vk_app,
-        ["wall-probe", "--account", "legendary-poet", "--community", "60805374"],
+        ["wall-probe", "--account", "safe-probe", "--community", "60805374"],
     )
 
     assert result.exit_code == 0, result.output
     assert observed == {
         "max_attempts": 1,
-        "account_alias": "legendary-poet",
+        "account_alias": "safe-probe",
         "scopes": ("wall",),
         "community_id": 60805374,
         "closed": True,

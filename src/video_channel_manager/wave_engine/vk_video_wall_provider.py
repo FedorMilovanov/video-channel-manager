@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import Any, Mapping
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
@@ -430,6 +431,7 @@ class VkPostponedVideoWallAdapter:
     ) -> None:
         if account_alias != VK_VIDEO_WALL_ACCOUNT_ALIAS:
             raise ValueError("Legendary Poet video wall provider requires the exact local VK alias")
+        reject_quarantined_legacy_alias(account_alias)
         settings = get_settings()
         self.settings = settings
         self.account_alias = account_alias
