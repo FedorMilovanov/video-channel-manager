@@ -24,7 +24,7 @@ def _no_settings():
     pytest.fail("Quarantined alias reached settings / credential store")
 
 
-@pytest.mark.parametrize("alias", ["legendary-poet", "default", " legendary-poet "])
+@pytest.mark.parametrize("alias", ["legendary-poet", "default", " legendary-poet ", "LEGENDARY-POET", "DEFAULT", " DeFaUlT "])
 def test_legacy_alias_is_rejected_without_any_credential_access(alias: str) -> None:
     with pytest.raises(ValueError, match="quarantined"):
         reject_quarantined_legacy_alias(alias)
@@ -55,14 +55,14 @@ def test_video_wall_adapter_rejects_legacy_alias_before_settings(
         wall_module.VkPostponedVideoWallAdapter()
 
 
-@pytest.mark.parametrize("alias", ["legendary-poet", "default"])
+@pytest.mark.parametrize("alias", ["legendary-poet", "default", "LEGENDARY-POET", "DEFAULT"])
 def test_postponed_text_cli_rejects_legacy_alias_before_settings(monkeypatch: pytest.MonkeyPatch, alias: str) -> None:
     monkeypatch.setattr(postponed_cli, "get_settings", _no_settings)
     with pytest.raises(ValueError, match="quarantined"):
         postponed_cli._writer(alias)
 
 
-@pytest.mark.parametrize("alias", ["legendary-poet", "default"])
+@pytest.mark.parametrize("alias", ["legendary-poet", "default", "LEGENDARY-POET", "DEFAULT"])
 def test_vk_login_cannot_force_refresh_legacy_alias_before_settings(
     monkeypatch: pytest.MonkeyPatch, alias: str
 ) -> None:
