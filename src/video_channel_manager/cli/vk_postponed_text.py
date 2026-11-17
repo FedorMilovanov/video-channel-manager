@@ -18,6 +18,7 @@ from video_channel_manager.platforms.vk.postponed_text_edit import (
     reconcile_vk_postponed_text_edit_plan,
     write_vk_postponed_text_document,
 )
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkAccountNotFoundError, VkTokenStore
 from video_channel_manager.platforms.vk.wall import VkWallWriter
 from video_channel_manager.platforms.vk.writer import VkWriteError
@@ -30,6 +31,7 @@ console = Console()
 
 
 def _writer(account: str) -> VkWallWriter:
+    reject_quarantined_legacy_alias(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     return VkWallWriter(
