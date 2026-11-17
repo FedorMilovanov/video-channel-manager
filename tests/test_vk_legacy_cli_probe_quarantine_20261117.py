@@ -38,18 +38,14 @@ def test_legacy_cli_entry_points_fail_before_settings(
         fn(**kwargs)
 
 
-def test_owner_clips_evidence_rejects_default_before_settings(
-    monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_owner_clips_evidence_rejects_default_before_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(clips, "get_settings", _fail_settings)
     monkeypatch.setattr(clips, "parser", lambda: SimpleNamespace(parse_args=lambda: SimpleNamespace(account="default")))
     with pytest.raises(ValueError, match="quarantined"):
         clips.main()
 
 
-def test_user_login_never_silently_reuses_global_vk_access_token(
-    monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_user_login_never_silently_reuses_global_vk_access_token(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "get_settings", _fail_settings)
     prompted: list[bool] = []
 
