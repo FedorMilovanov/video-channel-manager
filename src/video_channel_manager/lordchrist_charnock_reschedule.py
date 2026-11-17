@@ -101,7 +101,7 @@ def _select_due(
     entry = matches[0]
     if entry["publication_id"] != args.publication_id:
         raise RuntimeError("Requested article is not the sole due Charnock article")
-    if entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
+    if args.stage in ("prepare", "send") and entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
         raise RuntimeError(
             "Charnock 13 editorial HOLD: q-3/q-19 contain unmarked source omissions; "
             "a separately reviewed new edition is required"
