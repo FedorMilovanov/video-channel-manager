@@ -24,7 +24,9 @@ def _no_settings():
     pytest.fail("Quarantined alias reached settings / credential store")
 
 
-@pytest.mark.parametrize("alias", ["legendary-poet", "default", " legendary-poet ", "LEGENDARY-POET", "DEFAULT", " DeFaUlT "])
+@pytest.mark.parametrize(
+    "alias", ["legendary-poet", "default", " legendary-poet ", "LEGENDARY-POET", "DEFAULT", " DeFaUlT "]
+)
 def test_legacy_alias_is_rejected_without_any_credential_access(alias: str) -> None:
     with pytest.raises(ValueError, match="quarantined"):
         reject_quarantined_legacy_alias(alias)
