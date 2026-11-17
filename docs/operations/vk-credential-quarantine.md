@@ -45,7 +45,20 @@ of the owner's own app. The reason for the quarantine is the decision, not the e
 - `vk login --force` as a recovery attempt: the validation flow performs provider reads before it
   replaces the stored token;
 - alias rotation, token rotation, IP change or an alternate writer to evade flood control;
-- restoring or re-running any local launcher that resumes this credential.
+- restoring or re-running any local launcher that resumes this credential;
+- overwriting, recreating or deleting the retired token files via `VkTokenStore.save_token` / `delete_token`, including alias case variants. Offline read-only forensic inspection stays available; it is **not** permission to use the token with a VK client. These mutation guards additionally reject a **renamed raw token** when a local retired reference
+file exists. `VkTokenStore.save_token` performs an in-memory constant-time comparison with the
+retired evidence *before* creating directories or writing files. The low-level VK API, video
+writer and thumbnail writer use `load_token_for_provider`, which repeats the identity
+check immediately before provider use. Comparisons never emit tokens, token hashes, files
+or network requests. Malformed/unreadable retired reference evidence blocks use rather
+than silently allowing a new key.
+
+**Boundary:** the comparison depends on an accessible retired token file being present
+in the same store; when it is absent, the software cannot prove that a distinct alias is
+not the historical secret. This guard is not a license to attempt provider recovery and is
+not a substitute for confirming fresh key provenance. Authorized read-only
+`load_token` remains available for offline forensic inspection only.
 
 Local provider-inert blockers (`.cmd` / `.ps1` launchers and a turnkey script) were created on the
 operator's Windows desktop and their digests were recorded in issue #662. They are **not** tracked in

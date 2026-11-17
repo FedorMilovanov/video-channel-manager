@@ -34,7 +34,8 @@ concurrency:
 
 jobs:
   exact-control-plane:
-    if: github.ref == 'refs/heads/main'
+    # Editorial HOLD: schedule runs are job-skipped, with no protected-state checkout or provider access.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -93,6 +94,13 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             OPERATION="publish"
             DISPATCH_MODE="scheduled"
+          fi
+          # Editorial HOLD after the defective Sardis quiz #1623 (2026-11-17).
+          # Reject manual publish too, before any protected-state or Telegram provider work.
+          # Do not treat the immutable v1 release signature as a fresh content approval.
+          if [[ "$OPERATION" == "publish" ]]; then
+            echo "Series 03 publication on editorial hold after owner rejection; independent review required" >&2
+            exit 3
           fi
           case "$OPERATION" in
             validate)

@@ -8,7 +8,13 @@ CopyFinding = legacy.CopyFinding
 CopyFix = legacy.CopyFix
 
 
-def _review_punctuation_finding(match: re.Match[str]) -> CopyFinding:
+def _is_link_label(match: re.Match[str], text: str) -> bool:
+    """Recognize channel-specific link labels from syntax, not a name allowlist."""
+    inner = legacy._emphasis_inner(match.group("span"))
+    return legacy._is_metadata_label(inner) or bool(re.match(r"[ \t]+https?://", text[match.end() :], re.IGNORECASE))
+
+
+def _review_punctuation_finding(match: re.Match[str], text: str) -> CopyFinding:
     """Classify punctuation scope conservatively.
 
     Punctuation immediately after emphasis is often intentionally outside the
@@ -22,7 +28,7 @@ def _review_punctuation_finding(match: re.Match[str]) -> CopyFinding:
     inner = legacy._emphasis_inner(span)
     excerpt = legacy._excerpt(match.group(0))
 
-    if punctuation == ":" and legacy._is_metadata_label(inner):
+    if punctuation == ":" and _is_link_label(match, text):
         return CopyFinding(
             "metadata_label_colon",
             "error",
@@ -63,9 +69,9 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
             "duplicate_terminal_punctuation",
         }
     ]
-    text_without_non_markers = legacy._without_non_markers(description)
+    masked = legacy.NON_MARKER_RE.sub(lambda match: " " * len(match.group(0)), description)
     findings.extend(
-        _review_punctuation_finding(match) for match in legacy.PUNCT_OUTSIDE_RE.finditer(text_without_non_markers)
+        _review_punctuation_finding(match, description) for match in legacy.PUNCT_OUTSIDE_RE.finditer(masked)
     )
     return findings
 
@@ -112,7 +118,7 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
         inner = legacy._emphasis_inner(span)
         before = match.group(0)
 
-        if punctuation == ":" and legacy._is_metadata_label(inner):
+        if punctuation == ":" and _is_link_label(match, updated):
             after = legacy._with_punctuation_inside(span, punctuation)
             code = "metadata_label_colon"
         elif punctuation == "." and inner.endswith(legacy._TERMINAL_PUNCTUATION):

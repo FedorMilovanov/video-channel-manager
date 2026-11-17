@@ -28,6 +28,12 @@ class Store:
             token_type="community", scopes=("wall",), access_token="secret", is_expired=lambda: False
         )
 
+    def load_token_for_provider(self, alias: str) -> object:
+        # Mock only the reviewed community identity; actual store comparison is
+        # verified separately with synthetic on-disk retired-token evidence.
+        assert alias == mp.COMMUNITY_ACCOUNT
+        return self.load_token(alias)
+
 
 @pytest.fixture
 def pre_release_clock(monkeypatch: pytest.MonkeyPatch) -> None:

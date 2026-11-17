@@ -15,6 +15,8 @@ Before writing a rich/explanatory/theological post, read these files in order:
 
 For short quote-lane production, follow `README.md` and `presentation-policy.json`; do not force the rich-article layout onto the short quote lane.
 
+**Native Telegram QUIZ is a separate editorial lane.** For every new quiz or edit to a poll question, options or the post-vote explanation, **read `quiz/AGENTS.md` first**, then the relevant Bible passage and `quiz/QUIZ_BIBLE_THEOLOGY_READER_REVIEW_20261117.md`. Rich-article rules (uppercase title, hashtag footer, `U+2060` spacers, L1/L2 formatting) do **not** govern the Telegram Bot API native quiz UI. Scripture meaning, complete natural Russian sentences, four well-grounded options and independent per-item review precede technical tests, payload digests and release approval. The current Series03 remains on editorial HOLD; this paragraph grants no provider permission.
+
 ## Precedence
 
 For reader-facing rich posts, presentation authority is:

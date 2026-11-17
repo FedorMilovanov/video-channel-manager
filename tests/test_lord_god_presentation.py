@@ -434,6 +434,28 @@ def test_canonical_macarthur_spelling_is_not_rejected(correct_name: str) -> None
 
 
 @pytest.mark.parametrize(
+    "wrong_name",
+    ["ДжонМакартур", "#ДжонМакартура", "#МАКАРТУР", "МакАРтур"],
+)
+def test_joined_hashtag_and_case_variant_macarthur_spelling_is_rejected(wrong_name: str) -> None:
+    candidate = _DESCRIPTION + "\n\n" + wrong_name + " разбирает этот текст Писания."
+    assert "noncanonical_macarthur_spelling" in presentation_issues(candidate)
+    with pytest.raises(ValueError, match="noncanonical_macarthur_spelling"):
+        require_lord_god_youtube_presentation(_plan(candidate))
+
+
+@pytest.mark.parametrize("correct_name", ["#ДжонМакАртур", "ДжонМакАртур", "МакАртуром"])
+def test_joined_canonical_macarthur_spelling_is_allowed(correct_name: str) -> None:
+    assert presentation_issues(_DESCRIPTION + "\n\n" + correct_name) == []
+
+
+def test_source_url_spelling_is_preserved_without_forcing_editorial_url_rewrite() -> None:
+    candidate = _DESCRIPTION + "\n\nhttps://example.org/lectures/ДжонМакартур"
+    assert "noncanonical_macarthur_spelling" not in presentation_issues(candidate)
+    require_lord_god_youtube_presentation(_plan(candidate))
+
+
+@pytest.mark.parametrize(
     ("addition", "expected"),
     [
         ("https://t.me/lordchrist/", "duplicate_registered_telegram_link"),
