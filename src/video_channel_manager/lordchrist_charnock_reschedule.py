@@ -78,7 +78,10 @@ def _select_due(
     args: argparse.Namespace, ledger: dict[str, Any], *, now: datetime
 ) -> tuple[dict[str, Any], Any, Any, dict[str, Any]]:
     local = now.astimezone(MOSCOW)
-    if local.hour not in LIVE_WINDOW_HOUR:
+    # Only an already-sent message may be read back after 13:59, on the
+    # original Moscow date. Preparing and sending remain strictly in-window.
+    late_readback = args.stage == "verify" and local.hour > LIVE_WINDOW_HOUR[-1]
+    if local.hour not in LIVE_WINDOW_HOUR and not late_readback:
         raise RuntimeError("Charnock release is allowed only between 12:00 and 13:59 Moscow")
     manifest = json.loads((args.repo_root / MANIFEST).read_text(encoding="utf-8"))
     if (
@@ -116,6 +119,12 @@ def _select_due(
         or original.get("article_sha256") != entry["source_article_sha256"]
     ):
         raise RuntimeError("Source ledger identity does not match verified source delivery")
+    if late_readback:
+        # The only allowed post-window effect is public GET + persistence of an
+        # existing same-run 'sent' receipt. Never create/claim/send after 13:59.
+        receipt = original.get("scheduled_reissue")
+        if not isinstance(receipt, dict) or receipt.get("state") != "sent":
+            raise RuntimeError("Post-window readback requires the existing sent receipt")
     # The original creation commit is retained for deterministic historical URLs.
     source_sha = original.get("github_sha")
     if not isinstance(source_sha, str) or len(source_sha) != 40:
