@@ -107,6 +107,10 @@ complete snapshot + SHA-256
 - [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — VK API source ledger;
 - [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — cross-platform hardening ledger.
 
+### SHORTOREZ — нарезка готового видео непосредственно в чате
+
+Для задания вида `SHORTOREZ: <ссылка на видео>` используй [инструкцию AI-агенту для нарезки готовой русской записи](docs/operations/shortorez-chat-workflow.md). Это не режим Telegram MP3Bot и не автоматическая публикация. Планы адаптации готовых клипов для Telegram/VK/Instagram описаны отдельно в [маршрутизации SHORTOREZ](docs/operations/shortorez-publication-routing.md).
+
 ### Local media / Resi DASH
 
 - [`docs/operations/resi-dash-local-handoff.md`](docs/operations/resi-dash-local-handoff.md) — канонический Resi/DASH `Manifest.mpd` → retained master → optional exact trim → ffprobe/SHA-256 workflow;
