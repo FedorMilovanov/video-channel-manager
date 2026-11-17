@@ -133,7 +133,10 @@ def test_article_13_quote_gaps_block_scheduled_release_before_any_provider_call(
 def test_refuses_manual_publishing_even_with_correct_future_date(monkeypatch, tmp_path):
     args, _, _, _ = setup(monkeypatch, tmp_path)
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
-    with pytest.raises(RuntimeError, match="schedule-only"):
+    # GitHub CI supplies the real repository owner's actor by default.
+    # Explicitly simulate a different actor to exercise this negative gate.
+    monkeypatch.setenv("GITHUB_ACTOR", "unapproved-external-actor")
+    with pytest.raises(RuntimeError, match="owner-only dispatch"):
         m.execute(args)
 
 
@@ -268,7 +271,7 @@ def test_verification_failure_keeps_sent_without_replay(monkeypatch, tmp_path):
 def test_no_write_before_live_schedule_and_no_forged_clock(monkeypatch, tmp_path):
     args, _, _, _ = setup(monkeypatch, tmp_path)
     args.now = "2026-11-10T12:00:00+03:00"
-    with pytest.raises(RuntimeError, match="schedule-only"):
+    with pytest.raises(RuntimeError, match="Forged clock forbidden"):
         m.execute(args)
     args.stage = "preview"
     result = m.execute(args)
@@ -499,3 +502,54 @@ def test_send_refuses_if_network_preflight_crosses_1400(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="send window expired before provider POST"):
         m.execute(args)
     assert original["scheduled_reissue"]["state"] == "claimed"
+
+
+def test_owner_dispatch_requires_real_event_payload_and_exact_approved_future_id(monkeypatch, tmp_path):
+    article = "lordchrist-telegraph-charnock-09"
+    args = argparse.Namespace(publication_id=article)
+    event_file = tmp_path / "github-event.json"
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("GITHUB_ACTOR", "FedorMilovanov")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+    good = {"inputs": {"publication_id": article, "confirm": m.OWNER_DISPATCH_CONFIRM}}
+    event_file.write_text(json.dumps(good), encoding="utf-8")
+    m._require_approved_recovery_trigger(args)
+
+    for invalid_id in ("06", "07", "08", "13"):
+        args.publication_id = "lordchrist-telegraph-charnock-" + invalid_id
+        with pytest.raises(RuntimeError, match="cannot restore"):
+            m._require_approved_recovery_trigger(args)
+    args.publication_id = article
+
+    monkeypatch.setenv("GITHUB_ACTOR", "another-actor")
+    with pytest.raises(RuntimeError, match="owner-only"):
+        m._require_approved_recovery_trigger(args)
+    monkeypatch.setenv("GITHUB_ACTOR", "FedorMilovanov")
+
+    bad = [
+        {"inputs": {"publication_id": article, "confirm": "other"}},
+        {"inputs": {"publication_id": "lordchrist-telegraph-charnock-10", "confirm": m.OWNER_DISPATCH_CONFIRM}},
+        {"inputs": {}},
+        {"not_inputs": True},
+    ]
+    for payload in bad:
+        event_file.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(RuntimeError, match="inputs do not bind"):
+            m._require_approved_recovery_trigger(args)
+    event_file.write_text("{broken", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="invalid GitHub dispatch payload"):
+        m._require_approved_recovery_trigger(args)
+    monkeypatch.delenv("GITHUB_EVENT_PATH")
+    with pytest.raises(RuntimeError, match="Missing authenticated"):
+        m._require_approved_recovery_trigger(args)
+
+
+def test_disallow_unreviewed_event_types(monkeypatch):
+    args = argparse.Namespace(publication_id="lordchrist-telegraph-charnock-09")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    m._require_approved_recovery_trigger(args)
+    monkeypatch.setenv("GITHUB_ACTOR", "FedorMilovanov")
+    for name in ("push", "pull_request", "repository_dispatch", "workflow_run"):
+        monkeypatch.setenv("GITHUB_EVENT_NAME", name)
+        with pytest.raises(RuntimeError, match="owner-only"):
+            m._require_approved_recovery_trigger(args)
