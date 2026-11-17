@@ -122,9 +122,7 @@ def test_article_13_quote_gaps_block_scheduled_release_before_any_provider_call(
     manifest["items"][0]["publication_id"] = "lordchrist-telegraph-charnock-13"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     args.publication_id = "lordchrist-telegraph-charnock-13"
-    monkeypatch.setattr(
-        m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read during editorial HOLD")
-    )
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read during editorial HOLD"))
     for stage in ("prepare", "send"):
         args.stage = stage
         with pytest.raises(RuntimeError, match="editorial HOLD: q-3/q-19"):
