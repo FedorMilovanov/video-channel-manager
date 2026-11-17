@@ -44,7 +44,7 @@ def test_resolver_never_constructs_client_for_quarantined_alias_even_if_register
 
     monkeypatch.setattr(rollout, "VkApiClient", Client)
     monkeypatch.setattr(rollout, "_prove_target", prove)
-    store = SyntheticStore(["default", "legendary-poet", "shared-vk-user", "milovi-cake"])
+    store = SyntheticStore(["default", "DEFAULT", "legendary-poet", "LeGeNdArY-PoEt", "shared-vk-user", "milovi-cake"])
 
     alias, _client = rollout._resolve_account(store, "5.199")
     assert alias == "milovi-cake"
@@ -60,7 +60,7 @@ def test_resolver_does_not_use_legacy_alias_when_no_other_account_exists(
 
     monkeypatch.setattr(rollout, "VkApiClient", forbidden_client)
     with pytest.raises(rollout.MiloviTokenRolloutBlocked, match="nonquarantined"):
-        rollout._resolve_account(SyntheticStore(["legendary-poet", "default"]), "5.199")
+        rollout._resolve_account(SyntheticStore(["legendary-poet", "LeGeNdArY-PoEt", "DEFAULT", "default"]), "5.199")
 
 
 def test_resolver_closes_failed_candidate_then_checks_only_next_safe_alias(
