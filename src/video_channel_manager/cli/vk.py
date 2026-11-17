@@ -22,6 +22,7 @@ from video_channel_manager.platforms.vk import (
     VkTokenStore,
     known_user_scopes_from_permission_mask,
 )
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
 from video_channel_manager.platforms.vk.wall import VkWallWriter
@@ -89,6 +90,14 @@ def login(
     force: Annotated[bool, typer.Option("--force", help="Replace an existing token for this alias")] = False,
 ) -> None:
     """Import and validate a VK user token with video and groups permissions."""
+
+    # Preserve the retired third-party credential untouched. The legacy
+    # aliases cannot be reused as a login/--force recovery path (issue #662).
+    try:
+        reject_quarantined_legacy_alias(account)
+    except ValueError as exc:
+        console.print(f"[red]VK authorization blocked:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
