@@ -42,6 +42,38 @@ LIVE_WINDOW_HOUR = (12, 13)
 NEW_POST_PUBLIC_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
 
 
+def scheduled_reissue_preflight_status(ledger: dict[str, Any], manifest_entry: dict[str, Any]) -> str:
+    """Read-only status for redundant schedule triggers; never authorizes a send.
+
+    An already verified replacement is terminal only when its immutable
+    source and target identity still agree with the reviewed incident manifest.
+    Any partial or ambiguous intent must fail closed, never auto-replay.
+    """
+    original = ledger.get("entries", {}).get(manifest_entry["publication_id"])
+    if not isinstance(original, dict):
+        raise RuntimeError("Charnock original publication receipt missing")
+    receipt = original.get("scheduled_reissue")
+    if receipt is None:
+        return "unclaimed"
+    if not isinstance(receipt, dict):
+        raise RuntimeError("Malformed Charnock scheduled reissue; reconcile, do not replay")
+    expected = {
+        "scheduled_on_moscow": manifest_entry["scheduled_on_moscow"],
+        "original_deleted_message_id": manifest_entry["deleted_telegram_message_id"],
+        "source_article_sha256": manifest_entry["source_article_sha256"],
+        "telegraph_url": manifest_entry["verified_telegraph_url"],
+    }
+    if (
+        receipt.get("state") == "verified"
+        and receipt.get("provider_effect") == "verified"
+        and type(receipt.get("new_message_id")) is int
+        and receipt["new_message_id"] > 0
+        and all(receipt.get(key) == value for key, value in expected.items())
+    ):
+        return "verified"
+    raise RuntimeError("Existing Charnock reissue is not terminal-verified; reconcile without resend")
+
+
 def _select_due(
     args: argparse.Namespace, ledger: dict[str, Any], *, now: datetime
 ) -> tuple[dict[str, Any], Any, Any, dict[str, Any]]:
