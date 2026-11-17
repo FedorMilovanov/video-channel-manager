@@ -20,7 +20,7 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 
 ### SHORTOREZ — direct chat cutting of already-voiced videos
 
-When the owner says \`SHORTOREZ\`, provides a video URL for finished-language editorial cutting, or asks to repeat the MacArthur «Божья воля» cutting workflow, **first read [docs/operations/shortorez-chat-workflow.md](docs/operations/shortorez-chat-workflow.md)**. This is a **direct chat-agent workflow through the authorized computer**, NOT the Telegram \`/mode\` \`SHORTS FACTORY MAX\`, a new translation job, or automatic platform publication. Reuse existing source-bound renderers, keep the selected source's audible language, and cover all worthwhile semantic units without a fixed five-Short limit. The separate [SHORTOREZ platform routing](docs/operations/shortorez-publication-routing.md) is a provider-inert follow-on, not the media editor.
+When the owner says `SHORTOREZ`, provides a video URL for finished-language editorial cutting, or asks to repeat the MacArthur «Божья воля» cutting workflow, **first read [docs/operations/shortorez-chat-workflow.md](docs/operations/shortorez-chat-workflow.md)**. This is a **direct chat-agent workflow through the authorized computer**, NOT the Telegram `/mode` `SHORTS FACTORY MAX`, a new translation job, or automatic platform publication. Reuse existing source-bound renderers, keep the selected source's audible language, and cover all worthwhile semantic units without a fixed five-Short limit. The separate [SHORTOREZ platform routing](docs/operations/shortorez-publication-routing.md) is a provider-inert follow-on, not the media editor.
 
 ### @lordchrist content routing
 
