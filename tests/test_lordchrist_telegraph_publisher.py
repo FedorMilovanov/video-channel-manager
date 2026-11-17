@@ -146,12 +146,10 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
             "narodov--ispravlennoe-izdanie-11-05"
         ),
         "lordchrist-telegraph-charnock-03": (
-            "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--"
-            "ispravlennoe-izdanie-11-05"
+            "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05"
         ),
         "lordchrist-telegraph-charnock-04": (
-            "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--"
-            "ispravlennoe-izdanie-11-05"
+            "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--ispravlennoe-izdanie-11-05"
         ),
     }
     for entry in manifest["targets"]:
