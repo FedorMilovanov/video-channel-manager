@@ -24,6 +24,8 @@ New-Item -ItemType Directory -Force -Path $OperatorOutput | Out-Null
 
 Any file that the operator is expected to open, inspect, upload manually, attach to chat, or use as the next handoff input must be written directly into `operator-output` unless the operator explicitly chooses another location.
 
+**Owner-selected video workflow exception (direct-chat SHORTOREZ):** For new cutting jobs, the owner's preferred **media** location is `C:\Users\Fedor\Downloads`, not `Projects\...\operator-output`. Place source MP4 and unapproved render/review files in one clearly named per-source working folder, `Downloads\SHORTOREZ_<source_id>\`, and place **only accepted final MP4s** with readable Russian names in the Downloads root (or another location the owner explicitly specifies). Project-side `operator-output` retains small JSON/Markdown manifests, source hashes, cut decisions and QA/receipt evidence, with exact references to actual media paths. Do not create a second independent media copy in Projects merely for handoff. This is a new-job preference, **not authorization to move or delete existing in-progress Projects media**, especially Q&A54. Preserve media while any edit, QC or provider-effect state is uncertain; clean verified redundant working copies only after accepted SHA-256 and playback checks, confirmation of destination/publication state, and assurance no active agent or dependent manifest still needs them. Never treat files in Downloads as automatically expendable.
+
 Examples:
 
 - read-only inventory/AuditPackage JSON intended for review;
