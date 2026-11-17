@@ -15,6 +15,7 @@ from typing import Any
 
 from video_channel_manager.editorial._project_profiles import MILOVI_CAKE, resolve_project_key
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
+from video_channel_manager.platforms.vk.quarantine import QUARANTINED_LEGACY_VK_ALIASES
 from video_channel_manager.platforms.vk.milovi_immediate_wall import (
     MILOVI_COMMUNITY_ID,
     MILOVI_OWNER_ID,
@@ -130,21 +131,23 @@ def _prove_target(client: VkApiClient) -> None:
 
 
 def _resolve_account(store: VkTokenStore, api_version: str) -> tuple[str, VkApiClient]:
-    preferred = {"milovi-cake": 0, "shared-vk-user": 1, "legendary-poet": 2}
-    found: list[tuple[int, str, VkApiClient]] = []
-    for account in store.list_accounts():
+    """Use the best reviewed candidate, without probing quarantined/extra accounts."""
+    preferred = {"milovi-cake": 0, "shared-vk-user": 1}
+    candidates = sorted(
+        (account for account in store.list_accounts() if account.alias not in QUARANTINED_LEGACY_VK_ALIASES),
+        key=lambda account: (preferred.get(account.alias, 10), account.alias),
+    )
+    for account in candidates:
         if not store.token_exists(account.alias):
             continue
         client = VkApiClient(token_store=store, account_alias=account.alias, api_version=api_version)
         try:
             _prove_target(client)
         except Exception:
+            client.close()
             continue
-        found.append((preferred.get(account.alias, 10), account.alias, client))
-    if not found:
-        raise MiloviTokenRolloutBlocked("No stored VK user token proved administration of Milovi community 68859909")
-    found.sort(key=lambda row: (row[0], row[1]))
-    return found[0][1], found[0][2]
+        return account.alias, client
+    raise MiloviTokenRolloutBlocked("No nonquarantined VK user token proved management of Milovi community 68859909")
 
 
 def _find_existing_clip(client: VkApiClient, asset: SourceAsset) -> str | None:
