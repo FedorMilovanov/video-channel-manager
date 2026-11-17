@@ -137,10 +137,22 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
     assert manifest["links_are_live"] is True
     assert manifest["replacement_readback_on"] == "2026-11-17"
     verified_new_pages = {
-        "lordchrist-telegraph-charnock-01b": "https://telegra.ph/Podsvechnik-sovesti-i-zhertva-Avelya-pochemu-odnogo-znaniya-o-Boge-nedostatochno--ispravlennoe-izdanie-11-05",
-        "lordchrist-telegraph-charnock-02": "https://telegra.ph/Vseobshchee-soglasie-kak-CHarnok-obosnovyval-znanie-o-Boge-u-narodov--ispravlennoe-izdanie-11-05",
-        "lordchrist-telegraph-charnock-03": "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05",
-        "lordchrist-telegraph-charnock-04": "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--ispravlennoe-izdanie-11-05",
+        "lordchrist-telegraph-charnock-01b": (
+            "https://telegra.ph/Podsvechnik-sovesti-i-zhertva-Avelya-pochemu-odnogo-znaniya-o-"
+            "Boge-nedostatochno--ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-02": (
+            "https://telegra.ph/Vseobshchee-soglasie-kak-CHarnok-obosnovyval-znanie-o-Boge-u-"
+            "narodov--ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-03": (
+            "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--"
+            "ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-04": (
+            "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--"
+            "ispravlennoe-izdanie-11-05"
+        ),
     }
     for entry in manifest["targets"]:
         publication_id = entry["publication_id"]
