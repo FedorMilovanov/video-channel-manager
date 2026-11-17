@@ -574,7 +574,7 @@
           "type": "italic",
           "text": "Discourses upon the Existence and Attributes of God"
         },
-        " («Беседы о бытии и свойствах Бога»; первое издание 1682 года; переиздание Robert Carter & Brothers, 1853). Английский текст двух томов доступен в Project Gutenberg, eBook № 53527 (https://www.gutenberg.org/ebooks/53527). Русский перевод выдержек — редакционный; пропуски в цитатах отмечены многоточием. Библейские цитаты приведены по Синодальному переводу; нумерация Псалтири соответствует этому переводу. Биографические сведения сверены с надгробной проповедью Джона Джонсона (1680), предисловием издателей Ричарда Адамса и Эдуарда Вила и статьёй W. G. Blaikie в ",
+        " («Беседы о бытии и свойствах Бога»; первое издание 1682 года; переиздание Robert Carter & Brothers, 1853). Английский текст двух томов доступен в Project Gutenberg, eBook № 53527 (https://www.gutenberg.org/ebooks/53527). Русский перевод выдержек — редакционный; пропуски в цитатах отмечены многоточием. Библейские цитаты приведены по Синодальному переводу; нумерация Псалтири соответствует этому переводу. Биографические сведения сверены с надгробной проповедью Джона Джонсона (1680), предисловием издателей Ричарда Адамса и Эдуарда Вила, свидетельством Энтони Вуда в «Athenæ Oxonienses» (1691, т. II, вход [429], с. 491–492) и статьёй W. G. Blaikie в ",
         {
           "type": "italic",
           "text": "Dictionary of National Biography"
@@ -625,6 +625,13 @@
       "url": "https://www.gutenberg.org/files/53527/53527-h/53527-h.htm",
       "verified_on": "2026-11-15",
       "evidence": "EN: As his will wills all things, and his power effects all things, so his wisdom is the universal director of the motions of his will, and the executions of his power: as his righteousness is the measure of the matter of his actions, so his wisdom is the rule that directs the manner of his actions. The absolute power of God is not an unruly power: his wisdom orders all things, so that nothing is done but what is fit and convenient, and agreeable to so excellent a Being  [смещение 0 в блоке H06 (нормализованный текст источника, позиция 1631536; 470 зн.), eBook #53527 / издание 1853 г.; перевод канала]"
+    },
+    {
+      "source_id": "src-wood-1691-birth",
+      "label": "Anthony à Wood, Athenæ Oxonienses, vol. II (1691), entry [429], pp. 491–492; attributed London birth, approximate 1628",
+      "url": "https://github.com/textcreationpartnership/A71277/blob/97f473a5d46036ac46b5fe7c2d3be603d3946d9a/A71277.xml",
+      "verified_on": "2026-11-17",
+      "evidence": "EEBO-TCP A71277.0001.001 (Wood 1691, vol. II, [429], pp. 491–492): Wood reports Charnock was born in St Catherine Creechurch parish, London, and died aged 52 or thereabouts in 1680. Year 1628 is approximate; a contemporaneous birth/baptism record has not been verified. Historical claim ATTRIBUTED; not an act record."
     },
     {
       "source_id": "src-scripture-synodal",
