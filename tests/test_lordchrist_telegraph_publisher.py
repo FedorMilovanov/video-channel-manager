@@ -509,6 +509,26 @@ def test_layout_rules_merge_back_to_back_quotes_with_trailing_ellipsis() -> None
     assert credit_texts == ["— Стивен Чарнок, «О бытии Бога» (беседа I)"], "one credit, chapter tag appended"
 
 
+def test_charnock_history_explicit_discourse_credit_is_not_mislabeled_as_discourse_one() -> None:
+    for discourse in ("II", "V", "VIII", "IX"):
+        credit = f"— Стивен Чарнок, «Беседы о бытии и свойствах Бога», беседа {discourse}"
+        nodes = [
+            {"tag": "blockquote", "children": ["Отрывок исторической справки."]},
+            {"tag": "p", "children": [{"tag": "em", "children": [credit]}]},
+        ]
+        normalized = _apply_telegraph_layout_rules(nodes)
+        assert normalized[1]["children"][0]["children"][0] == credit
+
+    # The ordinary first-discourse cycle still receives its established
+    # reader-facing label when the explicit discourse number is absent.
+    unnumbered = [
+        {"tag": "blockquote", "children": ["Бог есть."]},
+        {"tag": "p", "children": [{"tag": "em", "children": ["— Стивен Чарнок, «О бытии Бога»"]}]},
+    ]
+    normalized = _apply_telegraph_layout_rules(unnumbered)
+    assert normalized[1]["children"][0]["children"][0] == "— Стивен Чарнок, «О бытии Бога» (беседа I)"
+
+
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)

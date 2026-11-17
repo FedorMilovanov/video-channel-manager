@@ -38,6 +38,9 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 MOSCOW = ZoneInfo("Europe/Moscow")
 MANIFEST = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json")
 LIVE_WINDOW_HOUR = (12, 13)
+# Source-verified omissions in article 13's q-3 and q-19 require editorial re-approval.
+# Keep the shared article queue unchanged: other lanes must retain its payload.
+CHARNOCK_EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
 # Read-only backoff after the single allowed sendMessage; never retry the provider mutation.
 NEW_POST_PUBLIC_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
 
@@ -98,6 +101,11 @@ def _select_due(
     entry = matches[0]
     if entry["publication_id"] != args.publication_id:
         raise RuntimeError("Requested article is not the sole due Charnock article")
+    if args.stage in ("prepare", "send") and entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
+        raise RuntimeError(
+            "Charnock 13 editorial HOLD: q-3/q-19 contain unmarked source omissions; "
+            "a separately reviewed new edition is required"
+        )
     queue = load_telegraph_queue(args.repo_root / DEFAULT_QUEUE_PATH, args.repo_root)
     item = _find_item(queue, args.publication_id)
     if not item.is_ready or item.scheduled_on != local.date() or item.channel_post is None:
