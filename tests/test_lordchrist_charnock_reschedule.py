@@ -133,6 +133,9 @@ def test_article_13_quote_gaps_block_scheduled_release_before_any_provider_call(
 def test_refuses_manual_publishing_even_with_correct_future_date(monkeypatch, tmp_path):
     args, _, _, _ = setup(monkeypatch, tmp_path)
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    # GitHub CI supplies the real repository owner's actor by default.
+    # Explicitly simulate a different actor to exercise this negative gate.
+    monkeypatch.setenv("GITHUB_ACTOR", "unapproved-external-actor")
     with pytest.raises(RuntimeError, match="owner-only dispatch"):
         m.execute(args)
 
