@@ -317,6 +317,26 @@
       ]
     },
     {
+      "boundary_id": "youtube.localization.update",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_guard_refuses_stale_or_unsafe_before_put",
+          "claim": "changed owner, primary text, locale map, privacy or metadata rejects a localization-only PUT"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_api_503_never_retries_put",
+          "claim": "an ambiguous videos.update 503 is attempted once with no replay"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_postflight_drift_blocks_without_replay",
+          "claim": "unexpected primary/audio/secondary-locale drift blocks completion without repeated PUT"
+        }
+      ]
+    },
+    {
       "boundary_id": "wave.operation.dispatch",
       "proofs": [
         {
