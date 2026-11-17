@@ -27,10 +27,10 @@ def _token() -> VkAccessToken:
 
 def _writer(tmp_path: Path, handler: httpx.MockTransport) -> VkVideoTextWriter:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", _token())
+    store.save_token("synthetic-vk-text", _token())
     return VkVideoTextWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-text",
         http_client=httpx.Client(transport=handler),
         api_base_url="https://api.example/method",
     )

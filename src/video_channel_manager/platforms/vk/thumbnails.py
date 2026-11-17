@@ -19,6 +19,7 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
@@ -62,6 +63,8 @@ class VkThumbnailWriter(HttpClientOwner):
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = random.random,
     ) -> None:
+        # Stop known retired aliases before token-store or HTTP initialization.
+        reject_quarantined_legacy_alias(account_alias)
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
@@ -77,6 +80,7 @@ class VkThumbnailWriter(HttpClientOwner):
         self._jitter = jitter
 
     def _token_value(self) -> str:
+        reject_quarantined_legacy_alias(self.account_alias)
         token = self.token_store.load_token(self.account_alias)
         if token.is_expired():
             raise VkWriteError(

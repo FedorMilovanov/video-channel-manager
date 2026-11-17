@@ -55,10 +55,10 @@ def _audit() -> AuditPackage:
 
 def _writer(tmp_path: Path, transport: httpx.MockTransport) -> VkWallWriter:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups", "wall"]))
+    store.save_token("synthetic-vk-wall", VkAccessToken(access_token="secret", scopes=["video", "groups", "wall"]))
     return VkWallWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-wall",
         http_client=httpx.Client(transport=transport),
         api_base_url="https://api.example/method",
     )

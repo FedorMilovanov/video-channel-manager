@@ -23,7 +23,7 @@ from video_channel_manager.platforms.youtube.store import TokenStore
 def _vk_store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path / "vk")
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-mutation",
         VkAccessToken(access_token="secret", scopes=["video", "groups"]),
     )
     return store
@@ -36,7 +36,7 @@ def _vk_writer(
 ) -> VkVideoWriter:
     return writer_type(
         token_store=_vk_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-mutation",
         http_client=httpx.Client(transport=handler),
         api_base_url="https://api.example/method",
     )

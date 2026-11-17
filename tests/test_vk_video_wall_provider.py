@@ -176,7 +176,7 @@ def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(
 
     writer = VkVideoWallWriter(
         token_store=VkTokenStore(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-wall-provider",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
@@ -200,7 +200,7 @@ def test_reconcile_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_p
 
     writer = VkVideoWallWriter(
         token_store=VkTokenStore(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-wall-provider",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )

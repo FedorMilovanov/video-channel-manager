@@ -21,7 +21,7 @@ KNOWN_SHREK_CLIP = "-68859909_456239130"
 
 def _client(tmp_path: Path, *, mode: str = "ok") -> tuple[VkApiClient, list[dict[str, str]]]:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-clips", VkAccessToken(access_token="access", user_id=42))
     requests: list[dict[str, str]] = []
     ids = [456239130, *range(456239200, 456239225)]
 
@@ -94,7 +94,7 @@ def _client(tmp_path: Path, *, mode: str = "ok") -> tuple[VkApiClient, list[dict
 
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-clips",
         api_version=VK_OWNER_CLIPS_PROBE_API_VERSION,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
