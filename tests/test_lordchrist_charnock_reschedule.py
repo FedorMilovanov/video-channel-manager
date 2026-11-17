@@ -365,3 +365,28 @@ def test_public_verification_refuses_wrong_telegraph_revision(monkeypatch, tmp_p
         m.execute(args)
     assert original["scheduled_reissue"]["state"] == "sent"
     assert len(calls) == len(m.NEW_POST_PUBLIC_READBACK_DELAYS)
+
+
+def test_redundant_schedule_readback_is_idempotent_and_fail_closed(monkeypatch, tmp_path):
+    _, ledger, original, source = setup(monkeypatch, tmp_path)
+    assert m.scheduled_reissue_preflight_status(ledger, source) == "unclaimed"
+    original["scheduled_reissue"] = {
+        "state": "verified",
+        "provider_effect": "verified",
+        "new_message_id": 1701,
+        "scheduled_on_moscow": source["scheduled_on_moscow"],
+        "original_deleted_message_id": source["deleted_telegram_message_id"],
+        "source_article_sha256": source["source_article_sha256"],
+        "telegraph_url": source["verified_telegraph_url"],
+    }
+    assert m.scheduled_reissue_preflight_status(ledger, source) == "verified"
+    original["scheduled_reissue"]["state"] = "sent"
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    original["scheduled_reissue"]["state"] = "verified"
+    original["scheduled_reissue"]["telegraph_url"] = "https://telegra.ph/Other-revision"
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    del ledger["entries"][ARTICLE]
+    with pytest.raises(RuntimeError, match="original publication receipt missing"):
+        m.scheduled_reissue_preflight_status(ledger, source)
