@@ -20,7 +20,7 @@ from video_channel_manager.platforms.vk.thumbnail_writer import VerifiedVkThumbn
 
 OWNER_ID = -235216998
 VIDEO_ID = 456239134
-PROJECT_KEY = "legendary-poet"
+PROJECT_KEY = "synthetic-vk-thumbnail"
 
 
 def _png(path: Path, *, width: int = 1280, height: int = 720) -> Path:
@@ -32,10 +32,10 @@ def _png(path: Path, *, width: int = 1280, height: int = 720) -> Path:
 
 def _writer(tmp_path: Path, respond: httpx.MockTransport) -> VerifiedVkThumbnailWriter:
     store = VkTokenStore(tmp_path / "tokens")
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
+    store.save_token("synthetic-vk-thumbnail", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return VerifiedVkThumbnailWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumbnail",
         http_client=httpx.Client(transport=respond),
         api_base_url="https://api.example/method",
         max_attempts=1,
