@@ -56,7 +56,7 @@ def test_candidate_json_has_only_approved_attribution_changes() -> None:
     assert isinstance(footnote, list)
     before, after = (
         " и статьёй W. G. Blaikie в ",
-        ', свидетельством Энтони Вуда в «Athenæ Oxonienses» (1691, т. II, '
+        ", свидетельством Энтони Вуда в «Athenæ Oxonienses» (1691, т. II, "
         "вход [429], с. 491–492) и статьёй W. G. Blaikie в ",
     )
     slots = [i for i, x in enumerate(footnote) if isinstance(x, str) and before in x]
@@ -87,7 +87,7 @@ def test_candidate_markdown_is_exactly_corresponding_source_delta() -> None:
         ),
         (
             " и статьёй W. G. Blaikie в ",
-            ', свидетельством Энтони Вуда в «Athenæ Oxonienses» '
+            ", свидетельством Энтони Вуда в «Athenæ Oxonienses» "
             "(1691, т. II, вход [429], с. 491–492) и статьёй W. G. Blaikie в ",
         ),
     ]
