@@ -22,9 +22,7 @@ def _load_json(path: Path) -> dict[str, object]:
 def _git_blob_sha1(path: Path) -> str:
     # A Git blob is the clean-filtered repository object, not Windows CRLF
     # working-tree bytes. Keep the lock strict without OS-dependent failures.
-    return subprocess.check_output(
-        ["git", "hash-object", "--", str(path)], cwd=ROOT, text=True
-    ).strip()
+    return subprocess.check_output(["git", "hash-object", "--", str(path)], cwd=ROOT, text=True).strip()
 
 
 def test_milovi_canary_is_exact_photo_candidate_but_not_executable() -> None:
