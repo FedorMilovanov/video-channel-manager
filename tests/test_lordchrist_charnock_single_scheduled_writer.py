@@ -14,13 +14,14 @@ def _cron_triggers(filename: str) -> list[str]:
 
 
 def test_only_charnock_reissue_owns_tuesday_friday_midday_schedule() -> None:
-    assert _cron_triggers("lordchrist-charnock-scheduled-reissue.yml") == ["0 9 * * 2,5"]
+    approved_triggers = ["0 9 * * 2,5", "11 9 * * 2,5", "37 9 * * 2,5", "11 10 * * 2,5"]
+    assert _cron_triggers("lordchrist-charnock-scheduled-reissue.yml") == approved_triggers
     assert _cron_triggers("lordchrist-telegraph-poster.yml") == []
     assert _cron_triggers("lordchrist-telegram-poster.yml") == ["17 16 * * 1,3,6"]
     all_midday_owners = {
         workflow.name
         for workflow in WORKFLOWS.glob("lordchrist-*.yml")
-        if "0 9 * * 2,5" in _cron_triggers(workflow.name)
+        if set(approved_triggers) & set(_cron_triggers(workflow.name))
     }
     assert all_midday_owners == {"lordchrist-charnock-scheduled-reissue.yml"}
 
@@ -30,6 +31,8 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     assert "LORDCHRIST_CHARNOCK_RECOVERY_ENABLED" in data
     assert "LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256" in data
     assert "now.hour not in (12,13)" in data
+    assert "scheduled_reissue_preflight_status(state,matches[0])" in data
+    assert "github.event_name == 'workflow_dispatch'" not in data
     assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
     assert "cancel-in-progress: false" in data
 
