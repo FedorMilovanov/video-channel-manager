@@ -1,4 +1,5 @@
 """Offline and negative tests for immutable public Charnock in-place revisions."""
+
 from __future__ import annotations
 
 import copy
@@ -12,30 +13,46 @@ from scripts import charnock_telegraph_surgical_revision as s
 def page03(monkeypatch):
     nodes = [{"tag": "p", "children": [f"opaque-{i}"]} for i in range(130)]
     nodes[104] = {"tag": "blockquote", "children": [s.OLD_Q29]}
-    page = {"path": s.CONTRACTS["03"]["path"], "title": s.CONTRACTS["03"]["title"],
-            "author_name": s.AUTHOR, "author_url": s.AUTHOR_URL,
-            "content": nodes, "image_url": "https://example.test/cover.jpg"}
+    page = {
+        "path": s.CONTRACTS["03"]["path"],
+        "title": s.CONTRACTS["03"]["title"],
+        "author_name": s.AUTHOR,
+        "author_url": s.AUTHOR_URL,
+        "content": nodes,
+        "image_url": "https://example.test/cover.jpg",
+    }
     monkeypatch.setitem(s.CONTRACTS["03"], "sha256", s.sha_content(nodes))
     return page
 
 
 def history(monkeypatch):
     nodes = [{"tag": "p", "children": [f"opaque-{i}"]} for i in range(76)]
-    nodes[8] = {"tag": "p", "children": [
-        s.OLD_BIRTH + " Он учился в Эммануил-колледже. В 1650 году стал ",
-        {"tag": "em", "children": ["феллоу"]},
-        " — членом академического сообщества."]}
+    nodes[8] = {
+        "tag": "p",
+        "children": [
+            s.OLD_BIRTH + " Он учился в Эммануил-колледже. В 1650 году стал ",
+            {"tag": "em", "children": ["феллоу"]},
+            " — членом академического сообщества.",
+        ],
+    }
     for index, roman in s.EXPECTED_ROMANS.items():
-        nodes[index] = {"tag": "p", "children": [{"tag": "em", "children": [
-            f"— Стивен Чарнок, беседа {roman} «Название» (беседа I)"]}]}
-    page = {"path": s.CONTRACTS["history-01"]["path"], "title": s.CONTRACTS["history-01"]["title"],
-            "author_name": s.AUTHOR, "author_url": s.AUTHOR_URL, "content": nodes}
+        nodes[index] = {
+            "tag": "p",
+            "children": [{"tag": "em", "children": [f"— Стивен Чарнок, беседа {roman} «Название» (беседа I)"]}],
+        }
+    page = {
+        "path": s.CONTRACTS["history-01"]["path"],
+        "title": s.CONTRACTS["history-01"]["title"],
+        "author_name": s.AUTHOR,
+        "author_url": s.AUTHOR_URL,
+        "content": nodes,
+    }
     monkeypatch.setitem(s.CONTRACTS["history-01"], "sha256", s.sha_content(nodes))
     return page
 
 
 def changed(before, after):
-    return tuple(i for i, (x, y) in enumerate(zip(before["content"], after["content"])) if x != y)
+    return tuple(i for i, (x, y) in enumerate(zip(before["content"], after["content"], strict=True)) if x != y)
 
 
 def test_q29_only_one_block_changes_without_touching_metadata_or_other_nodes(monkeypatch):
@@ -61,10 +78,10 @@ def test_history_changes_only_birth_and_five_wrapped_credits(monkeypatch):
         assert not val.endswith(" (беседа I)")
 
 
-@pytest.mark.parametrize("field,value", [
-    ("author_name", "Forged"), ("author_url", "https://wrong.example"),
-    ("title", "New page"), ("path", "new-url")
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [("author_name", "Forged"), ("author_url", "https://wrong.example"), ("title", "New page"), ("path", "new-url")],
+)
 def test_metadata_drift_blocks_before_any_edit(monkeypatch, field, value):
     page = page03(monkeypatch)
     page[field] = value
@@ -121,6 +138,7 @@ def test_wrong_account_never_reaches_editpage(monkeypatch):
     def fake_post(operation, fields):
         assert operation == "getPage/" + s.CONTRACTS["03"]["path"]
         return {"path": s.CONTRACTS["03"]["path"], "can_edit": False}
+
     monkeypatch.setattr(s, "post_form", fake_post)
     with pytest.raises(s.UnsafeRevision, match="cannot edit"):
         s.verify_ownership("private-token", s.CONTRACTS["03"]["path"])
@@ -128,12 +146,14 @@ def test_wrong_account_never_reaches_editpage(monkeypatch):
 
 def test_missing_can_edit_falls_back_to_owned_pages(monkeypatch):
     paths = []
+
     def fake_post(op, data):
         paths.append(op)
         if op.startswith("getPage/"):
             return {"path": s.CONTRACTS["03"]["path"]}
         assert op == "getPageList"
         return {"pages": [{"path": s.CONTRACTS["03"]["path"]}]}
+
     monkeypatch.setattr(s, "post_form", fake_post)
     s.verify_ownership("private-token", s.CONTRACTS["03"]["path"])
     assert paths == ["getPage/" + s.CONTRACTS["03"]["path"], "getPageList"]
@@ -147,12 +167,14 @@ def test_one_post_and_verified_full_readback_receipt(monkeypatch, tmp_path):
     monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "secret-not-logged")
     monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
     calls = []
+
     def fake_post(operation, fields):
         calls.append((operation, fields))
         assert operation == "editPage/" + s.CONTRACTS["03"]["path"]
         assert fields["access_token"] == "secret-not-logged"
         assert json.loads(fields["content"]) == after["content"]
         return {"path": s.CONTRACTS["03"]["path"]}
+
     monkeypatch.setattr(s, "post_form", fake_post)
     out = s.run_one("03", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
     assert out["effect"] == "VERIFIED_IN_PLACE"
@@ -181,9 +203,11 @@ def test_ambiguous_post_never_auto_retries(monkeypatch, tmp_path):
     monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "secret")
     monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
     count = []
+
     def fake_post(*_):
         count.append(1)
         raise TimeoutError("ambiguous provider result")
+
     monkeypatch.setattr(s, "post_form", fake_post)
     with pytest.raises(TimeoutError):
         s.run_one("03", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
@@ -200,9 +224,11 @@ def test_readback_mismatch_is_uncertain_and_does_not_retry(monkeypatch, tmp_path
     monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "secret")
     monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
     calls = []
+
     def fake_post(*_):
         calls.append(1)
         return {"path": s.CONTRACTS["03"]["path"]}
+
     monkeypatch.setattr(s, "post_form", fake_post)
     with pytest.raises(s.UnsafeRevision, match="UNCERTAIN"):
         s.run_one("03", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)

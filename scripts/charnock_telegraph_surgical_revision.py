@@ -6,6 +6,7 @@ token, an explicit confirmation and an outside-repository receipt directory.
 This cannot make Telegraph's editPage atomic: an edit may race between the
 last GET and POST; a failed/ambiguous POST must never be retried blindly.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -75,7 +76,12 @@ def sha_content(nodes: Any) -> str:
 
 def checked_page(page: dict[str, Any], key: str) -> None:
     spec = CONTRACTS[key]
-    for k, value in (("path", spec["path"]), ("title", spec["title"]), ("author_name", AUTHOR), ("author_url", AUTHOR_URL)):
+    for k, value in (
+        ("path", spec["path"]),
+        ("title", spec["title"]),
+        ("author_name", AUTHOR),
+        ("author_url", AUTHOR_URL),
+    ):
         if page.get(k) != value:
             raise UnsafeRevision(f"{key}: unreviewed {k}, no mutation")
     content = page.get("content")
@@ -100,11 +106,15 @@ def prepare(page: dict[str, Any], key: str) -> dict[str, Any]:
         if birth.get("tag") != "p" or not isinstance(birth.get("children"), list):
             raise UnsafeRevision("history-01: unexpected birth node")
         children = birth["children"]
-        if (len(children) != 3 or not isinstance(children[0], str) or
-                children[1] != {"tag": "em", "children": ["феллоу"]} or
-                not isinstance(children[2], str) or not children[0].startswith(OLD_BIRTH)):
+        if (
+            len(children) != 3
+            or not isinstance(children[0], str)
+            or children[1] != {"tag": "em", "children": ["феллоу"]}
+            or not isinstance(children[2], str)
+            or not children[0].startswith(OLD_BIRTH)
+        ):
             raise UnsafeRevision("history-01: birth structure/content differs")
-        children[0] = NEW_BIRTH + children[0][len(OLD_BIRTH):]
+        children[0] = NEW_BIRTH + children[0][len(OLD_BIRTH) :]
         for index, roman in EXPECTED_ROMANS.items():
             node = nodes[index]
             if node.get("tag") != "p" or not isinstance(node.get("children"), list):
@@ -115,14 +125,13 @@ def prepare(page: dict[str, Any], key: str) -> dict[str, Any]:
             if inner.get("tag") != "em" or not isinstance(inner.get("children"), list) or len(inner["children"]) != 1:
                 raise UnsafeRevision(f"history-01: credit {index} italic structure differs")
             value = inner["children"][0]
-            if (not isinstance(value, str) or not value.endswith(CREDIT_ENDING) or
-                    f"беседа {roman} «" not in value):
+            if not isinstance(value, str) or not value.endswith(CREDIT_ENDING) or f"беседа {roman} «" not in value:
                 raise UnsafeRevision(f"history-01: credit {index} attribution differs")
-            inner["children"][0] = value[:-len(CREDIT_ENDING)]
+            inner["children"][0] = value[: -len(CREDIT_ENDING)]
     else:
         raise UnsafeRevision("Unexpected article key")
 
-    changed = tuple(i for i, (before, after) in enumerate(zip(page["content"], nodes)) if before != after)
+    changed = tuple(i for i, (before, after) in enumerate(zip(page["content"], nodes, strict=True)) if before != after)
     if changed != CONTRACTS[key]["indices"] or len(nodes) != len(page["content"]):
         raise UnsafeRevision(f"{key}: unexpected changed-node set: {changed}")
     for field in ("path", "title", "author_name", "author_url"):
@@ -155,7 +164,7 @@ def _multipart(fields: dict[str, str]) -> tuple[str, bytes]:
     for name, value in fields.items():
         if not re.fullmatch(r"[a-z_]+", name):
             raise UnsafeRevision("Invalid multipart field")
-        out.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n".encode())
+        out.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n'.encode())
         out.extend(value.encode("utf-8"))
         out.extend(b"\r\n")
     out.extend(f"--{boundary}--\r\n".encode())
@@ -172,7 +181,7 @@ def post_form(path: str, fields: dict[str, str]) -> dict[str, Any]:
 
 def get_public_page(path: str) -> dict[str, Any]:
     url = HOST + "/getPage/" + quote(path, safe="-") + "?return_content=true"
-    page = _json_result(_read(Request(url, headers={"User-Agent":"Charnock-Revision-Readback/1.0"})), "getPage")
+    page = _json_result(_read(Request(url, headers={"User-Agent": "Charnock-Revision-Readback/1.0"})), "getPage")
     return page
 
 
@@ -200,9 +209,13 @@ def run_one(key: str, *, execute: bool, confirm: str | None, receipt_dir: Path |
     after = prepare(before, key)
     proposal_sha = sha_content(after["content"])
     result: dict[str, Any] = {
-        "article": key, "path": path, "old_sha256": sha_content(before["content"]),
-        "new_sha256": proposal_sha, "changed_nodes": list(CONTRACTS[key]["indices"]),
-        "node_count": len(before["content"]), "effect": "DRY_RUN_NO_POST"
+        "article": key,
+        "path": path,
+        "old_sha256": sha_content(before["content"]),
+        "new_sha256": proposal_sha,
+        "changed_nodes": list(CONTRACTS[key]["indices"]),
+        "node_count": len(before["content"]),
+        "effect": "DRY_RUN_NO_POST",
     }
     if not execute:
         return result
@@ -224,9 +237,11 @@ def run_one(key: str, *, execute: bool, confirm: str | None, receipt_dir: Path |
         raise UnsafeRevision("Live snapshot changed before edit; no POST")
     # One irreversible POST only. Any timeout/error makes status UNCERTAIN; NEVER retry.
     fields = {
-        "access_token": token, "title": before["title"],
+        "access_token": token,
+        "title": before["title"],
         "content": json.dumps(after["content"], ensure_ascii=False, separators=(",", ":")),
-        "author_name": before["author_name"], "author_url": before["author_url"],
+        "author_name": before["author_name"],
+        "author_url": before["author_url"],
         "return_content": "true",
     }
     if len(fields["content"].encode("utf-8")) > 64_000:
@@ -235,7 +250,12 @@ def run_one(key: str, *, execute: bool, confirm: str | None, receipt_dir: Path |
     if edited.get("path") != path:
         raise UnsafeRevision("Provider effect UNCERTAIN: editPage changed path; do not retry")
     check = get_public_page(path)
-    if check.get("path") != path or check.get("title") != before["title"] or check.get("author_name") != before["author_name"] or check.get("author_url") != before["author_url"]:
+    if (
+        check.get("path") != path
+        or check.get("title") != before["title"]
+        or check.get("author_name") != before["author_name"]
+        or check.get("author_url") != before["author_url"]
+    ):
         raise UnsafeRevision("Provider effect UNCERTAIN: metadata drift, do not retry")
     if check.get("content") != after["content"]:
         raise UnsafeRevision("Provider effect UNCERTAIN: full content mismatch, do not retry")
