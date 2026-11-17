@@ -193,21 +193,17 @@
     },
     {
       "module": "video_channel_manager.telegram_quote_v4_render_proof",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_lordchrist_quote_v4_render_proof.py"
-      ],
+      "status": "archived_canary",
       "statements": 102,
-      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+      "note": "Historical read-only quote-v4 render-proof canary. The November 2026 active writer is the separately guarded quote-v6 workflow; quote-v4 was superseded. This module has no production caller and the linked test preserves its historical rendering and ledger-invariant evidence. Keep importable for audit, never treat it as an alternate sender or authorization to replay.",
+      "evidence": "tests/test_lordchrist_quote_v4_render_proof.py"
     },
     {
       "module": "video_channel_manager.telegram_quote_v5_render_proof",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_lordchrist_quote_v5_render_proof.py"
-      ],
+      "status": "archived_canary",
       "statements": 99,
-      "note": "No production import, console script, documented invocation or workflow reaches this research module in the current exact-main scan. It is retained only for source-review tests; explicit owner review is required before deletion or activation."
+      "note": "Historical read-only quote-v5 render-proof canary. Quote-v5/depth-v3 was superseded by the verified quote-v6 writer, with historical release evidence retained. No production entrypoint invokes this module; the linked test still protects the old source-line and stand-alone review contracts. Preserve for forensic acceptance only, without activating, deleting, or republishing.",
+      "evidence": "tests/test_lordchrist_quote_v5_render_proof.py"
     },
     {
       "module": "video_channel_manager.telegram_release_binding_cli",
