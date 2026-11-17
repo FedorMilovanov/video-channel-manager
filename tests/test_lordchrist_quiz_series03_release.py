@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 from video_channel_manager.lordchrist_quiz import (
     build_poll_description,
     build_series_candidate,
@@ -93,7 +95,10 @@ def test_series03_runtime_exact_sha_profile_and_bot_target_binding() -> None:
         x.model_dump(mode="json") == y.model_dump(mode="json")
         for x, y in zip(actual.items, expected.items, strict=True)
     )
-    assert validate_series(SERIES, require_execution_authorized=True)["release_authorized"] is True
+    # The immutable v1 approval remains true as history, but active execution permission is withdrawn.
+    assert validate_series(SERIES, require_release_authorized=True)["release_authorized"] is True
+    with pytest.raises(ValueError, match="editorial hold after owner rejection"):
+        validate_series(SERIES, require_execution_authorized=True)
 
 
 def test_old_quiz_workflows_are_absent_from_all_executable_paths() -> None:
@@ -117,7 +122,30 @@ def test_old_quiz_workflows_are_absent_from_all_executable_paths() -> None:
     assert "telegram_multichannel_cli skip-expired" in workflow
     assert "series-state-check" in workflow
     assert "prepare" in workflow and "send-once" in workflow and "apply-outcome" in workflow
-    assert "publication on editorial hold after owner rejection" not in workflow
+    # Scheduling remains declared for historical evidence, but current Series03 is on content HOLD.
+    assert "Series 03 publication on editorial hold after owner rejection" in workflow
+    assert "github.event_name != 'schedule'" in workflow
+
+
+def test_series03_editorial_hold_blocks_all_provider_writes_before_dispatch() -> None:
+    """A content regression must fail closed without changing immutable v1 or its ledger."""
+    workflow = ACTIVE.read_text(encoding="utf-8")
+    assert "if: github.ref == 'refs/heads/main' && github.event_name != 'schedule'" in workflow
+    operation_gate = workflow.split("      - name: Resolve operation and authority gate", 1)[1].split(
+        "      - name: Provider-free validation complete", 1
+    )[0]
+    assert 'if [[ "$EVENT_NAME" == "schedule" ]]; then' in operation_gate
+    assert 'OPERATION="publish"' in operation_gate
+    assert 'if [[ "$OPERATION" == "publish" ]]; then' in operation_gate
+    assert "Series 03 publication on editorial hold after owner rejection" in operation_gate
+    assert operation_gate.index('if [[ "$OPERATION" == "publish" ]]; then') < operation_gate.index(
+        'case "$OPERATION" in'
+    )
+    assert operation_gate.index("exit 3") < operation_gate.index('case "$OPERATION" in')
+    assert 'validate-series \\\n                --series-id "$SERIES_ID"' in operation_gate
+    assert "      - name: Fresh exact target preflight" in workflow
+    assert "      - name: Send exactly once through the canonical generic Telegram runtime" in workflow
+    # The provider steps remain intact for a future separately approved unhold; no side-effect is triggered here.
 
 
 def test_series03_is_not_historical_release_or_deleted_poll() -> None:

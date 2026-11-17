@@ -41,6 +41,9 @@ STATE_LEDGER_PREFIX = "content/telegram/lordchrist/quiz"
 # 2026-10-29 manual canary. It is NOT an executable/current release source.
 ARCHIVED_QUIZ_DIR = QUIZ_DIR / "archived-old-queues"
 RETIRED_SERIES_IDS = frozenset({"lordchrist-quiz-series-01", "lordchrist-quiz-series-02"})
+# User-rejected copy must not be executed even though the original signed v1
+# release and its already-published receipts remain immutable historical facts.
+EDITORIAL_HOLD_SERIES_IDS = frozenset({"lordchrist-quiz-series-03"})
 RETIRED_ONE_OFF_IDS = frozenset({"lordchrist-quiz-city-of-palms", "lordchrist-quiz-book-without-gods-name"})
 
 
@@ -227,6 +230,8 @@ def validate_series(
     if require_release_authorized or require_execution_authorized:
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and series_id in EDITORIAL_HOLD_SERIES_IDS:
+        raise ValueError("quiz series is on editorial hold after owner rejection; execution forbidden")
     if require_execution_authorized and series_id in RETIRED_SERIES_IDS:
         raise ValueError("retired quiz series is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
