@@ -44,6 +44,8 @@ Historical `gospod_bog` vanity paths are not canonical output.
 6. Remove obsolete `shelf_id` URLs, old translation solicitations, personal-contact routes, and legacy payment details when the reviewed plan requires removal.
 7. Do not insert a donation/support link until the user selects and approves a service.
 8. Never insert The Legendary Poet links.
+9. New Lord God descriptions must use the agreed spelling `МакАртур` (and the inflected forms `МакАртура`, `МакАртуром`), never `Макартур`. The video's existing title is outside description-only scope and is not silently changed.
+10. Do not repeat the same registered project-homepage destination in a new description. `t.me/lordchrist` in a source/navigation block and the footer is a duplicate. `vk.com/the_lord_god_is_my_strength` and `vk.ru/the_lord_god_is_my_strength` are the same logical community destination; new output should use the latter. Distinct Telegram post URLs, VK post/video URLs and query-specific links are preserved rather than normalized or removed automatically.
 
 Recommended compact footer:
 

@@ -417,3 +417,55 @@ def test_lord_god_oversize_utf8_fails_before_oauth_or_provider(monkeypatch: pyte
             execute=False,
         )
     assert failure.value.exit_code == 2
+
+
+@pytest.mark.parametrize("wrong_name", ["Джон Макартур", "Джона Макартура", "макартур"])
+def test_new_lord_god_copy_requires_canonical_macarthur_spelling(wrong_name: str) -> None:
+    candidate = _DESCRIPTION + "\n\n" + wrong_name + " разбирает этот текст Писания."
+    assert "noncanonical_macarthur_spelling" in presentation_issues(candidate)
+    with pytest.raises(ValueError, match="noncanonical_macarthur_spelling"):
+        require_lord_god_youtube_presentation(_plan(candidate))
+
+
+@pytest.mark.parametrize("correct_name", ["Джон МакАртур", "Джона МакАртура"])
+def test_canonical_macarthur_spelling_is_not_rejected(correct_name: str) -> None:
+    candidate = _DESCRIPTION + "\n\n" + correct_name + " разбирает этот текст Писания."
+    assert presentation_issues(candidate) == []
+
+
+@pytest.mark.parametrize(
+    ("addition", "expected"),
+    [
+        ("https://t.me/lordchrist/", "duplicate_registered_telegram_link"),
+        ("https://gospod-bog.ru", "duplicate_registered_site_link"),
+        (
+            "https://vk.com/the_lord_god_is_my_strength\nhttps://vk.ru/the_lord_god_is_my_strength",
+            "duplicate_registered_vk_link",
+        ),
+        (
+            "https://vkvideo.ru/@the_lord_god_is_my_strength\nhttps://vkvideo.ru/@the_lord_god_is_my_strength/",
+            "duplicate_registered_vkvideo_link",
+        ),
+        (
+            "https://rutube.ru/channel/1876662/\nhttps://rutube.ru/channel/1876662",
+            "duplicate_registered_rutube_link",
+        ),
+    ],
+)
+def test_duplicate_exact_project_destinations_fail_before_provider(addition: str, expected: str) -> None:
+    candidate = _DESCRIPTION + "\n\n" + addition
+    assert expected in presentation_issues(candidate)
+    with pytest.raises(ValueError, match=expected):
+        require_lord_god_youtube_presentation(_plan(candidate))
+
+
+def test_distinct_telegram_posts_and_vk_source_urls_are_not_owner_footer_duplicates() -> None:
+    candidate = (
+        _DESCRIPTION
+        + "\n\nhttps://t.me/lordchrist/123\n"
+        + "https://t.me/lordchrist/456\n"
+        + "https://vk.com/the_lord_god_is_my_strength?w=wall-60805374_123\n"
+        + "https://vk.ru/the_lord_god_is_my_strength"
+    )
+    assert presentation_issues(candidate) == []
+    require_lord_god_youtube_presentation(_plan(candidate))
