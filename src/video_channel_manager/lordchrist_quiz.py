@@ -106,7 +106,9 @@ class LordchristQuizSeriesSpec(BaseModel):
     schema_version: Literal[1]
     series_id: str = Field(pattern=r"^lordchrist-quiz-series-\d{2}$")
     title: str = Field(min_length=3, max_length=120)
-    items: tuple[LordchristQuizSpec, ...] = Field(min_length=10, max_length=10)
+    # Series can contain a complete, independently reviewed eight-to-ten item batch.
+    # Never pad a batch with weak questions merely to satisfy a fixed count.
+    items: tuple[LordchristQuizSpec, ...] = Field(min_length=8, max_length=10)
 
     @model_validator(mode="after")
     def validate_series(self) -> "LordchristQuizSeriesSpec":
