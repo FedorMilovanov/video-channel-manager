@@ -850,7 +850,7 @@ def test_resumable_status_phase_error_overrides_stale_in_progress() -> None:
     assert "FILE_NOT_FOUND" in message
 
 
-@pytest.mark.parametrize
+@pytest.mark.parametrize(
     ("status_code", "human_status"),
     [
         ("EXPIRED", "Finished: Media has been uploaded and it is ready to be published."),
