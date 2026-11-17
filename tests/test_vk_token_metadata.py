@@ -100,6 +100,30 @@ class _PermissionClient:
         return _FULL_MASK
 
 
+def test_token_capabilities_syncs_equivalent_alias_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    store = VkTokenStore(tmp_path)
+    stale = VkAccessToken(access_token="shared", scopes=["video"], permission_mask=16)
+    store.save_token("safe-first", stale.model_copy(deep=True))
+    store.save_token("safe-second", stale.model_copy(deep=True))
+    monkeypatch.setattr(vk_cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path, vk_api_version="5.199"))
+    monkeypatch.setattr(vk_cli, "VkApiClient", _PermissionClient)
+
+    result = runner.invoke(
+        vk_app,
+        ["token-capabilities", "--account", "safe-second", "--sync-local"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Provider writes: 0" in result.output
+    for alias in ("safe-first", "safe-second"):
+        token = store.load_token(alias)
+        assert token.permission_mask == _FULL_MASK
+        assert token.scopes == ["video", "wall", "groups"]
+
+
 class _LoginClient(_PermissionClient):
     def get_current_user(self) -> VkUserIdentity:
         return VkUserIdentity(user_id=42, display_name="Test User")
