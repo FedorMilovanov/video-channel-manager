@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import uuid
@@ -29,7 +30,11 @@ from video_channel_manager.platforms.youtube import (
     YouTubeInventoryService,
     YouTubeWriteError,
 )
-from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
+from video_channel_manager.platforms.youtube.lord_god_presentation import (
+    presentation_issues,
+    require_lord_god_youtube_presentation,
+)
+from video_channel_manager.platforms.youtube.lord_god_source_preservation import source_preservation_issues
 from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
@@ -610,6 +615,219 @@ def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         raise ValueError(f"YouTube recovery evidence at {path} is not a JSON object.")
     return value
+
+
+@youtube_app.command("apply-localization-fix")
+def apply_localization_fix(
+    plan: Annotated[Path, typer.Argument(help="Frozen one-video non-default-language correction JSON")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    backup_output: Annotated[Path | None, typer.Option("--backup-output")] = None,
+    result_output: Annotated[Path | None, typer.Option("--result-output")] = None,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Guard a single non-default localized description; never replay or auto-rollback."""
+    prepare_windows_youtube_console()
+
+    def sha(value: str) -> str:
+        return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    try:
+        payload = json.loads(plan.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Expected localization plan object.")
+        if (
+            payload.get("schema_name") != "video-manager.youtube-localization-fix-plan"
+            or payload.get("schema_version") != 1
+        ):
+            raise ValueError("Unsupported localization-fix plan schema.")
+        if payload.get("project_key") != "lord-god-strength":
+            raise ValueError("Incorrect project identity.")
+        if payload.get("channel_id") != LORD_GOD_OWNER_CHANNEL or confirm_channel != LORD_GOD_OWNER_CHANNEL:
+            raise ValueError("Exact Lord God channel confirmation required.")
+        video_id = payload["video_id"]
+        language = payload["language"]
+        expected_title = payload["expected_title"]
+        before_primary = payload["expected_primary_description"]
+        expected_locales = payload["expected_localizations"]
+        before_locale = payload["expected_localized_description"]
+        after_locale = payload["after_description"]
+        expected_snippet = payload["expected_snippet_fields"]
+        expected_privacy = payload["expected_privacy"]
+        expected_duration = payload["expected_duration"]
+        if not all(
+            isinstance(v, str) and v
+            for v in (
+                video_id,
+                language,
+                expected_title,
+                before_primary,
+                before_locale,
+                after_locale,
+                expected_privacy,
+                expected_duration,
+            )
+        ):
+            raise ValueError("Incomplete localization plan.")
+        if not isinstance(expected_snippet, dict) or set(expected_snippet) != {
+            "title",
+            "categoryId",
+            "tags",
+            "defaultLanguage",
+            "defaultAudioLanguage",
+        }:
+            raise ValueError("Incomplete expected snippet fields.")
+        if expected_snippet["title"] != expected_title or language == expected_snippet["defaultLanguage"]:
+            raise ValueError("Only an existing non-default locale may be corrected.")
+        if not isinstance(expected_locales, dict) or language not in expected_locales:
+            raise ValueError("Missing frozen localization map.")
+        if not all(
+            isinstance(k, str)
+            and k
+            and isinstance(v, dict)
+            and set(v) == {"title", "description"}
+            and isinstance(v["title"], str)
+            and v["title"]
+            and isinstance(v["description"], str)
+            for k, v in expected_locales.items()
+        ):
+            raise ValueError("Invalid frozen localization map.")
+        if before_locale != expected_locales[language]["description"]:
+            raise ValueError("Inconsistent target locale.")
+        if (
+            sha(before_primary) != payload.get("expected_primary_sha256")
+            or sha(before_locale) != payload.get("before_sha256")
+            or sha(after_locale) != payload.get("after_sha256")
+        ):
+            raise ValueError("Plan text SHA-256 mismatch.")
+        if len(after_locale.encode("utf-8")) > 5000:
+            raise ValueError("Localized description over 5,000 UTF-8 bytes.")
+        if source_preservation_issues(before_locale, after_locale) or presentation_issues(after_locale):
+            raise ValueError("Localized editorial/source-preservation gate failed.")
+        if execute and payload.get("provider_mutation_authorized") is not True:
+            raise ValueError("This frozen plan has no explicit provider-write authorization.")
+        if expected_locales.get(expected_snippet["defaultLanguage"], {}).get("description") != before_primary:
+            raise ValueError("Default-language locale differs from primary text; cannot safely PUT.")
+        store, config, writer = _writer_components(account, client_secret)
+        settings = get_settings()
+    except (OSError, KeyError, TypeError, ValueError, AccountNotFoundError) as exc:
+        console.print(f"[red]Localization plan rejected; no provider write:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    lock_path = settings.data_dir / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+    lock = (
+        local_youtube_write_lock(lock_path, account=account, channel_id=confirm_channel) if execute else nullcontext()
+    )
+    try:
+        with lock:
+            try:
+                api = YouTubeApiClient(client_config=config, token_store=store, account_alias=account)
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.remote_id != confirm_channel:
+                    raise ValueError("OAuth owner-channel proof failed.")
+                current = writer.read_description(video_id)
+                sn = current.raw.get("snippet") or {}
+                protected = ("title", "categoryId", "tags", "defaultLanguage", "defaultAudioLanguage")
+                conditions = {
+                    "owner": current.channel_id == confirm_channel,
+                    "title": current.title == expected_title,
+                    "primary_description": current.description == before_primary,
+                    "snippet_metadata": {k: sn.get(k) for k in protected} == expected_snippet,
+                    "privacy": (current.raw.get("status") or {}).get("privacyStatus") == expected_privacy,
+                    "duration": (current.raw.get("contentDetails") or {}).get("duration") == expected_duration,
+                    "localized_map": current.raw.get("localizations") == expected_locales,
+                    "language": sn.get("defaultLanguage") != language and bool(sn.get("defaultAudioLanguage")),
+                }
+                if not all(conditions.values()):
+                    raise ValueError(
+                        f"Live localization preflight drift: {[k for k, v in conditions.items() if not v]}"
+                    )
+            except (ValueError, YouTubeWriteError, YouTubeApiError) as exc:
+                console.print(f"[red]Localization preflight failed, no PUT:[/red] {exc}")
+                raise typer.Exit(code=2) from exc
+            if before_locale == after_locale:
+                console.print("[green]Identical localized text, no provider action required.[/green]")
+                return
+            console.print(f"[green]Localization preflight passed.[/green] {video_id} | {language} | {confirm_channel}")
+            if not execute:
+                console.print("Dry-run only. An explicit --execute and fresh owner check are required.")
+                return
+            try:
+                if YOUTUBE_FORCE_SSL_SCOPE not in store.load_token(account).scopes:
+                    raise ValueError("OAuth write scope not granted.")
+                if backup_output is None or result_output is None:
+                    raise ValueError("Explicit separate --backup-output and --result-output required.")
+                reserve_youtube_copy_journals(plan_path=plan, backup_output=backup_output, result_output=result_output)
+                before_record = {
+                    "schema_name": "video-manager.youtube-localization-before",
+                    "video_id": video_id,
+                    "channel_id": confirm_channel,
+                    "locale": language,
+                    "source_plan": str(plan),
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "snapshot": current.raw,
+                }
+                _write_json(backup_output, before_record)
+                record = {
+                    "schema_name": "video-manager.youtube-localization-result",
+                    "schema_version": 1,
+                    "source_plan": str(plan),
+                    "backup": str(backup_output),
+                    "video_id": video_id,
+                    "channel_id": confirm_channel,
+                    "locale": language,
+                    "started_at": datetime.now(UTC).isoformat(),
+                    "status": "pending_reconciliation",
+                    "provider_dispatch": "may_exist",
+                    "before_sha256": sha(before_locale),
+                    "after_sha256": sha(after_locale),
+                }
+                _write_json(result_output, record)
+            except (OSError, ValueError) as exc:
+                console.print(f"[red]Localization output safety failed; no PUT:[/red] {exc}")
+                raise typer.Exit(code=2) from exc
+            try:
+                writer.replace_localized_description(
+                    video_id=video_id,
+                    expected_channel_id=confirm_channel,
+                    expected_title=expected_title,
+                    expected_primary_description=before_primary,
+                    expected_snippet_fields=expected_snippet,
+                    expected_privacy=expected_privacy,
+                    expected_duration=expected_duration,
+                    expected_localizations=expected_locales,
+                    language=language,
+                    expected_localized_description=before_locale,
+                    new_description=after_locale,
+                )
+                independent = writer.read_description(video_id)
+                new_map = dict(expected_locales)
+                new_map[language] = {**expected_locales[language], "description": after_locale}
+                if (
+                    independent.channel_id != confirm_channel
+                    or independent.description != before_primary
+                    or independent.raw.get("localizations") != new_map
+                    or (independent.raw.get("status") or {}).get("privacyStatus") != expected_privacy
+                    or {k: (independent.raw.get("snippet") or {}).get(k) for k in protected} != expected_snippet
+                ):
+                    raise YouTubeWriteError("Independent localized postflight mismatch; no replay.")
+                record["status"] = "completed"
+                record["provider_dispatch"] = "verified"
+                record["verified_at"] = datetime.now(UTC).isoformat()
+                record["verified_locale_sha256"] = sha(independent.raw["localizations"][language]["description"])
+                _write_json(result_output, record)
+                console.print(f"[green]Localization updated and independently verified:[/green] {video_id} {language}")
+            except BaseException as exc:
+                record["error"] = f"{type(exc).__name__}: {exc}"
+                _write_json(result_output, record)
+                console.print(
+                    f"[red]Localization outcome requires read-only reconciliation; do not replay:[/red] {exc}"
+                )
+                raise typer.Exit(code=2) from exc
+    except TimeoutError as exc:
+        console.print(f"[red]YouTube writer lock is busy; nothing dispatched:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("reconcile-copy-fixes")

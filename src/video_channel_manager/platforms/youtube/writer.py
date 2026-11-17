@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import random
 import json
@@ -340,6 +341,106 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             raise YouTubeWriteError(
                 f"Postflight metadata drift after updating description for {current.video_id}: "
                 f"{', '.join(drift)}. Reconcile the video before another write."
+            )
+        return verified
+
+    def replace_localized_description(
+        self,
+        *,
+        video_id: str,
+        expected_channel_id: str,
+        expected_title: str,
+        expected_primary_description: str,
+        expected_snippet_fields: dict[str, Any],
+        expected_privacy: str,
+        expected_duration: str,
+        expected_localizations: dict[str, dict[str, str]],
+        language: str,
+        expected_localized_description: str,
+        new_description: str,
+    ) -> VideoDescriptionSnapshot:
+        """Update exactly one non-default locale; preserve all others in one official PUT.
+
+        This never updates the snippet/status parts. Ambiguous PUT failures are not
+        retried or rolled back; reconcile with an independent owner GET instead.
+        """
+        current = self.read_description(video_id)
+        sn = _dict_field(current.raw, "snippet")
+        if current.channel_id != expected_channel_id or current.title != expected_title:
+            raise YouTubeRevisionConflictError(f"Owner/title mismatch for {video_id}; no PUT sent.")
+        if current.description != expected_primary_description:
+            raise YouTubeRevisionConflictError(f"Primary description changed for {video_id}; no PUT sent.")
+        protected_fields = ("title", "categoryId", "tags", "defaultLanguage", "defaultAudioLanguage")
+        if {k: sn.get(k) for k in protected_fields} != expected_snippet_fields:
+            raise YouTubeRevisionConflictError(f"Snippet metadata changed for {video_id}; no PUT sent.")
+        if _dict_field(current.raw, "status").get("privacyStatus") != expected_privacy:
+            raise YouTubeRevisionConflictError(f"Privacy changed for {video_id}; no PUT sent.")
+        if _dict_field(current.raw, "contentDetails").get("duration") != expected_duration:
+            raise YouTubeRevisionConflictError(f"Duration changed for {video_id}; no PUT sent.")
+        if not isinstance(language, str) or not language or language == sn.get("defaultLanguage"):
+            raise YouTubeRevisionConflictError(f"Expected non-default locale for {video_id}; no PUT sent.")
+        if not sn.get("defaultLanguage") or not sn.get("defaultAudioLanguage"):
+            raise YouTubeRevisionConflictError(f"Incomplete language metadata for {video_id}; no PUT sent.")
+        live_locales = current.raw.get("localizations")
+        if not isinstance(live_locales, dict) or live_locales != expected_localizations:
+            raise YouTubeRevisionConflictError(f"Localized metadata changed for {video_id}; no PUT sent.")
+        if language not in live_locales:
+            raise YouTubeRevisionConflictError(f"Locale {language} is missing for {video_id}; no PUT sent.")
+        for key, locale in live_locales.items():
+            if (
+                not isinstance(key, str)
+                or not key
+                or not isinstance(locale, dict)
+                or not isinstance(locale.get("title"), str)
+                or not locale["title"]
+                or not isinstance(locale.get("description"), str)
+            ):
+                raise YouTubeWriteError(f"Incomplete locale data for {video_id}; no PUT sent.")
+        if live_locales[language]["description"] != expected_localized_description:
+            raise YouTubeRevisionConflictError(f"Localized description changed for {video_id}; no PUT sent.")
+        if (
+            not isinstance(new_description, str)
+            or not new_description.strip()
+            or len(new_description.encode("utf-8")) > 5000
+        ):
+            raise YouTubeWriteError(f"Invalid localized description for {video_id}; no PUT sent.")
+
+        replacement = copy.deepcopy(live_locales)
+        replacement[language]["description"] = new_description
+        if replacement == live_locales:
+            return current
+
+        self._request(
+            "PUT",
+            "videos",
+            params={"part": "localizations"},
+            json_body={"id": video_id, "localizations": replacement},
+            require_write=True,
+        )
+        verified = self.read_description(video_id)
+        expected_raw = copy.deepcopy(current.raw)
+        expected_raw["localizations"] = replacement
+        expected = VideoDescriptionSnapshot(
+            video_id=current.video_id,
+            channel_id=current.channel_id,
+            title=current.title,
+            description=current.description,
+            revision=current.revision,
+            raw=expected_raw,
+        )
+        drift = _postwrite_metadata_drift(expected, verified, current.description)
+        if verified.description != current.description:
+            drift.append("snippet.description")
+        if _dict_field(verified.raw, "localizations") != replacement:
+            drift.append("localizations.exact_map")
+        if _dict_field(current.raw, "contentDetails").get("duration") != _dict_field(
+            verified.raw, "contentDetails"
+        ).get("duration"):
+            drift.append("contentDetails.duration")
+        if drift:
+            raise YouTubeWriteError(
+                f"Localized postflight drift for {video_id}: {', '.join(sorted(set(drift)))}. "
+                "Reconcile by GET; do not replay the PUT."
             )
         return verified
 
