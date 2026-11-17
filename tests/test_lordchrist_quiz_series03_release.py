@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 from video_channel_manager.lordchrist_quiz import (
     build_poll_description,
     build_series_candidate,
@@ -93,7 +95,10 @@ def test_series03_runtime_exact_sha_profile_and_bot_target_binding() -> None:
         x.model_dump(mode="json") == y.model_dump(mode="json")
         for x, y in zip(actual.items, expected.items, strict=True)
     )
-    assert validate_series(SERIES, require_execution_authorized=True)["release_authorized"] is True
+    # The immutable v1 approval remains true as history, but active execution permission is withdrawn.
+    assert validate_series(SERIES, require_release_authorized=True)["release_authorized"] is True
+    with pytest.raises(ValueError, match="editorial hold after owner rejection"):
+        validate_series(SERIES, require_execution_authorized=True)
 
 
 def test_old_quiz_workflows_are_absent_from_all_executable_paths() -> None:
