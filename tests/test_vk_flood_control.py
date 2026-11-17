@@ -106,8 +106,12 @@ def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path:
 def test_credential_gate_reads_and_clears_legacy_alias_state(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     shared = VkAccessToken(access_token="shared", user_id=42)
-    store.save_token("default", shared)
-    store.save_token("legendary-poet", shared)
+    # Seed an offline historical fixture directly: production store mutations
+    # are forbidden, but legacy flood-state reconciliation remains testable.
+    for retired_alias in ("default", "legendary-poet"):
+        path = store.token_path(retired_alias)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(shared.model_dump_json(), encoding="utf-8")
 
     VkFloodControlGate(tmp_path, "legendary-poet").record("wall.get")
     credential_gate = VkCredentialFloodControl(store, "default")

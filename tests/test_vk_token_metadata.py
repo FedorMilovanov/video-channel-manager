@@ -226,7 +226,11 @@ def test_community_key_login_never_uses_quarantined_global_user_token(
     from pydantic import SecretStr
 
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken.from_text("quarantined-user-token"))
+    # Seed a synthetic retired credential as offline evidence, bypassing the
+    # production mutation API which now deliberately preserves this alias.
+    legacy_path = store.token_path("default")
+    legacy_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_path.write_text(VkAccessToken.from_text("quarantined-user-token").model_dump_json(), encoding="utf-8")
     monkeypatch.setattr(
         vk_cli,
         "get_settings",
