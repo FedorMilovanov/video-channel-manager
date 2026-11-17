@@ -27,7 +27,9 @@ def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
     import json
 
     candidate_directory = ROOT / "content/research"
-    data = json.loads((candidate_directory / "charnock-13-quotation-gap-candidate-20261117.json").read_text(encoding="utf-8"))
+    data = json.loads(
+        (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.json").read_text(encoding="utf-8")
+    )
     markdown = (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.md").read_text(encoding="utf-8")
     # Active canonical article remains byte-for-byte pinned to reviewed SHA.
     current = REVIEW.parent / "lordchrist-telegraph-charnock-13.json"
