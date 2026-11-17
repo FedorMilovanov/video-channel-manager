@@ -336,13 +336,13 @@ python .\scripts\recover_youtube_copy_apply.py `
 
 ## Token и read-only inventory
 
-Текущий video contour использует **user access token** с ожидаемыми `video` и `groups` permissions.
+**Исторический контур:** VK Video использовал user access token с правами `video` и `groups`, но его aliases `legendary-poet` и `default` сейчас **в карантине (issue #662)**. Нельзя выполнять `login`, `communities`, `scan`, `token-capabilities` или другие VK API-запросы с этим секретом; смена alias не является восстановлением. Действующий изолированный VK-браузер (при наличии авторизации) — отдельный маршрут: его не нужно заново логинить или создавать для каждого проекта. Подробнее: [карантин VK](docs/operations/vk-credential-quarantine.md) и [точные идентификаторы проектов](docs/operations/project-identity-registry.md).
 
 ```powershell
-video-manager vk login --account legendary-poet
+# Только локальный перечень известных записей — без VK API:
 video-manager vk accounts
-video-manager vk communities --account legendary-poet
-video-manager vk scan --account legendary-poet --community 235216998
+# Любая будущая VK API инвентаризация требует отдельно проверенного
+# НЕкарантинного ключа/профиля и точной привязки project/community/owner.
 ```
 
 Снимок включает полный `owner_id_video_id`, `type`, размеры, albums, system markers и memberships.
@@ -470,10 +470,9 @@ video-manager youtube login --account legendary-poet
 video-manager youtube accounts
 video-manager youtube channels --account legendary-poet
 video-manager youtube scan --account legendary-poet
-video-manager vk login --account legendary-poet
+# VK: только локальный инвентарь. Исторические aliases запрещены для API:
 video-manager vk accounts
-video-manager vk communities --account legendary-poet
-video-manager vk scan --account legendary-poet --community 235216998
+# API read/write: см. policy карантина VK и проверку нового разрешённого credential.
 video-manager compare audits youtube.json vk.json
 ```
 
