@@ -64,10 +64,17 @@ _RETIRED_CONTENT: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
-# A live audit found new descriptions with the historical spelling
-# "Макартур". The accepted project identity is "МакАртур" in prose too.
-_NONCANONICAL_MACARTHUR_RE = re.compile(r"(?<!\w)[Мм]акартур[а-яё]*(?!\w)")
+# An owner-API audit found the old spelling "Макартур" inside current copy.
+# Whole-word matching missed joined social hashtags such as #ДжонМакартур.
+# Inspect prose/hashtags, but never rewrite or reject immutable source URLs.
+_MACARTHUR_OCCURRENCE_RE = re.compile(r"макартур[а-яё]*", re.I)
 _PUBLIC_URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
+
+
+def _has_noncanonical_macarthur_spelling(description: str) -> bool:
+    """Check inflected and joined mentions; preserve original source URLs."""
+    prose = _PUBLIC_URL_RE.sub("", description)
+    return any(not match.group().startswith("МакАртур") for match in _MACARTHUR_OCCURRENCE_RE.finditer(prose))
 
 
 def _registered_project_destination(url: str) -> str | None:
@@ -143,7 +150,7 @@ def presentation_issues(description: str) -> list[str]:
     for code, pattern in _RETIRED_CONTENT:
         if pattern.search(description):
             issues.append(code)
-    if _NONCANONICAL_MACARTHUR_RE.search(description):
+    if _has_noncanonical_macarthur_spelling(description):
         issues.append("noncanonical_macarthur_spelling")
     issues.extend(_duplicate_owner_link_issues(description))
     return sorted(set(issues))
