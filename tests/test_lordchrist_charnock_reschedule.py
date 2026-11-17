@@ -446,8 +446,16 @@ def test_send_refuses_if_network_preflight_crosses_1400(monkeypatch, tmp_path):
     args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
     args.stage = "send"
     monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "test-only-token")
-    monkeypatch.setattr(m, "load_channel_profile", lambda *_: SimpleNamespace(bot_token_env="LORDCHRIST_TELEGRAM_BOT_TOKEN"))
-    monkeypatch.setattr(m, "load_target_binding", lambda *a, **k: SimpleNamespace(bot_id=8716602202, chat_id=CHAT))
+    monkeypatch.setattr(
+        m,
+        "load_channel_profile",
+        lambda *_: SimpleNamespace(bot_token_env="LORDCHRIST_TELEGRAM_BOT_TOKEN"),
+    )
+    monkeypatch.setattr(
+        m,
+        "load_target_binding",
+        lambda *a, **k: SimpleNamespace(bot_id=8716602202, chat_id=CHAT),
+    )
     monkeypatch.setattr(
         m, "render_channel_post", lambda *a, **k: SimpleNamespace(html_text="Reviewed", visible_char_count=92)
     )
