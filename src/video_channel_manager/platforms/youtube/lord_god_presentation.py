@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 from video_channel_manager.editorial.youtube_copy import (
     BOLD_SPAN_RE,
@@ -63,6 +64,44 @@ _RETIRED_CONTENT: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
+# A live audit found new descriptions with the historical spelling
+# "Макартур". The accepted project identity is "МакАртур" in prose too.
+_NONCANONICAL_MACARTHUR_RE = re.compile(r"(?<!\w)[Мм]акартур[а-яё]*(?!\w)")
+_PUBLIC_URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
+
+
+def _registered_project_destination(url: str) -> str | None:
+    """Only classify exact owner homepage routes, never source posts or queries."""
+    parsed = urlsplit(url.rstrip(".,;!?)]}»"))
+    if parsed.query or parsed.fragment or parsed.username or parsed.password:
+        return None
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    path = parsed.path.rstrip("/")
+    if host == "gospod-bog.ru" and not path:
+        return "site"
+    if host == "t.me" and path == "/lordchrist":
+        return "telegram"
+    if host in {"vk.com", "vk.ru"} and path == "/the_lord_god_is_my_strength":
+        return "vk"
+    if host == "vkvideo.ru" and path == "/@the_lord_god_is_my_strength":
+        return "vkvideo"
+    if host == "rutube.ru" and path == "/channel/1876662":
+        return "rutube"
+    return None
+
+
+def _duplicate_owner_link_issues(description: str) -> list[str]:
+    seen: set[str] = set()
+    duplicate: set[str] = set()
+    for match in _PUBLIC_URL_RE.finditer(description):
+        destination = _registered_project_destination(match.group())
+        if destination is None:
+            continue
+        if destination in seen:
+            duplicate.add(destination)
+        seen.add(destination)
+    return [f"duplicate_registered_{destination}_link" for destination in sorted(duplicate)]
+
 
 def presentation_issues(description: str) -> list[str]:
     """Return deterministic issue codes; never changes the source copy."""
@@ -104,6 +143,9 @@ def presentation_issues(description: str) -> list[str]:
     for code, pattern in _RETIRED_CONTENT:
         if pattern.search(description):
             issues.append(code)
+    if _NONCANONICAL_MACARTHUR_RE.search(description):
+        issues.append("noncanonical_macarthur_spelling")
+    issues.extend(_duplicate_owner_link_issues(description))
     return sorted(set(issues))
 
 
