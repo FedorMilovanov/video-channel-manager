@@ -12,6 +12,7 @@ from video_channel_manager.config import get_settings
 from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
 from video_channel_manager.local_media.artifact import load_media_artifact_manifest
 from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -148,8 +149,7 @@ class VkNativeVideoUploadAdapter:
             raise ValueError("VK video account alias cannot be blank")
         # Issue #662: reject the quarantined shared credential before reading
         # any account/token store or constructing a VK provider client.
-        if self.account_alias in {"legendary-poet", "default"}:
-            raise ValueError("VK native video account alias is quarantined; use a separately reviewed account")
+        reject_quarantined_legacy_alias(self.account_alias)
 
         settings = get_settings()
         self.store = VkTokenStore(settings.data_dir)
