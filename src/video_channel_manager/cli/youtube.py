@@ -623,6 +623,12 @@ def apply_localization_fix(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
     confirm_channel: Annotated[str, typer.Option("--confirm-channel")] = "",
     execute: Annotated[bool, typer.Option("--execute")] = False,
+    confirm_target: Annotated[
+        str, typer.Option("--confirm-target", help="Type exact VIDEO_ID@LOCALE for this one write")
+    ] = "",
+    confirm_after_sha256: Annotated[
+        str, typer.Option("--confirm-after-sha256", help="Type exact reviewed SHA of the proposed new locale")
+    ] = "",
     backup_output: Annotated[Path | None, typer.Option("--backup-output")] = None,
     result_output: Annotated[Path | None, typer.Option("--result-output")] = None,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
@@ -707,6 +713,11 @@ def apply_localization_fix(
             raise ValueError("Localized editorial/source-preservation gate failed.")
         if execute and payload.get("provider_mutation_authorized") is not True:
             raise ValueError("This frozen plan has no explicit provider-write authorization.")
+        if execute and (confirm_target != f"{video_id}@{language}" or confirm_after_sha256 != sha(after_locale)):
+            raise ValueError(
+                "Executing localization requires independent --confirm-target VIDEO_ID@LOCALE "
+                "and --confirm-after-sha256 matching the reviewed new text."
+            )
         if expected_locales.get(expected_snippet["defaultLanguage"], {}).get("description") != before_primary:
             raise ValueError("Default-language locale differs from primary text; cannot safely PUT.")
         store, config, writer = _writer_components(account, client_secret)
