@@ -39,7 +39,16 @@ vk_app = typer.Typer(
 )
 
 
+def _reject_quarantined_cli_account(account: str) -> None:
+    """Fail with a CLI-friendly error before settings or provider access."""
+    try:
+        reject_quarantined_legacy_alias(account)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--account") from exc
+
+
 def _components(account: str) -> tuple[VkTokenStore, VkApiClient]:
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     client = VkApiClient(
@@ -51,11 +60,10 @@ def _components(account: str) -> tuple[VkTokenStore, VkApiClient]:
 
 
 def _read_token_input(token_file: Path | None) -> VkAccessToken:
-    settings = get_settings()
+    # Do not implicitly reuse VK_ACCESS_TOKEN: it may be the retired legacy
+    # third-party OAuth credential. A new token must be explicit or prompted.
     if token_file is not None:
         return VkAccessToken.from_file(token_file)
-    if settings.vk_access_token is not None:
-        return VkAccessToken.from_text(settings.vk_access_token.get_secret_value())
     raw = typer.prompt(
         "Paste a VK user access token or the complete redirect URL",
         hide_input=True,
@@ -210,6 +218,7 @@ def token_capabilities(
 ) -> None:
     """Read the token's live VK application permission mask; optionally sync local metadata."""
 
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     try:
@@ -262,6 +271,7 @@ def community_key_login(
 
     if community <= 0:
         raise typer.BadParameter("community must be positive", param_hint="--community")
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     try:
@@ -313,6 +323,7 @@ def community_key_capabilities(
 
     if community <= 0:
         raise typer.BadParameter("community must be positive", param_hint="--community")
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     try:
@@ -396,6 +407,7 @@ def flood_reset(
             f"--confirm-code {VK_FLOOD_CONTROL_CODE} is required; no provider request will be made",
             param_hint="--confirm-code",
         )
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     alias = store.validate_alias(account)
@@ -427,6 +439,7 @@ def community_probe(
 
     if community <= 0:
         raise typer.BadParameter("community must be positive", param_hint="--community")
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     alias = store.validate_alias(account)
@@ -458,6 +471,7 @@ def wall_probe(
 
     if community <= 0:
         raise typer.BadParameter("community must be positive", param_hint="--community")
+    _reject_quarantined_cli_account(account)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     alias = store.validate_alias(account)
