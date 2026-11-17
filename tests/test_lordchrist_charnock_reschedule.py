@@ -440,3 +440,39 @@ def test_post_window_lease_still_blocks_prepare_and_send(monkeypatch, tmp_path):
         m._select_due(args, ledger, now=datetime(2026, 11, 10, 11, 59, tzinfo=m.MOSCOW))
     with pytest.raises(RuntimeError, match="due today"):
         m._select_due(args, ledger, now=datetime(2026, 11, 11, 14, 2, tzinfo=m.MOSCOW))
+
+
+def test_send_refuses_if_network_preflight_crosses_1400(monkeypatch, tmp_path):
+    args, _, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
+    args.stage = "send"
+    monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "test-only-token")
+    monkeypatch.setattr(m, "load_channel_profile", lambda *_: SimpleNamespace(bot_token_env="LORDCHRIST_TELEGRAM_BOT_TOKEN"))
+    monkeypatch.setattr(m, "load_target_binding", lambda *a, **k: SimpleNamespace(bot_id=8716602202, chat_id=CHAT))
+    monkeypatch.setattr(
+        m, "render_channel_post", lambda *a, **k: SimpleNamespace(html_text="Reviewed", visible_char_count=92)
+    )
+    clock = [_at_noon()]
+
+    class AdvanceClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock[0]
+
+    monkeypatch.setattr(m, "datetime", AdvanceClock)
+
+    class SlowReads:
+        def read_json(self, url, body):
+            if url.endswith("/getMe"):
+                return {"ok": True, "result": {"id": 8716602202, "username": "preaching_mp3_bot"}}
+            if url.endswith("/getChat"):
+                clock[0] = datetime(2026, 11, 10, 14, 0, tzinfo=m.MOSCOW)
+                return {"ok": True, "result": {"id": CHAT, "username": "lordchrist", "type": "channel"}}
+            raise AssertionError(url)
+
+        def post_json(self, *_):
+            pytest.fail("Provider POST must never start after the live Moscow window")
+
+    monkeypatch.setattr(m, "HttpxLiveTransport", SlowReads)
+    with pytest.raises(RuntimeError, match="send window expired before provider POST"):
+        m.execute(args)
+    assert original["scheduled_reissue"]["state"] == "claimed"
