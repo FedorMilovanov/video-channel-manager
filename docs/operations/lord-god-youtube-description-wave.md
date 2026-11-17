@@ -85,6 +85,23 @@ for that consent. Still require a unique immutable backup/result, matching
 live title, owner channel, primary description and all frozen language keys,
 and delayed independent locale readback. An ambiguous PUT is never replayed.
 
+**Independent Russian-description write intent (17 Nov 2026, issue #795):**
+For the normal `youtube apply-copy-fixes` path, when the target is the
+`lord-god-strength` YouTube channel, `--execute` must additionally include
+both `--confirm-target <exact-video-id>` and
+`--confirm-after-sha256 sha256:<64-digit-digest>`. Confirm the **new**
+description's UTF-8 SHA and video ID outside the plan itself; a plan author
+cannot claim sufficient permission by adding a Boolean to its own JSON.
+The CLI rejects a batch, mixed project/channel identities, or any mismatch
+**before credentials, official API requests and write journals**. This does
+not change the CLI contract of other registered projects. Read-only dry-run
+does not require these flags; historical reconciliation must stay read-only.
+As with localization, these CLI flags are an error-prevention gate, **not**
+proof of fresh human authorization. Do not auto-populate them from a
+generated plan to bypass editorial consent. Require explicit current owner
+permission, source/rights verification, independent live preflight and
+one-video immutable journal/receipt before a real YouTube PUT.
+
 **UTF-8 limit (12 Nov 2026):** YouTube Data API `videos.update` limits
 `snippet.description` to **5000 UTF-8 bytes**, not 5000 Unicode characters.
 `presentation_issues()` rejects an after-description that exceeds
