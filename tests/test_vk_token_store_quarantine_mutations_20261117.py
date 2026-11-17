@@ -28,9 +28,7 @@ def test_cannot_create_retired_token_under_legacy_alias(tmp_path: Path, alias: s
 
 
 @pytest.mark.parametrize("alias", ["default", "DEFAULT", " legendary-poet ", "LeGeNdArY-PoEt"])
-def test_retired_alias_cannot_be_deleted_or_overwritten(
-    tmp_path: Path, alias: str
-) -> None:
+def test_retired_alias_cannot_be_deleted_or_overwritten(tmp_path: Path, alias: str) -> None:
     store = VkTokenStore(tmp_path)
     # Seed an offline historical evidence fixture *without* save_token.
     # The store must retain readable evidence but reject any write/delete.
