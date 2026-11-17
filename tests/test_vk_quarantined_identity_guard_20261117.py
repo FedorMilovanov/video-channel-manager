@@ -11,10 +11,15 @@ import httpx
 import pytest
 
 from video_channel_manager.platforms.vk.client import VkApiClient
+from video_channel_manager.platforms.vk.milovi_school_wall_publisher import (
+    COMMUNITY_ACCOUNT,
+    MiloviCommunitySchoolWriter,
+)
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkVideoWriter
+from video_channel_manager.wave_engine.vk_lord_god_wall_provider import LordGodWallWriter
 
 
 def _seed_legacy(
@@ -124,3 +129,63 @@ def test_offline_forensic_load_remains_separate_from_provider_guard(tmp_path: Pa
     assert store.load_token(alias).access_token == "retired-synthetic-secret"
     with pytest.raises(ValueError, match="quarantined"):
         store.load_token_for_provider(alias)
+
+
+@pytest.mark.parametrize(
+    "factory,alias,operation",
+    [
+        (
+            LordGodWallWriter,
+            "vk-lord-god-community-key",
+            lambda writer: writer.assert_token_scopes("wall"),
+        ),
+        (
+            LordGodWallWriter,
+            "vk-lord-god-community-key",
+            lambda writer: writer._token_value(),
+        ),
+        (
+            MiloviCommunitySchoolWriter,
+            COMMUNITY_ACCOUNT,
+            lambda writer: writer.assert_token_scopes("wall"),
+        ),
+        (
+            MiloviCommunitySchoolWriter,
+            COMMUNITY_ACCOUNT,
+            lambda writer: writer._token_value(),
+        ),
+    ],
+)
+def test_specialized_community_writers_reject_renamed_retired_secret(
+    tmp_path: Path, factory: type, alias: str, operation
+) -> None:
+    store = VkTokenStore(tmp_path)
+    _seed_legacy(store, value="synthetic-retired-community-secret")
+    # A manually copied community key bypasses import but must not bypass send.
+    candidate = VkAccessToken(
+        access_token="synthetic-retired-community-secret",
+        token_type="community",
+        scopes=["wall"],
+    )
+    store.token_path(alias).write_text(candidate.model_dump_json(), encoding="utf-8")
+    calls = 0
+
+    def forbidden_request(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        pytest.fail("No provider HTTP before identity verification")
+
+    http_client = httpx.Client(transport=httpx.MockTransport(forbidden_request))
+    writer = factory(
+        token_store=store,
+        account_alias=alias,
+        http_client=http_client,
+        api_base_url="https://example.test/method",
+    )
+    try:
+        with pytest.raises(ValueError, match="identity is quarantined"):
+            operation(writer)
+        assert calls == 0
+    finally:
+        writer.close()
+        http_client.close()
