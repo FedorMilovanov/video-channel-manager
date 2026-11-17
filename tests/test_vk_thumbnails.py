@@ -15,10 +15,10 @@ from video_channel_manager.platforms.vk.writer import VkWriteError
 
 def _writer(tmp_path: Path, transport: httpx.MockTransport, *, max_attempts: int = 4) -> VkThumbnailWriter:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
+    store.save_token("synthetic-vk-thumbnail", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return VkThumbnailWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumbnail",
         http_client=httpx.Client(transport=transport),
         api_base_url="https://api.example/method",
         max_attempts=max_attempts,
