@@ -579,7 +579,7 @@
       "ordinal": 13,
       "scheduled_on_moscow": "2026-12-04",
       "is_canary": false,
-      "status": "ready",
+      "status": "planned",
       "article": {
         "path": "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-13.json",
         "git_blob_sha": "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
