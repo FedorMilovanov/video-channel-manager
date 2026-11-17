@@ -11,7 +11,15 @@ REGISTRY_PATH = ROOT / "scripts" / "operator" / "powershell-wrappers.json"
 SUPPORTED_PATH = "scripts/operator/Invoke-VideoManager.ps1"
 DELEGATING_SUPPORTED_PATH = "scripts/Invoke-VkPostponedTextEdit.ps1"
 PROVIDER_INERT_PATH = "scripts/operator/Invoke-InstagramDailyQueue.ps1"
-STATUSES = {"supported", "delegating_supported", "provider_inert", "compatibility_only", "retired", "scoped_release"}
+STATUSES = {
+    "supported",
+    "delegating_supported",
+    "provider_inert",
+    "compatibility_only",
+    "retired",
+    "scoped_release",
+    "owner_dispatch_only",
+}
 RETIRED_GUARD = "Stop-VcmRetiredWrapper"
 RISK_MARKERS = (
     "apply_vk_editorial_cleanup_plan.py",
@@ -200,3 +208,36 @@ def test_scoped_milovi_https_release_is_exactly_one_owner_authorized_slot() -> N
     assert "Invoke-RestMethod -Method POST" not in (runner + canary)
     assert "Register-ScheduledTask" not in (runner + canary)
     assert "Start-ScheduledTask" not in (runner + canary)
+
+
+def test_charnock_backup_is_exactly_two_owner_scoped_wrappers() -> None:
+    """Independent Windows clock is not an unregistered general provider writer."""
+    items = {item["path"]: item for item in _registry()["wrappers"] if item["status"] == "owner_dispatch_only"}
+    dispatcher = "scripts/lordchrist_charnock_external_dispatch.ps1"
+    installer = "scripts/install_lordchrist_charnock_windows_backup.ps1"
+    assert set(items) == {dispatcher, installer}
+    assert all(item["project_key"] == "lord-god-strength" for item in items.values())
+    assert all(item["provider_write_capable"] is True for item in items.values())
+
+    script = _code_without_comments(ROOT / dispatcher)
+    assert "FedorMilovanov" in script
+    assert "approvedManifestSha256" in script
+    assert "approvedWorkflowBlob" in script
+    assert "if ($Dispatch -and $ProbeAt)" in script
+    assert "if (-not $Dispatch)" in script
+    assert "ALREADY_CLAIMED" in script
+    assert "Invoke-CheckedGh -Arguments @('workflow','run'" in script
+    assert "sendMessage" not in script
+    assert "editPage" not in script
+    assert "GH_TOKEN" not in script
+
+    setup = _code_without_comments(ROOT / installer)
+    assert "Russian Standard Time" in setup
+    assert "if (-not $Install)" in setup
+    assert "New-ScheduledTaskTrigger -Once" in setup
+    assert "Register-ScheduledTask" in setup
+    assert "New-ScheduledTaskPrincipal" in setup
+    assert "-LogonType Interactive" in setup
+    assert "Copy-Item" in setup
+    assert "-ProbeAt $probe" in setup
+    assert "Start-ScheduledTask" not in setup
