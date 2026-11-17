@@ -45,7 +45,8 @@ of the owner's own app. The reason for the quarantine is the decision, not the e
 - `vk login --force` as a recovery attempt: the validation flow performs provider reads before it
   replaces the stored token;
 - alias rotation, token rotation, IP change or an alternate writer to evade flood control;
-- restoring or re-running any local launcher that resumes this credential.
+- restoring or re-running any local launcher that resumes this credential;
+- overwriting, recreating or deleting the retired token files via `VkTokenStore.save_token` / `delete_token`, including alias case variants. Offline read-only forensic inspection stays available; it is **not** permission to use the token with a VK client. These two store mutation guards do not identify an identical raw token saved under an unrelated alias.
 
 Local provider-inert blockers (`.cmd` / `.ps1` launchers and a turnkey script) were created on the
 operator's Windows desktop and their digests were recorded in issue #662. They are **not** tracked in
