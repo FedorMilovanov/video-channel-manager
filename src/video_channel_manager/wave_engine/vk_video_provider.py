@@ -146,6 +146,10 @@ class VkNativeVideoUploadAdapter:
         self.account_alias = account_alias.strip()
         if not self.account_alias:
             raise ValueError("VK video account alias cannot be blank")
+        # Issue #662: reject the quarantined shared credential before reading
+        # any account/token store or constructing a VK provider client.
+        if self.account_alias in {"legendary-poet", "default"}:
+            raise ValueError("VK native video account alias is quarantined; use a separately reviewed account")
 
         settings = get_settings()
         self.store = VkTokenStore(settings.data_dir)
