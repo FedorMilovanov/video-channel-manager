@@ -14,7 +14,7 @@ from video_channel_manager.platforms.vk.store import VkTokenStore
 
 def _client(tmp_path: Path) -> VkApiClient:
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-client", VkAccessToken(access_token="access", user_id=42))
 
     def handler(request: httpx.Request) -> httpx.Response:
         method = request.url.path.rsplit("/", 1)[-1]
@@ -121,7 +121,7 @@ def _client(tmp_path: Path) -> VkApiClient:
     http_client = httpx.Client(transport=httpx.MockTransport(handler))
     return VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-client",
         http_client=http_client,
         api_base_url="https://example.test/method",
     )
@@ -145,7 +145,7 @@ def test_complete_vk_inventory_package(tmp_path: Path) -> None:
 
 def test_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="super-secret"))
+    store.save_token("synthetic-vk-client", VkAccessToken(access_token="super-secret"))
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -161,7 +161,7 @@ def test_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
 
     client = VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-client",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         max_attempts=1,
@@ -177,7 +177,7 @@ def test_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import RetryPolicy
 
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-client", VkAccessToken(access_token="access", user_id=42))
     calls = 0
     sleeps: list[float] = []
 
@@ -193,7 +193,7 @@ def test_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
 
     client = VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-client",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         retry_policy=RetryPolicy(max_attempts=2, base_delay_seconds=0.15, jitter_seconds=0.0),
@@ -209,10 +209,10 @@ def test_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import HttpFailureKind
 
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-client", VkAccessToken(access_token="access", user_id=42))
     client = VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-client",
         http_client=httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, text="nope"))),
         api_base_url="https://example.test/method",
         max_attempts=1,
@@ -264,10 +264,10 @@ def test_registry_bound_inventory_bypasses_group_discovery() -> None:
 
 def _pagination_client(tmp_path: Path, handler) -> VkApiClient:
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-client", VkAccessToken(access_token="access", user_id=42))
     return VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-client",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         max_attempts=1,
