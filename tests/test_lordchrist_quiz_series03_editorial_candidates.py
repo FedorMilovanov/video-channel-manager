@@ -49,10 +49,7 @@ def test_pending_rewrites_are_source_bound_and_never_publication_approval() -> N
         assert all(0 < len(option) <= 100 for option in candidate["options"])
         assert 0 <= candidate["correct_option_index"] <= 3
         assert 100 <= len(candidate["explanation"]) <= 200
-        assert any(
-            x in candidate["explanation"]
-            for x in ("Евр.", "1 Пар.", "Ин.", "Чис.", "Мк.", "Иак.", "Рим.")
-        )
+        assert any(x in candidate["explanation"] for x in ("Евр.", "1 Пар.", "Ин.", "Чис.", "Мк.", "Иак.", "Рим."))
         assert candidate["editorial_metrics"] == {
             "question_characters": len(candidate["question"]),
             "explanation_characters": len(candidate["explanation"]),
