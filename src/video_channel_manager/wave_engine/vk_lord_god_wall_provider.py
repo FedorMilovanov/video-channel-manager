@@ -208,7 +208,7 @@ class LordGodWallWriter(VkWallWriter):
     """
 
     def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
-        token = self.token_store.load_token(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.token_type != "community":
             return super().assert_token_scopes(*required_scopes)
         if token.is_expired():
@@ -229,7 +229,7 @@ class LordGodWallWriter(VkWallWriter):
         return token
 
     def _token_value(self) -> str:
-        token = self.token_store.load_token(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.token_type != "community":
             return super()._token_value()
         self.assert_token_scopes()
