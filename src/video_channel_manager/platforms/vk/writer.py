@@ -134,7 +134,7 @@ class VkVideoWriter(HttpClientOwner):
 
     def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
         reject_quarantined_legacy_alias(self.account_alias)
-        token = self.token_store.load_token(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.is_expired():
             raise VkWriteError(
                 "VK access token is expired. Import a fresh user token with verified permissions.",
