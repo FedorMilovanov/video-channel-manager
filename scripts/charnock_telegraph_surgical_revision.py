@@ -250,13 +250,9 @@ def run_one(key: str, *, execute: bool, confirm: str | None, receipt_dir: Path |
     if edited.get("path") != path:
         raise UnsafeRevision("Provider effect UNCERTAIN: editPage changed path; do not retry")
     check = get_public_page(path)
-    if (
-        check.get("path") != path
-        or check.get("title") != before["title"]
-        or check.get("author_name") != before["author_name"]
-        or check.get("author_url") != before["author_url"]
-    ):
-        raise UnsafeRevision("Provider effect UNCERTAIN: metadata drift, do not retry")
+    for field in ("path", "url", "title", "author_name", "author_url", "image_url", "description"):
+        if field in before and check.get(field) != before[field]:
+            raise UnsafeRevision("Provider effect UNCERTAIN: metadata drift, do not retry")
     if check.get("content") != after["content"]:
         raise UnsafeRevision("Provider effect UNCERTAIN: full content mismatch, do not retry")
     result["effect"] = "VERIFIED_IN_PLACE"

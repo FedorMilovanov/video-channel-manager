@@ -233,3 +233,25 @@ def test_readback_mismatch_is_uncertain_and_does_not_retry(monkeypatch, tmp_path
     with pytest.raises(s.UnsafeRevision, match="UNCERTAIN"):
         s.run_one("03", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
     assert len(calls) == 1 and list(tmp_path.iterdir()) == []
+
+
+def test_public_cover_drift_after_post_is_uncertain(monkeypatch, tmp_path):
+    page = page03(monkeypatch)
+    after = s.prepare(page, "03")
+    changed = copy.deepcopy(after)
+    changed["image_url"] = "https://example.test/another-cover.jpg"
+    pages = [page, page, changed]
+    monkeypatch.setattr(s, "get_public_page", lambda _: pages.pop(0))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "secret")
+    monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
+    calls = []
+
+    def fake_post(*_):
+        calls.append(1)
+        return {"path": s.CONTRACTS["03"]["path"]}
+
+    monkeypatch.setattr(s, "post_form", fake_post)
+    with pytest.raises(s.UnsafeRevision, match="metadata drift"):
+        s.run_one("03", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
+    assert calls == [1]
+    assert list(tmp_path.iterdir()) == []
