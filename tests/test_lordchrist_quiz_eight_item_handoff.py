@@ -98,3 +98,19 @@ def test_future_release_cannot_be_signed_without_independent_exact_item_reviews(
     signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(ValueError, match="missing exact independent evidence"):
         quiz.require_future_series_editorial_signoff(series)
+
+    signoff_file.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        quiz.require_future_series_editorial_signoff(series)
+
+    signoff_file.write_text(
+        json.dumps({"series_id": series.series_id, "approval_state": "pending", "items": []}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="wrong series, state or item count"):
+        quiz.require_future_series_editorial_signoff(series)
+
+    fake_review_fixture["items"][0] = None
+    signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="item review must be an object"):
+        quiz.require_future_series_editorial_signoff(series)
