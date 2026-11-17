@@ -45,7 +45,13 @@ def _raw() -> dict[str, Any]:
     }
 
 
-def _writer(tmp_path: Path, handler: Any, *, write: bool = True) -> YouTubeDescriptionWriter:
+def _writer(
+    tmp_path: Path,
+    handler: Any,
+    *,
+    write: bool = True,
+    verification_delays: tuple[float, ...] = (),
+) -> YouTubeDescriptionWriter:
     store = TokenStore(tmp_path)
     store.save_token(
         "account",
@@ -62,7 +68,7 @@ def _writer(tmp_path: Path, handler: Any, *, write: bool = True) -> YouTubeDescr
         account_alias="account",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://youtube.test",
-        verification_delays=(),
+        verification_delays=verification_delays,
     )
 
 
@@ -442,3 +448,97 @@ def test_localization_cli_requires_explicit_write_authority(monkeypatch: pytest.
     assert failure.value.exit_code == 2
     assert writer.writes == 0
     assert not (tmp_path / "no-backup.json").exists()
+
+
+@pytest.mark.parametrize("stale_reads", [1, 2])
+def test_localization_postwrite_eventual_consistency_is_get_only(tmp_path: Path, stale_reads: int) -> None:
+    """The first owner read can show the old EN despite one successful PUT."""
+    original = _raw()
+    current = copy.deepcopy(original)
+    methods: list[str] = []
+    saved = False
+    reads_after_put = 0
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal current, saved, reads_after_put
+        methods.append(request.method)
+        if request.method == "PUT":
+            assert request.url.params["part"] == "localizations"
+            assert not saved, "a second mutation must never happen"
+            current = copy.deepcopy(current)
+            current["localizations"] = json.loads(request.content)["localizations"]
+            saved = True
+            return httpx.Response(200, json=current)
+        if saved:
+            reads_after_put += 1
+            if reads_after_put <= stale_reads:
+                return httpx.Response(200, json={"items": [original]})
+        return httpx.Response(200, json={"items": [current]})
+
+    writer = _writer(tmp_path, handle, verification_delays=(0.0, 0.0))
+    verified = writer.replace_localized_description(**_args(original))
+    assert verified.raw["localizations"]["en-US"]["description"] == "Improved English."
+    assert verified.description == original["snippet"]["description"]
+    assert methods == ["GET", "PUT", *(["GET"] * (stale_reads + 1))]
+    assert methods.count("PUT") == 1
+
+
+def test_localization_postwrite_persistent_old_get_blocks_without_reput(
+    tmp_path: Path,
+) -> None:
+    """Exhausted reads keep the ambiguous result blocked, without rollback."""
+    original = _raw()
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "PUT":
+            assert request.url.params["part"] == "localizations"
+            return httpx.Response(200, json={"id": "video-test"})
+        return httpx.Response(200, json={"items": [original]})
+
+    writer = _writer(tmp_path, handle, verification_delays=(0.0, 0.0))
+    with pytest.raises(YouTubeWriteError, match="still mismatched after 3 safe GET reads"):
+        writer.replace_localized_description(**_args(original))
+    assert methods == ["GET", "PUT", "GET", "GET", "GET"]
+
+
+def test_localization_transport_error_never_enters_eventual_get_loop(
+    tmp_path: Path,
+) -> None:
+    original = _raw()
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "PUT":
+            return httpx.Response(503, json={"error": {"message": "ambiguous"}})
+        return httpx.Response(200, json={"items": [original]})
+
+    writer = _writer(tmp_path, handle, verification_delays=(0.0, 0.0))
+    with pytest.raises(YouTubeWriteError, match="YouTube API 503"):
+        writer.replace_localized_description(**_args(original))
+    assert methods == ["GET", "PUT"]
+
+
+def test_localization_postwrite_persistent_language_drift_is_not_accepted(
+    tmp_path: Path,
+) -> None:
+    original = _raw()
+    current = copy.deepcopy(original)
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal current
+        methods.append(request.method)
+        if request.method == "PUT":
+            current = copy.deepcopy(current)
+            current["localizations"] = json.loads(request.content)["localizations"]
+            current["snippet"]["defaultAudioLanguage"] = "en-US"
+            return httpx.Response(200, json=current)
+        return httpx.Response(200, json={"items": [current]})
+
+    writer = _writer(tmp_path, handle, verification_delays=(0.0, 0.0))
+    with pytest.raises(YouTubeWriteError, match="still mismatched after 3 safe GET reads"):
+        writer.replace_localized_description(**_args(original))
+    assert methods == ["GET", "PUT", "GET", "GET", "GET"]
