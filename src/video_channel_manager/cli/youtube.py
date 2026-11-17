@@ -97,6 +97,51 @@ def _load_copy_fix_plan(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _require_lord_god_copy_execute_confirmation(
+    payload: dict[str, Any],
+    operations: list[dict[str, Any]],
+    *,
+    execute: bool,
+    confirm_channel: str,
+    confirm_target: str,
+    confirm_after_sha256: str,
+) -> None:
+    """Block accidental Lord God description PUT before OAuth/API or file journals.
+
+    Operator flags are separate from a frozen plan, but are NOT evidence of
+    fresh human authorization. That permission must be established outside code.
+    Other registered projects retain their existing CLI write contract.
+    """
+    if not execute:
+        return
+    targets_lord_god = (
+        confirm_channel == LORD_GOD_OWNER_CHANNEL
+        or payload.get("target_channel_id") == LORD_GOD_OWNER_CHANNEL
+        or any(operation.get("channel_id") == LORD_GOD_OWNER_CHANNEL for operation in operations)
+    )
+    if not targets_lord_god:
+        return
+    if (
+        payload.get("project_key") != "lord-god-strength"
+        or payload.get("target_channel_id") != LORD_GOD_OWNER_CHANNEL
+        or confirm_channel != LORD_GOD_OWNER_CHANNEL
+        or len(operations) != 1
+        or operations[0].get("channel_id") != LORD_GOD_OWNER_CHANNEL
+    ):
+        raise ValueError("Lord God descriptions require one exact owner-bound operation per execution")
+    operation = operations[0]
+    video_id = operation.get("video_id")
+    after = operation.get("after_description")
+    if not isinstance(video_id, str) or not video_id or not isinstance(after, str):
+        raise ValueError("Lord God operation lacks an exact video ID or new description")
+    expected_sha = "sha256:" + hashlib.sha256(after.encode("utf-8")).hexdigest()
+    if confirm_target != video_id or confirm_after_sha256 != expected_sha:
+        raise ValueError(
+            "Lord God copy execution requires independent --confirm-target VIDEO_ID "
+            "and --confirm-after-sha256 matching the reviewed new description."
+        )
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     """Durable atomic JSON replacement with a unique, exclusive temporary file."""
 
@@ -345,6 +390,14 @@ def apply_copy_fixes(
         bool,
         typer.Option("--execute", help="Apply changes after a successful full preflight"),
     ] = False,
+    confirm_target: Annotated[
+        str,
+        typer.Option("--confirm-target", help="Lord God one-video write: type exact YouTube VIDEO_ID"),
+    ] = "",
+    confirm_after_sha256: Annotated[
+        str,
+        typer.Option("--confirm-after-sha256", help="Lord God write: type reviewed SHA of new description"),
+    ] = "",
     max_operations: Annotated[
         int,
         typer.Option("--max-operations", min=1, max=500, help="Safety cap for one run"),
@@ -369,6 +422,14 @@ def apply_copy_fixes(
             raise ValueError(f"Plan has {len(operations)} operations, above --max-operations {max_operations}.")
         if not confirm_channel:
             raise ValueError("--confirm-channel with the exact YouTube channel ID is required.")
+        _require_lord_god_copy_execute_confirmation(
+            payload,
+            operations,
+            execute=execute,
+            confirm_channel=confirm_channel,
+            confirm_target=confirm_target,
+            confirm_after_sha256=confirm_after_sha256,
+        )
         store, _, writer = _writer_components(account, client_secret)
     except (AccountNotFoundError, OSError, ValueError) as exc:
         console.print(f"[red]Cannot load copy-fix plan:[/red] {exc}")
@@ -623,6 +684,12 @@ def apply_localization_fix(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
     confirm_channel: Annotated[str, typer.Option("--confirm-channel")] = "",
     execute: Annotated[bool, typer.Option("--execute")] = False,
+    confirm_target: Annotated[
+        str, typer.Option("--confirm-target", help="Type exact VIDEO_ID@LOCALE for this one write")
+    ] = "",
+    confirm_after_sha256: Annotated[
+        str, typer.Option("--confirm-after-sha256", help="Type exact reviewed SHA of the proposed new locale")
+    ] = "",
     backup_output: Annotated[Path | None, typer.Option("--backup-output")] = None,
     result_output: Annotated[Path | None, typer.Option("--result-output")] = None,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
@@ -707,6 +774,11 @@ def apply_localization_fix(
             raise ValueError("Localized editorial/source-preservation gate failed.")
         if execute and payload.get("provider_mutation_authorized") is not True:
             raise ValueError("This frozen plan has no explicit provider-write authorization.")
+        if execute and (confirm_target != f"{video_id}@{language}" or confirm_after_sha256 != sha(after_locale)):
+            raise ValueError(
+                "Executing localization requires independent --confirm-target VIDEO_ID@LOCALE "
+                "and --confirm-after-sha256 matching the reviewed new text."
+            )
         if expected_locales.get(expected_snippet["defaultLanguage"], {}).get("description") != before_primary:
             raise ValueError("Default-language locale differs from primary text; cannot safely PUT.")
         store, config, writer = _writer_components(account, client_secret)

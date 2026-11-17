@@ -355,6 +355,8 @@ def test_localization_cli_single_write_journal_and_second_attempt_blocked(
         "account": "account",
         "confirm_channel": "UCeSJsC6go2c9pdJCuUI1BYA",
         "execute": True,
+        "confirm_target": "video-test@en-US",
+        "confirm_after_sha256": json.loads(plan.read_text(encoding="utf-8"))["after_sha256"],
         "backup_output": backup,
         "result_output": result,
         "client_secret": None,
@@ -386,6 +388,8 @@ def test_localization_cli_ambiguous_write_does_not_rollback_or_replay(
         "account": "account",
         "confirm_channel": "UCeSJsC6go2c9pdJCuUI1BYA",
         "execute": True,
+        "confirm_target": "video-test@en-US",
+        "confirm_after_sha256": json.loads(plan.read_text(encoding="utf-8"))["after_sha256"],
         "backup_output": backup,
         "result_output": result,
         "client_secret": None,
@@ -401,6 +405,50 @@ def test_localization_cli_ambiguous_write_does_not_rollback_or_replay(
     with pytest.raises(typer.Exit):
         youtube_cli.apply_localization_fix(plan, **opts)
     assert writer.writes == 1
+
+
+@pytest.mark.parametrize(
+    ("confirmed_target", "confirmed_sha"),
+    [
+        ("", ""),
+        ("video-test@de", "EXPECTED"),
+        ("video-test@en-US", "sha256:" + "0" * 64),
+    ],
+)
+def test_localization_write_requires_separate_exact_cli_confirmation_before_oauth(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    confirmed_target: str,
+    confirmed_sha: str,
+) -> None:
+    from video_channel_manager.cli import youtube as youtube_cli
+    import typer
+
+    plan = _make_localization_plan(tmp_path)
+    data = json.loads(plan.read_text(encoding="utf-8"))
+    effective_sha = data["after_sha256"] if confirmed_sha == "EXPECTED" else confirmed_sha
+
+    monkeypatch.setattr(youtube_cli, "prepare_windows_youtube_console", lambda: None)
+
+    def forbidden_writer(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("Missing exact confirmation reached OAuth/API")
+
+    monkeypatch.setattr(youtube_cli, "_writer_components", forbidden_writer)
+    backup, result = tmp_path / "no-backup.json", tmp_path / "no-result.json"
+    with pytest.raises(typer.Exit) as error:
+        youtube_cli.apply_localization_fix(
+            plan,
+            account="account",
+            confirm_channel="UCeSJsC6go2c9pdJCuUI1BYA",
+            confirm_target=confirmed_target,
+            confirm_after_sha256=effective_sha,
+            execute=True,
+            backup_output=backup,
+            result_output=result,
+            client_secret=None,
+        )
+    assert error.value.exit_code == 2
+    assert not backup.exists() and not result.exists()
 
 
 def test_localization_cli_corrupted_digest_blocked_pre_auth(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

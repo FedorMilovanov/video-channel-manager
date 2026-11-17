@@ -176,7 +176,7 @@ class VkApiClient(HttpClientOwner):
                 kind=HttpFailureKind.PROVIDER_FLOOD_CONTROL,
                 attempts=0,
             )
-        token = self.token_store.load_token(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.is_expired():
             raise VkApiError(
                 "VK access token is expired. Import a fresh user token with 'video' and 'groups' permissions.",

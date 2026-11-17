@@ -8,7 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from video_channel_manager.platforms.vk.models import VkAccessToken, VkAccount
-from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
+from video_channel_manager.platforms.vk.quarantine import (
+    QUARANTINED_LEGACY_VK_ALIASES,
+    reject_quarantined_legacy_alias,
+)
 
 _ACCOUNT_ALIAS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
@@ -63,10 +66,39 @@ class VkTokenStore:
                 aliases.add(candidate_alias)
         return tuple(sorted(aliases))
 
+    def _reject_quarantined_token_identity(self, access_token: str) -> None:
+        """Compare against retired local evidence in memory, without logging or provider calls.
+
+        If a retired reference file exists but is unreadable or malformed, fail closed.
+        If no reference file exists, equality cannot be established by this gate.
+        """
+        if not self.token_dir.is_dir():
+            return
+        for path in self.token_dir.iterdir():
+            if path.suffix.casefold() != ".json":
+                continue
+            if path.stem.casefold() not in QUARANTINED_LEGACY_VK_ALIASES:
+                continue
+            try:
+                legacy = VkAccessToken.model_validate_json(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                # Do not surface possibly sensitive contents of malformed evidence.
+                raise ValueError("Cannot validate quarantined VK credential identity (issue #662)") from None
+            if compare_digest(access_token.encode("utf-8"), legacy.access_token.encode("utf-8")):
+                raise ValueError("VK credential identity is quarantined (issue #662)")
+
+    def load_token_for_provider(self, alias: str) -> VkAccessToken:
+        """Provider boundary: reject both retired aliases and their renamed credentials."""
+        reject_quarantined_legacy_alias(alias)
+        token = self.load_token(alias)
+        self._reject_quarantined_token_identity(token.access_token)
+        return token
+
     def save_token(self, alias: str, token: VkAccessToken) -> Path:
         # Preserve retired credential evidence: no overwrite or recreation.
         # Check before mkdir or any filesystem mutation.
         reject_quarantined_legacy_alias(alias)
+        self._reject_quarantined_token_identity(token.access_token)
         self.ensure_directories()
         path = self.token_path(alias)
         self._write_json_atomic(path, token.model_dump(mode="json"), secret=True)
