@@ -674,3 +674,76 @@ def test_recovery_rejects_other_channel_before_mutation(tmp_path: Path) -> None:
             restore_description="Before",
         )
     assert methods == ["GET"]
+
+
+def test_description_put_preserves_all_existing_localizations(tmp_path: Path) -> None:
+    """Explicitly submit every existing locale; a snippet-only PUT may translate EN unexpectedly."""
+    raw = _localized_raw_video()
+    raw["localizations"]["de-DE"] = {"title": "German title", "description": "German before"}
+    method_sequence: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        method_sequence.append(request.method)
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": [raw]})
+        assert request.url.params["part"] == "snippet,localizations"
+        body = json.loads(request.content)
+        assert set(body) == {"id", "snippet", "localizations"}
+        assert body["localizations"] == {
+            "ru": {"title": "Russian title", "description": "After"},
+            "en-US": {"title": "English title", "description": "English before"},
+            "de-DE": {"title": "German title", "description": "German before"},
+        }
+        raw = copy.deepcopy(raw)
+        raw["snippet"]["description"] = body["snippet"]["description"]
+        raw["localizations"] = body["localizations"]
+        return httpx.Response(200, json=raw)
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    verified = writer.replace_description(
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_revision="stale-etag-safe",
+        expected_description="Before",
+        new_description="After",
+    )
+    assert verified.description == "After"
+    assert verified.raw["localizations"]["en-US"]["description"] == "English before"
+    assert verified.raw["localizations"]["de-DE"]["description"] == "German before"
+    assert method_sequence == ["GET", "PUT", "GET"]
+
+
+@pytest.mark.parametrize("broken", ["missing_description", "missing_default_language", "null_map"])
+def test_description_put_fails_closed_on_incomplete_localizations(tmp_path: Path, broken: str) -> None:
+    raw = _localized_raw_video()
+    if broken == "missing_description":
+        del raw["localizations"]["en-US"]["description"]
+    elif broken == "missing_default_language":
+        del raw["snippet"]["defaultLanguage"]
+    else:
+        raw["localizations"] = None
+    requests: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request.method)
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    with pytest.raises(YouTubeWriteError, match="no PUT sent"):
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_revision="same-before-text",
+            expected_description="Before",
+            new_description="After",
+        )
+    assert requests == ["GET"]
