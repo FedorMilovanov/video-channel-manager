@@ -15,5 +15,7 @@ def reject_quarantined_legacy_alias(alias: str) -> None:
     """Fail before settings, a credential store, or any VK client is created."""
     if not isinstance(alias, str) or not alias.strip():
         raise ValueError("VK account alias must be a nonempty string")
-    if alias.strip() in QUARANTINED_LEGACY_VK_ALIASES:
+    # NTFS is case-insensitive: differently cased aliases can resolve
+    # to the same stored token file on Windows.
+    if alias.strip().casefold() in QUARANTINED_LEGACY_VK_ALIASES:
         raise ValueError("VK account alias is quarantined (issue #662); use a separately reviewed credential")
