@@ -295,11 +295,41 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             if value:
                 update_snippet[field] = str(value)
 
+        # YouTube may auto-translate non-default locales on a snippet-only PUT.
+        # When existing localizations are present, submit the full, exact map
+        # with the snippet in ONE update. Omitting a locale from an update can
+        # delete it; never send a partial or malformed localization map.
+        body: dict[str, Any] = {"id": current.video_id, "snippet": update_snippet}
+        parts = "snippet"
+        if "localizations" in current.raw:
+            existing = current.raw["localizations"]
+            if not isinstance(existing, dict) or not snippet.get("defaultLanguage"):
+                raise YouTubeWriteError(f"Cannot safely preserve localizations for {current.video_id}; no PUT sent.")
+            preserved: dict[str, dict[str, str]] = {}
+            for language, locale in existing.items():
+                if (
+                    not isinstance(language, str)
+                    or not language
+                    or not isinstance(locale, dict)
+                    or not isinstance(locale.get("title"), str)
+                    or not locale["title"]
+                    or not isinstance(locale.get("description"), str)
+                ):
+                    raise YouTubeWriteError(f"Incomplete localization for {current.video_id}; no PUT sent.")
+                preserved[language] = {
+                    "title": locale["title"],
+                    "description": (
+                        new_description if language == snippet["defaultLanguage"] else locale["description"]
+                    ),
+                }
+            body["localizations"] = preserved
+            parts = "snippet,localizations"
+
         self._request(
             "PUT",
             "videos",
-            params={"part": "snippet"},
-            json_body={"id": current.video_id, "snippet": update_snippet},
+            params={"part": parts},
+            json_body=body,
             require_write=True,
         )
         verified = self.read_description(current.video_id)
