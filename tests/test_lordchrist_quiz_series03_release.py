@@ -122,7 +122,6 @@ def test_old_quiz_workflows_are_absent_from_all_executable_paths() -> None:
     assert "github.event_name != 'schedule'" in workflow
 
 
-
 def test_series03_editorial_hold_blocks_all_provider_writes_before_dispatch() -> None:
     """A content regression must fail closed without changing immutable v1 or its ledger."""
     workflow = ACTIVE.read_text(encoding="utf-8")
@@ -142,6 +141,7 @@ def test_series03_editorial_hold_blocks_all_provider_writes_before_dispatch() ->
     assert "      - name: Fresh exact target preflight" in workflow
     assert "      - name: Send exactly once through the canonical generic Telegram runtime" in workflow
     # The provider steps remain intact for a future separately approved unhold; no side-effect is triggered here.
+
 
 def test_series03_is_not_historical_release_or_deleted_poll() -> None:
     new = load_quiz_series(series_spec_path(SERIES))
