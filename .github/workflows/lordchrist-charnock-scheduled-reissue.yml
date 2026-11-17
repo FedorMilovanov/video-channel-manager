@@ -10,6 +10,21 @@ on:
     - cron: "11 9 * * 2,5"
     - cron: "37 9 * * 2,5"
     - cron: "11 10 * * 2,5"
+  workflow_dispatch:
+    inputs:
+      publication_id:
+        description: Existing owner-approved future Charnock article (no missed backfill)
+        required: true
+        type: choice
+        options:
+          - lordchrist-telegraph-charnock-09
+          - lordchrist-telegraph-charnock-10
+          - lordchrist-telegraph-charnock-11
+          - lordchrist-telegraph-charnock-12
+      confirm:
+        description: Type RUN_APPROVED_CHARNOCK_SLOT_ONCE; no off-date or off-window posting
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -22,6 +37,16 @@ concurrency:
 
 jobs:
   schedule-only:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.actor == 'FedorMilovanov' &&
+       github.ref == 'refs/heads/main' &&
+       inputs.confirm == 'RUN_APPROVED_CHARNOCK_SLOT_ONCE' &&
+       (inputs.publication_id == 'lordchrist-telegraph-charnock-09' ||
+        inputs.publication_id == 'lordchrist-telegraph-charnock-10' ||
+        inputs.publication_id == 'lordchrist-telegraph-charnock-11' ||
+        inputs.publication_id == 'lordchrist-telegraph-charnock-12'))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -30,6 +55,7 @@ jobs:
       LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/telegraph-v1/publication-ledger.json
       ENABLED: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_ENABLED }}
       APPROVED_MANIFEST_SHA256: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256 }}
+      REVIEWED_PUBLICATION_ID: ${{ inputs.publication_id }}
     steps:
       - name: Checkout current main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,7 +75,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          [[ "$GITHUB_EVENT_NAME" == "schedule" && "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            [[ "$GITHUB_ACTOR" == "FedorMilovanov" ]] || exit 3
+            [[ "${{ inputs.confirm }}" == "RUN_APPROVED_CHARNOCK_SLOT_ONCE" ]] || exit 3
+          elif [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
+            exit 3
+          fi
           [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
           [[ "$ENABLED" == "true" ]] || {
             echo "Charnock scheduled recovery disabled"
@@ -79,6 +111,9 @@ jobs:
               raise SystemExit("Late/early scheduled run: no catch-up")
           if len(matches)!=1:
               raise SystemExit("Ambiguous Charnock scheduled date")
+          if os.environ["GITHUB_EVENT_NAME"]=="workflow_dispatch":
+              if matches[0]["publication_id"] != os.environ.get("REVIEWED_PUBLICATION_ID"):
+                  raise SystemExit("Manual run is not for today's exact reviewed article")
           # Read protected state after acquiring the shared workflow concurrency
           # lock. A backup attempt may never replay an already-claimed send.
           state_path="content/telegram/lordchrist/telegraph-v1/publication-ledger.json"

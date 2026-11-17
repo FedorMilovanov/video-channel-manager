@@ -41,8 +41,43 @@ LIVE_WINDOW_HOUR = (12, 13)
 # Source-verified omissions in article 13's q-3 and q-19 require editorial re-approval.
 # Keep the shared article queue unchanged: other lanes must retain its payload.
 CHARNOCK_EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
+# The only manual recovery fallback: future slots in the already-approved immutable manifest.
+# Missed 06-08 and editorial-HOLD 13 may NOT be dispatched.
+OWNER_DISPATCH_IDS = frozenset(f"lordchrist-telegraph-charnock-{i:02d}" for i in range(9, 13))
+OWNER_DISPATCH_CONFIRM = "RUN_APPROVED_CHARNOCK_SLOT_ONCE"
 # Read-only backoff after the single allowed sendMessage; never retry the provider mutation.
 NEW_POST_PUBLIC_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
+
+
+def _require_approved_recovery_trigger(args: argparse.Namespace) -> None:
+    """Accept scheduled runs or *authenticated* owner-only due-slot manual backup.
+
+    Never accept a caller-supplied clock, past/missed slot, alternate article,
+    arbitrary workflow, non-main branch, or different GitHub actor. The
+    GitHub-managed GITHUB_EVENT_PATH provides the dispatch inputs, not CLI args.
+    Existing receipt and exact-date proof are rechecked separately.
+    """
+    event = os.environ.get("GITHUB_EVENT_NAME")
+    if event == "schedule":
+        return
+    if event != "workflow_dispatch" or os.environ.get("GITHUB_ACTOR") != "FedorMilovanov":
+        raise RuntimeError("Only scheduled or authenticated owner-only dispatch may recover Charnock")
+    if args.publication_id not in OWNER_DISPATCH_IDS:
+        raise RuntimeError("Dispatch cannot restore missed 06-08 or editorial HOLD 13")
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if not event_path:
+        raise RuntimeError("Missing authenticated GitHub event payload")
+    try:
+        payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError("Missing or invalid GitHub dispatch payload") from exc
+    inputs = payload.get("inputs") if isinstance(payload, dict) else None
+    if (
+        not isinstance(inputs, dict)
+        or inputs.get("confirm") != OWNER_DISPATCH_CONFIRM
+        or inputs.get("publication_id") != args.publication_id
+    ):
+        raise RuntimeError("Authenticated dispatch inputs do not bind exactly one approved article")
 
 
 def scheduled_reissue_preflight_status(ledger: dict[str, Any], manifest_entry: dict[str, Any]) -> str:
@@ -223,8 +258,9 @@ def _proof_page(entry: dict[str, Any], payload: Any) -> None:
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.stage != "preview":
         _require_execution_context(args)
-        if os.environ.get("GITHUB_EVENT_NAME") != "schedule" or args.now is not None:
-            raise RuntimeError("Live recovery is schedule-only; no manual/forged clock release")
+        _require_approved_recovery_trigger(args)
+        if args.now is not None:
+            raise RuntimeError("Forged clock forbidden on live recovery")
     now = datetime.fromisoformat(args.now) if args.stage == "preview" and args.now else datetime.now(tz=MOSCOW)
     ledger_path, ledger = _ledger(args)
     source, item, payload, original = _select_due(args, ledger, now=now)

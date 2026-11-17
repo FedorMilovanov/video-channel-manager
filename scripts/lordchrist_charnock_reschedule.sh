@@ -1,12 +1,29 @@
 #!/usr/bin/env bash
-# Schedule-only recovery of owner-deleted 2026-11-05 messages. Never re-create Telegraph.
+# Scheduled or owner-dispatched SAME-DAY recovery. Never re-create Telegraph.
 set -euo pipefail
 state_dir=".state/lordchrist"
 ledger_rel="content/telegram/lordchrist/telegraph-v1/publication-ledger.json"
 
 current_main_ci() {
-  [[ "$GITHUB_EVENT_NAME" == "schedule" && "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+  [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
   [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+  if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+    [[ "$GITHUB_ACTOR" == "FedorMilovanov" ]] || exit 3
+    python - <<'PY'
+import json
+import os
+from pathlib import Path
+from video_channel_manager.lordchrist_charnock_reschedule import OWNER_DISPATCH_CONFIRM, OWNER_DISPATCH_IDS
+payload=json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
+inputs=payload.get("inputs") or {}
+if (inputs.get("confirm") != OWNER_DISPATCH_CONFIRM or
+        inputs.get("publication_id") != os.environ.get("PUBLICATION_ID") or
+        os.environ.get("PUBLICATION_ID") not in OWNER_DISPATCH_IDS):
+    raise SystemExit("Owner-dispatched recovery identity mismatch")
+PY
+  elif [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
+    exit 3
+  fi
   [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
   python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
 }
