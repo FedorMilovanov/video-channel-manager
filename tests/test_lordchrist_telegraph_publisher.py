@@ -134,6 +134,14 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
     manifest = json.loads(path.read_text(encoding="utf-8"))
     queue = {entry.publication_id: entry for entry in load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)}
     assert len(manifest["targets"]) == 5
+    assert manifest["links_are_live"] is True
+    assert manifest["replacement_readback_on"] == "2026-11-17"
+    verified_new_pages = {
+        "lordchrist-telegraph-charnock-01b": "https://telegra.ph/Podsvechnik-sovesti-i-zhertva-Avelya-pochemu-odnogo-znaniya-o-Boge-nedostatochno--ispravlennoe-izdanie-11-05",
+        "lordchrist-telegraph-charnock-02": "https://telegra.ph/Vseobshchee-soglasie-kak-CHarnok-obosnovyval-znanie-o-Boge-u-narodov--ispravlennoe-izdanie-11-05",
+        "lordchrist-telegraph-charnock-03": "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05",
+        "lordchrist-telegraph-charnock-04": "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--ispravlennoe-izdanie-11-05",
+    }
     for entry in manifest["targets"]:
         publication_id = entry["publication_id"]
         old_url = entry["previous_telegraph_url"]
@@ -154,8 +162,13 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
             assert len(entry["editorial_polish_state_commit_sha"]) == 40
             assert len(entry["inplace_revision_state_commit_sha"]) == 40
         else:
-            assert entry["replacement_telegraph_url"] is None
-            assert entry["replacement_telegram_message_url"] is None
+            assert entry["provider_edit_status"] == "verified_new_page_and_original_message_updated"
+            assert entry["replacement_telegraph_url"] == verified_new_pages[publication_id]
+            assert entry["replacement_telegram_message_url"] == entry["previous_telegram_message_url"]
+            assert entry["telegram_message_revision_required"] is False
+            assert entry["replacement_state"] == "2026-11-05_verified_correction_live"
+            assert entry["nov05_correction_run_id"].isdigit()
+            assert entry["published_correction_article_sha256"].startswith("sha256:")
         item = queue[publication_id]
         assert item.article_path is not None
         assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
@@ -166,7 +179,9 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
             # The previous reviewed edition remains historical evidence, not a
             # claim that the new article bytes are already live on Telegra.ph.
             assert entry["prior_reviewed_document_git_blob_sha"] == "cac01a52dfce3a33062be0f1c1a47eb093cea21a"
-            assert entry["provider_edit_status"] == "not_attempted"
+            assert entry["provider_edit_status"] == "verified_new_page_and_original_message_updated"
+            assert entry["pending_editorial_change"].startswith("2026-11-17:")
+            assert "НЕ опубликована" in entry["notes"]
             assert entry["provider_writes_authorized"] is False
 
 
