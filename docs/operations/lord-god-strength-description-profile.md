@@ -305,3 +305,16 @@ platforms/youtube/lord_god_presentation.py and the shared
 editorial.youtube_copy.validate_youtube_description checker. Fix a
 rejected plan upstream and re-sign. Never bypass the validation,
 replay an ambiguous timeout, or work around a quotaExceeded response.
+
+## Lord God Shorts: title, source and existing-video edit gate
+
+This section applies to **future, individually reviewed** Lord God Shorts. It does not authorize edits to already published videos, substitute for the signed YouTube copy plan or relax the long-form source-preservation and owner-approval gates above.
+
+- **Titles:** Use the owner's Russian Title Case for substantive words; retain lowercase short prepositions/particles and spaced ASCII ` - ` separators. Do not introduce pipe separators or decorative em dashes. Preserve an existing published title until its exact owner-approved replacement is recorded.
+- **Content-specific descriptions:** Lead with the actual excerpt, speaker and verified biblical reference where applicable. Use only this project's relevant, registered links. Selective YouTube bold/italic improves readability; bureaucratic labels, speculative source claims and generic SEO padding do not.
+- **Source binding:** Before citing a full talk, independently match the excerpt to the exact **same source video** and its English original. Similar speakers, adjacent episodes or inherited template playlists are not evidence. Preserve a genuine, approved attribution or rights notice; never import unrelated John MacArthur playlists or legacy `shelf_id` routes into a Piper/Sproul excerpt.
+- **Existing Shorts:** Correct copy through the same YouTube video ID, not by uploading a replacement. Before a write, read and preserve its public/private/scheduled state and `publishAt`; confirm any change to `defaultAudioLanguage` is approved. After a write, independently read back the persisted snippet, including language and scheduling fields. Do not treat an API success response alone as verified visual presentation.
+- **Comments:** Inspect the owner's existing comments and pinned source links before proposing another full-video pointer. Avoid duplicate comments and unexpected new top-level comments. A description-only approval does not authorize a comment or a new upload.
+- **Shorts link UX:** Ordinary description/comment URLs may be non-clickable in Shorts interfaces. Where an actual tap-friendly source link is required and approved, prefer the YouTube Studio **Related Video** feature. YouTube currently requires advanced-feature access and a **public or unlisted video from the same channel**; check eligibility before promising a click-through. Do not claim that Data API description/comment editing configures that Studio association. See https://support.google.com/youtube/answer/14075157 and https://support.google.com/youtube/answer/13748639.
+
+All existing owner/channel checks, exact provenance evidence, copy validation, rights gates, rate/quota restrictions and postflight requirements still apply. No provider mutation is authorized by this document.
