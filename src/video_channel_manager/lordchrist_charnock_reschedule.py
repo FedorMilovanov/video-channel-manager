@@ -290,6 +290,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         rendered = render_channel_post(item.channel_post, source["verified_telegraph_url"])
         if not 1 <= rendered.visible_char_count <= 4096:
             raise RuntimeError("Rendered announcement must fit one Telegram L1 message")
+        # Network readbacks/authentication may straddle 14:00 even when the
+        # stage began within its lease. Check again immediately before POST.
+        if datetime.now(tz=MOSCOW).hour not in LIVE_WINDOW_HOUR:
+            raise RuntimeError("Charnock Telegram send window expired before provider POST")
         sent = transport.post_json(
             f"{base}/sendMessage",
             {
