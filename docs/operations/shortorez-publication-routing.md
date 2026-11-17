@@ -1,6 +1,8 @@
 # SHORTOREZ: adaptive clip publication routing — Issue #940
 
-Status: **provider-inert planning only**, no rendered MacArthur media and no publication authority. This is an adapter plan to existing provider writers, not a second uploader.
+Status: **provider-inert planning only**, and no publication authority. This module does **not** render media; separately verified MacArthur local cuts were created in later operator work recorded in [Issue #940](https://github.com/FedorMilovanov/video-channel-manager/issues/940). This is an adapter plan to existing provider writers, not a second uploader.
+
+**For direct AI-agent cutting of an already finished video from a chat URL, start at [shortorez-chat-workflow.md](shortorez-chat-workflow.md), NOT this platform planner or Telegram Bot `/mode`.** The historical offline/no-media notes below reflect the November 14 checkpoint and were superseded by November 15 real local renders; publication authorization and final hearing/rights review remain separate.
 
 ## Exact first source
 
@@ -29,7 +31,7 @@ This prints `provider_write_performed=false`, `release_authorized=false` and pro
 
 1. Reconcile exact rights, approved local master + SHA256, and any already-produced full Russian mixed audio.
 2. Extract exact candidate words from that master and verify RU spoken timing, including 3–8s of context around boundaries.
-3. Use MP3Bot SHORTS FACTORY MAX for selection and audio/subtitle expertise; its existing 1.00x rule remains intact. A future extraction-only/export contract must be implemented and tested before consuming Factory media outside the bot. Do not invoke user-facing Telegram Factory as a background publisher.
+3. Reuse MP3Bot's existing selection/audio/subtitle engineering and its **merged local provider-inert SHORTOREZ export modules** (`services/shortorez_export.py` for the reviewed 177–300s RU-postmix interval gap, `services/shortorez_vk_variant.py` for optional VK speed variants). They are narrow media operators, **not** a general URL-to-clip automation. Never launch the user-facing Telegram Factory `/mode` as an agent background publisher or change its 1.00x production rules. Use the chat workflow for semantic discovery and exact boundary review.
 4. Produce approved 9:16 files in the operator-output handoff location, with readable faces and subtitles outside platform safe-zone overlays. Preserve both participants in horizontal Q&A rather than cropping a speaker out.
 5. Check start/end syllables, scriptural references, theology, postmix language, pitch/tempo, visual sample frames, FFprobe, bytes and SHA-256. A 1.20x file requires listening to the **final encoded MP4**, not an ASR-only verdict.
 6. Prepare separate captions per platform with an **exact HTTPS YouTube watch URL and explicit Russian label** immediately before it (for example, «Полная проповедь: https://www.youtube.com/watch?v=…»). Bare URLs and lookalike video IDs/hosts fail routing handoff. Instagram caption links may be unclickable; verify a real profile/Story link route rather than promising a click.
@@ -44,12 +46,12 @@ TikTok official: https://developers.tiktok.com/docs/en/content-posting-api-media
 
 ## Known materialization gap and final-duration acceptance
 
-The existing MP3Bot `SHORTS FACTORY MAX` produces 35–177s semantic Shorts and 5–14:57 long-highlight candidates. It does **not** currently emit 3–5-minute semantic candidates. A Video Manager route for 3:30 is therefore only a proposal until a reviewed MP3Bot extraction-only interval/export interface closes this gap. Do not invent a second FFmpeg renderer or alter Factory's accepted Telegram-delivery path as a shortcut.
+The existing MP3Bot `SHORTS FACTORY MAX` produces 35–177s semantic Shorts and 5–14:57 long-highlight candidates. It does **not** automatically discover 3–5-minute semantic candidates. MP3Bot PR #470 merged the reviewed **177–300-second manual-interval local exporter**, and #473 merged the optional VK native speed derivative; neither is an automatic semantic candidate finder or a second engine. A Video Manager route for 3:30 is a proposal until a source-bound, editor-reviewed interval is handed to the local exporter and its actual MP4 passes QA. Do not alter Factory's Telegram delivery path as a shortcut.
 
 `validate_render_handoff` rejects a final MP4 duration deviating by more than 1.5 seconds from the planned complete interval after its approved speed transform. This is a data-integrity guard, not listening proof: the reviewer must still check both ends for exact Russian words and all transitions. An actually required longer dubbing tail must be represented by a corrected, reviewed interval/render plan; never remove the tail to satisfy a duration assertion.
 
 VK Video officially supports a Clip-linked full VK video with a native **«Перейти к полному видео»** action. Use that only if a read-only, exact-ID VK full-video match is present and approved. Preserve the original YouTube full-version attribution in the caption; never guess a VK remote ID. Source: https://vk-video.production.vklanding.ru/.
 
-## What is blocked right now
+## Historical 2026-11-14 checkpoint — no longer live operational state
 
-The OldPoet remote computer `DESKTOP-O3FDOA4` returned offline on 2026-11-14. No source master, genuine listening, cut selection, MP4 render, rights assessment or live provider delivery has been performed in this wave. Resume from exact source and media evidence when available; do not fabricate a ready count.
+At this earlier checkpoint `DESKTOP-O3FDOA4` was offline and this workstream had no source-bound render. The later Issue #940 comments document the **actual November 14–15 local MacArthur cuts**: three 1.00x pieces and three VK review variants, eventually remade with full-bleed static-per-source-shot cropping. Check that exact latest owner-local manifest, source SHA, current device state, listening/rights status and actual provider receipts independently. **Six locally rendered MP4s do not mean six published or rights-approved clips.** For current chat cutting, follow [shortorez-chat-workflow.md](shortorez-chat-workflow.md).
