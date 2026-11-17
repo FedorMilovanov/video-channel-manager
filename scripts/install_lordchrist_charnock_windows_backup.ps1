@@ -1,7 +1,8 @@
 # Install four one-date Windows Task Scheduler backup triggers for approved Charnock slots.
 # Requires logged-on Fedor account. No token copies or Telegram operations.
 [CmdletBinding()]
-param([switch]$Install)
+param([switch]$Install, [switch]$Verify)
+if ($Install -and $Verify) { throw 'Choose either -Install or -Verify' }
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $timeZoneId = (Get-TimeZone).Id
@@ -33,10 +34,43 @@ if ($principalId -notmatch '(?i)\\fedor$') {
 $existing = @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object {
     $_.TaskName -like "$prefix*"
 })
+$sourceHash = (Get-FileHash -LiteralPath $dispatcher -Algorithm SHA256).Hash
+
+function Confirm-CharnockTasks {
+    if ($existing.Count -ne $taskTimes.Count) {
+        throw 'Charnock backup task count mismatch'
+    }
+    if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or
+        (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -cne $sourceHash) {
+        throw 'Installed source SHA-256 is not the approved one'
+    }
+    foreach ($num in $taskTimes.Keys) {
+        $taskName = "$prefix$num"
+        $task = Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
+        $ownerName = [string]$task.Principal.UserId
+        # The Windows Scheduler normalizes DOMAIN\Fedor to just Fedor.
+        $correctOwner = ($ownerName -ieq $principalId -or $ownerName -ieq $env:USERNAME)
+        $start = "$($taskTimes[$num])+03:00"
+        if ($task.State -eq 'Disabled' -or $task.Actions[0].Execute -cne $pwsh -or
+            $task.Actions[0].Arguments -notlike "*-File `"$target`" -Dispatch*" -or
+            $task.Settings.WakeToRun -ne $true -or
+            $task.Principal.LogonType -ne 'Interactive' -or -not $correctOwner -or
+            $task.Triggers.Count -ne 1 -or $task.Triggers[0].StartBoundary -cne $start -or
+            $task.Triggers[0].Repetition.Interval -cne 'PT30M' -or
+            $task.Triggers[0].Repetition.Duration -cne 'PT1H35M') {
+            throw "Installed task $num failed readback; examine Windows Task Scheduler"
+        }
+        Write-Output "VERIFIED $taskName state=$($task.State) owner=$ownerName start=$start"
+    }
+    Write-Output "VERIFIED_SOURCE_SHA256 $sourceHash"
+}
+if ($Verify) {
+    Confirm-CharnockTasks
+    exit 0
+}
 if ($existing.Count -gt 0) {
     throw 'Pre-existing Charnock backup task(s) require explicit reconciliation; no overwrite'
 }
-$sourceHash = (Get-FileHash -LiteralPath $dispatcher -Algorithm SHA256).Hash
 foreach ($num in $taskTimes.Keys) {
     Write-Output "PLAN $prefix$num at $($taskTimes[$num]) Moscow, 12:05/12:35/13:05/13:35"
 }
@@ -69,14 +103,5 @@ foreach ($num in $taskTimes.Keys) {
     $trigger = New-ScheduledTaskTrigger -Once -At $at -RepetitionInterval (New-TimeSpan -Minutes 30) -RepetitionDuration (New-TimeSpan -Minutes 95)
     Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings -Trigger $trigger -Description "Charnock ${num}: due-day only; shared guarded GitHub publisher; no backfill" -ErrorAction Stop | Out-Null
 }
-foreach ($num in $taskTimes.Keys) {
-    $taskName = "$prefix$num"
-    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
-    if ($task.State -eq 'Disabled' -or $task.Actions[0].Execute -cne $pwsh -or
-        $task.Settings.WakeToRun -ne $true -or
-        $task.Principal.UserId -cne $principalId) {
-        throw "Installed task $num failed readback; examine Windows Task Scheduler"
-    }
-    Write-Output "INSTALLED $taskName state=$($task.State)"
-}
+Confirm-CharnockTasks
 Write-Output "INSTALLED_SOURCE_SHA256 $sourceHash; logged-on user required; PC availability not guaranteed"
