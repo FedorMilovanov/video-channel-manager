@@ -415,7 +415,7 @@ def build_release_candidate(
                 profile,
                 publication_id=publication_id,
                 caption=caption,
-                media_path=str(RUNTIME_MEDIA_DIR / f"{media_id}.jpg"),
+                media_path=(RUNTIME_MEDIA_DIR / f"{media_id}.jpg").as_posix(),
                 media_sha256=media["transport_sha256"],
                 media_byte_size=int(media["transport_byte_size"]),
                 media_filename=f"{media_id}.jpg",
