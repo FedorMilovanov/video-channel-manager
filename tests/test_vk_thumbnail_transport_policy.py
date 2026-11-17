@@ -14,7 +14,7 @@ from video_channel_manager.platforms.vk.writer import VkWriteError
 
 def _store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
+    store.save_token("synthetic-vk-thumb-transport", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return store
 
 
@@ -32,7 +32,7 @@ def test_thumbnail_safe_reservation_retries_provider_transient_error(tmp_path: P
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         api_base_url="https://api.example/method",
         retry_policy=RetryPolicy(max_attempts=3, base_delay_seconds=0.25, jitter_seconds=0.0),
@@ -58,7 +58,7 @@ def test_thumbnail_upload_transport_is_single_attempt_and_redacted(tmp_path: Pat
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         retry_policy=RetryPolicy(max_attempts=9),
     )
@@ -85,7 +85,7 @@ def test_thumbnail_save_provider_transient_error_is_not_replayed(tmp_path: Path)
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         retry_policy=RetryPolicy(max_attempts=8),
     )
@@ -107,7 +107,7 @@ def test_thumbnail_borrowed_client_remains_open(tmp_path: Path) -> None:
     client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={})))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
     )
 
