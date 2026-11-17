@@ -218,6 +218,22 @@
       "provider_write_capable": true,
       "sha256": "136f818418676515f17a6da5db9bb5343bc74e4f17e852323fee3d026b226a26",
       "reason": "14 Nov 2026 owner-authorized exact-source public HTTPS canary: only fixed account/sha/caption/slot and one provider attempt after read-only gates; never background retries."
+    },
+    {
+      "path": "scripts/lordchrist_charnock_external_dispatch.ps1",
+      "status": "owner_dispatch_only",
+      "project_key": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "be4dee12456ee1dfc12f1a980842166df0d9598d4a66684c429dec694f05610d",
+      "reason": "Owner-approved Charnock 09-12 only; SHA-pinned manifest/workflow/ledger, fixed due Moscow slot, single GitHub workflow_dispatch; no Telegram provider client."
+    },
+    {
+      "path": "scripts/install_lordchrist_charnock_windows_backup.ps1",
+      "status": "owner_dispatch_only",
+      "project_key": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "2daeb2b529a21372f83a942d80660db3ff714ac76e0b1f36a40474f3cb6e45bf",
+      "reason": "Owner-login Windows one-date Charnock task registration, four read-only provider preflights and script hash pin; no direct Telegram provider call."
     }
   ],
   "test_files": [
