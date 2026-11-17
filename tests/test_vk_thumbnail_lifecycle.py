@@ -20,7 +20,7 @@ from video_channel_manager.platforms.vk.thumbnail_writer import VerifiedVkThumbn
 
 OWNER_ID = -235216998
 VIDEO_ID = 456239134
-PROJECT_KEY = "synthetic-vk-thumbnail"
+PROJECT_KEY = "legendary-poet"
 
 
 def _png(path: Path, *, width: int = 1280, height: int = 720) -> Path:
