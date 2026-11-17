@@ -31,9 +31,7 @@ def test_all_eight_reader_reviews_match_the_unapproved_exact_candidate_text() ->
         question = section.split("**Вопрос для читателя**\n\n", 1)[1].split("\n\n", 1)[0]
         assert question == candidate["question"], candidate["source_publication_id"]
 
-        options_block = section.split("**Варианты ответов**\n\n", 1)[1].split(
-            "\n\n**Объяснение Telegram", 1
-        )[0]
+        options_block = section.split("**Варианты ответов**\n\n", 1)[1].split("\n\n**Объяснение Telegram", 1)[0]
         lines = re.findall(r"(?m)^([1-4])\. (.+)$", options_block)
         assert [int(number) for number, _ in lines] == [1, 2, 3, 4]
         selected = []
@@ -47,12 +45,10 @@ def test_all_eight_reader_reviews_match_the_unapproved_exact_candidate_text() ->
 
         explanation_section = section.split("**Объяснение Telegram (", 1)[1]
         limit_text, remainder = explanation_section.split(")**", 1)
-        assert limit_text == f'{len(candidate["explanation"])}/200'
+        assert limit_text == f"{len(candidate['explanation'])}/200"
         assert remainder.split("\n\n> ", 1)[1].split("\n\n", 1)[0] == candidate["explanation"]
 
-        wrong_block = section.split("**Почему остальные варианты неверны**\n\n", 1)[1].split(
-            "\n\n**Приёмка:**", 1
-        )[0]
+        wrong_block = section.split("**Почему остальные варианты неверны**\n\n", 1)[1].split("\n\n**Приёмка:**", 1)[0]
         wrong = re.findall(r"(?m)^- \*\*Неверно ([1-4]):\*\* (.+)$", wrong_block)
         expected = {n for n in (1, 2, 3, 4) if n != candidate["correct_option_index"] + 1}
         assert {int(number) for number, _ in wrong} == expected
