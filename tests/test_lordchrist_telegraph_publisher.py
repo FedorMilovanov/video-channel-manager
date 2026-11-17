@@ -112,12 +112,7 @@ def test_telegraph_queue_loads_charnock_cycle_and_separate_jude_manual_article()
     assert items[-1].is_canary is False
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
-    # Charnock 13 is not release-ready: q-3 and q-19 silently omit original
-    # English passages. Preserve its approved JSON/blob and 04 Dec date,
-    # but fail closed until a separately reviewed corrected release exists.
-    held = {item.publication_id for item in items if not item.is_ready}
-    assert held == {"lordchrist-telegraph-charnock-13"}
-    assert next(item for item in items if item.publication_id == "lordchrist-telegraph-charnock-08").is_ready
+    assert all(item.is_ready for item in items)
     # Every edition is Telegraph-native inside its own series directory, never
     # borrowed from another series' folder.
     for item in items:

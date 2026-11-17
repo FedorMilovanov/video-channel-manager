@@ -115,6 +115,21 @@ def setup(monkeypatch: pytest.MonkeyPatch, root: Path, *, existing_reissue: str 
     return args, ledger, original, source
 
 
+def test_article_13_quote_gaps_block_scheduled_release_before_any_provider_call(monkeypatch, tmp_path):
+    args, _, original, _ = setup(monkeypatch, tmp_path)
+    manifest_path = tmp_path / m.MANIFEST
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["items"][0]["publication_id"] = "lordchrist-telegraph-charnock-13"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    args.publication_id = "lordchrist-telegraph-charnock-13"
+    monkeypatch.setattr(
+        m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read during editorial HOLD")
+    )
+    with pytest.raises(RuntimeError, match="editorial HOLD: q-3/q-19"):
+        m.execute(args)
+    assert "scheduled_reissue" not in original
+
+
 def test_refuses_manual_publishing_even_with_correct_future_date(monkeypatch, tmp_path):
     args, _, _, _ = setup(monkeypatch, tmp_path)
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
