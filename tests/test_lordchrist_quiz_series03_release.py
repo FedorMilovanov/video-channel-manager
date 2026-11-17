@@ -136,7 +136,7 @@ def test_series03_editorial_hold_blocks_all_provider_writes_before_dispatch() ->
     assert operation_gate.index('if [[ "$OPERATION" == "publish" ]]; then') < operation_gate.index(
         'case "$OPERATION" in'
     )
-    assert operation_gate.index('exit 3') < operation_gate.index('case "$OPERATION" in')
+    assert operation_gate.index("exit 3") < operation_gate.index('case "$OPERATION" in')
     assert 'validate-series \\\n                --series-id "$SERIES_ID"' in operation_gate
     assert "      - name: Fresh exact target preflight" in workflow
     assert "      - name: Send exactly once through the canonical generic Telegram runtime" in workflow
