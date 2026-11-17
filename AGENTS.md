@@ -18,6 +18,10 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 5. Historical audits only when provenance or a past defect must be understood.
 6. `.github/copilot-instructions.md` for Windows/operator handoff details.
 
+### SHORTOREZ — direct chat cutting of already-voiced videos
+
+When the owner says \`SHORTOREZ\`, provides a video URL for finished-language editorial cutting, or asks to repeat the MacArthur «Божья воля» cutting workflow, **first read [docs/operations/shortorez-chat-workflow.md](docs/operations/shortorez-chat-workflow.md)**. This is a **direct chat-agent workflow through the authorized computer**, NOT the Telegram \`/mode\` \`SHORTS FACTORY MAX\`, a new translation job, or automatic platform publication. Reuse existing source-bound renderers, keep the selected source's audible language, and cover all worthwhile semantic units without a fixed five-Short limit. The separate [SHORTOREZ platform routing](docs/operations/shortorez-publication-routing.md) is a provider-inert follow-on, not the media editor.
+
 ### @lordchrist content routing
 
 For any task that researches, drafts, edits, formats, or hands off Telegram content for `@lordchrist` / «Господь Бог — Сила Моя», read `content/telegram/lordchrist/AGENTS.md` before using any old draft or example. That local contract routes to the current rich-editorial, quotation, and Android copy/paste standards and defines their precedence. Research drafts are evidence inputs, not presentation authority.
