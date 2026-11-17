@@ -146,3 +146,64 @@ def test_exact_review_receipt_rejects_nul_json_and_hash_mismatch(
     receipt.write_text(json.dumps({"sha256": "0" * 64, "subtitle_overlap_count": 0}), encoding="utf8")
     issues = verify(ass, asr, video, receipt=receipt)
     assert any("SHA-256 differs" in issue for issue in issues)
+
+
+def _correct_pause_hold_ass() -> str:
+    """BodyHold is white, still text—not the next active word."""
+    style = "Style: BodyHold,Manrope Q54,91,&H00F1FAFF&,&H00F1FAFF&,&H00211810&\n"
+    header = _STYLE.replace("[Events]", style + "[Events]")
+    first = _body("0:00:00.10", "0:00:00.40")
+    raw = r"{\an5\pos(540,1426)}{\1c&H00F1FAFF&}называли{\1c&H00F1FAFF&} бы его"
+    hold = "Dialogue: 1,0:00:00.40,0:00:04.40,BodyHold,,0000,0000,0000,," + raw + "\n"
+    following = _body("0:00:04.40", "0:00:05.00", payload=r"{\an5\pos(540,1426)}{\1c&H007DE1FF&}искуплением")
+    return header + first + hold + following
+
+
+def test_selected_passive_hold_preserves_caption_without_amber_or_jump() -> None:
+    assert check_ass(_correct_pause_hold_ass()) == []
+
+
+def test_passive_hold_rejects_amber_and_missing_matched_style() -> None:
+    active_hold = _correct_pause_hold_ass().replace(
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)}{\1c&H00F1FAFF&}называли",
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)}{\1c&H007DE1FF&}называли",
+    )
+    assert any("amber active word" in error for error in check_ass(active_hold))
+    no_style = _correct_pause_hold_ass().replace(
+        "Style: BodyHold,Manrope Q54,91,&H00F1FAFF&,&H00F1FAFF&,&H00211810&\n", ""
+    )
+    assert any("BodyHold must have" in error for error in check_ass(no_style))
+
+
+def test_passive_hold_and_next_word_overlap_is_rejected() -> None:
+    bad = _correct_pause_hold_ass().replace(
+        "0:00:04.40,0:00:05.00,Body,",
+        "0:00:04.30,0:00:05.00,Body,",
+    )
+    assert any("Overlapping Body/BodyHold" in error for error in check_ass(bad))
+
+
+def test_passive_hold_cannot_change_caption_or_fade_during_pause() -> None:
+    wrong_text = _correct_pause_hold_ass().replace(
+        r"бы его\nDialogue: 1,0:00:04.40",
+        r"будто он\nDialogue: 1,0:00:04.40",
+    )
+    # Use the direct encoded payload: two events must have the same visible text.
+    wrong_text = wrong_text.replace(
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)}{\1c&H00F1FAFF&}называли",
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)}{\1c&H00F1FAFF&}переходили",
+    )
+    assert any("same on-screen text" in error for error in check_ass(wrong_text))
+    bad_fade = _correct_pause_hold_ass().replace(
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)}",
+        r"BodyHold,,0000,0000,0000,,{\an5\pos(540,1426)\fad(90,0)}",
+    )
+    assert any("cannot restart a fade" in error for error in check_ass(bad_fade))
+
+
+def test_passive_hold_requires_immediate_prior_speaking_state() -> None:
+    bad = _correct_pause_hold_ass().replace(
+        "0:00:00.40,0:00:04.40,BodyHold,",
+        "0:00:00.55,0:00:04.40,BodyHold,",
+    )
+    assert any("immediately follow" in error for error in check_ass(bad))
