@@ -123,9 +123,9 @@ def test_exact_files_fail_when_ffprobe_reports_missing_moov(tmp_path: Path, monk
     assert any("Unusable MP4" in issue for issue in verify(ass, asr, mp4))
 
 
-
 def test_exact_review_receipt_rejects_nul_json_and_hash_mismatch(
-    tmp_path: Path, monkeypatch,
+    tmp_path: Path,
+    monkeypatch,
 ) -> None:
     ass = tmp_path / "q.ass"
     asr = tmp_path / "q_raw.json"

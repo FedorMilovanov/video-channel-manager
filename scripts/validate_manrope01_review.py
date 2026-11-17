@@ -17,7 +17,7 @@ from typing import Any
 
 _ASS_STAMP = re.compile(r"^(\d+):([0-5]\d):([0-5]\d)\.(\d{2})$")
 _EXPECTED_ACTIVE_ASS = "&H007DE1FF&"  # #FFE17D in libass BGR notation
-_EXPECTED_PAPER_ASS = "&H00F1FAFF&"   # #FFFAF1
+_EXPECTED_PAPER_ASS = "&H00F1FAFF&"  # #FFFAF1
 _INTERNAL_ONLY = re.compile(r"(?i)\bвопрос\s*0?\d+\s*(?:из|/)\s*\d+\b")
 
 
@@ -113,7 +113,10 @@ def check_mp4_streams(payload: dict[str, Any]) -> list[str]:
     videos = [s for s in streams if s.get("codec_type") == "video"]
     audios = [s for s in streams if s.get("codec_type") == "audio"]
     errors: list[str] = []
-    if len(videos) != 1 or (videos and (videos[0].get("codec_name"), videos[0].get("width"), videos[0].get("height")) != ("h264", 1080, 1920)):
+    if len(videos) != 1 or (
+        videos
+        and (videos[0].get("codec_name"), videos[0].get("width"), videos[0].get("height")) != ("h264", 1080, 1920)
+    ):
         errors.append("One H.264 1080x1920 video stream required")
     if not audios or audios[0].get("codec_name") != "aac":
         errors.append("AAC audio stream required")
@@ -148,10 +151,20 @@ def verify(
         issues.append(f"Text/ASR load failed: {exc}")
     try:
         result = subprocess.run(
-            [ffprobe, "-v", "error", "-show_entries",
-             "stream=codec_type,codec_name,width,height:format=duration",
-             "-of", "json", str(mp4)],
-            check=True, capture_output=True, text=True, timeout=30
+            [
+                ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "stream=codec_type,codec_name,width,height:format=duration",
+                "-of",
+                "json",
+                str(mp4),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         issues.extend(check_mp4_streams(json.loads(result.stdout)))
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as exc:
