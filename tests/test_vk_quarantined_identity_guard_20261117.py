@@ -17,7 +17,9 @@ from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkVideoWriter
 
 
-def _seed_legacy(store: VkTokenStore, *, filename: str = "default.json", value: str = "retired-synthetic-secret") -> Path:
+def _seed_legacy(
+    store: VkTokenStore, *, filename: str = "default.json", value: str = "retired-synthetic-secret"
+) -> Path:
     """Seed historical evidence without calling the intentionally protected writer."""
     path = store.token_dir / filename
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,19 +42,22 @@ def test_renamed_alias_cannot_save_retired_secret(tmp_path: Path, filename: str)
     assert not store.registry_path.exists()
 
 
-@pytest.mark.parametrize("factory,operation", [
-    (VkApiClient, lambda client: client._call("users.get")),
-    (VkVideoWriter, lambda client: client.assert_token_scopes("video")),
-    (VkThumbnailWriter, lambda client: client._token_value()),
-])
-def test_renamed_token_is_blocked_before_any_provider_request(
-    tmp_path: Path, factory: type, operation
-) -> None:
+@pytest.mark.parametrize(
+    "factory,operation",
+    [
+        (VkApiClient, lambda client: client._call("users.get")),
+        (VkVideoWriter, lambda client: client.assert_token_scopes("video")),
+        (VkThumbnailWriter, lambda client: client._token_value()),
+    ],
+)
+def test_renamed_token_is_blocked_before_any_provider_request(tmp_path: Path, factory: type, operation) -> None:
     store = VkTokenStore(tmp_path)
     _seed_legacy(store)
     # Simulate an old script copying the JSON directly and bypassing save_token.
     renamed = store.token_path("new-name-same-secret")
-    renamed.write_text(VkAccessToken(access_token="retired-synthetic-secret", scopes=["video"]).model_dump_json(), encoding="utf-8")
+    renamed.write_text(
+        VkAccessToken(access_token="retired-synthetic-secret", scopes=["video"]).model_dump_json(), encoding="utf-8"
+    )
     calls = 0
 
     def forbidden_request(_request: httpx.Request) -> httpx.Response:
