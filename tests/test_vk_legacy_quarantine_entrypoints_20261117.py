@@ -30,12 +30,11 @@ def test_legacy_alias_is_rejected_without_any_credential_access(alias: str) -> N
         reject_quarantined_legacy_alias(alias)
 
 
-
-
 @pytest.mark.parametrize("invalid_alias", ["", "  ", None])
 def test_blank_or_nonstring_alias_fails_closed(invalid_alias: str) -> None:
     with pytest.raises(ValueError, match="nonempty"):
         reject_quarantined_legacy_alias(invalid_alias)
+
 
 def test_new_reviewed_alias_is_not_mistaken_for_quarantined_credential() -> None:
     assert QUARANTINED_LEGACY_VK_ALIASES == {"default", "legendary-poet"}
