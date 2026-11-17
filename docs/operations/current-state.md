@@ -1,7 +1,13 @@
 # Current operational state
-Updated: 2026-11-15 (LordChrist active-lane overlay; historical sections preserved)
+Updated: 2026-11-17 (Telegram QUIZ editorial HOLD overlay; historical sections preserved)
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
+## 2026-11-17 Telegram QUIZ editorial incident — supersedes 15-Nov QUIZ line only
+
+The exact `lordchrist-quiz-series-03-v1` released two polls: **2026-11-15 @lordchrist/1617** and **2026-11-17 @lordchrist/1623**, both `published/provider_effect=verified` in protected `state/lordchrist-telegram` as of the 17-Nov readback. The second poll contained demonstrably ungrammatical Russian text. Its content error also existed in the 14-Nov editorial re-audit, **despite green CI**. The old "0/10" QUIZ count below is a historical 15-Nov checkpoint, not current truth.
+
+**Scope-limited disposition:** Series03 is under owner-requested **editorial HOLD**. Exact code owner: `.github/workflows/lordchrist-quiz-series-03-poster.yml` must skip scheduled jobs and reject manual publish; `lordchrist_quiz.validate_series(require_execution_authorized=True)` must reject signed-but-revoked Series03. Merge/required CI on exact HEAD is necessary for this control to be operative in `main`. Eight items have `pending/provider_effect=impossible`, not an authorization to send. Do not rewrite the signed spec/runtime or protected historical receipts and do not catch up/replay published polls. Draft rewrites are provider-inert at `content/telegram/lordchrist/quiz/SERIES_03_PENDING_EDITORIAL_CANDIDATES_20261117.json`. Independent source/grammar/distractor review and a **new** exact approved release are mandatory before any resumption. See incident [#1009](https://github.com/FedorMilovanov/video-channel-manager/issues/1009), corrective [PR #1010](https://github.com/FedorMilovanov/video-channel-manager/pull/1010) and `content/telegram/lordchrist/quiz/SERIES_03_RELEASE_RUNBOOK.md`. No new provider authority is created here.
+
 ## 2026-11-15 LordChrist active publication overlay
 
 This dated section supersedes the historical LordChrist quote/Shorts descriptions further below **for current publication routing**. It is a navigation checkpoint, not a standing release or provider-write authorization. Before acting, re-read exact `main`, the protected `state/lordchrist-telegram` ledgers and the owning issue; counts here can advance independently of code changes.
