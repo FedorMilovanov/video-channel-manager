@@ -6,7 +6,7 @@
   "channel_username": "@lordchrist",
   "publication_authorized": false,
   "release_authorized": false,
-  "review_status": "THEOLOGICAL_DRAFT_HOLD",
+  "review_status": "DRAFT_HOLD",
   "purpose": "Revised source-checked Russian editorial candidates. All eight still require independent theological and language approval before a new release; immutable signed v1, existing published polls, and ledger are untouched.",
   "preserve_published": [
     "lordchrist-quiz-s03-atonement-goat",
@@ -94,7 +94,7 @@
       "source_publication_id": "lordchrist-quiz-s03-bronze-serpent",
       "source_sha256": "sha256:35a77aa6610f7a198d23b1f91c653f2ba1fe996749b220d03fc425a0406a78ae",
       "review_status": "pending_independent_review",
-      "question": "Иисус напомнил Никодиму о медном змее, которого Моисей поднял в пустыне. Для чего должен быть вознесён Сын Человеческий (Ин. 3:14–15)?",
+      "question": "Иисус напомнил Никодиму о медном змее, которого Моисей поднял в пустыне. Для чего, по Его словам, должен быть поднят Сын Человеческий (Ин. 3:14–15)?",
       "options": [
         "Чтобы всякий увидевший Его получил телесное исцеление",
         "Чтобы люди получили новый обряд очищения",
@@ -106,7 +106,7 @@
       "source_url": "https://bible.by/syn/43/3/",
       "editorial_findings": "Сверка с указанным текстом Писания; ясный контекст, естественная русская речь и три содержательно связанные альтернативы. Нужна отдельная независимая редакционная приёмка до публикации.",
       "editorial_metrics": {
-        "question_characters": 134,
+        "question_characters": 148,
         "explanation_characters": 156,
         "options_characters": [
           53,
@@ -117,7 +117,7 @@
       },
       "exegesis_notes": {
         "review_provenance": "Assistant primary-text recheck, NOT independent human approval",
-        "passage_context": "Чис. 21:8–9 рассказывает об избавлении укушенных при взгляде на змея по Божьему слову; Ин. 3:14–15 говорит о вознесении Сына Человеческого, чтобы верующие имели жизнь вечную. Не утверждать, что предмет обладал самостоятельной магической силой.",
+        "passage_context": "Чис. 21:8–9 рассказывает об избавлении укушенных при взгляде на змея по Божьему слову; Ин. 3:14–15 говорит о вознесении Сына Человеческого, чтобы верующие имели жизнь вечную. Не утверждать, что предмет обладал самостоятельной магической силой. По Ин. 12:32–33 «вознесён от земли» прямо связано со смертью Христа, а не с позднейшим Вознесением на небо.",
         "correct_answer_grounding": "Ин. 3:15 прямо называет вечную жизнь верующих целью вознесения Сына Человеческого.",
         "incorrect_answer_analysis": [
           "В Ин. 3:15 говорится о вере и жизни вечной, а не обещании телесного исцеления каждому зрителю.",
@@ -318,5 +318,6 @@
         "status": "awaiting_independent_editorial_review"
       }
     }
-  ]
+  ],
+  "editorial_stage": "primary_text_checked_pending_independent_review"
 }
