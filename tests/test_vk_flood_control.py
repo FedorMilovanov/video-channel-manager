@@ -61,7 +61,7 @@ def test_flood_gate_retries_windows_permission_error_when_lock_disappears(
 
 def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-flood-one", VkAccessToken(access_token="access", user_id=42))
     calls = 0
     sleeps: list[float] = []
 
@@ -75,7 +75,7 @@ def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path:
 
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-flood-one",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
@@ -123,8 +123,8 @@ def test_credential_gate_reads_and_clears_legacy_alias_state(tmp_path: Path) -> 
 def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_call(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     shared = VkAccessToken(access_token="shared", user_id=42)
-    store.save_token("default", shared)
-    store.save_token("legendary-poet", shared)
+    store.save_token("synthetic-vk-flood-second", shared)
+    store.save_token("synthetic-vk-flood-first", shared)
     calls = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -138,7 +138,7 @@ def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_cal
     transport = httpx.MockTransport(handler)
     legendary = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-flood-first",
         http_client=httpx.Client(transport=transport),
         api_base_url="https://example.test/method",
         retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
@@ -146,7 +146,7 @@ def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_cal
     )
     default = VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-flood-second",
         http_client=httpx.Client(transport=transport),
         api_base_url="https://example.test/method",
         retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
@@ -165,14 +165,14 @@ def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_cal
     assert second.value.attempts == 0
     assert calls == 1
 
-    assert VkFloodControlGate(tmp_path, "legendary-poet").get("users.get") is not None
-    assert VkFloodControlGate(tmp_path, "default").get("users.get") is not None
+    assert VkFloodControlGate(tmp_path, "synthetic-vk-flood-first").get("users.get") is not None
+    assert VkFloodControlGate(tmp_path, "synthetic-vk-flood-second").get("users.get") is not None
 
 
 def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-flood-writer",
         VkAccessToken(access_token="access", scopes=["video", "groups", "wall"]),
     )
     calls: list[str] = []
@@ -191,7 +191,7 @@ def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp
 
     writer = VkVideoWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-flood-writer",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
