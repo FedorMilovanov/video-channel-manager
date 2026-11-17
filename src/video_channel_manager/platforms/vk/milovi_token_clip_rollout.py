@@ -134,7 +134,11 @@ def _resolve_account(store: VkTokenStore, api_version: str) -> tuple[str, VkApiC
     """Use the best reviewed candidate, without probing quarantined/extra accounts."""
     preferred = {"milovi-cake": 0, "shared-vk-user": 1}
     candidates = sorted(
-        (account for account in store.list_accounts() if account.alias not in QUARANTINED_LEGACY_VK_ALIASES),
+        (
+            account
+            for account in store.list_accounts()
+            if account.alias.strip().casefold() not in QUARANTINED_LEGACY_VK_ALIASES
+        ),
         key=lambda account: (preferred.get(account.alias, 10), account.alias),
     )
     for account in candidates:
