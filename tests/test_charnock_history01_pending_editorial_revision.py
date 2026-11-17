@@ -22,6 +22,12 @@ def test_birth_claim_source_is_attributed_and_year_approximate() -> None:
     assert "приблизительной датой" in paragraph
     assert "запись о рождении или крещении пока не установлена" in paragraph
     assert "Чарнок родился в Лондоне в 1628 году" not in paragraph
+    wood_sources = [source for source in article["sources"] if source["source_id"] == "src-wood-1691-birth"]
+    assert len(wood_sources) == 1
+    assert "A71277" in wood_sources[0]["url"]
+    assert "pp. 491–492" in wood_sources[0]["label"]
+    assert "Athenæ Oxonienses" in json.dumps(blocks["p-43"], ensure_ascii=False)
+
     markdown = MARKDOWN.read_text(encoding="utf-8")
     assert "(ок. 1628–1680)" in markdown
     assert paragraph in markdown
