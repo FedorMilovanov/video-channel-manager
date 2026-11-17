@@ -121,6 +121,30 @@ def test_description_without_emoji_is_valid() -> None:
     assert "emoji_density_high" not in _codes(description)
 
 
+def test_arbitrary_project_link_label_colon_is_checked_and_safe_to_fix() -> None:
+    description = (
+        "Обычный первый абзац.\n\n"
+        "*Telegram проекта*: https://t.me/lordchrist\n"
+        "*Книга Писания*; здесь внешняя синтаксическая связь.\n"
+        "*Имя*, которое упомянуто в оригинале."
+    )
+    assert "metadata_label_colon" in _codes(description)
+    assert "punctuation_outside_emphasis" not in _codes(description)
+    fixed, fixes = autofix_youtube_description(description)
+    assert "*Telegram проекта:* https://t.me/lordchrist" in fixed
+    assert "*Книга Писания*;" in fixed
+    assert "*Имя*, которое" in fixed
+    assert [fix.code for fix in fixes] == ["metadata_label_colon"]
+
+
+def test_explanatory_colon_without_link_stays_editorial_review_only() -> None:
+    description = "Обычный первый абзац.\n\n*Один важный вопрос*: как понять это?"
+    assert "metadata_label_colon" not in _codes(description)
+    assert "punctuation_scope_review" in _codes(description)
+    fixed, fixes = autofix_youtube_description(description)
+    assert fixed == description and fixes == []
+
+
 def test_underscore_inside_url_is_not_treated_as_italic_marker() -> None:
     description = """Первый абзац без форматирования.
 
