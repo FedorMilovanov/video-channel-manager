@@ -12,7 +12,7 @@ from video_channel_manager.platforms.vk.store import VkTokenStore
 
 def test_list_videos_continues_when_vk_clamps_requested_page_size(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-pagination", VkAccessToken(access_token="access", user_id=42))
     offsets: list[int] = []
     requested_counts: list[int] = []
     total = 235
@@ -42,7 +42,7 @@ def test_list_videos_continues_when_vk_clamps_requested_page_size(tmp_path: Path
 
     client = VkApiClient(
         token_store=store,
-        account_alias="default",
+        account_alias="synthetic-vk-pagination",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
