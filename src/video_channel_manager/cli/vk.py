@@ -90,7 +90,7 @@ def _read_community_key_input(token_file: Path | None) -> VkAccessToken:
 
 @vk_app.command("login")
 def login(
-    account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
+    account: Annotated[str, typer.Option("--account", "-a", help="New reviewed user-token alias; legacy default/legendary-poet are quarantined")] = "default",
     token_file: Annotated[
         Path | None,
         typer.Option("--token-file", help="Local ignored text/JSON file containing the user token or redirect URL"),
