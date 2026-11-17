@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_dispatch import (
@@ -199,6 +200,10 @@ def _dispatch_existing_intent(
     if not isinstance(account_alias, str) or not account_alias.strip():
         raise PromotionDispatchBlockedBeforeProvider("Fresh status evidence lost the exact VK account alias")
     account_alias = account_alias.strip()
+    try:
+        reject_quarantined_legacy_alias(account_alias)
+    except ValueError as exc:
+        raise PromotionDispatchBlockedBeforeProvider(str(exc)) from exc
     community_id = status_payload.get("community_id")
     if community_id != MILOVI_COMMUNITY_ID:
         raise PromotionDispatchBlockedBeforeProvider(
