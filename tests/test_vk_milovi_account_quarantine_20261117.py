@@ -83,9 +83,7 @@ def test_resolver_closes_failed_candidate_then_checks_only_next_safe_alias(
 
     monkeypatch.setattr(rollout, "VkApiClient", Client)
     monkeypatch.setattr(rollout, "_prove_target", prove)
-    alias, _client = rollout._resolve_account(
-        SyntheticStore(["default", "shared-vk-user", "milovi-cake"]), "5.199"
-    )
+    alias, _client = rollout._resolve_account(SyntheticStore(["default", "shared-vk-user", "milovi-cake"]), "5.199")
     assert alias == "shared-vk-user"
     assert created == ["milovi-cake", "shared-vk-user"]
     assert closed == ["milovi-cake"]
