@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from video_channel_manager.platforms.vk.models import VkAccessToken, VkAccount
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 
 _ACCOUNT_ALIAS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
@@ -63,6 +64,9 @@ class VkTokenStore:
         return tuple(sorted(aliases))
 
     def save_token(self, alias: str, token: VkAccessToken) -> Path:
+        # Preserve retired credential evidence: no overwrite or recreation.
+        # Check before mkdir or any filesystem mutation.
+        reject_quarantined_legacy_alias(alias)
         self.ensure_directories()
         path = self.token_path(alias)
         self._write_json_atomic(path, token.model_dump(mode="json"), secret=True)
@@ -77,6 +81,8 @@ class VkTokenStore:
         return VkAccessToken.model_validate(payload)
 
     def delete_token(self, alias: str) -> None:
+        # Quarantined evidence must not be removed by cleanup scripts.
+        reject_quarantined_legacy_alias(alias)
         path = self.token_path(alias)
         try:
             path.unlink()
