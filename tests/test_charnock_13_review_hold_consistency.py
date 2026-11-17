@@ -32,7 +32,9 @@ def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
     # Active canonical article remains byte-for-byte pinned to reviewed SHA.
     current = REVIEW.parent / "lordchrist-telegraph-charnock-13.json"
     from hashlib import sha1
-    assert sha1(current.read_bytes()).hexdigest() == "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
+    payload = current.read_bytes()
+    blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+    assert sha1(blob).hexdigest() == "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
     joins = {
         "q-3": ("без прикрас. […] Молча подавляйте", "без прикрас. Молча подавляйте"),
         "q-19": ("обращаться к Нему. […] Что за утешение", "обращаться к Нему. Что за утешение"),
