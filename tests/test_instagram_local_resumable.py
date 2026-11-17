@@ -850,6 +850,39 @@ def test_resumable_status_phase_error_overrides_stale_in_progress() -> None:
     assert "FILE_NOT_FOUND" in message
 
 
+@pytest.mark.parametrize(
+    ("status_code", "human_status"),
+    [
+        ("EXPIRED", "Finished: Media has been uploaded and it is ready to be published."),
+        ("EXPIRED", "In Progress: Media is still being processed."),
+    ],
+)
+def test_resumable_expired_machine_status_overrides_stale_human_status(status_code: str, human_status: str) -> None:
+    """The machine status wins even when Meta's prose contradicts it."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.params["fields"] == "id,status,status_code,video_status"
+        return _response(
+            request,
+            200,
+            {
+                "id": "container-local-1",
+                "status_code": status_code,
+                "status": human_status,
+                "video_status": {
+                    "uploading_phase": {"status": "not_started"},
+                    "processing_phase": {"status": "not_started"},
+                },
+            },
+        )
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        provider_status, detail = client.get_container_status("container-local-1")
+    assert provider_status == "EXPIRED"
+    assert detail == human_status
+
+
 def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -> None:
     video = tmp_path / "reel.mp4"
     _write_video(video)
