@@ -91,7 +91,6 @@ def test_thumbnail_flood_9_opens_method_circuit_and_never_retries(tmp_path: Path
         assert sleeps == []
 
 
-
 def test_thumbnail_upload_transport_is_single_attempt_and_redacted(tmp_path: Path) -> None:
     image = tmp_path / "thumb.jpg"
     image.write_bytes(b"jpeg")
