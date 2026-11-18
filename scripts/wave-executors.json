@@ -768,7 +768,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "844a3f1f38ab4eb890ed9a572654e5c02c61d405bc248f9211d18d772f25ea56",
+      "sha256": "8f1fe9e7a031e8b9d5c9242b53469b3cf761cc9c2d0c622e6ca396638e5efa04",
       "status": "independent_tool"
     },
     {
@@ -790,7 +790,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "fb4cc2b4627bb7fa35970729f2afe2589ba2f20f9b6479b9d39133dcefef2f44",
+      "sha256": "b23f5398089fdd7b5e14d2acf397d70ac2e8de9f62a8703cc1917933bb6af707",
       "status": "independent_tool"
     },
     {
@@ -801,6 +801,19 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "ec29c5bab716b635b360806f794607f9082c738ae702fbdc197bcf27b1c59414",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [
+        "scripts/lordchrist_quote_v6_native_readonly.py",
+        "scripts/lordchrist_quote_v6_publisher.py"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/lordchrist_quote_v6_restyle.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "256d0cad576ce573f52481361312ddd1c10f943213797067215c09b199f9363b",
       "status": "independent_tool"
     },
     {
