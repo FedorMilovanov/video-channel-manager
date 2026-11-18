@@ -91,9 +91,7 @@ def parse_remote_id(remote_id: str) -> tuple[int, int]:
 
 def _block_retired_vk_provider() -> None:
     """Keep legacy parsers importable, but make all old provider access fail closed."""
-    raise OperationError(
-        "VK_SHORTS_RESET_RETIRED_PROVIDER_BLOCKED: use the versioned video-manager wave engine."
-    )
+    raise OperationError("VK_SHORTS_RESET_RETIRED_PROVIDER_BLOCKED: use the versioned video-manager wave engine.")
 
 
 class VkGateway:
