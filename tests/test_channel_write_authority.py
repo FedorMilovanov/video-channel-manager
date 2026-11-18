@@ -83,7 +83,7 @@ def _expected_rows() -> dict[str, dict[str, Any]]:
             "concurrency_group": profile.concurrency_group,
             "provider_writes_authorized": profile.provider_writes_authorized,
             "profile_digest": profile.digest,
-            "profile_file_sha256": "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest(),
+            "profile_file_sha256": "sha256:" + hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
             "target_binding": binding_path.relative_to(ROOT).as_posix(),
             "chat_id": binding.chat_id,
             "bot_id": binding.bot_id,
