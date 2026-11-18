@@ -41,6 +41,7 @@ if __name__ == "__main__":
 def _retired_mutation_error() -> RuntimeError:
     return RuntimeError("This historical VK mutation executor is retired; use the supported Wave/provider workflow.")
 
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
