@@ -180,6 +180,20 @@ def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
     prior_lines = {line.strip() for line in before.splitlines() if line.strip()}
     after_lines = [line.strip() for line in after.splitlines() if line.strip()]
     issues: set[str] = set()
+    # Short clips intentionally bypass the longform formatting threshold.
+    # But deleting legacy shelf navigation must not leave a source-only card
+    # or an orphan heading that a plain short-description gate would miss.
+    if "shelf_id=" in before and "shelf_id=" not in after:
+        if len(after_lines) < 2 or any(
+            len(line) < 15
+            or "http://" in line.lower()
+            or "https://" in line.lower()
+            or line.startswith(("*", "_", "#", ">", "-"))
+            for line in after_lines[:2]
+        ):
+            issues.add("shelf_cleanup_missing_two_plain_intro_lines")
+        if after_lines and after_lines[-1].endswith(":"):
+            issues.add("shelf_cleanup_dangling_navigation_heading")
     for index, line in enumerate(after_lines):
         if line in prior_lines:
             # Historical author/source attribution may be obligatory evidence.
