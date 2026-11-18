@@ -143,6 +143,8 @@ Every Instagram write must bind exact account ID `17841435926122104`; username i
 
 - Website: https://thelegendarypoet.ru/
 - Telegram: https://t.me/thelegendarypoet
+- Telegram channel ID: `-1003345085810` (read-only discovery, 18 November 2026)
+- Shared posting bot: `@preaching_mp3_bot` / `8716602202`, administrator with `can_post_messages=true` on this exact channel (verified in Issue #1036). Credential reuse does not authorize dispatch; profile and state are separate.
 - Rutube: https://rutube.ru/channel/74579453/
 
 Default public footer: website, Telegram, canonical VK, and Rutube. Add the public Clips route only when the target text specifically promotes short-form material. Never put `cabinet.vkvideo.ru` in public output.
