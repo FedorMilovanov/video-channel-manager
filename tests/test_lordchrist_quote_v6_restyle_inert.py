@@ -117,3 +117,32 @@ def test_workflow_separates_state_migration_from_sending() -> None:
     assert "python -m scripts.lordchrist_quote_v6_publisher migrate" in workflow
     assert "steps.invocation.outputs.migrate != 'true'" in workflow
     assert workflow.index("Guarded migration of exact 19 pending") < workflow.index("Preflight exact Telegram bot")
+
+
+def test_migration_fails_closed_if_a_new_quote_publishes_before_cutover(monkeypatch) -> None:
+    import pytest
+    from scripts import lordchrist_quote_v6_publisher as publisher
+
+    ledger, proposal = _legacy_ledger_before_migration()
+    next_id = proposal["items"][0]["publication_id"]
+    entry = ledger.entries[next_id]
+    entry.state = "published"
+    entry.provider_effect = "verified"
+    entry.message_id = 1630
+    saved = []
+    monkeypatch.setattr(publisher, "load_ledger", lambda path, queue: ledger)
+    monkeypatch.setattr(publisher, "save_ledger", lambda path, value: saved.append(value))
+    monkeypatch.setattr(publisher, "guard_cross_track", lambda root: None)
+    with pytest.raises(ValueError, match="not safely rebindable"):
+        publisher.migrate_pending_restyle(ROOT)
+    assert not saved
+
+
+def test_scheduled_invocation_cannot_accidentally_select_migration() -> None:
+    workflow = (ROOT / ".github/workflows/lordchrist-quote-v6-publisher.yml").read_text(encoding="utf-8")
+    assert 'if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then' in workflow
+    scheduled_gate = workflow.split('if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then', 1)[1]
+    assert 'echo "mode=scheduled"' in scheduled_gate.split("exit 0", 1)[0]
+    migration_gate = 'if [[ "$V6_ACTION" == "migrate-restyle" ]]; then'
+    assert workflow.index(migration_gate) > workflow.index('if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then')
+    assert workflow.count("python -m scripts.lordchrist_quote_v6_publisher migrate") == 1
