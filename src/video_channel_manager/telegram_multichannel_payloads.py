@@ -6,10 +6,11 @@ from video_channel_manager.telegram_multichannel_transport import (
     GenericRichPhotoPayload,
     GenericPollPayload,
 )
+from video_channel_manager.telegram_multichannel_audio import GenericAudioPayload
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 
 GenericProviderPayload = (
-    GenericMessagePayload | GenericPollPayload | GenericPhotoPayload | GenericRichPhotoPayload | GenericVideoPayload
+    GenericMessagePayload | GenericPollPayload | GenericPhotoPayload | GenericRichPhotoPayload | GenericVideoPayload | GenericAudioPayload
 )
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "GenericPollPayload",
     "GenericProviderPayload",
     "GenericVideoPayload",
+    "GenericAudioPayload",
 ]
