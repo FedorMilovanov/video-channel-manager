@@ -87,3 +87,16 @@ def test_all_relative_links_in_decision_contract_resolve() -> None:
             continue
         target = (CONTRACT.parent / link.split("#", 1)[0]).resolve()
         assert target.is_file(), f"Missing agent contract target: {link}"
+
+
+def test_q02_delayed_locale_reconciliation_is_readonly_until_exact_verified() -> None:
+    """Provider may return an older localization map immediately after a 200 PUT."""
+    contract = CONTRACT.read_text(encoding="utf-8")
+    runbook = (ROOT / "docs/operations/lord-god-youtube-description-wave.md").read_text(encoding="utf-8")
+    for text in (contract, runbook):
+        assert "HOLD_NO_RETRY" in text
+        assert "VERIFIED_BY_RECONCILIATION" in text
+        assert "part=localizations" in text
+    assert "read-only owner GETs" in runbook
+    assert "No second PUT was sent" in runbook
+    assert "18 non-Russian translations" in runbook
