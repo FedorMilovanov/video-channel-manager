@@ -39,6 +39,7 @@ from scripts.lordchrist_quote_v6_native_readonly import (
     QuoteV6NativeQueue,
     QuoteV6NativePost,
     build_quote_v6_native_queue,
+    build_restyled_quote_v6_native_queue,
 )
 
 RELEASE_PATH = Path("content/telegram/lordchrist/quote-v6-owner-release.json")
@@ -47,7 +48,7 @@ STATE_PATH = Path(".state/lordchrist")
 STATE_LEDGER = Path("content/telegram/lordchrist/quote-v6-publication-ledger.json")
 LEGACY_QUEUE = Path("content/telegram/lordchrist/verified-30-posts.json")
 LEGACY_LEDGER = Path("content/telegram/lordchrist/publication-ledger.json")
-EXPECTED_DIGEST = "sha256:a1d865277e794aa5d47ea8248bfab9406b05a44e0ec822400650ed3f580e06f0"
+EXPECTED_DIGEST = "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -57,7 +58,7 @@ MOSCOW = ZoneInfo("Europe/Moscow")
 
 def release_and_queue(root: Path) -> QuoteV6NativeQueue:
     release = json.loads((root / RELEASE_PATH).read_text(encoding="utf-8"))
-    queue = build_quote_v6_native_queue(root / SOURCE_PATH)
+    queue = build_restyled_quote_v6_native_queue(root)
     required = {
         "schema_name": "video-channel-manager.lordchrist-v6-owner-requested-release",
         "schema_version": 1,
@@ -148,8 +149,26 @@ def validate_schedule(mode: str, current: datetime) -> None:
 
 
 def make_rendered(post: QuoteV6NativePost) -> tuple[str, str, tuple]:
+    """Re-derive Telegram entities from reviewed HTML, never from guessed prose."""
+    import html
+    import re
+
     builder = _RenderBuilder()
-    builder.append_styled(post.quote_text, "blockquote")
+    if post.presentation_style == "inline_emphasis":
+        body, separator, _remainder = post.html_text.rpartition("\n<i>")
+        if not separator:
+            raise ValueError("reviewed inline body and attribution are not separable")
+        for piece in re.split(r"(<b>.*?</b>|<i>.*?</i>)", body, flags=re.DOTALL):
+            if not piece:
+                continue
+            if piece.startswith("<b>") and piece.endswith("</b>"):
+                builder.append_styled(html.unescape(piece[3:-4]), "bold")
+            elif piece.startswith("<i>") and piece.endswith("</i>"):
+                builder.append_styled(html.unescape(piece[3:-4]), "italic")
+            else:
+                builder.append(html.unescape(piece))
+    else:
+        builder.append_styled(post.quote_text, "blockquote")
     builder.append("\n")
     builder.append_styled(post.attribution_line, "italic")
     builder.append("\n\n")
@@ -307,9 +326,76 @@ def send(root: Path) -> int:
     return 0 if entry.state == "published" else 6
 
 
+def migrate_pending_restyle(root: Path) -> None:
+    """One-time, exact 11-published/19-pending ledger rebinding; sends nothing.
+
+    The existing state is loaded with the OLD source digest. Published entries
+    are immutable, and any intervening publication/intent fails closed.
+    """
+    from scripts.lordchrist_quote_v6_restyle import build_restyle_preview
+
+    old_queue = build_quote_v6_native_queue(root / SOURCE_PATH)
+    proposed = build_restyle_preview(root)
+    new_queue = release_and_queue(root)
+    if (
+        proposed["original_queue_digest"] != old_queue.digest
+        or proposed["prospective_queue_digest"] != new_queue.digest
+    ):
+        raise ValueError("restyle source and release identities differ")
+    path = root / STATE_PATH / STATE_LEDGER
+    old_ledger = load_ledger(path, old_queue)
+    # The manifest holds the identifiers, not an ordinal prefix: source #13
+    # has published while #9 and #12 remain pending due to author rotation.
+    published_ids = {p["publication_id"] for p in proposed["published_immutable"]}
+    pending_ids = {p["publication_id"] for p in proposed["items"]}
+    if set(old_ledger.entries) != published_ids | pending_ids:
+        raise ValueError("migrate requires exact complete original ledger coverage")
+    old_by_id = {p.publication_id: p for p in old_queue.posts}
+    new_by_id = {p.publication_id: p for p in new_queue.posts}
+    for publication_id, entry in old_ledger.entries.items():
+        if publication_id in published_ids:
+            if (
+                entry.state != "published"
+                or entry.provider_effect != "verified"
+                or not entry.message_id
+                or new_by_id[publication_id].payload_sha256 != old_by_id[publication_id].payload_sha256
+            ):
+                raise ValueError("published history has advanced or is not immutable: " + publication_id)
+        else:
+            if (
+                entry.state != "pending"
+                or entry.provider_effect != "impossible"
+                or entry.intent_id is not None
+                or entry.workflow_run_id is not None
+                or entry.message_id is not None
+                or new_by_id[publication_id].payload_sha256 == old_by_id[publication_id].payload_sha256
+            ):
+                raise ValueError("pending card is not safely rebindable: " + publication_id)
+    guard_cross_track(root)
+    for publication_id in pending_ids:
+        old_ledger.entries[publication_id].payload_sha256 = new_by_id[publication_id].payload_sha256
+    old_ledger.queue_digest = new_queue.digest
+    save_ledger(path, old_ledger)
+    verified = load_ledger(path, new_queue)
+    if sum(x.state == "published" for x in verified.entries.values()) != 11:
+        raise ValueError("rebound ledger unexpectedly changed publication history")
+    print(
+        json.dumps(
+            {
+                "migrated": True,
+                "new_queue_digest": new_queue.digest,
+                "published_untouched": len(published_ids),
+                "pending_rebound": len(pending_ids),
+                "provider_effect": "impossible",
+            },
+            ensure_ascii=False,
+        )
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "init", "prepare", "send"))
+    parser.add_argument("command", choices=("validate", "init", "migrate", "prepare", "send"))
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--mode", choices=("manual", "scheduled"), default="scheduled")
     parser.add_argument("--publication-id")
@@ -323,6 +409,9 @@ def main() -> int:
         return 0
     if args.command == "init":
         init(root)
+        return 0
+    if args.command == "migrate":
+        migrate_pending_restyle(root)
         return 0
     if args.command == "prepare":
         return prepare(root, mode=args.mode, expected_id=args.publication_id)

@@ -47,7 +47,8 @@ def test_exact_html_plain_text_and_entities_roundtrip(index: int) -> None:
     assert html_text == post.html_text
     assert plain == post.text
     assert len(plain.encode("utf-16-le")) // 2 <= 4096
-    assert {entity.type for entity in entities} == {"blockquote", "italic"}
+    expected = {"blockquote", "italic"} if post.presentation_style == "legacy_blockquote" else {"bold", "italic"}
+    assert {entity.type for entity in entities} == expected
 
 
 def test_release_does_not_mutate_old_queue_or_editorial_evidence() -> None:
