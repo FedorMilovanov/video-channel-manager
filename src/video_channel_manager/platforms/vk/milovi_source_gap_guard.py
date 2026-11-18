@@ -155,12 +155,12 @@ def build_source_review(
     for row in _items(independent_visual, "items"):
         if row.get("visual_verdict") != "MATCHING_SAME_VIDEO_CONTENT_AT_SIX_TIME_ALIGNED_MOMENTS":
             continue
-        yid, vk_id = row.get("youtube_id"), row.get("vk_clip_id")
+        yid, matched_vk_id = row.get("youtube_id"), row.get("vk_clip_id")
         if yid not in probable_source_ids:
             continue
-        if not isinstance(yid, str) or not exact_published(vk_id):
+        if not isinstance(yid, str) or not isinstance(matched_vk_id, int) or not exact_published(matched_vk_id):
             raise MiloviReviewEvidenceError("Six-frame pair not confirmed by fresh public wall")
-        visual_pairs[yid] = vk_id
+        visual_pairs[yid] = matched_vk_id
 
     extra = additional_visual.get("newly_high_confidence_present_short") or {}
     extra_yid = extra.get("youtube_id")
@@ -188,10 +188,10 @@ def build_source_review(
     for yid, row in entries.items():
         privacy = indexed[yid].get("privacy_status")
         scope = row.get("scope")
-        vk_id = row.get("vk_id")
+        historical_vk_id = row.get("vk_id")
         state = "REVIEW_ONLY_NO_VK_OWNER_ABSENCE"
         identified_vk_id = None
-        if vk_id in deleted_clips:
+        if historical_vk_id in deleted_clips:
             state = "RETIRED_RIGHTS_NEVER_RESTORE"
         elif scope == "EXCLUDE_NAMED_CHARACTER_RIGHTS":
             state = "EXCLUDED_RIGHTS"
@@ -201,7 +201,7 @@ def build_source_review(
             state = "PRIVATE_OR_UNLISTED_HOLD"
         elif scope in STRONG:
             state = "HISTORICAL_VK_PRESENCE_PROTECT"
-            identified_vk_id = vk_id
+            identified_vk_id = historical_vk_id
         elif yid in manual_pairs:
             state = "MANUAL_VK_PRESENCE_PROTECT"
             identified_vk_id = manual_pairs[yid]
