@@ -202,6 +202,7 @@
     "src/video_channel_manager/platforms/vk/milovi_rollout_sources.py": 61.27,
     "src/video_channel_manager/platforms/vk/milovi_school_public_wall_audit.py": 85.0,
     "src/video_channel_manager/platforms/vk/milovi_school_wall_publisher.py": 70.0,
+    "src/video_channel_manager/platforms/vk/milovi_source_gap_guard.py": 76.25,
     "src/video_channel_manager/platforms/vk/milovi_targeted_youtube_retry.py": 23.75,
     "src/video_channel_manager/platforms/vk/milovi_targeted_youtube_retry_stable.py": 62.96,
     "src/video_channel_manager/platforms/vk/milovi_token_clip_rollout.py": 58.87,
