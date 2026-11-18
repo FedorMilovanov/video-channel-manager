@@ -2,6 +2,8 @@
 
 Этот процесс читает данные канала и создаёт локальные отчёты. Он не изменяет YouTube.
 
+**Область примеров ниже — The Legendary Poet, не общий шаблон ссылок/канала.** Команды используют `--account legendary-poet` и архивный пакет именно поэтического канала. Для аудита `lord-god-strength` сначала прочитать [матрицу проекта Lord God](operations/lord-god-youtube-agent-decision-contract.md), [идентификаторы](operations/project-identity-registry.md) и [отдельный owner-safe runbook](operations/lord-god-youtube-description-wave.md). У Lord God обязательны **две чистые непустые сырые строки**, а не только первый абзац; эти статические примеры не являются правом на запись.
+
 ## 1. Получить свежий AuditPackage
 
 ```powershell

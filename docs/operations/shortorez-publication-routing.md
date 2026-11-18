@@ -4,6 +4,8 @@ Status: **provider-inert planning only**, and no publication authority. This mod
 
 **For direct AI-agent cutting of an already finished video from a chat URL, start at [shortorez-chat-workflow.md](shortorez-chat-workflow.md), NOT this platform planner or Telegram Bot `/mode`.** The historical offline/no-media notes below reflect the November 14 checkpoint and were superseded by November 15 real local renders; publication authorization and final hearing/rights review remain separate.
 
+**YouTube-copy handoff before publishing:** [Lord God agent decision matrix](lord-god-youtube-agent-decision-contract.md). For a Short from an independently matched full recording, the full-video URL is the first URL **after two clean opening lines** and **before** project social links; description labels and comment labels must not be confused with the long-form English-original exception. The planner never grants approval to edit YouTube metadata.
+
 ## Exact first source
 
 Project `lord-god-strength`, owner YouTube channel `UCeSJsC6go2c9pdJCuUI1BYA`, video `5nKCs4bkoxE`, «Познание Божьей воли без тайн (Джон МакАртур)». Full URL: https://www.youtube.com/watch?v=5nKCs4bkoxE. Do not invent cut boundaries from the title. The media/master and authoritative Russian speech transcript need actual readback and listening.

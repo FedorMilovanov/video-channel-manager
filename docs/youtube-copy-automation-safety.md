@@ -3,6 +3,8 @@
 This document defines what the deterministic bot may change without editorial interpretation.
 It complements `youtube-description-rendering-standard.md`: a human editor may decide punctuation scope from meaning, while the bot must act only when that scope is mechanically provable.
 
+**Project/surface precedence:** the file above documents The Legendary Poet's own first-literary-paragraph rule. On the Lord God YouTube channel, however, the **first two nonempty raw Studio lines** must be substantive unmarked sentences; removing emphasis only from paragraph one may leave line two invalid. A copy plan for that channel must additionally pass the [Lord God agent surface decision contract](operations/lord-god-youtube-agent-decision-contract.md) and the code's `presentation_issues()` + source-preservation gates. Do not apply Poet v3.1 playlist-first layout to Lord God Shorts, move an ambiguous comma automatically, or infer provider write approval from a passing safe autofix.
+
 ## Automatic rules
 
 The bot may automatically:

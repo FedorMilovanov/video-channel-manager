@@ -19,6 +19,8 @@ The canonical identity and link profiles are documented in [`../operations/proje
 
 ## YouTube
 
+**Project-specific ordering matters:** Lord God `lord-god-strength` Shorts descriptions require two unmarked raw preview lines and, where the same full video is verified, the full Russian recording as the **first URL before social routes**. Lord God long-form original/source labels follow their different project runbook. The Legendary Poet new manual v3.1 package has playlist-first/social-first layout instead. See [Lord God decision matrix](../operations/lord-god-youtube-agent-decision-contract.md) and [Poet package master](../youtube-metadata-package-master-v3.1.md). Shared renderers must never erase those project/surface distinctions.
+
 ### Comment
 
 `YouTubeCommentRenderer` produces:

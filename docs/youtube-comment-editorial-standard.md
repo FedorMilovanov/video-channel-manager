@@ -8,6 +8,8 @@ It is not a second description, an advertising dump, a generic engagement prompt
 
 Questions belong only where they are the actual subject (a quiz, a documented interpretive dispute) or the owner expressly requests one; never generate a question merely to finish a public comment.
 
+**Маршрутизация Lord God:** перед составлением или редакцией авторских комментариев канала `UCeSJsC6go2c9pdJCuUI1BYA` прочитать [матрицу YouTube-поверхностей](operations/lord-god-youtube-agent-decision-contract.md). Для комментариев **нет** правила двух чистых строк SHARE (оно относится к Description), зато для каждой подписи URL действует `*Подпись:* URL` на **одной строке**; конечный знак выделенной фразы — **до** закрывающего `*` / `_`, если входит в выделяемую фразу. Не переносить пунктуацию без смысловой проверки. Прежде чем создавать новый комментарий, читать текущие авторские top-level comments и pin-state.
+
 ## Exact upload identity and pin state for historical interviews
 
 For a manually uploaded full-length conversation, **re-resolve the active YouTube video ID immediately before every metadata or comment action**. The previous video's URL, upload file name, title, description, or cached receipt is not proof that it is still the current provider object. A deleted/absent ID and a newly uploaded same-named video require separate read-only checks of the exact owner channel, file details, duration, visibility, description, and existing author comments. A stale plan must not be silently retargeted; build and approve an exact-ID plan for the replacement.

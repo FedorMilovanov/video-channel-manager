@@ -2,6 +2,8 @@
 
 This is the durable operating guide for the lord-god-strength YouTube project. It does not grant standing provider write permission. Resolve the user's current request and the exact operation's authorization first. Owning legacy-description issue: https://github.com/FedorMilovanov/video-channel-manager/issues/795. Older issue comments are evidence, never current state.
 
+**Обязательный входной документ для агентов:** [Lord God YouTube — матрица поверхности, ссылок и проверки](lord-god-youtube-agent-decision-contract.md). В этой инструкции сохраняются подробные правила источников и провайдерной безопасности; матрица определяет, какие правила относятся к SHORTS, к LONGFORM, к комментариям и к отдельному поэтическому проекту. Не переносить из Legendary Poet ни playlist-first порядок, ни его ссылки.
+
 ## Runtime provenance, OAuth directory and agent handoff
 
 - Resolve the exact current remote `main` SHA; inspect the source checkout's
