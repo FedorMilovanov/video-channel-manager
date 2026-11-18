@@ -5,6 +5,12 @@
   "deletion_rule": "A ref listed here is not a work branch, so neither age, nor a zero-ahead comparison against main, nor byte-identical duplication makes it deletable. Deleting one breaks a live binding: on 2026-10-21 the ref agent/milovi-video-accepted-73c578eff825 was deleted as a byte-identical duplicate and had to be restored, because the Milovi sendVideo binding, the workflow contract and current-state all name it. Any cleanup must read this file first, and tests/test_milovi_evidence_binding.py fails if a listed ref appears in a deletion ledger.",
   "refs": [
     {
+      "ref": "state/legendary-poet-telegram",
+      "role": "durable_state",
+      "tip_is_stable": false,
+      "why": "Reserved for dedicated Legendary Poet Telegram audio dispatch ledger and no-replay results. No remote state branch or publication authority exists merely by registering this ref."
+    },
+    {
       "ref": "state/lordchrist-telegram",
       "role": "durable_state",
       "tip_is_stable": false,
