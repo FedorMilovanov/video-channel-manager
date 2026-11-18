@@ -747,3 +747,68 @@ def test_description_put_fails_closed_on_incomplete_localizations(tmp_path: Path
             new_description="After",
         )
     assert requests == ["GET"]
+
+
+def test_lord_god_description_put_refuses_missing_owner_tags_before_http(tmp_path: Path) -> None:
+    """YouTube can randomly omit existing tag collections from owner videos.list."""
+    from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
+
+    raw = _raw_video("Before")
+    raw["snippet"]["channelId"] = LORD_GOD_OWNER_CHANNEL
+    del raw["snippet"]["tags"]
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        assert request.method == "GET", "Incomplete Lord God owner metadata must NEVER send PUT."
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    with pytest.raises(YouTubeWriteError, match="snippet.tags.*No videos.update PUT"):
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id=LORD_GOD_OWNER_CHANNEL,
+            expected_revision="sha256:stale",
+            expected_description="Before",
+            new_description="After",
+        )
+    assert methods == ["GET"]
+
+
+def test_other_project_tagless_description_writer_contract_unchanged(tmp_path: Path) -> None:
+    """The Lord God missing-tags fail-closed rule is not applied to other projects."""
+    raw = _raw_video("Before")
+    del raw["snippet"]["tags"]
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal raw
+        methods.append(request.method)
+        if request.method == "PUT":
+            body = json.loads(request.content)
+            assert "tags" not in body["snippet"]
+            raw = {
+                **raw,
+                "snippet": {**raw["snippet"], "description": body["snippet"]["description"]},
+            }
+            return httpx.Response(200, json=raw)
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+    )
+    updated = writer.replace_description(
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_revision="sha256:stale",
+        expected_description="Before",
+        new_description="After",
+    )
+    assert updated.description == "After"
+    assert methods == ["GET", "PUT", "GET"]

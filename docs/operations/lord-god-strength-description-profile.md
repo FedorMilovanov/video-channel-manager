@@ -4,6 +4,8 @@ Project key: `lord-god-strength`
 
 This profile applies only to the theological project. The existing files `docs/youtube-description-rendering-standard.md` and `docs/vk-description-rendering-standard.md` were written for The Legendary Poet and must not supply their channel name, site, VK community, Telegram, Rutube, playlist, or footer to this project.
 
+**Перед подготовкой любых YouTube Shorts, полноформатных описаний или авторских комментариев:** обязательна [матрица выбора правил по поверхности](lord-god-youtube-agent-decision-contract.md). Она поясняет, почему для Lord God у Shorts две чистые сырые строки и первая URL-ссылка на полную русскую запись, тогда как для нового ручного пакета Legendary Poet v3.1 сверху стоят жирные ссылки на плейлисты. Для Lord God long-form отдельно действует правило `Англоязычная запись:` на строке перед голым URL. **Не объединять эти три формата.**
+
 ## Exact identities
 
 - YouTube channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
