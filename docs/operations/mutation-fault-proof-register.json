@@ -320,17 +320,23 @@
       "boundary_id": "youtube.localization.update",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_youtube_localization_fix.py::test_localization_guard_refuses_stale_or_unsafe_before_put",
           "claim": "changed owner, primary text, locale map, privacy or metadata rejects a localization-only PUT"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_youtube_localization_fix.py::test_localization_api_503_never_retries_put",
           "claim": "an ambiguous videos.update 503 is attempted once with no replay"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_youtube_localization_fix.py::test_localization_postflight_drift_blocks_without_replay",
           "claim": "unexpected primary/audio/secondary-locale drift blocks completion without repeated PUT"
         }
@@ -819,6 +825,32 @@
           ],
           "test_id": "tests/test_telegram_multichannel_video.py::test_send_video_once_marks_returned_caption_drift_as_ambiguous",
           "claim": "a returned caption that differs from the exact video payload becomes may_exist instead of success"
+        }
+      ]
+    },
+    {
+      "boundary_id": "telegram.multichannel.audio.send",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_changed_media_digest_fails_before_dispatch",
+          "claim": "reviewed MP3 that changed before sending is blocked on size/hash before any provider request"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_send_audio_once_read_timeout_is_one_ambiguous_attempt",
+          "claim": "a response lost after the sole sendAudio dispatch produces may_exist, retryable=False, and exactly one provider request"
+        },
+        {
+          "stages": [
+            "after_response_before_commit"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_ambiguous_provider_echo_is_may_exist_no_second_send",
+          "claim": "wrong returned caption/chat/entities/audio is never committed as verified and remains a single ambiguous request"
         }
       ]
     },

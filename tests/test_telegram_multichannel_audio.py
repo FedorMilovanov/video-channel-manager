@@ -293,3 +293,22 @@ def test_provider_http_failure_never_retries(tmp_path, monkeypatch):
         with pytest.raises(TelegramApiError):
             send_audio_once(profile, _target(profile), payload, token="test", client=client, now=NOW)
     assert len(requests) == 1
+
+
+def test_send_audio_once_read_timeout_is_one_ambiguous_attempt(tmp_path, monkeypatch):
+    """After a request is dispatched, a lost response is may_exist and never replayed."""
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    dispatched = []
+
+    def handler(request):
+        dispatched.append(request)
+        raise httpx.ReadTimeout("lost sendAudio provider response", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(TelegramApiError) as error:
+            send_audio_once(profile, _target(profile), payload, token="test", client=client, now=NOW)
+    assert error.value.provider_effect == "may_exist"
+    assert error.value.retryable is False
+    assert len(dispatched) == 1
