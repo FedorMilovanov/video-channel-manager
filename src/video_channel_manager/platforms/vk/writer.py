@@ -35,7 +35,7 @@ from video_channel_manager.platforms.vk.wall_safety import (
     VkUploadWallPolicy,
 )
 
-_API_BASE_URL = "https://api.vk.com/method"
+_API_BASE_URL = "https://api.vk.ru/method"
 _RETRYABLE_API_CODES = frozenset({6, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
