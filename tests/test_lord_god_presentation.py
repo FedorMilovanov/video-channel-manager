@@ -119,9 +119,7 @@ def test_future_copy_accepts_plain_english_original_and_subject_matched_qa_playl
 def test_shelf_removal_rejects_short_source_only_card_and_orphan_heading() -> None:
     original = (
         "Original: https://youtube.com/shorts/Bp27Wqi6j5I"
-        "\nSermons: https://youtube.com/channel/"
-        + LORD_GOD_OWNER_CHANNEL
-        + "/playlists?sort=dd&shelf_id=3"
+        "\nSermons: https://youtube.com/channel/" + LORD_GOD_OWNER_CHANNEL + "/playlists?sort=dd&shelf_id=3"
     )
     proposed = "Original: https://youtube.com/shorts/Bp27Wqi6j5I\n\nConferences:"
     # The standalone short-format check permits this before/after; the
@@ -135,9 +133,7 @@ def test_shelf_removal_rejects_short_source_only_card_and_orphan_heading() -> No
 def test_shelf_removal_accepts_two_plain_content_lines_for_short_clip() -> None:
     original = (
         "Original: https://youtube.com/shorts/Bp27Wqi6j5I"
-        "\nSermons: https://youtube.com/channel/"
-        + LORD_GOD_OWNER_CHANNEL
-        + "/playlists?shelf_id=3"
+        "\nSermons: https://youtube.com/channel/" + LORD_GOD_OWNER_CHANNEL + "/playlists?shelf_id=3"
     )
     proposed = (
         "Joel Beeke speaks about Christ's continual presence with believers."
