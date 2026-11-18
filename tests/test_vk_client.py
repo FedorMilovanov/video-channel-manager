@@ -15,7 +15,6 @@ from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkVideoWriter
 
 
-
 @pytest.mark.parametrize("client_type", [VkApiClient, VkVideoWriter, VkThumbnailWriter])
 def test_vk_clients_default_to_current_api_domain_without_provider_calls(client_type: type[object]) -> None:
     assert signature(client_type).parameters["api_base_url"].default == "https://api.vk.ru/method"
