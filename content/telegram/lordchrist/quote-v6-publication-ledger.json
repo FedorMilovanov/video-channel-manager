@@ -3,7 +3,7 @@
   "schema_version": 3,
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
-  "queue_digest": "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03",
+  "queue_digest": "sha256:13cac1b9630072b7929d8d96244153284779dc41961469d3f106e289df94eb0d",
   "entries": {
     "lordchrist-ryle-religion-cost": {
       "publication_id": "lordchrist-ryle-religion-cost",
@@ -282,7 +282,7 @@
     },
     "lordchrist-spurgeon-resurrection-of-the-dead": {
       "publication_id": "lordchrist-spurgeon-resurrection-of-the-dead",
-      "payload_sha256": "sha256:794493993cb61b6cfce59c614fa7322351768360c10dd77d5e61d48225509e72",
+      "payload_sha256": "sha256:e7eb2d01ec1093c52eece462cb2e8ad101198a08bc3499e8927528a5d7ac5c04",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -332,7 +332,7 @@
     },
     "lordchrist-edwards-sinners-in-hands": {
       "publication_id": "lordchrist-edwards-sinners-in-hands",
-      "payload_sha256": "sha256:12cf7961a5289d6511a588ff8e0c75a3d805309b9474938739897ea54adf3092",
+      "payload_sha256": "sha256:dd1a5b48fd71f91f7f2c17748a24d30f8e9ca30b1ebbeee88a6a89c6ec7d59cd",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -357,7 +357,7 @@
     },
     "lordchrist-matthew-henry-heart-work": {
       "publication_id": "lordchrist-matthew-henry-heart-work",
-      "payload_sha256": "sha256:57a65d5f91215f6345308aa7ef9fb51c60cd0bad5febb0ece98891032acd3bce",
+      "payload_sha256": "sha256:c77a47e901e54b8aa6e59acac3318eada0ff526409f7fc9eae2764292b1c44e9",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -432,7 +432,7 @@
     },
     "lordchrist-ryle-christian-is-a-soldier": {
       "publication_id": "lordchrist-ryle-christian-is-a-soldier",
-      "payload_sha256": "sha256:23f196a2cc3b2c5446cb486c9828df508ee0e81248f755ec76d452ead1dcc61a",
+      "payload_sha256": "sha256:5bc651f1dccd50ddd8ee6b9b94397e34049a749c6d9c1b2e335865d884a95e85",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -457,7 +457,7 @@
     },
     "lordchrist-ryle-assurance": {
       "publication_id": "lordchrist-ryle-assurance",
-      "payload_sha256": "sha256:8a918f98c1ec71b3ec10b8ab42254a3bc44137b2e228e2f2dfcb8add83b8c9ae",
+      "payload_sha256": "sha256:b55e2bbbfcf581c5559aaf09284f1c1f5c9ef9ccf2fd5af5931aec8fa6709206",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -482,7 +482,7 @@
     },
     "lordchrist-ryle-practical-holiness": {
       "publication_id": "lordchrist-ryle-practical-holiness",
-      "payload_sha256": "sha256:64471e92357a2976d4961b97c05f32862a1460a706e5e635c0a1c267c9c63b1f",
+      "payload_sha256": "sha256:6194e00cb4be8996b9f0959fa14eec3705430be50875344c7cd708d1481a90b1",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -532,7 +532,7 @@
     },
     "lordchrist-watson-contentment-nature": {
       "publication_id": "lordchrist-watson-contentment-nature",
-      "payload_sha256": "sha256:1861bac537ead294907c9f4ce80f49a714b61a97c92fff71912da67188c2212f",
+      "payload_sha256": "sha256:cb8023be2192ed66d0693622ec6d9f2ac0092cb12080d6a4b75e742ae1668ac6",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -557,7 +557,7 @@
     },
     "lordchrist-flavel-keeping-the-heart": {
       "publication_id": "lordchrist-flavel-keeping-the-heart",
-      "payload_sha256": "sha256:16d3c6652163ef02e5cdfcfec6b251299c4f510141cbc8c55d55a9d8c98f46f1",
+      "payload_sha256": "sha256:79ee3de5f4a79d2184e0a0db0846a96cbe805b2957862c197a74471a1f9f5544",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -582,7 +582,7 @@
     },
     "lordchrist-whitefield-almost-christian": {
       "publication_id": "lordchrist-whitefield-almost-christian",
-      "payload_sha256": "sha256:7540d990dcb980356450ab723a7d4cff727777e3806e57b550e1cfb2175d3748",
+      "payload_sha256": "sha256:6979a078cc80d9d7c91c12b1f44790b80b6000b2b2d1888f969fcab231aacb29",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -632,7 +632,7 @@
     },
     "lordchrist-bunyan-preaching-call": {
       "publication_id": "lordchrist-bunyan-preaching-call",
-      "payload_sha256": "sha256:eae9e7367c2cb44b6ef45209245579660f013671ad5b3b320902f5826d8c3512",
+      "payload_sha256": "sha256:46a84400261a6c8b2e99931b4a7c13a1fb257ebe887358d9353bc53e518c3629",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -657,7 +657,7 @@
     },
     "lordchrist-bunyan-pilgrim-celestial-city": {
       "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
-      "payload_sha256": "sha256:7b3a3e9d8ca302baccca734b102c10c6cf45cc73036396bd138bb3b36a4e3a84",
+      "payload_sha256": "sha256:c81d0078e86a93eaa232f4bbc6f49743f35af867d90984bec24a2d2febf62fca",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -682,7 +682,7 @@
     },
     "lordchrist-kuyper-near-unto-god": {
       "publication_id": "lordchrist-kuyper-near-unto-god",
-      "payload_sha256": "sha256:e97b907bc8109b65fe2d6d95473e0b393093fbb57b6adc6e5b8e97dd84018b01",
+      "payload_sha256": "sha256:60ee67e67f360c8c740f4a78024e7bdf403d00885b242cd79e4c789d7935b465",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
@@ -707,7 +707,7 @@
     },
     "lordchrist-bavinck-revelation": {
       "publication_id": "lordchrist-bavinck-revelation",
-      "payload_sha256": "sha256:bc95abad7e309ecc482d00ebc9f2a65e3d3f00ff2532fde805d6f30c0e34d0d1",
+      "payload_sha256": "sha256:b32df6dc505d40473c7d2795ad1a642311748e5ed8d62eae6a7865854199ca19",
       "state": "pending",
       "provider_effect": "impossible",
       "intent_id": null,
