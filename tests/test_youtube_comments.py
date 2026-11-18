@@ -124,18 +124,20 @@ def test_validate_comment_text_keeps_normal_question_marks_and_cyrillic() -> Non
 @pytest.mark.parametrize(
     ("invalid", "valid"),
     [
-        ("МакАртур: _греческий текст сохранился_, но перевод отличается.",
-         "МакАртур: _греческий текст сохранился,_ но перевод отличается."),
-        ("Он старается _не оправдывать себя_, однако защищает сотрудников.",
-         "Он старается _не оправдывать себя,_ однако защищает сотрудников."),
+        (
+            "МакАртур: _греческий текст сохранился_, но перевод отличается.",
+            "МакАртур: _греческий текст сохранился,_ но перевод отличается.",
+        ),
+        (
+            "Он старается _не оправдывать себя_, однако защищает сотрудников.",
+            "Он старается _не оправдывать себя,_ однако защищает сотрудников.",
+        ),
         ("*Telegram*: https://t.me/lordchrist", "*Telegram:* https://t.me/lordchrist"),
         ("_Источник_: https://www.gty.org/sermons/70-26", "_Источник:_ https://www.gty.org/sermons/70-26"),
         ("*Фраза*.", "*Фраза.*"),
     ],
 )
-def test_validate_comment_text_rejects_punctuation_after_emphasis(
-    invalid: str, valid: str
-) -> None:
+def test_validate_comment_text_rejects_punctuation_after_emphasis(invalid: str, valid: str) -> None:
     with pytest.raises(ValueError, match="native emphasis punctuation is invalid"):
         validate_comment_text(invalid)
     assert validate_comment_text(valid) == valid
