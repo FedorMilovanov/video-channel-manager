@@ -83,6 +83,12 @@ A publishable fact paragraph normally contains 100–900 characters. Length alon
 
 Закреп — самостоятельная содержательная миниатюра (обычно 500–1400 символов), а не уменьшенная копия Description. При подготовке двух вариантов каждый должен опираться на **разный проверенный фактический узел** (например, воспоминание современника против места текста в структуре поэтического цикла), а не повторять одну идею другими словами. Не добавлять обязательный вопрос с двумя ответами, шаблонные приглашения подписаться или ненужные эмодзи. Если нужен второй развёрнутый авторский комментарий под одним видео, он остаётся **незакреплённым**: одновременно закрепить два нельзя.
 
+### 2026-11-18 — YouTube-native punctuation regression
+
+YouTube uses `*bold*` and `_italic_` (not Markdown double asterisks). A comma, period or link-label colon that **belongs to the emphasized phrase** goes **before** the closing marker: `*важное слово,*`, `_греческий текст сохранился,_`, `*Источник:*` and `_мысль._`. Reject `*важное слово*,`, `_греческий текст сохранился_,`, `*Источник*:` and `_мысль_.` before a YouTube comment POST or PUT.
+
+The incident was reproduced on two Lord God Q&A №54 owner comments: the malformed `_греческий текст сохранился_,` and `_не оправдывать себя_,` passed the older length/encoding-only comment validator. This is a **preflight rejection**, not an instruction to silently rewrite the punctuation in an arbitrary phrase; preserve exact meaning and review punctuation before submitting new copy. External connectors such as `*Джон МакАртур* — богослов` remain outside the emphasis. Existing public comments are not a reason for unrelated bulk edits.
+
 ## Visual style
 
 The style is compact and readable on desktop and mobile.

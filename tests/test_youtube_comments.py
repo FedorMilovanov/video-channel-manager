@@ -121,6 +121,31 @@ def test_validate_comment_text_keeps_normal_question_marks_and_cyrillic() -> Non
     assert validate_comment_text(label + "???") == label + "???"
 
 
+@pytest.mark.parametrize(
+    ("invalid", "valid"),
+    [
+        ("МакАртур: _греческий текст сохранился_, но перевод отличается.",
+         "МакАртур: _греческий текст сохранился,_ но перевод отличается."),
+        ("Он старается _не оправдывать себя_, однако защищает сотрудников.",
+         "Он старается _не оправдывать себя,_ однако защищает сотрудников."),
+        ("*Telegram*: https://t.me/lordchrist", "*Telegram:* https://t.me/lordchrist"),
+        ("_Источник_: https://www.gty.org/sermons/70-26", "_Источник:_ https://www.gty.org/sermons/70-26"),
+        ("*Фраза*.", "*Фраза.*"),
+    ],
+)
+def test_validate_comment_text_rejects_punctuation_after_emphasis(
+    invalid: str, valid: str
+) -> None:
+    with pytest.raises(ValueError, match="native emphasis punctuation is invalid"):
+        validate_comment_text(invalid)
+    assert validate_comment_text(valid) == valid
+
+
+def test_validate_comment_text_preserves_external_dash_and_urls() -> None:
+    text = "📌 *Полная встреча:* https://www.youtube.com/watch?v=a_123\n_Суть фразы,_ а не абзаца.\n*Поэт* — название."
+    assert validate_comment_text(text) == text
+
+
 def test_comment_create_and_update_fail_before_http_on_encoding_damage(tmp_path: Path) -> None:
     def no_http(request: httpx.Request) -> httpx.Response:
         pytest.fail("Damaged Unicode must not reach the YouTube HTTP client.")
@@ -140,6 +165,28 @@ def test_comment_create_and_update_fail_before_http_on_encoding_damage(tmp_path:
             expected_channel_id="channel-1",
             expected_text="previous text",
             new_text=damaged,
+        )
+
+
+def test_comment_create_rejects_punctuation_scope_before_http(tmp_path: Path) -> None:
+    def no_http(request: httpx.Request) -> httpx.Response:
+        pytest.fail("Invalid comment formatting must be rejected before the HTTP call.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(no_http))
+    broken = "МакАртур различил: _греческий текст сохранился_, но перевод может отличаться."
+    with pytest.raises(ValueError, match="native emphasis punctuation"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text=broken,
+        )
+    with pytest.raises(ValueError, match="native emphasis punctuation"):
+        writer.update_top_level_comment(
+            comment_id="comment-1",
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_text="previous text",
+            new_text=broken,
         )
 
 
