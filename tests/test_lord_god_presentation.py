@@ -82,6 +82,8 @@ def _plan(after: str = _DESCRIPTION) -> dict:
         ("*Важная мысль*", "new_template_summary_or_project_heading"),
         ("*Содержание*", "new_template_summary_or_project_heading"),
         ("*Проект*", "new_template_summary_or_project_heading"),
+        ("Corrupted source ????? ???", "new_text_encoding_corruption"),
+        ("Corrupted source \ufffd text", "new_text_encoding_corruption"),
         (
             "*Архивные серии канала (не все являются источником этого фрагмента)*",
             "new_playlist_heading_misstates_subject",
@@ -152,6 +154,12 @@ def test_shelf_removal_accepts_two_plain_content_lines_for_short_clip() -> None:
         "\n\nOriginal: https://youtube.com/shorts/Bp27Wqi6j5I"
     )
     assert forward_longform_editorial_issues(original, proposed) == []
+
+
+def test_inherited_question_mark_placeholder_is_not_forced_into_retroactive_rewrite() -> None:
+    legacy = "Original unavailable: ?????"
+    proposed = _DESCRIPTION + "\n\n" + legacy
+    assert forward_longform_editorial_issues(legacy, proposed) == []
 
 
 def test_inherited_legacy_summary_and_playlist_headings_do_not_rewrite_sources() -> None:
