@@ -33,13 +33,9 @@ For any task that researches, drafts, edits, formats, or hands off Telegram cont
 
 For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
 
-### Lord God YouTube: mandatory channel/surface decision matrix
-
-For **any** Lord God `@fedormilovanov` / `lord-god-strength` YouTube Short or long-form **description, title, source-link order, comment, pin, or provider-side copy edit**, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md) and follow its exact channel/surface table. It resolves the **two plain raw share-preview lines**, full Russian recording as the **first URL in a matched Short** (social routes below), YouTube `*bold*` / `_italic_` punctuation scope, the **different** long-form original-label formatting, current owner GET and localization preservation. The poet project's v3.1 playlist-first copy layout **does not apply**. For source-preserving text changes, continue to read the longer Lord God wave below; for comments, also read the channel-specific portion of `docs/youtube-comment-editorial-standard.md`. No document supplies standing provider write authority.
-
 ### Lord God YouTube description source-preservation routing
 
-For the lord-god-strength channel's YouTube description work, first read
+For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
 [docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
 In addition to signed copy-plan and project presentation validation, its
 non-deletion guard preserves original chapters, translation/source credits,
