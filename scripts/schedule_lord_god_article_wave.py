@@ -35,6 +35,13 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 
+def _deny_retired_article_provider() -> None:
+    """Retired article scheduler can be inspected but never dispatched through imports."""
+    raise RuntimeError(
+        "VK_RETIRED_ARTICLE_SCHEDULER_BLOCKED: use the reviewed video-manager wave engine."
+    )
+
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -556,6 +563,7 @@ def state_fingerprint(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def post_once(client: VkApiClient, operation: dict[str, Any]) -> object:
+    _deny_retired_article_provider()
     parsed = parse_attached_link(client, str(operation["url"]))
     return client._call(
         "wall.post",
@@ -677,6 +685,7 @@ def execute_scope(
     journal_path: Path,
     output_dir: Path,
 ) -> dict[str, Any]:
+    _deny_retired_article_provider()
     if os.environ.get("VCM_ALLOW_WALL_POSTS") != "1":
         raise RuntimeError("Execution requires VCM_ALLOW_WALL_POSTS=1")
 
@@ -883,6 +892,7 @@ def execute_scope(
 
 
 def run(repo: Path, *, mode: str) -> int:
+    _deny_retired_article_provider()
     repo = repo.resolve()
     output_dir = repo / "data" / "vk-wall" / DECISION_SET_ID
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -989,6 +999,7 @@ def run(repo: Path, *, mode: str) -> int:
 
 
 def main() -> int:
+    _deny_retired_article_provider()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     mode = parser.add_mutually_exclusive_group()
