@@ -935,6 +935,34 @@
       ]
     },
     {
+      "boundary_id": "telegram.multichannel.audio.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_audio.py",
+      "module": "video_channel_manager.telegram_multichannel_audio",
+      "callable": "send_audio_once",
+      "scanner_marker": "telegram_api:sendAudio",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "explicit channel profile write authority, fresh exact bot/channel proof, frozen digest of MP3/JPEG, HTML caption and UTF-16 entities; exact local media bytes re-verified before dispatch",
+      "dispatch_evidence": "one multipart sendAudio POST via telegram_transport._api_call with literal mutation=True and MUTATION_TRANSPORT_RETRIES == 0; no independent sender",
+      "response_evidence": "returned exact chat identity, caption text and entities, audio file_id and mime/title/performer, and positive message ID",
+      "postflight_evidence": "verified receipt includes exact channel, message ID and payload digest, applied by generic durable ledger; unknown outcome remains may_exist and cannot replay",
+      "reconciliation_identity": "publication_id, provider payload digest, MP3 hash, optional JPEG hash, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_audio.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
       "boundary_id": "telegram.channel.dispatch.prepared",
       "risk": "P0",
       "provider": "Telegram",

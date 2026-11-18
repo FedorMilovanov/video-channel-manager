@@ -216,6 +216,7 @@ class _AudioMultipartClient:
         }
         files = {"audio": (self._payload.media_filename, self._audio, "audio/mpeg")}
         if self._thumbnail is not None:
+            assert self._payload.thumbnail_filename is not None
             files["thumbnail"] = (self._payload.thumbnail_filename, self._thumbnail, "image/jpeg")
         return self._client.post(url, data=data, files=files)
 
