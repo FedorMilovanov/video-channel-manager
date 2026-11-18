@@ -29,6 +29,7 @@ the profiles and their pinned target bindings and compared with them by
 
 | Profile | Project | Target | State ref | `provider_writes_authorized` |
 | --- | --- | --- | --- | --- |
+| `content/telegram/channels/legendary-poet.json` | `legendary-poet` | `@thelegendarypoet` | `state/legendary-poet-telegram` | `false` |
 | `content/telegram/channels/lordchrist.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `false` |
 | `content/telegram/channels/lordchrist-rich.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
 | `content/telegram/channels/lordchrist-shorts-v1.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
