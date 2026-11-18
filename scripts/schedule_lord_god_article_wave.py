@@ -35,11 +35,10 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 
+
 def _deny_retired_article_provider() -> None:
     """Retired article scheduler can be inspected but never dispatched through imports."""
-    raise RuntimeError(
-        "VK_RETIRED_ARTICLE_SCHEDULER_BLOCKED: use the reviewed video-manager wave engine."
-    )
+    raise RuntimeError("VK_RETIRED_ARTICLE_SCHEDULER_BLOCKED: use the reviewed video-manager wave engine.")
 
 
 PROJECT_KEY = "lord-god-strength"
