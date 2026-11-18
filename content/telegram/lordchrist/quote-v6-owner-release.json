@@ -4,9 +4,9 @@
   "release_id": "lordchrist-quote-v6-20261106",
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
-  "candidate_digest": "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03",
-  "previous_candidate_digest": "sha256:a1d865277e794aa5d47ea8248bfab9406b05a44e0ec822400650ed3f580e06f0",
-  "restyle_manifest": "content/telegram/lordchrist/quote-v6-pending-restyle-v1.json",
+  "candidate_digest": "sha256:13cac1b9630072b7929d8d96244153284779dc41961469d3f106e289df94eb0d",
+  "previous_candidate_digest": "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03",
+  "restyle_manifest": "content/telegram/lordchrist/quote-v6-pending-restyle-v2.json",
   "owner_restyle_requested_on": "2026-11-18",
   "preserve_historical_publications": 11,
   "restyle_pending_publications": 19,
@@ -20,5 +20,7 @@
   "scheduled_start_moscow_date": "2026-11-08",
   "schedule_time_moscow": "10:00",
   "max_posts_per_run": 1,
-  "new_state_ledger_relative_path": "content/telegram/lordchrist/quote-v6-publication-ledger.json"
+  "new_state_ledger_relative_path": "content/telegram/lordchrist/quote-v6-publication-ledger.json",
+  "editorial_revision": 2,
+  "revision_basis": "User requested final editorial polish on 2026-11-18; 11 published remain byte-identical. Rights and bilingual human sign-off are NOT claimed."
 }

@@ -36,7 +36,8 @@ def test_19_new_presentations_have_exact_source_and_preserve_11_publications() -
         assert "<blockquote>" not in p.html_text
         assert "«" != p.text[0]
         assert "_" not in p.hashtags
-        assert "<b>" in p.html_text and "<i>" in p.html_text
+        body = p.html_text.rpartition("\n<i>")[0]
+        assert body.count("<b>") + body.count("<i>") in {1, 2}
         assert p.source.original_ru_quote_sha256 == original[p.publication_id].source.original_ru_quote_sha256
     lengths = [len(p.text) for p in changed]
     assert min(lengths) < 450 < max(lengths)
@@ -114,7 +115,10 @@ def test_workflow_separates_state_migration_from_sending() -> None:
     workflow = (ROOT / ".github/workflows/lordchrist-quote-v6-publisher.yml").read_text(encoding="utf-8")
     assert "migrate-restyle" in workflow
     assert "steps.invocation.outputs.migrate == 'true'" in workflow
-    assert "python -m scripts.lordchrist_quote_v6_publisher migrate" in workflow
+    assert (
+        'python -m scripts.lordchrist_quote_v6_publisher "${{ steps.invocation.outputs.migration_command }}"'
+        in workflow
+    )
     assert "steps.invocation.outputs.migrate != 'true'" in workflow
     assert workflow.index("Guarded migration of exact 19 pending") < workflow.index("Preflight exact Telegram bot")
 
@@ -145,4 +149,9 @@ def test_scheduled_invocation_cannot_accidentally_select_migration() -> None:
     assert 'echo "mode=scheduled"' in scheduled_gate.split("exit 0", 1)[0]
     migration_gate = 'if [[ "$V6_ACTION" == "migrate-restyle" ]]; then'
     assert workflow.index(migration_gate) > workflow.index('if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then')
-    assert workflow.count("python -m scripts.lordchrist_quote_v6_publisher migrate") == 1
+    assert (
+        workflow.count(
+            'python -m scripts.lordchrist_quote_v6_publisher "${{ steps.invocation.outputs.migration_command }}"'
+        )
+        == 1
+    )
