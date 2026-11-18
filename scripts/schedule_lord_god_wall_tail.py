@@ -36,6 +36,11 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 
+def _deny_retired_wall_tail_provider() -> None:
+    """Retired wall-tail scheduler must not reach VK when imported."""
+    raise RuntimeError("VK_RETIRED_WALL_TAIL_BLOCKED: use the reviewed video-manager wave engine.")
+
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -148,6 +153,7 @@ def post_ref(post: dict[str, Any], queue: str) -> dict[str, Any]:
 
 
 def wall_snapshot(client: VkApiClient) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    _deny_retired_wall_tail_provider()
     return (
         fetch_wall_posts(client, community_id=COMMUNITY_ID, filter_name="owner"),
         fetch_wall_posts(client, community_id=COMMUNITY_ID, filter_name="postponed"),
@@ -165,6 +171,7 @@ def wall_index(published: list[dict[str, Any]], postponed: list[dict[str, Any]])
 
 
 def exact_video(client: VkApiClient, remote_id: str) -> dict[str, Any] | None:
+    _deny_retired_wall_tail_provider()
     response = client._call("video.get", params={"videos": remote_id, "extended": False, "count": 1})
     items = response.get("items") if isinstance(response, dict) else None
     for item in items if isinstance(items, list) else []:
@@ -253,6 +260,7 @@ def state_fingerprint(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def post_once(client: VkApiClient, operation: dict[str, Any]) -> object:
+    _deny_retired_wall_tail_provider()
     token = client.token_store.load_token(client.account_alias)
     if token.is_expired():
         raise RuntimeError("Stored VK token is expired")
@@ -299,6 +307,7 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
 
 
 def run(repo: Path, *, execute: bool) -> int:
+    _deny_retired_wall_tail_provider()
     repo = repo.resolve()
     out = repo / "data" / "vk-wall" / DECISION_SET_ID
     out.mkdir(parents=True, exist_ok=True)
@@ -462,6 +471,7 @@ def run(repo: Path, *, execute: bool) -> int:
 
 
 def main() -> int:
+    _deny_retired_wall_tail_provider()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--execute", action="store_true")
