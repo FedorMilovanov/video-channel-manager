@@ -1,0 +1,272 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-quote-v6-pending-restyle",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "source_candidate_digest": "sha256:a1d865277e794aa5d47ea8248bfab9406b05a44e0ec822400650ed3f580e06f0",
+  "baseline_published_ids": [
+    "lordchrist-ryle-religion-cost",
+    "lordchrist-spurgeon-salvation-all-of-grace",
+    "lordchrist-spurgeon-divine-sovereignty",
+    "lordchrist-owen-mortification-daily",
+    "lordchrist-calvin-knowledge-of-god-and-self",
+    "lordchrist-augustine-restless-heart",
+    "lordchrist-gurnall-cold-prayer",
+    "lordchrist-baxter-dying-men-and-immortal-souls",
+    "lordchrist-charnock-god-is-light",
+    "lordchrist-murray-kept-by-power",
+    "lordchrist-bunyan-grace-abounding"
+  ],
+  "notes": "Editorial v2 of 19 pending posts: exact contiguous Russian spans, context-safe openings, meaning-led emphasis. v1 is frozen historical evidence; no published item edited. Independent translation rights and full bilingual certification remain separate, not implied.",
+  "pending": [
+    {
+      "sequence": 9,
+      "publication_id": "lordchrist-calvin-prayer-opens-treasures",
+      "excerpt_start": "Молитвою мы обязаны тем",
+      "excerpt_end": "не было тщетным.",
+      "bold": "Молитва есть своего рода общение между Богом и людьми",
+      "italic": "прибегаем к Его обетованиям",
+      "hashtags": [
+        "#ЖанКальвин",
+        "#Молитва",
+        "#БожьиОбетования"
+      ]
+    },
+    {
+      "sequence": 12,
+      "publication_id": "lordchrist-spurgeon-resurrection-of-the-dead",
+      "excerpt_start": null,
+      "excerpt_end": null,
+      "bold": "постоянным содержанием апостольского возвещения было воскресение мёртвых",
+      "italic": null,
+      "hashtags": [
+        "#Сперджен",
+        "#Воскресение",
+        "#Проповедь"
+      ]
+    },
+    {
+      "sequence": 14,
+      "publication_id": "lordchrist-edwards-sinners-in-hands",
+      "excerpt_start": "У Бога нет недостатка в силе, чтобы в любое мгновение низвергнуть нечестивых в ад.",
+      "excerpt_end": "никто не может избавить из Его руки.",
+      "bold": "У Бога нет недостатка в силе, чтобы в любое мгновение низвергнуть нечестивых в ад.",
+      "italic": "Самые могущественные люди бессильны противиться Ему, и никто не может избавить из Его руки.",
+      "hashtags": [
+        "#ДжонатанЭдвардс",
+        "#БожийСуд",
+        "#БожьяВоля"
+      ]
+    },
+    {
+      "sequence": 15,
+      "publication_id": "lordchrist-matthew-henry-heart-work",
+      "excerpt_start": "Служение греху — совершенное рабство",
+      "excerpt_end": "даже последнему из узников.",
+      "bold": "Служение греху — совершенное рабство; служение Богу — совершенная свобода.",
+      "italic": null,
+      "hashtags": [
+        "#МэтьюГенри",
+        "#Послушание",
+        "#Свобода"
+      ]
+    },
+    {
+      "sequence": 16,
+      "publication_id": "lordchrist-ryle-sanctification-three-necessaries",
+      "excerpt_start": "Если Библия истинна",
+      "excerpt_end": "не будет прославлен в последний день.",
+      "bold": "оправдание, возрождение и освящение",
+      "italic": "Все три присутствуют в каждом чаде Божьем",
+      "hashtags": [
+        "#Райл",
+        "#Освящение",
+        "#Оправдание"
+      ]
+    },
+    {
+      "sequence": 17,
+      "publication_id": "lordchrist-ryle-nature-of-sin",
+      "excerpt_start": "Простая истина состоит",
+      "excerpt_end": "что он — виновный грешник.",
+      "bold": "правильное познание греха лежит в основании всего спасительного христианства",
+      "italic": "показывает ему, что он — виновный грешник",
+      "hashtags": [
+        "#Райл",
+        "#Грех",
+        "#ПознаниеГреха"
+      ]
+    },
+    {
+      "sequence": 18,
+      "publication_id": "lordchrist-ryle-christian-is-a-soldier",
+      "excerpt_start": "Кто хочет понять природу подлинной святости, должен знать, что христианин — воин.",
+      "excerpt_end": "нам надлежит сражаться.",
+      "bold": "христианин — воин",
+      "italic": null,
+      "hashtags": [
+        "#Райл",
+        "#ДуховнаяБрань",
+        "#Святость"
+      ]
+    },
+    {
+      "sequence": 19,
+      "publication_id": "lordchrist-ryle-assurance",
+      "excerpt_start": "Павел смотрит вниз, на могилу, и не испытывает страха.",
+      "excerpt_end": "он отправится в плавание.",
+      "bold": "Павел смотрит вниз, на могилу, и не испытывает страха.",
+      "italic": "„Время моего отшествия настало“",
+      "hashtags": [
+        "#Райл",
+        "#Уверенность",
+        "#ВечнаяЖизнь"
+      ]
+    },
+    {
+      "sequence": 20,
+      "publication_id": "lordchrist-ryle-practical-holiness",
+      "excerpt_start": "Святость — привычка быть единомысленным с Богом",
+      "excerpt_end": "тот и есть самый святой человек.",
+      "bold": "Святость — привычка быть единомысленным с Богом",
+      "italic": null,
+      "hashtags": [
+        "#Райл",
+        "#Святость",
+        "#Благочестие"
+      ]
+    },
+    {
+      "sequence": 21,
+      "publication_id": "lordchrist-watson-divine-contentment",
+      "excerpt_start": "Чрезмерная забота отвлекает сердце от лучшего",
+      "excerpt_end": "чем локоть к утешению.",
+      "bold": "Чрезмерная забота отвлекает сердце от лучшего",
+      "italic": "Забота — духовная язва, которая истощает человека и лишает его сил.",
+      "hashtags": [
+        "#ТомасУотсон",
+        "#ДовериеБогу",
+        "#Заботы"
+      ]
+    },
+    {
+      "sequence": 22,
+      "publication_id": "lordchrist-watson-contentment-nature",
+      "excerpt_start": "Во-первых, довольство — дар Божественный.",
+      "excerpt_end": "но имеет небесное происхождение.",
+      "bold": "Во-первых, довольство — дар Божественный.",
+      "italic": null,
+      "hashtags": [
+        "#ТомасУотсон",
+        "#Довольство",
+        "#Благочестие"
+      ]
+    },
+    {
+      "sequence": 23,
+      "publication_id": "lordchrist-flavel-keeping-the-heart",
+      "excerpt_start": null,
+      "excerpt_end": null,
+      "bold": null,
+      "italic": "Таковы три воистину печальных зрелища!",
+      "hashtags": [
+        "#ДжонФлавел",
+        "#Сердце",
+        "#Лицемерие"
+      ]
+    },
+    {
+      "sequence": 24,
+      "publication_id": "lordchrist-whitefield-almost-christian",
+      "excerpt_start": null,
+      "excerpt_end": null,
+      "bold": "Словом, он любит форму, но никогда не испытывает силы благочестия в сердце своём.",
+      "italic": null,
+      "hashtags": [
+        "#ДжорджУайтфилд",
+        "#Обращение",
+        "#Благочестие"
+      ]
+    },
+    {
+      "sequence": 25,
+      "publication_id": "lordchrist-whitefield-method-of-grace-peace",
+      "excerpt_start": "Как нет для народа большего благословения",
+      "excerpt_end": "неумелых наставников.",
+      "bold": "величайшее проклятие, какое Бог может послать народу в этом мире",
+      "italic": "слепых, невозрождённых, плотских, равнодушных и неумелых наставников",
+      "hashtags": [
+        "#ДжорджУайтфилд",
+        "#ЛожныйМир",
+        "#Проповедь"
+      ]
+    },
+    {
+      "sequence": 26,
+      "publication_id": "lordchrist-bunyan-preaching-call",
+      "excerpt_start": null,
+      "excerpt_end": null,
+      "bold": null,
+      "italic": "Они вознесли благодарность Отцу милосердия за благодать, дарованную мне.",
+      "hashtags": [
+        "#ДжонБаньян",
+        "#Призвание",
+        "#Проповедь"
+      ]
+    },
+    {
+      "sequence": 27,
+      "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
+      "excerpt_start": null,
+      "excerpt_end": null,
+      "bold": null,
+      "italic": "Здесь вновь утверждался союз Невесты и Жениха",
+      "hashtags": [
+        "#ДжонБаньян",
+        "#ПутьПилигрима",
+        "#Небеса"
+      ]
+    },
+    {
+      "sequence": 28,
+      "publication_id": "lordchrist-kuyper-near-unto-god",
+      "excerpt_start": "Любовь к Богу может быть лишь прекрасным чувством.",
+      "excerpt_end": "не знает тайного хождения с Богом.",
+      "bold": "душа между тем всё ещё чужда общению с Вечным",
+      "italic": null,
+      "hashtags": [
+        "#АбрахамКёйпер",
+        "#БлизостьКБогу",
+        "#Молитва"
+      ]
+    },
+    {
+      "sequence": 29,
+      "publication_id": "lordchrist-bavinck-revelation",
+      "excerpt_start": "Если Бога нет либо если Он не открыл Себя",
+      "excerpt_end": "о нашем познании Его.",
+      "bold": "всякая религия есть иллюзия, а всякое богословие — призрак.",
+      "italic": null,
+      "hashtags": [
+        "#ГерманБавинк",
+        "#Откровение",
+        "#Богословие"
+      ]
+    },
+    {
+      "sequence": 30,
+      "publication_id": "lordchrist-whitefield-self-denial",
+      "excerpt_start": "Кто читает Евангелие простым оком",
+      "excerpt_end": "самоотречения.",
+      "bold": "Царство Его не от мира сего",
+      "italic": "учение Его есть учение о кресте",
+      "hashtags": [
+        "#ДжорджУайтфилд",
+        "#Крест",
+        "#Самоотречение"
+      ]
+    }
+  ],
+  "editorial_revision": 2,
+  "previous_queue_digest": "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03"
+}

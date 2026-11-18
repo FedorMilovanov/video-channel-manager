@@ -10,6 +10,7 @@ on:
         options:
           - initialize
           - migrate-restyle
+          - migrate-editorial-v2
           - publish
       publication_id:
         description: First canary publication ID (manual publish only)
@@ -105,6 +106,15 @@ jobs:
             [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
             echo "initialize=false" >> "$GITHUB_OUTPUT"
             echo "migrate=true" >> "$GITHUB_OUTPUT"
+            echo "migration_command=migrate" >> "$GITHUB_OUTPUT"
+            echo "mode=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$V6_ACTION" == "migrate-editorial-v2" ]]; then
+            [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
+            echo "initialize=false" >> "$GITHUB_OUTPUT"
+            echo "migrate=true" >> "$GITHUB_OUTPUT"
+            echo "migration_command=migrate-editorial" >> "$GITHUB_OUTPUT"
             echo "mode=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -144,7 +154,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m scripts.lordchrist_quote_v6_publisher migrate
+          python -m scripts.lordchrist_quote_v6_publisher "${{ steps.invocation.outputs.migration_command }}"
 
       - name: Persist checked queue rebind in shared state before any future send
         if: steps.invocation.outputs.migrate == 'true'
@@ -158,7 +168,7 @@ jobs:
             echo "No state migration was prepared: refusing a no-op success" >&2
             exit 3
           }
-          git -C "$STATE_DIR" commit -m "Rebind 19 pending @lordchrist quotes after 11 verified [skip ci]"
+          git -C "$STATE_DIR" commit -m "Rebind pending @lordchrist editorial revision after 11 verified [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"

@@ -17,8 +17,9 @@ from typing import Any
 from scripts.lordchrist_quote_v6_native_readonly import SOURCE_PATH, build_quote_v6_native_queue
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = Path("content/telegram/lordchrist/quote-v6-pending-restyle-v1.json")
-DEFAULT_PREVIEW = Path("docs/audits/2026-11-18-lordchrist-quote-v6-restyle-inert.json")
+V1_MANIFEST_PATH = Path("content/telegram/lordchrist/quote-v6-pending-restyle-v1.json")
+MANIFEST_PATH = Path("content/telegram/lordchrist/quote-v6-pending-restyle-v2.json")
+DEFAULT_PREVIEW = Path("docs/audits/2026-11-18-lordchrist-quote-v6-editorial-v2-inert.json")
 
 
 def canonical(value: Any) -> str:
@@ -53,15 +54,20 @@ def _excerpt(original: str, direction: dict[str, Any]) -> str:
     return excerpt
 
 
-def _emphasize(excerpt: str, bold: str, italic: str) -> str:
+def _emphasize(excerpt: str, bold: str | None, italic: str | None) -> str:
+    """Exactly one meaningful emphasis is sufficient; over-formatting is not required."""
     spans: list[tuple[int, int, str]] = []
     for label, needle in (("b", bold), ("i", italic)):
+        if needle is None:
+            continue
         if not needle or excerpt.count(needle) != 1:
             raise ValueError(f"reviewed emphasis {label} must occur exactly once")
         start = excerpt.index(needle)
         spans.append((start, start + len(needle), label))
+    if not spans:
+        raise ValueError("at least one meaningful emphasis required")
     spans.sort()
-    if spans[0][1] > spans[1][0]:
+    if len(spans) == 2 and spans[0][1] > spans[1][0]:
         raise ValueError("bold/italic spans overlap; nested or duplicate emphasis is forbidden")
     out: list[str] = []
     position = 0
@@ -73,9 +79,15 @@ def _emphasize(excerpt: str, bold: str, italic: str) -> str:
     return "".join(out)
 
 
-def build_restyle_preview(root: Path = ROOT) -> dict[str, Any]:
+def build_restyle_preview(root: Path = ROOT, *, manifest_path: Path = MANIFEST_PATH) -> dict[str, Any]:
     original = build_quote_v6_native_queue(root / SOURCE_PATH)
-    manifest = json.loads((root / MANIFEST_PATH).read_text(encoding="utf-8"))
+    manifest = json.loads((root / manifest_path).read_text(encoding="utf-8"))
+    if manifest_path == MANIFEST_PATH and (
+        manifest.get("editorial_revision") != 2
+        or manifest.get("previous_queue_digest")
+        != "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03"
+    ):
+        raise ValueError("new editorial revision lacks exact old live-digest binding")
     if (
         manifest.get("schema_name") != "video-channel-manager.lordchrist-quote-v6-pending-restyle"
         or manifest.get("schema_version") != 1

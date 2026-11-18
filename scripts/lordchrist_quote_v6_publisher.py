@@ -48,7 +48,7 @@ STATE_PATH = Path(".state/lordchrist")
 STATE_LEDGER = Path("content/telegram/lordchrist/quote-v6-publication-ledger.json")
 LEGACY_QUEUE = Path("content/telegram/lordchrist/verified-30-posts.json")
 LEGACY_LEDGER = Path("content/telegram/lordchrist/publication-ledger.json")
-EXPECTED_DIGEST = "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03"
+EXPECTED_DIGEST = "sha256:13cac1b9630072b7929d8d96244153284779dc41961469d3f106e289df94eb0d"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -393,9 +393,74 @@ def migrate_pending_restyle(root: Path) -> None:
     )
 
 
+def migrate_editorial_revision(root: Path) -> None:
+    """Rebind only pending v1 payloads; preserve published records; no API sends."""
+    from scripts.lordchrist_quote_v6_restyle import V1_MANIFEST_PATH
+
+    previous_queue = build_restyled_quote_v6_native_queue(root, manifest_path=V1_MANIFEST_PATH)
+    new_queue = release_and_queue(root)
+    if previous_queue.digest != "sha256:62a15d4b19057509fb38023847ccbdbde319f9d428a9d6463074ae11b3940b03":
+        raise ValueError("editorial v2 migration lost the exact live v1 baseline")
+    path = root / STATE_PATH / STATE_LEDGER
+    ledger = load_ledger(path, previous_queue)
+    before = {p.publication_id: p for p in previous_queue.posts}
+    after = {p.publication_id: p for p in new_queue.posts}
+    if before.keys() != after.keys() or len(before) != 30:
+        raise ValueError("editorial migration must preserve all 30 publication IDs")
+    changed = []
+    published = 0
+    for publication_id, entry in ledger.entries.items():
+        old_post, new_post = before[publication_id], after[publication_id]
+        if entry.state == "published":
+            if (
+                entry.provider_effect != "verified"
+                or not entry.message_id
+                or entry.published_at_utc is None
+                or new_post.payload_sha256 != old_post.payload_sha256
+            ):
+                raise ValueError("protected published history changed: " + publication_id)
+            published += 1
+            continue
+        if (
+            entry.state != "pending"
+            or entry.provider_effect != "impossible"
+            or entry.intent_id is not None
+            or entry.workflow_run_id is not None
+            or entry.message_id is not None
+            or entry.last_error is not None
+        ):
+            raise ValueError("pending editorial migration is not safe: " + publication_id)
+        if old_post.payload_sha256 != new_post.payload_sha256:
+            changed.append(publication_id)
+    if published != 11 or len(ledger.entries) - published != 19 or not changed:
+        raise ValueError("editorial v2 migration requires exactly 11 verified and 19 pending with changes")
+    guard_cross_track(root)
+    for publication_id in changed:
+        ledger.entries[publication_id].payload_sha256 = after[publication_id].payload_sha256
+    ledger.queue_digest = new_queue.digest
+    save_ledger(path, ledger)
+    verified = load_ledger(path, new_queue)
+    if sum(e.state == "published" for e in verified.entries.values()) != 11:
+        raise ValueError("editorial migration disturbed published history")
+    print(
+        json.dumps(
+            {
+                "migrated": True,
+                "kind": "editorial-v2",
+                "published_unchanged": 11,
+                "pending_preserved": 19,
+                "pending_payload_rebound": len(changed),
+                "new_digest": new_queue.digest,
+                "provider_send": False,
+            },
+            ensure_ascii=False,
+        )
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "init", "migrate", "prepare", "send"))
+    parser.add_argument("command", choices=("validate", "init", "migrate", "migrate-editorial", "prepare", "send"))
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--mode", choices=("manual", "scheduled"), default="scheduled")
     parser.add_argument("--publication-id")
@@ -412,6 +477,9 @@ def main() -> int:
         return 0
     if args.command == "migrate":
         migrate_pending_restyle(root)
+        return 0
+    if args.command == "migrate-editorial":
+        migrate_editorial_revision(root)
         return 0
     if args.command == "prepare":
         return prepare(root, mode=args.mode, expected_id=args.publication_id)

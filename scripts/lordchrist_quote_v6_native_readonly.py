@@ -249,8 +249,16 @@ def _validate_inline_emphasis(post: QuoteV6NativePost) -> QuoteV6NativePost:
     if match is None:
         raise ValueError("restyled message must be body, italic attribution, hashtag footer")
     body_html, attribution, tags = match.groups()
-    if "<blockquote" in body_html.lower() or body_html.count("<b>") != 1 or body_html.count("<i>") != 1:
-        raise ValueError("restyle must contain one bold and one italic emphasis, without blockquote")
+    bold_count, italic_count = body_html.count("<b>"), body_html.count("<i>")
+    if (
+        "<blockquote" in body_html.lower()
+        or not 1 <= bold_count + italic_count <= 2
+        or bold_count > 1
+        or italic_count > 1
+        or body_html.count("</b>") != bold_count
+        or body_html.count("</i>") != italic_count
+    ):
+        raise ValueError("restyle requires one or two balanced, meaning-led emphasis spans; no blockquote")
     body_stripped = re.sub(r"</?(?:b|i)>", "", body_html)
     if "<" in body_stripped or ">" in body_stripped:
         raise ValueError("restyled body contains unsupported markup")
@@ -284,7 +292,7 @@ def _validate_inline_emphasis(post: QuoteV6NativePost) -> QuoteV6NativePost:
     return post
 
 
-def build_restyled_quote_v6_native_queue(root: Path) -> QuoteV6NativeQueue:
+def build_restyled_quote_v6_native_queue(root: Path, *, manifest_path: Path | None = None) -> QuoteV6NativeQueue:
     """Build a new digest-bound queue while keeping all published payloads verbatim.
 
     This function does not modify a state ledger; the matching protected state
@@ -293,7 +301,7 @@ def build_restyled_quote_v6_native_queue(root: Path) -> QuoteV6NativeQueue:
     from scripts.lordchrist_quote_v6_restyle import build_restyle_preview
 
     original = build_quote_v6_native_queue(root / SOURCE_PATH)
-    proposed = build_restyle_preview(root)
+    proposed = build_restyle_preview(root, **({"manifest_path": manifest_path} if manifest_path is not None else {}))
     if proposed["original_queue_digest"] != original.digest:
         raise ValueError("restyle is not bound to the source queue")
     pending = {item["publication_id"]: item for item in proposed["items"]}
