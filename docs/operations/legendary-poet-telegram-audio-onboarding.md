@@ -18,18 +18,29 @@ C:\Users\Fedor\Projects\video-channel-manager\operator-output\legendary-poet-ler
 
 It contains the **unchanged** user-supplied MP3, a 320×320 JPEG thumbnail, reviewed HTML caption, cross-platform copy and `release-manifest.json`. Source file digest: `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`. Exact caption and media must be included in the reviewed release; do not use filename-only matching or an unpublished website link as a live claim.
 
-## Required onboarding before the first send
+## Shared-bot onboarding verified — 18 November 2026 (Issue #1036)
 
-1. Obtain a Telegram bot account that is **administrator with permission to post messages** in the *exact* channel `@thelegendarypoet`. Register its Bot API token through the supported secret manager, never in Git, chat, logs or a committed JSON artifact.
-2. Create a reviewed `content/telegram/channels/legendary-poet.json` profile with unique `project_key`, `state_branch`, concurrency group and credential environment names. Start `provider_writes_authorized=false`. Do not invent any `chat_id`, `bot_id` or `bot_username`.
-3. Use the repository-owned read-only discovery/binding flow to prove the **actual** `getMe` bot identity, `getChat` channel ID and `getChatMember` bot administrator permissions. Only then create the exact target binding and update the machine-maintained write-authority registry, tests and runbook; never borrow the LordChrist or Milovi Cake bot.
-4. Freeze a single `GenericAudioPayload` with `render_audio_payload`: `caption_html`, parsed expected caption/entities, verified MP3 path, SHA-256, size, safe ASCII transfer filename, `title`, `performer`, `duration` and thumbnail JPEG proof. Include it in a release queue. The profile/target binding/release must be reviewed and authorized separately.
-5. Run the usual `initialize-ledger`, `prepare`, `send`, and outcome application flow; preserve `dispatching/may_exist` before provider mutation. Verify the returned `sendAudio` receipt with exact chat identity, caption, entities and returned audio. Save **message ID and URL**.
-6. Re-read the channel permalink before any retry or cross-post. Never treat an unverified `HTTP 200` or incomplete upload as a verified publication.
+**Use the existing shared bot.** The production account is `@preaching_mp3_bot` (ID `8716602202`), intentionally reused by `@lordchrist`, `@deep_info_life`, `@MiloviCake` and this newly registered channel. Do not create another bot, copy a new token or treat the legacy secret name as a target selector. The existing MP3Bot `BOT_TOKEN` was checked in memory without printing/copying it; its bot ID matches.
+
+**Exact destination confirmed by the repository-owned read-only discovery CLI on current main:** `@thelegendarypoet`, numeric chat ID `-1003345085810`, bot `@preaching_mp3_bot`, `administrator`, `can_post_messages=true`. The checks were `getMe`, `getChat(public)`, `getChat(numeric)`, `getChatMember`. No Telegram write request occurred. The proof is archived outside Git under `operator-output/legendary-poet-telegram-discovery-20261118/legendary-poet-target-proof-readonly.json`, and the canonical, verified non-secret binding is `content/telegram/channels/legendary-poet-target-binding.json`.
+
+**Separate channel profile:** `content/telegram/channels/legendary-poet.json` uses `project_key=legendary-poet`, distinct prefix, `state/legendary-poet-telegram`, concurrency group, and `LEGENDARY_POET_TELEGRAM_*` names. The shared token can be mapped into that profile's environment from approved secret storage (including the existing historical LordChrist secret); it must never be committed, pasted into commands or exposed in logs. The `state/` ref is reserved/protected but is not yet initialized with an authorized release. The profile remains **`provider_writes_authorized=false`** and the live per-profile truth is `docs/operations/channel-write-authority.json`.
+
+**Transport boundary:** discovery succeeded through the generic Telegram Bot API read-only transport without restarting, logging out or changing MP3Bot's separate Local Bot API runtime. The 4.8 MB audio does not justify changing the working bot server. A fresh exact-target preflight is required immediately before any future send.
+
+### Required checks before the first audio post
+
+1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.
+2. Freeze one exact `GenericAudioPayload` with unmodified MP3 SHA-256/bytes, proven thumbnail, title/performer/duration, verified HTML caption and UTF-16 entities; do not claim the site URL works until HTTP 200 is confirmed.
+3. Separately review/authorize the immutable `GenericReleaseQueue`, initialize the dedicated state ledger and obtain an operation-specific execution gate. This discovery itself is **not** authority to post.
+4. Use only the current-main `telegram_multichannel_cli` workflow `initialize-ledger → prepare → verify-intent → send-once → apply-outcome`, recording durable intent before `sendAudio`. A possible remote effect `may_exist` blocks any blind repeat.
+5. Verify the exact returned numeric chat ID, actual MP3, caption/entities, positive message ID and permalink `https://t.me/thelegendarypoet/<message_id>`; store the immutable receipt before reporting success.
+
+Until that exact verified receipt exists, the state is **target binding verified, audio publication not dispatched**.
 
 ## Explicit boundaries
 
-- The audio adapter is reusable, but its presence **does not authorize any existing channel** or activate an independent schedule.
+- The audio adapter is reusable and the shared posting bot is intentional; neither their presence nor the new binding authorizes a send or activates a schedule.
 - A private Telegram Desktop login is not a substitute for the Bot API and exact target proof under this runbook.
 - The Legendary Poet VK legacy token alias `legendary-poet` remains quarantined (issue #662). No VK reads/writes using that token.
 - The Rutube channel (registered ID `74579453`) needs its **own** verified identity, duplicate inventory and upload mechanism.
