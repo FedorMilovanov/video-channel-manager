@@ -171,6 +171,8 @@ _ENGLISH_RECORDING_LABEL_RE = re.compile(r"^\s*[*_]*англоязычная з�
 _PLAIN_ENGLISH_RECORDING_LABEL = "Англоязычная запись:"
 _BARE_SOURCE_URL_RE = re.compile(r"https?://\S+\Z")
 
+_NEW_ENCODING_CORRUPTION_RE = re.compile(r"\?{3,}|\ufffd")
+
 
 def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
     """Check newly introduced viewer-facing boilerplate, never rewrite legacy copy.
@@ -208,6 +210,8 @@ def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
             issues.add("new_redundant_speaker_format_topic_field")
         if _TEMPLATE_SUMMARY_HEADING_RE.match(line):
             issues.add("new_template_summary_or_project_heading")
+        if _NEW_ENCODING_CORRUPTION_RE.search(line):
+            issues.add("new_text_encoding_corruption")
         if _NON_SUBJECT_PLAYLIST_HEADING_RE.match(line):
             issues.add("new_playlist_heading_misstates_subject")
         if _ENGLISH_RECORDING_LABEL_RE.match(line):
