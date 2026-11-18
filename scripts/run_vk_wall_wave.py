@@ -185,6 +185,7 @@ def _operation_states(preflight: dict[str, Any]) -> dict[str, str]:
 
 
 def run(args: argparse.Namespace) -> Path:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     if args.community <= 0:
         raise ValueError("--community must be a positive VK community ID")
     if args.write_delay < 0:
@@ -399,6 +400,7 @@ def run(args: argparse.Namespace) -> Path:
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     args = _parser().parse_args()
     run(args)
     return 0
