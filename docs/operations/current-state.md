@@ -15,6 +15,10 @@ This dated section supersedes the historical LordChrist quote/Shorts description
 
 **Operational sequencing:** protect today's QUIZ/Jude slots first; verify Charnock clock reliability before 17 November; prepare an explicitly approved Shorts recovery without date-lease bypass; only then expand into Instagram/VK/media scopes. None of these observations authorizes a POST, workflow rerun, release backfill, or state mutation.
 
+## 2026-11-18 Legendary Poet Telegram audio target (Issue #1036)
+
+Repository-owned read-only discovery verified the existing shared bot `@preaching_mp3_bot` (ID `8716602202`) as an administrator of `@thelegendarypoet` (channel `-1003345085810`) with `can_post_messages=true`. The exact target binding is registered but its channel profile is write-disabled and `state/legendary-poet-telegram` is reserved, not initialized. No `sendAudio` provider mutation or receipt is claimed. The 4.8MB Lermontov MP3 remains a separately reviewed release operation. See [#1036](https://github.com/FedorMilovanov/video-channel-manager/issues/1036) and [onboarding](legendary-poet-telegram-audio-onboarding.md).
+
 ## Completion and authority model
 Repository implementation, artifact production and provider rollout are separate completion states.
 - Implementation completion does not itself authorize execution.
