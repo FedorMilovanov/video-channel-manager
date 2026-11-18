@@ -8,10 +8,7 @@ One Telegram transport/runtime must be able to serve multiple independently conf
 
 ## Current architecture
 
-The generic layer is config-driven through `TelegramChannelProfile` and currently has profiles for:
-
-- `content/telegram/channels/svodka.json` → `@deep_info_life`, state `state/svodka-telegram`;
-- `content/telegram/channels/lordchrist.json` → `@lordchrist`, state `state/lordchrist-telegram`.
+The generic layer is config-driven through `TelegramChannelProfile`. Its current registered profile inventory and per-profile write gates are machine-checked in [`channel-write-authority.json`](channel-write-authority.json), including the verified-but-write-disabled `@thelegendarypoet` target and the independently isolated `@lordchrist`, `@deep_info_life` and `@MiloviCake` targets.
 
 Generic provider code does not select either channel by a module constant. The selected profile supplies project key, channel username, publication prefix, timezone, daily verified limit, state branch, concurrency group and environment-variable names for bot/target identity.
 
