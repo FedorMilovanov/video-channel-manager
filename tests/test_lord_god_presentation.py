@@ -116,6 +116,37 @@ def test_future_copy_accepts_plain_english_original_and_subject_matched_qa_playl
     require_lord_god_youtube_presentation(_plan(proposed))
 
 
+def test_shelf_removal_rejects_short_source_only_card_and_orphan_heading() -> None:
+    original = (
+        "Original: https://youtube.com/shorts/Bp27Wqi6j5I"
+        "\nSermons: https://youtube.com/channel/"
+        + LORD_GOD_OWNER_CHANNEL
+        + "/playlists?sort=dd&shelf_id=3"
+    )
+    proposed = "Original: https://youtube.com/shorts/Bp27Wqi6j5I\n\nConferences:"
+    # The standalone short-format check permits this before/after; the
+    # shelf transition gate must reject the empty viewer-facing content.
+    assert presentation_issues(proposed) == []
+    issues = forward_longform_editorial_issues(original, proposed)
+    assert "shelf_cleanup_missing_two_plain_intro_lines" in issues
+    assert "shelf_cleanup_dangling_navigation_heading" in issues
+
+
+def test_shelf_removal_accepts_two_plain_content_lines_for_short_clip() -> None:
+    original = (
+        "Original: https://youtube.com/shorts/Bp27Wqi6j5I"
+        "\nSermons: https://youtube.com/channel/"
+        + LORD_GOD_OWNER_CHANNEL
+        + "/playlists?shelf_id=3"
+    )
+    proposed = (
+        "Joel Beeke speaks about Christ's continual presence with believers."
+        "\nConfidence in His presence strengthens prayer and daily trust."
+        "\n\nOriginal: https://youtube.com/shorts/Bp27Wqi6j5I"
+    )
+    assert forward_longform_editorial_issues(original, proposed) == []
+
+
 def test_inherited_exact_archive_source_label_does_not_force_mass_rewrite() -> None:
     legacy_credit = "*Автор:* Переводчик, указан в первоначальной публикации"
     legacy_playlist = "*Исторические плейлисты канала:*"
