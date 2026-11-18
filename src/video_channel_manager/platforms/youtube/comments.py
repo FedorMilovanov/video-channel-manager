@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+import re
 import time
 import unicodedata
 from collections.abc import Callable
@@ -11,6 +12,7 @@ from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.editorial.youtube_copy import validate_youtube_description
 from video_channel_manager.platforms.http import (
     HttpClientOwner,
     HttpFailureKind,
@@ -97,6 +99,31 @@ def validate_comment_text(value: str) -> str:
         raise ValueError(
             f"YouTube comment text is {len(normalized)} characters; the project safety limit is {_COMMENT_TEXT_LIMIT}."
         )
+    # YouTube-native emphasis is *bold* or _italic_, not Markdown **bold**.
+    # A comma/period/colon belonging to a highlighted phrase must be INSIDE
+    # its closing marker. Reject bad punctuation before any provider POST/PUT;
+    # never silently move punctuation because a semantic review may be needed.
+    if "*" in normalized or "_" in normalized:
+        blocking_emphasis_codes = {
+            "punctuation_outside_emphasis",
+            "duplicate_terminal_punctuation",
+            "unbalanced_bold",
+            "unbalanced_italic",
+            "bold_edge_space",
+            "italic_edge_space",
+        }
+        problems = [
+            finding.code
+            for finding in validate_youtube_description(normalized)
+            if finding.severity == "error" and finding.code in blocking_emphasis_codes
+        ]
+        # Any emphasized link label immediately followed by a bare URL must
+        # include its colon within the markers, including source labels whose
+        # wording is not on the generic validator's metadata-label allowlist.
+        if re.search(r"(?:\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w)):\s+https?://", normalized):
+            problems.append("source_link_label_colon_outside_emphasis")
+        if problems:
+            raise ValueError(f"YouTube comment native emphasis punctuation is invalid: {', '.join(problems)}.")
     return normalized
 
 

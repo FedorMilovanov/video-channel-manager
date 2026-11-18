@@ -22,6 +22,7 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
+from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -289,6 +290,16 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             "description": new_description,
         }
         tags = snippet.get("tags")
+        # YouTube owner GET can intermittently omit an existing video's tags.
+        # A PUT built from that incomplete snapshot could silently erase them.
+        # Lord God has a strict source-preserving operator contract: fail before
+        # dispatch if the currently read owner snippet does not expose its tag
+        # collection. An actually tagless video needs separate owner review.
+        if current.channel_id == LORD_GOD_OWNER_CHANNEL and not isinstance(tags, list):
+            raise YouTubeWriteError(
+                f"Owner API did not return snippet.tags for {current.video_id}; "
+                "cannot prove tag preservation. No videos.update PUT was sent."
+            )
         if isinstance(tags, list):
             update_snippet["tags"] = [str(tag) for tag in tags]
         for field in ("defaultLanguage", "defaultAudioLanguage"):

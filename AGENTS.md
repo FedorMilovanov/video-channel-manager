@@ -35,7 +35,7 @@ For any request to prepare, correct, audit or hand off **YouTube titles, descrip
 
 ### Lord God YouTube description source-preservation routing
 
-For the lord-god-strength channel's YouTube description work, first read
+For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
 [docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
 In addition to signed copy-plan and project presentation validation, its
 non-deletion guard preserves original chapters, translation/source credits,
