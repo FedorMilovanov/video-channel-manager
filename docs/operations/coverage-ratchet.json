@@ -296,6 +296,7 @@
     "src/video_channel_manager/telegram_lordchrist_outcome_cli.py": 96.22,
     "src/video_channel_manager/telegram_milovi_outcome_artifact.py": 44.91,
     "src/video_channel_manager/telegram_models.py": 85.96,
+    "src/video_channel_manager/telegram_multichannel_audio.py": 91.43,
     "src/video_channel_manager/telegram_multichannel_cli.py": 56.3,
     "src/video_channel_manager/telegram_multichannel_outcome.py": 89.55,
     "src/video_channel_manager/telegram_multichannel_payloads.py": 100.0,
