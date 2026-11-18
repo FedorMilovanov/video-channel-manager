@@ -36,6 +36,7 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 
+
 def _deny_retired_wall_tail_provider() -> None:
     """Retired wall-tail scheduler must not reach VK when imported."""
     raise RuntimeError("VK_RETIRED_WALL_TAIL_BLOCKED: use the reviewed video-manager wave engine.")
