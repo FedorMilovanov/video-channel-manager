@@ -14,7 +14,7 @@
       "concurrency_group": "legendary-poet-telegram-publisher",
       "provider_writes_authorized": false,
       "profile_digest": "sha256:9c98dcd3a008d66a7fd5731acf4b5151b01d39f1fce2e20d21c4b2f31c0e0ef4",
-      "profile_file_sha256": "sha256:7aa0a364bca77e0c446d6481e8685019415b1b185ff373bd78d12c7c366e1608",
+      "profile_file_sha256": "sha256:ce9ec3ef491ee823839018da574da65d98f5023c95136592cabf22a972faf32e",
       "target_binding": "content/telegram/channels/legendary-poet-target-binding.json",
       "chat_id": -1003345085810,
       "bot_id": 8716602202,
