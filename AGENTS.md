@@ -110,7 +110,7 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 
 Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
 
-1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources.
+1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources. The `state/legendary-poet-telegram` ref is separately reserved for later initialized audio publication state, not an executable code source.
 2. **Content-addressed evidence refs** — the artifact store of a released media set. The ref name is the prefix of the accepted evidence digest, and runtime bindings reference it by name (for example `milovi_telegram_feed.VIDEO_ARTIFACT_REF` gates every Milovi `sendVideo`). These look like ordinary `agent/...` work branches and are not ephemeral.
 3. **Ephemeral work branches** — every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch.
 

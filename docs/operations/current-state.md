@@ -26,7 +26,7 @@ Repository implementation, artifact production and provider rollout are separate
 
 ## Repository source of truth
 Only `main` is a supported repository code/runtime execution baseline.
-`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
+`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. The `state/legendary-poet-telegram` ref is reserved but not initialized, with its provider write flag disabled (Issue #1036). None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
 
 ### Current checkpoint
 The exact repository checkpoint used for this documentation sync is `main` `c308448d8760f3a093dcf219ed4c80d29de338ad` (CI run `39132645918`, success). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.

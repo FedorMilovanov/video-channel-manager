@@ -85,6 +85,7 @@ def test_state_refs_are_declared_durable_and_not_immutable() -> None:
     state_refs = {ref: entry for ref, entry in protected.items() if ref.startswith("state/")}
 
     assert set(state_refs) == {
+        "state/legendary-poet-telegram",
         "state/lordchrist-telegram",
         "state/milovi-cake-telegram",
         "state/svodka-telegram",
