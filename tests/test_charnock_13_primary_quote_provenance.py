@@ -9,9 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CANDIDATE = ROOT / "content/research/charnock-13-quotation-gap-candidate-20261117.json"
 DRAFT = ROOT / "content/research/charnock-13-quotation-gap-candidate-20261117.md"
 PROOF = ROOT / "content/research/charnock-13-primary-witness-quote-boundaries-20261118.md"
-APPROVED = (
-    ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-13.json"
-)
+APPROVED = ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-13.json"
 
 
 def _load(path: Path) -> dict:
@@ -31,11 +29,7 @@ def test_candidate_keeps_all_other_approved_blocks_unchanged() -> None:
     assert after["revision"] == "charnock-13-v2-editorial-candidate"
     assert len(before["blocks"]) == len(after["blocks"]) == 44
     assert [x["block_id"] for x in before["blocks"]] == [x["block_id"] for x in after["blocks"]]
-    changed = {
-        old["block_id"]
-        for old, new in zip(before["blocks"], after["blocks"], strict=True)
-        if old != new
-    }
+    changed = {old["block_id"] for old, new in zip(before["blocks"], after["blocks"], strict=True) if old != new}
     assert changed == {"q-3", "q-19"}
     for key in ("document_id", "project_key", "schema_name", "schema_version", "media", "media_slots"):
         assert before[key] == after[key]
@@ -81,9 +75,10 @@ def test_q19_gap_and_full_source_provenance_are_not_erased() -> None:
     ):
         assert anchor in text
     assert "[ПРОПУЩЕННЫЙ В РУССКОЙ ЦИТАТЕ ФРАГМЕНТ:" in text
-    assert "What comfort can be had" not in next(
-        s for s in original["sources"] if s["source_id"] == "src-19-charnock"
-    )["evidence"]
+    assert (
+        "What comfort can be had"
+        not in next(s for s in original["sources"] if s["source_id"] == "src-19-charnock")["evidence"]
+    )
 
 
 def test_only_research_evidence_source_19_was_extended() -> None:
