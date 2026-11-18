@@ -78,6 +78,17 @@ def _plan(after: str = _DESCRIPTION) -> dict:
         ("*Формат:* вопрос и ответ", "new_redundant_speaker_format_topic_field"),
         ("*Тема:* избрание", "new_redundant_speaker_format_topic_field"),
         ("*Автор:* Джон МакАртур", "new_redundant_speaker_format_topic_field"),
+        ("*Главная мысль*", "new_template_summary_or_project_heading"),
+        ("*Важная мысль*", "new_template_summary_or_project_heading"),
+        ("*Содержание*", "new_template_summary_or_project_heading"),
+        ("*Проект*", "new_template_summary_or_project_heading"),
+        (
+            "*Архивные серии канала (не все являются источником этого фрагмента)*",
+            "new_playlist_heading_misstates_subject",
+        ),
+        ("*Другие архивные подборки, не первоисточники*", "new_playlist_heading_misstates_subject"),
+        ("*Проверенные серии канала*", "new_playlist_heading_misstates_subject"),
+        ("*Серии, содержащие этот ролик*", "new_playlist_heading_misstates_subject"),
         (
             "*Исторические плейлисты канала (не обязательно содержат этот выпуск):*",
             "new_playlist_heading_misstates_subject",
@@ -141,6 +152,14 @@ def test_shelf_removal_accepts_two_plain_content_lines_for_short_clip() -> None:
         "\n\nOriginal: https://youtube.com/shorts/Bp27Wqi6j5I"
     )
     assert forward_longform_editorial_issues(original, proposed) == []
+
+
+def test_inherited_legacy_summary_and_playlist_headings_do_not_rewrite_sources() -> None:
+    old_heading = "*Главная мысль*"
+    old_playlist = "*Архивные серии канала (не все являются источником этого фрагмента)*"
+    existing = "Старые исходные сведения:\n" + old_heading + "\n" + old_playlist
+    updated = _DESCRIPTION + "\n\n" + old_heading + "\n" + old_playlist
+    assert forward_longform_editorial_issues(existing, updated) == []
 
 
 def test_inherited_exact_archive_source_label_does_not_force_mass_rewrite() -> None:

@@ -159,7 +159,12 @@ def presentation_issues(description: str) -> list[str]:
 _REDUNDANT_EDITORIAL_FIELD_RE = re.compile(r"^\s*[*_]*(?:выступающий|формат|тема|автор)\s*:\s*[*_]*", re.I)
 _NON_SUBJECT_PLAYLIST_HEADING_RE = re.compile(
     r"^\s*[*_]*(?:исторические плейлисты|архивные плейлисты|архивная навигация"
-    r"|плейлисты из исходного описания)\b",
+    r"|плейлисты из исходного описания|архивные серии(?: канала)?"
+    r"|другие архивные подборки|проверенные серии канала|серии, содержащие этот ролик)\b",
+    re.I,
+)
+_TEMPLATE_SUMMARY_HEADING_RE = re.compile(
+    r"^\s*\*(?:главная мысль|важная мысль|содержание|проект)\s*:?\*\s*$",
     re.I,
 )
 _ENGLISH_RECORDING_LABEL_RE = re.compile(r"^\s*[*_]*англоязычная запись\b", re.I)
@@ -201,6 +206,8 @@ def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
             continue
         if _REDUNDANT_EDITORIAL_FIELD_RE.match(line):
             issues.add("new_redundant_speaker_format_topic_field")
+        if _TEMPLATE_SUMMARY_HEADING_RE.match(line):
+            issues.add("new_template_summary_or_project_heading")
         if _NON_SUBJECT_PLAYLIST_HEADING_RE.match(line):
             issues.add("new_playlist_heading_misstates_subject")
         if _ENGLISH_RECORDING_LABEL_RE.match(line):
