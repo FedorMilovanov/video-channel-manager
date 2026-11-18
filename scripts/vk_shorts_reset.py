@@ -25,14 +25,14 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 
-API_BASE = "https://api.vk.com/method"
+API_BASE = "https://api.vk.ru/method"
 API_VERSION = "5.199"
 EXPECTED_PROJECT = "lord-god-strength"
 EXPECTED_COMMUNITY = 60805374
 EXPECTED_OWNER = -60805374
 DEFAULT_BOUNDARY_POST = 12400
 DEFAULT_VIEW_CUTOFF = 20
-READ_RETRY_CODES = {6, 9, 10, 29}
+READ_RETRY_CODES = {6, 10, 29}
 PLAN_SCHEMA = "video-manager.vk-shorts-reset-plan"
 PLAN_VERSION = 1
 
@@ -89,12 +89,21 @@ def parse_remote_id(remote_id: str) -> tuple[int, int]:
         raise OperationError(f"Invalid VK remote video ID: {remote_id}") from exc
 
 
+def _block_retired_vk_provider() -> None:
+    """Keep legacy parsers importable, but make all old provider access fail closed."""
+    raise OperationError(
+        "VK_SHORTS_RESET_RETIRED_PROVIDER_BLOCKED: use the versioned video-manager wave engine."
+    )
+
+
 class VkGateway:
     def __init__(self, token: str, *, version: str = API_VERSION) -> None:
+        _block_retired_vk_provider()
         self.token = token
         self.version = version
 
     def _once(self, method: str, params: dict[str, object]) -> object:
+        _block_retired_vk_provider()
         payload = {"access_token": self.token, "v": self.version, **params}
         try:
             with httpx.Client(timeout=httpx.Timeout(90.0), follow_redirects=True) as client:
@@ -245,6 +254,7 @@ class VkGateway:
         }
 
     def upload_file_once(self, upload_url: str, media_path: Path) -> dict[str, Any]:
+        _block_retired_vk_provider()
         mime = mimetypes.guess_type(media_path.name)[0] or "video/mp4"
         try:
             with media_path.open("rb") as handle:
@@ -447,6 +457,7 @@ def operation_root(repo: Path) -> Path:
 
 
 def load_token_and_gateway(repo: Path, account: str, community: int) -> VkGateway:
+    _block_retired_vk_provider()
     data_dir = repo / "data"
     token = VkTokenStore(data_dir).load_token(account)
     if token.is_expired():
