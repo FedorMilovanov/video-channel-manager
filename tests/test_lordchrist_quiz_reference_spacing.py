@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
 CANDIDATES = QUIZ_DIR / "SERIES_03_PENDING_EDITORIAL_CANDIDATES_20261117.json"
 HANDOFF = QUIZ_DIR / "SERIES_04_EIGHT_ITEM_EDITORIAL_HANDOFF_20261117.json"
-REFERENCE = re.compile(r"(?:1 Пар|Евр|Чис|Мк|Иак|Рим)\\. [^\\n]+$", re.UNICODE)
+REFERENCE = re.compile(r"(?:1 Пар|Евр|Чис|Мк|Иак|Рим)\. [^\n]+$", re.UNICODE)
 
 
 def test_eight_pending_quiz_explanations_keep_scripture_on_separate_paragraph() -> None:
@@ -30,8 +30,8 @@ def test_eight_pending_quiz_explanations_keep_scripture_on_separate_paragraph() 
 
     for item in data["items"]:
         explanation = item["explanation"]
-        assert explanation.count("\\n\\n") == 1, item["source_publication_id"]
-        body, reference = explanation.split("\\n\\n")
+        assert explanation.count("\n\n") == 1, item["source_publication_id"]
+        body, reference = explanation.split("\n\n")
         assert body.endswith("."), item["source_publication_id"]
         assert REFERENCE.fullmatch(reference), item["source_publication_id"]
         assert not body.endswith(" "), item["source_publication_id"]
@@ -41,7 +41,7 @@ def test_eight_pending_quiz_explanations_keep_scripture_on_separate_paragraph() 
 
     raw = CANDIDATES.read_bytes()
     git_blob_sha = hashlib.sha1(
-        b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw,
+        b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw,
         usedforsecurity=False,
     ).hexdigest()
     assert handoff["source_blob_sha"] == git_blob_sha
