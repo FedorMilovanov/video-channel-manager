@@ -220,7 +220,7 @@ def test_workflow_refuses_deprecated_manual_state_writes() -> None:
     assert workflow.count("GITHUB_TOKEN: ${{ github.token }}") == 2
 
 
-def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, tmp_path):
+def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, tmp_path, capsys):
     queue = publisher.release_and_queue(ROOT)
     ledger = initialize_ledger(queue)
     original = ledger.model_copy(deep=True)
@@ -237,6 +237,10 @@ def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, 
         publisher, "prepare_next", lambda *_args, **_kwargs: pytest.fail("dispatch intent before editorial approval")
     )
     assert publisher.prepare(ROOT, mode="manual", expected_id=publisher.FIRST_ID) == 3
+    output = json.loads(capsys.readouterr().out)
+    assert output["prepared"] is False
+    assert output["reason"] == "editorial_hold"
+    assert "approval" in output["detail"]
     assert ledger == original
 
 
