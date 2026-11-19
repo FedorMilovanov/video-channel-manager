@@ -142,6 +142,23 @@ def test_missing_github_token_denies_even_valid_review(example, monkeypatch):
         require_semantic_approval(root, queue, post, github_get=_github_receipt(root))
 
 
+def test_historical_mutating_cli_commands_cannot_reinitialize_or_rebind_live_ledger(monkeypatch):
+    for action in ("init", "migrate", "migrate-editorial"):
+        monkeypatch.setattr("sys.argv", ["lordchrist_quote_v6_publisher", action])
+        with pytest.raises(ValueError, match="retired"):
+            publisher.main()
+
+
+def test_workflow_refuses_deprecated_manual_state_writes() -> None:
+    workflow = (ROOT / ".github/workflows/lordchrist-quote-v6-publisher.yml").read_text(
+        encoding="utf-8"
+    )
+    guard = 'if [[ "$V6_ACTION" != "publish" ]]; then'
+    assert workflow.index(guard) < workflow.index('if [[ "$V6_ACTION" == "initialize" ]]; then')
+    assert "pull-requests: read" in workflow
+    assert workflow.count("GITHUB_TOKEN: ${{ github.token }}") == 2
+
+
 def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, tmp_path):
     queue = publisher.release_and_queue(ROOT)
     ledger = initialize_ledger(queue)
