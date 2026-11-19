@@ -165,7 +165,8 @@ def test_unapproved_original_review_register_fails_before_github_network(example
 def test_approval_requires_distinct_github_reviewer_exact_merged_head_and_blob(example, mode):
     root, queue, post = example
     _activate(root, post)
-    check = lambda: require_semantic_approval(root, queue, post, github_get=_github_receipt(root, mode=mode))
+    def check():
+        return require_semantic_approval(root, queue, post, github_get=_github_receipt(root, mode=mode))
     if mode == "valid":
         check()
     else:
@@ -173,14 +174,17 @@ def test_approval_requires_distinct_github_reviewer_exact_merged_head_and_blob(e
             check()
 
 
-@pytest.mark.parametrize("field,value", [
-    ("semantic_verdict", "REVIEW_REQUIRED"),
-    ("original_collation", "not_verified"),
-    ("russian_translation_review", "not_verified"),
-    ("rights_clearance", "not_cleared"),
-    ("contiguous_source_span_verified", False),
-    ("payload_sha256", "sha256:" + "0" * 64),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("semantic_verdict", "REVIEW_REQUIRED"),
+        ("original_collation", "not_verified"),
+        ("russian_translation_review", "not_verified"),
+        ("rights_clearance", "not_cleared"),
+        ("contiguous_source_span_verified", False),
+        ("payload_sha256", "sha256:" + "0" * 64),
+    ],
+)
 def test_missing_semantic_rights_translation_or_exact_hash_denies(example, field, value):
     root, queue, post = example
     _activate(root, post)
