@@ -61,10 +61,7 @@ def test_all_18_pending_citations_have_source_locator_evidence_without_false_rel
         assert canonical.scheme == "https"
         assert canonical.netloc in {"ccel.org", "www.ccel.org", "www.spurgeon.org"}
 
-    corrected = next(
-        x for x in data["entries"]
-        if x["publication_id"] == "lordchrist-matthew-henry-heart-work"
-    )
+    corrected = next(x for x in data["entries"] if x["publication_id"] == "lordchrist-matthew-henry-heart-work")
     assert corrected["source_url_status"] == "broken_or_unavailable_old_path_repaired_in_evidence_only"
     assert corrected["original_english_source_url"].endswith("/henry/mhc3.Ps.cxx.html")
     assert corrected["verified_reader_source_url"].endswith("/henry/mhc3/mhc3.Ps.cxx.html")
