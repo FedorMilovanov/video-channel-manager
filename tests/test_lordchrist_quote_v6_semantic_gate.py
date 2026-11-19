@@ -34,6 +34,29 @@ def example(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return tmp_path, queue, post
 
 
+def test_frozen_review_register_has_30_exact_sha_bound_cards_and_zero_grants():
+    queue = publisher.release_and_queue(ROOT)
+    register = json.loads((ROOT / REVIEW_PATH).read_text(encoding="utf-8"))
+    activation = json.loads((ROOT / ACTIVATION_PATH).read_text(encoding="utf-8"))
+    assert register["queue_digest"] == activation["queue_digest"] == queue.digest
+    assert register["publication_count"] == len(queue.posts) == 30
+    assert register["published_snapshot"] == 12
+    assert register["pending_snapshot"] == 18
+    assert activation["entries"] == []
+    by_id = {card["publication_id"]: card for card in register["entries"]}
+    assert len(by_id) == 30
+    assert set(by_id) == {post.publication_id for post in queue.posts}
+    for post in queue.posts:
+        card = by_id[post.publication_id]
+        assert card["payload_sha256"] == post.payload_sha256
+        assert card["source_russian_sha256"] == post.source.original_ru_quote_sha256
+        assert card["original_english_span_sha256"] == post.source.original_english_span_sha256
+        assert card["source_url"] == post.source.url
+        assert card["semantic_verdict"] != "PASS_MEANING"
+        assert card["rights_clearance"] == "not_cleared"
+    assert sum(card["published_history"] for card in register["entries"]) == 12
+
+
 def _activate(tmp_path: Path, post):
     review_path = tmp_path / REVIEW_PATH
     review = json.loads(review_path.read_text(encoding="utf-8"))
