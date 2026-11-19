@@ -132,6 +132,12 @@ def _github_receipt(tmp_path: Path, *, mode: str = "valid"):
                 "head": {"sha": "a" * 40},
                 "user": {"login": "different-review-author" if mode != "self" else "independent-reader"},
             }
+        if url.endswith("/pulls/1045/files?per_page=100"):
+            return (
+                [{"filename": "docs/readme.md", "status": "modified"}]
+                if mode == "unrelated"
+                else [{"filename": REVIEW_PATH.as_posix(), "status": "modified"}]
+            )
         if url.endswith("/contents/" + REVIEW_PATH.as_posix() + "?ref=" + "a" * 40):
             return {"sha": "f" * 40 if mode == "drift" else _blob_sha(tmp_path / REVIEW_PATH)}
         if url.endswith("/pulls/1045/reviews?per_page=100"):
@@ -159,7 +165,7 @@ def test_unapproved_original_review_register_fails_before_github_network(example
         require_semantic_approval(root, queue, post, github_get=unexpected_get)
 
 
-@pytest.mark.parametrize("mode", ["valid", "self", "drift", "revoked"])
+@pytest.mark.parametrize("mode", ["valid", "self", "drift", "revoked", "unrelated"])
 def test_approval_requires_distinct_github_reviewer_exact_merged_head_and_blob(example, mode):
     root, queue, post = example
     _activate(root, post)
