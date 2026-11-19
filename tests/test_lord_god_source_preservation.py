@@ -164,6 +164,37 @@ def test_exact_source_credit_label_cannot_be_lost_if_link_is_preserved(credit_pr
     require_lord_god_youtube_presentation(_plan(before, restored))
 
 
+@pytest.mark.parametrize(
+    "credit",
+    [
+        "*Источник:* https://example.org/sermon",
+        "_Оригинал:_ https://example.org/sermon",
+        "*Официальный первоисточник:* https://example.org/sermon",
+        "*Англоязычная запись:* https://example.org/sermon",
+        "*Русская версия:* https://example.org/sermon",
+        "*Источник*: https://example.org/sermon",
+    ],
+)
+def test_youtube_native_emphasis_does_not_hide_a_lost_source_credit(credit: str) -> None:
+    """The exact attribution line must survive even when the URL survives."""
+    before = credit + "\n" + _SHELF
+    after = _VALID_TEXT + "\n*Связанная запись:* https://example.org/sermon"
+
+    assert source_preservation_issues(before, after) == [
+        "original_translation_or_source_credit_not_preserved"
+    ]
+    with pytest.raises(ValueError, match="original_translation_or_source_credit_not_preserved"):
+        require_lord_god_youtube_presentation(_plan(before, after))
+
+    restored = after + "\n" + credit
+    assert source_preservation_issues(before, restored) == []
+
+
+def test_emphasized_nonsource_heading_is_not_misclassified_as_provenance() -> None:
+    before = "*Содержание:* История Давида и Саула\n" + _SHELF
+    assert source_preservation_issues(before, _VALID_TEXT) == []
+
+
 def test_retired_general_recruitment_does_not_become_a_permanent_source_credit() -> None:
     retired = (
         "➡️ Некоторые проповеди получается перевести и озвучить самому, "
