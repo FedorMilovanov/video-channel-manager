@@ -34,6 +34,8 @@ from video_channel_manager.telegram_transport import (
     preflight_target,
 )
 
+from scripts.lordchrist_quote_v6_semantic_gate import require_semantic_approval
+
 from scripts.lordchrist_quote_v6_native_readonly import (
     SOURCE_PATH,
     QuoteV6NativeQueue,
@@ -212,6 +214,8 @@ def prepare(root: Path, *, mode: str, expected_id: str | None) -> int:
         raise ValueError("manual canary is not the first pending v6 publication")
     if mode == "scheduled" and expected_id is not None:
         raise ValueError("scheduled dispatch must not carry an explicit publication ID")
+    # Refuse unsigned meaning/source/rights text before target or state mutation.
+    require_semantic_approval(root, queue, post)
     proof, _token = target_from_provider()
     result = prepare_next(
         queue,
@@ -248,6 +252,8 @@ def send(root: Path) -> int:
     rich, plain, entities = make_rendered(post)
     if envelope.text != plain or envelope.payload_sha256 != post.payload_sha256:
         raise ValueError("persisted dispatch does not bind exact native v6 content")
+    # Re-check the exact approved PR and digest before the irreversible POST.
+    require_semantic_approval(root, queue, post)
     now = utc_now()
     if now - envelope.prepared_at_utc.astimezone(UTC) > timedelta(minutes=15):
         raise ValueError("prepared v6 dispatch expired before provider call")
