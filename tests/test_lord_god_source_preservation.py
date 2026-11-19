@@ -180,9 +180,7 @@ def test_youtube_native_emphasis_does_not_hide_a_lost_source_credit(credit: str)
     before = credit + "\n" + _SHELF
     after = _VALID_TEXT + "\n*Связанная запись:* https://example.org/sermon"
 
-    assert source_preservation_issues(before, after) == [
-        "original_translation_or_source_credit_not_preserved"
-    ]
+    assert source_preservation_issues(before, after) == ["original_translation_or_source_credit_not_preserved"]
     with pytest.raises(ValueError, match="original_translation_or_source_credit_not_preserved"):
         require_lord_god_youtube_presentation(_plan(before, after))
 
