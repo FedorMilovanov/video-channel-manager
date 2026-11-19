@@ -1,0 +1,98 @@
+{
+  "schema_name": "lordchrist-quote-v6-context-repair-candidates-inert",
+  "schema_version": 1,
+  "created_on": "2026-11-19",
+  "release_id": "lordchrist-quote-v6-20261106",
+  "channel_username": "@lordchrist",
+  "source_candidate_path": "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json",
+  "source_restyle_v2_path": "content/telegram/lordchrist/quote-v6-pending-restyle-v2.json",
+  "boundary": "Purely editorial suggestions. Not source- or rights-certified, not a Telegram payload, not an amended release, not a ledger migration and not provider permission. Every proposed source excerpt must be independently rechecked against original English, rights and translated Russian before any new digest.",
+  "published_exclusions": [
+    {
+      "publication_id": "lordchrist-edwards-sinners-in-hands",
+      "telegram_message_id": 1629,
+      "issue": "The 234-character posted excerpt omits God's sovereign will thesis and contrast to the earthly ruler. Never replay the message.",
+      "original_english_source": "https://anthology.lib.virginia.edu/work/Edwards/edwards-sinners"
+    },
+    {
+      "publication_id": "lordchrist-baxter-dying-men-and-immortal-souls",
+      "telegram_message_id": 1618,
+      "issue": "The posted initial 'это дело' lacks its pastoral ministry referent; no automatic repost."
+    }
+  ],
+  "candidates": [
+    {
+      "sequence": 15,
+      "publication_id": "lordchrist-matthew-henry-heart-work",
+      "triage": "REVIEW_REQUIRED",
+      "source_bound_excerpt_proposal": {
+        "start": "В этих стихах можно заметить, во-первых, как Давид любил закон Божий.",
+        "end": "даже последнему из узников."
+      },
+      "reader_reason": "Restore Psalm 118:45 / 119:45 and Henry's distinction between freedom from corruption and freedom for willing obedience, not mere obedience-as-prison.",
+      "external_source_for_comparison": "https://www.biblegateway.com/resources/matthew-henry/Ps.119.45-Ps.119.48",
+      "requires": "Verbatim Russian span validation, English context, translation/rights clearance and separate next-release ID/payload digest."
+    },
+    {
+      "sequence": 16,
+      "publication_id": "lordchrist-ryle-sanctification-three-necessaries",
+      "triage": "HOLD_MEANING",
+      "source_bound_excerpt_proposal": {
+        "start": "Если Библия истинна, то несомненно",
+        "end": "может принести нашим душам большую пользу."
+      },
+      "reader_reason": "Include Ryle's explicit warning not to confuse sanctification and justification. Verify salvation-by-grace meaning; do not present sanctification as saving merit.",
+      "requires": "Independent full primary-source reading, theology, natural Russian translation and rights review; may require L1 explanatory article if full excerpt cannot be used."
+    },
+    {
+      "sequence": 18,
+      "publication_id": "lordchrist-ryle-christian-is-a-soldier",
+      "triage": "HOLD_MEANING",
+      "source_bound_excerpt_proposal": {
+        "start": "Я говорю о духовной брани — о той борьбе за свою душу",
+        "end": "нам надлежит сражаться."
+      },
+      "reader_reason": "Directly name spiritual conflict before the soldier metaphor, preserve author's 1 Tim 6:12 reference and the logic of sanctification. Avoid an unexplained motivational slogan.",
+      "external_source_for_comparison": "https://www.ccel.org/ccel/ryle/holiness.iii.iv.html",
+      "requires": "Confirm excerpt boundaries and full English meaning; publish only under new approved versioned identity."
+    },
+    {
+      "sequence": 21,
+      "publication_id": "lordchrist-watson-divine-contentment",
+      "triage": "REVIEW_REQUIRED",
+      "source_bound_excerpt_proposal": {
+        "start": "Наше дело — отложить заботу (1 Пет. 5:7)",
+        "end": "что происходит внизу."
+      },
+      "reader_reason": "Shift from obscure 'верста скорби — локоть утешения' comparison to Watson's actual argument against untrusting and excessively dividing anxiety. Do not equate all responsibility with sinful worry.",
+      "requires": "Exact Russian contiguous span plus full original-source context; independent translation review."
+    },
+    {
+      "sequence": 22,
+      "publication_id": "lordchrist-watson-contentment-nature",
+      "triage": "HOLD_MEANING",
+      "source_bound_excerpt_proposal": {
+        "start": "Ответив на эти вопросы, я перейду к описанию довольства.",
+        "end": "от благочестия."
+      },
+      "reader_reason": "Begin with Watson's definition of contentment as Christian steadiness instead of the contextless enumeration 'Во-первых'. Still review the single-first-point structure; use a longer explanatory post if necessary.",
+      "external_source_for_comparison": "https://www.bibleportal.com/sermon/Thomas-Watson/the-art-of-divine-contentment-chapter-6",
+      "requires": "Full English verification and proof that Russian is a lawful editorial translation. Candidate is not approved."
+    },
+    {
+      "sequence": 27,
+      "publication_id": "lordchrist-bunyan-pilgrim-celestial-city",
+      "triage": "HOLD_MEANING",
+      "source_bound_excerpt_proposal": null,
+      "editorial_route": "Consider L1/L2 literary article with plainly separate introductory prose identifying an allegorical dream from 'The Pilgrim's Progress'; do not force the Beulah passage into a contextless stand-alone quotation.",
+      "reader_reason": "Beulah, Giant Despair and Doubting Castle are allegorical persons/places, not a literal map of heaven; the existing source text does not define them.",
+      "external_source_for_comparison": "https://johnbunyan.org/en/pilgrims-progress-part-1/",
+      "requires": "Independent literary/historical contextual reading, translated text and rights acceptance for the specific edition; no silent move to a different publisher."
+    }
+  ],
+  "state_change": false,
+  "payload_change": false,
+  "workflow_dispatch": false,
+  "provider_effect": "impossible",
+  "review_status": "editorial_proposal_only_not_approved"
+}
