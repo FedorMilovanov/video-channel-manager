@@ -236,8 +236,7 @@ def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, 
     monkeypatch.setattr(
         publisher, "prepare_next", lambda *_args, **_kwargs: pytest.fail("dispatch intent before editorial approval")
     )
-    with pytest.raises(SemanticApprovalHold):
-        publisher.prepare(ROOT, mode="manual", expected_id=publisher.FIRST_ID)
+    assert publisher.prepare(ROOT, mode="manual", expected_id=publisher.FIRST_ID) == 3
     assert ledger == original
 
 
