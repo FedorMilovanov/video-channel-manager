@@ -52,10 +52,7 @@ def test_four_critical_holds_use_contiguous_exact_russian_spans_and_separate_edi
 
 
 def test_context_risk_is_not_hidden_by_selection() -> None:
-    entries = {
-        x["sequence"]: x
-        for x in json.loads(PREVIEW.read_text(encoding="utf-8"))["entries"]
-    }
+    entries = {x["sequence"]: x for x in json.loads(PREVIEW.read_text(encoding="utf-8"))["entries"]}
     assert "оправдани" in entries[16]["editor_intro_outside_quote_ru"]
     assert "духовн" in entries[18]["quote_ru_contiguous_exact"]
     assert "Это" == entries[22]["quote_ru_contiguous_exact"][:3]
