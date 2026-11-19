@@ -8,14 +8,22 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
-REPAIR = ROOT / "docs/audits/2026-11-20-lordchrist-v6-11-remaining-meaning-repair-proposals-inert.json"
+SOURCE = (
+    ROOT
+    / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
+)
+REPAIR = (
+    ROOT
+    / "docs/audits/2026-11-20-lordchrist-v6-11-remaining-meaning-repair-proposals-inert.json"
+)
 ELEVEN = {12, 15, 17, 19, 20, 23, 24, 25, 26, 28, 29}
 OTHER_FOUR = {16, 18, 22, 27}
 OTHER_THREE = {9, 21, 30}
 
 
-def test_remaining_eleven_exact_contiguous_source_quotes_keep_editorial_text_separate() -> None:
+def test_remaining_eleven_exact_contiguous_source_quotes_keep_editorial_text_separate() -> (
+    None
+):
     data = json.loads(REPAIR.read_text(encoding="utf-8"))
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
     raw = SOURCE.read_bytes().replace(b"\r\n", b"\n")
@@ -48,8 +56,14 @@ def test_remaining_eleven_exact_contiguous_source_quotes_keep_editorial_text_sep
         assert entry["source_anchor_start"] == original["source_anchors"]["start"]
         assert entry["source_anchor_end"] == original["source_anchors"]["end"]
         assert entry["source_russian_quote_sha256"] == original["quoted_russian_sha256"]
-        assert entry["source_english_span_sha256"] == original["historical_english_span_sha256"]
-        assert entry["legacy_candidate_payload_sha256"] == original["candidate_payload_sha256"]
+        assert (
+            entry["source_english_span_sha256"]
+            == original["historical_english_span_sha256"]
+        )
+        assert (
+            entry["legacy_candidate_payload_sha256"]
+            == original["candidate_payload_sha256"]
+        )
         match = re.fullmatch(
             r"<blockquote>«([\s\S]+)»</blockquote>[\s\S]*", original["html_text"]
         )
@@ -57,9 +71,14 @@ def test_remaining_eleven_exact_contiguous_source_quotes_keep_editorial_text_sep
         body = match.group(1)
         selected = entry["source_contiguous_russian_excerpt"]
         assert body.count(selected) == 1
-        assert len(selected.encode("utf-16-le")) // 2 == entry["source_excerpt_utf16_units"]
+        assert (
+            len(selected.encode("utf-16-le")) // 2
+            == entry["source_excerpt_utf16_units"]
+        )
         assert 120 <= entry["source_excerpt_utf16_units"] <= 4096
-        assert (selected == body) is entry["selection"]["complete_original_russian_excerpt"]
+        assert (selected == body) is entry["selection"][
+            "complete_original_russian_excerpt"
+        ]
         assert len(entry["editor_intro_outside_author_quote_ru"]) > 100
         assert len(entry["reader_thesis_ru"]) > 100
         assert len(entry["reader_misreading_ru"]) > 90
@@ -82,4 +101,7 @@ def test_remaining_eleven_exact_contiguous_source_quotes_keep_editorial_text_sep
     assert isinstance(draft, str) and "Божьей волей" not in draft
     assert "ум Бога описан" not in draft
     assert draft != by_num[20]["source_contiguous_russian_excerpt"]
-    assert sum(bool(x["editable_original_translation_draft_ru"]) for x in data["entries"]) == 1
+    assert (
+        sum(bool(x["editable_original_translation_draft_ru"]) for x in data["entries"])
+        == 1
+    )
