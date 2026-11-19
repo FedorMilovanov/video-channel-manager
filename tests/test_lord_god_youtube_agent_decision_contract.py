@@ -100,3 +100,15 @@ def test_q02_delayed_locale_reconciliation_is_readonly_until_exact_verified() ->
     assert "read-only owner GETs" in runbook
     assert "No second PUT was sent" in runbook
     assert "18 non-Russian translations" in runbook
+
+
+def test_real_qna54_ai_disclosure_is_explicit_and_never_inherited() -> None:
+    """Original MacArthur footage must not inherit an old 'AI: Yes' upload plan."""
+    contract = CONTRACT.read_text(encoding="utf-8")
+    assert "contains_synthetic_media=True" in contract
+    assert "containsSyntheticMedia=false" in contract
+    assert "prepare_six_private_youtube_uploads.py" in contract
+    assert "stage_private_6_guarded.py" in contract
+    assert "с обычным переводом" in contract
+    assert "подписанные upload-планы" in contract
+    assert "отсутствующего поля в owner GET" in contract
