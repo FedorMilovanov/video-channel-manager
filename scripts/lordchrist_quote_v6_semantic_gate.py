@@ -103,10 +103,9 @@ def require_semantic_approval(
     grants = activation.get("entries")
     if not isinstance(records, list) or not isinstance(grants, list):
         raise SemanticApprovalHold("malformed semantic review/activation lists")
-    if (
-        len({row.get("publication_id") for row in records if isinstance(row, dict)}) != len(records)
-        or len({row.get("publication_id") for row in grants if isinstance(row, dict)}) != len(grants)
-    ):
+    if len({row.get("publication_id") for row in records if isinstance(row, dict)}) != len(records) or len(
+        {row.get("publication_id") for row in grants if isinstance(row, dict)}
+    ) != len(grants):
         raise SemanticApprovalHold("duplicate or non-object semantic review entries")
     row = next((x for x in records if x.get("publication_id") == post.publication_id), None)
     grant = next((x for x in grants if x.get("publication_id") == post.publication_id), None)
@@ -165,9 +164,7 @@ def require_semantic_approval(
         raise SemanticApprovalHold("PR not merged to main or reviewer is author")
 
     # Review the exact repository file bytes, never an assertion in the grant.
-    evidence = github_get(
-        f"{_GITHUB}/contents/{REVIEW_PATH.as_posix()}?ref={reviewed_head}", token
-    )
+    evidence = github_get(f"{_GITHUB}/contents/{REVIEW_PATH.as_posix()}?ref={reviewed_head}", token)
     if not isinstance(evidence, dict) or evidence.get("sha") != _blob_sha(root / REVIEW_PATH):
         raise SemanticApprovalHold("approved PR did not contain the exact reviewed bytes")
 
