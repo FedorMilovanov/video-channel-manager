@@ -472,6 +472,11 @@ def main() -> int:
     parser.add_argument("--publication-id")
     args = parser.parse_args()
     root = args.root.resolve()
+    if args.command in {"init", "migrate", "migrate-editorial"}:
+        raise ValueError(
+            "Historical v6 ledger initialization/migrations are retired on the live 12/18+ ledger. "
+            "No state mutation: prepare a separately reviewed exact pending-only successor release."
+        )
     if args.command == "validate":
         queue = release_and_queue(root)
         for post in queue.posts:
