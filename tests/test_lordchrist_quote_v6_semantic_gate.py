@@ -165,7 +165,7 @@ def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, 
 
 def test_no_telegram_http_after_prepared_intent_if_editorial_approval_revoked(monkeypatch, tmp_path):
     # Valid pending Telegram envelope is not enough: send must independently recheck.
-    import tests.test_lordchrist_quote_v6_live_publisher as original_tests
+    import test_lordchrist_quote_v6_live_publisher as original_tests
 
     owner, _queue, ledger_path, _envelope = original_tests._prepared_v6_fault_fixture(monkeypatch, tmp_path)
     monkeypatch.setattr(
