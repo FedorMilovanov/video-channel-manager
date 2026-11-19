@@ -10,6 +10,17 @@ A rich post is a compact article for a real reader, not a Telegram formatting de
 
 Every paragraph, heading, image, list and quotation must earn its place by improving understanding, evidence, historical context or clarity.
 
+**Semantic preflight precedes typography:** apply
+[`SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md`](SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md).
+Before adding bold, quote markup or headings, answer in plain Russian:
+**что автор утверждает, почему это верно по источнику, на кого относится
+суждение и что обычный читатель должен понять?** A reader cannot be
+expected to reconstruct an omitted premise from a work title, tags or
+earlier posts. Read the quoted source paragraph before and after,
+distinguish editorial explanation from direct quotation, and send
+unresolved translation/meaning cases to `REVIEW_REQUIRED/HOLD_MEANING`.
+Passing length/source-hash tests is not a substitute for this reading.
+
 The prose must read as a continuous argument. Normal explanatory/theological paragraphs should usually contain **2–5 complete sentences**. Do not split one thought into a ladder of tiny one-line declarations merely for drama.
 
 Avoid characteristic AI cadence such as:
@@ -243,6 +254,10 @@ Before considering a rich article finished:
 - [ ] lane is stated and the correct limit was preflighted (L1 4096 / L2 32 768);
 - [ ] in L2: air only before headings, never after; every list item is its own block; no `U+2060`;
 - [ ] article has one clear argument/narrative spine;
+- [ ] an independent reader can state the exact thesis and reasoning link in ordinary Russian without the article title;
+- [ ] no necessary premise, condition, comparison, subject, historical polemic or metaphor has been lost by shortening a quote;
+- [ ] reader-risk, original source context and translation status are documented in the exact semantic review card;
+- [ ] `REVIEW_REQUIRED/HOLD_MEANING` cases are not treated as ready because CI, hashes or visual formatting passed;
 - [ ] body paragraphs are real paragraphs, not a slogan ladder;
 - [ ] useful content was not shortened merely for visual compactness;
 - [ ] exact rendered/pasted text length was checked, including line breaks and `U+2060` spacers;

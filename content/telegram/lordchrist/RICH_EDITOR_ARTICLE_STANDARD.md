@@ -220,6 +220,18 @@ When the user asks for a paste-ready long article:
 
 ## 11. Two review passes before publication
 
+**До двух технических проходов — смысловой шлюз.** Обязателен
+[`SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md`](SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md):
+для каждой ключевой цитаты проверить «тезис — почему — возможная ошибочная
+трактовка — полный соседний контекст» и сохранить решение на exact SHA.
+Второй проход проверяет и **читательское понимание**, а не только точный
+перевод, формат, числа и грамматику. Если цитата без поясняющего
+контекста теряет логический довод, расширить непрерывный отрывок либо
+дать чётко отделённое пояснение редактора; нельзя внутри кавычек
+склеивать несмежные слова автора. `HOLD_MEANING` запрещает приёмку
+новой статьи, даже если проходит preflight. Это **не** новый writer
+и не разрешение Telegram/Telegraph POST.
+
 A long article of this series is published only after **two independent checks**.
 One pass is never enough: the second reading is what finds the wording that
 slipped, the mistranslated phrase, the quotation that does not belong to the

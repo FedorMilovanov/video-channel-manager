@@ -8,6 +8,7 @@
 
 1. `AGENTS.md` — локальный read order и приоритет правил;
 2. `RICH_EDITORIAL_STANDARD.md` — канонический стандарт больших богословских/исторических постов;
+2а. `SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md` — обязательный смысловой контроль цитат и статей до верстки и публикационной приёмки; отчёт всех 30 активных quote-v6: `docs/audits/2026-11-19-lordchrist-quote-v6-reader-meaning-audit.json`.
 3. `QUOTE_ATTRIBUTION_STANDARD.md` — цитаты, подписи и точное правило воздуха перед цитатами;
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing (lane L1);
 5. `RICH_EDITOR_ARTICLE_STANDARD.md` — длинные статьи в редакторе «Статья» (lane L2, до 32 768): заголовки, списки, цитаты, воздух;
