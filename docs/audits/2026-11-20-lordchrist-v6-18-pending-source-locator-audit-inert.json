@@ -53,8 +53,8 @@
       "sequence": 15,
       "publication_id": "lordchrist-matthew-henry-heart-work",
       "original_english_source_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
-      "source_url_status": "broken_or_unavailable_old_path_repaired_in_evidence_only",
-      "verified_reader_source_url": "https://ccel.org/ccel/henry/mhc3/mhc3.Ps.cxx.html",
+      "source_url_status": "historical_url_and_alternative_both_retrieved_same_work_and_anchor",
+      "verified_reader_source_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
       "original_english_opening_anchor": "We may observe in these verses, 1. What David experienced of an affection to the law of God:",
       "opening_anchor_located_on_source_page": true,
       "full_original_span_collated_against_russian": false,
@@ -66,7 +66,18 @@
       "revision_direction_ru": "В новой редакции восстановить Пс. 118:45–48 и причинное противопоставление; исправить источник.",
       "independent_editor_approved": false,
       "activation_approved": false,
-      "release_mutation_authorized": false
+      "release_mutation_authorized": false,
+      "alternative_retrieved_reader_source_url": "https://ccel.org/ccel/henry/mhc3/mhc3.Ps.cxx.html",
+      "original_source_url_retrieved": true,
+      "source_url_rebind_required": false,
+      "url_equivalence_evidence": {
+        "checked_on": "2026-11-20",
+        "historical_url": "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
+        "alternative_url": "https://ccel.org/ccel/henry/mhc3/mhc3.Ps.cxx.html",
+        "original_english_anchor_matches_both": true,
+        "both_present_matthew_henry_commentary_on_psalm_119_45_48": true,
+        "note_ru": "Оба адреса реально открывают комментарий Мэтью Генри к Пс. 118:45–48 и содержат нужный английский якорь. Прежнее «ссылка сломана» — ложный результат проверки; менять sealed original URL не требуется."
+      }
     },
     {
       "sequence": 16,
@@ -357,7 +368,7 @@
   "priority_fixes": [
     {
       "publication_id": "lordchrist-matthew-henry-heart-work",
-      "reason": "Broken historical CCEL URL (missing /mhc3/ path segment); do not alter sealed queue or claim live source SHA rebind."
+      "reason": "ERRATUM: оба варианта CCEL URL доступны и ведут к одному комментарию; первоначальный вердикт broken URL был ложным. Никакой rebind исходника или будущего релиза ради ссылки не нужен. Если изменяется только редакционный текст, он требует отдельного одобрения."
     },
     {
       "publication_id": "lordchrist-ryle-sanctification-three-necessaries",
@@ -380,5 +391,18 @@
       "reason": "Russian calque 'простым оком' does not transparently convey 'with a single eye'."
     }
   ],
-  "verification_notice": "Do NOT turn page located/opening anchor located into independently verified translation, contiguous span comparison or documented rights. Evidence of primary works in US public domain differs from rights of an exact Russian translation."
+  "verification_notice": "Do NOT turn page located/opening anchor located into independently verified translation, contiguous span comparison or documented rights. Evidence of primary works in US public domain differs from rights of an exact Russian translation. ERRATUM 2026-11-20: Matthew Henry historical URL is available and content-equivalent to alternative; do not relabel as broken or require digest rebind.",
+  "correction_notice": {
+    "corrected_on": "2026-11-20",
+    "corrected_item": "lordchrist-matthew-henry-heart-work",
+    "original_claim": "broken_or_unavailable_old_path_repaired_in_evidence_only",
+    "finding": "Both URLs retrieved with the same author/work, Psalm passage, and English opening anchor",
+    "historical_url_remains_valid": true,
+    "reference_urls": [
+      "https://www.ccel.org/ccel/henry/mhc3.Ps.cxx.html",
+      "https://ccel.org/ccel/henry/mhc3/mhc3.Ps.cxx.html"
+    ],
+    "release_mutated": false,
+    "ledger_mutated": false
+  }
 }

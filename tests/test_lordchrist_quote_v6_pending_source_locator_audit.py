@@ -62,8 +62,17 @@ def test_all_18_pending_citations_have_source_locator_evidence_without_false_rel
         assert canonical.netloc in {"ccel.org", "www.ccel.org", "www.spurgeon.org"}
 
     corrected = next(x for x in data["entries"] if x["publication_id"] == "lordchrist-matthew-henry-heart-work")
-    assert corrected["source_url_status"] == "broken_or_unavailable_old_path_repaired_in_evidence_only"
+    assert corrected["source_url_status"] == "historical_url_and_alternative_both_retrieved_same_work_and_anchor"
     assert corrected["original_english_source_url"].endswith("/henry/mhc3.Ps.cxx.html")
-    assert corrected["verified_reader_source_url"].endswith("/henry/mhc3/mhc3.Ps.cxx.html")
-    assert corrected["verified_reader_source_url"] != corrected["original_english_source_url"]
+    assert corrected["verified_reader_source_url"] == corrected["original_english_source_url"]
+    assert corrected["alternative_retrieved_reader_source_url"].endswith("/henry/mhc3/mhc3.Ps.cxx.html")
+    assert corrected["original_source_url_retrieved"] is True
+    assert corrected["source_url_rebind_required"] is False
+    proof = corrected["url_equivalence_evidence"]
+    assert proof["original_english_anchor_matches_both"] is True
+    assert proof["both_present_matthew_henry_commentary_on_psalm_119_45_48"] is True
+    correction = data["correction_notice"]
+    assert correction["historical_url_remains_valid"] is True
+    assert correction["release_mutated"] is False
+    assert correction["ledger_mutated"] is False
     assert sum(x["editorial_meaning_risk"] == "HOLD_MEANING" for x in data["entries"]) == 4
