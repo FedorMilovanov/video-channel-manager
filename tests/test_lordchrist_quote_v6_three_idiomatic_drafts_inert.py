@@ -26,6 +26,9 @@ def test_three_drafts_are_new_editorial_text_not_legacy_payload_mutations() -> N
     assert review["full_bilingual_review_complete"] is False
     assert review["activation_approved"] is False
     assert review["new_release_authorized"] is False
+    assert review["reader_facing_policy"] == "quote_text_and_verified_author_work_attribution_only"
+    assert review["editorial_commentary_in_payload_allowed"] is False
+    assert review["editorial_intro_in_payload_allowed"] is False
     assert len(review["entries"]) == 3
     assert {item["sequence"] for item in review["entries"]} == set(CALQUES)
     assert len({item["publication_id"] for item in review["entries"]}) == 3
@@ -41,7 +44,12 @@ def test_three_drafts_are_new_editorial_text_not_legacy_payload_mutations() -> N
         assert CALQUES[number] in original["html_text"]
         assert CALQUES[number] not in entry["proposed_new_editorial_translation_ru"]
         assert len(entry["proposed_new_editorial_translation_ru"]) > 200
-        assert len(entry["editor_comment_outside_quote_ru"]) > 80
+        assert entry["quote_only_candidate"] is True
+        assert entry["renderable_payload_ready"] is False
+        assert entry["explanatory_prose_allowed"] is False
+        assert entry["public_text_source_field"] == "proposed_new_editorial_translation_ru"
+        assert "editor_comment_outside_quote_ru" not in entry
+        assert "biblical_context_ru" not in entry
         assert entry["new_translation_status"] == "human_translation_and_rights_review_required"
         assert entry["source_contiguity_check"] == (
             "selected_original_english_segment_is_contiguous_not_reverified_machine"
