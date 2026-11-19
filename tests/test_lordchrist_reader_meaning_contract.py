@@ -56,7 +56,9 @@ def test_all_30_active_quote_cards_are_explicitly_triaged_without_release_mutati
     assert rows[13]["publication_id"] == "lordchrist-edwards-sinners-in-hands"
     assert rows[13]["semantic_triage"] == "HOLD_MEANING"
 
-    data = SOURCE.read_bytes()
+    # Hash the canonical Git blob bytes, not Windows CRLF working-tree smudge.
+    # The tracked JSON uses LF and GitHub reports the Git object SHA.
+    data = SOURCE.read_bytes().replace(b"\r\n", b"\n")
     actual_blob = hashlib.sha1(
         b"blob " + str(len(data)).encode("ascii") + b"\0" + data,
         usedforsecurity=False,

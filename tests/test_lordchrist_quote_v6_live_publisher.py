@@ -270,6 +270,7 @@ def _prepared_v6_fault_fixture(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     save_ledger(ledger_path, ledger)
     monkeypatch.setattr(publisher, "release_and_queue", lambda _root: queue)
     monkeypatch.setattr(publisher, "guard_cross_track", lambda _root: None)
+    monkeypatch.setattr(publisher, "require_semantic_approval", lambda *_args: None)
     monkeypatch.setattr(publisher, "load_dispatch", lambda _path: prepared.envelope)
     monkeypatch.setattr(publisher, "utc_now", lambda: attempt_at + timedelta(minutes=1))
     monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "fixture-token-not-a-real-credential")

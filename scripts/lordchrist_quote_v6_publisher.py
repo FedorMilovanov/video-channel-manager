@@ -34,6 +34,8 @@ from video_channel_manager.telegram_transport import (
     preflight_target,
 )
 
+from scripts.lordchrist_quote_v6_semantic_gate import SemanticApprovalHold, require_semantic_approval
+
 from scripts.lordchrist_quote_v6_native_readonly import (
     SOURCE_PATH,
     QuoteV6NativeQueue,
@@ -212,6 +214,13 @@ def prepare(root: Path, *, mode: str, expected_id: str | None) -> int:
         raise ValueError("manual canary is not the first pending v6 publication")
     if mode == "scheduled" and expected_id is not None:
         raise ValueError("scheduled dispatch must not carry an explicit publication ID")
+    # Expected editorial HOLD is a safe no-op, not a failed provider attempt.
+    # No target lookup, intent or protected-state write occurs on this path.
+    try:
+        require_semantic_approval(root, queue, post)
+    except SemanticApprovalHold as exc:
+        print(json.dumps({"prepared": False, "reason": "editorial_hold", "detail": str(exc)}, ensure_ascii=False))
+        return 3
     proof, _token = target_from_provider()
     result = prepare_next(
         queue,
@@ -248,6 +257,8 @@ def send(root: Path) -> int:
     rich, plain, entities = make_rendered(post)
     if envelope.text != plain or envelope.payload_sha256 != post.payload_sha256:
         raise ValueError("persisted dispatch does not bind exact native v6 content")
+    # Re-check the exact approved PR and digest before the irreversible POST.
+    require_semantic_approval(root, queue, post)
     now = utc_now()
     if now - envelope.prepared_at_utc.astimezone(UTC) > timedelta(minutes=15):
         raise ValueError("prepared v6 dispatch expired before provider call")
@@ -466,6 +477,11 @@ def main() -> int:
     parser.add_argument("--publication-id")
     args = parser.parse_args()
     root = args.root.resolve()
+    if args.command in {"init", "migrate", "migrate-editorial"}:
+        raise ValueError(
+            "Historical v6 ledger initialization/migrations are retired on the live 12/18+ ledger. "
+            "No state mutation: prepare a separately reviewed exact pending-only successor release."
+        )
     if args.command == "validate":
         queue = release_and_queue(root)
         for post in queue.posts:
