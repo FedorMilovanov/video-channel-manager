@@ -123,6 +123,11 @@ def validate_spec(spec: dict[str, Any]) -> None:
     require_resolved_metadata(title=spec["title"], description=spec["description"], tags=tags)
     if not isinstance(spec.get("audio_review_required", False), bool):
         raise UploadPlanError("Spec audio_review_required must be boolean.")
+    # Absent disclosure is not evidence of AI content; a default True has
+    # falsely described authentic recordings in prepared uploader intents.
+    # Force an explicit, reviewed decision for both genuine and AI media.
+    if type(spec.get("contains_synthetic_media")) is not bool:
+        raise UploadPlanError("Spec contains_synthetic_media must be an explicit boolean (true or false).")
 
 
 def intent_digest(intent: dict[str, Any]) -> str:
@@ -182,7 +187,7 @@ def build_intent(
             "embeddable": bool(spec.get("embeddable", True)),
             "license": str(spec.get("license", "youtube")),
             "selfDeclaredMadeForKids": bool(spec.get("self_declared_made_for_kids", False)),
-            "containsSyntheticMedia": bool(spec.get("contains_synthetic_media", True)),
+            "containsSyntheticMedia": spec["contains_synthetic_media"],
         },
         "notify_subscribers": False,
         "provider_write_authorized": False,
@@ -211,6 +216,9 @@ def validate_intent(intent: dict[str, Any]) -> None:
     require_resolved_metadata(title=title, description=description, tags=tags)
     if "audio_review_required" in intent and intent["audio_review_required"] is not True:
         raise UploadPlanError("Intent audio_review_required must be true when present.")
+    status = intent.get("status")
+    if not isinstance(status, dict) or type(status.get("containsSyntheticMedia")) is not bool:
+        raise UploadPlanError("Intent status.containsSyntheticMedia must be an explicit boolean.")
     project_key = str(intent.get("project_key") or "")
     account_alias = str(intent.get("account_alias") or "")
     target_channel_id = str(intent.get("target_channel_id") or "")
