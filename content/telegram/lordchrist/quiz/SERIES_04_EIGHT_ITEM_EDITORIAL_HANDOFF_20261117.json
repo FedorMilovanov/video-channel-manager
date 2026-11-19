@@ -11,7 +11,7 @@
     "lordchrist-quiz-s03-sardis-vigil"
   ],
   "source_document": "content/telegram/lordchrist/quiz/SERIES_03_PENDING_EDITORIAL_CANDIDATES_20261117.json",
-  "source_blob_sha": "29e2bee6c2a472d65cc8aff9a4f218aec2862910",
+  "source_blob_sha": "0e3c353ab74091a88b3842b0fe240b390d906222",
   "prepared_items": [
     {
       "from": "lordchrist-quiz-s03-melchizedek-greater",
@@ -19,7 +19,7 @@
       "reference": "Евр. 7:4–10",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 118,
-      "explanation_characters": 159
+      "explanation_characters": 160
     },
     {
       "from": "lordchrist-quiz-s03-ark-right-order",
@@ -27,7 +27,7 @@
       "reference": "1 Пар. 15:2,13–15",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 116,
-      "explanation_characters": 173
+      "explanation_characters": 174
     },
     {
       "from": "lordchrist-quiz-s03-bronze-serpent",
@@ -35,7 +35,7 @@
       "reference": "Чис. 21:8–9; Ин. 3:14–15; Ин. 12:32–33",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 148,
-      "explanation_characters": 156
+      "explanation_characters": 157
     },
     {
       "from": "lordchrist-quiz-s03-isaac-return",
@@ -43,7 +43,7 @@
       "reference": "Евр. 11:17–19; Быт. 22:11–12",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 133,
-      "explanation_characters": 181
+      "explanation_characters": 182
     },
     {
       "from": "lordchrist-quiz-s03-david-bread",
@@ -51,7 +51,7 @@
       "reference": "Мк. 2:23–28; 1 Цар. 21:1–6",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 135,
-      "explanation_characters": 171
+      "explanation_characters": 172
     },
     {
       "from": "lordchrist-quiz-s03-one-sacrifice",
@@ -59,7 +59,7 @@
       "reference": "Евр. 10:11–14",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 102,
-      "explanation_characters": 171
+      "explanation_characters": 172
     },
     {
       "from": "lordchrist-quiz-s03-faith-and-works",
@@ -67,7 +67,7 @@
       "reference": "Иак. 2:14–26",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 103,
-      "explanation_characters": 172
+      "explanation_characters": 173
     },
     {
       "from": "lordchrist-quiz-s03-adam-christ",
@@ -75,7 +75,7 @@
       "reference": "Рим. 5:12–21",
       "review_status": "ACCEPT_FOR_HUMAN_SIGNOFF_ONLY",
       "question_characters": 89,
-      "explanation_characters": 178
+      "explanation_characters": 179
     }
   ],
   "editorial_basis": "SYNODAL_BIBLE_PRIMARY_TEXT_AND_CONTEXT",
@@ -89,7 +89,8 @@
     "This is a review handoff, not LordchristQuizSeriesSpec, runtime release or workflow source. The old v1 and protected state remain untouched.",
     "The series schema now accepts 8-10 genuine questions, without filler. This proposal remains provider-inert: no executable Series04 spec, runtime, scheduled publisher or ledger has been created.",
     "After a real independent human editor signs each exact question/answer/explanation, construct a dedicated eight-item spec with a NEW future schedule, new immutable release identity, separate protected ledger and exact-target provider-free preflight.",
-    "No workflow_dispatch publish or scheduled send may be run on this draft."
+    "No workflow_dispatch publish or scheduled send may be run on this draft.",
+    "Native Telegram QUIZ explanation format: one blank line between the complete explanatory sentence and the Bible reference (JSON `\\n\\n`), not a run-on citation. All eight pending explanations follow this layout and remain within 200 Unicode characters. Not an executable queue or approval."
   ],
   "additional_safety": "Existing Series03 editorial HOLD remains active until explicit future replacement-release authorization. Assistant review is not independent human signature."
 }

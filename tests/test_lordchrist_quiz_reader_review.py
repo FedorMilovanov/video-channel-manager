@@ -46,7 +46,9 @@ def test_all_eight_reader_reviews_match_the_unapproved_exact_candidate_text() ->
         explanation_section = section.split("**Объяснение Telegram (", 1)[1]
         limit_text, remainder = explanation_section.split(")**", 1)
         assert limit_text == f"{len(candidate['explanation'])}/200"
-        assert remainder.split("\n\n> ", 1)[1].split("\n\n", 1)[0] == candidate["explanation"]
+        blockquote = remainder.split("\n\n> ", 1)[1].split("\n\n", 1)[0]
+        assert blockquote.count("\n>\n> ") == 1
+        assert blockquote.replace("\n>\n> ", "\n\n") == candidate["explanation"]
 
         wrong_block = section.split("**Почему остальные варианты неверны**\n\n", 1)[1].split("\n\n**Приёмка:**", 1)[0]
         wrong = re.findall(r"(?m)^- \*\*Неверно ([1-4]):\*\* (.+)$", wrong_block)
