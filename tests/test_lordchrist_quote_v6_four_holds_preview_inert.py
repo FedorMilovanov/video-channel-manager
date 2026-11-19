@@ -34,7 +34,7 @@ def test_four_critical_holds_use_contiguous_exact_russian_spans_and_separate_edi
         assert entry["source_historical_english_sha256"] == original["historical_english_span_sha256"]
         assert entry["primary_english_anchor_start"] == original["source_anchors"]["start"]
         assert entry["primary_english_anchor_end"] == original["source_anchors"]["end"]
-        quoted = re.fullmatch(r"<blockquote>«([\s\S]+)»</blockquote>.*", original["html_text"])
+        quoted = re.fullmatch(r"<blockquote>«([\s\S]+)»</blockquote>[\s\S]*", original["html_text"])
         assert quoted is not None
         body = quoted.group(1)
         start = entry["quote_russian_offset_start_utf16"]
