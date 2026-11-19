@@ -34,6 +34,42 @@ def example(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return tmp_path, queue, post
 
 
+def test_inert_context_repair_candidates_preserve_exact_original_russian_spans():
+    import html
+    import re
+
+    path = ROOT / "docs/audits/2026-11-19-lordchrist-v6-context-repair-candidates-inert.json"
+    plan = json.loads(path.read_text(encoding="utf-8"))
+    source = json.loads(
+        (
+            ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
+        ).read_text(encoding="utf-8")
+    )
+    from_source = {item["publication_id"]: item for item in source["items"]}
+    assert plan["state_change"] is False
+    assert plan["payload_change"] is False
+    assert plan["workflow_dispatch"] is False
+    assert plan["review_status"] == "editorial_proposal_only_not_approved"
+    assert len(plan["candidates"]) == 6
+    for item in plan["candidates"]:
+        original = from_source[item["publication_id"]]
+        assert original["sequence"] == item["sequence"]
+        span = re.search(r"<blockquote>(.*?)</blockquote>", original["html_text"], re.DOTALL)
+        assert span is not None
+        quote = html.unescape(span.group(1))[1:-1]
+        proposal = item["source_bound_excerpt_proposal"]
+        if proposal is None:
+            assert item["editorial_route"]
+            continue
+        start, end = proposal["start"], proposal["end"]
+        assert quote.count(start) == quote.count(end) == 1
+        begin = quote.index(start)
+        finish = quote.index(end) + len(end)
+        assert finish > begin
+        assert quote[begin:finish].startswith(start)
+        assert quote[begin:finish].endswith(end)
+
+
 def test_frozen_review_register_has_30_exact_sha_bound_cards_and_zero_grants():
     queue = publisher.release_and_queue(ROOT)
     register = json.loads((ROOT / REVIEW_PATH).read_text(encoding="utf-8"))
