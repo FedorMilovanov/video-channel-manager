@@ -55,21 +55,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/apply_youtube_comment_plan.py",
-      "private_imports": [],
-      "project_owner": "runtime-bound-or-none",
-      "provider_write_capable": true,
-      "sha256": "7d31b3c332c56843e7f5b1c8bc91abbe27c533da4e8824aa38166413f0c114b2",
-      "status": "retired"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/apply_youtube_comment_plan_compat.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
       "sha256": "159d4e1c5ba8a7b8f0e349d255ad1033f28559b7ef9efc85d86be1686ceb06bc",
+      "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/apply_youtube_comment_plan.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": true,
+      "sha256": "7d31b3c332c56843e7f5b1c8bc91abbe27c533da4e8824aa38166413f0c114b2",
       "status": "retired"
     },
     {
@@ -255,21 +255,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/build_vk_deferred_review_bundle.py",
-      "private_imports": [],
-      "project_owner": "runtime-bound-or-none",
-      "provider_write_capable": false,
-      "sha256": "d9c44480467025e60359774bd6334c35abf01fb4e9bc847b302c3f6246cf1966",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/build_vk_deferred_review_bundle_v3.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
       "sha256": "8ad029a988e7c5bb1da5211b8b04668b4e52cc7201efdcdca587ca31abfb21fa",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_vk_deferred_review_bundle.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": false,
+      "sha256": "d9c44480467025e60359774bd6334c35abf01fb4e9bc847b302c3f6246cf1966",
       "status": "independent_tool"
     },
     {
@@ -567,18 +567,11 @@
     {
       "callers": [],
       "direct_entrypoint": false,
-      "path": "scripts/lord_god_article_wave_v3/link_cards.py",
-      "private_imports": [
-        "sources:_compare_live_and_pinned_metadata",
-        "sources:_decode_utf8",
-        "sources:_metadata_from_text",
-        "sources:_response_or_conflict",
-        "sources:_verify_markers",
-        "sources:_verify_metadata"
-      ],
+      "path": "scripts/lord_god_article_wave_v3/link_cards_hardened_entry.py",
+      "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "098d48d53285b1e26e3cd37e26dc86fc3615799f1dc8d1965b662c18d50e58ee",
+      "sha256": "d0c788fdff1a13a2ea79495ce9269cc2aa1dcfd1c7dcde89d3f9f97801e34d66",
       "status": "compatibility_adapter"
     },
     {
@@ -594,21 +587,28 @@
     {
       "callers": [],
       "direct_entrypoint": false,
-      "path": "scripts/lord_god_article_wave_v3/link_cards_hardened_entry.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": true,
-      "sha256": "d0c788fdff1a13a2ea79495ce9269cc2aa1dcfd1c7dcde89d3f9f97801e34d66",
-      "status": "compatibility_adapter"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": false,
       "path": "scripts/lord_god_article_wave_v3/link_cards_parsed.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
       "sha256": "62310336213b0824837ece6d72dc9a100ffbe5682dddabd0f7ed2c0c3f11b052",
+      "status": "compatibility_adapter"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": false,
+      "path": "scripts/lord_god_article_wave_v3/link_cards.py",
+      "private_imports": [
+        "sources:_compare_live_and_pinned_metadata",
+        "sources:_decode_utf8",
+        "sources:_metadata_from_text",
+        "sources:_response_or_conflict",
+        "sources:_verify_markers",
+        "sources:_verify_metadata"
+      ],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "098d48d53285b1e26e3cd37e26dc86fc3615799f1dc8d1965b662c18d50e58ee",
       "status": "compatibility_adapter"
     },
     {
@@ -674,16 +674,6 @@
     {
       "callers": [],
       "direct_entrypoint": false,
-      "path": "scripts/lord_god_article_wave_v3/photo_wave_v5.py",
-      "private_imports": [],
-      "project_owner": "lord-god-strength",
-      "provider_write_capable": true,
-      "sha256": "2f0dad7b8ae98f715411bd6014738478e29b9d9e5b37bc6851b025ee64412e28",
-      "status": "compatibility_adapter"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": false,
       "path": "scripts/lord_god_article_wave_v3/photo_wave_v5_compat.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
@@ -699,6 +689,16 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
       "sha256": "be285d0299a0fc828af73039fc862ed8df5502deb483304834c2eaccd755d2b2",
+      "status": "compatibility_adapter"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": false,
+      "path": "scripts/lord_god_article_wave_v3/photo_wave_v5.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "2f0dad7b8ae98f715411bd6014738478e29b9d9e5b37bc6851b025ee64412e28",
       "status": "compatibility_adapter"
     },
     {
@@ -790,7 +790,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "860dfac0e83695feda184d9377c78bcc43f023c9b9c53b4b43fdaa46749dadad",
+      "sha256": "ce178b611482e993cfdb829e6091768c18281f35db6438cd8724fe4638fe3fe2",
       "status": "independent_tool"
     },
     {
@@ -814,6 +814,18 @@
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
       "sha256": "02f9c0dd61c91213870f1adc38278097156c71eaee859b8d5d8f7d4d6fa40cac",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [
+        "scripts/lordchrist_quote_v6_publisher.py"
+      ],
+      "direct_entrypoint": false,
+      "path": "scripts/lordchrist_quote_v6_semantic_gate.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "3c3fd563e81dd9cb073dd63199d511a491c665f54292ad4a38bce9ce6676bf26",
       "status": "independent_tool"
     },
     {
@@ -1072,16 +1084,6 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/run_vk_p1_final_megawave.py",
-      "private_imports": [],
-      "project_owner": "legendary-poet",
-      "provider_write_capable": true,
-      "sha256": "9e827de5123959d75f45a54e58ec57092e32c76564e5ddf3a0a734b72cfde2a0",
-      "status": "retired"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/run_vk_p1_final_megawave_resume.py",
       "private_imports": [],
       "project_owner": "legendary-poet",
@@ -1092,21 +1094,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/run_vk_wall_wave.py",
+      "path": "scripts/run_vk_p1_final_megawave.py",
       "private_imports": [],
-      "project_owner": "runtime-bound-or-none",
+      "project_owner": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "15c143c162bae0e93ba33fb33e0fd63890bc3089450aae32ceb1fb3348492a6e",
+      "sha256": "9e827de5123959d75f45a54e58ec57092e32c76564e5ddf3a0a734b72cfde2a0",
       "status": "retired"
     },
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/schedule_lord_god_article_wave.py",
+      "path": "scripts/run_vk_wall_wave.py",
       "private_imports": [],
-      "project_owner": "lord-god-strength",
+      "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
-      "sha256": "e7ac66c2659866096d4a7568d231cf2fa91f77b765456088af4ff46dc6ce8384",
+      "sha256": "15c143c162bae0e93ba33fb33e0fd63890bc3089450aae32ceb1fb3348492a6e",
       "status": "retired"
     },
     {
@@ -1132,11 +1134,11 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/schedule_lord_god_wall_tail.py",
+      "path": "scripts/schedule_lord_god_article_wave.py",
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "c1b26b6d1ed2a9daa308e0c8b41da7e1510cb9acebce0b7b574cb731a2baa3f3",
+      "sha256": "e7ac66c2659866096d4a7568d231cf2fa91f77b765456088af4ff46dc6ce8384",
       "status": "retired"
     },
     {
@@ -1152,6 +1154,16 @@
     {
       "callers": [],
       "direct_entrypoint": true,
+      "path": "scripts/schedule_lord_god_wall_tail.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "c1b26b6d1ed2a9daa308e0c8b41da7e1510cb9acebce0b7b574cb731a2baa3f3",
+      "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
       "path": "scripts/sync_youtube_thumbnails_to_vk.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
@@ -1162,21 +1174,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/sync_youtube_to_vk.py",
-      "private_imports": [],
-      "project_owner": "runtime-bound-or-none",
-      "provider_write_capable": true,
-      "sha256": "c793dc67e48a0cb5c595fc969ecd0f552bdeead9443aa1b79cb7b2bb0e7d9169",
-      "status": "retired"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/sync_youtube_to_vk_textsafe.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
       "sha256": "6b9a838fb0024dd509c4287ef4e1e90343cb96168ac1fc3cc2d05a012cb9d0b2",
+      "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/sync_youtube_to_vk.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": true,
+      "sha256": "c793dc67e48a0cb5c595fc969ecd0f552bdeead9443aa1b79cb7b2bb0e7d9169",
       "status": "retired"
     },
     {
@@ -1232,21 +1244,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/validate_youtube_copy.py",
-      "private_imports": [],
-      "project_owner": "runtime-bound-or-none",
-      "provider_write_capable": false,
-      "sha256": "b341f64603bba97d72b70dcc8cb3e5ff37ca9610edf2d42521f8d3d3a5860f00",
-      "status": "independent_tool"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/validate_youtube_copy_plan.py",
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": false,
       "sha256": "52092f9cc393f66b259354f9aaee18b29fcdf60bbff28c6f63d77f858d6807e0",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/validate_youtube_copy.py",
+      "private_imports": [],
+      "project_owner": "runtime-bound-or-none",
+      "provider_write_capable": false,
+      "sha256": "b341f64603bba97d72b70dcc8cb3e5ff37ca9610edf2d42521f8d3d3a5860f00",
       "status": "independent_tool"
     },
     {
@@ -1412,11 +1424,11 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/vk_shorts_reset.py",
+      "path": "scripts/vk_shorts_reset_20260801_v3.py",
       "private_imports": [],
-      "project_owner": "lord-god-strength",
+      "project_owner": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "f39936ac62c7a4b300022d913f9f7e8d5e2cbc947d50712c99585d349e82b995",
+      "sha256": "413d69b39346655c32b9c250546fe81b008700cf6d2f4ba2d7ea0d7a89677250",
       "status": "retired"
     },
     {
@@ -1432,21 +1444,21 @@
     {
       "callers": [],
       "direct_entrypoint": true,
-      "path": "scripts/vk_shorts_reset_20260801_v3.py",
-      "private_imports": [],
-      "project_owner": "legendary-poet",
-      "provider_write_capable": true,
-      "sha256": "413d69b39346655c32b9c250546fe81b008700cf6d2f4ba2d7ea0d7a89677250",
-      "status": "retired"
-    },
-    {
-      "callers": [],
-      "direct_entrypoint": true,
       "path": "scripts/vk_shorts_reset_current.py",
       "private_imports": [],
       "project_owner": "legendary-poet",
       "provider_write_capable": true,
       "sha256": "25af1aeb488f7b6d9c964100d8b7905f6473f141f3ac5b5e38b4887d700b3cd8",
+      "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/vk_shorts_reset.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "f39936ac62c7a4b300022d913f9f7e8d5e2cbc947d50712c99585d349e82b995",
       "status": "retired"
     },
     {
