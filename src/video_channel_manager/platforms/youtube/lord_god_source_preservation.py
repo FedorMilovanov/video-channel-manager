@@ -31,7 +31,7 @@ _RETIRED_OWNER_VK_FUNDRAISING_URL = "https://vk.com/the_lord_god_is_my_strength?
 _RETIRED_OWNER_OK_PROFILE_URL_SHA256 = "9e68cb068e9c95f0c8419f899537a3b4360860b53ed38b005c01b59937146894"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
-_CHAPTER_RE = re.compile(r"^\s*(?:[-*•‣◦⁃>]\s+)?[*_]*(?:\d{1,2}:)?\d{1,2}:\d{2}[*_]*\s+\S", re.M)
+_CHAPTER_RE = re.compile(r"^\s*(?:(?:[-*•‣◦⁃>]|\d+[.)])\s+)?[*_]*(?:\d{1,2}:)?\d{1,2}:\d{2}[*_]*\s+\S", re.M)
 _CREDIT_RE = re.compile(
     r"(?:"
     # Preserve full source/translator labels, even if the URL appears elsewhere.
