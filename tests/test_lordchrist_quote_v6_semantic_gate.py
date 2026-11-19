@@ -41,9 +41,9 @@ def test_inert_context_repair_candidates_preserve_exact_original_russian_spans()
     path = ROOT / "docs/audits/2026-11-19-lordchrist-v6-context-repair-candidates-inert.json"
     plan = json.loads(path.read_text(encoding="utf-8"))
     source = json.loads(
-        (
-            ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
-        ).read_text(encoding="utf-8")
+        (ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json").read_text(
+            encoding="utf-8"
+        )
     )
     from_source = {item["publication_id"]: item for item in source["items"]}
     assert plan["state_change"] is False
@@ -119,9 +119,7 @@ def _activate(tmp_path: Path, post):
             "github_approval_review_id": 12345,
         }
     ]
-    (tmp_path / ACTIVATION_PATH).write_text(
-        json.dumps(activation, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    (tmp_path / ACTIVATION_PATH).write_text(json.dumps(activation, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def _github_receipt(tmp_path: Path, *, mode: str = "valid"):
@@ -165,8 +163,10 @@ def test_unapproved_original_review_register_fails_before_github_network(example
 def test_approval_requires_distinct_github_reviewer_exact_merged_head_and_blob(example, mode):
     root, queue, post = example
     _activate(root, post)
+
     def check():
         return require_semantic_approval(root, queue, post, github_get=_github_receipt(root, mode=mode))
+
     if mode == "valid":
         check()
     else:
@@ -213,9 +213,7 @@ def test_historical_mutating_cli_commands_cannot_reinitialize_or_rebind_live_led
 
 
 def test_workflow_refuses_deprecated_manual_state_writes() -> None:
-    workflow = (ROOT / ".github/workflows/lordchrist-quote-v6-publisher.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (ROOT / ".github/workflows/lordchrist-quote-v6-publisher.yml").read_text(encoding="utf-8")
     guard = 'if [[ "$V6_ACTION" != "publish" ]]; then'
     assert workflow.index(guard) < workflow.index('if [[ "$V6_ACTION" == "initialize" ]]; then')
     assert "pull-requests: read" in workflow
@@ -249,7 +247,8 @@ def test_no_telegram_http_after_prepared_intent_if_editorial_approval_revoked(mo
 
     owner, _queue, ledger_path, _envelope = original_tests._prepared_v6_fault_fixture(monkeypatch, tmp_path)
     monkeypatch.setattr(
-        owner, "require_semantic_approval",
+        owner,
+        "require_semantic_approval",
         lambda *_args: (_ for _ in ()).throw(SemanticApprovalHold("approval revoked after intent")),
     )
     monkeypatch.setattr(owner, "_api_call", lambda *_args, **_kwargs: pytest.fail("Telegram POST after HOLD"))
