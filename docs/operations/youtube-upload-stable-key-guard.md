@@ -17,6 +17,22 @@ A later explicitly authorized historical execution of that draft exposed two add
 
 Those incidents are evidence only. They do not make PR #171 executable again.
 
+## AI-disclosure decision is mandatory, not inferred
+
+The current local v2 upload spec MUST explicitly set `contains_synthetic_media` to a
+JSON boolean. **The former default `true` was unsafe**: an uploader spec that
+forgot to choose a value could silently prepare `status.containsSyntheticMedia=true`
+for an authentic historical sermon recording. The planner now refuses a missing,
+null, string, or numeric decision. Set `false` **only after confirming that the
+video is genuine and the narration/footage do not require altered/synthetic
+disclosure**; set `true` for qualified realistic generated/meaningfully
+altered material. This is a local, provider-inert planner, not evidence it
+created any particular prior YouTube Studio flag. Neither absence of
+`status.containsSyntheticMedia` in owner `videos.list` nor an accepted
+`videos.update` alone proves the player badge disappeared. Do not silently
+rewrite existing signed release intents; replan them through their stable
+media-identity journal and owner review.
+
 ## Stable identity
 
 The local v2 model defines one upload identity as:
