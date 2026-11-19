@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:13cac1b9630072b7929d8d96244153284779dc41961469d3f106e289df94eb0d",
+  "publication_id": "lordchrist-edwards-sinners-in-hands",
+  "sequence": 14,
+  "intent_id": "e159c2405122f7f847eed5f00a823905",
+  "workflow_run_id": "44564265425",
+  "workflow_run_attempt": "1",
+  "github_sha": "7b0dbb478301073a03834eb81ce7f442aecc6e79",
+  "github_workflow_sha": "7b0dbb478301073a03834eb81ce7f442aecc6e79",
+  "payload_sha256": "sha256:dd1a5b48fd71f91f7f2c17748a24d30f8e9ca30b1ebbeee88a6a89c6ec7d59cd",
+  "text": "У Бога нет недостатка в силе, чтобы в любое мгновение низвергнуть нечестивых в ад. Человеческие руки не могут быть сильны, когда восстаёт Бог. Самые могущественные люди бессильны противиться Ему, и никто не может избавить из Его руки.\n— Джонатан Эдвардс, «Грешники в руках разгневанного Бога»\n\n#ДжонатанЭдвардс #БожийСуд #БожьяВоля",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-11-19T16:17:09.933020Z"
+  },
+  "prepared_at_utc": "2026-11-19T16:17:09.355761Z"
+}
