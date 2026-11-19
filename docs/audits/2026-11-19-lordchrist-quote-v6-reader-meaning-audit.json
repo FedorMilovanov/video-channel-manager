@@ -480,5 +480,36 @@
       "independent_bilingual_review": "not_proven_by_this_audit",
       "release_approval_from_this_audit": false
     }
-  ]
+  ],
+  "related_historical_quote_corpora": {
+    "scope_note": "Historical archives audited using their existing versioned review artifacts, not a fresh complete bilingual retranslation of all archived excerpts.",
+    "depth60": {
+      "file": "content/telegram/lordchrist/quote-depth-audit-v1.json",
+      "total": 60,
+      "history_locked": 10,
+      "keep": 29,
+      "proposed_replace": 21
+    },
+    "standalone_pending": {
+      "file": "content/telegram/lordchrist/quote-standalone-review-v2.json",
+      "total": 43,
+      "accepted_in_2026_10_snapshot": 43,
+      "meaning_verification_not_guaranteed_by_old_acceptance": true
+    },
+    "replacement_candidates": {
+      "file": "content/telegram/lordchrist/quote-depth-replacements-v2.json",
+      "total": 21,
+      "review_state": "pending_review"
+    },
+    "remaining_known_issue": {
+      "file": "content/telegram/lordchrist/quote-pending-content-findings-v2.json",
+      "publication_id": "lordchrist-successor-depth-v2-44-macarthur-repentance-not-merit",
+      "finding": "Russian translation calque: 'Покаяние не более заслуживающее спасение дело, чем вера'; change requires new release/digest and state rebind, not direct edit."
+    },
+    "old_v4_hold": {
+      "file": "content/telegram/lordchrist/quote-v4-editorial-safety-hold.json",
+      "status": "blocked_pending_full_source_collation",
+      "execution_authorized_by_this_report": false
+    }
+  }
 }
