@@ -127,6 +127,41 @@ def test_original_chapters_must_survive_exactly_including_hour_stamps() -> None:
     require_lord_god_youtube_presentation(_plan(before, after))
 
 
+@pytest.mark.parametrize(
+    "chapter",
+    [
+        "*00:00* Вступление",
+        "_00:00_ Вступление",
+        "- 00:00 Вступление",
+        "> *1:04:37* Доверие Богу",
+        "• 1:04:37 Доверие Богу",
+        "1. 00:00 Вступление",
+        "2) _1:04:37_ Доверие Богу",
+    ],
+)
+def test_list_or_emphasis_formatted_original_chapters_cannot_disappear(chapter: str) -> None:
+    before = chapter + "\n" + _SHELF
+    assert "original_chapters_not_preserved" in source_preservation_issues(before, _VALID_TEXT)
+    with pytest.raises(ValueError, match="original_chapters_not_preserved"):
+        require_lord_god_youtube_presentation(_plan(before, _VALID_TEXT))
+    assert source_preservation_issues(before, _VALID_TEXT + "\n" + chapter) == []
+
+
+@pytest.mark.parametrize("prefix", ["- ", "• ", "> ", "1. "])
+def test_list_wrapped_source_heading_cannot_be_removed_when_url_remains(prefix: str) -> None:
+    original = prefix + "*Источник:* https://example.org/sermon"
+    before = original + "\n" + _SHELF
+    after = _VALID_TEXT + "\n*Связанная запись:* https://example.org/sermon"
+    assert source_preservation_issues(before, after) == ["original_translation_or_source_credit_not_preserved"]
+    with pytest.raises(ValueError, match="original_translation_or_source_credit_not_preserved"):
+        require_lord_god_youtube_presentation(_plan(before, after))
+    assert source_preservation_issues(before, after + "\n" + original) == []
+
+
+def test_list_wrapped_nonsource_heading_is_not_attribution() -> None:
+    assert source_preservation_issues("- *Содержание:* Описание темы", _VALID_TEXT) == []
+
+
 def test_existing_translator_and_source_credit_cannot_be_silently_dropped() -> None:
     credit = "Перевод выполнил И. Иванов; источник записи — архив проповеди."
     before = credit + "\n" + _SHELF
