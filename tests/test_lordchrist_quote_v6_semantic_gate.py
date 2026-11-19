@@ -240,7 +240,7 @@ def test_prepare_rejects_before_provider_preflight_or_ledger_write(monkeypatch, 
     output = json.loads(capsys.readouterr().out)
     assert output["prepared"] is False
     assert output["reason"] == "editorial_hold"
-    assert "approval" in output["detail"]
+    assert "no independent acceptance" in output["detail"]
     assert ledger == original
 
 
