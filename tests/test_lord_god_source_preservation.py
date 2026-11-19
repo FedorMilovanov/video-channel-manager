@@ -135,6 +135,8 @@ def test_original_chapters_must_survive_exactly_including_hour_stamps() -> None:
         "- 00:00 Вступление",
         "> *1:04:37* Доверие Богу",
         "• 1:04:37 Доверие Богу",
+        "1. 00:00 Вступление",
+        "2) _1:04:37_ Доверие Богу",
     ],
 )
 def test_list_or_emphasis_formatted_original_chapters_cannot_disappear(chapter: str) -> None:
