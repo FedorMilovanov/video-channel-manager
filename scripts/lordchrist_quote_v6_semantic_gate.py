@@ -64,7 +64,7 @@ def _load(root: Path, path: Path) -> dict[str, Any]:
 
 def _blob_sha(path: Path) -> str:
     raw = path.read_bytes()
-    return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw, usedforsecurity=False).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(raw)).encode() + bytes([0]) + raw, usedforsecurity=False).hexdigest()
 
 
 def require_semantic_approval(
