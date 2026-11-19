@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Initialize v6, safely rebind 19 pending messages, or send first manual canary
+        description: Historical manual canary only; initialize/rebind actions are RETIRED and rejected
         required: true
         type: choice
         options:
@@ -96,6 +96,11 @@ jobs:
             echo "mode=scheduled" >> "$GITHUB_OUTPUT"
             echo "initialize=false" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          # Fail closed before legacy initialize/migrate commands can write protected state.
+          if [[ "$V6_ACTION" != "publish" ]]; then
+            echo "::error::Retired v6 state mutation cannot run on the advanced 12/18+ ledger" >&2
+            exit 2
           fi
           if [[ "$V6_ACTION" == "initialize" ]]; then
             [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
