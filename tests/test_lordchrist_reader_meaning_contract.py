@@ -68,9 +68,18 @@ def test_reader_meaning_contract_is_routed_to_each_editorial_lane() -> None:
     name = "SEMANTIC_CLARITY_AND_CONTEXT_STANDARD.md"
     standard = (CONTENT / name).read_text(encoding="utf-8")
     for required in (
-        "PASS_MEANING", "REVIEW_REQUIRED", "HOLD_MEANING",
-        "reader_thesis", "reasoning_link", "reader_misreading",
-        "прав", "перв", "quote-v6", "L1", "L2", "L3",
+        "PASS_MEANING",
+        "REVIEW_REQUIRED",
+        "HOLD_MEANING",
+        "reader_thesis",
+        "reasoning_link",
+        "reader_misreading",
+        "прав",
+        "перв",
+        "quote-v6",
+        "L1",
+        "L2",
+        "L3",
     ):
         assert required in standard, required
 
