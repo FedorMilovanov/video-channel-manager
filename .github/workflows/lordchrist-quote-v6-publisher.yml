@@ -31,6 +31,7 @@ on:
 permissions:
   contents: write
   actions: read
+  pull-requests: read
 
 concurrency:
   group: lordchrist-telegram-publisher
@@ -180,6 +181,7 @@ jobs:
         shell: bash
         env:
           EXPECTED_V6_PUBLICATION_ID: ${{ inputs.publication_id }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p .runtime
@@ -235,6 +237,8 @@ jobs:
         id: send
         if: steps.intent.outputs.persisted == 'true' && steps.final_quality.outcome == 'success'
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           set +e
