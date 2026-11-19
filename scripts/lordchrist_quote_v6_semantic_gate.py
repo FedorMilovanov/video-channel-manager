@@ -163,6 +163,21 @@ def require_semantic_approval(
     ):
         raise SemanticApprovalHold("PR not merged to main or reviewer is author")
 
+    # An unrelated approved PR must never be reused as a semantic signoff:
+    # the approved PR itself must have changed this exact register.
+    changed_files = github_get(f"{_GITHUB}/pulls/{number}/files?per_page=100", token)
+    if (
+        not isinstance(changed_files, list)
+        or len(changed_files) >= 100
+        or not any(
+            isinstance(item, dict)
+            and item.get("filename") == REVIEW_PATH.as_posix()
+            and item.get("status") in {"added", "modified"}
+            for item in changed_files
+        )
+    ):
+        raise SemanticApprovalHold("approval PR did not edit the semantic source register")
+
     # Review the exact repository file bytes, never an assertion in the grant.
     evidence = github_get(f"{_GITHUB}/contents/{REVIEW_PATH.as_posix()}?ref={reviewed_head}", token)
     if not isinstance(evidence, dict) or evidence.get("sha") != _blob_sha(root / REVIEW_PATH):
