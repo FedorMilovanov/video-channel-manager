@@ -1,0 +1,10 @@
+{
+  "schema_name": "lordchrist-quote-v6-semantic-activation",
+  "schema_version": 1,
+  "release_id": "lordchrist-quote-v6-20261106",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:13cac1b9630072b7929d8d96244153284779dc41961469d3f106e289df94eb0d",
+  "status": "hold_until_independent_source_translation_rights_and_meaning_review",
+  "entries": [],
+  "note": "Do not add self-approved entries. Each future grant must refer to an independently APPROVED, merged GitHub pull request whose exact reviewed semantic register bytes match the active main source; registration alone does not provide write authorization."
+}
