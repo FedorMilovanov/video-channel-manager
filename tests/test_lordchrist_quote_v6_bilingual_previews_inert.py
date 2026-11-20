@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "docs/audits/2026-11-20-lordchrist-quote-v6-18-bilingual-lexical-and-format-previews-inert.json"
 SOURCE = ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
 EXPECTED = {9, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
-NEW_TRANSLATIONS = {9, 20, 21, 22, 23, 30}
+NEW_TRANSLATIONS = {9, 20, 21, 30}
+DERIVATIVE_LEGACY_EDITS = {22, 23}
 ARTICLE_L1 = {16, 22, 27}
 
 
@@ -46,6 +47,8 @@ def test_exact_18_pending_revisions_bind_to_frozen_original_identity() -> None:
         assert entry["legacy_russian_sha256"] == original["quoted_russian_sha256"]
         assert entry["legacy_payload_sha256"] == original["candidate_payload_sha256"]
         assert len(entry["selected_lexical_checkpoints"]) == 3
+        assert entry["selected_english_excerpt_anchors"]["start"]
+        assert entry["selected_english_excerpt_anchors"]["end"]
         assert all(check["english"] and check["proposed_russian"] for check in entry["selected_lexical_checkpoints"])
 
 
@@ -75,13 +78,15 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
     old_by_num = {item["sequence"]: item for item in frozen["items"]}
     actual_new = {
         number for number, item in by_num.items()
-        if item["quote_provenance"] == "new_editorial_russian_candidate_requires_new_digest"
+        if item["quote_provenance"] == "new_editorial_translation_from_english_reference_requires_new_digest"
     }
     assert actual_new == NEW_TRANSLATIONS
+    assert {n for n, item in by_num.items() if item["quote_provenance"] == "legacy_russian_span_with_targeted_unapproved_edits_rights_and_new_digest_required"} == DERIVATIVE_LEGACY_EDITS
+    assert {n for n, item in by_num.items() if item["legacy_russian_dependency_remains"] is False} == NEW_TRANSLATIONS
 
     for number, item in by_num.items():
         old_text = html.unescape(re.sub(r"<[^>]+>", "", old_by_num[number]["html_text"]))
-        if number not in NEW_TRANSLATIONS:
+        if number not in NEW_TRANSLATIONS | DERIVATIVE_LEGACY_EDITS:
             assert item["proposed_quote_text_ru"] in old_text
 
     assert by_num[22]["proposed_quote_text_ru"].startswith("Христианское довольство —")
