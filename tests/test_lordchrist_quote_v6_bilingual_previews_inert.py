@@ -125,7 +125,12 @@ def test_short_and_l1_layout_keep_editor_outside_the_author_quote() -> None:
             assert intro not in quote
             assert preview.startswith("**")
             assert "**\n\n" in preview
+            assert item["native_telegram_quote_entity_required"] is True
+            assert item["native_telegram_quote_entity_payload_ready"] is False
+            assert "\u2060\n> " in preview
         else:
             assert intro is None
+            assert item["native_telegram_quote_entity_required"] is False
+            assert "\u2060" not in preview
             assert preview.startswith(quote[:4]) or preview.startswith("**")
             assert not preview.startswith("«")
