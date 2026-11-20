@@ -22,7 +22,7 @@
   "testable_count": 18,
   "formats": {
     "short": "author quote + italic work attribution + blank line + 2-4 underscorless tags; no outer quote marks or global blockquote",
-    "L1": "uppercase title + separate editor context + authored quote only + italic attribution + tags; no intro inserted into author speech"
+    "L1": "uppercase bold title + separate editor paragraph + standalone U+2060 spacer + native quote-only entity (preview marked with >) + italic attribution OUTSIDE quote + 4-6 hashtags. Actual Telegram entity offsets not signed."
   },
   "pending_human_and_owner_gates": [
     "complete English/Russian alignment",
@@ -73,7 +73,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 12,
@@ -116,7 +117,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 15,
@@ -159,7 +161,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 16,
@@ -195,14 +198,17 @@
       "highlight_bold_ru": "не будучи освящены, мы не будем спасены",
       "highlight_italic_ru": "смешивают его с оправданием",
       "hashtags_ru": "#ДжонРайл #Освящение #Оправдание #Благодать",
-      "reader_preview_markdown_ru": "**ОСВЯЩЕНИЕ И ОПРАВДАНИЕ**\n\nРайл различает оправдание и освящение. Первое нельзя заслужить делами; второе нельзя считать необязательным в жизни человека, которого Христос спасает. Автор предостерегает против обоих смешений.\n\nЕсли Библия истинна, то несомненно: **не будучи освящены, мы не будем спасены**. Согласно Писанию, для спасения каждого человека в христианском мире необходимы три вещи: оправдание, возрождение и освящение. Все три присутствуют в каждом чаде Божьем: он и рождён свыше, и оправдан, и освящён. Кому недостаёт хотя бы одного из них, тот в очах Божьих не является истинным христианином; умерев в таком состоянии, он не окажется на небесах и не будет прославлен в последний день.\n\nЭто особенно своевременная тема. В последнее время появились странные учения об освящении. Одни, кажется, *смешивают его с оправданием*. Другие сводят его почти к ничему, прикрываясь ревностью по даровой благодати, и на деле вовсе пренебрегают им. Третьи так боятся сделать дела частью оправдания, что едва находят для добрых дел место в своём христианстве.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Освящение #Оправдание #Благодать",
+      "reader_preview_markdown_ru": "**ОСВЯЩЕНИЕ И ОПРАВДАНИЕ**\n\nРайл различает оправдание и освящение. Первое нельзя заслужить делами; второе нельзя считать необязательным в жизни человека, которого Христос спасает. Автор предостерегает против обоих смешений.\n\n⁠\n> Если Библия истинна, то несомненно: **не будучи освящены, мы не будем спасены**. Согласно Писанию, для спасения каждого человека в христианском мире необходимы три вещи: оправдание, возрождение и освящение. Все три присутствуют в каждом чаде Божьем: он и рождён свыше, и оправдан, и освящён. Кому недостаёт хотя бы одного из них, тот в очах Божьих не является истинным христианином; умерев в таком состоянии, он не окажется на небесах и не будет прославлен в последний день.\n>\n> Это особенно своевременная тема. В последнее время появились странные учения об освящении. Одни, кажется, *смешивают его с оправданием*. Другие сводят его почти к ничему, прикрываясь ревностью по даровой благодати, и на деле вовсе пренебрегают им. Третьи так боятся сделать дела частью оправдания, что едва находят для добрых дел место в своём христианстве.\n\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Освящение #Оправдание #Благодать",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "copy_to_android_spacer_line": "⁠",
+      "native_telegram_quote_entity_required": true,
+      "native_telegram_quote_entity_payload_ready": false
     },
     {
       "sequence": 17,
@@ -245,7 +251,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 18,
@@ -288,7 +295,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 19,
@@ -321,17 +329,18 @@
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Дж. К. Райл, «Святость»",
-      "highlight_bold_ru": "не испытывает страха",
+      "highlight_bold_ru": "Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.",
       "highlight_italic_ru": "Время моего отшествия настало",
       "hashtags_ru": "#ДжонРайл #АпостолПавел #Уверенность",
-      "reader_preview_markdown_ru": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\nПрежде всего Павел смотрит вниз, на могилу, и **не испытывает страха**. Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„*Время моего отшествия настало*“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #АпостолПавел #Уверенность",
+      "reader_preview_markdown_ru": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\n**Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.** Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„*Время моего отшествия настало*“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #АпостолПавел #Уверенность",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 20,
@@ -364,17 +373,18 @@
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Дж. К. Райл, «Святость»",
-      "highlight_bold_ru": "Святость",
-      "highlight_italic_ru": "Его Слова",
+      "highlight_bold_ru": "Святость — это привычка быть единодушным с Богом",
+      "highlight_italic_ru": "мерилу Его Слова",
       "hashtags_ru": "#ДжонРайл #Святость #СловоБожье",
-      "reader_preview_markdown_ru": "**Святость** — это привычка быть единодушным с Богом в том, что открыто о Нём в Писании: соглашаться с Его оценкой добра и зла, ненавидеть то, что Он ненавидит, любить то, что Он любит, и судить обо всём по мерилу *Его Слова*. Чем полнее человек согласует свои суждения с Божьими, тем более он свят.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Святость #СловоБожье",
+      "reader_preview_markdown_ru": "**Святость — это привычка быть единодушным с Богом** в том, что открыто о Нём в Писании: соглашаться с Его оценкой добра и зла, ненавидеть то, что Он ненавидит, любить то, что Он любит, и судить обо всём по *мерилу Его Слова*. Чем полнее человек согласует свои суждения с Божьими, тем более он свят.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Святость #СловоБожье",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 21,
@@ -417,7 +427,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 22,
@@ -453,14 +464,17 @@
       "highlight_bold_ru": "довольство — дар Божественный",
       "highlight_italic_ru": "светильником Писания",
       "hashtags_ru": "#ТомасУотсон #ХристианскоеДовольство #Благочестие #Писание",
-      "reader_preview_markdown_ru": "**ЧТО ТАКОЕ ХРИСТИАНСКОЕ ДОВОЛЬСТВО**\n\nПод «довольством» Томас Уотсон понимает не самодовольство и не равнодушие, а христианское спокойствие сердца, которое даёт Дух Божий. Далее автор объясняет, почему такое довольство нельзя свести к обычному самообладанию.\n\nХристианское довольство — это благостное расположение духа, благодаря которому христианин сохраняет равновесие при любых обстоятельствах. Его природа станет яснее из трёх положений.\n\nВо-первых, **довольство — дар Божественный**. Оно становится нашим не потому, что мы приобрели его собственными силами, но потому, что оно вложено в нас. Это побег от древа жизни, насаждённый Духом Божьим в душе; такой плод вырастает не в саду философии, но имеет небесное происхождение. Поэтому довольство соединено с благочестием, как сказано: „Великое приобретение — быть благочестивым и довольным“ (1 Тим. 6:6).\n\nДовольство может быть следствием благочестия, его спутником либо тем и другим одновременно. Я называю его Божественным, чтобы отличить от того спокойствия, которого способен достичь просто нравственный человек. Казалось, что и язычники обладали довольством, но у них была только его тень и подобие: у них — берилл, а не настоящий алмаз. Их спокойствие принадлежало гражданской добродетели, наше — священно; их довольство исходило лишь из рассудка, христианское — из благочестия. Их свет зажигался факелом природы, наш — *светильником Писания*.\n*— Томас Уотсон, «Искусство Божественного довольства»*\n\n#ТомасУотсон #ХристианскоеДовольство #Благочестие #Писание",
+      "reader_preview_markdown_ru": "**ЧТО ТАКОЕ ХРИСТИАНСКОЕ ДОВОЛЬСТВО**\n\nПод «довольством» Томас Уотсон понимает не самодовольство и не равнодушие, а христианское спокойствие сердца, которое даёт Дух Божий. Далее автор объясняет, почему такое довольство нельзя свести к обычному самообладанию.\n\n⁠\n> Христианское довольство — это благостное расположение духа, благодаря которому христианин сохраняет равновесие при любых обстоятельствах. Его природа станет яснее из трёх положений.\n>\n> Во-первых, **довольство — дар Божественный**. Оно становится нашим не потому, что мы приобрели его собственными силами, но потому, что оно вложено в нас. Это побег от древа жизни, насаждённый Духом Божьим в душе; такой плод вырастает не в саду философии, но имеет небесное происхождение. Поэтому довольство соединено с благочестием, как сказано: „Великое приобретение — быть благочестивым и довольным“ (1 Тим. 6:6).\n>\n> Довольство может быть следствием благочестия, его спутником либо тем и другим одновременно. Я называю его Божественным, чтобы отличить от того спокойствия, которого способен достичь просто нравственный человек. Казалось, что и язычники обладали довольством, но у них была только его тень и подобие: у них — берилл, а не настоящий алмаз. Их спокойствие принадлежало гражданской добродетели, наше — священно; их довольство исходило лишь из рассудка, христианское — из благочестия. Их свет зажигался факелом природы, наш — *светильником Писания*.\n\n*— Томас Уотсон, «Искусство Божественного довольства»*\n\n#ТомасУотсон #ХристианскоеДовольство #Благочестие #Писание",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "copy_to_android_spacer_line": "⁠",
+      "native_telegram_quote_entity_required": true,
+      "native_telegram_quote_entity_payload_ready": false
     },
     {
       "sequence": 23,
@@ -503,7 +517,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 24,
@@ -546,7 +561,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 25,
@@ -589,7 +605,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 26,
@@ -632,7 +649,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 27,
@@ -668,14 +686,17 @@
       "highlight_bold_ru": "И видел я во сне",
       "highlight_italic_ru": "расположенной у самой границы неба",
       "hashtags_ru": "#ДжонБаньян #ПутешествиеПилигрима #Надежда #НебесныйГород",
-      "reader_preview_markdown_ru": "**СТРАНА БЕУЛА: У ПОРОГА НЕБЕСНОГО ГОРОДА**\n\nВ аллегории Джона Баньяна «Путешествие пилигрима» странники приближаются к Небесному городу. Страна Беула — образ близости к долгожданной цели, а великан Отчаяние и замок Сомнения обозначают испытания духовного пути. Ни одно из этих мест не описывается автором как буквальная карта небес.\n\n**И видел я во сне**, что к тому времени странники уже миновали Зачарованную землю и входили в страну Беула. Воздух там был сладостен и приятен (Ис. 62:4–12; Песн. 2:10–12); дорога пролегала прямо через неё, и некоторое время они наслаждались покоем. Здесь они постоянно слышали пение птиц, каждый день видели появляющиеся на земле цветы и внимали голосу горлицы.\n\nВ этой стране солнце сияло и днём и ночью. Она лежала уже за долиной Смертной Тени, вне досягаемости великана Отчаяния; отсюда нельзя было даже разглядеть замок Сомнения. Перед путниками открывался город, к которому они шли. Здесь им встречались некоторые из его жителей, ибо сияющие вестники нередко бывали в этой стране, *расположенной у самой границы неба*.\n\nЗдесь вновь утверждался союз Невесты и Жениха; как жених радуется о невесте, так Бог радовался о них. В стране не было недостатка ни в хлебе, ни в вине: здесь странники нашли в изобилии то, чего искали на протяжении всего своего путешествия.\n*— Джон Баньян, «Путешествие пилигрима»*\n\n#ДжонБаньян #ПутешествиеПилигрима #Надежда #НебесныйГород",
+      "reader_preview_markdown_ru": "**СТРАНА БЕУЛА: У ПОРОГА НЕБЕСНОГО ГОРОДА**\n\nВ аллегории Джона Баньяна «Путешествие пилигрима» странники приближаются к Небесному городу. Страна Беула — образ близости к долгожданной цели, а великан Отчаяние и замок Сомнения обозначают испытания духовного пути. Ни одно из этих мест не описывается автором как буквальная карта небес.\n\n⁠\n> **И видел я во сне**, что к тому времени странники уже миновали Зачарованную землю и входили в страну Беула. Воздух там был сладостен и приятен (Ис. 62:4–12; Песн. 2:10–12); дорога пролегала прямо через неё, и некоторое время они наслаждались покоем. Здесь они постоянно слышали пение птиц, каждый день видели появляющиеся на земле цветы и внимали голосу горлицы.\n>\n> В этой стране солнце сияло и днём и ночью. Она лежала уже за долиной Смертной Тени, вне досягаемости великана Отчаяния; отсюда нельзя было даже разглядеть замок Сомнения. Перед путниками открывался город, к которому они шли. Здесь им встречались некоторые из его жителей, ибо сияющие вестники нередко бывали в этой стране, *расположенной у самой границы неба*.\n>\n> Здесь вновь утверждался союз Невесты и Жениха; как жених радуется о невесте, так Бог радовался о них. В стране не было недостатка ни в хлебе, ни в вине: здесь странники нашли в изобилии то, чего искали на протяжении всего своего путешествия.\n\n*— Джон Баньян, «Путешествие пилигрима»*\n\n#ДжонБаньян #ПутешествиеПилигрима #Надежда #НебесныйГород",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "copy_to_android_spacer_line": "⁠",
+      "native_telegram_quote_entity_required": true,
+      "native_telegram_quote_entity_payload_ready": false
     },
     {
       "sequence": 28,
@@ -718,7 +739,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 29,
@@ -751,17 +773,18 @@
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Герман Бавинк, «Философия откровения» (Стоуновские лекции, 1908–1909)",
-      "highlight_bold_ru": "Если Бога нет",
-      "highlight_italic_ru": "на основании откровения",
+      "highlight_bold_ru": "Но на основании откровения богословие берётся за славный труд",
+      "highlight_italic_ru": "Если Бога нет либо если Он не открыл Себя и поэтому непознаваем",
       "hashtags_ru": "#ГерманБавинк #Откровение #Богословие",
-      "reader_preview_markdown_ru": "**Если Бога нет** либо если Он не открыл Себя и поэтому непознаваем, тогда всякая религия есть иллюзия, а всякое богословие — призрак. Но *на основании откровения* богословие берётся за славный труд — раскрывать учение о Божьем откровении и о нашем познании Его.\n*— Герман Бавинк, «Философия откровения» (Стоуновские лекции, 1908–1909)*\n\n#ГерманБавинк #Откровение #Богословие",
+      "reader_preview_markdown_ru": "*Если Бога нет либо если Он не открыл Себя и поэтому непознаваем*, тогда всякая религия есть иллюзия, а всякое богословие — призрак. **Но на основании откровения богословие берётся за славный труд** — раскрывать учение о Божьем откровении и о нашем познании Его.\n*— Герман Бавинк, «Философия откровения» (Стоуновские лекции, 1908–1909)*\n\n#ГерманБавинк #Откровение #Богословие",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     },
     {
       "sequence": 30,
@@ -804,7 +827,8 @@
       "translated_text_provenance_verified": false,
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
-      "publisher_activation_authorized": false
+      "publisher_activation_authorized": false,
+      "native_telegram_quote_entity_required": false
     }
   ]
 }
