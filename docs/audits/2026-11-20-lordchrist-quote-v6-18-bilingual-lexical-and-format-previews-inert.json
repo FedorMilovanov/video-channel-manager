@@ -22,7 +22,8 @@
   "testable_count": 18,
   "formats": {
     "short": "author quote + italic work attribution + blank line + 2-4 underscorless tags; no outer quote marks or global blockquote",
-    "L1": "uppercase bold title + separate editor paragraph + standalone U+2060 spacer + native quote-only entity (preview marked with >) + italic attribution OUTSIDE quote + 4-6 hashtags. Actual Telegram entity offsets not signed."
+    "L1": "uppercase bold title + separate editor paragraph + standalone U+2060 spacer + native quote-only entity (preview marked with >) + italic attribution OUTSIDE quote + 4-6 hashtags. Actual Telegram entity offsets not signed.",
+    "telegram_html_inert": "Safe HTML preview using <b>, <i>, and <blockquote> ONLY for L1 explanatory articles; attribution outside author quote. NOT a production payload and no release/activation digest."
   },
   "pending_human_and_owner_gates": [
     "complete English/Russian alignment",
@@ -82,7 +83,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": false
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "Именно молитвой мы приобщаемся к сокровищам, которые Небесный Отец хранит для нас. Ведь <b>в молитве совершается общение Бога с людьми</b>: словно вступая в небесное святилище, мы предстаём перед Ним и <i>обращаемся к Его обетованиям</i>, чтобы в час нужды на собственном опыте убедиться, что наша вера в Его Слово не была напрасной.\n<i>— Жан Кальвин, «Наставление в христианской вере» (кн. III, о молитве)</i>\n\n#ЖанКальвин #Молитва #БожьиОбетования",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 12,
@@ -134,7 +140,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Недавно, размышляя о печальном состоянии церквей нашего времени, я мысленно обратился к апостольской эпохе и задумался, чем нынешняя проповедь отличается от апостольской. Я заметил, насколько их манера проповеди отличалась от размеренного, формального красноречия нашего века.\n\nЯ заметил, что апостолы не выбирали себе отдельный текст перед каждой проповедью, не ограничивали себя одной темой и тем более — определённым местом богослужения. Они вставали там, где находились, и от полноты сердца возвещали то, что знали об Иисусе Христе. Но главное различие я обнаружил в самих предметах их проповеди. С удивлением я увидел, что <b>постоянным содержанием апостольского возвещения было воскресение мёртвых</b>.\n\nСам я проповедовал о благодати Божьей, защищал учение о свободном избрании и, насколько мог, вводил народ Божий в глубины Его Слова. Однако я с удивлением понял, что далеко не в полной мере следовал апостольскому примеру. Апостолы, когда проповедовали, неизменно свидетельствовали <i>о воскресении Иисуса</i> и о следующем из него воскресении мёртвых.\n<i>— Чарльз Г. Сперджен, «Воскресение мёртвых»</i>\n\n#ЧарльзСперджен #Воскресение #Проповедь",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 15,
@@ -186,7 +197,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "В этих стихах можно заметить, во-первых, как Давид любил закон Божий. „Взыскиваю повелений Твоих“ (Пс. 118:45). Он желал знать и исполнять свой долг, потому обращался к Слову Божьему, стараясь постичь волю Господа. Он взыскал повелений Его, потому что возлюбил их (ст. 47–48). Он не только признавал их добрыми, но и находил в них добро для себя. Все, кто любит Бога, любят и Его правление, а потому — и все Его заповеди.\n\nВо-вторых, посмотрим, чего он от этого ожидал. Силой Божьей благодати Давид надеялся на пять благ. Первое — свободно и охотно исполнять свой долг: „Буду ходить свободно“. Это значит быть свободным от зла, не скованным собственным растлением, и свободным для добра, совершая его не по принуждению, но добровольно. <b>Служение греху — совершенное рабство; служение Богу — совершенная свобода.</b> Распущенность отдаёт человека в рабство самому жестокому тирану, тогда как <i>добросовестное послушание</i> приносит свободу даже последнему из узников.\n<i>— Мэтью Генри, «Комментарий на всю Библию»</i>\n\n#МэтьюГенри #Послушание #Свобода",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 16,
@@ -240,7 +256,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "<b>ОСВЯЩЕНИЕ И ОПРАВДАНИЕ</b>\n\nРайл различает оправдание и освящение. Первое нельзя заслужить делами; второе нельзя считать необязательным в жизни человека, которого Христос спасает. Автор предостерегает против обоих смешений.\n\n⁠\n<blockquote>Если Библия истинна, то несомненно: <b>не будучи освящены, мы не будем спасены</b>. Согласно Писанию, для спасения каждого человека в христианском мире необходимы три вещи: оправдание, возрождение и освящение. Все три присутствуют в каждом чаде Божьем: он и рождён свыше, и оправдан, и освящён. Кому недостаёт хотя бы одного из них, тот в очах Божьих не является истинным христианином; умерев в таком состоянии, он не окажется на небесах и не будет прославлен в последний день.\n\nЭто особенно своевременная тема. В последнее время появились странные учения об освящении. Одни, кажется, <i>смешивают его с оправданием</i>. Другие сводят его почти к ничему, прикрываясь ревностью по даровой благодати, и на деле вовсе пренебрегают им. Третьи так боятся сделать дела частью оправдания, что едва находят для добрых дел место в своём христианстве.</blockquote>\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #Освящение #Оправдание #Благодать",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 17,
@@ -292,7 +313,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Простая истина состоит в том, что <b>правильное познание греха</b> лежит в основании всего спасительного христианства. Без такого познания учения об оправдании, обращении и освящении остаются для ума лишь словами и названиями, ничего не объясняющими. Поэтому, когда Бог делает человека новым творением во Христе, Он прежде всего посылает свет в его сердце и показывает ему, что он — <i>виновный грешник</i>.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #Грех #Покаяние",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 18,
@@ -344,7 +370,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Но существует и другая брань, несравненно более важная, чем любая война, которую когда-либо вёл человек. Она касается не только двух или трёх народов, но каждого христианина и каждой христианки, живущих на земле. <b>Я говорю о духовной брани</b> — о той борьбе за свою душу, которую должен вести всякий, кто желает спастись.\n\nЯ знаю, что многие вовсе не ведают об этой брани. Заговорите с ними о ней, и они готовы счесть вас безумцем, восторженным мечтателем или глупцом. Между тем она столь же реальна, как и любая земная война. У неё есть схватки и раны, бдения и утомление, осады и приступы, победы и поражения. Но главное — её последствия страшны, велики и совершенно особенные. В земных войнах последствия для народов нередко временны, и причинённый ущерб можно исправить. С духовной бранью всё иначе: когда борьба окончена, её последствия неизменны и вечны.\n\nИменно об этой брани апостол Павел писал Тимофею, обращаясь к нему с пламенными словами: „Подвизайся добрым подвигом веры, держись вечной жизни“. Об этой брани я и хочу говорить. Считаю её тесно связанной с освящением и святостью. Кто хочет понять природу подлинной святости, должен знать, что христианин — воин. <i>Если мы хотим быть святыми, нам надлежит сражаться.</i>\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #ДуховнаяБрань #Святость",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 19,
@@ -396,7 +427,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\n<b>Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.</b> Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„<i>Время моего отшествия настало</i>“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #АпостолПавел #Уверенность",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 20,
@@ -448,7 +484,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": false
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "<b>Святость — это привычка быть единодушным с Богом</b> в том, что открыто о Нём в Писании: соглашаться с Его оценкой добра и зла, ненавидеть то, что Он ненавидит, любить то, что Он любит, и судить обо всём по <i>мерилу Его Слова</i>. Чем полнее человек согласует свои суждения с Божьими, тем более он свят.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #Святость #СловоБожье",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 21,
@@ -500,7 +541,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": false
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "Когда забота становится чрезмерной, недоверчивой или рассеивает сердце, она глубоко бесчестит Бога. Человек словно отрицает Его провидение, будто Господь находится на небесах и не видит, что происходит на земле. Это подобно тому, как если бы мастер сделал часы, а затем оставил их идти сами по себе. <b>Чрезмерная тревога отвлекает сердце от лучшего</b>: размышляя о том, как нам прожить, мы забываем о том, как предстоит умереть. <i>Такая тревога разъедает душу</i> и лишает её сил.\n<i>— Томас Уотсон, «Искусство Божественного довольства»</i>\n\n#ТомасУотсон #Довольство #БожийПромысел",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 22,
@@ -555,7 +601,12 @@
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
       "legacy_russian_dependency_remains": false,
-      "first_pass_translation_source_note": "Fresh independently worded Russian candidate drafted against public historical English reference page; unverified by a separate translator and not guaranteed independently rights-cleared."
+      "first_pass_translation_source_note": "Fresh independently worded Russian candidate drafted against public historical English reference page; unverified by a separate translator and not guaranteed independently rights-cleared.",
+      "telegram_html_preview_inert": "<b>ЧТО ТАКОЕ ХРИСТИАНСКОЕ ДОВОЛЬСТВО</b>\n\nПод «довольством» Томас Уотсон понимает не самодовольство и не равнодушие, а христианское спокойствие сердца, которое даёт Дух Божий. Далее автор объясняет, почему такое довольство нельзя свести к обычному самообладанию.\n\n⁠\n<blockquote>Христианское довольство — это благостное устроение духа, при котором верующий сохраняет внутреннее равновесие в любом положении. Его природу помогут объяснить три положения.\n\nВо-первых, <b>довольство — Божественный дар</b>. Мы обретаем его не собственными стараниями, а потому, что оно вложено в душу. Оно подобно побегу с дерева жизни, который Дух Божий насадил внутри человека. Этот плод не вырастает в саду философии: он небесного происхождения. Вот почему Писание соединяет довольство с благочестием: «Великое приобретение — быть благочестивым и довольным» (1 Тим. 6:6).\n\nДовольство может быть плодом благочестия, его спутником или и тем и другим одновременно. Я называю его Божественным, чтобы отличить от спокойствия, которого способен достичь нравственный человек. Язычники иногда казались довольными, однако то было лишь отражение подлинного, его подобие: берилл, а не настоящий алмаз. Их спокойствие принадлежало области гражданской добродетели, христианское же — области священного. Их довольство опиралось на доводы разума, наше — на религиозное благочестие. Их свет был зажжён факелом природы, наш — <i>светильником Писания</i>.</blockquote>\n<i>— Томас Уотсон, «Искусство Божественного довольства»</i>\n\n#ТомасУотсон #ХристианскоеДовольство #Благочестие #Писание",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 23,
@@ -608,7 +659,12 @@
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
       "legacy_russian_dependency_remains": false,
-      "first_pass_translation_source_note": "Fresh independently worded Russian candidate drafted against public historical English reference page; unverified by a separate translator and not guaranteed independently rights-cleared."
+      "first_pass_translation_source_note": "Fresh independently worded Russian candidate drafted against public historical English reference page; unverified by a separate translator and not guaranteed independently rights-cleared.",
+      "telegram_html_preview_inert": "Есть <b>три печальных зрелища</b>, при виде которых наши сердца должны вновь и вновь сокрушаться. Первое — множество людей, живущих нечестиво и распутно. Они носят самый образ сатаны; их образ жизни ясно обнаруживает, кто они и куда направляются (Флп. 3:18–19). Они выглядят тем, кем являются: детьми гнева.\n\nВторое — множество проклятых лицемеров, умело скрывающих своё подлинное состояние и с удивительной ловкостью изображающих святых. Даже проницательный наблюдатель порой принимает внешне похожие движения духа в таких людях за спасительные действия Духа в других. Услышав, как человек рассуждает о вере, молится, скорбит о своих греховных склонностях и рассказывает о духовных переживаниях, легко поверить, что он не только с виду, но и в сердце искренний христианин. Здесь уместен известный латинский стих: «sic oculus, sic ille manus, sic ora ferebat» — «те же глаза, те же руки, те же черты». Такие люди говорят, как Божьи люди, молятся так же и так же рассказывают о своём духовном состоянии. Они кажутся святыми, но ими не являются.\n\nТретье — <i>истинных святых</i>, в которых пребывает Дух истины, но которые из-за бурного действия своих греховных наклонностей и небрежения о страже сердца порой совершают такие соблазнительные поступки, что кажутся лицемерами, хотя на самом деле не являются ими.\n\nВот три поистине печальных зрелища! О, если бы голова моя стала водою, а глаза — источниками слёз, чтобы я мог вдоволь плакать обо всех них!\n<i>— Джон Флавел, «Истинный святой: хранение сердца»</i>\n\n#ДжонФлавел #Сердце #Лицемерие",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 24,
@@ -660,7 +716,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Почти христианин, если рассматривать его в отношении его долга к Богу, есть тот, кто колеблется между двумя мнениями; кто неустойчив между Христом и миром; кто хотел бы примирить Бога и маммону, свет и тьму, Христа и Велиала. Правда, в нём есть расположение к религии, но он осторожен, как бы не зайти в ней слишком далеко; его лживое сердце постоянно вопиёт: „пощади себя“, „не делай себе вреда“.\n\nОн и в самом деле молится: „Да будет воля Божья на земле, как на небе“; но при всём том он частичен в своём послушании и тешит себя надеждой, будто Бог не будет до крайности строг, чтобы замечать всякое умышленно совершаемое им зло — хотя вдохновенный апостол сказал ему, что „кто соблюдёт весь закон и согрешит в одном, тот становится виновным во всём“.\n\nНо главное — это человек, много уповающий на <i>внешние установления</i> и потому почитающий себя праведным и презирающий других, хотя в то же самое время он такой же чуждый божественной жизни, как и всякий другой. Словом, он <b>любит форму, но никогда не испытывает силы благочестия</b> в сердце своём. Год за годом он ходит к средствам благодати, но, подобно тощим коровам фараоновым, от того не становится лучше — скорее, делается хуже.\n<i>— Джордж Уайтфилд, «Почти христианин»</i>\n\n#ДжорджУайтфилд #Обращение #Благочестие",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 25,
@@ -712,7 +773,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Как нет для народа большего благословения от Бога, чем получить верных, искренних и праведных служителей, так и <b>величайшее проклятие</b>, какое Бог может послать народу в этом мире, — отдать его во власть слепых, невозрождённых, плотских, равнодушных и неумелых наставников.\n\nМежду тем во все времена находилось немало волков в овечьей одежде: тех, кто замазывал стену непрочным раствором и пророчествовал более приятные вещи, чем позволял Бог. Как было прежде, так и теперь многие искажают Слово Божье и поступают с ним лукаво. Особенно это было заметно во времена пророка Иеремии. Верный своему Господу и призвавшему его Богу, он снова и снова обличал таких служителей и смело свидетельствовал о чести Бога, от имени Которого говорил.\n\nПрочитайте его пророчество и увидите: мало кто столь решительно обличал подобных наставников. Особенно строго Иеремия говорит о них в главе, из которой взят текст этой проповеди. Среди прочего он обвиняет их в корыстолюбии: „От малого до большого каждый из них предан корысти; и от пророка до священника — все действуют лживо“ (Иер. 6:13). Затем он показывает, как вероломно они поступают с несчастными душами: „Врачуют раны дочери народа Моего легкомысленно, говоря: ‘<i>мир! мир!</i>’, а мира нет“ (Иер. 6:14).\n<i>— Джордж Уайтфилд, «Избранные проповеди»</i>\n\n#ДжорджУайтфилд #ИстиннаяПроповедь #Покаяние",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 26,
@@ -764,7 +830,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Когда прошло около пяти или шести лет с тех пор, как я пробудился и получил помощь, чтобы увидеть и свою нужду в Иисусе Христе, Господе нашем, и Его бесконечную драгоценность, и когда я решился доверить Ему свою душу, некоторые из наиболее зрелых святых среди нас — люди, которых считали особенно рассудительными и благочестивыми, — заметили, что Бог удостоил меня некоторого понимания Своей святой и благословенной воли, открытой в Его Слове. Они увидели также, что Он в какой-то мере дал мне способность излагать понятое ради назидания других.\n\nПоэтому они стали настойчиво просить меня, чтобы иногда на одном из собраний я произносил для них слово увещания. Поначалу это очень смутило меня и привело в замешательство. Однако они продолжали просить, и я согласился. <b>Дважды, в двух разных собраниях</b>, пока ещё частных, я со множеством слабостей и немощей попытался воспользоваться полученным даром.\n\nСлушавшие не только казались тронутыми и утешенными, но и торжественно засвидетельствовали перед великим Богом, что они и в самом деле были тронуты и утешены. <i>Они вознесли благодарность</i> Отцу милосердия за благодать, дарованную мне.\n<i>— Джон Баньян, «Благодать, преизобилующая к первому из грешников»</i>\n\n#ДжонБаньян #Служение #Проповедь",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 27,
@@ -818,7 +889,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "<b>СТРАНА БЕУЛА: У ПОРОГА НЕБЕСНОГО ГОРОДА</b>\n\nВ аллегории Джона Баньяна «Путешествие пилигрима» странники приближаются к Небесному городу. Страна Беула — образ близости к долгожданной цели, а великан Отчаяние и замок Сомнения обозначают испытания духовного пути. Ни одно из этих мест не описывается автором как буквальная карта небес.\n\n⁠\n<blockquote><b>И видел я во сне</b>, что к тому времени странники уже миновали Зачарованную землю и входили в страну Беула. Воздух там был сладостен и приятен (Ис. 62:4–12; Песн. 2:10–12); дорога пролегала прямо через неё, и некоторое время они наслаждались покоем. Здесь они постоянно слышали пение птиц, каждый день видели появляющиеся на земле цветы и внимали голосу горлицы.\n\nВ этой стране солнце сияло и днём и ночью. Она лежала уже за долиной Смертной Тени, вне досягаемости великана Отчаяния; отсюда нельзя было даже разглядеть замок Сомнения. Перед путниками открывался город, к которому они шли. Здесь им встречались некоторые из его жителей, ибо сияющие вестники нередко бывали в этой стране, <i>расположенной у самой границы неба</i>.\n\nЗдесь вновь утверждался союз Невесты и Жениха; как жених радуется о невесте, так Бог радовался о них. В стране не было недостатка ни в хлебе, ни в вине: здесь странники нашли в изобилии то, чего искали на протяжении всего своего путешествия.</blockquote>\n<i>— Джон Баньян, «Путешествие пилигрима»</i>\n\n#ДжонБаньян #ПутешествиеПилигрима #Надежда #НебесныйГород",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 28,
@@ -870,7 +946,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "Любовь к Богу может быть лишь прекрасным чувством. Она может быть искренней и способной вдохновлять на святой восторг, — а душа между тем всё ещё чужда общению с Вечным и не знает тайного хождения с Богом.\n\n<b>Великий Бог может всё ещё не быть вашим Богом</b>. Сердце ваше, быть может, всё ещё не настроено на этот страстный порыв восхищения: „я люблю Господа“. Ибо любовь к Богу вообще есть во многом любовь к идее Бога, любовь к Источнику жизни, Источнику всякого блага, к Стражу Израиля, Который никогда не дремлет, — словом, любовь к Тому, Кто, что бы ни менялось, вечно пребывает Тем же. Но когда сердце может сказать: „я люблю Господа“, — отвлечённое представление о Вечном обретает личный характер. Тогда Бог становится Пастырем, Который ведёт нас; Отцом, духовно родившим нас; Богом завета, с Которым мы состоим в заветных отношениях; Другом, предлагающим нам Свою дружбу; Господом, Которому мы служим; Богом нашего упования, Который уже не просто Бог, но <i>наш Бог</i>.\n<i>— Абрахам Кёйпер, «Быть близко к Богу»</i>\n\n#АбрахамКёйпер #ОбщениеСБогом #Вера",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 29,
@@ -922,7 +1003,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true
+      "legacy_russian_dependency_remains": true,
+      "telegram_html_preview_inert": "<i>Если Бога нет либо если Он не открыл Себя и поэтому непознаваем</i>, тогда всякая религия есть иллюзия, а всякое богословие — призрак. <b>Но на основании откровения богословие берётся за славный труд</b> — раскрывать учение о Божьем откровении и о нашем познании Его.\n<i>— Герман Бавинк, «Философия откровения» (Стоуновские лекции, 1908–1909)</i>\n\n#ГерманБавинк #Откровение #Богословие",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     },
     {
       "sequence": 30,
@@ -974,7 +1060,12 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": false
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "Всякий, кто читает Евангелие непредвзято и с искренним намерением, увидит: наш благословенный Господь при каждом случае напоминал ученикам, что <b>Его Царство не от мира сего</b>, Его учение — учение о кресте, а следование за Ним требует <i>постоянного самоотречения</i> и готовности добровольно переносить страдания.\n<i>— Джордж Уайтфилд, «Разумность самоотречения»</i>\n\n#ДжорджУайтфилд #Самоотречение #КрестХристов",
+      "telegram_html_preview_parse_mode": "HTML",
+      "telegram_html_preview_publisher_authorized": false,
+      "telegram_html_preview_is_signed_payload": false,
+      "telegram_html_preview_binds_existing_source_sha_only": true
     }
   ],
   "translation_provenance_categories": {
@@ -1004,5 +1095,12 @@
   },
   "translation_provenance_notice": "Earlier drafts #22/#23 modified old Russian excerpts, which would retain their edition rights dependencies. This revision REPLACES those derivative previews with a fresh Russian editorial wording drafted against historical English sources. This lowers but does not independently resolve source-edition rights and attribution; human legal and translation signoff remain mandatory.",
   "selected_english_bounds_are_transcribed_from_open_pages": true,
-  "human_translation_review_verified": false
+  "human_translation_review_verified": false,
+  "html_preview_counts": {
+    "total": 18,
+    "short_quotes": 15,
+    "l1_articles": 3,
+    "all_parse_mode_html": true,
+    "all_below_4000_chars_approx": true
+  }
 }
