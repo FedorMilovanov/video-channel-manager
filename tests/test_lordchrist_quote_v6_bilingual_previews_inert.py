@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "docs/audits/2026-11-20-lordchrist-quote-v6-18-bilingual-lexical-and-format-previews-inert.json"
 SOURCE = ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
 EXPECTED = {9, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
-NEW_TRANSLATIONS = {9, 20, 21, 30}
-DERIVATIVE_LEGACY_EDITS = {22, 23}
+NEW_TRANSLATIONS = {9, 20, 21, 22, 23, 30}
+DERIVATIVE_LEGACY_EDITS: set[int] = set()
 ARTICLE_L1 = {16, 22, 27}
 
 
