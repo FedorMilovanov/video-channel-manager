@@ -139,3 +139,33 @@ def test_short_and_l1_layout_keep_editor_outside_the_author_quote() -> None:
             assert "\u2060" not in preview
             assert preview.replace("*", "").startswith(quote[:4])
             assert not preview.startswith("«")
+
+
+def test_html_preview_preserves_author_words_and_native_quote_entity_boundary() -> None:
+    """HTML is an inert Telegram preview, never a signed provider payload."""
+    audit, _ = _data()
+    for item in audit["entries"]:
+        markup = item["telegram_html_preview_inert"]
+        assert item["telegram_html_preview_parse_mode"] == "HTML"
+        assert item["telegram_html_preview_publisher_authorized"] is False
+        assert item["telegram_html_preview_is_signed_payload"] is False
+        assert markup.count("<b>") == markup.count("</b>")
+        assert markup.count("<i>") == markup.count("</i>")
+        assert markup.count("<blockquote>") == markup.count("</blockquote>")
+        assert markup.count("<blockquote>") == (1 if item["sequence"] in ARTICLE_L1 else 0)
+        assert "<b>" + html.escape(item["highlight_bold_ru"], quote=True) + "</b>" in markup
+        assert "<i>" + html.escape(item["highlight_italic_ru"], quote=True) + "</i>" in markup
+        assert "<i>" + html.escape(item["attribution_ru"], quote=True) + "</i>" in markup
+        assert "<script" not in markup.lower()
+        assert item["hashtags_ru"] in markup
+        if item["sequence"] in ARTICLE_L1:
+            assert markup.index("</blockquote>") < markup.index(
+                "<i>" + html.escape(item["attribution_ru"], quote=True) + "</i>"
+            )
+            assert item["editor_intro_outside_quote_ru"] not in html.unescape(
+                markup.split("<blockquote>", 1)[1].split("</blockquote>", 1)[0]
+            )
+            assert "\u2060" in markup
+        else:
+            assert "<blockquote>" not in markup
+            assert "\u2060" not in markup
