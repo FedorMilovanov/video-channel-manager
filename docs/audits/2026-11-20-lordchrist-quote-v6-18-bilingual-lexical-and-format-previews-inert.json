@@ -58,7 +58,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Молитва не заслуга перед Богом, а обращение к Его обетованиям.",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
       "proposed_quote_text_ru": "Именно молитвой мы приобщаемся к сокровищам, которые Небесный Отец хранит для нас. Ведь в молитве совершается общение Бога с людьми: словно вступая в небесное святилище, мы предстаём перед Ним и обращаемся к Его обетованиям, чтобы в час нужды на собственном опыте убедиться, что наша вера в Его Слово не была напрасной.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
@@ -74,7 +74,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "To prayer, then, are we indebted for penetrating to those riches",
+        "end": "that what they believed merely on the authority of his word was not in vain.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": false
     },
     {
       "sequence": 12,
@@ -118,7 +126,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "REFLECTING the other day upon the sad state of the churches at the present moment",
+        "end": "and the consequent resurrection of the dead.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 15,
@@ -162,7 +178,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "We may observe in these verses",
+        "end": "conscientiousness is freedom to the meanest of prisoners",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 16,
@@ -208,7 +232,15 @@
       "publisher_activation_authorized": false,
       "copy_to_android_spacer_line": "⁠",
       "native_telegram_quote_entity_required": true,
-      "native_telegram_quote_entity_payload_ready": false
+      "native_telegram_quote_entity_payload_ready": false,
+      "selected_english_excerpt_anchors": {
+        "start": "If the Bible be true, it is certain that unless we are",
+        "end": "they can hardly find any place at all for “works” in their religion.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 17,
@@ -252,7 +284,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "The plain truth is that a right knowledge of sin",
+        "end": "show him that he is a guilty sinner.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 18,
@@ -296,7 +336,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "But there is another warfare of far greater importance",
+        "end": "If we would be holy we must fight.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 19,
@@ -340,7 +388,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "IN the words of Scripture which head this page",
+        "end": "and I shall then set sail, and begin my voyage.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 20,
@@ -368,7 +424,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Вместо кальки об «уме Бога» — Божья воля и оценка добра и зла, открытые в Писании.",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
       "proposed_quote_text_ru": "Святость — это привычка быть единодушным с Богом в том, что открыто о Нём в Писании: соглашаться с Его оценкой добра и зла, ненавидеть то, что Он ненавидит, любить то, что Он любит, и судить обо всём по мерилу Его Слова. Чем полнее человек согласует свои суждения с Божьими, тем более он свят.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
@@ -384,7 +440,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "(a) Holiness is the habit of being of one mind with God",
+        "end": "He who most entirely agrees with God, he is the most holy man.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": false
     },
     {
       "sequence": 21,
@@ -412,7 +476,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Уотсон не осуждает ответственную заботу; английская мера furlong не равна русской версте.",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
       "proposed_quote_text_ru": "Когда забота становится чрезмерной, недоверчивой или рассеивает сердце, она глубоко бесчестит Бога. Человек словно отрицает Его провидение, будто Господь находится на небесах и не видит, что происходит на земле. Это подобно тому, как если бы мастер сделал часы, а затем оставил их идти сами по себе. Чрезмерная тревога отвлекает сердце от лучшего: размышляя о том, как нам прожить, мы забываем о том, как предстоит умереть. Такая тревога разъедает душу и лишает её сил.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
@@ -428,7 +492,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "Care, when it is eccentric, either distrustful or distracting",
+        "end": "Care is a spiritual canker that doth waste and dispirit;",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": false
     },
     {
       "sequence": 22,
@@ -456,7 +528,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Самостоятельная цитата не может начинаться с «Это» без указания предмета — христианского довольства.",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "legacy_russian_span_with_targeted_unapproved_edits_rights_and_new_digest_required",
       "proposed_quote_text_ru": "Христианское довольство — это благостное расположение духа, благодаря которому христианин сохраняет равновесие при любых обстоятельствах. Его природа станет яснее из трёх положений.\n\nВо-первых, довольство — дар Божественный. Оно становится нашим не потому, что мы приобрели его собственными силами, но потому, что оно вложено в нас. Это побег от древа жизни, насаждённый Духом Божьим в душе; такой плод вырастает не в саду философии, но имеет небесное происхождение. Поэтому довольство соединено с благочестием, как сказано: „Великое приобретение — быть благочестивым и довольным“ (1 Тим. 6:6).\n\nДовольство может быть следствием благочестия, его спутником либо тем и другим одновременно. Я называю его Божественным, чтобы отличить от того спокойствия, которого способен достичь просто нравственный человек. Казалось, что и язычники обладали довольством, но у них была только его тень и подобие: у них — берилл, а не настоящий алмаз. Их спокойствие принадлежало гражданской добродетели, наше — священно; их довольство исходило лишь из рассудка, христианское — из благочестия. Их свет зажигался факелом природы, наш — светильником Писания.",
       "format_lane": "separate_L1_editorial_article_not_quote_v6",
       "editor_intro_outside_quote_ru": "Под «довольством» Томас Уотсон понимает не самодовольство и не равнодушие, а христианское спокойствие сердца, которое даёт Дух Божий. Далее автор объясняет, почему такое довольство нельзя свести к обычному самообладанию.",
@@ -474,7 +546,15 @@
       "publisher_activation_authorized": false,
       "copy_to_android_spacer_line": "⁠",
       "native_telegram_quote_entity_required": true,
-      "native_telegram_quote_entity_payload_ready": false
+      "native_telegram_quote_entity_payload_ready": false,
+      "selected_english_excerpt_anchors": {
+        "start": "It is a sweet temper of spirit, whereby a Christian",
+        "end": "this at the lamp of scripture.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 23,
@@ -502,7 +582,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Неправильный оттенок «заклятые» и потеря смысла рассудительного различения; нельзя выдавать душепопечительное предостережение за лицензию на личные приговоры.",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "legacy_russian_span_with_targeted_unapproved_edits_rights_and_new_digest_required",
       "proposed_quote_text_ru": "Есть три печальных зрелища, которыми наши глаза должны непременно сокрушать наши сердца. Первое — видеть повсюду столь многих нечестивых и распущенных, носящих самый образ сатаны; вид их жизни открыто обнаруживает, кто они и куда идут (Флп. 3:18–19). Они выглядят тем, что они суть: чадами гнева.\n\nВторое — видеть столь многих проклятых лицемеров, искусно маскирующихся и с изумительною ловкостью играющих роль святых; так что даже проницательный наблюдатель может иногда принять их похожие движения духа за его спасительные действия в других. Слышишь такого человека рассуждающим, молящимся, плачущим о своих растлениях, говорящим о своих опытах — и легко поверить, что у него сердце, а не одна лишь личина искреннего христианина: ведь, как сказано по-латыни, «таков взгляд, таковы руки, таков облик» (sic oculus, sic ille manus, sic ora ferebat). Они говорят так, как говорят люди Божьи, они молятся так, они открывают свои состояния так. Они выглядят как святые, но они не святые.\n\nТретье — видеть столь многих истинных святых, в которых пребывает Дух истины, но которые, вследствие неукротимых порывов своих растлений и небрежения о страже над сердцем, часто впадают в такие соблазнительные поступки, что выглядят как лицемеры, хотя они не суть таковые. Таковы три воистину печальных зрелища! О, если бы глава моя была водою и очи мои — источником слёз, чтобы я мог плакать над ними всеми в изобилии!",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
@@ -518,7 +598,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "There are three sad sights with which our eyes",
+        "end": "that I might weep abundantly over them all!",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 24,
@@ -562,7 +650,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "An almost Christian, if we consider him in respect to his duty to God",
+        "end": "but rather the worse for them.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 25,
@@ -606,7 +702,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "As God can send a nation or people no greater blessing",
+        "end": "when there is no peace.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 26,
@@ -650,7 +754,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "For after I had been about five or six years awakened",
+        "end": "gave thanks to the Father of mercies for the grace bestowed on me.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 27,
@@ -696,7 +808,15 @@
       "publisher_activation_authorized": false,
       "copy_to_android_spacer_line": "⁠",
       "native_telegram_quote_entity_required": true,
-      "native_telegram_quote_entity_payload_ready": false
+      "native_telegram_quote_entity_payload_ready": false,
+      "selected_english_excerpt_anchors": {
+        "start": "Now I saw in my dream, that by this time the pilgrims",
+        "end": "in this place they met with abundance of what they had sought for in all their pilgrimage.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 28,
@@ -740,7 +860,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "Love for God may be fine sentiment.",
+        "end": "but our God.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 29,
@@ -784,7 +912,15 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "If God does not exist, or if he has not revealed himself, and hence is unknowable",
+        "end": "the science of the revelation of God and of our knowledge concerning him.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": true
     },
     {
       "sequence": 30,
@@ -812,7 +948,7 @@
         }
       ],
       "translation_semantic_risk_ru": "Идиома single eye означает целостное искреннее намерение, не буквально «простое око».",
-      "quote_provenance": "new_editorial_russian_candidate_requires_new_digest",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
       "proposed_quote_text_ru": "Всякий, кто читает Евангелие непредвзято и с искренним намерением, увидит: наш благословенный Господь при каждом случае напоминал ученикам, что Его Царство не от мира сего, Его учение — учение о кресте, а следование за Ним требует постоянного самоотречения и готовности добровольно переносить страдания.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
@@ -828,7 +964,44 @@
       "rights_cleared": false,
       "legacy_ledger_write_authorized": false,
       "publisher_activation_authorized": false,
-      "native_telegram_quote_entity_required": false
+      "native_telegram_quote_entity_required": false,
+      "selected_english_excerpt_anchors": {
+        "start": "Whoever reads the gospel with a single eye, and sincere intentions",
+        "end": "state of voluntary suffering and self-denial.",
+        "span_type": "targeted_contiguous_segment_to_be_independently_compared",
+        "distinct_from_legacy_full_source_span": true
+      },
+      "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
+      "legacy_russian_dependency_remains": false
     }
-  ]
+  ],
+  "translation_provenance_categories": {
+    "fresh_english_based_candidate": [
+      9,
+      20,
+      21,
+      30
+    ],
+    "partial_legacy_russian_text_edits": [
+      22,
+      23
+    ],
+    "untouched_contiguous_legacy_russian_span": [
+      12,
+      15,
+      16,
+      17,
+      18,
+      19,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ]
+  },
+  "translation_provenance_notice": "Changes to one or two words in a legacy untraced Russian translation do NOT remove the rights dependency of the rest of the copied text. Both #22 and #23 remain derivative candidates requiring edition-specific clearance or a completely fresh independently translated Russian text.",
+  "selected_english_bounds_are_transcribed_from_open_pages": true,
+  "human_translation_review_verified": false
 }
