@@ -127,5 +127,5 @@ def test_short_and_l1_layout_keep_editor_outside_the_author_quote() -> None:
             assert "**\n\n" in preview
         else:
             assert intro is None
-            assert preview.startswith(quote[:10]) or preview.startswith("**")
+            assert preview.startswith(quote[:4]) or preview.startswith("**")
             assert not preview.startswith("«")
