@@ -322,8 +322,8 @@
       "telegram_link_preview_large_media": true,
       "telegram_published_at_utc": "2026-11-05T04:15:13.620529+00:00",
       "scheduled_reissue": {
-        "state": "sent",
-        "provider_effect": "verified_by_api",
+        "state": "verified",
+        "provider_effect": "verified",
         "run_id": "44707693019",
         "run_attempt": 1,
         "github_sha": "642b838f276b44f8e54339c2d4cd02637c7d3246",
@@ -333,7 +333,8 @@
         "telegraph_url": "https://telegra.ph/Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
         "claimed_at_moscow": "2026-11-20T12:05:29.603135+03:00",
         "new_message_id": 1630,
-        "sent_at_moscow": "2026-11-20T12:05:33.409581+03:00"
+        "sent_at_moscow": "2026-11-20T12:05:33.409581+03:00",
+        "verified_at_moscow": "2026-11-20T12:05:46.394323+03:00"
       }
     },
     "lordchrist-telegraph-charnock-10": {
