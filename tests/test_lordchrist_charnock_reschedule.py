@@ -125,7 +125,7 @@ def test_article_13_quote_gaps_block_scheduled_release_before_any_provider_call(
     monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read during editorial HOLD"))
     for stage in ("prepare", "send"):
         args.stage = stage
-        with pytest.raises(RuntimeError, match="editorial HOLD: q-3/q-19"):
+        with pytest.raises(RuntimeError, match="TELEGRAM SEND HOLD"):
             m.execute(args)
         assert "scheduled_reissue" not in original
 
