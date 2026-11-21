@@ -136,15 +136,132 @@ def _content_bytes(content: list[Any]) -> int:
     return len(json.dumps(content, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
 
 
+def _semantic_nodes(content: list[Any], exclude: set[int]) -> list[tuple[str, str]]:
+    """Tag + visible text for non-target nodes, ignoring empty line-break nodes."""
+    nodes: list[tuple[str, str]] = []
+    for index, node in enumerate(content):
+        if index in exclude or not isinstance(node, dict):
+            continue
+        tag = str(node.get("tag") or "")
+        text = normalized(flatten(node))
+        if tag == "br" or not text:
+            continue
+        nodes.append((tag, text))
+    return nodes
+
+
+def _target_indices_after(content: list[Any], key: str) -> tuple[int, ...]:
+    """Require every contract after-blockquote exactly once and no before-blockquote left."""
+    indices: list[int] = []
+    for replacement in CONTRACTS[key]["replacements"]:
+        after = normalized(replacement["after"])
+        before = normalized(replacement["before"])
+        after_matches = [
+            index
+            for index, node in enumerate(content)
+            if isinstance(node, dict) and node.get("tag") == "blockquote" and normalized(flatten(node)) == after
+        ]
+        before_matches = [
+            index
+            for index, node in enumerate(content)
+            if isinstance(node, dict) and node.get("tag") == "blockquote" and normalized(flatten(node)) == before
+        ]
+        if len(after_matches) != 1:
+            raise UnsafeRevision(
+                f"{key}/{replacement['block_id']}: expected exactly one applied blockquote, found {len(after_matches)}"
+            )
+        if before_matches:
+            raise UnsafeRevision(f"{key}/{replacement['block_id']}: pre-edit blockquote is still present")
+        indices.append(after_matches[0])
+    if len(set(indices)) != len(indices):
+        raise UnsafeRevision(f"{key}: two targets resolved to the same live blockquote")
+    return tuple(indices)
+
+
+def _safe_prefix(text: str, limit: int = 120) -> str:
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
+def _semantic_diff(
+    key: str,
+    before_content: list[Any],
+    live_content: list[Any],
+    changed: tuple[int, ...],
+) -> list[str]:
+    """Explain non-target differences without ever including the access token."""
+    live_targets = _target_indices_after(live_content, key)
+    before_nodes = _semantic_nodes(before_content, set(changed))
+    live_nodes = _semantic_nodes(live_content, set(live_targets))
+    differences: list[str] = []
+    for index, (before_node, live_node) in enumerate(zip(before_nodes, live_nodes, strict=False)):
+        if before_node != live_node:
+            differences.append(
+                f"node {index}: {before_node[0]} {_safe_prefix(before_node[1])!r} -> "
+                f"{live_node[0]} {_safe_prefix(live_node[1])!r}"
+            )
+        if len(differences) >= 5:
+            break
+    if len(before_nodes) != len(live_nodes):
+        differences.append(f"non-target node count {len(before_nodes)} -> {len(live_nodes)}")
+    return differences
+
+
+def _check_receipt_dir(receipt_dir: Path | None) -> Path:
+    if receipt_dir is None:
+        raise UnsafeRevision("A receipt directory is required")
+    if not receipt_dir.is_dir() or any((part / ".git").exists() for part in (receipt_dir, *receipt_dir.parents)):
+        raise UnsafeRevision("Receipt directory must already exist outside a git repository")
+    return receipt_dir
+
+
+def _receipt_path(receipt_dir: Path, key: str, suffix: str, digest: str) -> Path:
+    run_id = os.environ.get("GITHUB_RUN_ID") or "local"
+    return receipt_dir / f"charnock-telegraph-{key}-{digest[:16]}{suffix}-{run_id}.json"
+
+
+def _write_receipt(path: Path, result: dict[str, Any]) -> None:
+    path.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+
+
+def _reconcile_one(key: str, receipt_dir: Path) -> dict[str, Any]:
+    """Read-only proof that an already-applied page still matches every after-blockquote."""
+    page = get_public_page(CONTRACTS[key]["path"])
+    targets = _target_indices_after(page["content"], key)
+    live_sha = sha_content(page["content"])
+    result: dict[str, Any] = {
+        "article": key,
+        "path": CONTRACTS[key]["path"],
+        "url": page.get("url"),
+        "old_sha256": None,
+        "new_sha256": live_sha,
+        "live_sha256": live_sha,
+        "changed_nodes": list(targets),
+        "node_count": len(page["content"]),
+        "content_utf8_bytes": _content_bytes(page["content"]),
+        "effect": "VERIFIED_IN_PLACE_RECONCILED",
+        "verification": {"mode": "reconciled", "read_only": True, "targets_after": list(targets)},
+        "run_id": os.environ.get("GITHUB_RUN_ID"),
+        "verified_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+    _write_receipt(_receipt_path(receipt_dir, key, "-reconciled", live_sha), result)
+    return result
+
+
 def run_one(
     key: str,
     *,
     execute: bool,
     confirm: str | None,
     receipt_dir: Path | None,
+    reconcile: bool = False,
 ) -> dict[str, Any]:
     if key not in CONTRACTS:
         raise UnsafeRevision("Unknown page key")
+    if execute and reconcile:
+        raise UnsafeRevision("Execution and reconciliation are mutually exclusive")
+    if reconcile:
+        directory = _check_receipt_dir(receipt_dir)
+        return _reconcile_one(key, directory)
     page = get_public_page(CONTRACTS[key]["path"])
     before_sha = sha_content(page["content"])
     after_content, changed = prepare(page, key)
@@ -171,11 +288,10 @@ def run_one(
     }
     if not execute:
         return result
-    if confirm != CONFIRM or receipt_dir is None:
+    if confirm != CONFIRM:
         raise UnsafeRevision("Execution requires explicit confirmation and receipt directory")
-    if not receipt_dir.is_dir() or any((part / ".git").exists() for part in (receipt_dir, *receipt_dir.parents)):
-        raise UnsafeRevision("Receipt directory must already exist outside a git repository")
-    receipt_file = receipt_dir / f"charnock-telegraph-{key}-{after_sha[:16]}.json"
+    directory = _check_receipt_dir(receipt_dir)
+    receipt_file = _receipt_path(directory, key, "", after_sha)
     if receipt_file.exists():
         raise UnsafeRevision("Receipt already exists; reconcile first, no POST")
     token = os.environ.get("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "").strip()
@@ -196,18 +312,61 @@ def run_one(
         "return_content": "true",
     }
     # One irreversible POST only. Any timeout/error is UNCERTAIN; never retry.
-    edited = post_form("editPage/" + CONTRACTS[key]["path"], fields)
+    try:
+        edited = post_form("editPage/" + CONTRACTS[key]["path"], fields)
+    except Exception as exc:
+        result["effect"] = "UNCERTAIN"
+        result["uncertainty"] = f"POST_{type(exc).__name__}"
+        result["run_id"] = os.environ.get("GITHUB_RUN_ID")
+        _write_receipt(_receipt_path(directory, key, "-uncertain", after_sha), result)
+        raise
     if edited.get("path") != CONTRACTS[key]["path"]:
+        result["effect"] = "UNCERTAIN"
+        result["uncertainty"] = "editPage changed path"
+        result["run_id"] = os.environ.get("GITHUB_RUN_ID")
+        _write_receipt(_receipt_path(directory, key, "-uncertain", after_sha), result)
         raise UnsafeRevision("Provider effect UNCERTAIN: editPage changed path; do not retry")
     check = get_public_page(CONTRACTS[key]["path"])
     for field in ("path", "url", "title", "author_name", "author_url", "image_url", "description"):
         if field in page and check.get(field) != page[field]:
+            result["effect"] = "UNCERTAIN"
+            result["uncertainty"] = f"{field} drift"
+            result["live_sha256"] = sha_content(check["content"])
+            result["run_id"] = os.environ.get("GITHUB_RUN_ID")
+            _write_receipt(_receipt_path(directory, key, "-uncertain", after_sha), result)
             raise UnsafeRevision(f"Provider effect UNCERTAIN: {field} drift; do not retry")
-    if check.get("content") != after_content:
-        raise UnsafeRevision("Provider effect UNCERTAIN: full content mismatch; do not retry")
-    result["effect"] = "VERIFIED_IN_PLACE"
+    live_sha = sha_content(check["content"])
+    result["live_sha256"] = live_sha
+    if check.get("content") == after_content:
+        result["effect"] = "VERIFIED_IN_PLACE"
+        result["verification"] = {"mode": "exact", "provider_content_exact": True}
+    else:
+        try:
+            differences = _semantic_diff(key, page["content"], check["content"], changed)
+        except UnsafeRevision as exc:
+            result["effect"] = "UNCERTAIN"
+            result["uncertainty"] = str(exc)
+            result["run_id"] = os.environ.get("GITHUB_RUN_ID")
+            _write_receipt(_receipt_path(directory, key, "-uncertain", after_sha), result)
+            raise
+        if differences:
+            result["effect"] = "UNCERTAIN"
+            result["uncertainty"] = "non-target text changed"
+            result["differences"] = differences
+            result["run_id"] = os.environ.get("GITHUB_RUN_ID")
+            _write_receipt(_receipt_path(directory, key, "-uncertain", after_sha), result)
+            raise UnsafeRevision("Provider effect UNCERTAIN: non-target text changed; do not retry")
+        result["effect"] = "VERIFIED_IN_PLACE"
+        result["verification"] = {
+            "mode": "semantic",
+            "provider_content_exact": False,
+            "non_target_text_unchanged": True,
+            "node_count_after": len(check["content"]),
+            "content_utf8_bytes_after": _content_bytes(check["content"]),
+        }
+    result["run_id"] = os.environ.get("GITHUB_RUN_ID")
     result["verified_at_utc"] = datetime.now(timezone.utc).isoformat()
-    receipt_file.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    _write_receipt(_receipt_path(directory, key, "", after_sha), result)
     return result
 
 
@@ -215,9 +374,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--page", choices=tuple(CONTRACTS), required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--reconcile", action="store_true")
     parser.add_argument("--confirm", default="")
     parser.add_argument("--receipt-dir", type=Path)
     args = parser.parse_args()
+    if args.execute and args.reconcile:
+        parser.error("--execute and --reconcile are mutually exclusive")
     if args.execute and args.confirm != CONFIRM:
         parser.error("Execution requires --confirm " + CONFIRM)
     try:
@@ -226,6 +388,7 @@ def main() -> None:
             execute=args.execute,
             confirm=args.confirm,
             receipt_dir=args.receipt_dir,
+            reconcile=args.reconcile,
         )
     except Exception as exc:
         # Never echo arbitrary provider errors (can contain credentials).

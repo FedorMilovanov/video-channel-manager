@@ -155,3 +155,112 @@ def test_intervening_live_change_blocks_before_post(contract, monkeypatch, tmp_p
 def test_unknown_page_is_refused(contract):
     with pytest.raises(s.UnsafeRevision, match="Unknown page"):
         s.run_one("other", execute=False, confirm=None, receipt_dir=None)
+
+
+def _applied_page() -> dict:
+    applied = page()
+    applied["content"][1] = {
+        "tag": "blockquote",
+        "children": [{"tag": "strong", "children": ["New quoted text."]}],
+    }
+    return applied
+
+
+def test_reconcile_already_applied_page_writes_read_only_receipt(contract, monkeypatch, tmp_path):
+    monkeypatch.setattr(s, "get_public_page", lambda _: copy.deepcopy(_applied_page()))
+    monkeypatch.setattr(s, "post_form", lambda *_: pytest.fail("POST called during reconcile"))
+    monkeypatch.setattr(s, "verify_ownership", lambda *_: pytest.fail("ownership called during reconcile"))
+    out = s.run_one("test", execute=False, confirm=None, receipt_dir=tmp_path, reconcile=True)
+    assert out["effect"] == "VERIFIED_IN_PLACE_RECONCILED"
+    assert out["verification"]["read_only"] is True
+    receipts = list(tmp_path.glob("*-reconciled-*.json"))
+    assert len(receipts) == 1
+    receipt = json.loads(receipts[0].read_text(encoding="utf-8"))
+    assert receipt["effect"] == "VERIFIED_IN_PLACE_RECONCILED"
+    assert receipt["changed_nodes"] == [1]
+
+
+def test_reconcile_refuses_a_page_that_still_has_the_before_text(contract, monkeypatch, tmp_path):
+    monkeypatch.setattr(s, "get_public_page", lambda _: copy.deepcopy(page()))
+    with pytest.raises(s.UnsafeRevision, match="exactly one applied"):
+        s.run_one("test", execute=False, confirm=None, receipt_dir=tmp_path, reconcile=True)
+
+
+def test_semantic_readback_accepts_dropped_empty_break(contract, monkeypatch, tmp_path):
+    before = page()
+    before["content"].insert(3, {"tag": "br"})
+    planned, _ = s.prepare(copy.deepcopy(before), "test")
+    live = copy.deepcopy(before)
+    live["content"] = [copy.deepcopy(node) for node in planned if node.get("tag") != "br"]
+    calls = {"get": 0, "post": 0}
+
+    def fake_get(_):
+        calls["get"] += 1
+        return copy.deepcopy(before if calls["get"] <= 2 else live)
+
+    def fake_post(path, fields):
+        calls["post"] += 1
+        assert path == "editPage/" + PATH
+        assert json.loads(fields["content"]) == planned
+        return {"path": PATH, "url": live["url"]}
+
+    monkeypatch.setattr(s, "get_public_page", fake_get)
+    monkeypatch.setattr(s, "post_form", fake_post)
+    monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    out = s.run_one("test", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
+    assert out["effect"] == "VERIFIED_IN_PLACE"
+    assert out["verification"]["mode"] == "semantic"
+    assert out["verification"]["provider_content_exact"] is False
+    assert calls == {"get": 3, "post": 1}
+    receipts = list(tmp_path.glob("charnock-telegraph-test-*.json"))
+    assert len(receipts) == 1
+    assert json.loads(receipts[0].read_text(encoding="utf-8"))["verification"]["mode"] == "semantic"
+
+
+def test_uncertain_non_target_change_writes_receipt_and_does_not_claim_success(contract, monkeypatch, tmp_path):
+    before = page()
+    planned, _ = s.prepare(copy.deepcopy(before), "test")
+    live = copy.deepcopy(before)
+    live["content"] = copy.deepcopy(planned)
+    live["content"][3]["children"] = ["tampered by someone else"]
+    calls = {"get": 0}
+
+    def fake_get(_):
+        calls["get"] += 1
+        return copy.deepcopy(before if calls["get"] <= 2 else live)
+
+    monkeypatch.setattr(s, "get_public_page", fake_get)
+    monkeypatch.setattr(s, "post_form", lambda *_: {"path": PATH, "url": live["url"]})
+    monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    with pytest.raises(s.UnsafeRevision, match="non-target text changed"):
+        s.run_one("test", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
+    receipts = list(tmp_path.glob("*-uncertain-*.json"))
+    assert len(receipts) == 1
+    receipt = json.loads(receipts[0].read_text(encoding="utf-8"))
+    assert receipt["effect"] == "UNCERTAIN"
+    assert receipt["uncertainty"] == "non-target text changed"
+    assert "test-token" not in receipts[0].read_text(encoding="utf-8")
+
+
+def test_post_error_is_receipted_as_uncertain(contract, monkeypatch, tmp_path):
+    before = page()
+
+    def fake_get(_):
+        return copy.deepcopy(before)
+
+    def fake_post(*_):
+        raise TimeoutError("ambiguous")
+
+    monkeypatch.setattr(s, "get_public_page", fake_get)
+    monkeypatch.setattr(s, "post_form", fake_post)
+    monkeypatch.setattr(s, "verify_ownership", lambda *_: None)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    with pytest.raises(TimeoutError):
+        s.run_one("test", execute=True, confirm=s.CONFIRM, receipt_dir=tmp_path)
+    receipts = list(tmp_path.glob("*-uncertain-*.json"))
+    assert len(receipts) == 1
+    receipt = json.loads(receipts[0].read_text(encoding="utf-8"))
+    assert receipt["effect"] == "UNCERTAIN"
+    assert receipt["uncertainty"] == "POST_TimeoutError"
