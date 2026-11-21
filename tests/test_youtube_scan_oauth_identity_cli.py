@@ -109,9 +109,7 @@ def test_exact_channel_on_multi_channel_alias_still_exports_readonly_package(tmp
     assert inspected == [POET]
     assert json.loads(path.read_text(encoding="utf-8"))["channel_id"] == POET
 
-def test_scan_receipt_survives_legacy_cp1252_terminal_after_durable_export(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_scan_receipt_survives_legacy_cp1252_terminal_after_durable_export(tmp_path: Path, monkeypatch) -> None:
     """Actual Unicode receipt + Cyrillic output path cannot fail after file write."""
     import io
     from rich.console import Console
@@ -141,7 +139,8 @@ def test_scan_receipt_survives_legacy_cp1252_terminal_after_durable_export(
     monkeypatch.setattr(youtube_cli, "console", Console(file=legacy_stream, force_terminal=False))
     # Simulate Windows os.name without changing global pathlib platform state.
     monkeypatch.setattr(
-        youtube_cli, "prepare_windows_youtube_console",
+        youtube_cli,
+        "prepare_windows_youtube_console",
         lambda: make_console_text_safe(legacy_stream),
     )
 
