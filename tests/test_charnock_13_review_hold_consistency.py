@@ -55,7 +55,7 @@ def test_all_five_canonical_quote_gaps_are_closed_or_marked() -> None:
     assert "Пс. 103:31" in q12 and "урок о творении" in q12
     assert "мухам" in q19 and "Пс. 10:4" in q19
     assert "так и активность наших душ" not in q19
-    assert article["revision"] == "charnock-13-qb-20261121"
+    assert article["revision"] == "charnock-13-qc-20261121"
 
 
 def test_canonical_blob_is_synchronised_with_the_queue() -> None:
