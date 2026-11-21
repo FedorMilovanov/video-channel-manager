@@ -264,3 +264,14 @@ def test_post_error_is_receipted_as_uncertain(contract, monkeypatch, tmp_path):
     receipt = json.loads(receipts[0].read_text(encoding="utf-8"))
     assert receipt["effect"] == "UNCERTAIN"
     assert receipt["uncertainty"] == "POST_TimeoutError"
+
+
+def test_13_multi_paragraph_quotes_pin_the_whole_live_blockquote():
+    q3 = next(r for r in s.CONTRACTS["13"]["replacements"] if r["block_id"] == "q-3")
+    q11 = next(r for r in s.CONTRACTS["13"]["replacements"] if r["block_id"] == "q-11")
+    assert "Скорее решайтесь верить" in q3["before"]
+    assert "Скорее решайтесь верить" in q3["after"]
+    assert "Писание будет лёгкой вещью" in q11["before"]
+    assert "Писание будет лёгкой вещью" in q11["after"]
+    assert "Власть всего зависит от бытия Открывающего" in q11["before"]
+    assert "Власть всего зависит от бытия Открывающего" in q11["after"]
