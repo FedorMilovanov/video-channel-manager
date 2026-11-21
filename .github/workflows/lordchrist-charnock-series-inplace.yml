@@ -1,4 +1,5 @@
 name: Lordchrist Charnock series existing-page correction (owner only)
+run-name: charnock-series-inplace-${{ github.event.client_payload.page || inputs.page }}-${{ github.event.client_payload.mode || inputs.mode }}
 
 on:
   workflow_dispatch:
@@ -81,6 +82,7 @@ jobs:
           MODE: ${{ github.event.client_payload.mode || inputs.mode }}
         run: |
           set -euo pipefail
+          echo "::notice title=charnock-series-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE}"
           mkdir -p "$RUNNER_TEMP/charnock-series-provider-receipts"
           args=(--page "$REVIEWED_PAGE" --receipt-dir "$RUNNER_TEMP/charnock-series-provider-receipts")
           if [[ "$MODE" == "execute" ]]; then
@@ -96,7 +98,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: charnock-series-receipt-${{ inputs.page }}-${{ github.run_id }}
+          name: charnock-series-receipt-${{ github.event.client_payload.page || inputs.page }}-${{ github.run_id }}
           path: ${{ runner.temp }}/charnock-series-provider-receipts/*.json
           if-no-files-found: warn
           retention-days: 30

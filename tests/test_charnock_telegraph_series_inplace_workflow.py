@@ -21,6 +21,7 @@ def test_only_manual_single_page_dispatch() -> None:
         assert page in text
     assert "default: dry-run" in text
     assert "MODE" in text and '"$MODE" == "execute"' in text
+    assert "run-name: charnock-series-inplace-" in text
 
 
 def test_owner_main_and_explicit_confirmation_gate() -> None:
@@ -56,3 +57,5 @@ def test_one_pinned_script_exactly_one_receipt_and_upload() -> None:
     assert "--receipt-dir" in text
     assert "find" in text and "wc -l" in text
     assert "actions/upload-artifact" in text
+    assert "charnock-series-receipt-${{ github.event.client_payload.page || inputs.page }}" in text
+    assert "::notice title=charnock-series-" in text
