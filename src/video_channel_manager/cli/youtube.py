@@ -344,6 +344,11 @@ def scan(
 ) -> None:
     """Export a complete read-only AuditPackage for videos, playlists, and memberships."""
 
+    # The AuditPackage is already durable when the completion receipt prints.
+    # A cp1252/cp866 Windows terminal must not turn that successful scan into
+    # a misleading nonzero result when the receipt contains a Unicode arrow
+    # or a Cyrillic operator-selected output path.
+    prepare_windows_youtube_console()
     settings = get_settings()
     try:
         _, _, client = _components(account, client_secret)
