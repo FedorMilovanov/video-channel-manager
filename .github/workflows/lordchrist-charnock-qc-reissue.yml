@@ -83,6 +83,7 @@ jobs:
       - name: Exactly one preconditioned editPage and full public readback
         shell: bash
         env:
+          PYTHONPATH: src
           LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           REVIEWED_PAGE: ${{ inputs.page }}
@@ -98,7 +99,12 @@ jobs:
           elif [[ "$MODE" != "dry-run" ]]; then
             exit 3
           fi
-          python -m scripts.charnock_telegraph_qc_reissue "${args[@]}"
+          if ! python -m scripts.charnock_telegraph_qc_reissue "${args[@]}" 2>&1 \
+              | tee "$RUNNER_TEMP/charnock-qc-reissue.log"; then
+            message="$(tail -n 2 "$RUNNER_TEMP/charnock-qc-reissue.log" | tr '\n' ' ' | cut -c1-900)"
+            echo "::error title=charnock-qc-reissue-${REVIEWED_PAGE}::${message}"
+            exit 3
+          fi
           if [[ "$MODE" == "execute" ]]; then
             [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
           fi
