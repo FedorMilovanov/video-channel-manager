@@ -13,6 +13,8 @@ def _source() -> str:
 def test_only_manual_single_page_dispatch() -> None:
     text = _source()
     assert "workflow_dispatch:" in text
+    assert "repository_dispatch:" in text
+    assert "types: [charnock-series-inplace]" in text
     for event in ("schedule:", "push:", "pull_request:"):
         assert event not in text
     for page in ("'02'", "'03'", "'09'", "'11'", "'12'", "'13'"):
@@ -27,6 +29,8 @@ def test_owner_main_and_explicit_confirmation_gate() -> None:
     assert "github.repository == 'FedorMilovanov/video-channel-manager'" in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "inputs.confirm == 'EDIT_EXISTING_CHARNOCK_PAGE_ONCE'" in text
+    assert "github.event.client_payload.confirm == 'EDIT_EXISTING_CHARNOCK_PAGE_ONCE'" in text
+    assert "github.event.client_payload.page" in text
     assert '"$GITHUB_RUN_ATTEMPT" == "1"' in text
     assert 'gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha' in text
 
