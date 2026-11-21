@@ -20,12 +20,13 @@ on:
         required: true
         type: string
       mode:
-        description: dry-run verifies the pinned contract with public GET only
+        description: dry-run verifies, reconcile receipts an already-applied page, execute posts once
         required: true
         type: choice
         default: dry-run
         options:
           - dry-run
+          - reconcile
           - execute
   repository_dispatch:
     types: [charnock-series-inplace]
@@ -87,11 +88,13 @@ jobs:
           args=(--page "$REVIEWED_PAGE" --receipt-dir "$RUNNER_TEMP/charnock-series-provider-receipts")
           if [[ "$MODE" == "execute" ]]; then
             args+=(--execute --confirm EDIT_EXISTING_CHARNOCK_PAGE_ONCE)
+          elif [[ "$MODE" == "reconcile" ]]; then
+            args+=(--reconcile)
           elif [[ "$MODE" != "dry-run" ]]; then
             exit 3
           fi
           python -m scripts.charnock_telegraph_series_inplace "${args[@]}"
-          if [[ "$MODE" == "execute" ]]; then
+          if [[ "$MODE" == "execute" || "$MODE" == "reconcile" ]]; then
             [[ "$(find "$RUNNER_TEMP/charnock-series-provider-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
           fi
       - name: Upload the single provider receipt

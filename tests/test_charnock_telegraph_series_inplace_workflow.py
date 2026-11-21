@@ -20,7 +20,9 @@ def test_only_manual_single_page_dispatch() -> None:
     for page in ("'02'", "'03'", "'09'", "'11'", "'12'", "'13'"):
         assert page in text
     assert "default: dry-run" in text
+    assert "- reconcile" in text
     assert "MODE" in text and '"$MODE" == "execute"' in text
+    assert "--reconcile" in text
     assert "run-name: charnock-series-inplace-" in text
 
 

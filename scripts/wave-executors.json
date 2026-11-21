@@ -1483,7 +1483,7 @@
     },
     {
       "path": "scripts/charnock_telegraph_series_inplace.py",
-      "sha256": "218aceef41be5ec7dffb4e2eff440a252f6bcaa2f58bed3a0dacf254bebb4c71",
+      "sha256": "47c58b7193fbf0034b2152402fb0d185b749f1c418f69e6df4e03998a85220aa",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
