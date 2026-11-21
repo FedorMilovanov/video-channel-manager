@@ -330,6 +330,10 @@ def main() -> None:
             receipt_dir=args.receipt_dir,
             reconcile=args.reconcile,
         )
+    except UnsafeRevision as exc:
+        # Local guard messages are written here and never carry credentials.
+        print(f"{args.page}: STOP / no automatic retry: {exc}")
+        raise SystemExit(2) from None
     except Exception as exc:
         # Never echo arbitrary provider errors (can contain credentials).
         print(f"{args.page}: STOP / no automatic retry ({type(exc).__name__})")
