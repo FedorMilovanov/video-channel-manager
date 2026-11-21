@@ -107,6 +107,9 @@ jobs:
           fi
           if [[ "$MODE" == "execute" ]]; then
             [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
+          else
+            plan="$(tr -d '\n' < "$RUNNER_TEMP/charnock-qc-reissue.log" | cut -c1-6000)"
+            echo "::notice title=charnock-qc-reissue-plan-${REVIEWED_PAGE}::${plan}"
           fi
       - name: Upload the single provider receipt
         if: always()
