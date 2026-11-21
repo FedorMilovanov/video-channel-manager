@@ -1,0 +1,112 @@
+name: Lordchrist Charnock QC reissue of existing Telegraph pages (owner only)
+run-name: charnock-qc-reissue-${{ inputs.page }}-${{ inputs.mode }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      page:
+        description: Existing reviewed Charnock page to reprint in place (never create)
+        required: true
+        type: choice
+        options:
+          - '01b'
+          - '02'
+          - '03'
+          - '04'
+          - '05'
+          - '06'
+          - '07'
+          - '08'
+          - '09'
+          - '10'
+          - '11'
+          - '12'
+          - '13'
+      mode:
+        description: dry-run prints the plan; execute posts exactly once
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - execute
+      confirm:
+        description: Type REISSUE_EXISTING_CHARNOCK_PAGE_ONCE to authorize this single page
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lordchrist-charnock-qc-reissue
+  cancel-in-progress: false
+
+jobs:
+  reissue:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.repository == 'FedorMilovanov/video-channel-manager' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'REISSUE_EXISTING_CHARNOCK_PAGE_ONCE' &&
+      (inputs.page == '01b' || inputs.page == '02' || inputs.page == '03' ||
+       inputs.page == '04' || inputs.page == '05' || inputs.page == '06' ||
+       inputs.page == '07' || inputs.page == '08' || inputs.page == '09' ||
+       inputs.page == '10' || inputs.page == '11' || inputs.page == '12' ||
+       inputs.page == '13')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Refuse replay, non-main, or moving HEAD
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+      - name: Check out pinned QC reissue editor
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install pinned publisher runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Exactly one preconditioned editPage and full public readback
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
+          REVIEWED_PAGE: ${{ inputs.page }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          echo "::notice title=charnock-qc-reissue-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE}"
+          mkdir -p "$RUNNER_TEMP/charnock-qc-reissue-receipts"
+          args=(--page "$REVIEWED_PAGE" --media-base-url "$MEDIA_BASE_URL"
+                --receipt-dir "$RUNNER_TEMP/charnock-qc-reissue-receipts")
+          if [[ "$MODE" == "execute" ]]; then
+            args+=(--execute --confirm REISSUE_EXISTING_CHARNOCK_PAGE_ONCE)
+          elif [[ "$MODE" != "dry-run" ]]; then
+            exit 3
+          fi
+          python -m scripts.charnock_telegraph_qc_reissue "${args[@]}"
+          if [[ "$MODE" == "execute" ]]; then
+            [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
+          fi
+      - name: Upload the single provider receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: charnock-qc-reissue-receipt-${{ inputs.page }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/charnock-qc-reissue-receipts/*.json
+          if-no-files-found: warn
+          retention-days: 30
