@@ -39,9 +39,7 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
 
 CONFIRM = "REISSUE_EXISTING_CHARNOCK_PAGE_ONCE"
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = (
-    ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/charnock-qc-reissue-20261121.json"
-)
+MANIFEST_PATH = ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/charnock-qc-reissue-20261121.json"
 QUEUE_PATH = Path("content/telegram/lordchrist/telegraph-v1/article-queue.json")
 MAX_CONTENT_BYTES = 65_536
 MAX_DIFFERENCES = 5
@@ -137,9 +135,7 @@ def check_live_page(page: dict[str, Any], key: str, contract: dict[str, Any]) ->
 def _check_receipt_dir(receipt_dir: Path | None) -> Path:
     if receipt_dir is None:
         raise UnsafeRevision("A receipt directory is required")
-    if not receipt_dir.is_dir() or any(
-        (part / ".git").exists() for part in (receipt_dir, *receipt_dir.parents)
-    ):
+    if not receipt_dir.is_dir() or any((part / ".git").exists() for part in (receipt_dir, *receipt_dir.parents)):
         raise UnsafeRevision("Receipt directory must already exist outside a git repository")
     return receipt_dir
 
@@ -169,8 +165,7 @@ def reviewed_payload(
     payload = build_telegraph_payload(repo_root, matches[0], media_base_url=media_base_url)
     if payload.content_utf8_bytes > MAX_CONTENT_BYTES:
         raise UnsafeRevision(
-            f"{key}: payload is {payload.content_utf8_bytes} UTF-8 bytes; "
-            f"Telegraph ceiling is {MAX_CONTENT_BYTES}"
+            f"{key}: payload is {payload.content_utf8_bytes} UTF-8 bytes; Telegraph ceiling is {MAX_CONTENT_BYTES}"
         )
     return payload
 
@@ -192,9 +187,7 @@ def run_one(
     if execute and reconcile:
         raise UnsafeRevision("Execution and reconciliation are mutually exclusive")
     contract = pages[key]
-    payload = reviewed_payload(
-        key, repo_root=repo_root, media_base_url=media_base_url, manifest=pages
-    )
+    payload = reviewed_payload(key, repo_root=repo_root, media_base_url=media_base_url, manifest=pages)
     target_content = payload.nodes
     target_sha = sha_content(target_content)
     target_bytes = content_bytes(target_content)

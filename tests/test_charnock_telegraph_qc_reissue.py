@@ -83,11 +83,21 @@ def test_dry_run_reports_the_plan_without_a_receipt(tmp_path: Path, monkeypatch)
 
 def test_execute_posts_exactly_once_and_verifies_exact_readback(tmp_path: Path, monkeypatch) -> None:
     payload = _payload("01b")
-    monkeypatch.setattr(reissue, "get_public_page", Reader([_live("01b"), _live("01b"), {
-        **_live("01b"),
-        "title": payload.title,
-        "content": payload.nodes,
-    }]))
+    monkeypatch.setattr(
+        reissue,
+        "get_public_page",
+        Reader(
+            [
+                _live("01b"),
+                _live("01b"),
+                {
+                    **_live("01b"),
+                    "title": payload.title,
+                    "content": payload.nodes,
+                },
+            ]
+        ),
+    )
     posts: list[tuple[str, dict]] = []
     monkeypatch.setattr(reissue, "verify_ownership", lambda token, path: None)
 
@@ -194,9 +204,7 @@ def test_live_page_with_foreign_author_is_refused(tmp_path: Path, monkeypatch) -
     stranger = {**_live("09"), "author_name": "Кто-то другой"}
     monkeypatch.setattr(reissue, "get_public_page", Reader([stranger]))
     with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "09", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest()
-        )
+        reissue.run_one("09", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest())
 
 
 def test_already_live_page_requires_reconcile(tmp_path: Path, monkeypatch) -> None:
@@ -204,9 +212,7 @@ def test_already_live_page_requires_reconcile(tmp_path: Path, monkeypatch) -> No
     current = {**_live("11"), "title": payload.title, "content": payload.nodes}
     monkeypatch.setattr(reissue, "get_public_page", Reader([current]))
     with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "11", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest()
-        )
+        reissue.run_one("11", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest())
     outcome = reissue.run_one(
         "11",
         repo_root=ROOT,
