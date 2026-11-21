@@ -1,7 +1,8 @@
-"""Research-only Charnock #13 quote proof: no silent canonical publication change."""
+"""Charnock #13: historical candidate vs the approved 2026-11-21 revision."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -22,75 +23,74 @@ def _quote(document: dict, block_id: str) -> str:
     return "".join(piece if isinstance(piece, str) else piece["text"] for piece in pieces)
 
 
-def test_candidate_keeps_all_other_approved_blocks_unchanged() -> None:
-    before, after = _load(APPROVED), _load(CANDIDATE)
-    assert before["document_id"] == after["document_id"] == "lordchrist-telegraph-charnock-13"
-    assert before["revision"] == "charnock-13-v1"
-    assert after["revision"] == "charnock-13-v2-editorial-candidate"
-    assert len(before["blocks"]) == len(after["blocks"]) == 44
-    assert [x["block_id"] for x in before["blocks"]] == [x["block_id"] for x in after["blocks"]]
-    changed = {old["block_id"] for old, new in zip(before["blocks"], after["blocks"], strict=True) if old != new}
-    assert changed == {"q-3", "q-19"}
-    for key in ("document_id", "project_key", "schema_name", "schema_version", "media", "media_slots"):
-        assert before[key] == after[key]
+def test_candidate_is_the_frozen_two_block_historical_sidecar() -> None:
+    assert hashlib.sha256(CANDIDATE.read_bytes()).hexdigest() == (
+        "d647368dac7786b8f877c6c7882beafa0d95d89c61b85674b221db09d0327125"
+    )
+    assert hashlib.sha256(DRAFT.read_bytes()).hexdigest() == (
+        "0fc50fdde58070fab103d6254c22925b9d56b4ff1cc7f0e2533a815d239975ae"
+    )
+    candidate = _load(CANDIDATE)
+    assert candidate["document_id"] == "lordchrist-telegraph-charnock-13"
+    assert candidate["revision"] == "charnock-13-v2-editorial-candidate"
+    assert len(candidate["blocks"]) == 44
+    assert "[…]" in _quote(candidate, "q-3")
+    assert "[…]" in _quote(candidate, "q-19")
 
 
-def test_q3_correction_is_in_both_drafts_and_visible_as_a_gap() -> None:
-    candidate, original = _load(CANDIDATE), _load(APPROVED)
-    quote = _quote(candidate, "q-3")
-    md = DRAFT.read_text(encoding="utf-8")
-    assert "[…]" in quote
+def test_q3_gap_is_marked_and_the_translation_calques_are_gone() -> None:
+    approved, candidate = _load(APPROVED), _load(CANDIDATE)
     corrected = (
         "Немедленно пресекайте такие внушения, отвергайте их; "
         "противопоставляйте им всё устроение природы, чтобы оно сражалось против них"
     )
-    assert corrected in quote
-    assert corrected in md
-    assert "Молча подавляйте" not in quote
-    assert "Молча подавляйте" not in md
-    assert "систему природы сражаться" not in quote
-    assert "Молча подавляйте" in _quote(original, "q-3")
-    assert "как звёзды сражались против Сисары" in quote
+    for document in (approved, candidate):
+        quote = _quote(document, "q-3")
+        assert "без прикрас. […]" in quote
+        assert corrected in quote
+        assert "Молча подавляйте" not in quote
+        assert "систему природы сражаться" not in quote
+        assert "как звёзды сражались против Сисары" in quote
+    assert corrected in DRAFT.read_text(encoding="utf-8")
 
 
-def test_q19_gap_and_full_source_provenance_are_not_erased() -> None:
-    candidate = _load(CANDIDATE)
-    original = _load(APPROVED)
-    quote = _quote(candidate, "q-19")
-    assert "[…]" in quote
-    assert "Что за утешение может быть" in quote
-    assert "Забытый Бог для нас" in quote
-    assert "так и активность наших душ" not in quote
-    assert "[…]" not in _quote(original, "q-19")
-    proof = next(s for s in candidate["sources"] if s["source_id"] == "src-19-charnock")
-    text = proof["evidence"]
-    for anchor in (
-        "Our minds are a beam from God",
-        "like flies",
-        "dunghills than flowers",
-        "God is not in all his thoughts",
-        "Psalm 10:4",
-        "What comfort can be had in the being of God",
-        "A God forgotten is as good as no God to us",
-    ):
-        assert anchor in text
-    assert "[ПРОПУЩЕННЫЙ В РУССКОЙ ЦИТАТЕ ФРАГМЕНТ:" in text
-    assert (
-        "What comfort can be had"
-        not in next(s for s in original["sources"] if s["source_id"] == "src-19-charnock")["evidence"]
-    )
+def test_q19_candidate_keeps_gap_and_approved_revision_is_continuous() -> None:
+    candidate, approved = _load(CANDIDATE), _load(APPROVED)
+    assert "отражаться обратно к Богу. […] Что за утешение" in _quote(candidate, "q-19")
+    assert "так и активность наших душ" not in _quote(candidate, "q-19")
+    approved_quote = _quote(approved, "q-19")
+    assert "мухам" in approved_quote and "Пс. 10:4" in approved_quote
+    assert "так и активность наших душ" not in approved_quote
+    assert "[…]" not in approved_quote
 
 
-def test_only_research_evidence_source_19_was_extended() -> None:
-    before, after = _load(APPROVED), _load(CANDIDATE)
-    b = {s["source_id"]: s for s in before["sources"]}
-    a = {s["source_id"]: s for s in after["sources"]}
-    assert b.keys() == a.keys()
-    changed = {source for source in b if b[source] != a[source]}
-    assert changed == {"src-19-charnock"}
+def test_approved_source_19_evidence_covers_the_whole_restored_interval() -> None:
+    candidate = next(s for s in _load(CANDIDATE)["sources"] if s["source_id"] == "src-19-charnock")
+    approved = next(s for s in _load(APPROVED)["sources"] if s["source_id"] == "src-19-charnock")
+    for text in (candidate["evidence"], approved["evidence"]):
+        for anchor in (
+            "Our minds are a beam from God",
+            "like flies",
+            "dunghills than flowers",
+            "God is not in all his thoughts",
+            "Psalm 10:4",
+            "What comfort can be had in the being of God",
+            "A God forgotten is as good as no God to us",
+        ):
+            assert anchor in text
+    assert "ПРОПУЩЕННЫЙ В РУССКОЙ ЦИТАТЕ ФРАГМЕНТ" in candidate["evidence"]
+    assert "ВОССТАНОВЛЕННЫЙ 21.11.2026" in approved["evidence"]
+    assert "русская цитата восстановлена непрерывно" in approved["evidence"]
 
 
-def test_source_note_preserves_independent_review_and_publication_hold() -> None:
+def test_only_source_19_differs_between_candidate_and_approved() -> None:
+    before = {s["source_id"]: s for s in _load(CANDIDATE)["sources"]}
+    after = {s["source_id"]: s for s in _load(APPROVED)["sources"]}
+    assert before.keys() == after.keys()
+    assert {source for source in before if before[source] != after[source]} == {"src-19-charnock"}
+
+
+def test_source_note_preserves_the_historical_research_verdict() -> None:
     proof = PROOF.read_text(encoding="utf-8")
     for term in (
         "RESEARCH_ONLY",

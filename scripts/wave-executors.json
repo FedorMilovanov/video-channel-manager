@@ -1480,6 +1480,18 @@
       "provider_write_capable": true,
       "sha256": "345c8aae04e3d38ff885c7c5cfbf1a9c0be85191b67349472dbf6c0c3aace8d2",
       "status": "independent_tool"
+    },
+    {
+      "path": "scripts/charnock_telegraph_series_inplace.py",
+      "sha256": "218aceef41be5ec7dffb4e2eff440a252f6bcaa2f58bed3a0dacf254bebb4c71",
+      "status": "independent_tool",
+      "project_owner": "lord-god-strength",
+      "direct_entrypoint": true,
+      "provider_write_capable": true,
+      "callers": [
+        ".github/workflows/lordchrist-charnock-series-inplace.yml"
+      ],
+      "private_imports": []
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",

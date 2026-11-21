@@ -38,8 +38,9 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 MOSCOW = ZoneInfo("Europe/Moscow")
 MANIFEST = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json")
 LIVE_WINDOW_HOUR = (12, 13)
-# Source-verified omissions in article 13's q-3 and q-19 require editorial re-approval.
-# Keep the shared article queue unchanged: other lanes must retain its payload.
+# Article 13's public page was corrected in place on 2026-11-21 (q-3, q-9,
+# q-11, q-12, q-19).  The hold is now a Telegram send/reissue gate only:
+# the correction itself authorizes no new channel post.
 CHARNOCK_EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
 # The only manual recovery fallback: future slots in the already-approved immutable manifest.
 # Missed 06-08 and editorial-HOLD 13 may NOT be dispatched.
@@ -138,8 +139,8 @@ def _select_due(
         raise RuntimeError("Requested article is not the sole due Charnock article")
     if args.stage in ("prepare", "send") and entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
         raise RuntimeError(
-            "Charnock 13 editorial HOLD: q-3/q-19 contain unmarked source omissions; "
-            "a separately reviewed new edition is required"
+            "Charnock 13 TELEGRAM SEND HOLD: the existing page was corrected in place "
+            "2026-11-21; no send or reissue is authorized by that correction"
         )
     queue = load_telegraph_queue(args.repo_root / DEFAULT_QUEUE_PATH, args.repo_root)
     item = _find_item(queue, args.publication_id)
