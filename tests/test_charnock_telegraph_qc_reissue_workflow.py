@@ -18,7 +18,9 @@ def test_manual_single_page_dispatch_only() -> None:
     for page in ("'01b'", "'02'", "'07'", "'13'"):
         assert page in text
     assert "default: dry-run" in text
+    assert "          - reconcile" in text
     assert '"$MODE" == "execute"' in text
+    assert '"$MODE" == "reconcile"' in text
     assert "run-name: charnock-qc-reissue-" in text
 
 
@@ -54,5 +56,6 @@ def test_one_pinned_script_exactly_one_receipt_and_upload() -> None:
     assert 'if [[ "$MODE" == "execute" ]]' in text
     assert "find" in text and "wc -l" in text and "-eq 1" in text
     assert "actions/upload-artifact" in text
+    assert "charnock-qc-reissue-result-${REVIEWED_PAGE}" in text
     assert "charnock-qc-reissue-receipt-${{ inputs.page }}" in text
     assert "::notice title=charnock-qc-reissue-" in text
