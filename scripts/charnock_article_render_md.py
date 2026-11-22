@@ -117,7 +117,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     article = json.loads(args.article.read_text(encoding="utf-8"))
-    footer = ""
     existing = ""
     if args.markdown is not None:
         existing = args.markdown.read_text(encoding="utf-8")
