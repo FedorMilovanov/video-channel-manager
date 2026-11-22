@@ -121,8 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     existing = ""
     if args.markdown is not None:
         existing = args.markdown.read_text(encoding="utf-8")
-        footer = extract_footer(existing)
-    rendered = render_markdown(article, footer=footer)
+        # Source credit must be authored in JSON, not copied from reviewed Markdown.
+    rendered = render_markdown(article)
 
     if args.check:
         if rendered.rstrip("\n") != existing.rstrip("\n"):
