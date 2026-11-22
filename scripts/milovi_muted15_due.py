@@ -18,6 +18,8 @@ from video_channel_manager.milovi_telegram_feed import (
     EXPECTED_CHAT_ID,
     PROJECT_KEY,
     exact_paths,
+    require_never_attempted_pending,
+    require_raw_receipt_identifiers,
     state_check,
     state_init,
     validate_bundle,
@@ -34,23 +36,6 @@ EXACT_LAST = "milovi-feed-20261122-001"
 CHANNEL = "@MiloviCake"
 MOSCOW = ZoneInfo("Europe/Moscow")
 MAX_LAG = timedelta(minutes=120)
-PENDING_NULL_ATTEMPT_FIELDS = (
-    "intent_id",
-    "dispatch_mode",
-    "workflow_run_id",
-    "workflow_run_attempt",
-    "github_sha",
-    "github_workflow_sha",
-    "attempted_at_utc",
-    "published_at_utc",
-    "message_id",
-    "message_url",
-    "actual_chat_id",
-    "actual_chat_username",
-    "bot_id",
-    "bot_username",
-    "last_error",
-)
 
 
 def _read_json(path: Path) -> dict:
@@ -130,19 +115,7 @@ def due_row(now: datetime, rows: list[dict]) -> dict | None:
 
 
 def _require_clean_pending(pid: str, *, checkout: Path) -> None:
-    """Accept only explicitly never-attempted pending state; never erase evidence."""
-    ledger = _read_json(checkout / exact_paths(pid)["ledger"])
-    entries = ledger.get("entries")
-    entry = entries.get(pid) if isinstance(entries, dict) else None
-    if not (
-        isinstance(entry, dict)
-        and entry.get("state") == "pending"
-        and entry.get("provider_effect") == "impossible"
-        and all(field in entry and entry[field] is None for field in PENDING_NULL_ATTEMPT_FIELDS)
-    ):
-        raise ValueError(
-            f"pending record has an unresolved provider intent or provenance: {pid}; reconcile without replay"
-        )
+    require_never_attempted_pending(pid, state_checkout=checkout)
 
 
 def _require_exact_verified_receipt(row: dict, *, checkout: Path, as_of: datetime) -> None:
@@ -178,18 +151,14 @@ def _require_exact_verified_receipt(row: dict, *, checkout: Path, as_of: datetim
         raise ValueError(mismatch)
 
     ledger_path = checkout / paths["ledger"]
-    raw_entry = _read_json(ledger_path).get("entries", {}).get(pid)
+    require_raw_receipt_identifiers(pid, state_checkout=checkout)
     entry = load_ledger(ledger_path, release).entries[pid]
     username = entry.actual_chat_username
     bot_username = entry.bot_username
     attempted = entry.attempted_at_utc
     verified_at = entry.published_at_utc
     if not (
-        isinstance(raw_entry, dict)
-        and type(raw_entry.get("message_id")) is int
-        and type(raw_entry.get("actual_chat_id")) is int
-        and type(raw_entry.get("bot_id")) is int
-        and entry.state == "published"
+        entry.state == "published"
         and entry.provider_effect == "verified"
         and entry.message_id is not None
         and entry.message_id > 0

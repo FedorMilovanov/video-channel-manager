@@ -280,6 +280,26 @@ def test_index_ledger_disagreement_never_becomes_a_green_receipt(tmp_path: Path,
     assert _snapshot(tmp_path) == before
 
 
+@pytest.mark.parametrize("surface", ["due", "audit"])
+def test_boolean_index_message_identity_is_not_a_raw_integer_receipt(
+    tmp_path: Path, two_rows: list[dict], surface: str
+) -> None:
+    row = two_rows[0]
+    _record_synthetic_verified(tmp_path, row, changes={"message_id": 1, "message_url": "https://t.me/MiloviCake/1"})
+    index_path = tmp_path / FEED / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["entries"][row["publication_id"]]["message_id"] = True
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    before = _snapshot(tmp_path)
+    assert state_check(row["publication_id"], state_checkout=tmp_path)["state"] == "published"
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        if surface == "due":
+            due.exact_state_decision(row, checkout=tmp_path)
+        else:
+            due.missed_delivery_windows(datetime(2026, 11, 10, 0, 0, tzinfo=MOSCOW), two_rows, checkout=tmp_path)
+    assert _snapshot(tmp_path) == before
+
+
 def test_missing_ledger_never_becomes_a_green_receipt(tmp_path: Path, two_rows: list[dict]) -> None:
     row = two_rows[0]
     (tmp_path / FEED / f"{row['publication_id']}.json").unlink()

@@ -879,7 +879,7 @@
       "private_imports": [],
       "project_owner": "milovi-cake",
       "provider_write_capable": false,
-      "sha256": "d171c55ebb4badb420443b1306c689ff6e506f256ad12f46239427cd0af487c1",
+      "sha256": "9cf8087d793b0e616928437899e02992f02927a080eab649a4731603000fadc0",
       "status": "independent_tool"
     },
     {
@@ -891,7 +891,7 @@
       "private_imports": [],
       "project_owner": "milovi-cake",
       "provider_write_capable": false,
-      "sha256": "d5d2b7af67ec2e072a6602eda5aadb6e4b4c6c19d34d8f783653cf04e22fec28",
+      "sha256": "3c553002762ee9e673929ce5708d228c4793bc568a42adef71dbd4b45689ed8d",
       "status": "independent_tool"
     },
     {

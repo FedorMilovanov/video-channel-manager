@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from scripts import milovi_muted15_due as due
+from video_channel_manager.milovi_telegram_feed import PENDING_NULL_ATTEMPT_FIELDS
 
 
 def test_every_approved_muted_release_has_exact_date_source_and_owner_scope() -> None:
@@ -51,7 +52,7 @@ def test_provider_inert_schedule_requires_actual_publishable_protected_state(
             pid: {
                 "state": "pending",
                 "provider_effect": "impossible",
-                **{field: None for field in due.PENDING_NULL_ATTEMPT_FIELDS},
+                **{field: None for field in PENDING_NULL_ATTEMPT_FIELDS},
             }
         }
     }

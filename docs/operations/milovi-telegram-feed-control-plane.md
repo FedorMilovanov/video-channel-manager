@@ -49,6 +49,28 @@ ledger checks, not a live provider readback. This hardening takes effect only
 on a merged, CI-verified runtime and neither creates authority nor guarantees
 that GitHub cron runs on time.
 
+### School receipt and migration checks: 22 November checkpoint
+
+The separate School reading dispatcher and its expired audit use the same raw
+never-attempted pending check. First-ten Cake prerequisites, earlier School
+posts and the early Paris-Brest duplicate suppression require exact
+index/ledger agreement, uncoerced integer identities, canonical URL, correct
+target and a recorded verification no later than the decision clock. The
+legacy two-item editorial migration refuses to erase stale provenance even
+when its state labels say `pending/impossible`. An uncertain record requires
+reconciliation, not replay. These checks do not establish a complete channel
+history or independently prove Telegram request time.
+
+A read-only snapshot at the same protected commit contained the early
+Paris-Brest verified ledger (message 27), the original November 17 pending
+ledger, and the November 21 Croissant and November 25 Stohrer pending ledgers.
+The provider-free audit suppressed the original as an early duplicate and
+reported **one elapsed School slot without a verified ledger receipt**
+(Croissant), exit 2. Snapshot bytes were unchanged. The November 25 post still
+requires the ten verified first-screen videos and all existing exact release,
+predecessor, window, authority and single-writer gates; this note does not
+approve a catch-up or guarantee the scheduled run.
+
 ## One writer
 
 `.github/workflows/milovi-telegram-feed-publisher.yml` is the only supported Milovi Telegram provider-mutation workflow.
