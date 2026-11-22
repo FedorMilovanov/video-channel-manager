@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.domain.models import ChannelRecord
 from video_channel_manager.platforms.youtube import (
     AccountNotFoundError,
     ChannelIdentity,
@@ -190,7 +191,7 @@ def _read_candidate_oauth_channels(
     config: InstalledClientConfig,
     account: str,
     token: OAuthToken,
-) -> list:
+) -> list[ChannelRecord]:
     """Owner GET before touching the durable token or account registry."""
     ephemeral = _CandidateOAuthTokenStore(token)
     client = YouTubeApiClient(client_config=config, token_store=ephemeral, account_alias=account)
