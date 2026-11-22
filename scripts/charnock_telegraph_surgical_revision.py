@@ -276,6 +276,10 @@ def main() -> None:
     for key in keys:
         try:
             outcome = run_one(key, execute=args.execute, confirm=args.confirm, receipt_dir=args.receipt_dir)
+        except UnsafeRevision as exc:
+            # Local guard messages are written in this module and carry no secrets.
+            print(f"{key}: STOP / no automatic retry: {exc}")
+            raise SystemExit(2) from None
         except Exception as exc:
             # Never echo arbitrary provider errors (can contain credentials).
             print(f"{key}: STOP / no automatic retry ({type(exc).__name__})")
