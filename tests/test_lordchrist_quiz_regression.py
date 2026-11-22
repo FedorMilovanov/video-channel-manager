@@ -13,9 +13,11 @@ from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
+from quiz_fixture_helpers import FIXTURE_ONE, fake_one, fake_profile_binding, fake_series
 
 from video_channel_manager import lordchrist_quiz as quiz
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_editorial_hold import EditorialExecutionHold
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 ONE = "lordchrist-quiz-city-of-palms"
@@ -43,24 +45,25 @@ def test_historical_quiz_releases_remain_reviewable_but_never_executable() -> No
         quiz.validate_quiz(ONE, require_execution_authorized=True)
 
 
-def test_series_state_init_is_local_idempotent_and_checked(tmp_path: Path) -> None:
+def test_series_state_init_is_local_idempotent_and_checked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, binding = fake_profile_binding()
+    series, release = fake_series(profile, binding)
+    monkeypatch.setattr(quiz, "_load_series_bundle", lambda _id: (series, release))
+    fixture_id = "synthetic-series-for-test"
     with pytest.raises(ValueError, match="not initialized"):
-        quiz.series_state_check(SERIES, tmp_path)
-
-    path = quiz.series_state_init(SERIES, tmp_path)
-    assert path.is_file()
+        quiz.series_state_check(fixture_id, tmp_path)
+    path = quiz.series_state_init(fixture_id, tmp_path)
     before = path.read_bytes()
-    assert quiz.series_state_check(SERIES, tmp_path) == {"pending": 10}
-    assert quiz.series_state_init(SERIES, tmp_path) == path
+    assert quiz.series_state_check(fixture_id, tmp_path) == {"pending": 10}
+    assert quiz.series_state_init(fixture_id, tmp_path) == path
     assert path.read_bytes() == before
-
     data = json.loads(path.read_text("utf-8"))
     data["release_digest"] = "sha256:" + "0" * 64
     path.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(ValueError):
-        quiz.series_state_check(SERIES, tmp_path)
+        quiz.series_state_check(fixture_id, tmp_path)
     with pytest.raises(ValueError):
-        quiz.series_state_init(SERIES, tmp_path)
+        quiz.series_state_init(fixture_id, tmp_path)
 
 
 def test_quiz_spec_validator_rejects_ambiguous_and_unsafe_specs() -> None:
@@ -140,38 +143,83 @@ def test_series_runtime_mismatch_fails_before_execution(monkeypatch: pytest.Monk
 
 
 def test_one_off_published_receipt_blocks_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    path = quiz.state_init(ONE, tmp_path)
-    assert path.exists()
+    profile, binding = fake_profile_binding()
+    spec, release = fake_one(profile, binding)
+    monkeypatch.setattr(quiz, "_load_bundle", lambda _id: (spec, release))
+    path = tmp_path / quiz.ledger_relative_path(FIXTURE_ONE)
+    path.parent.mkdir(parents=True)
+    path.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(
         quiz,
         "load_ledger",
-        lambda _path, _release: SimpleNamespace(entries={ONE: SimpleNamespace(state="published")}),
+        lambda _path, _release: SimpleNamespace(entries={FIXTURE_ONE: SimpleNamespace(state="published")}),
     )
     with pytest.raises(ValueError, match="replay is forbidden"):
-        quiz.state_check(ONE, tmp_path, require_publishable=True)
+        quiz.state_check(FIXTURE_ONE, tmp_path, require_publishable=True)
 
 
-def test_local_cli_commands_prove_release_and_state_without_sending(
+def test_historical_cli_is_readable_but_cannot_resign_or_initialize(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     stamp = "2026-11-04T16:00:00+03:00"
-    single_output = tmp_path / "one.json"
-    series_output = tmp_path / "series.json"
     assert quiz.main(["validate", "--publication-id", ONE, "--require-release-authorized"]) == 0
     assert quiz.main(["validate-series", "--series-id", SERIES, "--require-release-authorized"]) == 0
+    for kind, ident in (("runtime", ONE), ("series-runtime", SERIES)):
+        output = tmp_path / f"{kind}.json"
+        with pytest.raises(EditorialExecutionHold, match="Historical QUIZ"):
+            quiz.main(
+                [
+                    f"build-{kind}",
+                    "--publication-id" if kind == "runtime" else "--series-id",
+                    ident,
+                    "--reviewed-by",
+                    "fixture",
+                    "--reviewed-at",
+                    stamp,
+                    "--output",
+                    str(output),
+                ]
+            )
+        assert not output.exists()
+    with pytest.raises(EditorialExecutionHold, match="Historical QUIZ"):
+        quiz.main(["state-init", "--publication-id", ONE, "--state-checkout", str(tmp_path)])
+    with pytest.raises(EditorialExecutionHold, match="Historical QUIZ"):
+        quiz.main(["series-state-init", "--series-id", SERIES, "--state-checkout", str(tmp_path)])
+    assert "lordchrist-quiz" in capsys.readouterr().out
 
+
+def test_local_cli_build_and_state_use_synthetic_channel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, binding = fake_profile_binding()
+    spec, _ = fake_one(profile, binding)
+    series, _ = fake_series(profile, binding)
+    profile_path, binding_path = tmp_path / "profile.json", tmp_path / "binding.json"
+    spec_path, one_runtime = tmp_path / "one-spec.json", tmp_path / "one-runtime.json"
+    series_spec, series_runtime = tmp_path / "series-spec.json", tmp_path / "series-runtime.json"
+    profile_path.write_text(profile.model_dump_json(), encoding="utf-8")
+    binding_path.write_text(binding.model_dump_json(), encoding="utf-8")
+    spec_path.write_text(spec.model_dump_json(), encoding="utf-8")
+    series_spec.write_text(series.model_dump_json(), encoding="utf-8")
+    monkeypatch.setattr(quiz, "PROFILE_PATH", profile_path)
+    monkeypatch.setattr(quiz, "BINDING_PATH", binding_path)
+    monkeypatch.setattr(quiz, "spec_path", lambda _id: spec_path)
+    monkeypatch.setattr(quiz, "runtime_path", lambda _id: one_runtime)
+    monkeypatch.setattr(quiz, "series_spec_path", lambda _id: series_spec)
+    monkeypatch.setattr(quiz, "series_runtime_path", lambda _id: series_runtime)
+    # Only tests CLI plumbing, not editorial approval.
+    monkeypatch.setattr(quiz, "require_future_series_editorial_signoff", lambda *_a, **_kw: None)
+    stamp = "2026-11-04T16:00:00+03:00"
     assert (
         quiz.main(
             [
                 "build-runtime",
                 "--publication-id",
-                ONE,
+                FIXTURE_ONE,
                 "--reviewed-by",
-                "regression-test",
+                "test-fixture",
                 "--reviewed-at",
                 stamp,
                 "--output",
-                str(single_output),
+                str(one_runtime),
             ]
         )
         == 0
@@ -181,24 +229,32 @@ def test_local_cli_commands_prove_release_and_state_without_sending(
             [
                 "build-series-runtime",
                 "--series-id",
-                SERIES,
+                series.series_id,
                 "--reviewed-by",
-                "regression-test",
+                "test-fixture",
                 "--reviewed-at",
                 stamp,
                 "--output",
-                str(series_output),
+                str(series_runtime),
             ]
         )
         == 0
     )
-    assert single_output.is_file() and series_output.is_file()
-    assert quiz.main(["state-init", "--publication-id", ONE, "--state-checkout", str(tmp_path)]) == 0
+    assert quiz.main(["validate", "--publication-id", FIXTURE_ONE, "--require-release-authorized"]) == 0
+    assert quiz.main(["validate-series", "--series-id", series.series_id, "--require-release-authorized"]) == 0
+    with pytest.raises(ValueError, match="not initialized"):
+        quiz.state_check(FIXTURE_ONE, tmp_path)
+    assert quiz.main(["state-init", "--publication-id", FIXTURE_ONE, "--state-checkout", str(tmp_path)]) == 0
+    # An already valid ledger is read without recreating or replacing it.
+    one_ledger = tmp_path / quiz.ledger_relative_path(FIXTURE_ONE)
+    before = one_ledger.read_bytes()
+    assert quiz.main(["state-init", "--publication-id", FIXTURE_ONE, "--state-checkout", str(tmp_path)]) == 0
+    assert one_ledger.read_bytes() == before
+    assert quiz.main(["series-state-init", "--series-id", series.series_id, "--state-checkout", str(tmp_path)]) == 0
+    assert quiz.main(["series-state-check", "--series-id", series.series_id, "--state-checkout", str(tmp_path)]) == 0
     assert (
-        quiz.main(["state-check", "--publication-id", ONE, "--state-checkout", str(tmp_path), "--require-publishable"])
+        quiz.main(
+            ["state-check", "--publication-id", FIXTURE_ONE, "--state-checkout", str(tmp_path), "--require-publishable"]
+        )
         == 0
     )
-    assert quiz.main(["series-state-init", "--series-id", SERIES, "--state-checkout", str(tmp_path)]) == 0
-    assert quiz.main(["series-state-check", "--series-id", SERIES, "--state-checkout", str(tmp_path)]) == 0
-    output = capsys.readouterr().out
-    assert "lordchrist-quiz" in output

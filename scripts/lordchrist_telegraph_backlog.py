@@ -1,43 +1,52 @@
-"""Read-only release backlog and a spaced slot proposal for @lordchrist articles.
+"""Read-only @lordchrist article backlog; proposed dates are never release authority.
 
-The publisher only ever asks "is exactly one article scheduled today?", so a
-missed window leaves no trace: the article simply never publishes, and nothing
-warns that four of them are now overdue.  This tool answers the other question —
-what is waiting, what is overdue, and which dates would keep releases apart —
-without touching the queue, the ledger or any provider.
-
-It is advisory by construction: it writes nothing except an optional JSON file
-with the plan, and it never mutates content, state or provider.  Dates it
-proposes are proposals for the owner, not authority.
+The original Charnock Telegram messages were deleted. Only a matching terminal
+scheduled_reissue receipt proves a replacement; missing or ambiguous state must
+never be turned into a resend recommendation. This report does not write the
+queue, protected state, or any provider. It does not prove fresh public readback
+or approve a source migration.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import subprocess
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 QUEUE_PATH = Path("content/telegram/lordchrist/telegraph-v1/article-queue.json")
 LEDGER_PATH = Path("content/telegram/lordchrist/telegraph-v1/publication-ledger.json")
 MANIFEST_PATH = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json")
-
-# Release-time editorial holds: these must not be proposed for a slot.
-# lordchrist-telegraph-charnock-13 — issue #997: independent quotation review
-# and a new approved blob are required before the @lordchrist release.
+MOSCOW = ZoneInfo("Europe/Moscow")
+LORDCHRIST_CHAT_ID = -1001295216957
 EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
-
-# The durable ledger lives on the state branch, not in the working tree.
-# The constant stays the canonical protected ref; git needs the remote-tracking form.
 DEFAULT_STATE_REF = "state/lordchrist-telegram"
 DEFAULT_STATE_REMOTE_REF = f"refs/remotes/origin/{DEFAULT_STATE_REF}"
 
 
 def _read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read valid JSON {path}: {exc}") from None
+
+
+def _iso_date(value: Any, *, field: str) -> date:
+    if not isinstance(value, str):
+        raise SystemExit(f"{field}: expected ISO date")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise SystemExit(f"{field}: invalid ISO date {value!r}") from None
+    if parsed.isoformat() != value:
+        raise SystemExit(f"{field}: expected YYYY-MM-DD")
+    return parsed
 
 
 def load_queue(path: Path) -> list[dict[str, Any]]:
@@ -45,117 +54,288 @@ def load_queue(path: Path) -> list[dict[str, Any]]:
     items = document.get("items") if isinstance(document, dict) else None
     if not isinstance(items, list) or not items:
         raise SystemExit(f"{path}: no queue items")
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict) or not isinstance(item.get("publication_id"), str) or not item["publication_id"]:
+            raise SystemExit(f"{path}: invalid queue publication identity")
+        pid = item["publication_id"]
+        if pid in seen:
+            raise SystemExit(f"{path}: duplicate queue publication identity {pid}")
+        seen.add(pid)
+        if item.get("scheduled_on_moscow") is not None:
+            _iso_date(item["scheduled_on_moscow"], field=f"{pid} queue date")
     return items
 
 
+def _ledger_entries(document: Any, *, source: str) -> dict[str, Any]:
+    if (
+        not isinstance(document, dict)
+        or document.get("schema_name") != "video-channel-manager.lordchrist-telegraph-ledger"
+        or document.get("schema_version") != 1
+        or document.get("project_key") != "lord-god-strength"
+        or not isinstance(document.get("entries"), dict)
+    ):
+        raise SystemExit(f"{source}: invalid or unbound LordChrist ledger; no safe proposal")
+    return document["entries"]
+
+
 def load_ledger_from_ref(root: Path, ref: str, path: Path) -> dict[str, Any]:
-    """Read the durable ledger from a git ref (read-only, no checkout needed)."""
+    """Read a named Git ref, without checking out or fetching it."""
     try:
         raw = subprocess.check_output(
             ["git", "-C", str(root), "show", f"{ref}:{path.as_posix()}"], stderr=subprocess.PIPE
         )
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-        raise SystemExit(f"cannot read ledger from {ref}: {exc}") from None
-    document = json.loads(raw)
-    entries = document.get("entries") if isinstance(document, dict) else None
-    return entries if isinstance(entries, dict) else {}
+        document = json.loads(raw)
+    except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read valid ledger from {ref}: {exc}") from None
+    return _ledger_entries(document, source=ref)
 
 
-def load_ledger(path: Path) -> dict[str, Any]:
+def load_ledger(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
-        return {}
-    document = _read_json(path)
-    entries = document.get("entries") if isinstance(document, dict) else None
-    return entries if isinstance(entries, dict) else {}
+        return None
+    return _ledger_entries(_read_json(path), source=str(path))
 
 
 def load_calendar_manifest(path: Path) -> dict[str, dict[str, Any]]:
-    """publication_id -> review calendar record for the Charnock reissue workflow."""
-    if not path.is_file():
-        return {}
+    """Read exact reviewed incident bindings, never a proposal file."""
     document = _read_json(path)
     items = document.get("items") if isinstance(document, dict) else None
-    if not isinstance(items, list):
-        return {}
+    if (
+        not isinstance(document, dict)
+        or document.get("schema_name") != "video-channel-manager.lordchrist-charnock-2026-reissue-v1"
+        or document.get("schema_version") != 1
+        or document.get("channel") != "@lordchrist"
+        or document.get("timezone") != "Europe/Moscow"
+        or document.get("release_time") != "12:00"
+        or "proposal_status" in document
+        or not isinstance(items, list)
+        or not items
+    ):
+        raise SystemExit(f"{path}: missing, unreviewed or invalid Charnock calendar; no safe proposal")
     result: dict[str, dict[str, Any]] = {}
+    dates: set[str] = set()
     for item in items:
         if not isinstance(item, dict):
-            continue
+            raise SystemExit(f"{path}: invalid calendar entry")
         pid = item.get("publication_id")
         when = item.get("scheduled_on_moscow")
-        if isinstance(pid, str) and isinstance(when, str):
-            result[pid] = {
-                "date": when,
-                "deleted_telegram_message_id": item.get("deleted_telegram_message_id"),
-            }
+        blob = item.get("article_git_blob_sha")
+        source = item.get("source_article_sha256")
+        url = item.get("verified_telegraph_url")
+        deleted = item.get("deleted_telegram_message_id")
+        if (
+            not isinstance(pid, str)
+            or not pid
+            or not isinstance(blob, str)
+            or re.fullmatch(r"[0-9a-f]{40}", blob) is None
+            or not isinstance(source, str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", source) is None
+            or not isinstance(url, str)
+            or not url.startswith("https://telegra.ph/")
+            or type(deleted) is not int
+            or deleted <= 0
+        ):
+            raise SystemExit(f"{path}: incomplete immutable calendar binding")
+        _iso_date(when, field=f"{pid} calendar date")
+        if pid in result or when in dates:
+            raise SystemExit(f"{path}: duplicate publication or date in calendar")
+        result[pid] = dict(item)
+        dates.add(when)
     return result
+
+
+def _published_date(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        stamp = datetime.fromisoformat(value)
+        if stamp.tzinfo is None:
+            return None
+        return stamp.astimezone(MOSCOW).date().isoformat()
+    except ValueError:
+        return None
+
+
+def _positive_int(value: Any) -> bool:
+    return type(value) is int and value > 0
+
+
+def _ordinary_receipt_status(entry: Any, pid: str) -> tuple[str, str | None]:
+    """Return evidence class, not an assertion about current public visibility."""
+    if not isinstance(entry, dict) or entry.get("publication_id") != pid:
+        return "ambiguous", None
+    message_id = entry.get("telegram_message_id")
+    url = entry.get("telegraph_url")
+    published_on = _published_date(entry.get("telegram_published_at_utc"))
+    if (
+        not _positive_int(message_id)
+        or entry.get("telegram_chat_id") != LORDCHRIST_CHAT_ID
+        or not isinstance(url, str)
+        or not url.startswith("https://telegra.ph/")
+        or published_on is None
+        or "scheduled_reissue" in entry
+    ):
+        return "ambiguous", None
+    state = entry.get("state")
+    effect = entry.get("provider_effect")
+    telegram_effect = entry.get("telegram_provider_effect")
+    if state == "published" and effect == "verified" and telegram_effect == "verified":
+        return "verified_receipt", published_on
+    if state is None and effect is None and telegram_effect is None:
+        # Pre-staged legacy schema: message + exact target + page + timestamp.
+        return "legacy_receipt", published_on
+    return "ambiguous", None
+
+
+def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str, str | None]:
+    """Match the durable replacement receipt to the immutable incident identity."""
+    if not isinstance(entry, dict):
+        return "ambiguous", None
+    if (
+        entry.get("publication_id") != calendar["publication_id"]
+        or entry.get("state") != "published"
+        or entry.get("provider_effect") != "verified"
+        or entry.get("telegram_chat_id") != LORDCHRIST_CHAT_ID
+        or entry.get("telegram_message_id") != calendar["deleted_telegram_message_id"]
+        or entry.get("telegraph_url") != calendar["verified_telegraph_url"]
+        or entry.get("article_sha256") != calendar["source_article_sha256"]
+    ):
+        return "ambiguous", None
+    if "scheduled_reissue" not in entry:
+        return "unclaimed", None
+    receipt = entry["scheduled_reissue"]
+    expected = {
+        "scheduled_on_moscow": calendar["scheduled_on_moscow"],
+        "original_deleted_message_id": calendar["deleted_telegram_message_id"],
+        "source_article_sha256": calendar["source_article_sha256"],
+        "telegraph_url": calendar["verified_telegraph_url"],
+    }
+    if (
+        isinstance(receipt, dict)
+        and receipt.get("state") == "verified"
+        and receipt.get("provider_effect") == "verified"
+        and _positive_int(receipt.get("new_message_id"))
+        and receipt.get("new_message_id") != calendar["deleted_telegram_message_id"]
+        and all(receipt.get(key) == value for key, value in expected.items())
+    ):
+        return "verified", _published_date(receipt.get("verified_at_moscow")) or calendar["scheduled_on_moscow"]
+    return "ambiguous", None
+
+
+def _calendar_source_blockers(item: dict[str, Any], calendar: dict[str, Any], root: Path) -> list[str]:
+    """Check queue/manifest/file bindings, not live page or rendered payload."""
+    blockers: list[str] = []
+    if item.get("scheduled_on_moscow") != calendar["scheduled_on_moscow"]:
+        blockers.append("queue_calendar_date_mismatch")
+    article = item.get("article")
+    if not isinstance(article, dict):
+        return [*blockers, "queue_article_missing"]
+    queue_blob = article.get("git_blob_sha")
+    if queue_blob != calendar["article_git_blob_sha"]:
+        blockers.append("queue_calendar_blob_mismatch")
+    raw_path = article.get("path")
+    if not isinstance(raw_path, str) or not raw_path:
+        return [*blockers, "queue_article_path_missing"]
+    root = root.resolve()
+    path = (root / raw_path).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        return [*blockers, "queue_article_file_unavailable"]
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return [*blockers, "queue_article_file_unavailable"]
+    actual = hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
+    if actual != queue_blob:
+        blockers.append("queue_article_file_blob_mismatch")
+    return blockers
 
 
 def classify(
     items: list[dict[str, Any]],
-    ledger: dict[str, Any],
-    calendar: dict[str, str],
+    ledger: dict[str, Any] | None,
+    calendar: dict[str, dict[str, Any]],
     *,
     today: date,
+    root: Path = ROOT,
     holds: frozenset[str] = EDITORIAL_HOLDS,
 ) -> dict[str, list[dict[str, Any]]]:
-    published: list[dict[str, Any]] = []
-    overdue: list[dict[str, Any]] = []
-    upcoming: list[dict[str, Any]] = []
-    undated: list[dict[str, Any]] = []
-    calendar_owned: list[dict[str, Any]] = []
-
+    groups: dict[str, list[dict[str, Any]]] = {
+        "published": [],
+        "overdue": [],
+        "upcoming": [],
+        "undated": [],
+        "calendar_owned": [],
+        "needs_reconciliation": [],
+    }
     for item in items:
-        pid = item.get("publication_id")
-        if not isinstance(pid, str):
-            continue
-        entry = ledger.get(pid) or {}
-        record = {
+        pid = item["publication_id"]
+        record: dict[str, Any] = {
             "publication_id": pid,
             "status": item.get("status"),
             "scheduled_on_moscow": item.get("scheduled_on_moscow"),
             "canary": bool(item.get("is_canary")),
             "held": pid in holds,
-            "telegram_message_id": entry.get("telegram_message_id"),
-            "telegraph_path": entry.get("telegraph_path"),
+            "proposal_blockers": [],
         }
+        if record["held"]:
+            record["proposal_blockers"].append("editorial_hold")
+        if record["canary"]:
+            record["proposal_blockers"].append("canary")
+        if record["status"] != "ready":
+            record["proposal_blockers"].append("queue_not_ready")
         if pid in calendar:
-            # The reviewed Charnock calendar owns these dates, and the ledger
-            # still carries the deleted 2026-11-05 message ids, so a ledger-only
-            # view would wrongly call them published.
-            record["calendar_date"] = calendar[pid]["date"]
-            record["deleted_telegram_message_id"] = calendar[pid]["deleted_telegram_message_id"]
-            if calendar[pid]["date"] < today.isoformat():
-                record["calendar_overdue_days"] = (today - date.fromisoformat(calendar[pid]["date"])).days
-            calendar_owned.append(record)
+            binding = calendar[pid]
+            record["calendar_date"] = binding["scheduled_on_moscow"]
+            record["deleted_telegram_message_id"] = binding["deleted_telegram_message_id"]
+            record["proposal_blockers"].extend(_calendar_source_blockers(item, binding, root))
+            if ledger is None:
+                status, published_on = "unavailable", None
+            else:
+                status, published_on = _calendar_receipt_status(ledger.get(pid), binding)
+            record["receipt_status"] = status
+            if status == "verified":
+                receipt = ledger[pid]["scheduled_reissue"]  # type: ignore[index]
+                record["telegram_message_id"] = receipt["new_message_id"]
+                record["published_on_moscow"] = published_on
+                groups["published"].append(record)
+                continue
+            if status != "unclaimed":
+                record["proposal_blockers"].append(f"reissue_receipt_{status}")
+            if binding["scheduled_on_moscow"] < today.isoformat():
+                record["calendar_overdue_days"] = (today - date.fromisoformat(binding["scheduled_on_moscow"])).days
+            groups["calendar_owned"].append(record)
             continue
-        if entry.get("telegram_message_id"):
-            published.append(record)
+        if ledger is None:
+            record["receipt_status"] = "unavailable"
+            record["proposal_blockers"].append("ledger_unavailable")
+            groups["needs_reconciliation"].append(record)
             continue
+        if pid in ledger:
+            status, published_on = _ordinary_receipt_status(ledger[pid], pid)
+            record["receipt_status"] = status
+            if status == "ambiguous":
+                record["proposal_blockers"].append("publication_receipt_ambiguous")
+                groups["needs_reconciliation"].append(record)
+            else:
+                record["telegram_message_id"] = ledger[pid]["telegram_message_id"]
+                record["published_on_moscow"] = published_on
+                groups["published"].append(record)
+            continue
+        record["receipt_status"] = "no_ledger_entry"
         raw = item.get("scheduled_on_moscow")
         if not raw:
-            undated.append(record)
-            continue
-        record["scheduled_on_moscow"] = raw
-        if raw < today.isoformat():
+            groups["undated"].append(record)
+        elif raw < today.isoformat():
             record["overdue_days"] = (today - date.fromisoformat(raw)).days
-            overdue.append(record)
+            groups["overdue"].append(record)
         else:
-            upcoming.append(record)
-
-    order = lambda record: record.get("scheduled_on_moscow") or ""  # noqa: E731
-    overdue.sort(key=order)
-    upcoming.sort(key=order)
-    published.sort(key=order)
-    undated.sort(key=lambda record: record["publication_id"])
-    calendar_owned.sort(key=lambda record: record.get("calendar_date") or "")
-    return {
-        "published": published,
-        "overdue": overdue,
-        "upcoming": upcoming,
-        "undated": undated,
-        "calendar_owned": calendar_owned,
-    }
+            groups["upcoming"].append(record)
+    for records in groups.values():
+        records.sort(
+            key=lambda r: (r.get("calendar_date") or r.get("scheduled_on_moscow") or "9999", r["publication_id"])
+        )
+    return groups
 
 
 def propose_slots(
@@ -166,20 +346,17 @@ def propose_slots(
     busy: set[date],
     horizon_days: int = 180,
 ) -> list[dict[str, Any]]:
-    """One article per date, at least `gap_days` apart across the whole channel.
-
-    `waiting` must already be ordered by how overdue each item is; held and
-    canary items are skipped and stay waiting for an owner decision.
-    """
-    if gap_days < 1:
-        raise SystemExit("--gap must be at least 1 day")
+    """Space from all occupied dates in both directions, not only new slots."""
+    if gap_days < 1 or horizon_days < 0:
+        raise SystemExit("--gap must be at least 1 day and horizon must be non-negative")
     proposal: list[dict[str, Any]] = []
+    occupied = set(busy)
     cursor = start
     limit = start + timedelta(days=horizon_days)
     for item in waiting:
-        if item["held"] or item.get("canary"):
+        if item.get("held") or item.get("canary") or item.get("proposal_blockers"):
             continue
-        while cursor in busy and cursor <= limit:
+        while cursor <= limit and any(abs((cursor - day).days) < gap_days for day in occupied):
             cursor += timedelta(days=1)
         if cursor > limit:
             break
@@ -191,7 +368,7 @@ def propose_slots(
                 "source": item["source"],
             }
         )
-        busy.add(cursor)
+        occupied.add(cursor)
         cursor += timedelta(days=gap_days)
     return proposal
 
@@ -208,105 +385,126 @@ def build_plan(
     priority: tuple[str, ...] = (),
     holds: frozenset[str] = EDITORIAL_HOLDS,
     ledger_source: str = "file",
+    repo_root: Path = ROOT,
 ) -> dict[str, Any]:
+    if gap_days < 1:
+        raise SystemExit("--gap must be at least 1 day")
+    if start < today:
+        raise SystemExit("--start cannot be before --today")
     items = load_queue(queue_path)
     ledger = ledger_entries if ledger_entries is not None else load_ledger(ledger_path)
+    if ledger_source == "absent":
+        ledger = None
+    elif ledger is None:
+        ledger_source = "absent"
     calendar = load_calendar_manifest(manifest_path)
-    groups = classify(items, ledger, calendar, today=today, holds=holds)
+    if set(calendar) - {item["publication_id"] for item in items}:
+        raise SystemExit("calendar contains publication identities missing from the queue")
+    groups = classify(items, ledger, calendar, today=today, root=repo_root, holds=holds)
 
-    busy = {
-        date.fromisoformat(record["scheduled_on_moscow"])
-        for record in groups["upcoming"]
-        if record.get("scheduled_on_moscow")
-    }
-    busy |= {
-        date.fromisoformat(record["calendar_date"])
-        for record in groups["calendar_owned"]
-        if record.get("calendar_date") and record["calendar_date"] >= today.isoformat()
-    }
-
-    waiting: list[dict[str, Any]] = []
-    for record in groups["overdue"]:
-        waiting.append({**record, "source": "queue"})
-    for record in groups["undated"]:
-        waiting.append({**record, "source": "queue"})
-    for record in groups["calendar_owned"]:
-        if record.get("calendar_overdue_days"):
-            waiting.append({**record, "source": "charnock_calendar"})
-    priority_rank = {pid: index for index, pid in enumerate(priority)}
+    # Reserve even held, ambiguous and already-sent dates. A local Git ref can
+    # be stale: every proposal still needs a fresh protected-state recheck.
+    occupied: set[date] = set()
+    for records in groups.values():
+        for record in records:
+            for key in ("scheduled_on_moscow", "calendar_date", "published_on_moscow"):
+                if record.get(key):
+                    occupied.add(date.fromisoformat(record[key]))
+    waiting = [{**r, "source": "queue"} for key in ("overdue", "undated") for r in groups[key]]
+    waiting += [
+        {**r, "source": "charnock_calendar"} for r in groups["calendar_owned"] if r.get("calendar_overdue_days")
+    ]
+    rank = {pid: index for index, pid in enumerate(priority)}
     waiting.sort(
-        key=lambda record: (
-            priority_rank.get(record["publication_id"], len(priority_rank)),
-            record.get("calendar_date") or record.get("scheduled_on_moscow") or "9999",
-            record["publication_id"],
+        key=lambda r: (
+            rank.get(r["publication_id"], len(rank)),
+            r.get("calendar_date") or r.get("scheduled_on_moscow") or "9999",
+            r["publication_id"],
         )
     )
-    proposal = propose_slots(waiting, start=start, gap_days=gap_days, busy=busy)
-
+    proposal = propose_slots(waiting, start=start, gap_days=gap_days, busy=occupied) if ledger is not None else []
     return {
         "schema_name": "video-channel-manager.lordchrist-telegraph-backlog-plan",
         "schema_version": 1,
         "generated_for": today.isoformat(),
         "read_only": True,
         "ledger_source": ledger_source,
+        "ledger_freshness": "not_proven_by_local_ref; re-read protected state before any decision",
+        "proposal_start": start.isoformat(),
         "gap_days": gap_days,
         "counts": {name: len(records) for name, records in groups.items()},
         **groups,
         "proposal": proposal,
-        "editorial_holds": sorted(EDITORIAL_HOLDS),
+        "editorial_holds": sorted(holds),
     }
 
 
 def render(plan: dict[str, Any]) -> str:
-    lines: list[str] = []
     counts = plan["counts"]
-    lines.append(
-        "Опубликовано: {published} | просрочено: {overdue} | впереди: {upcoming} | "
-        "без даты: {undated} | календарь Чарнока: {calendar_owned}".format(**counts)
-    )
+    lines = [
+        "Квитанции: {published} | просрочено: {overdue} | впереди: {upcoming} | "
+        "без даты: {undated} | календарь Чарнока: {calendar_owned} | сверить: {needs_reconciliation}".format(**counts)
+    ]
     if plan["overdue"]:
-        lines.append("\nПРОСРОЧЕНО (окно прошло, нужен явный выпуск):")
-        for record in plan["overdue"]:
-            held = " [HOLD]" if record["held"] else ""
-            lines.append(
-                f"  {record['publication_id']} — было {record['scheduled_on_moscow']}, "
-                f"{record['overdue_days']} дн.{held}"
-            )
+        lines.append("\nПРОСРОЧЕНО (не разрешение на выпуск):")
+        for r in plan["overdue"]:
+            lines.append(f"  {r['publication_id']} — было {r['scheduled_on_moscow']}, {r['overdue_days']} дн.")
     if plan["undated"]:
-        lines.append("\nБЕЗ ДАТЫ (нужно решение владельца):")
-        for record in plan["undated"]:
-            held = " [HOLD]" if record["held"] else ""
-            lines.append(f"  {record['publication_id']}{held}")
+        lines.append("\nБЕЗ ДАТЫ:")
+        lines.extend(f"  {r['publication_id']}" for r in plan["undated"])
     if plan["calendar_owned"]:
-        lines.append("\nКАЛЕНДАРЬ ЧАРНОКА (отдельный манифест, руками не двигать):")
-        for record in plan["calendar_owned"]:
-            extra = ""
-            if record.get("calendar_overdue_days"):
-                extra = f", просрочка {record['calendar_overdue_days']} дн."
-            if record.get("deleted_telegram_message_id"):
-                extra += f", удалённое сообщение {record['deleted_telegram_message_id']}"
-            held = " [HOLD]" if record["held"] else ""
-            lines.append(f"  {record['publication_id']} — {record.get('calendar_date')}{extra}{held}")
-    if plan["upcoming"]:
-        lines.append("\nВПЕРЕДИ:")
-        for record in plan["upcoming"]:
-            lines.append(f"  {record['publication_id']} — {record['scheduled_on_moscow']}")
-    if plan["proposal"]:
-        lines.append(
-            f"\nПРЕДЛОЖЕНИЕ: шаг {plan['gap_days']} дн., не более одной статьи в день, занятые даты пропускаются:"
-        )
-        for slot in plan["proposal"]:
-            where = "календарь Чарнока" if slot["source"] == "charnock_calendar" else "очередь"
+        lines.append("\nКАЛЕНДАРЬ ЧАРНОКА (оригинальные удалённые ID не подтверждают перевыпуск):")
+        for r in plan["calendar_owned"]:
+            blockers = ", ".join(r["proposal_blockers"]) or "нет локальных блокеров; provider не проверен"
             lines.append(
-                f"  {slot['proposed_date']} — {slot['publication_id']} ({where}, было {slot['was_scheduled_for']})"
+                f"  {r['publication_id']} — {r['calendar_date']}, удалённое сообщение "
+                f"{r['deleted_telegram_message_id']}, receipt={r['receipt_status']}; {blockers}"
             )
-    if plan.get("ledger_source") == "absent":
-        lines.append(
-            "\nВНИМАНИЕ: ledger не прочитан — уже опубликованные статьи могут выглядеть как ожидающие. "
-            "Укажите --ledger-ref origin/state/lordchrist-telegram."
-        )
-    lines.append("\nТолько чтение: очередь, ledger и провайдер не меняются. Даты — предложение.")
+    if plan["needs_reconciliation"]:
+        lines.append("\nНУЖНА СВЕРКА (не планировать повтор):")
+        for r in plan["needs_reconciliation"]:
+            lines.append(f"  {r['publication_id']} — {r['receipt_status']}")
+    if plan["upcoming"]:
+        lines.append("\nВПЕРЕДИ (не разрешение на выпуск):")
+        for r in plan["upcoming"]:
+            lines.append(f"  {r['publication_id']} — {r['scheduled_on_moscow']}")
+    if plan["proposal"]:
+        lines.append(f"\nЧЕРНОВИК ДАТ (зазор {plan['gap_days']} дн. от занятых дат; не разрешение):")
+        for slot in plan["proposal"]:
+            lines.append(f"  {slot['proposed_date']} — {slot['publication_id']} (было {slot['was_scheduled_for']})")
+    if plan["ledger_source"] == "absent":
+        lines.append("\nВНИМАНИЕ: ledger не прочитан; все предложения дат отключены.")
+    lines.append(
+        "\nТолько чтение. Свежесть local ref, публичный readback, права, приёмка и разрешение владельца "
+        "этим отчётом не подтверждаются."
+    )
     return "\n".join(lines)
+
+
+def _default_proposal_start(today: date, now: datetime) -> date:
+    """Offer today's midday slot only before its 14:00 Moscow cutoff."""
+    if now.tzinfo is None:
+        raise ValueError("proposal clock must be timezone-aware")
+    local = now.astimezone(MOSCOW)
+    if local.date() == today and local.hour < 14:
+        return today
+    return today + timedelta(days=1)
+
+
+def _safe_output_path(root: Path, out: Path, inputs: tuple[Path, ...]) -> Path:
+    """An optional report must not overwrite content, a ledger or source code."""
+    root = root.resolve()
+    out = out.resolve()
+    if out in {path.resolve() for path in inputs}:
+        raise SystemExit("report output cannot overwrite a planner input")
+    artifacts = (root / "artifacts").resolve()
+    if artifacts != root / "artifacts":
+        raise SystemExit("artifacts/ must not be a symlink")
+    if out.is_relative_to(root) and not out.is_relative_to(artifacts):
+        raise SystemExit("report output inside the checkout must be under artifacts/")
+    if out.exists() and not out.is_relative_to(artifacts):
+        raise SystemExit("refusing to overwrite an existing report path outside artifacts/")
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -317,36 +515,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ledger-ref", help="read the durable ledger from this git ref instead")
     parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--today", help="override for tests: YYYY-MM-DD")
-    parser.add_argument("--start", help="first proposed date: YYYY-MM-DD (default: next day)")
-    parser.add_argument("--gap", type=int, default=3, help="days between proposed slots")
-    parser.add_argument(
-        "--priority",
-        action="append",
-        default=[],
-        metavar="PUBLICATION_ID",
-        help="pull this publication to the front of the proposed order (repeatable)",
-    )
-    parser.add_argument("--out", type=Path, help="write the plan JSON here")
+    parser.add_argument("--start", help="first proposed date: YYYY-MM-DD (default: today's remaining midday slot)")
+    parser.add_argument("--gap", type=int, default=2, help="minimum days between proposal and every occupied slot")
+    parser.add_argument("--priority", action="append", default=[], metavar="PUBLICATION_ID")
+    parser.add_argument("--out", type=Path, help="write the advisory JSON plan")
     parser.add_argument("--json", action="store_true", help="print JSON instead of text")
     args = parser.parse_args(argv)
 
     root = args.repo_root
     resolve = lambda path: path if path.is_absolute() else root / path  # noqa: E731
-    today = date.fromisoformat(args.today) if args.today else datetime.now().date()
-    start = date.fromisoformat(args.start) if args.start else today + timedelta(days=1)
+    local_now = datetime.now(MOSCOW)
+    today = _iso_date(args.today, field="--today") if args.today else local_now.date()
+    start = _iso_date(args.start, field="--start") if args.start else _default_proposal_start(today, local_now)
+    if start < today:
+        raise SystemExit("--start cannot be before --today")
     ledger_entries: dict[str, Any] | None = None
     ledger_source = "file"
     if args.ledger_ref:
         ledger_entries = load_ledger_from_ref(root, args.ledger_ref, args.ledger)
         ledger_source = args.ledger_ref
     elif not resolve(args.ledger).is_file():
-        # The durable ledger lives on the state branch: never report an empty
-        # ledger as if nothing had been published.
         try:
             ledger_entries = load_ledger_from_ref(root, DEFAULT_STATE_REMOTE_REF, args.ledger)
             ledger_source = DEFAULT_STATE_REF
         except SystemExit:
-            ledger_entries = {}
             ledger_source = "absent"
 
     plan = build_plan(
@@ -359,9 +551,13 @@ def main(argv: list[str] | None = None) -> int:
         priority=tuple(args.priority),
         ledger_entries=ledger_entries,
         ledger_source=ledger_source,
+        repo_root=root,
     )
     if args.out:
-        out = args.out if args.out.is_absolute() else root / args.out
+        requested_out = args.out if args.out.is_absolute() else root / args.out
+        out = _safe_output_path(
+            root, requested_out, (resolve(args.queue), resolve(args.ledger), resolve(args.manifest))
+        )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(plan, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(plan, ensure_ascii=False, indent=1) if args.json else render(plan))

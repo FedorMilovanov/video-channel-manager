@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Validate, initialize protected Series 03 state, or publish the next due approved quiz
+        description: Validate only; Series 03 state initialization and publication are on editorial hold
         required: true
         default: validate
         type: choice
@@ -96,10 +96,10 @@ jobs:
             DISPATCH_MODE="scheduled"
           fi
           # Editorial HOLD after the defective Sardis quiz #1623 (2026-11-17).
-          # Reject manual publish too, before any protected-state or Telegram provider work.
-          # Do not treat the immutable v1 release signature as a fresh content approval.
-          if [[ "$OPERATION" == "publish" ]]; then
-            echo "Series 03 publication on editorial hold after owner rejection; independent review required" >&2
+          # Only read-only validation is allowed. Do not recreate missing
+          # historical state or treat a v1 signature as current authority.
+          if [[ "$OPERATION" != "validate" ]]; then
+            echo "Series 03 publication on editorial hold after owner rejection; state initialization and sending forbidden" >&2
             exit 3
           fi
           case "$OPERATION" in
