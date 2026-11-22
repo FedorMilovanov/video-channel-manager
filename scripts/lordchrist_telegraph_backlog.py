@@ -30,6 +30,11 @@ MANIFEST_PATH = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock
 # and a new approved blob are required before the @lordchrist release.
 EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
 
+# The durable ledger lives on the state branch, not in the working tree.
+# The constant stays the canonical protected ref; git needs the remote-tracking form.
+DEFAULT_STATE_REF = "state/lordchrist-telegram"
+DEFAULT_STATE_REMOTE_REF = f"refs/remotes/origin/{DEFAULT_STATE_REF}"
+
 
 def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -202,6 +207,7 @@ def build_plan(
     ledger_entries: dict[str, Any] | None = None,
     priority: tuple[str, ...] = (),
     holds: frozenset[str] = EDITORIAL_HOLDS,
+    ledger_source: str = "file",
 ) -> dict[str, Any]:
     items = load_queue(queue_path)
     ledger = ledger_entries if ledger_entries is not None else load_ledger(ledger_path)
@@ -242,6 +248,7 @@ def build_plan(
         "schema_version": 1,
         "generated_for": today.isoformat(),
         "read_only": True,
+        "ledger_source": ledger_source,
         "gap_days": gap_days,
         "counts": {name: len(records) for name, records in groups.items()},
         **groups,
@@ -293,6 +300,11 @@ def render(plan: dict[str, Any]) -> str:
             lines.append(
                 f"  {slot['proposed_date']} — {slot['publication_id']} ({where}, было {slot['was_scheduled_for']})"
             )
+    if plan.get("ledger_source") == "absent":
+        lines.append(
+            "\nВНИМАНИЕ: ledger не прочитан — уже опубликованные статьи могут выглядеть как ожидающие. "
+            "Укажите --ledger-ref origin/state/lordchrist-telegram."
+        )
     lines.append("\nТолько чтение: очередь, ledger и провайдер не меняются. Даты — предложение.")
     return "\n".join(lines)
 
@@ -322,6 +334,21 @@ def main(argv: list[str] | None = None) -> int:
     resolve = lambda path: path if path.is_absolute() else root / path  # noqa: E731
     today = date.fromisoformat(args.today) if args.today else datetime.now().date()
     start = date.fromisoformat(args.start) if args.start else today + timedelta(days=1)
+    ledger_entries: dict[str, Any] | None = None
+    ledger_source = "file"
+    if args.ledger_ref:
+        ledger_entries = load_ledger_from_ref(root, args.ledger_ref, args.ledger)
+        ledger_source = args.ledger_ref
+    elif not resolve(args.ledger).is_file():
+        # The durable ledger lives on the state branch: never report an empty
+        # ledger as if nothing had been published.
+        try:
+            ledger_entries = load_ledger_from_ref(root, DEFAULT_STATE_REMOTE_REF, args.ledger)
+            ledger_source = DEFAULT_STATE_REF
+        except SystemExit:
+            ledger_entries = {}
+            ledger_source = "absent"
+
     plan = build_plan(
         queue_path=resolve(args.queue),
         ledger_path=resolve(args.ledger),
@@ -330,7 +357,8 @@ def main(argv: list[str] | None = None) -> int:
         start=start,
         gap_days=args.gap,
         priority=tuple(args.priority),
-        ledger_entries=(load_ledger_from_ref(root, args.ledger_ref, args.ledger) if args.ledger_ref else None),
+        ledger_entries=ledger_entries,
+        ledger_source=ledger_source,
     )
     if args.out:
         out = args.out if args.out.is_absolute() else root / args.out

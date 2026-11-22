@@ -3,6 +3,9 @@
   "schema_version": 1,
   "generated_at": "2026-11-21",
   "note": "Pinned before/after text for one-shot editPage operations on existing Charnock pages. No createPage, no Telegram.",
+  "status": "ARCHIVED_STALE",
+  "archived_at": "2026-11-21",
+  "archived_reason": "Superseded by the 2026-11-21 qc reissue: every Charnock page changed, so these pinned before/after pairs no longer match. Kept for forensic reference only; no workflow reads this file.",
   "pages": {
     "02": {
       "path": "Vseobshchee-soglasie-kak-CHarnok-obosnovyval-znanie-o-Boge-u-narodov--ispravlennoe-izdanie-11-05",

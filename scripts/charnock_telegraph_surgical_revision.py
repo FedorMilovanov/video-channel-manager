@@ -5,6 +5,10 @@ Default action is public GET + dry-run; execution requires an existing account
 token, an explicit confirmation and an outside-repository receipt directory.
 This cannot make Telegraph's editPage atomic: an edit may race between the
 last GET and POST; a failed/ambiguous POST must never be retried blindly.
+
+RETIRED 21.11.2026: рабочая полоса снята — контракты закрепляли состояние страниц
+до qc-переиздания, после него не совпадают; workflow удалён. Модуль оставлен как
+fail-closed историческое свидетельство и как библиотека для тестов.
 """
 
 from __future__ import annotations

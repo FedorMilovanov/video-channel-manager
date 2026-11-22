@@ -9,6 +9,10 @@ directory.
 
 The live page is treated as the source of the whole document: only the pinned
 blockquote nodes are replaced, so unrelated live revisions are preserved.
+
+RETIRED 21.11.2026: рабочая полоса снята — контракты закрепляли состояние страниц
+до qc-переиздания, после него не совпадают; workflow удалён. Модуль оставлен как
+fail-closed историческое свидетельство и как библиотека для тестов.
 """
 
 from __future__ import annotations
