@@ -117,6 +117,46 @@ def test_november_22_readbacks_preserve_uncertainty_and_no_replay() -> None:
     assert "issuecomment-7084081762" in lordchrist
 
 
+def test_owner_checkpoints_separate_read_access_ledger_and_authority() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    plan = " ".join(plan.split())
+
+    for fact in (
+        "issuecomment-7085551248",
+        "does not confirm a quota grant",
+        "issuecomment-7085944239",
+        "has no media ID, not a verified Reel receipt",
+        "milovi-instagram-https-fallback-handoff.md",
+    ):
+        assert fact in current
+    for fact in (
+        "186/186 Poet, 152/152 Milovi и 1 881/1 887 Lord God",
+        "не полный аудит drafts вне uploads playlist",
+        "quota decision не подтверждено",
+        "4 original-audio `published` с media ID, 7 `terminal_failure`",
+        "18341870875261465`, но без media ID",
+        "заблокирована security layer; обходить нельзя",
+        "issuecomment-7086329857",
+        "owner-local wrapper не доказывает его merge/deployment",
+        "Ни auto-switch HTTPS, ни новые hosting",
+    ):
+        assert fact in plan
+
+
+def test_milovi_https_handoff_preserves_expired_window_and_unknown_effect() -> None:
+    handoff = (OPERATIONS_DIR / "milovi-instagram-https-fallback-handoff.md").read_text(encoding="utf-8")
+    future = handoff.split("## Safe handoff when public hosting is separately authorized", 1)[1]
+    assert "14 November window below is historical and has expired" in handoff
+    assert "container `18341870875261465`, with **no provider media ID**" in handoff
+    assert "not proof that a provider effect is absent" in handoff
+    assert "Do not retry that key or source" in handoff
+    assert "--day '<approved-future-date-YYYY-MM-DD>'" in future
+    assert "--day '2026-11-14'" not in future
+    assert "approval was limited to that expired window" in future
+    assert "The only prospective exception" not in handoff
+
+
 def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
     incident = (OPERATIONS_DIR / "2026-11-22-jude-actions-reconciliation.md").read_text(encoding="utf-8")
     for fact in (
@@ -170,6 +210,7 @@ def test_legendary_poet_comment_checkpoint_keeps_research_separate_from_publicat
         assert "Lf0h4yXPVng" in text and "8g_4EVWFb1g" in text
         assert "audio_unverified" in text
         assert "не отправлен" in text
+        assert "Решение владельца — ждать; не публиковать кандидата Есенина до нового решения" in text
         assert "pin" in text and "readback" in text
     assert "финальные строки и год — по музею, не по самой рукописи" in poet
     assert "на 06.11" in poet and "нынешнее наличие других owner-комментариев не установлено" in poet

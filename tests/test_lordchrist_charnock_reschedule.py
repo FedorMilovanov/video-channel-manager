@@ -176,6 +176,45 @@ def test_immutable_source_blob_and_page_mismatch_blocks_claim(monkeypatch, tmp_p
     assert "scheduled_reissue" not in original
 
 
+@pytest.mark.parametrize(("stage", "receipt"), [("prepare", None), ("send", "claimed")])
+def test_changed_authored_heading_blocks_claim_and_send_without_mutation(monkeypatch, tmp_path, stage, receipt):
+    real_proof = m._proof_page
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue=receipt)
+    args.stage = stage
+    payload = SimpleNamespace(
+        article_sha256=PAYLOAD_SHA,
+        title="Reviewed",
+        author_name="A",
+        author_url="https://example.invalid/author",
+        nodes=[{"tag": "h3", "attrs": {"id": "reviewed"}, "children": ["Heading"]}],
+    )
+    page = {
+        "path": URL.removeprefix("https://telegra.ph/"),
+        "url": URL,
+        "title": payload.title,
+        "author_name": payload.author_name,
+        "author_url": payload.author_url,
+        "content": [{"tag": "h3", "attrs": {"id": "changed"}, "children": ["Heading"]}],
+    }
+    monkeypatch.setattr(m, "_proof_page", real_proof)
+    monkeypatch.setattr(m, "build_telegraph_payload", lambda *a, **k: payload)
+    monkeypatch.setattr(
+        m.httpx,
+        "get",
+        lambda *a, **k: SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"ok": True, "result": page}),
+    )
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("Telegram must not be contacted"))
+    monkeypatch.setattr(m, "save_ledger", lambda *a: pytest.fail("Ledger must not be written"))
+    before = copy.deepcopy(ledger)
+    with pytest.raises(RuntimeError, match="entire reviewed latest"):
+        m.execute(args)
+    assert ledger == before
+    if receipt is None:
+        assert "scheduled_reissue" not in original
+    else:
+        assert original["scheduled_reissue"]["state"] == "claimed"
+
+
 def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
     args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
     args.stage = "send"
