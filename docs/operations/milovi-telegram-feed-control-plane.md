@@ -23,6 +23,54 @@ receipts. Past release IDs cannot be re-sent or extended automatically. Only
 `state/milovi-cake-telegram` and fresh exact Telegram receipts determine
 current results; this dated text is never a replacement for protected state.
 
+### Expired video receipt audit: 22 November checkpoint
+
+At approximately 21:32 Moscow on 22 November, read-only GitHub inspection of
+`state/milovi-cake-telegram@3ae7e91b7806131dfc99afa9edcfac37e41f9e67`
+retrieved the exact index and 15 video-ledger Git objects and rechecked their
+blob IDs and bytes. Provider-free `audit-expired` returned **15 elapsed slots
+without verified ledger receipts**, all `pending/impossible`, and exit 2. The
+snapshot remained byte-identical; it is not a fresh complete Telegram history
+and does not prove an external writer had no effect. Do not backfill.
+
+In this revision, an elapsed `published/verified` video is not silently
+accepted from the state labels alone: its immutable release and reviewed
+slot/digests, numeric chat/bot/message identities, channel/bot names, canonical
+message URL and protected index/ledger agreement must match. Its recorded
+intent/preparation time must fall inside the approved 19:00–21:00 lease, and
+its verification time cannot be in the future at the audit clock. A
+`pending/impossible` row must explicitly retain nulls for every intent,
+attempt, target, receipt and error field; missing or stale provenance fails
+closed instead of enabling dispatch or clearing the audit. An invalid or
+ambiguous receipt fails the check for reconciliation without replay. A
+verification may arrive after the lease; the intent timestamp is **not** an
+independent proof of when Telegram received the request. These are recorded
+ledger checks, not a live provider readback. This hardening takes effect only
+on a merged, CI-verified runtime and neither creates authority nor guarantees
+that GitHub cron runs on time.
+
+### School receipt and migration checks: 22 November checkpoint
+
+The separate School reading dispatcher and its expired audit use the same raw
+never-attempted pending check. First-ten Cake prerequisites, earlier School
+posts and the early Paris-Brest duplicate suppression require exact
+index/ledger agreement, uncoerced integer identities, canonical URL, correct
+target and a recorded verification no later than the decision clock. The
+legacy two-item editorial migration refuses to erase stale provenance even
+when its state labels say `pending/impossible`. An uncertain record requires
+reconciliation, not replay. These checks do not establish a complete channel
+history or independently prove Telegram request time.
+
+A read-only snapshot at the same protected commit contained the early
+Paris-Brest verified ledger (message 27), the original November 17 pending
+ledger, and the November 21 Croissant and November 25 Stohrer pending ledgers.
+The provider-free audit suppressed the original as an early duplicate and
+reported **one elapsed School slot without a verified ledger receipt**
+(Croissant), exit 2. Snapshot bytes were unchanged. The November 25 post still
+requires the ten verified first-screen videos and all existing exact release,
+predecessor, window, authority and single-writer gates; this note does not
+approve a catch-up or guarantee the scheduled run.
+
 ## One writer
 
 `.github/workflows/milovi-telegram-feed-publisher.yml` is the only supported Milovi Telegram provider-mutation workflow.

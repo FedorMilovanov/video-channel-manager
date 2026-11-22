@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo
 from video_channel_manager.milovi_telegram_feed import (
     MiloviFeedIndex,
     _save_index,
+    require_never_attempted_pending,
+    require_raw_receipt_identifiers,
     state_check,
     state_init,
     validate_bundle,
@@ -82,71 +84,59 @@ def _verified(entry: object, expected_pid: str) -> bool:
     return (
         entry.get("state") == "published"
         and entry.get("provider_effect") == "verified"
-        and isinstance(entry.get("message_id"), int)
+        and type(entry.get("message_id")) is int
         and entry["message_id"] > 0
         and entry.get("message_url") is not None
     )
 
 
-def _early_paris_brest_verified(checkout: Path, entries: dict[str, object]) -> bool:
+def _early_paris_brest_verified(checkout: Path, entries: dict[str, object], as_of: datetime | None = None) -> bool:
     """Recognize only the owner-approved exact Nov 6 published photo, not a loose match."""
-    early = entries.get(OWNER_EARLY_PARIS_BREST)
-    if not _verified(early, OWNER_EARLY_PARIS_BREST):
+    indexed = OWNER_EARLY_PARIS_BREST in entries
+    ledger_exists = (checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json").is_file()
+    if indexed != ledger_exists:
+        raise ValueError("Early Paris-Brest index/ledger incomplete; reconcile without replay")
+    if not indexed:
         return False
-    assert isinstance(early, dict)
+    result = state_check(OWNER_EARLY_PARIS_BREST, state_checkout=checkout)
+    if result["state"] == "pending" and result["provider_effect"] == "impossible":
+        require_never_attempted_pending(OWNER_EARLY_PARIS_BREST, state_checkout=checkout)
+        return False
+    if result["state"] != "published" or result["provider_effect"] != "verified":
+        raise ValueError("Early Paris-Brest effect is unresolved or inconsistent; reconcile without replay")
+    _require_exact_verified_receipt(checkout, OWNER_EARLY_PARIS_BREST, as_of=as_of or datetime.now(timezone.utc))
     release = load_release(ROOT / "releases" / f"{OWNER_EARLY_PARIS_BREST}-runtime.json")
     original = load_release(ROOT / "releases" / f"{ORIGINAL_PARIS_BREST}-runtime.json")
     if (
         len(release.items) != 1
-        or release.channel_username != "@MiloviCake"
-        or release.chat_id != -1002215328390
-        or release.bot_id != 8716602202
         or release.items[0].source_sha256 != original.items[0].source_sha256
         or release.items[0].payload.caption != original.items[0].payload.caption
         or release.items[0].payload.media_sha256 != original.items[0].payload.media_sha256
+        or release.items[0].payload.media_byte_size != original.items[0].payload.media_byte_size
     ):
-        raise ValueError("Owner's early School post identity differs from original Nov 17 story")
-    ledger = load_ledger(checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json", release)
-    item = ledger.entries[OWNER_EARLY_PARIS_BREST]
-    if not (
-        item.state == "published"
-        and item.provider_effect == "verified"
-        and item.actual_chat_id == release.chat_id
-        and item.bot_id == release.bot_id
-        and item.message_id == early["message_id"]
-        and item.message_url == early["message_url"]
-    ):
-        raise ValueError("Early School publication is not confirmed by exact protected provider receipt")
+        raise ValueError(
+            "Owner's early School post identity differs from original Nov 17 story; reconcile without replay"
+        )
+    early_entry = load_ledger(checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json", release)
+    published_at = early_entry.entries[OWNER_EARLY_PARIS_BREST].published_at_utc
+    if published_at is None or published_at >= original.items[0].scheduled_at:
+        raise ValueError("Paris-Brest receipt was not early; reconcile without replay")
     return True
 
 
-def require_first_ten_real_cake_videos(checkout: Path, entries: dict[str, object]) -> None:
+def require_first_ten_real_cake_videos(
+    checkout: Path, entries: dict[str, object], as_of: datetime | None = None
+) -> None:
     """The channel's first screen must be actual Cake work, not School promos."""
+    observed_at = as_of or datetime.now(timezone.utc)
     for pid in FIRST_TEN:
         item = entries.get(pid)
         if not _verified(item, pid):
             raise ValueError(f"School reading requires verified first-ten Cake video: {pid}")
         release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
-        if (
-            len(release.items) != 1
-            or not isinstance(release.items[0].payload, GenericVideoPayload)
-            or release.channel_username != "@MiloviCake"
-            or release.chat_id != -1002215328390
-            or release.bot_id != 8716602202
-        ):
+        if len(release.items) != 1 or not isinstance(release.items[0].payload, GenericVideoPayload):
             raise ValueError(f"First screen must contain native Cake videos on exact target: {pid}")
-        ledger_path = checkout / STATE_FEED / f"{pid}.json"
-        ledger = load_ledger(ledger_path, release)
-        e = ledger.entries[pid]
-        if not (
-            e.state == "published"
-            and e.provider_effect == "verified"
-            and e.message_id == item["message_id"]
-            and e.actual_chat_id == -1002215328390
-            and e.bot_id == 8716602202
-            and e.message_url == item["message_url"]
-        ):
-            raise ValueError(f"First-screen Cake video lacks an exact protected receipt: {pid}")
+        _require_exact_verified_receipt(checkout, pid, as_of=observed_at)
 
 
 def validate_exact_releases() -> None:
@@ -249,6 +239,7 @@ def migrate_two_provider_inert_editorial_revisions(checkout: Path) -> None:
             and entry.workflow_run_attempt is None
         ):
             raise ValueError(f"Rich School revision cannot rewrite any possibly sent Telegram item: {pid}")
+        require_never_attempted_pending(pid, state_checkout=checkout)
         new_ledger = initialize_ledger(release)
         to_write.append((ledger_path, new_ledger))
         indexed.release_candidate_sha256 = release.candidate_digest()
@@ -268,9 +259,20 @@ def initialize_all(checkout: Path) -> None:
     _load_state_index(checkout)
 
 
+def _require_suppressed_original_pending(checkout: Path) -> None:
+    result = state_check(ORIGINAL_PARIS_BREST, state_checkout=checkout)
+    if result["state"] == "pending" and result["provider_effect"] == "impossible":
+        require_never_attempted_pending(ORIGINAL_PARIS_BREST, state_checkout=checkout)
+        return
+    raise ValueError("Original Paris-Brest is not clean pending after early publication; reconcile without replay")
+
+
 def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
     validate_exact_releases()
-    clock = (now or datetime.now(timezone.utc)).astimezone(ZONE)
+    observed_at = now if now is not None else datetime.now(timezone.utc)
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("School due clock must be timezone-aware")
+    clock = observed_at.astimezone(ZONE)
     if clock.year != 2026 or clock.month != 11:
         return {"dispatch": "false", "reason": "year_or_month_mismatch"}
     matching = [(d, pid) for d, pid, _ in RELEASES if d == clock.date().isoformat()]
@@ -282,10 +284,12 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
     if clock < slot or clock >= slot + SLOT_MAX_LAG:
         return {"dispatch": "false", "reason": "outside_reviewed_school_slot"}
     entries = _load_state_index(checkout)
-    early_verified = _early_paris_brest_verified(checkout, entries)
+    early_verified = _early_paris_brest_verified(checkout, entries, clock)
+    if early_verified:
+        _require_suppressed_original_pending(checkout)
     if pid == ORIGINAL_PARIS_BREST and early_verified:
         return {"dispatch": "false", "reason": "original_story_already_sent_20261106"}
-    require_first_ten_real_cake_videos(checkout, entries)
+    require_first_ten_real_cake_videos(checkout, entries, clock)
 
     # One shared provider account and index. Any unresolved effect anywhere blocks.
     for eid, e in entries.items():
@@ -301,6 +305,7 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
             continue
         if not _verified(entries.get(prior_pid), prior_pid):
             raise ValueError(f"School reading strict predecessor not verified: {prior_pid}")
+        _require_exact_verified_receipt(checkout, prior_pid, as_of=clock)
 
     today_verified = sum(
         1
@@ -314,13 +319,12 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
         raise ValueError("Milovi owner-verified daily limit already reached")
     entry = entries.get(pid)
     if _verified(entry, pid):
+        _require_exact_verified_receipt(checkout, pid, as_of=clock)
         return {"dispatch": "false", "reason": "already_verified"}
     if not isinstance(entry, dict) or entry.get("state") != "pending" or entry.get("provider_effect") != "impossible":
         raise ValueError("School reading entry missing, uncertain, previously attempted or non-pending")
-    ledger = load_ledger(checkout / STATE_FEED / f"{pid}.json", release)
-    child = ledger.entries[pid]
-    if child.state != "pending" or child.provider_effect != "impossible":
-        raise ValueError("School reading exact immutable ledger differs from pending index")
+    state_check(pid, state_checkout=checkout, require_publishable=True)
+    require_never_attempted_pending(pid, state_checkout=checkout)
     return {"dispatch": "true", "publication_id": pid, "reason": "exact_owner_approved_school_photo_due"}
 
 
@@ -332,9 +336,27 @@ class SchoolAuditReport(TypedDict):
     provider_mutation_performed: bool
 
 
-def _require_exact_verified_receipt(checkout: Path, pid: str) -> None:
-    """Only a receipt for the exact channel/bot and canonical message URL is terminal."""
+def _require_exact_verified_receipt(checkout: Path, pid: str, *, as_of: datetime) -> None:
+    """Only exact protected terminal evidence observed by this clock is usable.
+
+    The attempted time records intent/preparation, not independently when the
+    Telegram request arrived. Verification may finish after the due window.
+    """
+    if as_of.tzinfo is None or as_of.utcoffset() is None:
+        raise ValueError("School receipt observation clock must be timezone-aware")
+    state_check(pid, state_checkout=checkout)
+    require_raw_receipt_identifiers(pid, state_checkout=checkout)
     release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
+    if not (
+        len(release.items) == 1
+        and release.release_id == release.items[0].publication_id == pid
+        and release.project_key == "milovi-cake"
+        and release.channel_username == "@MiloviCake"
+        and release.chat_id == -1002215328390
+        and release.bot_id == 8716602202
+        and (release.bot_username or "").casefold() == "preaching_mp3_bot"
+    ):
+        raise ValueError(f"School receipt release has mismatched identity: {pid}; reconcile without replay")
     entry = load_ledger(checkout / STATE_FEED / f"{pid}.json", release).entries[pid]
     username = entry.actual_chat_username
     bot_username = entry.bot_username
@@ -345,10 +367,12 @@ def _require_exact_verified_receipt(checkout: Path, pid: str) -> None:
         and entry.provider_effect == "verified"
         and attempted_at is not None
         and slot <= attempted_at < slot + SLOT_MAX_LAG
+        and entry.published_at_utc is not None
+        and entry.published_at_utc <= as_of
         and type(entry.message_id) is int
         and entry.message_id > 0
-        and entry.actual_chat_id == release.chat_id == -1002215328390
-        and entry.bot_id == release.bot_id == 8716602202
+        and entry.actual_chat_id == release.chat_id
+        and entry.bot_id == release.bot_id
         and isinstance(username, str)
         and username.casefold() == release.channel_username.lstrip("@").casefold() == "milovicake"
         and isinstance(bot_username, str)
@@ -356,8 +380,8 @@ def _require_exact_verified_receipt(checkout: Path, pid: str) -> None:
         and entry.message_url == f"https://t.me/{username}/{entry.message_id}"
     ):
         raise ValueError(
-            f"School receipt has mismatched target or message identity, or is outside the scheduled window: "
-            f"{pid}; reconcile without replay"
+            f"School receipt has mismatched target or message identity, is outside the scheduled window, "
+            f"or was not yet verified: {pid}; reconcile without replay"
         )
 
 
@@ -390,34 +414,17 @@ def audit_expired(now: datetime, *, checkout: Path) -> SchoolAuditReport:
     entries = _load_state_index(checkout)
     early_verified = False
     if ORIGINAL_PARIS_BREST in elapsed:
-        early_indexed = OWNER_EARLY_PARIS_BREST in entries
-        early_ledger = (checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json").is_file()
-        if early_indexed != early_ledger:
-            raise ValueError("Early Paris-Brest index/ledger incomplete; reconcile without replay")
-        if early_indexed:
-            early = state_check(OWNER_EARLY_PARIS_BREST, state_checkout=checkout)
-            if early["state"] == "published" and early["provider_effect"] == "verified":
-                _require_exact_verified_receipt(checkout, OWNER_EARLY_PARIS_BREST)
-                early_verified = _early_paris_brest_verified(checkout, entries)
-                if not early_verified:
-                    raise ValueError("Early Paris-Brest is not the exact original story; reconcile without replay")
-                early_release = load_release(ROOT / "releases" / f"{OWNER_EARLY_PARIS_BREST}-runtime.json")
-                early_entry = load_ledger(checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json", early_release)
-                original_release = load_release(ROOT / "releases" / f"{ORIGINAL_PARIS_BREST}-runtime.json")
-                published_at = early_entry.entries[OWNER_EARLY_PARIS_BREST].published_at_utc
-                if published_at is None or published_at >= original_release.items[0].scheduled_at:
-                    raise ValueError("Paris-Brest receipt was not early; reconcile without replay")
-            elif early["state"] != "pending" or early["provider_effect"] != "impossible":
-                raise ValueError("Early Paris-Brest effect is unresolved or inconsistent; reconcile without replay")
+        early_verified = _early_paris_brest_verified(checkout, entries, clock)
 
     for pid in elapsed:
         result = state_check(pid, state_checkout=checkout)
         if result["state"] == "published" and result["provider_effect"] == "verified":
-            _require_exact_verified_receipt(checkout, pid)
+            _require_exact_verified_receipt(checkout, pid, as_of=clock)
             if pid == ORIGINAL_PARIS_BREST and early_verified:
                 raise ValueError("Early and original Paris-Brest are both verified; reconcile without replay")
             report["verified"].append(pid)
         elif result["state"] == "pending" and result["provider_effect"] == "impossible":
+            require_never_attempted_pending(pid, state_checkout=checkout)
             if pid == ORIGINAL_PARIS_BREST and early_verified:
                 report["suppressed_early_duplicate"].append(pid)
             else:

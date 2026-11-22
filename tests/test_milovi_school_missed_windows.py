@@ -138,6 +138,8 @@ def test_early_receipt_must_predate_original_slot_and_have_both_index_and_ledger
     ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
     with pytest.raises(ValueError, match="not early"):
         school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+    with pytest.raises(ValueError, match="not early"):
+        school.due(tmp_path, now=datetime(2026, 11, 21, 12, 37, tzinfo=LOCAL))
     ledger_path.unlink()
     with pytest.raises(ValueError, match="index/ledger incomplete"):
         school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
@@ -172,6 +174,8 @@ def test_duplicate_early_and_original_verified_receipts_are_incident_not_suppres
     _set_state(tmp_path, ORIGINAL, state="published", message_id=28)
     with pytest.raises(ValueError, match="both.*verified"):
         school.audit_expired(datetime(2026, 11, 17, 14, 30, tzinfo=LOCAL), checkout=tmp_path)
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.due(tmp_path, now=datetime(2026, 11, 17, 12, 37, tzinfo=LOCAL))
 
 
 def test_verified_receipt_with_wrong_target_and_index_ledger_drift_fail_closed(tmp_path: Path) -> None:
@@ -275,3 +279,182 @@ def test_workflow_audits_after_dispatch_without_new_schedule_or_writer() -> None
     assert "milovi-telegram-feed-publisher.yml" in text
     assert "workflow_run:" not in text and "initialize-all" not in text
     assert "contents: write" not in text and "sendPhoto" not in text
+
+
+@pytest.mark.parametrize("surface", ["due", "audit"])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("dispatch_mode", "scheduled"),
+        ("workflow_run_id", "12345"),
+        ("attempted_at_utc", "2026-11-21T12:37:00+03:00"),
+        ("actual_chat_id", -1002215328390),
+        ("last_error", "prior attempt unresolved"),
+    ],
+)
+def test_school_pending_with_attempt_provenance_fails_for_reconciliation_without_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str, value: object, surface: str
+) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][CROISSANT][field] = value
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    monkeypatch.setattr(school, "require_first_ten_real_cake_videos", lambda *_args: None)
+    before = _snapshot(tmp_path)
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        if surface == "due":
+            school.due(tmp_path, now=datetime(2026, 11, 21, 12, 37, tzinfo=LOCAL))
+        else:
+            school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+    assert _snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("surface", ["due", "audit"])
+def test_early_pending_with_attempt_provenance_cannot_be_treated_as_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, surface: str
+) -> None:
+    _initialized(tmp_path)
+    ledger_path = tmp_path / FEED / f"{EARLY}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][EARLY]["last_error"] = "prior attempt unresolved"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    monkeypatch.setattr(school, "require_first_ten_real_cake_videos", lambda *_args: None)
+    before = _snapshot(tmp_path)
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        if surface == "due":
+            school.due(tmp_path, now=datetime(2026, 11, 17, 12, 37, tzinfo=LOCAL))
+        else:
+            school.audit_expired(datetime(2026, 11, 17, 14, 30, tzinfo=LOCAL), checkout=tmp_path)
+    assert _snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("field,value", [("actual_chat_id", "-1002215328390"), ("bot_id", "8716602202")])
+def test_school_receipt_must_have_raw_numeric_target_identity(tmp_path: Path, field: str, value: str) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    _set_state(tmp_path, CROISSANT, state="published", message_id=50)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][CROISSANT][field] = value
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+
+
+def test_school_future_verification_does_not_clear_missed_window(tmp_path: Path) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    _set_state(tmp_path, CROISSANT, state="published", message_id=50)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][CROISSANT]["published_at_utc"] = "2026-11-22T00:36:00+03:00"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+
+
+def test_school_rejects_boolean_raw_index_message_id(tmp_path: Path) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    _set_state(tmp_path, CROISSANT, state="published", message_id=1)
+    index_path = tmp_path / FEED / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["entries"][CROISSANT]["message_id"] = True
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+
+
+@pytest.mark.parametrize("surface", ["due", "audit"])
+def test_school_pending_requires_explicit_attempt_nulls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, surface: str
+) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    del ledger["entries"][CROISSANT]["attempted_at_utc"]
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    monkeypatch.setattr(school, "require_first_ten_real_cake_videos", lambda *_args: None)
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        if surface == "due":
+            school.due(tmp_path, now=datetime(2026, 11, 21, 12, 37, tzinfo=LOCAL))
+        else:
+            school.audit_expired(datetime(2026, 11, 22, 0, 35, tzinfo=LOCAL), checkout=tmp_path)
+
+
+def test_school_allows_late_verification_of_in_window_intent_when_already_observed(tmp_path: Path) -> None:
+    _initialized(tmp_path)
+    _verified_early(tmp_path)
+    _set_state(tmp_path, CROISSANT, state="published", message_id=50)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    entry = ledger["entries"][CROISSANT]
+    entry["attempted_at_utc"] = "2026-11-21T14:29:59+03:00"
+    entry["published_at_utc"] = "2026-11-21T14:31:00+03:00"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.audit_expired(datetime(2026, 11, 21, 14, 30, tzinfo=LOCAL), checkout=tmp_path)
+    report = school.audit_expired(datetime(2026, 11, 21, 14, 31, tzinfo=LOCAL), checkout=tmp_path)
+    assert report["verified"] == [CROISSANT]
+    assert report["missed_windows"] == []
+
+
+def test_full_school_first_ten_proof_can_pass_without_provider_access(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _initialized(tmp_path, early=False)
+    for number, pid in enumerate(school.FIRST_TEN, start=31):
+        state_init(pid, state_checkout=tmp_path)
+        _set_state(tmp_path, pid, state="published", message_id=number)
+    before = _snapshot(tmp_path)
+
+    def no_network(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("The first-ten guard and due decision must not contact a provider")
+
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    now = datetime(2026, 11, 17, 12, 37, tzinfo=LOCAL)
+    school.require_first_ten_real_cake_videos(tmp_path, school._load_state_index(tmp_path), now)
+    assert school.due(tmp_path, now=now) == {
+        "dispatch": "true",
+        "publication_id": ORIGINAL,
+        "reason": "exact_owner_approved_school_photo_due",
+    }
+    assert _snapshot(tmp_path) == before
+    with pytest.raises(ValueError, match="timezone-aware"):
+        school.due(tmp_path, now=datetime(2026, 11, 17, 12, 37))
+
+
+def test_first_ten_and_predecessors_require_exact_protected_receipts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _initialized(tmp_path)
+    video = school.FIRST_TEN[0]
+    state_init(video, state_checkout=tmp_path)
+    _set_state(tmp_path, video, state="published", message_id=30)
+    ledger_path = tmp_path / FEED / f"{video}.json"
+    index_path = tmp_path / FEED / "index.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    ledger["entries"][video]["message_url"] = "https://t.me/OtherChannel/30"
+    index["entries"][video]["message_url"] = "https://t.me/OtherChannel/30"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    monkeypatch.setattr(school, "FIRST_TEN", (video,))
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.require_first_ten_real_cake_videos(tmp_path, school._load_state_index(tmp_path))
+
+    _verified_early(tmp_path)
+    _set_state(tmp_path, CROISSANT, state="published", message_id=50)
+    ledger_path = tmp_path / FEED / f"{CROISSANT}.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    ledger["entries"][CROISSANT]["message_url"] = "https://t.me/OtherChannel/50"
+    index["entries"][CROISSANT]["message_url"] = "https://t.me/OtherChannel/50"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    monkeypatch.setattr(school, "require_first_ten_real_cake_videos", lambda *_args: None)
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.due(tmp_path, now=datetime(2026, 11, 25, 12, 37, tzinfo=LOCAL))
