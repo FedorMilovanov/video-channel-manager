@@ -1491,7 +1491,7 @@
     },
     {
       "path": "scripts/charnock_telegraph_qc_reissue.py",
-      "sha256": "aa116270441eb518a151a066e4abb60a6dca71cafd6ca8b6e51603e76f6359d4",
+      "sha256": "3084c5c63461d1687e45ce862305463a6ac72efdf764f46e1654c82799b6025c",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,

@@ -28,8 +28,8 @@ from scripts.charnock_telegraph_surgical_revision import (
     sha_content,
 )
 from video_channel_manager.lordchrist_charnock_reschedule import (
-    _normalized_telegraph_digest,
-    _normalized_telegraph_node,
+    _normalized_telegraph_pair,
+    _normalized_telegraph_pair_digests,
 )
 from video_channel_manager.lordchrist_telegraph_publisher import (
     build_telegraph_payload,
@@ -45,6 +45,7 @@ QUEUE_PATH = Path("content/telegram/lordchrist/telegraph-v1/article-queue.json")
 MAX_CONTENT_BYTES = 65_536
 MAX_DIFFERENCES = 5
 MAX_DIAGNOSTIC_PATH = 200
+NORMALIZED_TREE_ALGORITHM = "target-relative-heading-ids-v2"
 # Unknown provider-supplied keys can themselves contain arbitrary text.
 DIAGNOSTIC_KEYS = frozenset({"tag", "attrs", "children", "src", "href", "id"})
 
@@ -157,9 +158,8 @@ def describe_differences(before: Any, after: Any) -> list[str]:
 
 
 def normalized_tree_differences(before: Any, after: Any) -> list[str]:
-    """Report bounded JSON paths without copying values or unknown keys."""
-    left = _normalized_telegraph_node(before)
-    right = _normalized_telegraph_node(after)
+    """Report bounded JSON paths using the same paired comparison as the digests."""
+    left, right = _normalized_telegraph_pair(before, after)
     differences: list[str] = []
 
     def extend(path: str, segment: str) -> str:
@@ -238,6 +238,7 @@ def annotation_summary(outcome: dict[str, Any]) -> dict[str, Any]:
         "provider_content_exact",
         "normalized_node_tree_equal",
         "normalized_node_tree_required",
+        "normalized_node_tree_algorithm",
     )
     return {
         **{field: outcome.get(field) for field in fields},
@@ -339,8 +340,7 @@ def run_one(
     live_content = live["content"]
     live_sha = sha_content(live_content)
     differences = describe_differences(live_content, target_content)
-    live_tree_sha = _normalized_telegraph_digest(live_content)
-    target_tree_sha = _normalized_telegraph_digest(target_content)
+    live_tree_sha, target_tree_sha = _normalized_telegraph_pair_digests(live_content, target_content)
     tree_equal = live_tree_sha == target_tree_sha
     tree_differences = [] if tree_equal else normalized_tree_differences(live_content, target_content)
     title_exact = live.get("title") == payload.title
@@ -397,8 +397,10 @@ def run_one(
             "provider_content_exact": live_sha == target_sha,
             "normalized_node_tree_equal": tree_equal,
             "normalized_node_tree_required": require_normalized_tree,
+            "normalized_node_tree_algorithm": NORMALIZED_TREE_ALGORITHM,
             "normalized_node_tree_excludes": [
-                "all h3/h4 heading ids and attrs emptied by removing id",
+                "additional live string h3/h4 id when the corresponding reviewed heading has none",
+                "live attrs emptied by removing that id",
                 "adjacent text fragments in content and children arrays",
             ],
             "visible_text_comparison_excludes": [

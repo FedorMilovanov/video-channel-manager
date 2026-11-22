@@ -6,7 +6,26 @@
 Issue [#790](https://github.com/FedorMilovanov/video-channel-manager/issues/790).
 This document is **not** public-hosting authority or permission to publish.
 
-## Evidence, 13 November 2026 (Europe/Moscow)
+## Later incident checkpoint — 23 November 2026 Moscow time
+
+The 14 November window below is historical and has expired. The owner's
+[read-only SQLite reconciliation](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7085944239)
+found the separate 14 November `public-https-v1` key in `container_created`,
+container `18341870875261465`, with **no provider media ID**. A created
+container or earlier dry-run is not a published Reel, and a missing media ID
+is not proof that a provider effect is absent. Do not retry that key or source
+or claim a successful HTTPS canary without exact reconciliation and separately
+scoped authority. The reported attempt to GET eight historical containers was
+blocked by the execution security layer; do not bypass it with another token.
+
+The owner's later [route and single-writer checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7086329857)
+supersedes the earlier installed wrapper SHA. Routed root-URL GETs and local
+media checks do not establish Meta upload acceptance or independently cleared
+soundtrack rights. The existing owner task was still enabled at that checkpoint;
+confirm its current state rather than creating another writer. Future slots do
+not inherit permission to auto-switch to HTTPS or to host new files.
+
+## Historical evidence, 13 November 2026 (Europe/Moscow)
 
 The Windows daily 19:00 writer runs. Local SQL and independent authenticated **GET**
 to the exact Media container IDs showed:
@@ -70,14 +89,14 @@ This is public hosting, not a claim of licensed music.
   content type. Frozen candidate:
   `operator-output/milovi-cake-instagram/2026-11-05/meta-verified/milovi-ig-20261114-public-https-v1-candidate.json`;
   SHA-256 `52c40517d3fa32ab4c4912f09a5ca47b5de7f9ba3bd346817468ba44f353bdde`.
-- The exact one-time release must occur **no earlier than 14 November
-  19:00 MSK**, within the existing 18-minute due window, through the
-  **existing single Task Scheduler writer**, never a second independent writer.
-  Canonical script sources: `scripts/instagram/milovi_cake_due_slot_single_writer.ps1`
-  and `scripts/instagram/milovi_cake_https_single_slot_20261114.ps1`.
-  The scheduled action must continue to invoke the existing
-  `milovi_release_due_slot.ps1 -Execute` path; its exact verified file may
-  route **only** that approved source/date to the HTTPS publisher.
+- The historical one-time release was limited to **14 November 19:00 MSK**
+  and the existing 18-minute due window through the single Task Scheduler
+  writer, never a second writer. That window is over and the later local
+  ledger contains a container without a media ID; see the checkpoint above.
+  Canonical historical script sources were
+  `scripts/instagram/milovi_cake_due_slot_single_writer.ps1` and
+  `scripts/instagram/milovi_cake_https_single_slot_20261114.ps1`.
+  This old approval is not permission for an immediate run or retry.
 - Full end-to-end PowerShell **dry-run** against the real 14 Nov source,
   Graph `/app`, Instagram identity/quota, local and public media validators
   ended `MILOVI_HTTPS_SINGLE_SLOT_PREFLIGHT_PASS NO_POST NO_PUBLISH`.
@@ -125,19 +144,21 @@ $db = Join-Path $root 'data\video_manager.db'
 
 & (Join-Path $root '.venv\Scripts\python.exe') `
   (Join-Path $root 'scripts\prepare_milovi_instagram_https_fallback.py') `
-  --index $index --database $db --day '2026-11-14' `
+  --index $index --database $db --day '<approved-future-date-YYYY-MM-DD>' `
   --video-url 'https://fedormilovanov.github.io/media/instagram/milovi-cake/<exact-sha256>.mp4' `
   --allowed-host 'fedormilovanov.github.io' `
   --output 'E:\MiloviRecovery\approved-new-key-candidate.json' `
   --public-hosting-authorized
 ```
 
-The **generic future-source example** above contains an `<exact-sha256>`
-placeholder; it does not represent another hosted video. The one explicitly
-approved 14 November file is already hosted and verified at the exact URL
-recorded earlier. Future source URLs still fail closed without fresh
-public-hosting authority and complete byte verification. It
-produces a candidate JSON, not a publication or any scheduler changes.
+The **generic future-source example** above contains non-executable date and
+`<exact-sha256>` placeholders; it does not represent another hosted video or
+permission to use a particular date. Only a separately approved, not-yet-attempted
+future source and date may be considered. The historically approved 14 November
+file was hosted at the exact URL recorded earlier; hosting did not prove
+publication. Future source URLs still fail closed without fresh public-hosting
+authority and complete byte verification. The command produces a candidate
+JSON, not a publication or any scheduler changes.
 `video-manager instagram production validate-public <candidate.json>` may
 provide an additional independent provider-inert check with
 `VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS` set to the exact approved hostname.
@@ -146,11 +167,10 @@ provide an additional independent provider-inert check with
 
 - Do **not** repeat the 10, 12 or 13 Nov `original-audio-v1` keys.
 - Do **not** call `-Execute` or Meta POST during diagnostics, CI, read-only
-  audits or preview. The only prospective exception is the **one** explicitly
-  approved 14 Nov 19:00 MSK `public-https-v1` release under the existing
-  single-writer task, after exact-code deployment and the full fresh gates.
-  This authorization does not cover an immediate manual run, old-key retry,
-  other dates, a second task or any other Instagram identity.
+  audits or preview. The historical 14 Nov 19:00 MSK `public-https-v1`
+  approval was limited to that expired window; the key now has an unresolved
+  local container. It does not cover a retry, immediate manual run, other
+  dates, a second task or another Instagram identity.
 - Do **not** automatically create a new key for a failed source. Provider
   reconciliation and operation-specific authorization come first.
 - Do **not** treat Windows `LastTaskResult=0`, accepted container response,
