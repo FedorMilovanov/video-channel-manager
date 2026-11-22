@@ -286,22 +286,45 @@ class YouTubeApiClient(HttpClientOwner):
         playlist_items = self._list_all(
             "playlistItems",
             params={
-                "part": "contentDetails",
+                "part": "id,snippet,contentDetails,status",
                 "playlistId": uploads_playlist,
                 "maxResults": 50,
             },
         )
         ordered_ids: list[str] = []
+        item_id_by_video: dict[str, str] = {}
+        video_id_by_item: dict[str, str] = {}
+        confirmed_deleted: set[str] = set()
         for item in playlist_items:
             video_id = str(_dict_field(item, "contentDetails").get("videoId") or "").strip()
-            if video_id:
-                ordered_ids.append(video_id)
-
-        if len(ordered_ids) != len(set(ordered_ids)):
-            raise YouTubeApiError(
-                "Owner uploads pagination returned repeated video IDs; "
-                "use the read-only AuditPackage inventory diagnostics before planning changes."
-            )
+            if not video_id:
+                continue
+            playlist_item_id = str(item.get("id") or "").strip()
+            if playlist_item_id and video_id_by_item.get(playlist_item_id, video_id) != video_id:
+                raise YouTubeApiError("Owner uploads pagination returned a playlist item ID bound to multiple videos.")
+            if playlist_item_id:
+                video_id_by_item[playlist_item_id] = video_id
+            if video_id in item_id_by_video:
+                # A Google page may repeat the SAME upload playlist item at the
+                # page boundary. Never mistake it for a second uploaded video.
+                if not playlist_item_id or item_id_by_video[video_id] != playlist_item_id:
+                    raise YouTubeApiError(
+                        "Owner uploads pagination returned repeated video IDs with "
+                        "different or missing playlist item identities."
+                    )
+                continue
+            item_id_by_video[video_id] = playlist_item_id
+            ordered_ids.append(video_id)
+            snippet = _dict_field(item, "snippet")
+            status = _dict_field(item, "status")
+            if (
+                snippet.get("title") == "Deleted video"
+                and snippet.get("description") == "This video is unavailable."
+                and status.get("privacyStatus") == "privacyStatusUnspecified"
+            ):
+                # An explicit YouTube tombstone is distinct from an omitted
+                # LIVE upload. Do not infer deletion from a generic missing ID.
+                confirmed_deleted.add(video_id)
 
         raw_by_id: dict[str, dict[str, Any]] = {}
         for batch in _chunks(ordered_ids, 50):
@@ -318,7 +341,9 @@ class YouTubeApiClient(HttpClientOwner):
                 if item_id:
                     raw_by_id[item_id] = raw_item
 
-        missing_ids = [video_id for video_id in ordered_ids if video_id not in raw_by_id]
+        missing_ids = [
+            video_id for video_id in ordered_ids if video_id not in raw_by_id and video_id not in confirmed_deleted
+        ]
         if missing_ids:
             raise YouTubeApiError(
                 "YouTube videos.list omitted upload IDs from the owner uploads playlist: " + ",".join(missing_ids)
@@ -326,6 +351,9 @@ class YouTubeApiClient(HttpClientOwner):
 
         records: list[VideoRecord] = []
         for video_id in ordered_ids:
+            if video_id not in raw_by_id:
+                # Only provider-explicit Deleted video tombstones reach here.
+                continue
             video_payload = raw_by_id[video_id]
             snippet = _dict_field(video_payload, "snippet")
             details = _dict_field(video_payload, "contentDetails")
