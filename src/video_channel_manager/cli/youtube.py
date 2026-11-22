@@ -20,6 +20,7 @@ from video_channel_manager.platforms.youtube import (
     InstalledClientConfig,
     InstalledOAuthFlow,
     OAuthFlowError,
+    OAuthToken,
     TokenStore,
     YOUTUBE_FORCE_SSL_SCOPE,
     YOUTUBE_READONLY_SCOPE,
@@ -168,6 +169,37 @@ def _show_oauth_storage(store: TokenStore) -> None:
         )
 
 
+class _CandidateOAuthTokenStore(TokenStore):
+    """In-memory candidate grant: do not replace a real alias until identity matches."""
+
+    def __init__(self, token: OAuthToken) -> None:
+        self._token = token
+
+    def load_token(self, alias: str) -> OAuthToken:
+        self.validate_alias(alias)
+        return self._token
+
+    def save_token(self, alias: str, token: OAuthToken) -> Path:
+        self.validate_alias(alias)
+        self._token = token
+        return Path(":not-persisted:")
+
+
+def _read_candidate_oauth_channels(
+    *,
+    config: InstalledClientConfig,
+    account: str,
+    token: OAuthToken,
+) -> list:
+    """Owner GET before touching the durable token or account registry."""
+    ephemeral = _CandidateOAuthTokenStore(token)
+    client = YouTubeApiClient(client_config=config, token_store=ephemeral, account_alias=account)
+    try:
+        return client.list_my_channels()
+    finally:
+        client.close()
+
+
 @youtube_app.command("login")
 def login(
     account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
@@ -194,6 +226,18 @@ def login(
         raise typer.Exit(code=2) from exc
 
     _show_oauth_storage(store)
+    try:
+        registered = next((item for item in store.list_accounts() if item.alias == account), None)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]YouTube account registry unavailable:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    expected_channel_ids = {channel.channel_id for channel in registered.channels} if registered else set()
+    if (registered and not expected_channel_ids) or (store.token_exists(account) and not registered):
+        console.print(
+            "[red]Existing OAuth alias has no trusted channel identity; refusing replacement. "
+            "Repair the account registry before reauthorization.[/red]"
+        )
+        raise typer.Exit(code=2)
     if store.token_exists(account) and not force:
         console.print(
             f"[yellow]Account '{account}' is already authorized.[/yellow] "
@@ -231,9 +275,23 @@ def login(
                 "Review the requested permissions on the Google consent screen. "
                 "No account token was saved or replaced."
             )
-        store.save_token(account, token)
-        client = YouTubeApiClient(client_config=config, token_store=store, account_alias=account)
-        channels = client.list_my_channels()
+        if not token.refresh_token:
+            raise OAuthFlowError(
+                "Google did not issue an offline refresh token. The existing YouTube account token was not replaced."
+            )
+        channels = _read_candidate_oauth_channels(config=config, account=account, token=token)
+        actual_channel_ids = {item.ref.remote_id for item in channels}
+        if expected_channel_ids and actual_channel_ids != expected_channel_ids:
+            raise OAuthFlowError(
+                "Google authorized a different YouTube channel than the existing alias. "
+                f"Expected {sorted(expected_channel_ids)!r}; received {sorted(actual_channel_ids)!r}. "
+                "Neither the original token nor the account registry was changed."
+            )
+        if not channels:
+            raise OAuthFlowError(
+                "Google authorization returned no owned YouTube channels; "
+                "neither the original token nor the account registry was changed."
+            )
         account_record = YouTubeAccount(
             alias=account,
             token_file=str(store.token_path(account)),
@@ -242,8 +300,11 @@ def login(
                 for item in channels
             ],
         )
+        # Only an exact provider-confirmed channel and complete scope grant can replace
+        # a trusted alias. The previous token stays untouched on every failed preflight.
+        store.save_token(account, token)
         store.save_account(account_record)
-    except (OAuthFlowError, YouTubeApiError, ValueError) as exc:
+    except (OAuthFlowError, YouTubeApiError, ValueError, OSError) as exc:
         console.print(f"[red]YouTube authorization failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
