@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from video_channel_manager.telegram_editorial_hold import require_execution_not_held
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release
 from video_channel_manager.telegram_multichannel_state import (
     GenericPublicationLedger,
@@ -88,6 +89,7 @@ def skip_expired_pending_by_freshness(
     remains available in ``telegram_multichannel_state.skip_expired_pending``.
     """
 
+    require_execution_not_held(release)
     effective_now = now or datetime.now(tz=UTC)
     if effective_now.tzinfo is None:
         raise ValueError("stale-publication check timestamp must be timezone-aware")

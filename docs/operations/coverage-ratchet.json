@@ -275,6 +275,7 @@
     "src/video_channel_manager/telegram_custom_emoji_canary.py": 57.73,
     "src/video_channel_manager/telegram_custom_emoji_catalog.py": 81.73,
     "src/video_channel_manager/telegram_custom_emoji_harvest.py": 82.97,
+    "src/video_channel_manager/telegram_editorial_hold.py": 100.0,
     "src/video_channel_manager/telegram_github_outcome_artifact.py": 69.25,
     "src/video_channel_manager/telegram_github_quality_gate.py": 78.12,
     "src/video_channel_manager/telegram_historical_archival_release.py": 75.3,

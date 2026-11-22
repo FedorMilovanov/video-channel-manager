@@ -6,7 +6,7 @@
  "release_time": "12:00",
  "source": "correction of 2026-11-05 mass-post incident; owner manually deleted the 8 posts",
  "proposal_status": "PROPOSAL_ONLY_NOT_APPROVED",
- "proposal_note": "Черновик переназначения просроченных слотов 06–09. Даты выбраны только вторник/пятница, потому что ручной dispatch этого workflow принимает лишь 09–12, а 06–08 выходят исключительно запланированным запуском: 08.12, 11.12, 15.12, 18.12.2026, окно 12:00–13:59 МСК. НЕ является действующим манифестом: рабочий процесс сверяет SHA-256 файла charnock-reschedule-2026.json с переменной LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256. Порядок: владелец утверждает даты, заменяет ими действующий манифест, обновляет переменную. Даты 10–13 не двигаются.",
+ "proposal_note": "ТОЛЬКО ЧЕРНОВИК НЕ УТВЕРЖДЁН. Даты 06–08 предлагаются 08.12, 11.12, 15.12.2026; 09 НЕ ПЕРЕНОСИТЬ И НЕ ПОВТОРЯТЬ: подтверждённый перевыпуск Telegram #1630 от 20.11. Даты 10–13 оставлены исторически без изменений, 13 на HOLD. После исправления страниц 21.11 все восемь article_git_blob_sha действующего манифеста расходятся с очередью; повторное связывание оригинальной квитанции и новой исправленной версии требует отдельного решения, точной проверки страницы, редакционной и исполнительной авторизации. НЕ копировать этот файл в активный манифест и НЕ включать workflow/переменные по одному утверждению дат.",
  "items": [
   {
    "publication_id": "lordchrist-telegraph-charnock-06",
@@ -37,12 +37,11 @@
   },
   {
    "publication_id": "lordchrist-telegraph-charnock-09",
-   "scheduled_on_moscow": "2026-12-18",
+   "scheduled_on_moscow": "2026-11-20",
    "article_git_blob_sha": "bbf90eb3062eeb383bfe58745c86898ddb1feb17",
    "source_article_sha256": "sha256:b0d3936488829ceb21f8b599ccfe925d26564b8ee9e9c7d63eb6970d2de2adb3",
    "verified_telegraph_url": "https://telegra.ph/Ne-nuzhno-vyhodit-iz-doma-telo-i-dusha-kak-svidetelstvo-o-Tvorce-11-05",
-   "deleted_telegram_message_id": 1599,
-   "previous_scheduled_on_moscow": "2026-11-20"
+   "deleted_telegram_message_id": 1599
   },
   {
    "publication_id": "lordchrist-telegraph-charnock-10",

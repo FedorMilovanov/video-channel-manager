@@ -11,6 +11,7 @@ from typing import TypeVar
 from pydantic import BaseModel, ValidationError
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
+from video_channel_manager.telegram_editorial_hold import require_execution_not_held
 from video_channel_manager.telegram_multichannel_outcome import (
     GenericProviderOutcome,
     GenericSendProviderEffect,
@@ -250,6 +251,9 @@ def _send_exact_payload(
     *,
     now: datetime | None = None,
 ) -> GenericProviderOutcome:
+    # A prior intent may already have had an effect; HOLD must not fabricate
+    # a no-effect outcome that would clear the conservative may_exist state.
+    require_execution_not_held(release)
     try:
         _require_runtime_profile(profile, release)
         _require_release_target(release, envelope.target)
@@ -324,6 +328,7 @@ def main() -> int:
 
     if args.command == "initialize-ledger":
         release = load_release(args.release)
+        require_execution_not_held(release)
         expected = f"INITIALIZE:{release.digest}"
         if args.confirm != expected:
             raise ValueError("ledger initialization confirmation does not match exact release digest")
@@ -349,6 +354,7 @@ def main() -> int:
 
     if args.command == "skip-expired":
         release = load_release(args.release)
+        require_execution_not_held(release)
         if not release.release_authorized:
             raise ValueError("stale-publication skipping requires an authorized immutable release")
         ledger = load_ledger(args.ledger, release)
@@ -386,8 +392,9 @@ def main() -> int:
         return 0
 
     if args.command == "prepare":
-        profile = load_channel_profile(args.profile)
         release = load_release(args.release)
+        require_execution_not_held(release)
+        profile = load_channel_profile(args.profile)
         ledger = load_ledger(args.ledger, release)
         recovered = _recover_expired_before_exact_manual_prepare(
             release,
@@ -463,8 +470,9 @@ def main() -> int:
         return 0
 
     if args.command == "send-once":
-        profile = load_channel_profile(args.profile)
         release = load_release(args.release)
+        require_execution_not_held(release)
+        profile = load_channel_profile(args.profile)
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
         outcome = _send_exact_payload(profile, release, ledger, envelope)
