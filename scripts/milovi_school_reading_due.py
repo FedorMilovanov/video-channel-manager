@@ -6,11 +6,13 @@ import argparse
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import TypedDict
 from zoneinfo import ZoneInfo
 
 from video_channel_manager.milovi_telegram_feed import (
     MiloviFeedIndex,
     _save_index,
+    state_check,
     state_init,
     validate_bundle,
 )
@@ -25,6 +27,7 @@ from video_channel_manager.telegram_multichannel_video import GenericVideoPayloa
 from video_channel_manager.telegram_multichannel_transport import GenericRichPhotoPayload
 
 ZONE = ZoneInfo("Europe/Moscow")
+SLOT_MAX_LAG = timedelta(minutes=120)
 ROOT = Path("content/telegram/milovi-cake")
 STATE_FEED = ROOT / "feed"
 SCHOOL_REPO = "FedorMilovanov/Milovi_School"
@@ -276,7 +279,7 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
     _, pid = matching[0]
     release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
     slot = release.items[0].scheduled_at.astimezone(ZONE)
-    if clock < slot or clock >= slot + timedelta(minutes=120):
+    if clock < slot or clock >= slot + SLOT_MAX_LAG:
         return {"dispatch": "false", "reason": "outside_reviewed_school_slot"}
     entries = _load_state_index(checkout)
     early_verified = _early_paris_brest_verified(checkout, entries)
@@ -321,9 +324,112 @@ def due(checkout: Path, *, now: datetime | None = None) -> dict[str, str]:
     return {"dispatch": "true", "publication_id": pid, "reason": "exact_owner_approved_school_photo_due"}
 
 
+class SchoolAuditReport(TypedDict):
+    missed_windows: list[str]
+    suppressed_early_duplicate: list[str]
+    verified: list[str]
+    provider_access_performed: bool
+    provider_mutation_performed: bool
+
+
+def _require_exact_verified_receipt(checkout: Path, pid: str) -> None:
+    """Only a receipt for the exact channel/bot and canonical message URL is terminal."""
+    release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
+    entry = load_ledger(checkout / STATE_FEED / f"{pid}.json", release).entries[pid]
+    username = entry.actual_chat_username
+    bot_username = entry.bot_username
+    attempted_at = entry.attempted_at_utc
+    slot = release.items[0].scheduled_at
+    if not (
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and attempted_at is not None
+        and slot <= attempted_at < slot + SLOT_MAX_LAG
+        and type(entry.message_id) is int
+        and entry.message_id > 0
+        and entry.actual_chat_id == release.chat_id == -1002215328390
+        and entry.bot_id == release.bot_id == 8716602202
+        and isinstance(username, str)
+        and username.casefold() == release.channel_username.lstrip("@").casefold() == "milovicake"
+        and isinstance(bot_username, str)
+        and bot_username.casefold() == (release.bot_username or "").casefold() == "preaching_mp3_bot"
+        and entry.message_url == f"https://t.me/{username}/{entry.message_id}"
+    ):
+        raise ValueError(
+            f"School receipt has mismatched target or message identity, or is outside the scheduled window: "
+            f"{pid}; reconcile without replay"
+        )
+
+
+def audit_expired(now: datetime, *, checkout: Path) -> SchoolAuditReport:
+    """Report elapsed unverified slots; this never dispatches or changes state.
+
+    A pending original Paris-Brest slot is suppressed only by the exact
+    verified early release. Unknown effects and inconsistent receipts remain
+    reconciliation incidents, not evidence of absence or retry authority.
+    """
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("School overdue audit clock must be timezone-aware")
+    validate_exact_releases()
+    clock = now.astimezone(ZONE)
+    elapsed: list[str] = []
+    for _, pid, _ in RELEASES:
+        release = load_release(ROOT / "releases" / f"{pid}-runtime.json")
+        if clock >= release.items[0].scheduled_at.astimezone(ZONE) + SLOT_MAX_LAG:
+            elapsed.append(pid)
+    report: SchoolAuditReport = {
+        "missed_windows": [],
+        "suppressed_early_duplicate": [],
+        "verified": [],
+        "provider_access_performed": False,
+        "provider_mutation_performed": False,
+    }
+    if not elapsed:
+        return report
+
+    entries = _load_state_index(checkout)
+    early_verified = False
+    if ORIGINAL_PARIS_BREST in elapsed:
+        early_indexed = OWNER_EARLY_PARIS_BREST in entries
+        early_ledger = (checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json").is_file()
+        if early_indexed != early_ledger:
+            raise ValueError("Early Paris-Brest index/ledger incomplete; reconcile without replay")
+        if early_indexed:
+            early = state_check(OWNER_EARLY_PARIS_BREST, state_checkout=checkout)
+            if early["state"] == "published" and early["provider_effect"] == "verified":
+                _require_exact_verified_receipt(checkout, OWNER_EARLY_PARIS_BREST)
+                early_verified = _early_paris_brest_verified(checkout, entries)
+                if not early_verified:
+                    raise ValueError("Early Paris-Brest is not the exact original story; reconcile without replay")
+                early_release = load_release(ROOT / "releases" / f"{OWNER_EARLY_PARIS_BREST}-runtime.json")
+                early_entry = load_ledger(checkout / STATE_FEED / f"{OWNER_EARLY_PARIS_BREST}.json", early_release)
+                original_release = load_release(ROOT / "releases" / f"{ORIGINAL_PARIS_BREST}-runtime.json")
+                published_at = early_entry.entries[OWNER_EARLY_PARIS_BREST].published_at_utc
+                if published_at is None or published_at >= original_release.items[0].scheduled_at:
+                    raise ValueError("Paris-Brest receipt was not early; reconcile without replay")
+            elif early["state"] != "pending" or early["provider_effect"] != "impossible":
+                raise ValueError("Early Paris-Brest effect is unresolved or inconsistent; reconcile without replay")
+
+    for pid in elapsed:
+        result = state_check(pid, state_checkout=checkout)
+        if result["state"] == "published" and result["provider_effect"] == "verified":
+            _require_exact_verified_receipt(checkout, pid)
+            if pid == ORIGINAL_PARIS_BREST and early_verified:
+                raise ValueError("Early and original Paris-Brest are both verified; reconcile without replay")
+            report["verified"].append(pid)
+        elif result["state"] == "pending" and result["provider_effect"] == "impossible":
+            if pid == ORIGINAL_PARIS_BREST and early_verified:
+                report["suppressed_early_duplicate"].append(pid)
+            else:
+                report["missed_windows"].append(pid)
+        else:
+            raise ValueError(f"School effect is unresolved or inconsistent: {pid}; reconcile without replay")
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "initialize-all", "due"))
+    parser.add_argument("command", choices=("validate", "initialize-all", "due", "audit-expired"))
     parser.add_argument("--state-checkout", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -334,6 +440,18 @@ def main() -> int:
         if args.state_checkout is None:
             parser.error("initialize-all requires --state-checkout")
         initialize_all(args.state_checkout)
+    elif args.command == "audit-expired":
+        if args.state_checkout is None:
+            parser.error("audit-expired requires --state-checkout")
+        report = audit_expired(datetime.now(timezone.utc), checkout=args.state_checkout)
+        print(json.dumps(report, ensure_ascii=False))
+        if report["missed_windows"]:
+            print(
+                "::error::MILOVI_SCHOOL_MISSED_DUE_WINDOWS "
+                + str(len(report["missed_windows"]))
+                + " elapsed School slots lack a verified receipt; never replay automatically"
+            )
+            return 2
     else:
         if args.state_checkout is None or args.output is None:
             parser.error("due requires --state-checkout and --output")
