@@ -1,0 +1,77 @@
+name: Lordchrist Jude Telegraph account inspection (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lordchrist-jude-telegraph-readonly
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.repository == 'FedorMilovanov/video-channel-manager' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed main without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install the locked read runtime
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Prove exact current main and successful CI
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+      - name: Read the existing durable ledger without a worktree or state write
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin \
+            state/lordchrist-telegram:refs/remotes/origin/state/lordchrist-telegram
+          ledger_sha="$(git rev-parse refs/remotes/origin/state/lordchrist-telegram)"
+          [[ "$ledger_sha" =~ ^[a-f0-9]{40}$ ]] || exit 3
+          git show "${ledger_sha}:content/telegram/lordchrist/telegraph-v1/publication-ledger.json" \
+            > "$RUNNER_TEMP/lordchrist-telegraph-ledger.json"
+          echo "LEDGER_SHA=$ledger_sha" >> "$GITHUB_ENV"
+      - name: Inspect account titles twice and recheck main and state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_jude_telegraph_readonly \
+            --ledger "$RUNNER_TEMP/lordchrist-telegraph-ledger.json" > "$RUNNER_TEMP/jude-account-report.json"
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+          remote_state="$(git ls-remote origin refs/heads/state/lordchrist-telegram | cut -f1)"
+          [[ "$remote_state" == "$LEDGER_SHA" ]] || exit 3
+          report="$(cat "$RUNNER_TEMP/jude-account-report.json")"
+          echo "::notice title=lordchrist-jude-account-read-only::${report}"
+          {
+            echo '## Jude Telegraph account: read-only title inspection'
+            echo 'Counts cover only the bound account and are not publication authority.'
+            echo '```json'
+            echo "$report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
