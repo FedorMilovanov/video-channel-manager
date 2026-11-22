@@ -692,16 +692,17 @@ class InstagramProviderClient:
         # An explicit, validated loopback tunnel is the sole Meta network
         # route in this mode. Do not let ambient HTTP_PROXY/HTTPS_PROXY
         # override it, and use the same route for Graph and rupload uploads.
-        if config.meta_proxy_url is None:
-            self._client = client or httpx.Client(timeout=config.timeout_seconds)
-            self._media_client = media_client or httpx.Client(timeout=config.timeout_seconds)
-        else:
-            self._client = client or httpx.Client(
-                timeout=config.timeout_seconds, proxy=config.meta_proxy_url, trust_env=False
+        def new_owned_client() -> httpx.Client:
+            if config.meta_proxy_url is None:
+                return httpx.Client(timeout=config.timeout_seconds)
+            return httpx.Client(
+                timeout=config.timeout_seconds,
+                proxy=config.meta_proxy_url,
+                trust_env=False,
             )
-            self._media_client = media_client or httpx.Client(
-                timeout=config.timeout_seconds, proxy=config.meta_proxy_url, trust_env=False
-            )
+
+        self._client = client or new_owned_client()
+        self._media_client = media_client or new_owned_client()
 
     def close(self) -> None:
         if self._owns_client:
