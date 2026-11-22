@@ -83,3 +83,10 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --ref main \
             -f operation=publish -f publication_id="$PUBLICATION_ID" \
             -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"
+
+      - name: Detect expired School windows without replay
+        if: ${{ always() && github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.milovi_school_reading_due audit-expired \
+            --state-checkout "$STATE_DIR"
