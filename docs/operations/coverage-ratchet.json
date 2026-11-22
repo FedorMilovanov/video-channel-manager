@@ -116,6 +116,7 @@
     "src/video_channel_manager/local_media/scanner.py": 97.05,
     "src/video_channel_manager/lordchrist_charnock_reschedule.py": 60.0,
     "src/video_channel_manager/lordchrist_cross_track_effect_guard.py": 77.2,
+    "src/video_channel_manager/lordchrist_jude_telegraph_readonly.py": 90.0,
     "src/video_channel_manager/lordchrist_peasants1525_inplace.py": 75.8,
     "src/video_channel_manager/lordchrist_peasants1525_readability.py": 60.0,
     "src/video_channel_manager/lordchrist_peasants1525_term_pages.py": 60.0,
