@@ -76,6 +76,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
             "provider_effect": "verified",
             "telegram_chat_id": backlog.LORDCHRIST_CHAT_ID,
             "telegram_message_id": original_id,
+            "telegram_published_at_utc": "2026-11-05T04:15:13+00:00",
             "telegraph_url": url,
             "article_sha256": source,
         }
@@ -88,6 +89,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
                 "original_deleted_message_id": original_id,
                 "source_article_sha256": source,
                 "telegraph_url": url,
+                "sent_at_moscow": "2026-11-20T12:05:33+03:00",
                 "verified_at_moscow": "2026-11-20T12:05:46+03:00",
             }
     queue = _write(tmp_path / "queue.json", {"items": items})
@@ -149,6 +151,155 @@ def test_verified_reissue_wins_and_original_deleted_message_is_not_reissue(tmp_p
     assert reissued["telegram_message_id"] == 1630  # never the deleted 1599
     assert "h-calendar-verified" not in [slot["publication_id"] for slot in plan["proposal"]]
     assert _record(plan, "published", "c-done")["receipt_status"] == "verified_receipt"
+
+
+def test_jude_date_is_not_suggested_while_old_run_target_is_unknown(tmp_path: Path) -> None:
+    queue_path, _, _ = _fixture(tmp_path)
+    queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    jude = "lordchrist-telegraph-jude-1-5-20261105"
+    queue["items"].append({"publication_id": jude, "status": "ready", "scheduled_on_moscow": "2026-11-15"})
+    _write(queue_path, queue)
+
+    plan = _plan_files(tmp_path, priority=(jude,))
+    record = _record(plan, "overdue", jude)
+    assert record["receipt_status"] == "no_ledger_entry"  # not proof of provider absence
+    assert "queued_run_43098273140_target_unknown" in record["proposal_blockers"]
+    assert jude not in [slot["publication_id"] for slot in plan["proposal"]]
+    assert "queued_run_43098273140_target_unknown" in backlog.render(plan)
+
+
+def test_history_02_requires_owner_date_decision_not_an_automatic_suggestion(tmp_path: Path) -> None:
+    queue_path, _, _ = _fixture(tmp_path)
+    queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    history = "lordchrist-telegraph-charnock-history-02"
+    queue["items"].append({"publication_id": history, "status": "ready"})
+    _write(queue_path, queue)
+
+    plan = _plan_files(tmp_path, priority=(history,))
+    record = _record(plan, "undated", history)
+    assert "owner_date_not_selected" in record["proposal_blockers"]
+    assert history not in [slot["publication_id"] for slot in plan["proposal"]]
+    assert "owner_date_not_selected" in backlog.render(plan)
+
+
+def test_reissue_spacing_uses_actual_send_date_not_verification_date(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    receipt = ledger["entries"]["h-calendar-verified"]["scheduled_reissue"]
+    receipt["sent_at_moscow"] = "2026-11-21T21:05:33+00:00"  # 22 November in Moscow
+    receipt["verified_at_moscow"] = "2026-11-23T00:05:46+03:00"
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path, gap=1)
+    reissued = _record(plan, "published", "h-calendar-verified")
+    assert reissued["published_on_moscow"] == "2026-11-22"
+    assert plan["proposal"]  # other proposals can still be considered
+    assert all(slot["proposed_date"] != "2026-11-22" for slot in plan["proposal"])
+
+
+@pytest.mark.parametrize("sent_at", [None, "", "invalid", "2026-11-20T12:05:33", 123])
+def test_unknown_reissue_send_date_suppresses_all_date_proposals(tmp_path: Path, sent_at) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    receipt = ledger["entries"]["h-calendar-verified"]["scheduled_reissue"]
+    if sent_at is None:
+        receipt.pop("sent_at_moscow")
+    else:
+        receipt["sent_at_moscow"] = sent_at
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path)
+    record = _record(plan, "published", "h-calendar-verified")
+    assert record["receipt_status"] == "verified"  # retain the terminal no-replay evidence
+    assert record["telegram_message_id"] == 1630
+    assert record["published_on_moscow"] is None
+    assert "h-calendar-verified:publication_date_unresolved" in plan["proposal_suppressed_by"]
+    assert plan["proposal"] == []
+    assert "publication_date_unresolved" in backlog.render(plan)
+
+
+def test_uncertain_provider_effect_suppresses_other_date_proposals(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"]["a-old"] = {"publication_id": "a-old", "state": "dispatching", "provider_effect": "may_exist"}
+    ledger["entries"]["e-calendar-old"]["scheduled_reissue"] = {"state": "sent", "provider_effect": "may_exist"}
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path)
+    assert "a-old:publication_receipt_ambiguous" in plan["proposal_suppressed_by"]
+    assert "e-calendar-old:reissue_receipt_ambiguous" in plan["proposal_suppressed_by"]
+    assert plan["proposal"] == []
+
+
+def test_deleted_original_receipt_still_reserves_its_actual_publication_date(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"]["e-calendar-old"]["telegram_published_at_utc"] = "2026-11-22T09:00:00+00:00"
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path, gap=1)
+    record = _record(plan, "calendar_owned", "e-calendar-old")
+    assert record["receipt_status"] == "unclaimed"
+    assert record["original_published_on_moscow"] == "2026-11-22"
+    assert plan["proposal"]
+    assert all(slot["proposed_date"] != "2026-11-22" for slot in plan["proposal"])
+
+
+@pytest.mark.parametrize("pid,group", [("e-calendar-old", "calendar_owned"), ("h-calendar-verified", "published")])
+def test_missing_original_publication_date_blocks_all_draft_dates(tmp_path: Path, pid: str, group: str) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][pid].pop("telegram_published_at_utc")
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path)
+    assert _record(plan, group, pid)["original_published_on_moscow"] is None
+    assert f"{pid}:original_publication_date_unresolved" in plan["proposal_suppressed_by"]
+    assert plan["proposal"] == []
+
+
+def test_ledger_only_receipt_reserves_send_date_but_is_never_requeued(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"]["orphan-legacy"] = {
+        "publication_id": "orphan-legacy",
+        "telegram_chat_id": backlog.LORDCHRIST_CHAT_ID,
+        "telegram_message_id": 17,
+        "telegraph_url": "https://telegra.ph/old-page",
+        "telegram_published_at_utc": "2026-11-22T09:00:00+00:00",
+    }
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path, gap=1, priority=("orphan-legacy",))
+    old = _record(plan, "ledger_only", "orphan-legacy")
+    assert old["receipt_status"] == "legacy_receipt"
+    assert old["published_on_moscow"] == "2026-11-22"
+    assert old["telegram_message_id"] == 17
+    assert plan["proposal"]
+    assert all(slot["proposed_date"] != "2026-11-22" for slot in plan["proposal"])
+    assert "orphan-legacy" not in [slot["publication_id"] for slot in plan["proposal"]]
+    assert "orphan-legacy" in backlog.render(plan)
+
+
+def test_ambiguous_ledger_only_receipt_suppresses_all_date_proposals(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"]["orphan-unknown"] = {"publication_id": "orphan-unknown", "provider_effect": "may_exist"}
+    _write(ledger_path, ledger)
+
+    plan = _plan_files(tmp_path)
+    assert _record(plan, "ledger_only", "orphan-unknown")["receipt_status"] == "ambiguous"
+    assert "orphan-unknown:ledger_only_receipt_ambiguous" in plan["proposal_suppressed_by"]
+    assert plan["proposal"] == []
+
+
+def test_invalid_ledger_only_identity_fails_closed(tmp_path: Path) -> None:
+    _, ledger_path, _ = _fixture(tmp_path)
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["entries"][""] = {"publication_id": "", "provider_effect": "may_exist"}
+    _write(ledger_path, ledger)
+    with pytest.raises(SystemExit, match="invalid publication identity"):
+        _plan_files(tmp_path)
 
 
 def test_overdue_undated_and_holds_are_separate(tmp_path: Path) -> None:

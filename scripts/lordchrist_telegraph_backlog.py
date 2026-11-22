@@ -26,6 +26,14 @@ MANIFEST_PATH = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock
 MOSCOW = ZoneInfo("Europe/Moscow")
 LORDCHRIST_CHAT_ID = -1001295216957
 EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
+# These are report-only holds, not publisher gates. The old run's inputs are
+# unknown; a missing Jude ledger entry does not resolve its target. History-02
+# also needs an owner date decision. Remove only after the respective evidence
+# and decision are independently established and reviewed.
+PROPOSAL_ONLY_HOLDS = {
+    "lordchrist-telegraph-jude-1-5-20261105": "queued_run_43098273140_target_unknown",
+    "lordchrist-telegraph-charnock-history-02": "owner_date_not_selected",
+}
 DEFAULT_STATE_REF = "state/lordchrist-telegram"
 DEFAULT_STATE_REMOTE_REF = f"refs/remotes/origin/{DEFAULT_STATE_REF}"
 
@@ -219,7 +227,9 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
         and receipt.get("new_message_id") != calendar["deleted_telegram_message_id"]
         and all(receipt.get(key) == value for key, value in expected.items())
     ):
-        return "verified", _published_date(receipt.get("verified_at_moscow")) or calendar["scheduled_on_moscow"]
+        # Verification may occur after the send, even on a different date.
+        # A missing send timestamp must not be replaced by an expected date.
+        return "verified", _published_date(receipt.get("sent_at_moscow"))
     return "ambiguous", None
 
 
@@ -267,6 +277,7 @@ def classify(
         "undated": [],
         "calendar_owned": [],
         "needs_reconciliation": [],
+        "ledger_only": [],
     }
     for item in items:
         pid = item["publication_id"]
@@ -284,6 +295,8 @@ def classify(
             record["proposal_blockers"].append("canary")
         if record["status"] != "ready":
             record["proposal_blockers"].append("queue_not_ready")
+        if pid in PROPOSAL_ONLY_HOLDS:
+            record["proposal_blockers"].append(PROPOSAL_ONLY_HOLDS[pid])
         if pid in calendar:
             binding = calendar[pid]
             record["calendar_date"] = binding["scheduled_on_moscow"]
@@ -294,10 +307,19 @@ def classify(
             else:
                 status, published_on = _calendar_receipt_status(ledger.get(pid), binding)
             record["receipt_status"] = status
+            if status in ("unclaimed", "verified"):
+                # The original was deleted, but its real publication date is
+                # still relevant to a channel-wide one-article-per-day plan.
+                original_date = _published_date(ledger[pid].get("telegram_published_at_utc"))  # type: ignore[index]
+                record["original_published_on_moscow"] = original_date
+                if original_date is None:
+                    record["proposal_blockers"].append("original_publication_date_unresolved")
             if status == "verified":
                 receipt = ledger[pid]["scheduled_reissue"]  # type: ignore[index]
                 record["telegram_message_id"] = receipt["new_message_id"]
                 record["published_on_moscow"] = published_on
+                if published_on is None:
+                    record["proposal_blockers"].append("publication_date_unresolved")
                 groups["published"].append(record)
                 continue
             if status != "unclaimed":
@@ -331,6 +353,23 @@ def classify(
             groups["overdue"].append(record)
         else:
             groups["upcoming"].append(record)
+
+    # A protected receipt can outlive its queue item. It must reserve its real
+    # date without ever being turned back into a candidate for publication.
+    if ledger is not None:
+        if any(not isinstance(pid, str) or not pid for pid in ledger):
+            raise SystemExit("ledger contains an invalid publication identity; no safe proposal")
+        queue_ids = {item["publication_id"] for item in items}
+        for pid in sorted(ledger.keys() - queue_ids):
+            status, published_on = _ordinary_receipt_status(ledger[pid], pid)
+            extra: dict[str, Any] = {
+                "publication_id": pid,
+                "receipt_status": status,
+                "published_on_moscow": published_on,
+            }
+            if status != "ambiguous":
+                extra["telegram_message_id"] = ledger[pid]["telegram_message_id"]
+            groups["ledger_only"].append(extra)
     for records in groups.values():
         records.sort(
             key=lambda r: (r.get("calendar_date") or r.get("scheduled_on_moscow") or "9999", r["publication_id"])
@@ -407,7 +446,7 @@ def build_plan(
     occupied: set[date] = set()
     for records in groups.values():
         for record in records:
-            for key in ("scheduled_on_moscow", "calendar_date", "published_on_moscow"):
+            for key in ("scheduled_on_moscow", "calendar_date", "published_on_moscow", "original_published_on_moscow"):
                 if record.get(key):
                     occupied.add(date.fromisoformat(record[key]))
     waiting = [{**r, "source": "queue"} for key in ("overdue", "undated") for r in groups[key]]
@@ -422,7 +461,38 @@ def build_plan(
             r["publication_id"],
         )
     )
-    proposal = propose_slots(waiting, start=start, gap_days=gap_days, busy=occupied) if ledger is not None else []
+    # Unknown effects or publication dates cannot establish which day is free.
+    # Retain verified receipts as terminal, but stop all date suggestions until
+    # those unknowns are reconciled; this is still only an advisory report.
+    suppressed_by: list[str] = []
+    if ledger is None:
+        suppressed_by.append("ledger_unavailable")
+    else:
+        suppressed_by.extend(
+            f"{record['publication_id']}:publication_date_unresolved"
+            for record in groups["published"]
+            if record.get("published_on_moscow") is None
+        )
+        suppressed_by.extend(
+            f"{record['publication_id']}:original_publication_date_unresolved"
+            for group in ("published", "calendar_owned")
+            for record in groups[group]
+            if "original_published_on_moscow" in record and record["original_published_on_moscow"] is None
+        )
+        suppressed_by.extend(
+            f"{record['publication_id']}:publication_receipt_ambiguous" for record in groups["needs_reconciliation"]
+        )
+        suppressed_by.extend(
+            f"{record['publication_id']}:reissue_receipt_ambiguous"
+            for record in groups["calendar_owned"]
+            if record["receipt_status"] == "ambiguous"
+        )
+        suppressed_by.extend(
+            f"{record['publication_id']}:ledger_only_receipt_ambiguous"
+            for record in groups["ledger_only"]
+            if record["receipt_status"] == "ambiguous"
+        )
+    proposal = propose_slots(waiting, start=start, gap_days=gap_days, busy=occupied) if not suppressed_by else []
     return {
         "schema_name": "video-channel-manager.lordchrist-telegraph-backlog-plan",
         "schema_version": 1,
@@ -434,6 +504,7 @@ def build_plan(
         "gap_days": gap_days,
         "counts": {name: len(records) for name, records in groups.items()},
         **groups,
+        "proposal_suppressed_by": suppressed_by,
         "proposal": proposal,
         "editorial_holds": sorted(holds),
     }
@@ -442,16 +513,22 @@ def build_plan(
 def render(plan: dict[str, Any]) -> str:
     counts = plan["counts"]
     lines = [
-        "Квитанции: {published} | просрочено: {overdue} | впереди: {upcoming} | "
-        "без даты: {undated} | календарь Чарнока: {calendar_owned} | сверить: {needs_reconciliation}".format(**counts)
+        "Квитанции очереди: {published} | вне очереди: {ledger_only} | просрочено: {overdue} | "
+        "впереди: {upcoming} | без даты: {undated} | календарь Чарнока: {calendar_owned} | "
+        "сверить: {needs_reconciliation}".format(**counts)
     ]
     if plan["overdue"]:
         lines.append("\nПРОСРОЧЕНО (не разрешение на выпуск):")
         for r in plan["overdue"]:
-            lines.append(f"  {r['publication_id']} — было {r['scheduled_on_moscow']}, {r['overdue_days']} дн.")
+            blockers = f"; блокеры: {', '.join(r['proposal_blockers'])}" if r["proposal_blockers"] else ""
+            lines.append(
+                f"  {r['publication_id']} — было {r['scheduled_on_moscow']}, {r['overdue_days']} дн.{blockers}"
+            )
     if plan["undated"]:
         lines.append("\nБЕЗ ДАТЫ:")
-        lines.extend(f"  {r['publication_id']}" for r in plan["undated"])
+        for r in plan["undated"]:
+            blockers = f"; блокеры: {', '.join(r['proposal_blockers'])}" if r["proposal_blockers"] else ""
+            lines.append(f"  {r['publication_id']}{blockers}")
     if plan["calendar_owned"]:
         lines.append("\nКАЛЕНДАРЬ ЧАРНОКА (оригинальные удалённые ID не подтверждают перевыпуск):")
         for r in plan["calendar_owned"]:
@@ -460,6 +537,11 @@ def render(plan: dict[str, Any]) -> str:
                 f"  {r['publication_id']} — {r['calendar_date']}, удалённое сообщение "
                 f"{r['deleted_telegram_message_id']}, receipt={r['receipt_status']}; {blockers}"
             )
+    if plan["ledger_only"]:
+        lines.append("\nКВИТАНЦИИ ВНЕ ТЕКУЩЕЙ ОЧЕРЕДИ (не планировать повтор):")
+        for r in plan["ledger_only"]:
+            when = r["published_on_moscow"] or "дата неизвестна"
+            lines.append(f"  {r['publication_id']} — receipt={r['receipt_status']}, {when}")
     if plan["needs_reconciliation"]:
         lines.append("\nНУЖНА СВЕРКА (не планировать повтор):")
         for r in plan["needs_reconciliation"]:
@@ -468,6 +550,8 @@ def render(plan: dict[str, Any]) -> str:
         lines.append("\nВПЕРЕДИ (не разрешение на выпуск):")
         for r in plan["upcoming"]:
             lines.append(f"  {r['publication_id']} — {r['scheduled_on_moscow']}")
+    if plan["proposal_suppressed_by"]:
+        lines.append("\nЧЕРНОВИК ДАТ ОТКЛЮЧЁН ДО СВЕРКИ: " + ", ".join(plan["proposal_suppressed_by"]))
     if plan["proposal"]:
         lines.append(f"\nЧЕРНОВИК ДАТ (зазор {plan['gap_days']} дн. от занятых дат; не разрешение):")
         for slot in plan["proposal"]:

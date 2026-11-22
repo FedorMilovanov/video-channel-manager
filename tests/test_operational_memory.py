@@ -71,6 +71,72 @@ def test_wave14_history_remains_machine_readable_but_not_live_state() -> None:
     assert "Issue #154 remains **artifact-level open**" not in current
 
 
+def test_lordchrist_checkpoint_preserves_no_replay_and_editorial_holds() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    overlay = current.split("## LordChrist publication checkpoint", 1)[1].split("## Completion", 1)[0]
+
+    for fact in (
+        "[ordered queue](2026-11-21-zero-open-tasks-plan.md)",
+        "[release calendar](2026-11-21-release-calendar.md)",
+        "**QUIZ: EDITORIAL HOLD.**",
+        "Local signoff JSON is not review provenance or authority",
+        "`may_exist`",
+        "#09 is already verified as Telegram message **1630**",
+        "never repeat it",
+        "do not increase pages 04/05",
+        "`43098273140`",
+        "unknown inputs",
+        "do not replay or cancel blindly",
+        "never publish at night",
+    ):
+        assert fact in overlay
+    assert "Next planned item 8: 17 November" not in current
+    for name in ("2026-11-21-zero-open-tasks-plan.md", "2026-11-21-release-calendar.md"):
+        assert (OPERATIONS_DIR / name).is_file()
+
+
+def test_legendary_poet_inventory_keeps_done_edits_and_project_identity() -> None:
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    poet = inventory.split("Legendary Poet:", 1)[1].split("Lord God:", 1)[0]
+    lord_god = inventory.split("Lord God:", 1)[1].split("LordChrist Shorts / видео:", 1)[0]
+
+    assert "все 7/7 исправлений" in poet
+    assert "уже выполнены на checkpoint; не повторять" in poet
+    assert "8g_4EVWFb1g" in poet and "UgyUMAfJqC8hdzxSnfF4AaABAg" in poet
+    assert "Lf0h4yXPVng" in poet and "комментарий только draft" in poet
+    assert "WizaG8S085g::en-US" in poet and "`may_exist`" in poet
+    assert "`reconciled_absent_after_403`" in poet
+    assert "Это не доказывает отсутствия сейчас" in poet
+    assert "#789" in poet and "#778" in poet
+    assert "#789" not in lord_god and "#778" not in lord_god
+    assert "#869" in lord_god
+
+
+def test_platform_inventory_preserves_existing_reel_and_vk_wall_evidence() -> None:
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    blok = plan.split("- **#778,", 1)[1].split("- **#792,", 1)[0]
+    milovi = plan.split("- **#792,", 1)[1].split("- **#790,", 1)[0]
+
+    assert "18125909824868306" in blok and "#АлександрПушкин" in blok
+    assert "тело существующего Reel" in blok and "уже называло Блока" in blok
+    assert "не создавать Reel заново" in blok and "старый полный caption-план устарел" in blok
+    assert "27/27" in milovi and "19 отдельных Clip-вложений" in milovi and "все 18" in milovi
+    assert "Восемь прочих ordinary video" in milovi and "уже загружены" in milovi
+    assert "`acodec=None` означает **звук неизвестен**" in milovi
+    assert "не автоматическая отмена, перепубликация" in milovi
+    assert "issuecomment-7051382962" in milovi and "issuecomment-7052639277" in milovi
+
+
+def test_caption_reconciliation_is_historical_and_not_retry_authority() -> None:
+    quota = (OPERATIONS_DIR / "youtube-api-quota-and-viewer-language-2026-11-13.md").read_text(encoding="utf-8")
+    correction = next(line for line in quota.splitlines() if "reconciled_absent_after_403" in line)
+    assert "WizaG8S085g::en-US" in correction
+    assert "two owner `captions.list` reads" in correction
+    assert "**12 November**" in correction
+    assert "**not** proof of present-day absence or permission to insert" in correction
+    assert "issuecomment-6874475550" in correction
+
+
 def test_agent_instructions_preserve_current_identity_and_execution_boundaries() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
