@@ -346,6 +346,18 @@ class InstagramRuntimeConfig:
     timeout_seconds: float
     poll_interval_seconds: float
     poll_attempts: int
+    meta_proxy_url: str | None = None
+
+    def __post_init__(self) -> None:
+        # Normal CLI settings are validated by Pydantic. Also reject unsafe
+        # URLs when this dataclass is created directly by a caller.
+        if self.meta_proxy_url is not None:
+            try:
+                validated = AppSettings.validate_instagram_meta_proxy_url(self.meta_proxy_url)
+            except ValueError as exc:
+                raise InstagramConfigurationError("Instagram Meta proxy must use loopback HTTP") from exc
+            if validated != self.meta_proxy_url:
+                raise InstagramConfigurationError("Instagram Meta proxy must use loopback HTTP")
 
     @classmethod
     def from_settings(cls, settings: AppSettings) -> InstagramRuntimeConfig:
@@ -387,6 +399,7 @@ class InstagramRuntimeConfig:
             timeout_seconds=settings.instagram_request_timeout_seconds,
             poll_interval_seconds=settings.instagram_poll_interval_seconds,
             poll_attempts=settings.instagram_poll_attempts,
+            meta_proxy_url=settings.instagram_meta_proxy_url,
         )
 
     @property
@@ -676,8 +689,21 @@ class InstagramProviderClient:
         self.config = config
         self._owns_client = client is None
         self._owns_media_client = media_client is None
-        self._client = client or httpx.Client(timeout=config.timeout_seconds)
-        self._media_client = media_client or httpx.Client(timeout=config.timeout_seconds)
+
+        # An explicit, validated loopback tunnel is the sole Meta network
+        # route in this mode. Do not let ambient HTTP_PROXY/HTTPS_PROXY
+        # override it, and use the same route for Graph and rupload uploads.
+        def new_owned_client() -> httpx.Client:
+            if config.meta_proxy_url is None:
+                return httpx.Client(timeout=config.timeout_seconds)
+            return httpx.Client(
+                timeout=config.timeout_seconds,
+                proxy=config.meta_proxy_url,
+                trust_env=False,
+            )
+
+        self._client = client or new_owned_client()
+        self._media_client = media_client or new_owned_client()
 
     def close(self) -> None:
         if self._owns_client:
