@@ -349,3 +349,32 @@ def test_quote_v6_fault_after_response_before_commit_cannot_replay(
     assert durable.entries[FIRST_ID].state == "dispatching"
     assert durable.entries[FIRST_ID].provider_effect == "may_exist"
     assert strict_next_post(queue, durable)[0] is None
+
+
+RETIRED_MUTATIONS = ("initialize", "migrate-restyle", "migrate-editorial-v2")
+
+
+def test_retired_mutations_are_guarded_before_their_own_branches() -> None:
+    """The 11/19-era migrations must be unreachable, not merely discouraged."""
+
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    guard = workflow.index('if [[ "$V6_ACTION" != "publish" ]]; then')
+    guard_exit = workflow.index("exit 2", guard)
+    assert "Retired v6 state mutation cannot run" in workflow
+    for action in RETIRED_MUTATIONS:
+        branch = workflow.index(f'if [[ "$V6_ACTION" == "{action}" ]]; then')
+        assert guard < guard_exit < branch, action
+
+
+@pytest.mark.parametrize("command", ("init", "migrate", "migrate-editorial"))
+def test_cli_refuses_retired_mutations_without_touching_state(monkeypatch, command: str) -> None:
+    import sys
+
+    from scripts import lordchrist_quote_v6_publisher as publisher
+
+    writes: list[object] = []
+    monkeypatch.setattr(publisher, "save_ledger", lambda *args, **kwargs: writes.append(args))
+    monkeypatch.setattr(sys, "argv", ["publisher", command])
+    with pytest.raises(ValueError, match="retired on the live"):
+        publisher.main()
+    assert writes == []
