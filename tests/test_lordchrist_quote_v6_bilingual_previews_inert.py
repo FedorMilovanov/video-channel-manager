@@ -21,9 +21,7 @@ ARTICLE_L1 = {16, 22, 27}
 
 
 def _data() -> tuple[dict, dict]:
-    return json.loads(AUDIT.read_text(encoding="utf-8")), json.loads(
-        SOURCE.read_text(encoding="utf-8")
-    )
+    return json.loads(AUDIT.read_text(encoding="utf-8")), json.loads(SOURCE.read_text(encoding="utf-8"))
 
 
 def test_exact_18_pending_revisions_bind_to_frozen_original_identity() -> None:
@@ -49,10 +47,7 @@ def test_exact_18_pending_revisions_bind_to_frozen_original_identity() -> None:
         assert len(entry["selected_lexical_checkpoints"]) == 3
         assert entry["selected_english_excerpt_anchors"]["start"]
         assert entry["selected_english_excerpt_anchors"]["end"]
-        assert all(
-            check["english"] and check["proposed_russian"]
-            for check in entry["selected_lexical_checkpoints"]
-        )
+        assert all(check["english"] and check["proposed_russian"] for check in entry["selected_lexical_checkpoints"])
 
 
 def test_previews_are_separate_from_provider_and_independent_human_authority() -> None:
@@ -80,14 +75,16 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
     by_num = {item["sequence"]: item for item in audit["entries"]}
     old_by_num = {item["sequence"]: item for item in frozen["items"]}
     actual_new = {
-        number for number, item in by_num.items()
+        number
+        for number, item in by_num.items()
         if item["quote_provenance"] == "new_editorial_translation_from_english_reference_requires_new_digest"
     }
     assert actual_new == NEW_TRANSLATIONS
     derivative_items = {
         number
         for number, item in by_num.items()
-        if item["quote_provenance"] == "legacy_russian_span_with_targeted_unapproved_edits_rights_and_new_digest_required"
+        if item["quote_provenance"]
+        == "legacy_russian_span_with_targeted_unapproved_edits_rights_and_new_digest_required"
     }
     assert derivative_items == DERIVATIVE_LEGACY_EDITS
     freshly_translated = {
@@ -114,8 +111,7 @@ def test_short_and_l1_layout_keep_editor_outside_the_author_quote() -> None:
     by_num = {item["sequence"]: item for item in audit["entries"]}
 
     assert {
-        number for number, item in by_num.items()
-        if item["format_lane"] == "separate_L1_editorial_article_not_quote_v6"
+        number for number, item in by_num.items() if item["format_lane"] == "separate_L1_editorial_article_not_quote_v6"
     } == ARTICLE_L1
 
     for item in audit["entries"]:
