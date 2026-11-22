@@ -17,6 +17,8 @@ def test_only_manual_single_page_dispatch() -> None:
     assert "push:" not in text
     assert "pull_request:" not in text
     assert "  - '03'" in text
+    assert "default: dry-run" in text
+    assert '"$MODE" == "execute"' in text
     assert "  - history-01" in text
     assert "inputs.page == '03'" in text
     assert "inputs.page == 'history-01'" in text
@@ -47,6 +49,8 @@ def test_one_pinned_script_exactly_one_receipt() -> None:
     text = _source()
     assert "python -m scripts.charnock_telegraph_surgical_revision" in text
     assert "--execute" in text
+    assert "charnock-inplace-result-${REVIEWED_PAGE}" in text
+    assert "::error title=charnock-inplace-" in text
     assert "--page" in text
     assert "--receipt-dir" in text
     assert "find" in text and "wc -l" in text

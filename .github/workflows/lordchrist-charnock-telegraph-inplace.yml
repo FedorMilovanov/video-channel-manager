@@ -14,6 +14,14 @@ on:
         description: Type EDIT_EXISTING_CHARNOCK_PAGE_ONCE for one guarded in-place revision
         required: true
         type: string
+      mode:
+        description: dry-run proves the pinned contract; execute posts exactly one editPage
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - execute
 
 permissions:
   contents: read
@@ -56,12 +64,24 @@ jobs:
         env:
           LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
           REVIEWED_PAGE: ${{ inputs.page }}
+          MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/charnock-provider-receipts"
-          python -m scripts.charnock_telegraph_surgical_revision \
-            --page "$REVIEWED_PAGE" \
-            --execute \
-            --confirm EDIT_EXISTING_CHARNOCK_PAGE_ONCE \
-            --receipt-dir "$RUNNER_TEMP/charnock-provider-receipts"
-          [[ "$(find "$RUNNER_TEMP/charnock-provider-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
+          args=(--page "$REVIEWED_PAGE" --receipt-dir "$RUNNER_TEMP/charnock-provider-receipts")
+          if [[ "$MODE" == "execute" ]]; then
+            args+=(--execute --confirm EDIT_EXISTING_CHARNOCK_PAGE_ONCE)
+          elif [[ "$MODE" != "dry-run" ]]; then
+            exit 3
+          fi
+          if ! python -m scripts.charnock_telegraph_surgical_revision "${args[@]}" 2>&1 \
+              | tee "$RUNNER_TEMP/charnock-provider.log"; then
+            message="$(tail -n 2 "$RUNNER_TEMP/charnock-provider.log" | tr '\n' ' ' | cut -c1-900)"
+            echo "::error title=charnock-inplace-${REVIEWED_PAGE}::${message}"
+            exit 3
+          fi
+          result="$(tail -n 1 "$RUNNER_TEMP/charnock-provider.log" | cut -c1-6000)"
+          echo "::notice title=charnock-inplace-result-${REVIEWED_PAGE}::${result}"
+          if [[ "$MODE" == "execute" ]]; then
+            [[ "$(find "$RUNNER_TEMP/charnock-provider-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
+          fi
