@@ -93,9 +93,13 @@ receipts и переменные этим PR не менялись. Нужна �
   164-row recensus. Нужна свежая сверка по точному owner/ID; исключить Heroes III, черновики и
   девять старых частных HOLD-копий сохранить; quarantined aliases не использовать.
 - **#782:** все 7/7 title/factual changes, включая две атрибуционные опечатки, уже опубликованы
-  и проверены на checkpoint 06.11; не повторять и не откатывать. У Блока `8g_4EVWFb1g` уже был
-  owner comment `UgyUMAfJqC8hdzxSnfF4AaABAg` — не дублировать. У Есенина `Lf0h4yXPVng`
-  был только draft; решения по комментариям и закрепам требуют свежей проверки и одобрения.
+  и проверены на checkpoint 06.11; не повторять и не откатывать. У Блока `8g_4EVWFb1g` тогда был
+  owner comment `UgyUMAfJqC8hdzxSnfF4AaABAg` — сохранить, не дублировать. У Есенина
+  `Lf0h4yXPVng` тогда был только draft; нынешний полный inventory неизвестен. По делегированному
+  редакционному решению подготовлен [источниковедческий кандидат](https://github.com/FedorMilovanov/video-channel-manager/issues/782#issuecomment-7078589769),
+  но YouTube-комментарий не отправлен и закреп не проверен. Нужны свежие owner inventory,
+  exact-operation guards, поддержанный authenticated transport и отдельный pin/readback в UI;
+  `audio_unverified`. Исторический owner comment и API POST не доказывают текущий закреп.
 - **#903:** 178-видео очередь 10 языков. На checkpoint 12.11 проверены 195/1780 metadata
   slots, не подтверждены 1585; это не текущий recensus. `NZISwKGIzGI` имел 10 verified
   caption tracks. Старый `may_exist` для `WizaG8S085g::en-US` после quotaExceeded был разрешён
