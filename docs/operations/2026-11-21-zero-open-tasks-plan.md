@@ -201,10 +201,11 @@ receipts и переменные этим PR не менялись. Нужна �
   не создавать новый. [Точный Git blob MP3](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7083322026)
   проверен по размеру и SHA-256 `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`;
   [полный локальный decode](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7087633303)
-  прошёл без ошибок, 9 011 270 stereo frames — 187,734792 с. Это не listening; права, deployed HTTP,
-  Windows bundle и отдельная кандидатная обложка не подтверждены. Частичный public scan не доказал
-  отсутствие дубля; профиль записи выключен. Нужны свежая сверка, редакционная и правовая приёмка,
-  release/ledger и отдельное разрешение; `sendAudio` здесь не выполнялся.
+  прошёл без ошибок, 9 011 270 stereo frames — 187,734792 с. Это не listening; ID3 и неслитый
+  site ledger называют разные Suno ID, связь которых не установлена (не доказательство разных записей).
+  Права, deployed HTTP, Windows bundle и отдельная кандидатная обложка не подтверждены. Частичный public
+  scan не доказал отсутствие дубля; профиль записи выключен. Нужны свежая сверка происхождения,
+  редакционная и правовая приёмка, release/ledger и отдельное разрешение; `sendAudio` здесь не выполнялся.
 - **#810, LordChrist Shorts:** свежий owner AuditPackage, exact media и права, отсутствие дублей,
   новые даты и один проверенный canary; исторические слоты не догонять и второй writer не заводить.
 
