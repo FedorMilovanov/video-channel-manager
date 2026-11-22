@@ -113,6 +113,21 @@ def test_priority_pulls_an_item_to_the_first_slot(tmp_path: Path) -> None:
     assert plan["proposal"][0]["publication_id"] == "e-calendar-old"
 
 
+def test_missing_ledger_is_reported_not_silently_empty(tmp_path: Path) -> None:
+    queue, ledger, manifest = _fixture(tmp_path)
+    plan = backlog.build_plan(
+        queue_path=queue,
+        ledger_path=ledger,
+        manifest_path=manifest,
+        today=date(2026, 11, 21),
+        start=date(2026, 11, 22),
+        gap_days=3,
+        ledger_entries={},
+        ledger_source="absent",
+    )
+    assert "ledger не прочитан" in backlog.render(plan)
+
+
 def test_render_states_that_it_is_read_only(tmp_path: Path) -> None:
     text = backlog.render(_plan(tmp_path))
     assert "ПРОСРОЧЕНО" in text
@@ -131,5 +146,21 @@ def test_real_repository_queue_is_classified_without_provider_access(tmp_path: P
     )
     assert plan["read_only"] is True
     assert plan["counts"]["calendar_owned"] == 8
+    # Without a ledger the calendar still comes from the manifest, so a Charnock
+    # page shows up as overdue rather than silently disappearing.
+    assert "lordchrist-telegraph-charnock-02" in [item["publication_id"] for item in plan["overdue"]]
     assert {slot["proposed_date"] for slot in plan["proposal"]}
     assert plan["editorial_holds"] == ["lordchrist-telegraph-charnock-13"]
+
+
+def test_main_falls_back_to_the_state_branch_ledger(tmp_path: Path, monkeypatch) -> None:
+    seen: list[str] = []
+
+    def fake_load(root, ref, ledger):
+        seen.append(ref)
+        return {}
+
+    monkeypatch.setattr(backlog, "load_ledger_from_ref", fake_load)
+    out = tmp_path / "plan.json"
+    assert backlog.main(["--today", "2026-11-21", "--out", str(out), "--json"]) == 0
+    assert seen == [backlog.DEFAULT_STATE_REMOTE_REF]

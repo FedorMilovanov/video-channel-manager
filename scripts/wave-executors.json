@@ -374,14 +374,12 @@
     },
     {
       "path": "scripts/charnock_telegraph_surgical_revision.py",
-      "sha256": "c34cf013ee7d84790d5224203d95e1a9e59175186fa0982a22889fa0de18212d",
+      "sha256": "b48bf5cdcda63f12875ea01a5ad7e371395010bf53ac0f58d1fad28d6405260a",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
       "provider_write_capable": true,
-      "callers": [
-        ".github/workflows/lordchrist-charnock-telegraph-inplace.yml"
-      ],
+      "callers": [],
       "private_imports": []
     },
     {
@@ -1483,14 +1481,12 @@
     },
     {
       "path": "scripts/charnock_telegraph_series_inplace.py",
-      "sha256": "47c58b7193fbf0034b2152402fb0d185b749f1c418f69e6df4e03998a85220aa",
+      "sha256": "2251ff5550afe49a67b956de522e98ed5f30850eab40bfd3ec64cefee4b2df5c",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
       "provider_write_capable": true,
-      "callers": [
-        ".github/workflows/lordchrist-charnock-series-inplace.yml"
-      ],
+      "callers": [],
       "private_imports": []
     },
     {
@@ -1507,7 +1503,7 @@
     },
     {
       "path": "scripts/lordchrist_telegraph_backlog.py",
-      "sha256": "2a6d2d747b38de92eb00eaad367bd28134345abd97f2243b4cbef25388afd715",
+      "sha256": "dddd0ac0ad50dade48ef9991c0ac8840d732bb788d2cc8939037194a08d614c8",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
