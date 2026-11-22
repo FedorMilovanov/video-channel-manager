@@ -85,6 +85,14 @@ check suite также остаётся `queued`. Это противоречи�
 | 12 | `095de9e09ccf` | `e7ea215bcea9` |
 | 13 | `cc9b20e98cb8` | `eedc00889bb2` |
 
+На checkpoint `main@947035bcc2fde9d7a302c265c94e4ffd0fc30de4` и
+`state@bca3c01f2455516b2756494452cda7e8cd366098` локальный provider-free preview с гипотетическим
+12:05 МСК в каждый из прежних дней для №10–12 поштучно остановился на несовпадении утверждённого
+blob **до** intent и обращения к провайдеру. Подробности и полные blob — в
+[issue #997](https://github.com/FedorMilovanov/video-channel-manager/issues/997#issuecomment-7078609772).
+Это не реальные будущие запуски, не live readback и не гарантия поведения при смене main/state.
+Workflow числился active, но текущие release variables через эту интеграцию не прочитаны (403).
+
 Дополнительно `build_telegraph_payload` локально использовал **настоящий `github_sha` оригинальной
 квитанции каждого пункта** для media-base URL: текущий payload SHA-256 не совпал с историческим
 `source_article_sha256` во всех восьми случаях. Это воспроизводимая локальная проверка сборки,

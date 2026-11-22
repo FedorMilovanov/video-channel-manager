@@ -106,6 +106,8 @@ def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
         "Повторную или принудительную отмену",
         "0 jobs",
         "0 artifacts",
+        "33 последующих",
+        "нефильтрованным traversal",
         "45014714988",
         "только заголовки одного аккаунта",
         "не останавливает",
@@ -133,6 +135,33 @@ def test_legendary_poet_inventory_keeps_done_edits_and_project_identity() -> Non
     assert "#789" in poet and "#778" in poet
     assert "#789" not in lord_god and "#778" not in lord_god
     assert "#869" in lord_god
+
+
+def test_legendary_poet_comment_checkpoint_keeps_research_separate_from_publication() -> None:
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    poet = inventory.split("- **#782**", 1)[1].split("- **#903**", 1)[0]
+    queued = plan.split("- **#782:**", 1)[1].split("- **#903:**", 1)[0]
+
+    for text in (poet, queued):
+        assert "issuecomment-7078589769" in text
+        assert "Lf0h4yXPVng" in text and "8g_4EVWFb1g" in text
+        assert "audio_unverified" in text
+        assert "не отправлен" in text
+        assert "pin" in text and "readback" in text
+    assert "финальные строки и год — по музею, не по самой рукописи" in poet
+    assert "на 06.11" in poet and "нынешнее наличие других owner-комментариев не установлено" in poet
+    assert "не заменяет exact-operation" in poet
+    assert "API POST не доказывают текущий закреп" in queued
+
+
+def test_charnock_due_date_previews_remain_hypothetical_and_provider_free() -> None:
+    calendar = (OPERATIONS_DIR / "2026-11-21-release-calendar.md").read_text(encoding="utf-8")
+    assert "issuecomment-7078609772" in calendar
+    assert "provider-free preview с гипотетическим" in calendar
+    assert "для №10–12 поштучно остановился" in calendar
+    assert "не реальные будущие запуски, не live readback" in calendar
+    assert "текущие release variables через эту интеграцию не прочитаны (403)" in calendar
 
 
 def test_platform_inventory_preserves_existing_reel_and_vk_wall_evidence() -> None:
