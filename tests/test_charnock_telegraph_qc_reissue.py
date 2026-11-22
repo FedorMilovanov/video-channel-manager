@@ -1,13 +1,18 @@
-"""Unit guards for the one-page QC reissue editor (no network, no provider writes)."""
+"""Read-only Charnock QC comparisons: no network in these tests."""
 
 from __future__ import annotations
 
+import copy
 import json
+import sys
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scripts import charnock_telegraph_qc_reissue as reissue
+from scripts import charnock_telegraph_surgical_revision as surgical
 
 ROOT = Path(__file__).resolve().parents[1]
 MEDIA = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + "a" * 40
@@ -17,35 +22,34 @@ def _manifest() -> dict:
     return reissue.load_manifest()
 
 
+def _payload(key: str):
+    return reissue.reviewed_payload(key, repo_root=ROOT, media_base_url=MEDIA, manifest=_manifest())
+
+
 def _live(key: str, *, title: str | None = None, content: list | None = None) -> dict:
     contract = _manifest()[key]
     return {
         "path": contract["path"],
         "url": contract["url"],
-        "title": title or "Прежний заголовок",
+        "title": "Прежний заголовок" if title is None else title,
         "author_name": reissue.AUTHOR,
         "author_url": reissue.AUTHOR_URL,
         "content": content if content is not None else [{"tag": "p", "children": ["Старый текст страницы."]}],
     }
 
 
-def _payload(key: str):
-    return reissue.reviewed_payload(key, repo_root=ROOT, media_base_url=MEDIA, manifest=_manifest())
-
-
 class Reader:
-    def __init__(self, pages: list[dict]) -> None:
-        self.pages = list(pages)
+    def __init__(self, page: dict) -> None:
+        self.page = page
         self.calls = 0
 
     def __call__(self, path: str) -> dict:
-        page = self.pages[min(self.calls, len(self.pages) - 1)]
         self.calls += 1
-        assert page["path"] == path
-        return page
+        assert self.page["path"] == path
+        return self.page
 
 
-def test_manifest_pins_thirteen_existing_pages(tmp_path: Path) -> None:
+def test_manifest_pins_thirteen_existing_pages() -> None:
     pages = _manifest()
     assert set(pages) == {"01b", *[f"{n:02d}" for n in range(2, 14)]}
     assert len({page["path"] for page in pages.values()}) == 13
@@ -56,210 +60,292 @@ def test_manifest_pins_thirteen_existing_pages(tmp_path: Path) -> None:
 
 
 def test_manifest_matches_queue_blobs() -> None:
-    pages = _manifest()
     queue = json.loads((ROOT / reissue.QUEUE_PATH).read_text(encoding="utf-8"))["items"]
     by_id = {item["publication_id"]: item for item in queue}
-    for page in pages.values():
+    for page in _manifest().values():
         item = by_id[page["publication_id"]]
         assert item["article"]["path"] == page["article_path"]
         assert item["article"]["git_blob_sha"] == page["article_git_blob_sha"]
 
 
-def test_dry_run_reports_the_plan_without_a_receipt(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(reissue, "get_public_page", Reader([_live("01b")]))
-    outcome = reissue.run_one(
-        "01b",
-        repo_root=ROOT,
-        media_base_url=MEDIA,
-        receipt_dir=tmp_path,
-        manifest=_manifest(),
-    )
-    assert outcome["effect"] == "DRY_RUN_NO_POST"
-    assert outcome["node_count_after"] == len(_payload("01b").nodes)
-    assert outcome["planned_differences"]
-    assert outcome["content_utf8_bytes_after"] <= reissue.MAX_CONTENT_BYTES
-    assert list(tmp_path.iterdir()) == []
-
-
-def test_execute_posts_exactly_once_and_verifies_exact_readback(tmp_path: Path, monkeypatch) -> None:
-    payload = _payload("01b")
-    monkeypatch.setattr(
-        reissue,
-        "get_public_page",
-        Reader(
-            [
-                _live("01b"),
-                _live("01b"),
-                {
-                    **_live("01b"),
-                    "title": payload.title,
-                    "content": payload.nodes,
-                },
-            ]
-        ),
-    )
-    posts: list[tuple[str, dict]] = []
-    monkeypatch.setattr(reissue, "verify_ownership", lambda token, path: None)
-
-    def fake_post(path: str, fields: dict) -> dict:
-        posts.append((path, fields))
-        return {"path": path.split("/", 1)[1]}
-
-    monkeypatch.setattr(reissue, "post_form", fake_post)
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "token-value")
-    outcome = reissue.run_one(
-        "01b",
-        repo_root=ROOT,
-        media_base_url=MEDIA,
-        execute=True,
-        confirm=reissue.CONFIRM,
-        receipt_dir=tmp_path,
-        manifest=_manifest(),
-    )
-    assert outcome["effect"] == "VERIFIED_REISSUE"
-    assert outcome["verification"]["mode"] == "exact"
-    assert len(posts) == 1
-    path, fields = posts[0]
-    assert path == "editPage/" + _manifest()["01b"]["path"]
-    assert fields["title"] == payload.title
-    assert fields["content"] == payload.compact_content_json
-    assert "token-value" in json.dumps(fields)
-    receipts = list(tmp_path.iterdir())
-    assert len(receipts) == 1
-    receipt = json.loads(receipts[0].read_text(encoding="utf-8"))
-    assert receipt["effect"] == "VERIFIED_REISSUE"
-    assert receipt["live_sha256"] == reissue.sha_content(payload.nodes)
-
-
-def test_readback_with_normalised_nodes_is_verified_semantically(tmp_path: Path, monkeypatch) -> None:
-    payload = _payload("07")
-    normalised = list(payload.nodes)
-    normalised.insert(1, {"tag": "br"})
-    monkeypatch.setattr(
-        reissue,
-        "get_public_page",
-        Reader([_live("07"), _live("07"), {**_live("07"), "title": payload.title, "content": normalised}]),
-    )
-    monkeypatch.setattr(reissue, "verify_ownership", lambda token, path: None)
-    monkeypatch.setattr(reissue, "post_form", lambda path, fields: {"path": path.split("/", 1)[1]})
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "token-value")
-    outcome = reissue.run_one(
-        "07",
-        repo_root=ROOT,
-        media_base_url=MEDIA,
-        execute=True,
-        confirm=reissue.CONFIRM,
-        receipt_dir=tmp_path,
-        manifest=_manifest(),
-    )
-    assert outcome["effect"] == "VERIFIED_REISSUE"
-    assert outcome["verification"]["mode"] == "semantic"
-
-
-def test_readback_mismatch_is_uncertain_and_never_retried(tmp_path: Path, monkeypatch) -> None:
-    payload = _payload("07")
-    broken = [{"tag": "p", "children": ["Совсем другой текст."]}]
-    monkeypatch.setattr(
-        reissue,
-        "get_public_page",
-        Reader([_live("07"), _live("07"), {**_live("07"), "title": payload.title, "content": broken}]),
-    )
-    monkeypatch.setattr(reissue, "verify_ownership", lambda token, path: None)
-    monkeypatch.setattr(reissue, "post_form", lambda path, fields: {"path": path.split("/", 1)[1]})
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "token-value")
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "07",
-            repo_root=ROOT,
-            media_base_url=MEDIA,
-            execute=True,
-            confirm=reissue.CONFIRM,
-            receipt_dir=tmp_path,
-            manifest=_manifest(),
-        )
-    receipts = list(tmp_path.iterdir())
-    assert len(receipts) == 1
-    assert json.loads(receipts[0].read_text(encoding="utf-8"))["effect"] == "UNCERTAIN"
-
-
-def test_edit_changing_the_path_is_uncertain(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(reissue, "get_public_page", Reader([_live("07"), _live("07")]))
-    monkeypatch.setattr(reissue, "verify_ownership", lambda token, path: None)
-    monkeypatch.setattr(reissue, "post_form", lambda path, fields: {"path": "Drugaya-stranica-11-21"})
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "token-value")
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "07",
-            repo_root=ROOT,
-            media_base_url=MEDIA,
-            execute=True,
-            confirm=reissue.CONFIRM,
-            receipt_dir=tmp_path,
-            manifest=_manifest(),
-        )
-    assert [p.name for p in tmp_path.iterdir() if "uncertain" in p.name]
-
-
-def test_live_page_with_foreign_author_is_refused(tmp_path: Path, monkeypatch) -> None:
-    stranger = {**_live("09"), "author_name": "Кто-то другой"}
-    monkeypatch.setattr(reissue, "get_public_page", Reader([stranger]))
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one("09", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest())
-
-
-def test_already_live_page_requires_reconcile(tmp_path: Path, monkeypatch) -> None:
-    payload = _payload("11")
-    current = {**_live("11"), "title": payload.title, "content": payload.nodes}
-    monkeypatch.setattr(reissue, "get_public_page", Reader([current]))
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one("11", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, manifest=_manifest())
-    outcome = reissue.run_one(
-        "11",
-        repo_root=ROOT,
-        media_base_url=MEDIA,
-        receipt_dir=tmp_path,
-        reconcile=True,
-        manifest=_manifest(),
-    )
-    assert outcome["effect"] == "VERIFIED_REISSUE_RECONCILED"
-    assert outcome["live_first_text"] == outcome["target_first_text"]
-    assert outcome["live_last_text"] == outcome["target_last_text"]
-    assert outcome["live_first_text"]
-    assert len(list(tmp_path.iterdir())) == 1
-
-
-def test_execution_needs_confirmation_and_receipt_directory(monkeypatch) -> None:
-    monkeypatch.setattr(reissue, "get_public_page", Reader([_live("02")]))
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "02",
-            repo_root=ROOT,
-            media_base_url=MEDIA,
-            execute=True,
-            confirm="nope",
-            receipt_dir=Path("/tmp"),
-            manifest=_manifest(),
-        )
-
-
-def test_receipt_directory_inside_git_is_refused(monkeypatch) -> None:
-    monkeypatch.setattr(reissue, "get_public_page", Reader([_live("02")]))
-    with pytest.raises(reissue.UnsafeRevision):
-        reissue.run_one(
-            "02",
-            repo_root=ROOT,
-            media_base_url=MEDIA,
-            execute=True,
-            confirm=reissue.CONFIRM,
-            receipt_dir=ROOT,
-            manifest=_manifest(),
-        )
-
-
-def test_manifest_rejects_mismatched_url(tmp_path: Path) -> None:
-    document = json.loads((ROOT / reissue.MANIFEST_PATH).read_text(encoding="utf-8"))
-    document["pages"]["01b"]["url"] = "https://telegra.ph/drugaya-stranica"
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("url", "https://telegra.ph/different"),
+        ("path", "different?unsafe=1"),
+        ("article_path", "../../outside.json"),
+        ("article_git_blob_sha", "z" * 40),
+    ],
+)
+def test_manifest_rejects_unsafe_or_unbound_identity(tmp_path: Path, field: str, value: str) -> None:
+    document = json.loads(reissue.MANIFEST_PATH.read_text(encoding="utf-8"))
+    document["pages"]["01b"][field] = value
     broken = tmp_path / "manifest.json"
     broken.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(reissue.UnsafeRevision):
         reissue.load_manifest(broken)
+
+
+def test_manifest_rejects_duplicate_page_identity(tmp_path: Path) -> None:
+    document = json.loads(reissue.MANIFEST_PATH.read_text(encoding="utf-8"))
+    document["pages"]["02"]["publication_id"] = document["pages"]["01b"]["publication_id"]
+    broken = tmp_path / "manifest.json"
+    broken.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(reissue.UnsafeRevision, match="duplicate"):
+        reissue.load_manifest(broken)
+
+
+@pytest.mark.parametrize("field", ["article_path", "article_git_blob_sha"])
+def test_qc_manifest_must_bind_the_actual_queue_article_before_get(field: str, monkeypatch) -> None:
+    manifest = _manifest()
+    manifest["10"][field] = _manifest()["11"][field]
+    monkeypatch.setattr(reissue, "get_public_page", lambda path: pytest.fail("source drift must stop before GET"))
+    with pytest.raises(reissue.UnsafeRevision, match="queue article path or blob"):
+        reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA, manifest=manifest)
+
+
+def test_nondefault_repo_root_selects_its_own_manifest(tmp_path: Path, monkeypatch) -> None:
+    document = json.loads(reissue.MANIFEST_PATH.read_text(encoding="utf-8"))
+    document["pages"]["10"]["path"] = "different-pinned-page"
+    document["pages"]["10"]["url"] = "https://telegra.ph/different-pinned-page"
+    manifest_path = tmp_path / reissue.MANIFEST_RELATIVE
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    payload = _payload("10")
+    monkeypatch.setattr(reissue, "reviewed_payload", lambda *args, **kwargs: payload)
+    page = {**_live("10", title=payload.title, content=payload.nodes), **document["pages"]["10"]}
+    page["author_name"], page["author_url"] = reissue.AUTHOR, reissue.AUTHOR_URL
+    reader = Reader(page)
+    monkeypatch.setattr(reissue, "get_public_page", reader)
+    result = reissue.run_one("10", repo_root=tmp_path, media_base_url=MEDIA)
+    assert reader.calls == 1
+    assert result["path"] == "different-pinned-page"
+
+
+def test_read_only_preview_reports_difference_without_receipt(tmp_path: Path, monkeypatch) -> None:
+    reader = Reader(_live("01b"))
+    monkeypatch.setattr(reissue, "get_public_page", reader)
+    outcome = reissue.run_one("01b", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path)
+    assert outcome["effect"] == "VISIBLE_TEXT_MISMATCH"
+    assert outcome["mode"] == "dry-run"
+    assert outcome["node_count_after"] == len(_payload("01b").nodes)
+    assert outcome["differences"]
+    assert outcome["verification"]["title_exact"] is False
+    assert outcome["provider_write_attempted"] is False
+    assert reader.calls == 1
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_read_only_preview_is_allowed_when_visible_text_already_matches(monkeypatch) -> None:
+    payload = _payload("11")
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("11", title=payload.title, content=payload.nodes)))
+    outcome = reissue.run_one("11", repo_root=ROOT, media_base_url=MEDIA)
+    assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
+    assert outcome["mode"] == "dry-run"
+    assert outcome["verification"]["title_exact"] is True
+    assert outcome["verification"]["visible_text_equal"] is True
+    assert outcome["verification"]["provider_content_exact"] is True
+
+
+def test_exact_read_only_match_writes_one_immutable_receipt(tmp_path: Path, monkeypatch) -> None:
+    payload = _payload("11")
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("11", title=payload.title, content=payload.nodes)))
+    outcome = reissue.run_one("11", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, reconcile=True)
+    assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
+    assert outcome["article_git_blob_sha"] == _manifest()["11"]["article_git_blob_sha"]
+    assert outcome["verification"]["title_exact"] is True
+    assert outcome["verification"]["visible_text_equal"] is True
+    assert outcome["verification"]["provider_content_exact"] is True
+    assert outcome["live_first_text"] == outcome["target_first_text"]
+    assert outcome["live_last_text"] == outcome["target_last_text"]
+    receipt_path = next(tmp_path.iterdir())
+    before = receipt_path.read_bytes()
+    receipt = json.loads(before)
+    assert receipt == outcome
+    with pytest.raises(reissue.UnsafeRevision, match="already exists"):
+        reissue.run_one("11", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, reconcile=True)
+    assert receipt_path.read_bytes() == before
+
+
+def test_text_mismatch_cannot_be_marked_as_a_match(tmp_path: Path, monkeypatch) -> None:
+    payload = _payload("07")
+    broken = [{"tag": "p", "children": ["Совсем другой текст."]}]
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("07", title=payload.title, content=broken)))
+    outcome = reissue.run_one("07", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, reconcile=True)
+    assert outcome["effect"] == "VISIBLE_TEXT_MISMATCH"
+    assert outcome["verification"]["title_exact"] is True
+    assert outcome["verification"]["visible_text_equal"] is False
+    assert outcome["differences"]
+    assert json.loads(next(tmp_path.iterdir()).read_text(encoding="utf-8"))["effect"] == "VISIBLE_TEXT_MISMATCH"
+
+
+def test_visible_text_match_does_not_claim_media_or_markup_equality(tmp_path: Path, monkeypatch) -> None:
+    payload = _payload("10")
+    changed = copy.deepcopy(payload.nodes)
+    changed[0]["children"][0]["attrs"]["src"] = "https://example.invalid/other-image.jpg"
+    changed.insert(1, {"tag": "br"})
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("10", title=payload.title, content=changed)))
+    outcome = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, reconcile=True)
+    assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
+    assert outcome["verification"]["provider_content_exact"] is False
+    assert outcome["verification"]["visible_text_comparison_excludes"] == [
+        "media sources",
+        "link targets",
+        "inline markup",
+        "non-text nodes",
+        "exact whitespace",
+    ]
+    assert outcome["node_count_before"] != outcome["node_count_after"]
+
+
+def test_exact_content_field_distinguishes_json_boolean_and_number(monkeypatch) -> None:
+    payload = _payload("10")
+    target = copy.deepcopy(payload.nodes)
+    target[0]["children"][0]["attrs"]["test"] = 1
+    live = copy.deepcopy(target)
+    live[0]["children"][0]["attrs"]["test"] = True
+    assert live == target  # Python equality alone does not distinguish these JSON values.
+    monkeypatch.setattr(reissue, "reviewed_payload", lambda *args, **kwargs: replace(payload, nodes=target))
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("10", title=payload.title, content=live)))
+    outcome = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA)
+    assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
+    assert outcome["verification"]["provider_content_exact"] is False
+    assert outcome["old_sha256"] != outcome["new_sha256"]
+
+
+def test_visible_comparison_excludes_link_targets_but_checks_outer_tags() -> None:
+    def node(tag: str, href: str) -> list:
+        return [{"tag": tag, "children": [{"tag": "a", "attrs": {"href": href}, "children": ["Текст"]}]}]
+
+    assert reissue.describe_differences(node("p", "https://one.invalid"), node("p", "https://two.invalid")) == []
+    assert reissue.describe_differences(node("p", "https://one.invalid"), node("h3", "https://one.invalid"))
+    assert reissue.describe_differences(["extra text"], [])
+    assert (
+        reissue.describe_differences([{"tag": "p", "children": ["a   b"]}], [{"tag": "p", "children": ["a b"]}]) == []
+    )
+
+
+@pytest.mark.parametrize("nodes", [None, [{"children": ["text"]}], [42]])
+def test_invalid_top_level_nodes_fail_closed(nodes) -> None:
+    with pytest.raises(reissue.UnsafeRevision):
+        reissue.semantic_nodes(nodes)
+
+
+def test_empty_reviewed_payload_is_not_a_match(monkeypatch) -> None:
+    monkeypatch.setattr(
+        reissue,
+        "build_telegraph_payload",
+        lambda *args, **kwargs: SimpleNamespace(nodes=[{"tag": "figure"}], content_utf8_bytes=10),
+    )
+    with pytest.raises(reissue.UnsafeRevision, match="no visible text"):
+        reissue.reviewed_payload("10", repo_root=ROOT, media_base_url=MEDIA, manifest=_manifest())
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("path", "wrong-page"),
+        ("url", "https://telegra.ph/wrong-page"),
+        ("url", None),
+        ("author_name", "Кто-то другой"),
+        ("author_url", "https://t.me/different"),
+        ("content", []),
+    ],
+)
+def test_public_page_identity_must_match_exactly(field: str, value, monkeypatch) -> None:
+    stranger = {**_live("09"), field: value}
+    monkeypatch.setattr(reissue, "get_public_page", lambda path: stranger)
+    with pytest.raises(reissue.UnsafeRevision):
+        reissue.run_one("09", repo_root=ROOT, media_base_url=MEDIA)
+
+
+def test_receipt_directory_inside_git_or_symlink_to_it_is_refused(tmp_path: Path, monkeypatch) -> None:
+    payload = _payload("02")
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("02", title=payload.title, content=payload.nodes)))
+    with pytest.raises(reissue.UnsafeRevision, match="outside a git repository"):
+        reissue.run_one("02", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=ROOT, reconcile=True)
+    link = tmp_path / "repo-link"
+    try:
+        link.symlink_to(ROOT, target_is_directory=True)
+    except (NotImplementedError, OSError):
+        pytest.skip("directory symlinks unavailable")
+    with pytest.raises(reissue.UnsafeRevision, match="outside a git repository"):
+        reissue.run_one("02", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=link, reconcile=True)
+
+
+def test_reconcile_requires_a_safe_existing_receipt_directory(monkeypatch) -> None:
+    payload = _payload("02")
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("02", title=payload.title, content=payload.nodes)))
+    with pytest.raises(reissue.UnsafeRevision, match="receipt directory"):
+        reissue.run_one("02", repo_root=ROOT, media_base_url=MEDIA, reconcile=True)
+
+
+@pytest.mark.parametrize("reconcile", [False, True])
+def test_historical_execute_confirmation_never_grants_provider_access(reconcile: bool, monkeypatch) -> None:
+    monkeypatch.setattr(reissue, "load_manifest", lambda *args, **kwargs: pytest.fail("must stop before loading"))
+    monkeypatch.setattr(reissue, "get_public_page", lambda path: pytest.fail("must stop before GET"))
+    with pytest.raises(reissue.UnsafeRevision, match="retired"):
+        reissue.run_one("10", media_base_url=MEDIA, execute=True, confirm=reissue.CONFIRM, reconcile=reconcile)
+
+
+def test_retired_cli_execute_is_nonzero_without_provider_access(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["charnock-qc", "--page", "10", "--media-base-url", MEDIA, "--execute", "--confirm", reissue.CONFIRM],
+    )
+    monkeypatch.setattr(reissue, "get_public_page", lambda path: pytest.fail("must stop before GET"))
+    with pytest.raises(SystemExit) as error:
+        reissue.main()
+    assert error.value.code == 2
+    assert "retired" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("reconcile", [False, True])
+def test_mismatch_cli_exits_nonzero_in_both_modes(tmp_path: Path, reconcile: bool, monkeypatch, capsys) -> None:
+    payload = _payload("10")
+    monkeypatch.setattr(
+        reissue, "get_public_page", Reader(_live("10", title="Другой заголовок", content=payload.nodes))
+    )
+    argv = ["charnock-qc", "--page", "10", "--media-base-url", MEDIA, "--receipt-dir", str(tmp_path)]
+    if reconcile:
+        argv.append("--reconcile")
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit) as error:
+        reissue.main()
+    assert error.value.code == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["effect"] == "VISIBLE_TEXT_MISMATCH"
+    assert result["verification"]["title_exact"] is False
+    if reconcile:
+        assert json.loads(next(tmp_path.iterdir()).read_text(encoding="utf-8")) == result
+    else:
+        assert list(tmp_path.iterdir()) == []
+
+
+def test_real_reader_uses_only_one_public_get_without_credentials(monkeypatch) -> None:
+    payload = _payload("10")
+    page = _live("10", title=payload.title, content=payload.nodes)
+    requests = []
+
+    def fake_read(request) -> bytes:
+        requests.append(request)
+        assert request.get_method() == "GET"
+        assert request.full_url == "https://api.telegra.ph/getPage/" + page["path"] + "?return_content=true"
+        assert request.data is None
+        assert "access_token" not in request.full_url
+        assert "Authorization" not in request.headers
+        return json.dumps({"ok": True, "result": page}, ensure_ascii=False).encode("utf-8")
+
+    monkeypatch.setattr(surgical, "_read", fake_read)
+    monkeypatch.setattr(surgical, "post_form", lambda *args, **kwargs: pytest.fail("provider POST forbidden"))
+    result = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA)
+    assert result["effect"] == "VISIBLE_TEXT_MATCH"
+    assert len(requests) == 1
+
+
+def test_reader_has_no_provider_mutation_helpers_or_token() -> None:
+    text = (ROOT / "scripts/charnock_telegraph_qc_reissue.py").read_text(encoding="utf-8")
+    for forbidden in ("post_form", "verify_ownership", "LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "editPage/", "sendMessage"):
+        assert forbidden not in text
