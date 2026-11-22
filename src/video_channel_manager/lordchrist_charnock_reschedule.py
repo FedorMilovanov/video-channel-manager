@@ -212,18 +212,22 @@ def _prove_new_public_post(*, message_id: int, telegraph_url: str) -> None:
     )
 
 
-def _normalized_telegraph_node(value: Any) -> Any:
-    """Normalize only Telegraph node lists and their generated heading anchors.
+def _normalized_telegraph_node(value: Any, *, retain_heading_ids: bool = False) -> Any:
+    """Normalize node text; the legacy default also removes all heading IDs.
 
-    An ``id`` on an h3/h4 cannot be distinguished from a generated one, so all
-    such IDs are ignored. Adjacent strings are merged only in the top-level
-    content or a node's children, never inside arbitrary attributes or fields.
-    The original input is not mutated.
+    The default is retained for the independently used 1525 page proof. For
+    Charnock comparisons, retain IDs first and use the target-relative pair
+    normalizer. Lists inside attributes and other arbitrary fields are never
+    normalized. The input is not mutated.
     """
     if isinstance(value, list):
         joined: list[Any] = []
         for item in value:
-            child = _normalized_telegraph_node(item) if isinstance(item, dict) else item
+            child = (
+                _normalized_telegraph_node(item, retain_heading_ids=retain_heading_ids)
+                if isinstance(item, dict)
+                else item
+            )
             if isinstance(child, str) and joined and isinstance(joined[-1], str):
                 joined[-1] += child
             else:
@@ -233,34 +237,91 @@ def _normalized_telegraph_node(value: Any) -> Any:
         normalized = dict(value)
         children = value.get("children")
         if isinstance(children, list):
-            normalized["children"] = _normalized_telegraph_node(children)
+            normalized["children"] = _normalized_telegraph_node(children, retain_heading_ids=retain_heading_ids)
         attrs = value.get("attrs")
-        if value.get("tag") in ("h3", "h4") and isinstance(attrs, dict) and "id" in attrs:
-            remaining_attrs = {key: child for key, child in attrs.items() if key != "id"}
-            if remaining_attrs:
-                normalized["attrs"] = remaining_attrs
+        if not retain_heading_ids and value.get("tag") in ("h3", "h4") and isinstance(attrs, dict) and "id" in attrs:
+            remaining = {key: child for key, child in attrs.items() if key != "id"}
+            if remaining:
+                normalized["attrs"] = remaining
             else:
                 normalized.pop("attrs")
         return normalized
     return value
 
 
-def _normalized_telegraph_digest(value: Any) -> str:
-    """Hash normalized JSON without Python's bool/int or numeric coercions.
+def _normalized_telegraph_pair(live: Any, reviewed: Any) -> tuple[Any, Any]:
+    """Normalize a live tree relative to its reviewed target, without mutation.
 
-    The normalization only merges adjacent text fragments in content/children
-    arrays and removes all h3/h4 heading IDs (including any authored IDs). Other
-    nodes, attributes, links, media URLs and whitespace remain in the comparison.
-    This is not a hash of fetched media bytes.
+    A string ID on a live h3/h4 is ignored only if its corresponding reviewed
+    heading has no explicit ID. The live ID's origin is not established. When
+    the reviewed heading specifies an ID, it and its JSON type must match.
+    Node alignment follows normalized content/children only; no attributes or
+    other arbitrary substructures are traversed or rewritten.
+    """
+    actual = _normalized_telegraph_node(live, retain_heading_ids=True)
+    expected = _normalized_telegraph_node(reviewed, retain_heading_ids=True)
+
+    def visit_list(actual_items: list[Any], expected_items: list[Any]) -> None:
+        for actual_child, expected_child in zip(actual_items, expected_items, strict=False):
+            # Nested arrays are not node content and were not copied above.
+            if isinstance(actual_child, dict) and isinstance(expected_child, dict):
+                visit_node(actual_child, expected_child)
+
+    def visit_node(actual_node: dict[str, Any], expected_node: dict[str, Any]) -> None:
+        tag = expected_node.get("tag")
+        if tag in ("h3", "h4") and actual_node.get("tag") == tag:
+            actual_attrs = actual_node.get("attrs")
+            expected_attrs = expected_node.get("attrs")
+            if (
+                isinstance(actual_attrs, dict)
+                and isinstance(actual_attrs.get("id"), str)
+                and not (isinstance(expected_attrs, dict) and "id" in expected_attrs)
+            ):
+                remaining = {key: child for key, child in actual_attrs.items() if key != "id"}
+                if remaining:
+                    actual_node["attrs"] = remaining
+                else:
+                    actual_node.pop("attrs")
+        actual_children = actual_node.get("children")
+        expected_children = expected_node.get("children")
+        if isinstance(actual_children, list) and isinstance(expected_children, list):
+            visit_list(actual_children, expected_children)
+
+    if isinstance(actual, list) and isinstance(expected, list):
+        visit_list(actual, expected)
+    elif isinstance(actual, dict) and isinstance(expected, dict):
+        visit_node(actual, expected)
+    return actual, expected
+
+
+def _normalized_telegraph_digest(value: Any, *, retain_heading_ids: bool = False) -> str:
+    """Hash normalized JSON without bool/int or numeric coercions.
+
+    The legacy default ignores all heading IDs. Charnock compares a paired live
+    and reviewed tree with ``retain_heading_ids=True``; independent digests do
+    not establish fetched media bytes or the provenance of a live heading ID.
     """
     try:
-        normalized = _normalized_telegraph_node(value)
+        normalized = _normalized_telegraph_node(value, retain_heading_ids=retain_heading_ids)
         encoded = json.dumps(
             normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
         ).encode("utf-8")
     except (TypeError, ValueError) as exc:
         raise RuntimeError("Malformed normalized Telegraph content") from exc
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _normalized_telegraph_pair_digests(live: Any, reviewed: Any) -> tuple[str, str]:
+    actual, expected = _normalized_telegraph_pair(live, reviewed)
+    return (
+        _normalized_telegraph_digest(actual, retain_heading_ids=True),
+        _normalized_telegraph_digest(expected, retain_heading_ids=True),
+    )
+
+
+def _normalized_telegraph_equal(live: Any, reviewed: Any) -> bool:
+    actual_digest, expected_digest = _normalized_telegraph_pair_digests(live, reviewed)
+    return actual_digest == expected_digest
 
 
 def _proof_page(entry: dict[str, Any], payload: Any) -> None:
@@ -289,7 +350,7 @@ def _proof_page(entry: dict[str, Any], payload: Any) -> None:
         or not page["content"]
         or not isinstance(payload.nodes, list)
         or not payload.nodes
-        or _normalized_telegraph_digest(page["content"]) != _normalized_telegraph_digest(payload.nodes)
+        or not _normalized_telegraph_equal(page["content"], payload.nodes)
     ):
         raise RuntimeError("Public Telegraph page is not the entire reviewed latest article edition")
 
