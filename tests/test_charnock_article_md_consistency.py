@@ -35,3 +35,10 @@ def test_source_credit_is_part_of_the_telegraph_json_payload(article_path: Path)
     footer_text = iter_text(footer["text"])
     assert footer_text.startswith("© Цитаты Чарнока"), article_path
     assert "gutenberg.org/ebooks/53527" in footer_text, article_path
+
+
+def test_markdown_footer_fallback_is_rejected() -> None:
+    """An external Markdown footer must never conceal a missing provider block."""
+    incomplete = {"blocks": [{"type": "paragraph", "block_id": "p-1", "text": "Body"}]}
+    with pytest.raises(ValueError, match="source credit must be authored in JSON blocks"):
+        render_markdown(incomplete, footer="© Citation that exists only in Markdown")
