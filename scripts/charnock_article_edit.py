@@ -24,10 +24,12 @@ import argparse
 import json
 import re
 from datetime import date
+import os
 from pathlib import Path
+import tempfile
 from typing import Any
 
-from charnock_article_render_md import extract_footer, render_markdown
+from charnock_article_render_md import iter_text, render_markdown
 
 INLINE = re.compile(r"\*\*(.+?)\*\*|\*(.+?)\*|\[(.+?)\]\((.+?)\)", re.S)
 
@@ -62,6 +64,60 @@ def find_block(blocks: list[dict[str, Any]], block_id: str) -> tuple[int, dict[s
     raise SystemExit(f"block not found: {block_id}")
 
 
+
+def _require_source_credit(article: dict[str, Any]) -> None:
+    """The only publishable source credit is the one carried in JSON blocks."""
+    blocks = article.get("blocks")
+    if not isinstance(blocks, list) or not blocks:
+        raise SystemExit("article has no block list")
+    footer = blocks[-1]
+    if footer.get("type") != "paragraph":
+        raise SystemExit("missing source credit in last JSON paragraph")
+    credit = iter_text(footer.get("text", ""))
+    if not credit.startswith("© Цитаты Чарнока") or "gutenberg.org/ebooks/53527" not in credit:
+        raise SystemExit("missing source credit in JSON; no files written")
+
+
+def _stage_bytes(target: Path, contents: bytes) -> Path:
+    """Stage same-directory data for a safe replace across filesystem volumes."""
+    with tempfile.NamedTemporaryFile(
+        mode="wb", prefix=f".{target.name}.", suffix=".tmp",
+        dir=target.parent, delete=False
+    ) as stream:
+        stream.write(contents)
+        return Path(stream.name)
+
+
+def _write_pair(article_path: Path, markdown_path: Path, json_text: str, markdown_text: str) -> None:
+    """Update both files, restoring the prior JSON if the second replace fails."""
+    originals = (
+        (article_path, article_path.read_bytes(), json_text.encode("utf-8")),
+        (markdown_path, markdown_path.read_bytes(), markdown_text.encode("utf-8")),
+    )
+    staged: list[tuple[Path, Path, Path]] = []
+    replaced: list[tuple[Path, Path]] = []
+    try:
+        for target, previous, updated in originals:
+            candidate = _stage_bytes(target, updated)
+            try:
+                rollback = _stage_bytes(target, previous)
+            except BaseException:
+                candidate.unlink(missing_ok=True)
+                raise
+            staged.append((target, candidate, rollback))
+        for target, candidate, rollback in staged:
+            os.replace(candidate, target)
+            replaced.append((target, rollback))
+    except BaseException:
+        for target, rollback in reversed(replaced):
+            os.replace(rollback, target)
+        raise
+    finally:
+        for _target, candidate, rollback in staged:
+            candidate.unlink(missing_ok=True)
+            rollback.unlink(missing_ok=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--article", required=True, type=Path)
@@ -70,7 +126,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--markdown", type=Path, help="Markdown source to rewrite (default: JSON sibling)")
     args = parser.parse_args(argv)
 
-    article = json.loads(args.article.read_text(encoding="utf-8"))
+    # Validate the original published-source pair before modifying either file.
+    # The Markdown review copy must never supply missing JSON-only content.
+    if args.markdown is not None and args.markdown.resolve() == args.article.resolve():
+        raise SystemExit("article and Markdown paths must differ")
+    original_json = args.article.read_text(encoding="utf-8")
+    article = json.loads(original_json)
+    markdown_path = args.markdown or args.article.with_suffix(".md")
+    if not markdown_path.exists():
+        raise SystemExit(f"missing existing reviewed Markdown: {markdown_path}")
+    old_markdown = markdown_path.read_text(encoding="utf-8")
+    _require_source_credit(article)
+    if render_markdown(article).rstrip("\n") != old_markdown.rstrip("\n"):
+        raise SystemExit("JSON/Markdown drift before patch; no files written")
     patch = json.loads(args.patch.read_text(encoding="utf-8"))
     blocks = article.get("blocks")
     if not isinstance(blocks, list):
@@ -102,11 +170,12 @@ def main(argv: list[str] | None = None) -> int:
 
     article["revision"] = args.revision
     article.setdefault("metadata", {})["updated_at"] = date.today().isoformat()
-    args.article.write_text(json.dumps(article, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    markdown_path = args.markdown or args.article.with_suffix(".md")
-    footer = extract_footer(markdown_path.read_text(encoding="utf-8")) if markdown_path.exists() else ""
-    markdown_path.write_text(render_markdown(article, footer=footer), encoding="utf-8")
+    _require_source_credit(article)
+    # Render/validate both outputs before the first write. Stage both files and
+    # a rollback copy so a failed second replacement restores the original pair.
+    new_markdown = render_markdown(article)
+    new_json = json.dumps(article, ensure_ascii=False, indent=2) + "\n"
+    _write_pair(args.article, markdown_path, new_json, new_markdown)
     print(
         f"applied {len(patch.get('replace', {}))} replacements and "
         f"{sum(len(v) for v in patch.get('insert_after', {}).values())} insertions; "
