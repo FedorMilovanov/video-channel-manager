@@ -5,6 +5,9 @@
 артефакт, независимая приёмка, разрешение на исполнение и подтверждённая публикация — разные
 состояния.** Не засчитывать intent, зелёный тест или старую квитанцию как текущий provider readback.
 
+Более поздние read-only checkpoints 22.11 и точные ограничения — в
+[`current-state.md`](current-state.md) и ссылках на issues ниже. Это снимки, а не новое разрешение.
+
 ## Сверка объёма
 
 Свежий `gh issue list --state open` вернул **17 различных открытых issues**:
@@ -36,14 +39,17 @@ GitHub variables недоступны через текущий токен (403)
 должен проверить переменные, а исполнитель — exact target/state/current-main и отдельные гейты.
 Если всё выполнено — один дневной прогон и публичный readback; при `may_exist` только сверка.
 **Ночью не выпускать.** Read-only отчёт не предлагает дату Иуды при неразрешённом старом запуске.
-В этой ревизии отдельный staged guard также блокирует четыре этапа для точного ID/blob; ни он, ни
-отчёт не проверяют GitHub live, все внешние writers или занятость дня. Защита вступит в runtime
-после слияния и exact-main CI, а снятие потребует отдельной рассмотренной сверки.
+Отдельный staged guard из слитого PR #1082 блокирует четыре этапа для точного ID/blob; он присутствовал
+в `main@ce701b440223e3cfc5ca9017af25aa1d439ed5db` с успешным exact-main CI #45060934538. Ни guard,
+ни отчёт не проверяют GitHub live, все внешние writers или занятость дня и не останавливают старые
+SHA. Снятие HOLD потребует отдельной рассмотренной сверки, не повторной отмены.
 
 ### 2. #1009 — QUIZ: ликвидировать обходы, затем независимая приёмка
 
 - Исторический Series03: 2 опубликованных/verified (#1617, #1623), 8 pending/impossible на
-  checkpoint state `bca3c01f…`; v1 и его ledger не переписываются, повторы запрещены.
+  checkpoint state `bca3c01f…`; v1 и его ledger не переписываются, повторы запрещены. 22.11
+  публичный виджет #1617 показал опрос, а виджет #1623 ответил «Post not found»; это не квитанция
+  удаления и не доказательство причины ([read-only checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/1009#issuecomment-7084480991)).
 - PR #1079 слит с provider-free guard и тестами против исторических ID, переименования release,
   generic initialization/skip/prepare/send и прямого native `sendPoll` на точный @lordchrist
   target. Workflow допускает только validate. Проверять точный текущий main и его CI перед
@@ -63,6 +69,9 @@ GitHub variables недоступны через текущий токен (403)
 №09 уже имеет terminal reissue #1630 (20.11); повтор запрещён. Для 06–08 даты в отдельном
 черновике не утверждены. Существующие слоты 10–12 нельзя считать работоспособными: все восемь
 исторических blob и payload bindings расходятся с текущей очередью. №13 остаётся на HOLD.
+Для №10–12 [отдельно установлено](https://github.com/FedorMilovanov/video-channel-manager/issues/997#issuecomment-7084081762),
+что ledger media-base и QC media-base дают разные cover URLs при одинаковых байтах; обновление
+article SHA само по себе не доказывает совпадение live page tree и не снимает блокировку.
 
 В PR #1079 исправлен **только read-only планировщик**: терминальная вложенная квитанция,
 неоднозначные эффекты, отсутствие ledger, drift и интервалы до/после занятых дат. PR слит;
@@ -89,9 +98,12 @@ receipts и переменные этим PR не менялись. Нужна �
 
 ### 5. Последовательно: #774 → #782 → #903 → #795
 
-- **#774:** исторический checkpoint 10.11 — производный счёт 154/164 PUBLIC, не полный свежий
-  164-row recensus. Нужна свежая сверка по точному owner/ID; исключить Heroes III, черновики и
-  девять старых частных HOLD-копий сохранить; quarantined aliases не использовать.
+- **#774:** исторический checkpoint 10.11 — производный счёт 154/164 PUBLIC. [Независимый
+  read-only postflight 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/774#issuecomment-7084046551)
+  подтвердил шесть точных переходов в Published: производно 160/164 + четыре отложенных, но это
+  не полный свежий 164-row recensus; четыре старых scheduled ID через этот UI заново не доказаны.
+  Исключить Heroes III, черновики и девять старых частных HOLD-копий сохранить; quarantined aliases
+  не использовать, подтверждённые шесть объектов не создавать повторно.
 - **#782:** все 7/7 title/factual changes, включая две атрибуционные опечатки, уже опубликованы
   и проверены на checkpoint 06.11; не повторять и не откатывать. У Блока `8g_4EVWFb1g` тогда был
   owner comment `UgyUMAfJqC8hdzxSnfF4AaABAg` — сохранить, не дублировать. У Есенина
@@ -138,23 +150,35 @@ receipts и переменные этим PR не менялись. Нужна �
   У шести запланированных Clips `acodec=None` означает **звук неизвестен**, не доказанную тишину;
   нужны playback/stream readback, не автоматическая отмена, перепубликация или правка по одному
   metadata-признаку ([аудио-сверка](https://github.com/FedorMilovanov/video-channel-manager/issues/792#issuecomment-7052639277)).
-  Community wall key не доказывает video/admin read; quarantined aliases не использовать.
+  [Поздний независимый UI checkpoint 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/792#issuecomment-7084519026)
+  сверил 25/25 текущих postponed wall ID и дат без коллизий; это не свежая полная сверка всех
+  25 вложений. Community wall key не доказывает video/admin read; quarantined aliases не использовать.
 - **#790, Milovi Instagram:** reconcile точные container IDs и ошибки `1363008`, сохранять один
-  writer; старые неясные/неуспешные ключи не повторять. На checkpoint 18.11 активная owner-local
-  задача импортировала старый/dirty checkout: нужен отдельно одобренный безопасный переход без
-  второго writer и с сохранением журналов. HTTPS-кандидат, exit 0 и локальный QA не равны
-  provider readback; права и будущие receipts проверять отдельно.
-- **#809, Milovi Telegram:** сначала прочитать свежий protected state и истёкшие слоты; никаких
-  backfill или замены исторического ID. Новая дата требует точного медиа, прав и авторизации.
+  writer; старые неясные/неуспешные ключи не повторять. [Независимый отчёт 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7084590166)
+  сообщает об установке только guard истёкшего окна из #1087 в существующий owner-local wrapper и
+  успешном read-only DryRun без POST. Downstream всё ещё использует старый/dirty checkout: нужен
+  отдельно одобренный безопасный переход без второго writer и с сохранением журналов. Guard не
+  исправляет старые Meta ingest failures; HTTPS-кандидат, exit 0 и локальный QA не равны provider
+  readback; права и будущие receipts проверять отдельно.
+- **#809, Milovi Telegram:** на 22.11 все 15 video окон истекли без verified ledger receipt;
+  ранний Paris-Brest подавляет оригинал 17.11, окно Croissant 21.11 без verified ledger receipt,
+  Stohrer 25.11 pending. Это не полная внешняя история и не доказательство отсутствия отправки.
+  Публичный виджет исторического #28 ответил «Post not found», #29 показывает ту же статью с
+  иной подписью; связь не доказана ([checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/809#issuecomment-7084149926)).
+  Никаких backfill или замены исторического ID. PR #1088 слит и прошёл exact-main CI, но не
+  обеспечивает on-time scheduler или фактическую доставку. Новая дата требует точного медиа, прав,
+  сверки дублей и отдельной авторизации.
 - **#662, VK:** открыты code-9 circuit и карантин прежнего user token. Отдельный ключ Lord God
   ранее подтверждён только для wall; восстановление — по официальному supported path и свежему
   ограниченному read, без ретраев старых `default`/`legendary-poet` и обхода flood.
 - **#869, Lord God Instagram:** аккаунт и отдельные Reels ранее проверены; необходимы свежие
   receipts, права, состояние и контроль единственного owner-local writer для остальных выпусков.
 - **#1036, Legendary Poet Telegram:** общий бот и target уже проверяли read-only 18–19.11;
-  не создавать новый. Частичный public scan не показал содержимое MP3 и не доказал отсутствие
-  дубля. Нужны свежая сверка, точный MP3, release/ledger и отдельное разрешение; `sendAudio`
-  на checkpoint не выполнялся.
+  не создавать новый. [Точный Git blob MP3](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7083322026)
+  проверен по размеру и SHA-256 `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`,
+  но listening, права, deployed HTTP и кандидатная обложка не подтверждены. Частичный public scan
+  не доказал отсутствие дубля; профиль записи выключен. Нужны свежая сверка, редакционная и
+  правовая приёмка, release/ledger и отдельное разрешение; `sendAudio` не выполнялся.
 - **#810, LordChrist Shorts:** свежий owner AuditPackage, exact media и права, отсутствие дублей,
   новые даты и один проверенный canary; исторические слоты не догонять и второй writer не заводить.
 

@@ -95,6 +95,28 @@ def test_lordchrist_checkpoint_preserves_no_replay_and_editorial_holds() -> None
         assert (OPERATIONS_DIR / name).is_file()
 
 
+def test_november_22_readbacks_preserve_uncertainty_and_no_replay() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    milovi = current.split("## Telegram / Milovi Cake / Issue #353", 1)[1].split("## ", 1)[0]
+    lordchrist = current.split("## LordChrist publication checkpoint", 1)[1].split("## Completion", 1)[0]
+
+    for fact in (
+        "20 `pending/impossible`",
+        "two historical `published/verified`",
+        "not complete Telegram history",
+        "https://t.me/MiloviCake/28?embed=1",
+        "https://t.me/MiloviCake/29?embed=1",
+        "Neither deletion nor the relationship of #28 and #29 is established",
+        "never substitute an ID or resend",
+        "does not create a reliable on-time scheduler",
+    ):
+        assert fact in milovi
+    assert "#1617 but returned “Post not found” for #1623" in lordchrist
+    assert "not proof of deletion" in lordchrist
+    assert "different cover URLs" in lordchrist
+    assert "issuecomment-7084081762" in lordchrist
+
+
 def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
     incident = (OPERATIONS_DIR / "2026-11-22-jude-actions-reconciliation.md").read_text(encoding="utf-8")
     for fact in (
