@@ -210,6 +210,7 @@ def test_legendary_poet_comment_checkpoint_keeps_research_separate_from_publicat
         assert "Lf0h4yXPVng" in text and "8g_4EVWFb1g" in text
         assert "audio_unverified" in text
         assert "не отправлен" in text
+        assert "Решение владельца — ждать; не публиковать кандидата Есенина до нового решения" in text
         assert "pin" in text and "readback" in text
     assert "финальные строки и год — по музею, не по самой рукописи" in poet
     assert "на 06.11" in poet and "нынешнее наличие других owner-комментариев не установлено" in poet
