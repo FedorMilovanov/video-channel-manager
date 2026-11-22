@@ -222,6 +222,9 @@ def test_already_live_page_requires_reconcile(tmp_path: Path, monkeypatch) -> No
         manifest=_manifest(),
     )
     assert outcome["effect"] == "VERIFIED_REISSUE_RECONCILED"
+    assert outcome["live_first_text"] == outcome["target_first_text"]
+    assert outcome["live_last_text"] == outcome["target_last_text"]
+    assert outcome["live_first_text"]
     assert len(list(tmp_path.iterdir())) == 1
 
 

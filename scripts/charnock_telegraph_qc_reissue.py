@@ -123,6 +123,17 @@ def describe_differences(before: Any, after: Any) -> list[str]:
     return differences
 
 
+def readable_edges(nodes: Any) -> dict[str, str]:
+    """First and last visible text of a page body, for the operator's readback."""
+    semantic = semantic_nodes(nodes)
+    if not semantic:
+        return {"first_text": "", "last_text": ""}
+    return {
+        "first_text": _safe_prefix(semantic[0][1], 160),
+        "last_text": _safe_prefix(semantic[-1][1], 160),
+    }
+
+
 def check_live_page(page: dict[str, Any], key: str, contract: dict[str, Any]) -> None:
     if page.get("path") != contract["path"]:
         raise UnsafeRevision(f"{key}: live path differs from the pinned path")
@@ -198,6 +209,7 @@ def run_one(
     live_sha = sha_content(live_content)
     live_bytes = content_bytes(live_content)
     differences = describe_differences(live_content, target_content)
+    edges = readable_edges(live_content)
 
     result: dict[str, Any] = {
         "article": key,
@@ -213,6 +225,10 @@ def run_one(
         "content_utf8_bytes_before": live_bytes,
         "content_utf8_bytes_after": target_bytes,
         "article_sha256": payload.article_sha256,
+        "live_first_text": edges["first_text"],
+        "live_last_text": edges["last_text"],
+        "target_first_text": readable_edges(target_content)["first_text"],
+        "target_last_text": readable_edges(target_content)["last_text"],
         "run_id": os.environ.get("GITHUB_RUN_ID"),
     }
 
