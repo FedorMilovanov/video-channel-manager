@@ -189,6 +189,10 @@ def test_visible_text_match_does_not_claim_media_or_markup_equality(tmp_path: Pa
     outcome = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA, receipt_dir=tmp_path, reconcile=True)
     assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
     assert outcome["verification"]["provider_content_exact"] is False
+    assert outcome["verification"]["normalized_node_tree_equal"] is False
+    assert outcome["verification"]["normalized_node_tree_required"] is False
+    assert outcome["normalized_tree_differences"]
+    assert outcome["media_base_revision"] == "a" * 40
     assert outcome["verification"]["visible_text_comparison_excludes"] == [
         "media sources",
         "link targets",
@@ -211,7 +215,123 @@ def test_exact_content_field_distinguishes_json_boolean_and_number(monkeypatch) 
     outcome = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA)
     assert outcome["effect"] == "VISIBLE_TEXT_MATCH"
     assert outcome["verification"]["provider_content_exact"] is False
+    assert outcome["verification"]["normalized_node_tree_equal"] is False
+    assert any("JSON types differ" in diff for diff in outcome["normalized_tree_differences"])
     assert outcome["old_sha256"] != outcome["new_sha256"]
+
+
+def test_full_tree_match_accepts_only_documented_provider_normalization(monkeypatch) -> None:
+    payload = _payload("10")
+    live = copy.deepcopy(payload.nodes)
+    heading = next(node for node in live if isinstance(node, dict) and node.get("tag") == "h3")
+    assert isinstance(heading["children"][0], str)
+    heading["attrs"] = {"id": "generated-heading-anchor"}
+    text = heading["children"][0]
+    heading["children"] = [text[:3], text[3:]]
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("10", title=payload.title, content=live)))
+    result = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA, require_normalized_tree=True)
+    assert result["effect"] == "NORMALIZED_NODE_TREE_MATCH"
+    assert result["verification"]["provider_content_exact"] is False
+    assert result["verification"]["mode"] == "normalized_node_tree"
+    assert result["verification"]["normalized_node_tree_equal"] is True
+    assert result["verification"]["normalized_node_tree_required"] is True
+    assert result["normalized_tree_sha256_before"] == result["normalized_tree_sha256_after"]
+    assert result["normalized_tree_differences"] == []
+
+
+@pytest.mark.parametrize("change", ["image", "link", "markup", "empty_node", "whitespace"])
+def test_strict_tree_detects_changes_visible_text_alone_can_miss(monkeypatch, change) -> None:
+    payload = _payload("10")
+    target = [
+        {"tag": "figure", "children": [{"tag": "img", "attrs": {"src": "https://media.invalid/one"}}]},
+        {
+            "tag": "p",
+            "children": [{"tag": "a", "attrs": {"href": "https://source.invalid/one"}, "children": ["A B"]}],
+        },
+    ]
+    live = copy.deepcopy(target)
+    if change == "image":
+        live[0]["children"][0]["attrs"]["src"] = "https://media.invalid/two"
+    elif change == "link":
+        live[1]["children"][0]["attrs"]["href"] = "https://source.invalid/two"
+    elif change == "markup":
+        live[1]["children"][0]["tag"] = "em"
+    elif change == "empty_node":
+        live.insert(1, {"tag": "br"})
+    else:
+        live[1]["children"][0]["children"] = ["A   B"]
+    assert reissue.describe_differences(live, target) == []
+    monkeypatch.setattr(reissue, "reviewed_payload", lambda *a, **k: replace(payload, nodes=target))
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("10", title=payload.title, content=live)))
+    result = reissue.run_one("10", repo_root=ROOT, media_base_url=MEDIA, require_normalized_tree=True)
+    assert result["effect"] == "NORMALIZED_NODE_TREE_MISMATCH"
+    assert result["verification"]["visible_text_equal"] is True
+    assert result["verification"]["normalized_node_tree_equal"] is False
+    assert result["normalized_tree_sha256_before"] != result["normalized_tree_sha256_after"]
+    assert result["normalized_tree_differences"]
+    assert result["provider_write_attempted"] is False
+
+
+def test_strict_mismatch_exits_nonzero_and_still_records_evidence(tmp_path: Path, monkeypatch, capsys) -> None:
+    payload = _payload("10")
+    live = copy.deepcopy(payload.nodes)
+    live[0]["children"][0]["attrs"]["src"] = "https://different.invalid/image"
+    monkeypatch.setattr(reissue, "get_public_page", Reader(_live("10", title=payload.title, content=live)))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "qc",
+            "--page",
+            "10",
+            "--media-base-url",
+            MEDIA,
+            "--reconcile",
+            "--require-normalized-tree",
+            "--receipt-dir",
+            str(tmp_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        reissue.main()
+    assert exc.value.code == 2
+    outcome = json.loads(capsys.readouterr().out)
+    assert outcome["mode"] == "structural-reconcile"
+    assert outcome["verification"]["mode"] == "normalized_node_tree"
+    assert outcome["effect"] == "NORMALIZED_NODE_TREE_MISMATCH"
+    assert json.loads(next(tmp_path.iterdir()).read_text(encoding="utf-8")) == outcome
+    summary = reissue.annotation_summary(outcome)
+    assert summary["effect"] == outcome["effect"]
+    assert summary["normalized_tree_sha256_before"] == outcome["normalized_tree_sha256_before"]
+    assert summary["verification"]["normalized_node_tree_equal"] is False
+    assert "live_first_text" not in summary and "differences" not in summary
+    assert "visible_text_comparison_excludes" not in summary["verification"]
+    with pytest.raises(ValueError, match="no verification"):
+        reissue.annotation_summary({})
+
+
+def test_tree_differences_are_bounded_and_do_not_print_values() -> None:
+    before = [{"tag": "p", "children": [str(i), {"tag": "br"}]} for i in range(10)]
+    after = [{"tag": "p", "children": [f"secret-{i}", {"tag": "br"}]} for i in range(10)]
+    differences = reissue.normalized_tree_differences(before, after)
+    assert len(differences) == reissue.MAX_DIFFERENCES
+    assert all("secret" not in item for item in differences)
+
+
+def test_tree_diagnostics_hide_unknown_keys_and_limit_deep_paths() -> None:
+    before = {"secret-provider-key": "old"}
+    after = {"secret-provider-key": "new"}
+    for _ in range(30):
+        before = {"children": [before]}
+        after = {"children": [after]}
+    differences = reissue.normalized_tree_differences(before, after)
+    assert len(differences) == 1
+    assert "secret-provider-key" not in differences[0]
+    assert len(differences[0]) <= reissue.MAX_DIAGNOSTIC_PATH + len(": value differs")
+    assert "..." in differences[0]
+
+    unknown_key = "secret-" * 10_000
+    assert "secret" not in " ".join(reissue.normalized_tree_differences({unknown_key: "old"}, {unknown_key: "new"}))
 
 
 def test_visible_comparison_excludes_link_targets_but_checks_outer_tags() -> None:

@@ -213,24 +213,54 @@ def _prove_new_public_post(*, message_id: int, telegraph_url: str) -> None:
 
 
 def _normalized_telegraph_node(value: Any) -> Any:
-    """Telegra.ph adds heading anchors and merges adjacent text children on readback."""
+    """Normalize only Telegraph node lists and their generated heading anchors.
+
+    An ``id`` on an h3/h4 cannot be distinguished from a generated one, so all
+    such IDs are ignored. Adjacent strings are merged only in the top-level
+    content or a node's children, never inside arbitrary attributes or fields.
+    The original input is not mutated.
+    """
     if isinstance(value, list):
         joined: list[Any] = []
-        for child in (_normalized_telegraph_node(item) for item in value):
+        for item in value:
+            child = _normalized_telegraph_node(item) if isinstance(item, dict) else item
             if isinstance(child, str) and joined and isinstance(joined[-1], str):
                 joined[-1] += child
             else:
                 joined.append(child)
         return joined
     if isinstance(value, dict):
-        normalized = {key: _normalized_telegraph_node(child) for key, child in value.items()}
-        attrs = normalized.get("attrs")
-        if normalized.get("tag") in ("h3", "h4") and isinstance(attrs, dict):
-            attrs.pop("id", None)
-            if not attrs:
+        normalized = dict(value)
+        children = value.get("children")
+        if isinstance(children, list):
+            normalized["children"] = _normalized_telegraph_node(children)
+        attrs = value.get("attrs")
+        if value.get("tag") in ("h3", "h4") and isinstance(attrs, dict) and "id" in attrs:
+            remaining_attrs = {key: child for key, child in attrs.items() if key != "id"}
+            if remaining_attrs:
+                normalized["attrs"] = remaining_attrs
+            else:
                 normalized.pop("attrs")
         return normalized
     return value
+
+
+def _normalized_telegraph_digest(value: Any) -> str:
+    """Hash normalized JSON without Python's bool/int or numeric coercions.
+
+    The normalization only merges adjacent text fragments in content/children
+    arrays and removes all h3/h4 heading IDs (including any authored IDs). Other
+    nodes, attributes, links, media URLs and whitespace remain in the comparison.
+    This is not a hash of fetched media bytes.
+    """
+    try:
+        normalized = _normalized_telegraph_node(value)
+        encoded = json.dumps(
+            normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("Malformed normalized Telegraph content") from exc
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _proof_page(entry: dict[str, Any], payload: Any) -> None:
@@ -250,8 +280,16 @@ def _proof_page(entry: dict[str, Any], payload: Any) -> None:
     if (
         not document.get("ok")
         or not isinstance(page, dict)
+        or page.get("path") != path
+        or page.get("url") != url
         or page.get("title") != payload.title
-        or _normalized_telegraph_node(page.get("content")) != _normalized_telegraph_node(payload.nodes)
+        or page.get("author_name") != payload.author_name
+        or page.get("author_url") != payload.author_url
+        or not isinstance(page.get("content"), list)
+        or not page["content"]
+        or not isinstance(payload.nodes, list)
+        or not payload.nodes
+        or _normalized_telegraph_digest(page["content"]) != _normalized_telegraph_digest(payload.nodes)
     ):
         raise RuntimeError("Public Telegraph page is not the entire reviewed latest article edition")
 

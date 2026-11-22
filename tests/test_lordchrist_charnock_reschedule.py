@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 from datetime import datetime
@@ -295,7 +296,12 @@ def test_telegraph_readback_normalization_preserves_all_words_and_nodes():
 
 def test_telegra_ph_api_must_match_entire_last_reviewed_page(monkeypatch):
     source = {"verified_telegraph_url": URL}
-    document = SimpleNamespace(title="Reviewed", nodes=[{"tag": "p", "children": ["Full approved text"]}])
+    document = SimpleNamespace(
+        title="Reviewed",
+        author_name="Господь Бог",
+        author_url="https://t.me/lordchrist",
+        nodes=[{"tag": "p", "children": ["Full approved text"]}],
+    )
 
     def fake_page(url, **kwargs):
         assert url == "https://api.telegra.ph/getPage/Reviewed-Charnock-11-05?return_content=true"
@@ -304,7 +310,11 @@ def test_telegra_ph_api_must_match_entire_last_reviewed_page(monkeypatch):
             json=lambda: {
                 "ok": True,
                 "result": {
+                    "path": "Reviewed-Charnock-11-05",
+                    "url": URL,
                     "title": "Reviewed",
+                    "author_name": "Господь Бог",
+                    "author_url": "https://t.me/lordchrist",
                     "content": [{"tag": "p", "children": ["Full approved text"]}],
                 },
             },
@@ -315,6 +325,102 @@ def test_telegra_ph_api_must_match_entire_last_reviewed_page(monkeypatch):
     document.nodes[0]["children"] = ["A different revision"]
     with pytest.raises(RuntimeError, match="entire reviewed latest"):
         m._proof_page(source, document)
+
+
+@pytest.mark.parametrize("field", ["path", "url", "title", "author_name", "author_url"])
+def test_page_proof_refuses_wrong_or_missing_identity(monkeypatch, field):
+    source = {"verified_telegraph_url": URL}
+    payload = SimpleNamespace(
+        title="Reviewed",
+        author_name="Господь Бог",
+        author_url="https://t.me/lordchrist",
+        nodes=[{"tag": "p", "children": ["Exact"]}],
+    )
+    page = {
+        "path": "Reviewed-Charnock-11-05",
+        "url": URL,
+        "title": payload.title,
+        "author_name": payload.author_name,
+        "author_url": payload.author_url,
+        "content": payload.nodes,
+    }
+    monkeypatch.setattr(
+        m.httpx,
+        "get",
+        lambda *a, **k: SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"ok": True, "result": page}),
+    )
+    m._proof_page(source, payload)
+    page[field] = "unexpected"
+    with pytest.raises(RuntimeError, match="entire reviewed latest"):
+        m._proof_page(source, payload)
+    del page[field]
+    with pytest.raises(RuntimeError, match="entire reviewed latest"):
+        m._proof_page(source, payload)
+
+
+def test_normalized_page_digest_checks_json_types_and_only_provider_normalizations():
+    reviewed = [{"tag": "h3", "children": ["A", " B"]}, {"tag": "img", "attrs": {"src": "https://a", "v": 1}}]
+    live = [
+        {"tag": "h3", "attrs": {"id": "A-B"}, "children": ["A B"]},
+        {"tag": "img", "attrs": {"src": "https://a", "v": 1}},
+    ]
+    assert m._normalized_telegraph_digest(live) == m._normalized_telegraph_digest(reviewed)
+    live[1]["attrs"]["v"] = True
+    assert m._normalized_telegraph_node(live) == m._normalized_telegraph_node(reviewed)
+    assert m._normalized_telegraph_digest(live) != m._normalized_telegraph_digest(reviewed)
+    live[1]["attrs"]["v"] = float("nan")
+    with pytest.raises(RuntimeError, match="Malformed normalized Telegraph"):
+        m._normalized_telegraph_digest(live)
+
+
+def test_normalization_does_not_erase_attribute_values_or_mutate_input():
+    reviewed = [
+        {
+            "tag": "h3",
+            "attrs": {"id": "authored-id", "data": ["one", "two"], "nested": {"tag": "h3", "attrs": {"id": "x"}}},
+            "children": ["A", " B"],
+        }
+    ]
+    original = copy.deepcopy(reviewed)
+    normalized = m._normalized_telegraph_node(reviewed)
+    assert reviewed == original
+    assert normalized[0]["attrs"] == {"data": ["one", "two"], "nested": {"tag": "h3", "attrs": {"id": "x"}}}
+    assert normalized[0]["children"] == ["A B"]
+
+    altered = copy.deepcopy(reviewed)
+    altered[0]["attrs"]["data"] = ["onetwo"]
+    assert m._normalized_telegraph_digest(reviewed) != m._normalized_telegraph_digest(altered)
+    altered = copy.deepcopy(reviewed)
+    altered[0]["attrs"]["nested"]["attrs"]["id"] = "changed"
+    assert m._normalized_telegraph_digest(reviewed) != m._normalized_telegraph_digest(altered)
+    assert m._normalized_telegraph_digest([{"tag": "h3", "attrs": {}}]) != m._normalized_telegraph_digest(
+        [{"tag": "h3"}]
+    )
+    # An authored heading ID is indistinguishable from a provider-generated one.
+    altered = copy.deepcopy(reviewed)
+    altered[0]["attrs"]["id"] = "another-heading-id"
+    assert m._normalized_telegraph_digest(reviewed) == m._normalized_telegraph_digest(altered)
+
+
+def test_page_proof_refuses_python_equal_but_json_distinct_attributes(monkeypatch):
+    source = {"verified_telegraph_url": URL}
+    nodes = [{"tag": "p", "attrs": {"hidden": 1}, "children": ["Exact"]}]
+    payload = SimpleNamespace(title="Reviewed", author_name="A", author_url="https://a", nodes=nodes)
+    page = {
+        "path": "Reviewed-Charnock-11-05",
+        "url": URL,
+        "title": payload.title,
+        "author_name": payload.author_name,
+        "author_url": payload.author_url,
+        "content": [{"tag": "p", "attrs": {"hidden": True}, "children": ["Exact"]}],
+    }
+    monkeypatch.setattr(
+        m.httpx,
+        "get",
+        lambda *a, **k: SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"ok": True, "result": page}),
+    )
+    with pytest.raises(RuntimeError, match="entire reviewed latest"):
+        m._proof_page(source, payload)
 
 
 def test_delayed_public_telegram_message_is_verified_without_second_send(monkeypatch, tmp_path):

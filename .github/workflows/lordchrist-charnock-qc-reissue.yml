@@ -23,13 +23,22 @@ on:
           - '12'
           - '13'
       mode:
-        description: dry-run prints a comparison; reconcile also saves a read-only receipt
+        description: Choose visible-text or stricter normalized node-tree comparison
         required: true
         default: dry-run
         type: choice
         options:
           - dry-run
           - reconcile
+          - structural-reconcile
+      media_base:
+        description: Compare media URLs against current main or the historical QC run
+        required: true
+        default: current-main
+        type: choice
+        options:
+          - current-main
+          - historical-qc-20261121
 
 permissions:
   contents: read
@@ -75,37 +84,67 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: \
             -r requirements/telegram-publisher.txt
-      - name: Compare public title and visible text without provider writes
+      - name: Compare the public page without provider writes
         shell: bash
         env:
           PYTHONPATH: src
-          MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           REVIEWED_PAGE: ${{ inputs.page }}
           MODE: ${{ inputs.mode }}
+          MEDIA_BASE: ${{ inputs.media_base }}
         run: |
           set -euo pipefail
-          echo "::notice title=charnock-qc-readonly-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE}"
+          echo "::notice title=charnock-qc-readonly-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE} media_base=${MEDIA_BASE}"
           mkdir -p "$RUNNER_TEMP/charnock-qc-reissue-receipts"
-          args=(--page "$REVIEWED_PAGE" --media-base-url "$MEDIA_BASE_URL"
+          if [[ "$MEDIA_BASE" == "current-main" ]]; then
+            media_revision="$GITHUB_SHA"
+          elif [[ "$MEDIA_BASE" == "historical-qc-20261121" ]]; then
+            # Recorded head of the completed 2026-11-21 QC runs; media URLs only.
+            media_revision="c1bafa972e91d536fc56d86e53b4ce6f3502f37d"
+          else
+            exit 3
+          fi
+          media_base_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${media_revision}"
+          args=(--page "$REVIEWED_PAGE" --media-base-url "$media_base_url"
                 --receipt-dir "$RUNNER_TEMP/charnock-qc-reissue-receipts")
           if [[ "$MODE" == "reconcile" ]]; then
             args+=(--reconcile)
+          elif [[ "$MODE" == "structural-reconcile" ]]; then
+            args+=(--reconcile --require-normalized-tree)
           elif [[ "$MODE" != "dry-run" ]]; then
             exit 3
           fi
+          emit_comparison_summary() {
+            local summary
+            summary="$(python - "$RUNNER_TEMP/charnock-qc-reissue.log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          from scripts.charnock_telegraph_qc_reissue import annotation_summary
+
+          try:
+              outcome = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1])
+              if not isinstance(outcome, dict):
+                  raise ValueError("Not a comparison result")
+              print(json.dumps(annotation_summary(outcome), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+          except (OSError, ValueError, IndexError, TypeError):
+              print("No structured comparison was produced")
+          PY
+            )"
+            echo "::notice title=charnock-qc-readonly-result-${REVIEWED_PAGE}::${summary}"
+          }
           if ! python -m scripts.charnock_telegraph_qc_reissue "${args[@]}" 2>&1 \
               | tee "$RUNNER_TEMP/charnock-qc-reissue.log"; then
+            emit_comparison_summary
             message="$(tail -n 2 "$RUNNER_TEMP/charnock-qc-reissue.log" | tr '\n' ' ' | cut -c1-900)"
             echo "::error title=charnock-qc-readonly-${REVIEWED_PAGE}::${message}"
             exit 3
           fi
-          result="$(tail -n 1 "$RUNNER_TEMP/charnock-qc-reissue.log" | cut -c1-6000)"
-          echo "::notice title=charnock-qc-readonly-result-${REVIEWED_PAGE}::${result}"
-          if [[ "$MODE" == "reconcile" ]]; then
+          emit_comparison_summary
+          if [[ "$MODE" == "reconcile" || "$MODE" == "structural-reconcile" ]]; then
             [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
           fi
       - name: Upload the read-only comparison receipt
-        if: always() && inputs.mode == 'reconcile'
+        if: always() && (inputs.mode == 'reconcile' || inputs.mode == 'structural-reconcile')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: charnock-qc-reissue-receipt-${{ inputs.page }}-${{ github.run_id }}
