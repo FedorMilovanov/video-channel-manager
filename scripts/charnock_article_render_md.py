@@ -68,6 +68,10 @@ def extract_footer(markdown: str) -> str:
 
 
 def render_markdown(article: dict[str, Any], *, footer: str = "") -> str:
+    # Backward-compatible parameter, but never borrow missing publication content
+    # from a separate Markdown file: that concealed absent Telegraph JSON blocks.
+    if footer:
+        raise ValueError("source credit must be authored in JSON blocks, not supplied by Markdown")
     blocks = article.get("blocks")
     if not isinstance(blocks, list):
         raise ValueError("article has no block list")
@@ -102,9 +106,6 @@ def render_markdown(article: dict[str, Any], *, footer: str = "") -> str:
             raise ValueError(f"{block.get('block_id')}: unsupported block type {kind!r}")
         out.append("")
     text = "\n".join(out).rstrip() + "\n"
-    last_text = iter_text(blocks[-1].get("text")) if blocks else ""
-    if footer and not last_text.lstrip().startswith("©"):
-        text += "\n" + footer.rstrip() + "\n"
     return text
 
 
