@@ -16,7 +16,19 @@ The canonical operator bundle is the following on the authorized desktop:
 C:\Users\Fedor\Projects\video-channel-manager\operator-output\legendary-poet-lermontov-niva-20261118
 ```
 
-It contains the **unchanged** user-supplied MP3, a 320×320 JPEG thumbnail, reviewed HTML caption, cross-platform copy and `release-manifest.json`. Source file digest: `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`. Exact caption and media must be included in the reviewed release; do not use filename-only matching or an unpublished website link as a live claim.
+It contains the **unchanged** user-supplied MP3, a 320×320 JPEG thumbnail, reviewed HTML caption, cross-platform copy and `release-manifest.json`. Source file digest: `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`. Exact caption and media must be included in the reviewed release; do not use filename-only matching or an unpublished website link as a live claim. This historical Windows handoff was not re-opened by the technical checkpoint below.
+
+## Provider-free source decode — 23 November 2026 Moscow time
+
+At 22 November 23:31 UTC, the [source-only checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7087633303) revalidated 4,825,010 bytes from Git blob `9da6847c5ee5008981fa154b1b95d87d6809cf01` at `FedorMilovanov/TheLegendaryPoet@7d041a174c34325ac003bfde1c78903b5dff1e58`: the MP3 SHA-256 remains `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`. This is a pinned Git source, not a fresh production-HTTP or Windows-bundle check.
+
+FFmpeg 7.0.2-static, extracted from the PyPI `imageio-ffmpeg` 0.6.0 wheel, fully decoded the first audio stream with `-xerror` and local `file,pipe` protocol restriction. The decode exited zero; a separate PCM pass emitted no stderr errors. The resulting 48 kHz stereo `pcm_s16le` stream contained **9,011,270 stereo sample frames**, or **187.7347917 seconds**; its SHA-256 was `f5626af91887032d79c9c1fc30d53a5b248a9b8fd8eff13a5c8c33176c85b818`. That PCM hash describes this particular decoder output, not a new master. FFmpeg's rounded container duration of 187.78 seconds and the earlier Mutagen estimate of 187.776 seconds are different measurements, not evidence of a different MP3.
+
+`volumedetect` reported a mean of −16.2 dB and a rounded maximum of 0.0 dB; one of 18,022,540 quantized 16-bit samples reached negative full scale. These numbers **do not prove audible clipping or its absence**, listening quality, editorial acceptance, rights, release approval or duplicate absence. The extracted decoder binary SHA-256 was `e7e7fb30477f717e6f55f9180a70386c62677ef8a4d4d1a5d948f4098aa3eb99`; source and decoder were temporary `/tmp` copies, not the owner's handoff.
+
+The separate 22,308-byte candidate JPEG was previously identified by SHA-256 `6be386a116c9564ee1c09c6f7c5a385c324e00ed86753782cea24f389f43cfd4`. The MP3's embedded cover has a different SHA-256 and must not be substituted. No blob of the candidate's exact length appeared in the pinned website tree or `video-channel-manager@aa9cf9ef10b2dcae54f9eeee1cc9b8676b39ad17`; this limited Git-tree check says nothing conclusive about other commits or the owner's Windows bundle.
+
+Independent human listening and editorial/rights review, an exact JPEG and caption check, complete duplicate reconciliation, fresh target proof and a separately authorized release/intent/execution remain required. The historical 19 November proposed slot has expired. This checkpoint performed no `sendAudio` and grants no provider authority.
 
 ## Shared-bot onboarding verified — 18 November 2026 (Issue #1036)
 

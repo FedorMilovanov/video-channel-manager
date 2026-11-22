@@ -138,7 +138,9 @@ def test_owner_checkpoints_separate_read_access_ledger_and_authority() -> None:
         "18341870875261465`, но без media ID",
         "заблокирована security layer; обходить нельзя",
         "issuecomment-7086329857",
-        "owner-local wrapper не доказывает его merge/deployment",
+        "a78bf4e6c46bba5f3831bf9cdf514c6d940e3168",
+        "9946067ca830d0cd7684d4b8d84d78e7299117a6",
+        "owner-local wrapper не доказывает deployment этого commit",
         "Ни auto-switch HTTPS, ни новые hosting",
     ):
         assert fact in plan
@@ -151,10 +153,41 @@ def test_milovi_https_handoff_preserves_expired_window_and_unknown_effect() -> N
     assert "container `18341870875261465`, with **no provider media ID**" in handoff
     assert "not proof that a provider effect is absent" in handoff
     assert "Do not retry that key or source" in handoff
+    assert "a78bf4e6c46bba5f3831bf9cdf514c6d940e3168" in handoff
+    assert "9946067ca830d0cd7684d4b8d84d78e7299117a6" in handoff
+    assert "not proof of owner-local deployment" in " ".join(handoff.replace("**", "").split())
+    assert "old unknown/failed effects and no-replay boundary still apply" in handoff
     assert "--day '<approved-future-date-YYYY-MM-DD>'" in future
     assert "--day '2026-11-14'" not in future
     assert "approval was limited to that expired window" in future
     assert "The only prospective exception" not in handoff
+
+
+def test_lermontov_decode_is_not_listening_or_release_authority() -> None:
+    onboarding = (OPERATIONS_DIR / "legendary-poet-telegram-audio-onboarding.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    checkpoint = onboarding.split("## Provider-free source decode", 1)[1].split("## Shared-bot onboarding", 1)[0]
+
+    for fact in (
+        "issuecomment-7087633303",
+        "9da6847c5ee5008981fa154b1b95d87d6809cf01",
+        "10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8",
+        "9,011,270 stereo sample frames",
+        "f5626af91887032d79c9c1fc30d53a5b248a9b8fd8eff13a5c8c33176c85b818",
+        "not a fresh production-HTTP or Windows-bundle check",
+        "do not prove audible clipping or its absence",
+        "must not be substituted",
+        "nothing conclusive about other commits or the owner's Windows bundle",
+        "Independent human listening and editorial/rights review",
+        "historical 19 November proposed slot has expired",
+        "grants no provider authority",
+    ):
+        assert fact in checkpoint.replace("**", "")
+    for text in (plan, inventory):
+        assert "issuecomment-7087633303" in text
+        assert "не listening" in text or "не прослушивание" in text
+        assert "`sendAudio` здесь не выполнялся" in text
 
 
 def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
