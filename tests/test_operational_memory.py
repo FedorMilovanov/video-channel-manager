@@ -95,6 +95,29 @@ def test_lordchrist_checkpoint_preserves_no_replay_and_editorial_holds() -> None
         assert (OPERATIONS_DIR / name).is_file()
 
 
+def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
+    incident = (OPERATIONS_DIR / "2026-11-22-jude-actions-reconciliation.md").read_text(encoding="utf-8")
+    for fact in (
+        "43098273140",
+        "116713949914",
+        "`Cannot cancel a workflow run that is completed`",
+        "`status=queued`",
+        "`conclusion=null`",
+        "Повторную или принудительную отмену",
+        "0 jobs",
+        "0 artifacts",
+        "45014714988",
+        "только заголовки одного аккаунта",
+        "не останавливает",
+        "не проверяет GitHub live, занятость сегодняшнего дня и время суток",
+    ):
+        assert fact in incident
+    calendar = (OPERATIONS_DIR / "2026-11-21-release-calendar.md").read_text(encoding="utf-8")
+    assert "**не подтверждённая отмена**" in calendar
+    assert "2026-11-22-jude-actions-reconciliation.md" in calendar
+    assert "блокирует все четыре этапа" in calendar
+
+
 def test_legendary_poet_inventory_keeps_done_edits_and_project_identity() -> None:
     inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
     poet = inventory.split("Legendary Poet:", 1)[1].split("Lord God:", 1)[0]

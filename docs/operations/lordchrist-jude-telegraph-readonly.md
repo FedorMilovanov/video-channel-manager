@@ -34,5 +34,8 @@ other accounts, other writers, private/removed Telegram posts and concurrency af
 not covered. Two scans are not an atomic provider snapshot. The report cannot settle old run
 [43098273140](https://github.com/FedorMilovanov/video-channel-manager/actions/runs/43098273140),
 prove release-variable values, decide whether another article went out today, or authorize a
-publication. Recheck all relevant state immediately before any separately authorized operation;
-never replay or cancel an unknown effect blindly.
+publication. One owner-authorized ordinary cancellation returned an error saying the run was
+completed, while GET still reported queued; it is **not** a confirmed cancellation. Do not retry
+or force-cancel. See the [reconciliation packet](2026-11-22-jude-actions-reconciliation.md).
+Recheck all relevant state immediately before any separately authorized operation; never replay an
+unknown effect blindly.
