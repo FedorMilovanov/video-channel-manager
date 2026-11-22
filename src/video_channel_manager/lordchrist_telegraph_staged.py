@@ -35,6 +35,21 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 
 STATES = frozenset({"page_dispatch_claimed", "page_published", "telegram_dispatch_claimed", "published"})
 
+# The old Actions run has unknown dispatch inputs and a contradictory
+# cancellation response. This is a hard execution hold, not a live check or
+# evidence that the provider effect is absent. No environment variable can
+# override it. Remove only in a separately reviewed reconciliation change.
+JUDE_PUBLICATION_ID = "lordchrist-telegraph-jude-1-5-20261105"
+JUDE_ARTICLE_GIT_BLOB = "dd15da234a74eb474963d275c6a9bccfcadb9985"
+JUDE_HOLD_REASON = "queued_run_43098273140_target_unknown"
+
+
+def _require_jude_reconciled(publication_id: str, *, article_blob: str | None = None) -> None:
+    if publication_id == JUDE_PUBLICATION_ID or article_blob == JUDE_ARTICLE_GIT_BLOB:
+        raise RuntimeError(
+            f"Jude staged release is held: {JUDE_HOLD_REASON}; reconcile the old run and provider effects"
+        )
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -60,6 +75,10 @@ def _release(args: argparse.Namespace) -> tuple[Any, Any]:
     root = args.repo_root.resolve()
     items = load_telegraph_queue(root / args.queue, root)
     item = _find_item(items, args.publication_id)
+    # load_telegraph_queue verifies article bytes against article_blob. Binding
+    # both identity and reviewed bytes prevents a simple ID-only rename from
+    # bypassing the hold; it cannot identify every edited or external copy.
+    _require_jude_reconciled(item.publication_id, article_blob=item.article_blob)
     if not item.is_ready or item.is_canary:
         raise RuntimeError("Exact ready non-canary Telegraph article required")
     payload = build_telegraph_payload(root, item, media_base_url=args.media_base_url)
@@ -104,6 +123,11 @@ def _verified_payload(entry: dict[str, Any], payload: Any) -> None:
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     _require_execution_context(args)
+    # Check the exact held ID before reading or changing the durable ledger;
+    # _release performs the second, verified-article-blob check for aliases.
+    # Every stage is blocked, preserving any existing receipt or claim for
+    # separately reviewed reconciliation rather than resuming blindly.
+    _require_jude_reconciled(args.publication_id)
     path, ledger = _ledger(args)
     item, payload = _release(args)
 

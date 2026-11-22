@@ -556,6 +556,38 @@ def test_preview_html_page_embeds_both_tabs() -> None:
     assert payload.title in page
 
 
+def test_jude_preview_is_available_during_hold_without_false_charnock_series(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from video_channel_manager.lordchrist_telegraph_staged import JUDE_PUBLICATION_ID
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("Preview must not contact providers"))
+    output = tmp_path / "jude-preview.html"
+    assert (
+        publisher.main(
+            [
+                "preview",
+                "--repo-root",
+                str(ROOT),
+                "--publication-id",
+                JUDE_PUBLICATION_ID,
+                "--media-base-url",
+                MEDIA_BASE,
+                "--html-out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["publication_id"] == JUDE_PUBLICATION_ID
+    assert report["channel_post_visible_chars"] == 1263
+    html = output.read_text(encoding="utf-8")
+    assert report["title"] in html
+    assert "Серия «Стивен Чарнок. О бытии Бога»" not in html
+    assert '<div class="tph-byline"><a href="https://t.me/lordchrist">Господь Бог</a></div>' in html
+
+
 def test_01b_has_zero_overlapping_english_spans_with_article_01() -> None:
     j01 = json.loads(
         (ROOT / "content/telegram/lordchrist/rich-v1/charnock/lordchrist-rich-charnock-01.json").read_text("utf-8")

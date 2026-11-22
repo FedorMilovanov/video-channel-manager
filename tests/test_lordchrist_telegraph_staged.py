@@ -103,6 +103,78 @@ def _state(args: argparse.Namespace) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
+    ("stage", "existing_state"),
+    [
+        ("prepare-page", None),
+        ("send-page", "page_dispatch_claimed"),
+        ("prepare-telegram", "page_published"),
+        ("send-telegram", "telegram_dispatch_claimed"),
+    ],
+)
+def test_unreconciled_jude_is_held_before_ledger_or_provider_on_every_stage(
+    execution: argparse.Namespace,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    existing_state: str | None,
+) -> None:
+    execution.stage = stage
+    execution.publication_id = staged.JUDE_PUBLICATION_ID
+    if existing_state is not None:
+        ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+        ledger["entries"][execution.publication_id] = {
+            "publication_id": execution.publication_id,
+            "state": existing_state,
+            "run_id": execution.run_id,
+            "run_attempt": 1,
+            "github_sha": execution.github_sha,
+            "provider_effect": "unknown_until_reconciled",
+        }
+        save_ledger(execution.ledger, ledger)
+    before = execution.ledger.read_bytes()
+    # Normal workflow approvals and credentials cannot override the incident hold.
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_POSTING_ENABLED", "true")
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID", staged.JUDE_PUBLICATION_ID)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA", staged.JUDE_ARTICLE_GIT_BLOB)
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+    monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setattr(staged, "_ledger", lambda *_: pytest.fail("Hold must stop before ledger access"))
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Hold must stop before provider access"))
+    with pytest.raises(RuntimeError, match="queued_run_43098273140_target_unknown"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize("stage", ["prepare-page", "send-page", "prepare-telegram", "send-telegram"])
+def test_renaming_exact_jude_article_cannot_bypass_staged_hold(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, stage: str
+) -> None:
+    queue = json.loads((ROOT / execution.queue).read_text(encoding="utf-8"))
+    item = next(item for item in queue["items"] if item["publication_id"] == staged.JUDE_PUBLICATION_ID)
+    assert item["article"]["git_blob_sha"] == staged.JUDE_ARTICLE_GIT_BLOB
+    item["publication_id"] = "lordchrist-renamed-jude-test"
+    queue_path = tmp_path / "renamed-queue.json"
+    queue_path.write_text(json.dumps(queue, ensure_ascii=False), encoding="utf-8")
+    execution.queue = queue_path
+    execution.publication_id = item["publication_id"]
+    execution.stage = stage
+    before = execution.ledger.read_bytes()
+    monkeypatch.setattr(staged, "build_telegraph_payload", lambda *a, **kw: pytest.fail("Held blob must not render"))
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Hold must stop before provider access"))
+    with pytest.raises(RuntimeError, match="queued_run_43098273140_target_unknown"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+def test_jude_hold_matches_readonly_planner_and_account_probe() -> None:
+    from scripts import lordchrist_telegraph_backlog as backlog
+    from video_channel_manager import lordchrist_jude_telegraph_readonly as probe
+
+    assert backlog.PROPOSAL_ONLY_HOLDS[staged.JUDE_PUBLICATION_ID] == staged.JUDE_HOLD_REASON
+    assert probe.PUBLICATION_ID == staged.JUDE_PUBLICATION_ID
+    assert probe.ARTICLE_BLOB == staged.JUDE_ARTICLE_GIT_BLOB
+
+
+@pytest.mark.parametrize(
     "corruption",
     [
         {"schema_name": "another-project-ledger"},
