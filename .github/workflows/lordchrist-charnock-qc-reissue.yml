@@ -1,11 +1,11 @@
-name: Lordchrist Charnock QC reissue of existing Telegraph pages (owner only)
-run-name: charnock-qc-reissue-${{ inputs.page }}-${{ inputs.mode }}
+name: Lordchrist Charnock QC read-only comparison (owner only)
+run-name: charnock-qc-readonly-${{ inputs.page }}-${{ inputs.mode }}
 
 on:
   workflow_dispatch:
     inputs:
       page:
-        description: Existing reviewed Charnock page to reprint in place (never create)
+        description: Existing Charnock page to compare (read-only)
         required: true
         type: choice
         options:
@@ -23,18 +23,13 @@ on:
           - '12'
           - '13'
       mode:
-        description: dry-run prints the plan; execute posts exactly once; reconcile re-reads a published page
+        description: dry-run prints a comparison; reconcile also saves a read-only receipt
         required: true
         default: dry-run
         type: choice
         options:
           - dry-run
-          - execute
           - reconcile
-      confirm:
-        description: Type REISSUE_EXISTING_CHARNOCK_PAGE_ONCE to authorize this single page
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -44,12 +39,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  reissue:
+  compare:
     if: >-
       github.actor == 'FedorMilovanov' &&
       github.repository == 'FedorMilovanov/video-channel-manager' &&
       github.ref == 'refs/heads/main' &&
-      inputs.confirm == 'REISSUE_EXISTING_CHARNOCK_PAGE_ONCE' &&
       (inputs.page == '01b' || inputs.page == '02' || inputs.page == '03' ||
        inputs.page == '04' || inputs.page == '05' || inputs.page == '06' ||
        inputs.page == '07' || inputs.page == '08' || inputs.page == '09' ||
@@ -68,7 +62,7 @@ jobs:
           [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
           [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
           [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
-      - name: Check out pinned QC reissue editor
+      - name: Check out pinned QC reader
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -81,23 +75,20 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: \
             -r requirements/telegram-publisher.txt
-      - name: Exactly one preconditioned editPage and full public readback
+      - name: Compare public title and visible text without provider writes
         shell: bash
         env:
           PYTHONPATH: src
-          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
           MEDIA_BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}"
           REVIEWED_PAGE: ${{ inputs.page }}
           MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
-          echo "::notice title=charnock-qc-reissue-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE}"
+          echo "::notice title=charnock-qc-readonly-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE}"
           mkdir -p "$RUNNER_TEMP/charnock-qc-reissue-receipts"
           args=(--page "$REVIEWED_PAGE" --media-base-url "$MEDIA_BASE_URL"
                 --receipt-dir "$RUNNER_TEMP/charnock-qc-reissue-receipts")
-          if [[ "$MODE" == "execute" ]]; then
-            args+=(--execute --confirm REISSUE_EXISTING_CHARNOCK_PAGE_ONCE)
-          elif [[ "$MODE" == "reconcile" ]]; then
+          if [[ "$MODE" == "reconcile" ]]; then
             args+=(--reconcile)
           elif [[ "$MODE" != "dry-run" ]]; then
             exit 3
@@ -105,16 +96,16 @@ jobs:
           if ! python -m scripts.charnock_telegraph_qc_reissue "${args[@]}" 2>&1 \
               | tee "$RUNNER_TEMP/charnock-qc-reissue.log"; then
             message="$(tail -n 2 "$RUNNER_TEMP/charnock-qc-reissue.log" | tr '\n' ' ' | cut -c1-900)"
-            echo "::error title=charnock-qc-reissue-${REVIEWED_PAGE}::${message}"
+            echo "::error title=charnock-qc-readonly-${REVIEWED_PAGE}::${message}"
             exit 3
           fi
           result="$(tail -n 1 "$RUNNER_TEMP/charnock-qc-reissue.log" | cut -c1-6000)"
-          echo "::notice title=charnock-qc-reissue-result-${REVIEWED_PAGE}::${result}"
-          if [[ "$MODE" == "execute" || "$MODE" == "reconcile" ]]; then
+          echo "::notice title=charnock-qc-readonly-result-${REVIEWED_PAGE}::${result}"
+          if [[ "$MODE" == "reconcile" ]]; then
             [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
           fi
-      - name: Upload the single provider receipt
-        if: always()
+      - name: Upload the read-only comparison receipt
+        if: always() && inputs.mode == 'reconcile'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: charnock-qc-reissue-receipt-${{ inputs.page }}-${{ github.run_id }}

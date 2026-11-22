@@ -164,6 +164,20 @@ def test_charnock_due_date_previews_remain_hypothetical_and_provider_free() -> N
     assert "текущие release variables через эту интеграцию не прочитаны (403)" in calendar
 
 
+def test_charnock_qc_history_keeps_limited_evidence_and_retired_editor() -> None:
+    runbook = (OPERATIONS_DIR / "charnock-qc-reissue-20261121.md").read_text(encoding="utf-8")
+    audit = (ROOT / "docs/audits/2026-11-21-charnock-qc-reissue-execution-log.md").read_text(encoding="utf-8")
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    assert "`--execute` останавливается до любого GET" in runbook
+    assert "`VISIBLE_TEXT_MISMATCH`" in runbook and "ненулевой exit" in runbook
+    assert "не доказывает" in runbook and "независимую редакционную приёмку" in runbook
+    assert "не новая\n> полная сверка 13 страниц" in audit
+    assert "**`new_sha256` целевого payload**" in audit and "`old_sha256`" in audit
+    assert "он отличается от `new_sha256` для 13/13" in audit
+    assert "old SHAs/external copies are not stopped" in current
+    assert "not a fresh full-series provider readback" in current
+
+
 def test_platform_inventory_preserves_existing_reel_and_vk_wall_evidence() -> None:
     plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
     blok = plan.split("- **#778,", 1)[1].split("- **#792,", 1)[0]
