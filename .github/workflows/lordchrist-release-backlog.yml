@@ -1,0 +1,60 @@
+name: Lordchrist release backlog report (read-only)
+
+on:
+  schedule:
+    # Daily visibility report; delayed or dropped schedules are harmless.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lordchrist-release-backlog
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Fetch the durable ledger ref read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin \
+            state/lordchrist-telegram:refs/remotes/origin/state/lordchrist-telegram
+      - name: Report what is waiting and which dates keep releases apart
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python scripts/lordchrist_telegraph_backlog.py \
+            --ledger-ref refs/remotes/origin/state/lordchrist-telegram \
+            --out artifacts/lordchrist-release-backlog.json > artifacts/report.txt
+          cat artifacts/report.txt
+          {
+            echo "## Очередь @lordchrist"
+            echo
+            echo '```'
+            cat artifacts/report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          summary="$(head -n 1 artifacts/report.txt | cut -c1-900)"
+          echo "::notice title=lordchrist-release-backlog::${summary}"
+      - name: Upload the backlog plan
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lordchrist-release-backlog-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 30
