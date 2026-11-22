@@ -5,7 +5,7 @@
 артефакт, независимая приёмка, разрешение на исполнение и подтверждённая публикация — разные
 состояния.** Не засчитывать intent, зелёный тест или старую квитанцию как текущий provider readback.
 
-Более поздние read-only checkpoints 22.11 и точные ограничения — в
+Более поздние owner-reported/read-only checkpoints 22.11 UTC / 23.11 МСК и точные ограничения — в
 [`current-state.md`](current-state.md) и ссылках на issues ниже. Это снимки, а не новое разрешение.
 
 ## Сверка объёма
@@ -72,6 +72,9 @@ SHA. Снятие HOLD потребует отдельной рассмотре�
 Для №10–12 [отдельно установлено](https://github.com/FedorMilovanov/video-channel-manager/issues/997#issuecomment-7084081762),
 что ledger media-base и QC media-base дают разные cover URLs при одинаковых байтах; обновление
 article SHA само по себе не доказывает совпадение live page tree и не снимает блокировку.
+[PR #1092](https://github.com/FedorMilovanov/video-channel-manager/pull/1092) добавил сравнение
+heading ID относительно рассмотренного образца; синтетические тесты не являются свежим provider
+readback и не превращают исторические QC runs в проверки по новому алгоритму.
 
 В PR #1079 исправлен **только read-only планировщик**: терминальная вложенная квитанция,
 неоднозначные эффекты, отсутствие ledger, drift и интервалы до/после занятых дат. PR слит;
@@ -116,9 +119,16 @@ receipts и переменные этим PR не менялись. Нужна �
   slots, не подтверждены 1585; это не текущий recensus. `NZISwKGIzGI` имел 10 verified
   caption tracks. Старый `may_exist` для `WizaG8S085g::en-US` после quotaExceeded был разрешён
   двумя owner-readback 12.11 как `reconciled_absent_after_403` (issue 14.11); это не текущее
-  доказательство отсутствия и не разрешение на повтор. Требуются свежие readback и квота.
-  Подробности: [квота и мультиязычный rollout](youtube-api-quota-and-viewer-language-2026-11-13.md).
-- **#795:** свежий owner-API аудит 1781+ YouTube с сохранением глав/кредитов и сверкой VK.
+  доказательство отсутствия и не разрешение на повтор. Восстановленный owner OAuth и успешный
+  GET inventory не доказывают текущий остаток квоты, увеличенный grant или доступность
+  `captions.insert`; [quota decision не подтверждено](https://github.com/FedorMilovanov/video-channel-manager/issues/903#issuecomment-7086336601).
+  Требуются свежие readback и квота. Подробности: [квота и мультиязычный rollout](youtube-api-quota-and-viewer-language-2026-11-13.md).
+- **#795:** owner-API аудит YouTube с сохранением глав/кредитов и сверкой VK остаётся открытым.
+  [Owner GET inventory 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/795#issuecomment-7085551248)
+  после OAuth consent получил 186/186 Poet, 152/152 Milovi и 1 881/1 887 Lord God video objects;
+  в прочитанных uploads-playlist объектах не было будущего `publishAt`. Шесть отсутствующих Lord God
+  объектов отдельно обозначены как deleted playlist tombstones, 18 повторных playlist-entry occurrences
+  не доказывают дубли медиа. Это не полный аудит drafts вне uploads playlist и не разрешение на запись.
   На checkpoint 21.11 из 66 строк V5: 31 локальный draft (30 RU-only, 1 bilingual), 3 source-drift
   HOLD, 32 bilingual ещё не переписаны; это не редакционное/правовое одобрение и не новые PUT.
   У `7rfAeCHdz-s` отдельный HOLD из-за расхождения года в ASR/названии; не переименовывать.
@@ -153,18 +163,29 @@ receipts и переменные этим PR не менялись. Нужна �
   [Поздний независимый UI checkpoint 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/792#issuecomment-7084519026)
   сверил 25/25 текущих postponed wall ID и дат без коллизий; это не свежая полная сверка всех
   25 вложений. Community wall key не доказывает video/admin read; quarantined aliases не использовать.
-- **#790, Milovi Instagram:** reconcile точные container IDs и ошибки `1363008`, сохранять один
-  writer; старые неясные/неуспешные ключи не повторять. [Независимый отчёт 22.11](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7084590166)
-  сообщает об установке только guard истёкшего окна из #1087 в существующий owner-local wrapper и
-  успешном read-only DryRun без POST. Downstream всё ещё использует старый/dirty checkout: нужен
-  отдельно одобренный безопасный переход без второго writer и с сохранением журналов. Guard не
-  исправляет старые Meta ingest failures; HTTPS-кандидат, exit 0 и локальный QA не равны provider
-  readback; права и будущие receipts проверять отдельно.
+- **#790, Milovi Instagram:** сохранять один writer и не повторять старые неясные/неуспешные
+  ключи. [Owner-local SQLite reconciliation 23.11 МСК](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7085944239):
+  4 original-audio `published` с media ID, 7 `terminal_failure`, 1 `container_created` / `upload_unknown`,
+  8 без соответствующей original-audio строки; это не полная текущая provider-сверка. Отдельный
+  14.11 HTTPS key имеет container `18341870875261465`, но без media ID: успешный Reel не доказан.
+  Попытка read-only GET восьми старых containers заблокирована security layer; обходить нельзя.
+  Шесть будущих media прошли owner-local hash/codec, но лицензия soundtrack независимо не проверена.
+  [Поздний owner checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7086329857)
+  сообщает, что единственный установленный wrapper имеет SHA-256 `1a0ddbeb8f5c3c57e0f1fd95c99120950a995580d480cb4b0b70634e3d1d13ec`,
+  dry-run без POST и закрытый proxy port блокирует dispatch; старые wrapper SHA — только backups.
+  Task был включён, interactive-only; без работающего ПК/локального proxy доставка не гарантирована.
+  Ответы public-root GET через proxy не доказывают Meta ingestion или причину всех `1363008`.
+  Repo-изменение отслеживается отдельно в [#1093](https://github.com/FedorMilovanov/video-channel-manager/pull/1093);
+  owner-local wrapper не доказывает его merge/deployment. Ни auto-switch HTTPS, ни новые hosting,
+  retry, изменение task или второй writer из этих наблюдений не следуют.
 - **#809, Milovi Telegram:** на 22.11 все 15 video окон истекли без verified ledger receipt;
   ранний Paris-Brest подавляет оригинал 17.11, окно Croissant 21.11 без verified ledger receipt,
   Stohrer 25.11 pending. Это не полная внешняя история и не доказательство отсутствия отправки.
   Публичный виджет исторического #28 ответил «Post not found», #29 показывает ту же статью с
   иной подписью; связь не доказана ([checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/809#issuecomment-7084149926)).
+  Независимый scheduled [run 45073384973](https://github.com/FedorMilovanov/video-channel-manager/actions/runs/45073384973)
+  23.11 00:48 МСК пропустил dispatch и завершился failure из-за защитного аудита 15 истёкших окон;
+  это не полный внешний Telegram census и не повод перезапускать или догонять.
   Никаких backfill или замены исторического ID. PR #1088 слит и прошёл exact-main CI, но не
   обеспечивает on-time scheduler или фактическую доставку. Новая дата требует точного медиа, прав,
   сверки дублей и отдельной авторизации.
