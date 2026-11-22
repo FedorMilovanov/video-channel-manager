@@ -78,9 +78,7 @@ def test_canary_does_not_create_a_second_writer_or_automatic_retry() -> None:
 def test_expired_due_day_is_an_incident_not_success_or_replay() -> None:
     """Late -Execute must fail visibly before selecting any provider writer."""
     source = RUNNER.read_text(encoding="utf-8")
-    guard = source.split("if ($match.Count -eq 0) {", 1)[1].split(
-        "if ($match.Count -ne 1)", 1
-    )[0]
+    guard = source.split("if ($match.Count -eq 0) {", 1)[1].split("if ($match.Count -ne 1)", 1)[0]
     for expected in (
         "if ($Execute)",
         "$slot.Date -eq $Msk.Date",
@@ -89,8 +87,6 @@ def test_expired_due_day_is_an_incident_not_success_or_replay() -> None:
         "throw ('MILOVI_EXACT_WINDOW_CLOSED_NO_DISPATCH=' + $NowClock)",
     ):
         assert expected in guard
-    assert guard.index("throw ('MILOVI_EXACT_WINDOW_CLOSED_NO_DISPATCH=") < guard.index(
-        "exit 0"
-    )
+    assert guard.index("throw ('MILOVI_EXACT_WINDOW_CLOSED_NO_DISPATCH=") < guard.index("exit 0")
     assert "& $target" not in guard
     assert "Start-ScheduledTask" not in source
