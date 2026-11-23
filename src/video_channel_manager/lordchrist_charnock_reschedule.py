@@ -41,10 +41,7 @@ MANIFEST = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-resc
 # Historical 2026-11 manifest is immutable. This separate SHA-pinned v2 binding
 # authorizes only the already-published #10 QC article+cover URL on 24 November.
 # No source/receipt/date from the legacy manifest is overwritten on disk.
-V2_BINDING = Path(
-    "content/telegram/lordchrist/telegraph-v1/charnock/"
-    "charnock-10-source-media-binding-v2-20261123.json"
-)
+V2_BINDING = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-10-source-media-binding-v2-20261123.json")
 V2_BINDING_GIT_BLOB = "7708abcac315acd32794dfdc52e4676278a85c81"
 LEGACY_MANIFEST_GIT_BLOB = "9bbacf42933da605ca8f47a4708d23dd18971a8b"
 V2_PUBLICATION_ID = "lordchrist-telegraph-charnock-10"
@@ -245,7 +242,8 @@ def _select_due(
         or original.get("provider_effect") != "verified"
         or original.get("telegram_message_id") != entry["deleted_telegram_message_id"]
         or original.get("telegraph_url") != entry["verified_telegraph_url"]
-        or original.get("article_sha256") != entry.get("historical_source_article_sha256", entry["source_article_sha256"])
+        or original.get("article_sha256")
+        != entry.get("historical_source_article_sha256", entry["source_article_sha256"])
     ):
         raise RuntimeError("Source ledger identity does not match verified source delivery")
     if late_readback:
@@ -259,8 +257,7 @@ def _select_due(
     if not isinstance(source_sha, str) or len(source_sha) != 40:
         raise RuntimeError("Original publication commit missing")
     if entry.get("media_base_revision") and (
-        source_sha != entry["original_github_sha"]
-        or original.get("cover_sha256") != entry["original_cover_sha256"]
+        source_sha != entry["original_github_sha"] or original.get("cover_sha256") != entry["original_cover_sha256"]
     ):
         raise RuntimeError("Original Charnock receipt/media provenance drift")
     media_revision = entry.get("media_base_revision", source_sha)
