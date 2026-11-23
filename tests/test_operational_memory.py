@@ -127,6 +127,9 @@ def test_owner_checkpoints_separate_read_access_ledger_and_authority() -> None:
         "does not confirm a quota grant",
         "issuecomment-7085944239",
         "has no media ID, not a verified Reel receipt",
+        "issuecomment-7088810705",
+        "not an independent inspection or proof of a new Reel",
+        "fixed pin must not be presumed current after `main` moves",
         "milovi-instagram-https-fallback-handoff.md",
     ):
         assert fact in current
@@ -140,7 +143,10 @@ def test_owner_checkpoints_separate_read_access_ledger_and_authority() -> None:
         "issuecomment-7086329857",
         "a78bf4e6c46bba5f3831bf9cdf514c6d940e3168",
         "9946067ca830d0cd7684d4b8d84d78e7299117a6",
-        "owner-local wrapper не доказывает deployment этого commit",
+        "Сам результат repo не доказывает deployment",
+        "issuecomment-7088810705",
+        "owner-reported evidence, не самостоятельная проверка ПК и не Reel receipt",
+        "Фиксированный pin не доказывает текущий `main` после его движения",
         "Ни auto-switch HTTPS, ни новые hosting",
     ):
         assert fact in plan
@@ -161,6 +167,45 @@ def test_milovi_https_handoff_preserves_expired_window_and_unknown_effect() -> N
     assert "--day '2026-11-14'" not in future
     assert "approval was limited to that expired window" in future
     assert "The only prospective exception" not in handoff
+
+
+def test_milovi_owner_runtime_report_is_dated_and_not_a_reel_receipt() -> None:
+    handoff = (OPERATIONS_DIR / "milovi-instagram-https-fallback-handoff.md").read_text(encoding="utf-8")
+    checkpoint = handoff.split("### Owner-reported clean-runtime checkpoint", 1)[1].split("## Historical evidence", 1)[
+        0
+    ]
+    checkpoint = " ".join(checkpoint.replace("**", "").split())
+
+    for fact in (
+        "23 November 01:01 UTC",
+        "issuecomment-7088810705",
+        "not independently inspected the Windows machine",
+        "MILOVI-CAKE-Instagram-Reels",
+        "Enabled/Ready",
+        "23 November 19:00 Europe/Moscow at that checkpoint",
+        "488e5380` with 96 dirty paths",
+        r"H:\VCM-MILOVI-RUNTIME-PIN-20261123",
+        "then-current `main` `b312ce3afaa922282b66ddf513dce24fd94d80d6`",
+        "35 Instagram/HTTP-inventory test modules exited 0",
+        "VCM_INSTAGRAM_META_PROXY_URL=http://127.0.0.1:10808",
+        "d6f98412a81e3d34540e9e052b8cb53ce02fe924f3763d3dcb927752228ff91b",
+        "1a0ddbeb8f5c3c57e0f1fd95c99120950a995580d480cb4b0b70634e3d1d13ec",
+        "byte-identical backup, not the current wrapper at this checkpoint",
+        "OXC3BjtlU1g",
+        "17841407843933779",
+        "READ-ONLY PREFLIGHT SUCCESS; NO POST",
+        "Neither dry-run nor that quota snapshot proves ingestion or publication",
+        "independent soundtrack rights remain unverified",
+        "does not establish whether dispatch also compares the remote `main`",
+        "not a second writer or an unreviewed task change",
+        "0/6 confirmed Meta scheduled slots",
+        "no result for the next slot is implied",
+    ):
+        assert fact in checkpoint
+
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    assert "issuecomment-7088810705" in inventory
+    assert "старые неизвестные/неуспешные эффекты не повторять" in inventory
 
 
 def test_lermontov_decode_is_not_listening_or_release_authority() -> None:
