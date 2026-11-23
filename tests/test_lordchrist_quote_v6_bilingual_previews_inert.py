@@ -176,3 +176,22 @@ def test_html_preview_preserves_author_words_and_native_quote_entity_boundary() 
         else:
             assert "<blockquote>" not in markup
             assert "\u2060" not in markup
+
+
+def test_both_preview_formats_preserve_exact_quote_text() -> None:
+    """Both inert formats must carry the exact candidate, not just highlighted phrases."""
+    audit, _ = _data()
+    for item in audit["entries"]:
+        expected = item["proposed_quote_text_ru"]
+        markup = item["telegram_html_preview_inert"]
+        markdown = item["reader_preview_markdown_ru"]
+        if item["sequence"] in ARTICLE_L1:
+            rendered_html = markup.split("<blockquote>", 1)[1].split("</blockquote>", 1)[0]
+            rendered_markdown = "\n".join(
+                line.removeprefix(">").removeprefix(" ") for line in markdown.splitlines() if line.startswith(">")
+            )
+        else:
+            rendered_html = markup.split("\n<i>" + html.escape(item["attribution_ru"], quote=True), 1)[0]
+            rendered_markdown = markdown.split("\n*" + item["attribution_ru"] + "*", 1)[0]
+        assert html.unescape(re.sub(r"</?[bi]>", "", rendered_html)) == expected, item["sequence"]
+        assert rendered_markdown.replace("*", "") == expected, item["sequence"]
