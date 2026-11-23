@@ -517,8 +517,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError("Reissue intent/reviewed payload drift; fail closed")
 
     if args.stage == "send":
-        if receipt.get("state") != "claimed" or receipt.get("provider_effect") != "may_exist_until_reconciled":
-            raise RuntimeError("Send-once claim state/effect is not approved; no replay")
+        if receipt.get("state") != "claimed":
+            raise RuntimeError("Send-once already attempted; no replay")
+        if receipt.get("provider_effect") != "may_exist_until_reconciled":
+            raise RuntimeError("Claimed Telegram provider effect drifted; reconcile without resend")
         _prove_owner_deletion(source)
         _proof_page(source, payload)
         profile = load_channel_profile(args.repo_root / DEFAULT_PROFILE_PATH)
