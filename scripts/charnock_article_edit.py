@@ -82,12 +82,12 @@ def _require_source_credit(article: dict[str, Any]) -> None:
         raise SystemExit("missing source credit in JSON; no files written")
 
 
-def _stage_bytes(target: Path, contents: bytes) -> Path:
-    """Stage same-directory data for a safe replace across filesystem volumes."""
+def _stage_bytes(target: Path, contents: bytes, *, suffix: str = ".tmp") -> Path:
+    """Stage bytes on the destination filesystem before replacing anything."""
     with tempfile.NamedTemporaryFile(
         mode="wb",
         prefix=f".{target.name}.",
-        suffix=".tmp",
+        suffix=suffix,
         dir=target.parent,
         delete=False,
     ) as stream:
@@ -98,18 +98,24 @@ def _stage_bytes(target: Path, contents: bytes) -> Path:
 def _write_pair(
     article_path: Path, markdown_path: Path, json_text: str, markdown_text: str
 ) -> None:
-    """Update both files, restoring the prior JSON if the second replace fails."""
+    """Prestage both files; roll back on failure or preserve unrecoverable backups.
+
+    A two-file replacement cannot be power-loss atomic. If restoration also
+    fails, keep the exact original bytes in an on-disk .rollback file and
+    report its location. Do not silently discard the recovery copy.
+    """
     originals = (
         (article_path, article_path.read_bytes(), json_text.encode("utf-8")),
         (markdown_path, markdown_path.read_bytes(), markdown_text.encode("utf-8")),
     )
     staged: list[tuple[Path, Path, Path]] = []
     replaced: list[tuple[Path, Path]] = []
+    preserve_backups: set[Path] = set()
     try:
         for target, previous, updated in originals:
             candidate = _stage_bytes(target, updated)
             try:
-                rollback = _stage_bytes(target, previous)
+                rollback = _stage_bytes(target, previous, suffix=".rollback")
             except BaseException:
                 candidate.unlink(missing_ok=True)
                 raise
@@ -117,14 +123,30 @@ def _write_pair(
         for target, candidate, rollback in staged:
             os.replace(candidate, target)
             replaced.append((target, rollback))
-    except BaseException:
+    except BaseException as write_error:
+        restore_errors: list[tuple[Path, Path, BaseException]] = []
         for target, rollback in reversed(replaced):
-            os.replace(rollback, target)
+            try:
+                os.replace(rollback, target)
+            except BaseException as restore_error:
+                preserve_backups.add(rollback)
+                restore_errors.append((target, rollback, restore_error))
+        if restore_errors:
+            evidence = "; ".join(
+                f"target={target}; backup={backup}; error={error!r}"
+                for target, backup, error in restore_errors
+            )
+            raise RuntimeError(
+                "JSON/Markdown pair update AND rollback failed; "
+                "original backup(s) retained for manual recovery: "
+                f"{evidence}; first error={write_error!r}"
+            ) from write_error
         raise
     finally:
         for _target, candidate, rollback in staged:
             candidate.unlink(missing_ok=True)
-            rollback.unlink(missing_ok=True)
+            if rollback not in preserve_backups:
+                rollback.unlink(missing_ok=True)
 
 
 def main(argv: list[str] | None = None) -> int:
