@@ -1515,7 +1515,7 @@
     },
     {
       "path": "scripts/charnock_article_edit.py",
-      "sha256": "f0a7a6b4c345f66c53ad081e3c2f145406c479797aaa1c25ee13b2af05f6f9b0",
+      "sha256": "1bdf64d001f8896a12e1cd5836b41880d0b7942e2b87c769d6985a0425e77040",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
