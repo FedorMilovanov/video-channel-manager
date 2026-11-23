@@ -24,6 +24,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import tempfile
 from datetime import date
 from pathlib import Path
@@ -57,9 +58,7 @@ def parse_inline(text: str) -> list[Any]:
     return spans
 
 
-def find_block(
-    blocks: list[dict[str, Any]], block_id: str
-) -> tuple[int, dict[str, Any]]:
+def find_block(blocks: list[dict[str, Any]], block_id: str) -> tuple[int, dict[str, Any]]:
     for index, block in enumerate(blocks):
         if block.get("block_id") == block_id:
             return index, block
@@ -75,10 +74,7 @@ def _require_source_credit(article: dict[str, Any]) -> None:
     if footer.get("type") != "paragraph":
         raise SystemExit("missing source credit in last JSON paragraph")
     credit = iter_text(footer.get("text", ""))
-    if (
-        not credit.startswith("© Цитаты Чарнока")
-        or "gutenberg.org/ebooks/53527" not in credit
-    ):
+    if not credit.startswith("© Цитаты Чарнока") or "gutenberg.org/ebooks/53527" not in credit:
         raise SystemExit("missing source credit in JSON; no files written")
 
 
@@ -92,12 +88,14 @@ def _stage_bytes(target: Path, contents: bytes, *, suffix: str = ".tmp") -> Path
         delete=False,
     ) as stream:
         stream.write(contents)
-        return Path(stream.name)
+        staged = Path(stream.name)
+    # A temporary file otherwise has 0600 permissions even when reviewed
+    # source was world/group readable; preserve the source file mode on POSIX.
+    os.chmod(staged, stat.S_IMODE(target.stat().st_mode))
+    return staged
 
 
-def _write_pair(
-    article_path: Path, markdown_path: Path, json_text: str, markdown_text: str
-) -> None:
+def _write_pair(article_path: Path, markdown_path: Path, json_text: str, markdown_text: str) -> None:
     """Prestage both files; roll back on failure or preserve unrecoverable backups.
 
     A two-file replacement cannot be power-loss atomic. If restoration also
@@ -121,8 +119,11 @@ def _write_pair(
                 raise
             staged.append((target, candidate, rollback))
         for target, candidate, rollback in staged:
-            os.replace(candidate, target)
+            # Register the backup BEFORE the rename; a KeyboardInterrupt can
+            # occur after the filesystem replaces the target but before the
+            # next Python statement. We must still restore that replacement.
             replaced.append((target, rollback))
+            os.replace(candidate, target)
     except BaseException as write_error:
         restore_errors: list[tuple[Path, Path, BaseException]] = []
         for target, rollback in reversed(replaced):
@@ -133,8 +134,7 @@ def _write_pair(
                 restore_errors.append((target, rollback, restore_error))
         if restore_errors:
             evidence = "; ".join(
-                f"target={target}; backup={backup}; error={error!r}"
-                for target, backup, error in restore_errors
+                f"target={target}; backup={backup}; error={error!r}" for target, backup, error in restore_errors
             )
             raise RuntimeError(
                 "JSON/Markdown pair update AND rollback failed; "
@@ -182,9 +182,7 @@ def main(argv: list[str] | None = None) -> int:
     for block_id, text in patch.get("replace", {}).items():
         _, block = find_block(blocks, block_id)
         if block.get("type") not in {"paragraph", "heading"}:
-            raise SystemExit(
-                f"{block_id}: only paragraphs and headings may be replaced"
-            )
+            raise SystemExit(f"{block_id}: only paragraphs and headings may be replaced")
         block["text"] = parse_inline(text)
 
     for anchor_id, new_blocks in patch.get("insert_after", {}).items():
@@ -193,9 +191,7 @@ def main(argv: list[str] | None = None) -> int:
         for raw in new_blocks:
             block = dict(raw)
             if block.get("type") not in {"paragraph", "heading"}:
-                raise SystemExit(
-                    f"insert after {anchor_id}: unsupported type {block.get('type')!r}"
-                )
+                raise SystemExit(f"insert after {anchor_id}: unsupported type {block.get('type')!r}")
             block["text"] = parse_inline(block["text"])
             prepared.append(block)
         blocks[index + 1 : index + 1] = prepared
