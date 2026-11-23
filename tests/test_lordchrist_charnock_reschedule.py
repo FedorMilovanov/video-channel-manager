@@ -555,6 +555,54 @@ def test_redundant_schedule_readback_is_idempotent_and_fail_closed(monkeypatch, 
         m.scheduled_reissue_preflight_status(ledger, source)
 
 
+@pytest.mark.parametrize(
+    ("field", "wrong"),
+    [
+        ("state", "unknown"),
+        ("provider_effect", "unverified"),
+        ("telegram_message_id", MESSAGE + 1),
+        ("telegram_chat_id", CHAT + 1),
+        ("telegraph_url", "https://telegra.ph/Wrong-original"),
+        ("article_sha256", "sha256:wrong-original"),
+    ],
+)
+def test_verified_reissue_does_not_hide_damaged_original_receipt(monkeypatch, tmp_path, field, wrong):
+    _, ledger, original, source = setup(monkeypatch, tmp_path)
+    original["scheduled_reissue"] = {
+        "state": "verified",
+        "provider_effect": "verified",
+        "new_message_id": 1701,
+        "scheduled_on_moscow": source["scheduled_on_moscow"],
+        "original_deleted_message_id": source["deleted_telegram_message_id"],
+        "source_article_sha256": source["source_article_sha256"],
+        "telegraph_url": source["verified_telegraph_url"],
+    }
+    assert m.scheduled_reissue_preflight_status(ledger, source) == "verified"
+    original[field] = wrong
+    snapshot = copy.deepcopy(ledger)
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    assert ledger == snapshot
+
+
+@pytest.mark.parametrize("replacement_message_id", [MESSAGE, 0, True])
+def test_terminal_reissue_requires_distinct_real_new_message_id(monkeypatch, tmp_path, replacement_message_id):
+    _, ledger, original, source = setup(monkeypatch, tmp_path)
+    original["scheduled_reissue"] = {
+        "state": "verified",
+        "provider_effect": "verified",
+        "new_message_id": replacement_message_id,
+        "scheduled_on_moscow": source["scheduled_on_moscow"],
+        "original_deleted_message_id": source["deleted_telegram_message_id"],
+        "source_article_sha256": source["source_article_sha256"],
+        "telegraph_url": source["verified_telegraph_url"],
+    }
+    snapshot = copy.deepcopy(ledger)
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    assert ledger == snapshot
+
+
 def test_late_same_day_readback_finishes_without_any_second_send(monkeypatch, tmp_path):
     args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
     args.stage = "verify"
