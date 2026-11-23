@@ -267,6 +267,7 @@ def test_no_telegram_http_after_prepared_intent_if_editorial_approval_revoked(mo
         owner.send(tmp_path)
     assert ledger_path.exists()
 
+
 @pytest.mark.parametrize("editorially_approved", [False, True])
 def test_late_scheduled_quote_hold_is_not_reported_as_a_provider_failure(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], editorially_approved: bool
