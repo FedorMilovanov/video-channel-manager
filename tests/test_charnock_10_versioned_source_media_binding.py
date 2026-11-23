@@ -86,9 +86,7 @@ def test_current_queue_and_real_article_render_against_pinned_live_media_base() 
     # Actual production source/cover bytes and the real queue (no mocks).
     ledger = _original_ledger()
     before = copy.deepcopy(ledger)
-    entry, item, payload, original = m._select_due(
-        _args(), ledger, now=datetime(2026, 11, 24, 12, 5, tzinfo=m.MOSCOW)
-    )
+    entry, item, payload, original = m._select_due(_args(), ledger, now=datetime(2026, 11, 24, 12, 5, tzinfo=m.MOSCOW))
     assert original is ledger["entries"][PUBLICATION]
     assert ledger == before
     assert entry["source_article_sha256"] == REVIEWED_SHA
@@ -164,10 +162,8 @@ def test_versioned_receipt_must_pin_new_target_and_binding() -> None:
 
 
 def test_workflow_checks_v2_binding_before_redundant_schedule() -> None:
-    flow = (
-        ROOT / ".github/workflows/lordchrist-charnock-scheduled-reissue.yml"
-    ).read_text(encoding="utf-8")
-    assert "approved=approved_reissue_entry(Path(\".\"),matches[0])" in flow
+    flow = (ROOT / ".github/workflows/lordchrist-charnock-scheduled-reissue.yml").read_text(encoding="utf-8")
+    assert 'approved=approved_reissue_entry(Path("."),matches[0])' in flow
     assert "scheduled_reissue_preflight_status(state,approved)" in flow
     assert "APPROVED_MANIFEST_SHA256" in flow
     assert "github.event_name == 'schedule'" in flow
