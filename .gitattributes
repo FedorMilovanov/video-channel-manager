@@ -1,0 +1,6 @@
+# Charnock #10: keep byte-pinned historical/reviewed JSON checkout bytes
+# identical to the stored Git blobs on Windows with core.autocrlf=true.
+# Scoped only to these three approved identities; no repository-wide EOL change.
+content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json text eol=lf
+content/telegram/lordchrist/telegraph-v1/charnock/charnock-10-source-media-binding-v2-20261123.json text eol=lf
+content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-10.json text eol=lf
