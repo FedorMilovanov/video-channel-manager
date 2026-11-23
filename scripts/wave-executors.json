@@ -1515,7 +1515,7 @@
     },
     {
       "path": "scripts/charnock_article_edit.py",
-      "sha256": "5a9235a0e3bb6a83357b25985c989d133ae66a0120b9293dcedb1f50179f0263",
+      "sha256": "0af9d422551eaad14983d2f41bbd8560dd687b93d570c2c559b4499ce384e6a7",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
@@ -1525,7 +1525,7 @@
     },
     {
       "path": "scripts/charnock_article_render_md.py",
-      "sha256": "c6212131161ae350db30e7779a9a2130eb9108c2d13621bc65f40e7200e74110",
+      "sha256": "2c7e0ff00249829d4a3e91359c7ed3df14a1aba8b3ff34df58d24e8ef80a601b",
       "status": "independent_tool",
       "project_owner": "lord-god-strength",
       "direct_entrypoint": true,
