@@ -228,3 +228,28 @@ def test_editor_preserves_original_mode_for_both_files(tmp_path: Path) -> None:
     result = _run(article, markdown, patch)
     assert result.returncode == 0, result.stderr
     assert (article.stat().st_mode & 0o777, markdown.stat().st_mode & 0o777) == before
+
+
+def test_staging_failure_cleans_up_temporary_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed chmod must not leave a partial staged file or change the source."""
+    spec = importlib.util.spec_from_file_location("charnock_editor_staging", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        editor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(editor)
+    finally:
+        sys.path.pop(0)
+    article, markdown, _ = _files(tmp_path)
+    before = (article.read_bytes(), markdown.read_bytes())
+
+    def fail_chmod(*_args: object, **_kwargs: object) -> None:
+        raise OSError("simulated failure while setting original source mode")
+
+    monkeypatch.setattr(editor.os, "chmod", fail_chmod)
+    with pytest.raises(OSError, match="source mode"):
+        editor._stage_bytes(article, b"new staged content")
+    assert (article.read_bytes(), markdown.read_bytes()) == before
+    assert not list(tmp_path.glob(".*.tmp"))
