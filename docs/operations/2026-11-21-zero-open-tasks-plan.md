@@ -171,16 +171,23 @@ receipts и переменные этим PR не менялись. Нужна �
   14.11 HTTPS key имеет container `18341870875261465`, но без media ID: успешный Reel не доказан.
   Попытка read-only GET восьми старых containers заблокирована security layer; обходить нельзя.
   Шесть будущих media прошли owner-local hash/codec, но лицензия soundtrack независимо не проверена.
-  [Поздний owner checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7086329857)
-  сообщает, что единственный установленный wrapper имеет SHA-256 `1a0ddbeb8f5c3c57e0f1fd95c99120950a995580d480cb4b0b70634e3d1d13ec`,
-  dry-run без POST и закрытый proxy port блокирует dispatch; старые wrapper SHA — только backups.
-  Task был включён, interactive-only; без работающего ПК/локального proxy доставка не гарантирована.
-  Ответы public-root GET через proxy не доказывают Meta ingestion или причину всех `1363008`.
+  [Ранний owner checkpoint](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7086329857)
+  указал wrapper `1a0ddbeb8f5c3c57e0f1fd95c99120950a995580d480cb4b0b70634e3d1d13ec`;
+  позднее он стал backup, а не текущей установленной версией. Ответы public-root GET через proxy не
+  доказывают Meta ingestion или причину всех `1363008`.
   Repo-изменение [#1093](https://github.com/FedorMilovanov/video-channel-manager/pull/1093)
   слито как `a78bf4e6c46bba5f3831bf9cdf514c6d940e3168`; exact head
   `9946067ca830d0cd7684d4b8d84d78e7299117a6` прошёл CI, дерево совпадает с merge.
-  Однако owner-local wrapper не доказывает deployment этого commit. Ни auto-switch HTTPS, ни новые hosting,
-  retry, изменение task или второй writer из этих наблюдений не следуют.
+  Сам результат repo не доказывает deployment. [Поздний отчёт владельца 23.11 01:01 UTC](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7088810705)
+  отдельно сообщает о clean detached runtime на тогдашнем `main@b312ce3afaa922282b66ddf513dce24fd94d80d6`,
+  35 прошедших test modules и установленном wrapper SHA-256
+  `d6f98412a81e3d34540e9e052b8cb53ce02fe924f3763d3dcb927752228ff91b`.
+  Один task оставался Enabled/Ready на 23.11 19:00 МСК; `-DryRun` exact source `OXC3BjtlU1g`
+  дал `NO POST`. Это owner-reported evidence, не самостоятельная проверка ПК и не Reel receipt.
+  Фиксированный pin не доказывает текущий `main` после его движения; перед новой операцией отдельно
+  сверить baseline и состояние владельца, не меняя task и не создавая второго writer. Без работающего
+  ПК/локального proxy доставка не гарантирована. Ни auto-switch HTTPS, ни новые hosting, retry,
+  изменение task или второй writer из этих наблюдений не следуют.
 - **#809, Milovi Telegram:** на 22.11 все 15 video окон истекли без verified ledger receipt;
   ранний Paris-Brest подавляет оригинал 17.11, окно Croissant 21.11 без verified ledger receipt,
   Stohrer 25.11 pending. Это не полная внешняя история и не доказательство отсутствия отправки.
