@@ -173,10 +173,9 @@ def _exclusive_pair_lock(article_path: Path, markdown_path: Path) -> Iterator[No
             try:
                 fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             except FileExistsError:
-                raise SystemExit(
-                    f"Charnock editor lock exists: {lock}. "
-                    "Another editor may be active; inspect before manual removal."
-                ) from None
+                location = f"Charnock editor lock exists: {lock}."
+                guidance = "Another editor may be active; inspect before manual removal."
+                raise SystemExit(f"{location} {guidance}") from None
             acquired.append(lock)
             with os.fdopen(fd, "w", encoding="utf-8") as stream:
                 stream.write(f"pid={os.getpid()}\n")
