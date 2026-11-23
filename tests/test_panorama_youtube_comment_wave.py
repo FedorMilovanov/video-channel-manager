@@ -89,7 +89,8 @@ class FakeCommentWriter:
         self.reads += 1
         return SimpleNamespace(video_id=video_id, channel_id=self.channel, title=self.title, privacy_status=self.status)
 
-    def list_top_level_comments(self, video_id: str) -> list[object]:
+    def list_top_level_comments(self, video_id: str, *, strict_moderation: bool = False) -> list[object]:
+        assert strict_moderation, "Guarded publisher must require complete moderation inventory"
         return list(self.owned)
 
     def create_top_level_comment(self, *, video_id: str, expected_channel_id: str, text: str) -> SimpleNamespace:
@@ -270,4 +271,55 @@ def test_wrong_oauth_channel_grant_blocks_write_and_reconciliation(tmp_path: Pat
         adapter.execute(_operation())
     with pytest.raises(OperationRejectedError, match="OAuth grant"):
         adapter.reconcile(_operation())
+    assert fake.creates == 0
+
+
+def test_strict_moderation_inventory_rejects_unreadable_held_comments() -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            assert method == "GET" and resource == "commentThreads"
+            if params["moderationStatus"] == "published":
+                return {"items": []}
+            raise YouTubeCommentError("Owner cannot read held-for-review or likely-spam")
+
+    stub = StubCommentsAPI()
+    assert stub.list_top_level_comments(VIDEO_ID) == []
+    with pytest.raises(YouTubeCommentError, match="Owner cannot read"):
+        stub.list_top_level_comments(VIDEO_ID, strict_moderation=True)
+
+
+def test_incomplete_comment_inventory_blocks_before_post(tmp_path: Path) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError
+
+    class IncompleteWriter(FakeCommentWriter):
+        def list_top_level_comments(self, video_id: str, *, strict_moderation: bool = False) -> list[object]:
+            assert strict_moderation
+            raise YouTubeCommentError("moderation inventory incomplete")
+
+    fake = IncompleteWriter()
+    adapter, _ = _adapter(tmp_path, fake)
+    with pytest.raises(OperationRejectedError, match="inventory is incomplete"):
+        adapter.execute(_operation())
+    assert fake.creates == 0
+
+
+def test_original_link_must_match_video_episode_number(tmp_path: Path) -> None:
+    wrong = "https://www.slovo.org/resursy/propovedi/panorama-biblii-4-kniga-levit/"
+    comment = TEXT.replace(SOURCE_URL, wrong)
+    adapter, fake = _adapter(tmp_path)
+    with pytest.raises(OperationRejectedError, match="episode number"):
+        adapter.execute(
+            _operation(
+                payload_patch={
+                    "source_url": wrong,
+                    "comment_text": comment,
+                    "comment_sha256": comment_text_sha256(comment),
+                }
+            )
+        )
     assert fake.creates == 0

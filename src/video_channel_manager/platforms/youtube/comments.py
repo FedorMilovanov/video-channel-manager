@@ -367,7 +367,9 @@ class YouTubeCommentWriter(HttpClientOwner):
             raw=comment,
         )
 
-    def list_top_level_comments(self, video_id: str) -> list[TopLevelCommentSnapshot]:
+    def list_top_level_comments(
+        self, video_id: str, *, strict_moderation: bool = False
+    ) -> list[TopLevelCommentSnapshot]:
         records: list[TopLevelCommentSnapshot] = []
         seen_comment_ids: set[str] = set()
         for moderation_status in _MODERATION_STATES:
@@ -386,7 +388,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                 try:
                     payload = self._request("GET", "commentThreads", params=params)
                 except YouTubeCommentError:
-                    if moderation_status == "published":
+                    if strict_moderation or moderation_status == "published":
                         raise
                     break
                 for item in _dict_items(payload):

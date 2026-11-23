@@ -10,6 +10,7 @@ import re
 from typing import Any, Mapping
 
 from video_channel_manager.platforms.youtube.comments import (
+    YouTubeCommentError,
     YouTubeCommentWriter,
     comment_text_sha256,
     comments_equivalent,
@@ -93,6 +94,10 @@ class LordGodYouTubeCommentAdapter:
             raise OperationRejectedError("YouTube comment must have a record-specific editorial approval")
         if not p["source_url"].startswith("https://www.slovo.org/resursy/propovedi/panorama-biblii-"):
             raise OperationRejectedError("YouTube comment source URL must be its first-party sermon page")
+        episode_title = re.search(r"Панорама Библии\s*-\s*(\d+)\s*\|", p["video_title"])
+        episode_source = re.search(r"/panorama-biblii-(\d+)-[a-z0-9-]+/?$", p["source_url"])
+        if not episode_title or not episode_source or episode_title.group(1) != episode_source.group(1):
+            raise OperationRejectedError("YouTube comment source page does not match the exact episode number")
         try:
             normalized = validate_comment_text(p["comment_text"])
         except ValueError as exc:
@@ -106,7 +111,12 @@ class LordGodYouTubeCommentAdapter:
         return p
 
     def _owned(self, *, video_id: str) -> list[Any]:
-        all_comments = self.writer.list_top_level_comments(video_id)
+        try:
+            all_comments = self.writer.list_top_level_comments(video_id, strict_moderation=True)
+        except YouTubeCommentError as exc:
+            raise OperationRejectedError(
+                "YouTube moderation inventory is incomplete; comment publication prohibited"
+            ) from exc
         return [c for c in all_comments if c.author_channel_id == YOUTUBE_COMMENT_OWNER]
 
     def _assert_authenticated_owner(self) -> None:
