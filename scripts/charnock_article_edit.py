@@ -57,7 +57,9 @@ def parse_inline(text: str) -> list[Any]:
     return spans
 
 
-def find_block(blocks: list[dict[str, Any]], block_id: str) -> tuple[int, dict[str, Any]]:
+def find_block(
+    blocks: list[dict[str, Any]], block_id: str
+) -> tuple[int, dict[str, Any]]:
     for index, block in enumerate(blocks):
         if block.get("block_id") == block_id:
             return index, block
@@ -73,7 +75,10 @@ def _require_source_credit(article: dict[str, Any]) -> None:
     if footer.get("type") != "paragraph":
         raise SystemExit("missing source credit in last JSON paragraph")
     credit = iter_text(footer.get("text", ""))
-    if not credit.startswith("© Цитаты Чарнока") or "gutenberg.org/ebooks/53527" not in credit:
+    if (
+        not credit.startswith("© Цитаты Чарнока")
+        or "gutenberg.org/ebooks/53527" not in credit
+    ):
         raise SystemExit("missing source credit in JSON; no files written")
 
 
@@ -127,7 +132,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--article", required=True, type=Path)
     parser.add_argument("--patch", required=True, type=Path)
     parser.add_argument("--revision", required=True)
-    parser.add_argument("--markdown", type=Path, help="Markdown source to rewrite (default: JSON sibling)")
+    parser.add_argument(
+        "--markdown", type=Path, help="Markdown source to rewrite (default: JSON sibling)"
+    )
     args = parser.parse_args(argv)
 
     # Validate the original published-source pair before modifying either file.
@@ -151,7 +158,9 @@ def main(argv: list[str] | None = None) -> int:
     for block_id, text in patch.get("replace", {}).items():
         _, block = find_block(blocks, block_id)
         if block.get("type") not in {"paragraph", "heading"}:
-            raise SystemExit(f"{block_id}: only paragraphs and headings may be replaced")
+            raise SystemExit(
+                f"{block_id}: only paragraphs and headings may be replaced"
+            )
         block["text"] = parse_inline(text)
 
     for anchor_id, new_blocks in patch.get("insert_after", {}).items():
@@ -160,7 +169,9 @@ def main(argv: list[str] | None = None) -> int:
         for raw in new_blocks:
             block = dict(raw)
             if block.get("type") not in {"paragraph", "heading"}:
-                raise SystemExit(f"insert after {anchor_id}: unsupported type {block.get('type')!r}")
+                raise SystemExit(
+                    f"insert after {anchor_id}: unsupported type {block.get('type')!r}"
+                )
             block["text"] = parse_inline(block["text"])
             prepared.append(block)
         blocks[index + 1 : index + 1] = prepared
