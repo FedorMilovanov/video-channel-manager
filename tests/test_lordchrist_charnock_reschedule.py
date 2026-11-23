@@ -83,6 +83,7 @@ def setup(monkeypatch: pytest.MonkeyPatch, root: Path, *, existing_reissue: str 
             "source_article_sha256": PAYLOAD_SHA,
             "telegraph_url": URL,
             "scheduled_on_moscow": DATE,
+            "original_deleted_message_id": MESSAGE,
             "new_message_id": 1701,
         }
     ledger = {"entries": {ARTICLE: original}}
@@ -214,6 +215,38 @@ def test_changed_authored_heading_blocks_claim_and_send_without_mutation(monkeyp
         assert "scheduled_reissue" not in original
     else:
         assert original["scheduled_reissue"]["state"] == "claimed"
+
+
+@pytest.mark.parametrize("effect", ["verified_by_api", "verified", "unknown_until_reconciled", None])
+def test_send_refuses_corrupt_claimed_provider_effect_without_any_telegram_io(monkeypatch, tmp_path, effect):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
+    args.stage = "send"
+    original["scheduled_reissue"]["provider_effect"] = effect
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider GET for corrupt claim"))
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No Telegram POST for corrupt claim"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No state write for corrupt claim"))
+    with pytest.raises(RuntimeError, match="Claimed Telegram provider effect drifted"):
+        m.execute(args)
+    assert ledger == snapshot
+
+
+@pytest.mark.parametrize("stage", ["send", "verify"])
+@pytest.mark.parametrize("original_id", [MESSAGE + 1, None, True])
+def test_claim_original_deleted_message_id_must_match_source_before_provider_call(
+    monkeypatch, tmp_path, stage, original_id
+):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed" if stage == "send" else "sent")
+    args.stage = stage
+    original["scheduled_reissue"]["original_deleted_message_id"] = original_id
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read for drifted old ID"))
+    monkeypatch.setattr(m, "_prove_new_public_post", lambda **_: pytest.fail("No public proof for drifted old ID"))
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No provider POST for drifted old ID"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No ledger write for drifted old ID"))
+    with pytest.raises(RuntimeError, match="intent/reviewed payload drift"):
+        m.execute(args)
+    assert ledger == snapshot
 
 
 def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
