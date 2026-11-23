@@ -278,14 +278,18 @@ def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
         ("verified_by_api", 0),
     ],
 )
-def test_verify_requires_api_ack_and_distinct_numeric_id_before_any_public_read(monkeypatch, tmp_path, effect, message_id):
+def test_verify_requires_api_ack_and_distinct_numeric_id_before_any_public_read(
+    monkeypatch, tmp_path, effect, message_id
+):
     args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
     args.stage = "verify"
     receipt = original["scheduled_reissue"]
     receipt["provider_effect"] = effect
     receipt["new_message_id"] = message_id
     snapshot = copy.deepcopy(ledger)
-    monkeypatch.setattr(m, "_prove_new_public_post", lambda **_: pytest.fail("No provider readback on invalid receipt"))
+    monkeypatch.setattr(
+        m, "_prove_new_public_post", lambda **_: pytest.fail("No provider readback on invalid receipt")
+    )
     monkeypatch.setattr(m, "save_ledger", lambda *a: pytest.fail("No durable ledger write on invalid receipt"))
     with pytest.raises(RuntimeError, match="provider-acknowledged"):
         m.execute(args)
