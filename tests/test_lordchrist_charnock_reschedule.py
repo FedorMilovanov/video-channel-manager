@@ -76,12 +76,14 @@ def setup(monkeypatch: pytest.MonkeyPatch, root: Path, *, existing_reissue: str 
     if existing_reissue:
         original["scheduled_reissue"] = {
             "state": existing_reissue,
+            "provider_effect": "verified_by_api" if existing_reissue == "sent" else "may_exist_until_reconciled",
             "run_id": "421",
             "run_attempt": 1,
             "github_sha": SHA,
             "source_article_sha256": PAYLOAD_SHA,
             "telegraph_url": URL,
             "scheduled_on_moscow": DATE,
+            "original_deleted_message_id": MESSAGE,
             "new_message_id": 1701,
         }
     ledger = {"entries": {ARTICLE: original}}
@@ -160,6 +162,31 @@ def test_claim_preserves_original_and_prevents_duplicate(monkeypatch, tmp_path):
         m.execute(args)
 
 
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("telegram_chat_id", CHAT + 1),
+        ("telegram_chat_id", None),
+        ("telegram_chat_id", str(CHAT)),
+        ("telegram_message_id", str(MESSAGE)),
+        ("telegram_message_id", True),
+    ],
+)
+def test_damaged_original_delivery_identity_blocks_prepare_before_any_provider_contact(
+    monkeypatch, tmp_path, field, bad_value
+):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path)
+    original[field] = bad_value
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider contact"))
+    monkeypatch.setattr(m, "_proof_page", lambda *_: pytest.fail("No provider contact"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No ledger mutation"))
+    with pytest.raises(RuntimeError, match="Source ledger identity"):
+        m.execute(args)
+    assert ledger == snapshot
+    assert "scheduled_reissue" not in original
+
+
 def test_original_live_message_blocks_new_claim(monkeypatch, tmp_path):
     args, _, original, _ = setup(monkeypatch, tmp_path)
     monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: (_ for _ in ()).throw(RuntimeError("still visible")))
@@ -215,6 +242,38 @@ def test_changed_authored_heading_blocks_claim_and_send_without_mutation(monkeyp
         assert original["scheduled_reissue"]["state"] == "claimed"
 
 
+@pytest.mark.parametrize("effect", ["verified_by_api", "verified", "unknown_until_reconciled", None])
+def test_send_refuses_corrupt_claimed_provider_effect_without_any_telegram_io(monkeypatch, tmp_path, effect):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
+    args.stage = "send"
+    original["scheduled_reissue"]["provider_effect"] = effect
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider GET for corrupt claim"))
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No Telegram POST for corrupt claim"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No state write for corrupt claim"))
+    with pytest.raises(RuntimeError, match="Claimed Telegram provider effect drifted"):
+        m.execute(args)
+    assert ledger == snapshot
+
+
+@pytest.mark.parametrize("stage", ["send", "verify"])
+@pytest.mark.parametrize("original_id", [MESSAGE + 1, None, True])
+def test_claim_original_deleted_message_id_must_match_source_before_provider_call(
+    monkeypatch, tmp_path, stage, original_id
+):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed" if stage == "send" else "sent")
+    args.stage = stage
+    original["scheduled_reissue"]["original_deleted_message_id"] = original_id
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider read for drifted old ID"))
+    monkeypatch.setattr(m, "_prove_new_public_post", lambda **_: pytest.fail("No public proof for drifted old ID"))
+    monkeypatch.setattr(m, "HttpxLiveTransport", lambda: pytest.fail("No provider POST for drifted old ID"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No ledger write for drifted old ID"))
+    with pytest.raises(RuntimeError, match="intent/reviewed payload drift"):
+        m.execute(args)
+    assert ledger == snapshot
+
+
 def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
     args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="claimed")
     args.stage = "send"
@@ -264,6 +323,33 @@ def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="already attempted"):
         m.execute(args)
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("effect", "message_id"),
+    [
+        ("may_exist_until_reconciled", 1701),
+        ("unverified", 1701),
+        (None, 1701),
+        ("verified_by_api", MESSAGE),
+        ("verified_by_api", True),
+        ("verified_by_api", 0),
+    ],
+)
+def test_verify_requires_api_ack_and_distinct_numeric_id_before_any_public_read(
+    monkeypatch, tmp_path, effect, message_id
+):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
+    args.stage = "verify"
+    receipt = original["scheduled_reissue"]
+    receipt["provider_effect"] = effect
+    receipt["new_message_id"] = message_id
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_new_public_post", lambda **_: pytest.fail("No provider readback on invalid receipt"))
+    monkeypatch.setattr(m, "save_ledger", lambda *a: pytest.fail("No durable ledger write on invalid receipt"))
+    with pytest.raises(RuntimeError, match="provider-acknowledged"):
+        m.execute(args)
+    assert ledger == snapshot
 
 
 def test_verification_requires_public_readback_and_no_resend(monkeypatch, tmp_path):
@@ -553,6 +639,54 @@ def test_redundant_schedule_readback_is_idempotent_and_fail_closed(monkeypatch, 
     del ledger["entries"][ARTICLE]
     with pytest.raises(RuntimeError, match="original publication receipt missing"):
         m.scheduled_reissue_preflight_status(ledger, source)
+
+
+@pytest.mark.parametrize(
+    ("field", "wrong"),
+    [
+        ("state", "unknown"),
+        ("provider_effect", "unverified"),
+        ("telegram_message_id", MESSAGE + 1),
+        ("telegram_chat_id", CHAT + 1),
+        ("telegraph_url", "https://telegra.ph/Wrong-original"),
+        ("article_sha256", "sha256:wrong-original"),
+    ],
+)
+def test_verified_reissue_does_not_hide_damaged_original_receipt(monkeypatch, tmp_path, field, wrong):
+    _, ledger, original, source = setup(monkeypatch, tmp_path)
+    original["scheduled_reissue"] = {
+        "state": "verified",
+        "provider_effect": "verified",
+        "new_message_id": 1701,
+        "scheduled_on_moscow": source["scheduled_on_moscow"],
+        "original_deleted_message_id": source["deleted_telegram_message_id"],
+        "source_article_sha256": source["source_article_sha256"],
+        "telegraph_url": source["verified_telegraph_url"],
+    }
+    assert m.scheduled_reissue_preflight_status(ledger, source) == "verified"
+    original[field] = wrong
+    snapshot = copy.deepcopy(ledger)
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    assert ledger == snapshot
+
+
+@pytest.mark.parametrize("replacement_message_id", [MESSAGE, 0, True])
+def test_terminal_reissue_requires_distinct_real_new_message_id(monkeypatch, tmp_path, replacement_message_id):
+    _, ledger, original, source = setup(monkeypatch, tmp_path)
+    original["scheduled_reissue"] = {
+        "state": "verified",
+        "provider_effect": "verified",
+        "new_message_id": replacement_message_id,
+        "scheduled_on_moscow": source["scheduled_on_moscow"],
+        "original_deleted_message_id": source["deleted_telegram_message_id"],
+        "source_article_sha256": source["source_article_sha256"],
+        "telegraph_url": source["verified_telegraph_url"],
+    }
+    snapshot = copy.deepcopy(ledger)
+    with pytest.raises(RuntimeError, match="reconcile without resend"):
+        m.scheduled_reissue_preflight_status(ledger, source)
+    assert ledger == snapshot
 
 
 def test_late_same_day_readback_finishes_without_any_second_send(monkeypatch, tmp_path):
