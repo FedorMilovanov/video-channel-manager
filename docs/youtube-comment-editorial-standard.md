@@ -30,7 +30,7 @@ Historical and theological comments should add independently sourced particulars
 
 ## Manual pinned comments for The Legendary Poet packages
 
-When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (500–900 characters, bold title line, 1–2 italic lines, a documented interpretive or historical insight and two verified playlist links). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification. For the owner's **quote-Shorts exception** (compact Shorts text, first full-edition pin candidate, second independent history comment), use [`youtube-metadata-package-master-v3.1.md` §5a](youtube-metadata-package-master-v3.1.md). A second reply/comment must not be mistaken for a second pin. A pinned label is not proof that the owner comment was pinned; independently verify exact IDs and Studio state after separate approval.
+When the user requests a **manual five-block YouTube package** for `legendary-poet`, the owner's [`youtube-metadata-package-master-v3.1.md`](youtube-metadata-package-master-v3.1.md) governs the **copy-only pinned-comment format** (normally 500–900 characters, bold title line, 1–2 italic lines, a documented interpretive or historical insight and two verified playlist links; the owner's explicit request for deep historical comments follows the long-form exception below). The present document still governs **fact accuracy, project identity and source-backed claims**. Its structured v2 schema and provider comment executor are **not** silently changed by the manual v3.1 template. The manual text is a draft, not an approved `create` or `update` action. A full poem in a pin requires the owner's explicit separate request and exact text verification. For the owner's **quote-Shorts exception** (compact Shorts text, first full-edition pin candidate, second independent history comment), use [`youtube-metadata-package-master-v3.1.md` §5a](youtube-metadata-package-master-v3.1.md). A second reply/comment must not be mistaken for a second pin. A pinned label is not proof that the owner comment was pinned; independently verify exact IDs and Studio state after separate approval.
 
 ## Project identity
 
@@ -194,7 +194,7 @@ Explain the relationship to the original-language work without claiming that eve
 
 ### Shorts
 
-Keep the factual note short but still specific. Prefer a link to the exact full version. Do not copy the full-length comment into the Short.
+Keep the factual note short but still specific **by default**. Prefer a link to the exact full version. Do not copy the full-length comment into the Short. For the owner's explicit request for long historical author comments on `legendary-poet` Shorts, follow the historical-depth exception above instead of compressing the narrative into a single paragraph.
 
 ## Stable project links
 
