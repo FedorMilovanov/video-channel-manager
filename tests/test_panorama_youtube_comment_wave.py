@@ -323,3 +323,90 @@ def test_original_link_must_match_video_episode_number(tmp_path: Path) -> None:
             )
         )
     assert fake.creates == 0
+
+
+@pytest.mark.parametrize("payload", [{}, {"items": {}}, {"items": [None]}, {"items": [], "nextPageToken": 123}])
+def test_strict_inventory_rejects_malformed_success_response(payload: dict[str, object]) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            return payload
+
+    with pytest.raises(YouTubeCommentError, match="malformed moderation inventory|invalid moderation page token"):
+        StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
+
+
+def test_strict_inventory_rejects_repeated_page_token() -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            self.calls += 1
+            assert self.calls <= 2
+            return {"items": [], "nextPageToken": "repeat"}
+
+    with pytest.raises(YouTubeCommentError, match="repeated a moderation page token"):
+        StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
+
+
+@pytest.mark.parametrize("video_id, author_id", [("wrong-video", YOUTUBE_COMMENT_OWNER), (VIDEO_ID, None)])
+def test_strict_inventory_rejects_unverified_target_or_author(video_id: str, author_id: str | None) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            return {
+                "items": [
+                    {
+                        "id": "thread-id",
+                        "snippet": {
+                            "videoId": video_id,
+                            "channelId": YOUTUBE_COMMENT_OWNER,
+                            "topLevelComment": {
+                                "id": "comment-id",
+                                "snippet": {"authorChannelId": {"value": author_id}, "textOriginal": TEXT},
+                            },
+                        },
+                    }
+                ]
+            }
+
+    with pytest.raises(YouTubeCommentError, match="unverified target or author"):
+        StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
+
+
+@pytest.mark.parametrize("outcome", ["missing", "different_id", "different_text", "duplicate", "error"])
+def test_post_receipt_alone_never_verifies_publication(tmp_path: Path, outcome: str) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError
+
+    class ReceiptOnlyWriter(FakeCommentWriter):
+        def list_top_level_comments(self, video_id: str, *, strict_moderation: bool = False) -> list[object]:
+            assert strict_moderation
+            if not self.creates:
+                return []
+            if outcome == "error":
+                raise YouTubeCommentError("readback unavailable")
+            if outcome == "missing":
+                return []
+            observed = SimpleNamespace(
+                author_channel_id=YOUTUBE_COMMENT_OWNER,
+                comment_id="other" if outcome == "different_id" else "Ugxyz123",
+                text="different" if outcome == "different_text" else TEXT,
+            )
+            return [observed, observed] if outcome == "duplicate" else [observed]
+
+    fake = ReceiptOnlyWriter()
+    adapter, _ = _adapter(tmp_path, fake)
+    with pytest.raises(UnknownProviderOutcomeError, match="independent readback uncertain"):
+        adapter.execute(_operation())
+    assert fake.creates == 1
