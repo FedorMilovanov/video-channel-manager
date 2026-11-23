@@ -14,13 +14,16 @@ The patch is a small JSON file::
 
 Only top-level paragraphs and headings can be replaced; quotations are never
 edited through this tool.  New blocks are inserted directly after the named
-block.  The Markdown source is re-rendered from the JSON afterwards, so the
-review surface cannot drift from what will be published.
+block.  The Markdown source is re-rendered from the JSON afterwards. Concurrent
+edits of either file are rejected by an exclusive pair lock covering the
+source read, validation, staging, and both replacements. Sudden power loss
+remains outside the two-file transactional guarantee.
 """
 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 import os
 import re
@@ -28,7 +31,7 @@ import stat
 import tempfile
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from charnock_article_render_md import iter_text, render_markdown
 
@@ -154,6 +157,38 @@ def _write_pair(article_path: Path, markdown_path: Path, json_text: str, markdow
                 rollback.unlink(missing_ok=True)
 
 
+@contextmanager
+def _exclusive_pair_lock(article_path: Path, markdown_path: Path) -> Iterator[None]:
+    """Fail closed when another editor owns either path of this reviewed pair.
+
+    A lock is held from source-parity preflight through both replacements.
+    Locks are created with atomic O_EXCL semantics, sorted to avoid deadlock,
+    and are never forcibly cleared after a crash: inspect before manual recovery.
+    """
+    targets = sorted({article_path.resolve(), markdown_path.resolve()})
+    locks = [Path(str(path) + ".charnock-edit.lock") for path in targets]
+    acquired: list[Path] = []
+    try:
+        for lock in locks:
+            try:
+                fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                raise SystemExit(
+                    f"Charnock editor lock exists: {lock}. "
+                    "Another editor may be active; inspect before manual removal."
+                ) from None
+            acquired.append(lock)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                    stream.write(f"pid={os.getpid()}\\n")
+            except BaseException:
+                raise
+        yield
+    finally:
+        for lock in reversed(acquired):
+            lock.unlink(missing_ok=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--article", required=True, type=Path)
@@ -166,13 +201,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    markdown_path = args.markdown or args.article.with_suffix(".md")
+    if markdown_path.resolve() == args.article.resolve():
+        raise SystemExit("article and Markdown paths must differ")
+    # Hold both locks for preflight, staging and every replacement. No stale reads.
+    with _exclusive_pair_lock(args.article, markdown_path):
+        return _edit_locked(args, markdown_path)
+
+
+def _edit_locked(args: argparse.Namespace, markdown_path: Path) -> int:
     # Validate the original published-source pair before modifying either file.
     # The Markdown review copy must never supply missing JSON-only content.
     if args.markdown is not None and args.markdown.resolve() == args.article.resolve():
         raise SystemExit("article and Markdown paths must differ")
     original_json = args.article.read_text(encoding="utf-8")
     article = json.loads(original_json)
-    markdown_path = args.markdown or args.article.with_suffix(".md")
     if not markdown_path.exists():
         raise SystemExit(f"missing existing reviewed Markdown: {markdown_path}")
     old_markdown = markdown_path.read_text(encoding="utf-8")
