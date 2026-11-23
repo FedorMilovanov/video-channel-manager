@@ -573,6 +573,18 @@
         },
         "verified_at_utc": "2026-11-16T16:43:04.085228+00:00"
       }
+    },
+    "lordchrist-telegraph-jude-1-5-20261105": {
+      "publication_id": "lordchrist-telegraph-jude-1-5-20261105",
+      "state": "page_dispatch_claimed",
+      "provider_effect": "unknown_until_reconciled",
+      "run_id": "45214387883",
+      "run_attempt": 1,
+      "github_sha": "406d26b178f039509d28baef2d49a4d545bc0078",
+      "title": "Один Господь, два чтения: «Иисус» или «Господь» в Иуд. 1:5",
+      "article_sha256": "sha256:8d3b581c5b22646c38fc89b295379016273e624b657e213319e3cf160c0ee5e5",
+      "cover_sha256": "sha256:db7414068891b87d14b7e42ba7a1e21f90bbaee19abfb423c7617f939c12a885",
+      "page_intent_at_utc": "2026-11-23T16:38:58.546367+00:00"
     }
   }
 }
