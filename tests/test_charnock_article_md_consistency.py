@@ -72,6 +72,21 @@ def test_legacy_live_source_is_unchanged_and_not_mistaken_for_candidate(key: str
     assert render_markdown(approved).rstrip("\n") != reviewed_markdown.rstrip("\n")
 
 
+@pytest.mark.parametrize(
+    ("key", "credit_block_id"),
+    [("11", "p-27"), ("12", "p-21"), ("13", "p-23")],
+)
+def test_source_credit_candidate_has_unique_block_ids_and_unused_footer_id(key: str, credit_block_id: str) -> None:
+    """Unreleased source-credit candidates must not reuse an existing rich-block anchor."""
+    approved = json.loads(approved_article_path(key).read_text(encoding="utf-8"))
+    candidate = json.loads(reviewed_article_path(key).read_text(encoding="utf-8"))
+    for document in (approved, candidate):
+        ids = [block["block_id"] for block in document["blocks"]]
+        assert len(ids) == len(set(ids)), (key, ids)
+    assert candidate["blocks"][-1]["block_id"] == credit_block_id
+    assert credit_block_id not in {block["block_id"] for block in approved["blocks"]}
+
+
 def test_markdown_footer_fallback_is_rejected() -> None:
     incomplete = {"blocks": [{"type": "paragraph", "block_id": "p-1", "text": "Body"}]}
     with pytest.raises(ValueError, match="source credit must be authored in JSON blocks"):
