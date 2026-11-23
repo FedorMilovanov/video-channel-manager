@@ -122,26 +122,6 @@ def test_exact_reconciled_jude_claim_is_provider_inert_and_cannot_be_replayed(
     assert execution.ledger.read_bytes() == before
 
 
-def test_reconciled_jude_first_claim_is_provider_inert_and_not_repeatable(
-    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    execution.publication_id = staged.JUDE_PUBLICATION_ID
-    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Claim must not reach provider"))
-    out = staged.execute(execution)
-    assert out["state"] == "page_dispatch_claimed"
-    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
-    entry = ledger["entries"][staged.JUDE_PUBLICATION_ID]
-    assert entry["provider_effect"] == "unknown_until_reconciled"
-    assert entry["run_id"] == execution.run_id
-    assert entry["github_sha"] == execution.github_sha
-    assert entry["article_sha256"].startswith("sha256:")
-    assert entry["cover_sha256"].startswith("sha256:")
-    before = execution.ledger.read_bytes()
-    with pytest.raises(RuntimeError, match="already exists in durable state"):
-        staged.execute(execution)
-    assert execution.ledger.read_bytes() == before
-
-
 @pytest.mark.parametrize(
     ("stage", "existing_state"),
     [
