@@ -186,6 +186,15 @@ def scheduled_reissue_preflight_status(ledger: dict[str, Any], manifest_entry: d
         and receipt.get("provider_effect") == "verified"
         and type(receipt.get("new_message_id")) is int
         and receipt["new_message_id"] > 0
+        and receipt["new_message_id"] != manifest_entry["deleted_telegram_message_id"]
+        and original.get("state") == "published"
+        and original.get("provider_effect") == "verified"
+        and type(original.get("telegram_message_id")) is int
+        and original["telegram_message_id"] == manifest_entry["deleted_telegram_message_id"]
+        and original.get("telegram_chat_id") == -1001295216957
+        and original.get("telegraph_url") == manifest_entry["verified_telegraph_url"]
+        and original.get("article_sha256")
+        == manifest_entry.get("historical_source_article_sha256", manifest_entry["source_article_sha256"])
         and all(receipt.get(key) == value for key, value in expected.items())
     ):
         return "verified"
