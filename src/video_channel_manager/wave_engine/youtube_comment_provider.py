@@ -165,6 +165,20 @@ class LordGodYouTubeCommentAdapter:
                 raise UnknownProviderOutcomeError(
                     "YouTube reported a mismatched comment after dispatch; manual reconciliation required"
                 )
+            # The shared writer may fall back to the POST receipt after unsuccessful GETs.
+            # This wave requires an independent, complete owner-inventory readback.
+            try:
+                observed = self._owned(video_id=p["video_id"])
+                if (
+                    len(observed) != 1
+                    or observed[0].comment_id != created.comment_id
+                    or not comments_equivalent(observed[0].text, p["comment_text"])
+                ):
+                    raise ValueError("Independent comment inventory does not match the create receipt")
+            except Exception as exc:
+                raise UnknownProviderOutcomeError(
+                    "YouTube comment independent readback uncertain; reconcile with GET only, never blind retry"
+                ) from exc
             return {
                 "video_id": p["video_id"],
                 "channel_id": YOUTUBE_COMMENT_OWNER,
