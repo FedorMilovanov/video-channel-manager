@@ -249,3 +249,76 @@ def test_staging_failure_cleans_up_temporary_bytes(tmp_path: Path, monkeypatch: 
         editor._stage_bytes(article, b"new staged content")
     assert (article.read_bytes(), markdown.read_bytes()) == before
     assert not list(tmp_path.glob(".*.tmp"))
+
+
+def _load_editor_for_lock_test(module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, SCRIPT)
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        editor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(editor)
+        return editor
+    finally:
+        sys.path.pop(0)
+
+
+def test_concurrent_edit_of_same_pair_fails_closed(tmp_path: Path) -> None:
+    """A second process cannot pass preflight while the first owns both files."""
+    article, markdown, patch = _files(tmp_path)
+    editor = _load_editor_for_lock_test("charnock_editor_lock_same_pair")
+    before = (article.read_bytes(), markdown.read_bytes())
+    with editor._exclusive_pair_lock(article, markdown):
+        result = _run(article, markdown, patch)
+        assert result.returncode != 0
+        assert "Charnock editor lock exists" in result.stderr
+        assert (article.read_bytes(), markdown.read_bytes()) == before
+    assert not list(tmp_path.glob("*.charnock-edit.lock"))
+    result = _run(article, markdown, patch)
+    assert result.returncode == 0, result.stderr
+    reviewed = json.loads(article.read_text(encoding="utf-8"))
+    assert render_markdown(reviewed) == markdown.read_text(encoding="utf-8")
+
+
+def test_shared_markdown_path_is_exclusive_across_different_json(tmp_path: Path) -> None:
+    """Different JSON filenames must not concurrently overwrite one reviewed MD."""
+    article, markdown, patch = _files(tmp_path)
+    editor = _load_editor_for_lock_test("charnock_editor_lock_shared_md")
+    other = tmp_path / "other.json"
+    other.write_bytes(article.read_bytes())
+    before = (other.read_bytes(), markdown.read_bytes())
+    command = [
+        sys.executable,
+        str(SCRIPT),
+        "--article",
+        str(other),
+        "--markdown",
+        str(markdown),
+        "--patch",
+        str(patch),
+        "--revision",
+        "other-process",
+    ]
+    with editor._exclusive_pair_lock(article, markdown):
+        outcome = subprocess.run(command, capture_output=True, text=True, check=False)
+        assert outcome.returncode != 0
+        assert "Charnock editor lock exists" in outcome.stderr
+        assert (other.read_bytes(), markdown.read_bytes()) == before
+    assert not list(tmp_path.glob("*.charnock-edit.lock"))
+
+
+def test_stale_lock_is_never_removed_automatically(tmp_path: Path) -> None:
+    """A crash remnant requires inspection; it never authorizes a risky retry."""
+    article, markdown, patch = _files(tmp_path)
+    lock = Path(str(article.resolve()) + ".charnock-edit.lock")
+    lock.write_text("pid=unknown\\n", encoding="utf-8")
+    before = (article.read_bytes(), markdown.read_bytes())
+    try:
+        outcome = _run(article, markdown, patch)
+        assert outcome.returncode != 0
+        assert "inspect before manual removal" in outcome.stderr
+        assert lock.read_text(encoding="utf-8") == "pid=unknown\\n"
+        assert (article.read_bytes(), markdown.read_bytes()) == before
+    finally:
+        lock.unlink()
+    assert not list(tmp_path.glob("*.charnock-edit.lock"))
