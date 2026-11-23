@@ -511,13 +511,14 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         or receipt.get("source_article_sha256") != payload.article_sha256
         or receipt.get("telegraph_url") != source["verified_telegraph_url"]
         or receipt.get("scheduled_on_moscow") != source["scheduled_on_moscow"]
+        or receipt.get("original_deleted_message_id") != source["deleted_telegram_message_id"]
         or receipt.get("binding_git_blob_sha") != source.get("binding_git_blob_sha")
     ):
         raise RuntimeError("Reissue intent/reviewed payload drift; fail closed")
 
     if args.stage == "send":
-        if receipt.get("state") != "claimed":
-            raise RuntimeError("Send-once already attempted; no replay")
+        if receipt.get("state") != "claimed" or receipt.get("provider_effect") != "may_exist_until_reconciled":
+            raise RuntimeError("Send-once claim state/effect is not approved; no replay")
         _prove_owner_deletion(source)
         _proof_page(source, payload)
         profile = load_channel_profile(args.repo_root / DEFAULT_PROFILE_PATH)
