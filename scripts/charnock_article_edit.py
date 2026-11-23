@@ -79,20 +79,25 @@ def _require_source_credit(article: dict[str, Any]) -> None:
 
 
 def _stage_bytes(target: Path, contents: bytes, *, suffix: str = ".tmp") -> Path:
-    """Stage bytes on the destination filesystem before replacing anything."""
-    with tempfile.NamedTemporaryFile(
-        mode="wb",
-        prefix=f".{target.name}.",
-        suffix=suffix,
-        dir=target.parent,
-        delete=False,
-    ) as stream:
-        stream.write(contents)
-        staged = Path(stream.name)
-    # A temporary file otherwise has 0600 permissions even when reviewed
-    # source was world/group readable; preserve the source file mode on POSIX.
-    os.chmod(staged, stat.S_IMODE(target.stat().st_mode))
-    return staged
+    """Stage source-mode bytes, including cleanup if staging itself fails."""
+    staged: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{target.name}.",
+            suffix=suffix,
+            dir=target.parent,
+            delete=False,
+        ) as stream:
+            staged = Path(stream.name)
+            stream.write(contents)
+        # NamedTemporaryFile defaults to 0600; preserve the original mode.
+        os.chmod(staged, stat.S_IMODE(target.stat().st_mode))
+        return staged
+    except BaseException:
+        if staged is not None:
+            staged.unlink(missing_ok=True)
+        raise
 
 
 def _write_pair(article_path: Path, markdown_path: Path, json_text: str, markdown_text: str) -> None:
