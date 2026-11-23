@@ -13,7 +13,7 @@ BASE = ROOT / "content/research/charnock-source-credit-candidates-20261123/charn
 PROPOSAL = ROOT / "content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json"
 
 APPROVED_SHA = "d42392bb593de4f89d36a12a3548f459efe41090"
-BASE_SHA = "0e56d11cbaa1032d6ae4857ac32e641bd1ad2067"
+BASE_SHA = "9f6bf6403d852723ec240e1839239652e44b4012"
 PROPOSED_REVISION = "charnock-11-q10-translation-proposal-20261123"
 
 
@@ -69,3 +69,13 @@ def test_proposed_translation_changes_only_plain_span_and_revision() -> None:
     assert proposed == expected
     assert proposed["blocks"][-1] == base["blocks"][-1]
     assert proposed["document_id"] == "lordchrist-telegraph-charnock-11"
+
+
+def test_proposed_q10_translation_retains_unique_top_level_block_ids() -> None:
+    """Translation work may change one quotation span, never collide with the bibliography anchor."""
+    base = json.loads(BASE.read_text(encoding="utf-8"))
+    proposed = json.loads(PROPOSAL.read_text(encoding="utf-8"))
+    for document in (base, proposed):
+        ids = [block["block_id"] for block in document["blocks"]]
+        assert len(ids) == len(set(ids)), ids
+    assert base["blocks"][-1]["block_id"] == proposed["blocks"][-1]["block_id"] == "p-27"
