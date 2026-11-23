@@ -57,7 +57,7 @@ def test_legacy_live_source_is_unchanged_and_not_mistaken_for_candidate(
     approved_path = approved_article_path(key)
     raw = approved_path.read_bytes()
     actual_blob = hashlib.sha1(
-        b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw
+        b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw
     ).hexdigest()
     assert actual_blob == blob_sha
     approved = json.loads(raw)
@@ -78,5 +78,7 @@ def test_legacy_live_source_is_unchanged_and_not_mistaken_for_candidate(
 
 def test_markdown_footer_fallback_is_rejected() -> None:
     incomplete = {"blocks": [{"type": "paragraph", "block_id": "p-1", "text": "Body"}]}
-    with pytest.raises(ValueError, match="source credit must be authored in JSON blocks"):
+    with pytest.raises(
+        ValueError, match="source credit must be authored in JSON blocks"
+    ):
         render_markdown(incomplete, footer="© Citation that exists only in Markdown")
