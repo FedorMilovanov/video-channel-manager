@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
@@ -497,13 +498,13 @@ def test_local_photo_claim_is_durable_and_unique(publisher, monkeypatch, tmp_pat
     monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
     item = publisher.read_plan()[1]
     publisher.claim_local_photo_once(item, item["date"])
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         rows = conn.execute("SELECT state,item_id,caption_sha256 FROM instagram_lord_god_quote_attempts").fetchall()
     assert rows == [("CLAIMED", "02-owen", hashlib.sha256(item["caption"].encode()).hexdigest())]
     with pytest.raises(RuntimeError, match="already claimed"):
         publisher.claim_local_photo_once(item, item["date"])
     publisher.finalize_local_photo(item, item["date"], "123456789", "https://www.instagram.com/p/offline/")
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         assert conn.execute("SELECT state,media_id FROM instagram_lord_god_quote_attempts").fetchone() == (
             "VERIFIED",
             "123456789",
@@ -585,7 +586,7 @@ def test_ambiguous_local_post_never_retries(publisher, monkeypatch, tmp_path):
     monkeypatch.setattr(publisher, "request_json", fake_request)
     with pytest.raises(RuntimeError, match="Ambiguous Meta response"):
         publisher.main()
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         assert conn.execute("SELECT state FROM instagram_lord_god_quote_attempts").fetchone() == ("CLAIMED",)
     with pytest.raises(RuntimeError, match="already claimed"):
         publisher.main()
