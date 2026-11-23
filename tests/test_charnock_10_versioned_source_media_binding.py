@@ -58,7 +58,6 @@ def _args() -> SimpleNamespace:
     )
 
 
-
 def test_exactly_pinned_json_sources_check_out_as_lf_on_windows() -> None:
     """Hardcoded raw Git-blob checks require LF even if core.autocrlf is true."""
     paths = (
