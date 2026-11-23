@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import io
 import json
@@ -38,6 +39,13 @@ def configure(monkeypatch, module, mode="scheduled", hour=12, minute=46):
     monkeypatch.setattr(module, "verify_identity", lambda token: None)
     monkeypatch.setattr(module, "media_verified", lambda item: "https://example.invalid/safe-image.jpg")
     monkeypatch.setattr(module, "first_scheduled_run_for_day", lambda day: True)
+
+
+def test_frozen_plan_checkout_preserves_approved_bytes(publisher):
+    root = SCRIPT.parents[2]
+    attrs = (root / ".gitattributes").read_text(encoding="utf-8").splitlines()
+    assert "content/instagram/lord-god-strength-quote-cloud-20261111.json text eol=lf" in attrs
+    assert hashlib.sha256(publisher.PLAN.read_bytes()).hexdigest() == publisher.PLAN_SHA256
 
 
 def test_four_frozen_slots(publisher):
