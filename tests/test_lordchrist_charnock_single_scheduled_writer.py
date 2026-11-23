@@ -34,7 +34,7 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     # The v2 source/media binding is resolved read-only before the immutable
     # ledger preflight.  #10 may use only its separately pinned reviewed source,
     # and every other article retains the historic manifest entry unchanged.
-    assert "approved=approved_reissue_entry(Path(\".\"),matches[0])" in data
+    assert 'approved=approved_reissue_entry(Path("."),matches[0])' in data
     assert "scheduled_reissue_preflight_status(state,approved)" in data
     assert "APPROVED_MANIFEST_SHA256" in data
     assert '[[ "$(sha256sum "$MANIFEST"' in data
