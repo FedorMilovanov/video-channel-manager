@@ -143,7 +143,7 @@ def test_pair_writer_restores_json_if_second_replace_fails(tmp_path: Path, monke
     monkeypatch.setattr(editor.os, "replace", fail_second_replace)
     with pytest.raises(OSError, match="simulated second-file"):
         editor._write_pair(article, markdown, '{"revision":"changed"}\n', "Changed\n")
-    assert calls == 3  # JSON write, Markdown failure, JSON rollback
+    assert calls == 4  # JSON write, Markdown failure, Markdown restore, JSON restore
     assert (article.read_bytes(), markdown.read_bytes()) == before
     assert not list(tmp_path.glob(".*.tmp"))
 
@@ -166,14 +166,14 @@ def test_recovery_copy_survives_failed_rollback(tmp_path: Path, monkeypatch: pyt
     def fail_write_and_restore(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
         nonlocal calls
         calls += 1
-        if calls in (2, 3):
+        if calls in (2, 4):
             raise OSError(f"simulated failure at replace #{calls}")
         original_replace(src, dst)
 
     monkeypatch.setattr(editor.os, "replace", fail_write_and_restore)
     with pytest.raises(RuntimeError, match="backup\\(s\\) retained") as caught:
         editor._write_pair(article, markdown, '{"revision":"changed"}\\n', "Changed\\n")
-    assert calls == 3
+    assert calls == 4
     assert article.read_bytes() != original_json  # rollback was blocked
     assert markdown.read_bytes() == original_md
     saved = list(tmp_path.glob(".*.rollback"))
@@ -187,9 +187,7 @@ def test_recovery_copy_survives_failed_rollback(tmp_path: Path, monkeypatch: pyt
     assert (article.read_bytes(), markdown.read_bytes()) == (original_json, original_md)
 
 
-def test_interrupt_after_successful_rename_restores_both_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_interrupt_after_successful_rename_restores_both_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """First replace succeeds, but an interrupt lands before the next bytecode."""
     spec = importlib.util.spec_from_file_location("charnock_editor_interrupt", SCRIPT)
     assert spec is not None and spec.loader is not None
@@ -230,9 +228,7 @@ def test_editor_preserves_original_mode_for_both_files(tmp_path: Path) -> None:
     assert (article.stat().st_mode & 0o777, markdown.stat().st_mode & 0o777) == before
 
 
-def test_staging_failure_cleans_up_temporary_bytes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_staging_failure_cleans_up_temporary_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A failed chmod must not leave a partial staged file or change the source."""
     spec = importlib.util.spec_from_file_location("charnock_editor_staging", SCRIPT)
     assert spec is not None and spec.loader is not None
