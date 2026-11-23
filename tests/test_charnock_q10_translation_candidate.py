@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,8 +17,22 @@ BASE_SHA = "0e56d11cbaa1032d6ae4857ac32e641bd1ad2067"
 PROPOSED_REVISION = "charnock-11-q10-translation-proposal-20261123"
 
 
-def _git_blob_sha(contents: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(contents)).encode("ascii") + b"\0" + contents).hexdigest()
+def _working_tree_git_blob_sha(path: Path) -> str:
+    """Hash checkout bytes through Git's normal clean filters.
+
+    The Git object stays LF even if Windows core.autocrlf checks it out as
+    CRLF. The filtered working-tree hash still catches content mutations,
+    unlike looking only at the stored HEAD blob identity.
+    """
+    relative = path.relative_to(ROOT).as_posix()
+    result = subprocess.run(
+        ["git", "hash-object", f"--path={relative}", "--", relative],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
 
 
 def _q10(article: dict) -> dict:
@@ -29,8 +43,8 @@ def _q10(article: dict) -> dict:
 
 
 def test_baseline_and_approved_sources_remain_immutable() -> None:
-    assert _git_blob_sha(ARTICLE.read_bytes()) == APPROVED_SHA
-    assert _git_blob_sha(BASE.read_bytes()) == BASE_SHA
+    assert _working_tree_git_blob_sha(ARTICLE) == APPROVED_SHA
+    assert _working_tree_git_blob_sha(BASE) == BASE_SHA
 
 
 def test_proposed_translation_changes_only_plain_span_and_revision() -> None:
