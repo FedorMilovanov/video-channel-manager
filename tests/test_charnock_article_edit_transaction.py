@@ -166,7 +166,9 @@ def test_recovery_copy_survives_failed_rollback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """If both the second write and rollback fail, do not erase old JSON bytes."""
-    spec = importlib.util.spec_from_file_location("charnock_editor_double_failure", SCRIPT)
+    spec = importlib.util.spec_from_file_location(
+        "charnock_editor_double_failure", SCRIPT
+    )
     assert spec is not None and spec.loader is not None
     sys.path.insert(0, str(SCRIPT.parent))
     try:
