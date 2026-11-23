@@ -103,11 +103,12 @@ def approved_reissue_entry(repo_root: Path, legacy_entry: dict[str, Any]) -> dic
         "reviewed_cover_git_blob_sha",
         "reviewed_media_base_revision",
         "original_github_sha",
-        "reviewed_normalized_tree_sha256",
     ):
-        if not isinstance(approved.get(key), str) or re.fullmatch(r"[0-9a-f]{40}", approved[key]) is None and key != "reviewed_normalized_tree_sha256":
+        value = approved.get(key)
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{40}", value) is None:
             raise RuntimeError("Malformed Charnock v2 source/media identity")
-    if re.fullmatch(r"[0-9a-f]{64}", approved["reviewed_normalized_tree_sha256"]) is None:
+    tree_digest = approved.get("reviewed_normalized_tree_sha256")
+    if not isinstance(tree_digest, str) or re.fullmatch(r"[0-9a-f]{64}", tree_digest) is None:
         raise RuntimeError("Malformed reviewed Charnock normalized tree digest")
     for key in ("reviewed_article_sha256", "original_article_sha256", "original_cover_sha256"):
         if not isinstance(approved.get(key), str) or re.fullmatch(r"sha256:[0-9a-f]{64}", approved[key]) is None:
