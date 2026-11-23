@@ -33,9 +33,7 @@ def _files(tmp_path: Path, *, json_footer: bool = True) -> tuple[Path, Path, Pat
         ],
     }
     if json_footer:
-        article["blocks"].append(
-            {"type": "paragraph", "block_id": "p-2", "text": FOOTER}
-        )
+        article["blocks"].append({"type": "paragraph", "block_id": "p-2", "text": FOOTER})
     article_path = tmp_path / "candidate.json"
     markdown_path = tmp_path / "candidate.md"
     patch_path = tmp_path / "patch.json"
@@ -43,11 +41,7 @@ def _files(tmp_path: Path, *, json_footer: bool = True) -> tuple[Path, Path, Pat
         json.dumps(article, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    extra = (
-        []
-        if json_footer
-        else [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}]
-    )
+    extra = [] if json_footer else [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}]
     readable = {**article, "blocks": article["blocks"] + extra}
     markdown_path.write_text(render_markdown(readable), encoding="utf-8")
     patch_path.write_text(
@@ -57,9 +51,7 @@ def _files(tmp_path: Path, *, json_footer: bool = True) -> tuple[Path, Path, Pat
     return article_path, markdown_path, patch_path
 
 
-def _run(
-    article: Path, markdown: Path, patch: Path
-) -> subprocess.CompletedProcess[str]:
+def _run(article: Path, markdown: Path, patch: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -118,9 +110,7 @@ def test_editor_rejects_preexisting_parity_drift_without_writing(
 
 def test_editor_rejects_patch_that_erases_source_credit(tmp_path: Path) -> None:
     article, markdown, patch = _files(tmp_path)
-    patch.write_text(
-        json.dumps({"replace": {"p-2": "No credit now"}}), encoding="utf-8"
-    )
+    patch.write_text(json.dumps({"replace": {"p-2": "No credit now"}}), encoding="utf-8")
     before = (article.read_bytes(), markdown.read_bytes())
     result = _run(article, markdown, patch)
     assert result.returncode != 0
@@ -128,9 +118,7 @@ def test_editor_rejects_patch_that_erases_source_credit(tmp_path: Path) -> None:
     assert (article.read_bytes(), markdown.read_bytes()) == before
 
 
-def test_pair_writer_restores_json_if_second_replace_fails(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_pair_writer_restores_json_if_second_replace_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Exercise the failure after the first os.replace, not just preflight validation.
     spec = importlib.util.spec_from_file_location("charnock_editor_tested", SCRIPT)
     assert spec is not None and spec.loader is not None
@@ -145,9 +133,7 @@ def test_pair_writer_restores_json_if_second_replace_fails(
     original_replace = os.replace
     calls = 0
 
-    def fail_second_replace(
-        src: str | os.PathLike[str], dst: str | os.PathLike[str]
-    ) -> None:
+    def fail_second_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
         nonlocal calls
         calls += 1
         if calls == 2:
@@ -162,13 +148,9 @@ def test_pair_writer_restores_json_if_second_replace_fails(
     assert not list(tmp_path.glob(".*.tmp"))
 
 
-def test_recovery_copy_survives_failed_rollback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_recovery_copy_survives_failed_rollback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """If both the second write and rollback fail, do not erase old JSON bytes."""
-    spec = importlib.util.spec_from_file_location(
-        "charnock_editor_double_failure", SCRIPT
-    )
+    spec = importlib.util.spec_from_file_location("charnock_editor_double_failure", SCRIPT)
     assert spec is not None and spec.loader is not None
     sys.path.insert(0, str(SCRIPT.parent))
     try:
@@ -181,9 +163,7 @@ def test_recovery_copy_survives_failed_rollback(
     original_replace = os.replace
     calls = 0
 
-    def fail_write_and_restore(
-        src: str | os.PathLike[str], dst: str | os.PathLike[str]
-    ) -> None:
+    def fail_write_and_restore(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
         nonlocal calls
         calls += 1
         if calls in (2, 3):
@@ -205,3 +185,46 @@ def test_recovery_copy_survives_failed_rollback(
     # Operator can restore exact original bytes from the retained backup.
     original_replace(saved[0], article)
     assert (article.read_bytes(), markdown.read_bytes()) == (original_json, original_md)
+
+
+def test_interrupt_after_successful_rename_restores_both_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """First replace succeeds, but an interrupt lands before the next bytecode."""
+    spec = importlib.util.spec_from_file_location("charnock_editor_interrupt", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        editor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(editor)
+    finally:
+        sys.path.pop(0)
+    article, markdown, _ = _files(tmp_path)
+    before = (article.read_bytes(), markdown.read_bytes())
+    original_replace = os.replace
+    calls = 0
+
+    def replace_then_interrupt(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        nonlocal calls
+        calls += 1
+        original_replace(src, dst)
+        if calls == 1:
+            raise KeyboardInterrupt("after successful first rename")
+
+    monkeypatch.setattr(editor.os, "replace", replace_then_interrupt)
+    with pytest.raises(KeyboardInterrupt, match="after successful first rename"):
+        editor._write_pair(article, markdown, '{"revision":"changed"}\\n', "Changed\\n")
+    assert calls == 2  # rename, rollback of exact original JSON
+    assert (article.read_bytes(), markdown.read_bytes()) == before
+    assert not list(tmp_path.glob(".*.rollback"))
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX source-mode preservation")
+def test_editor_preserves_original_mode_for_both_files(tmp_path: Path) -> None:
+    article, markdown, patch = _files(tmp_path)
+    os.chmod(article, 0o644)
+    os.chmod(markdown, 0o640)
+    before = (article.stat().st_mode & 0o777, markdown.stat().st_mode & 0o777)
+    result = _run(article, markdown, patch)
+    assert result.returncode == 0, result.stderr
+    assert (article.stat().st_mode & 0o777, markdown.stat().st_mode & 0o777) == before
