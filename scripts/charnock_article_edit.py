@@ -23,12 +23,12 @@ remains outside the two-file transactional guarantee.
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
 import json
 import os
 import re
 import stat
 import tempfile
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 from typing import Any, Iterator
@@ -178,11 +178,8 @@ def _exclusive_pair_lock(article_path: Path, markdown_path: Path) -> Iterator[No
                     "Another editor may be active; inspect before manual removal."
                 ) from None
             acquired.append(lock)
-            try:
-                with os.fdopen(fd, "w", encoding="utf-8") as stream:
-                    stream.write(f"pid={os.getpid()}\\n")
-            except BaseException:
-                raise
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write(f"pid={os.getpid()}\\n")
         yield
     finally:
         for lock in reversed(acquired):
@@ -212,8 +209,6 @@ def main(argv: list[str] | None = None) -> int:
 def _edit_locked(args: argparse.Namespace, markdown_path: Path) -> int:
     # Validate the original published-source pair before modifying either file.
     # The Markdown review copy must never supply missing JSON-only content.
-    if args.markdown is not None and args.markdown.resolve() == args.article.resolve():
-        raise SystemExit("article and Markdown paths must differ")
     original_json = args.article.read_text(encoding="utf-8")
     article = json.loads(original_json)
     if not markdown_path.exists():
