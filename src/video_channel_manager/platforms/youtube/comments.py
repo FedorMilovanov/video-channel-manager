@@ -374,6 +374,7 @@ class YouTubeCommentWriter(HttpClientOwner):
         seen_comment_ids: set[str] = set()
         for moderation_status in _MODERATION_STATES:
             page_token: str | None = None
+            seen_page_tokens: set[str] = set()
             while True:
                 params: QueryParams = {
                     "part": "snippet",
@@ -391,15 +392,29 @@ class YouTubeCommentWriter(HttpClientOwner):
                     if strict_moderation or moderation_status == "published":
                         raise
                     break
+                if strict_moderation:
+                    items = payload.get("items")
+                    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+                        raise YouTubeCommentError("YouTube returned a malformed moderation inventory.")
                 for item in _dict_items(payload):
                     snapshot = self._parse_thread(item)
+                    if strict_moderation and (snapshot.video_id != video_id or not snapshot.author_channel_id):
+                        raise YouTubeCommentError("YouTube moderation inventory has an unverified target or author.")
                     if snapshot.comment_id in seen_comment_ids:
                         continue
                     seen_comment_ids.add(snapshot.comment_id)
                     records.append(snapshot)
-                next_token = str(payload.get("nextPageToken") or "").strip()
+                raw_token = payload.get("nextPageToken")
+                if strict_moderation and raw_token is not None and (
+                    not isinstance(raw_token, str) or not raw_token.strip()
+                ):
+                    raise YouTubeCommentError("YouTube returned an invalid moderation page token.")
+                next_token = str(raw_token or "").strip()
                 if not next_token:
                     break
+                if next_token in seen_page_tokens:
+                    raise YouTubeCommentError("YouTube repeated a moderation page token.")
+                seen_page_tokens.add(next_token)
                 page_token = next_token
         return records
 
