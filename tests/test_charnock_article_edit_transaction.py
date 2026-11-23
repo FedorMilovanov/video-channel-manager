@@ -1,4 +1,4 @@
-"""Charnock editor must never partially replace JSON or Markdown on failures."""
+"""Charnock editor must recover both files or retain original rollback evidence."""
 
 from __future__ import annotations
 
@@ -160,3 +160,46 @@ def test_pair_writer_restores_json_if_second_replace_fails(
     assert calls == 3  # JSON write, Markdown failure, JSON rollback
     assert (article.read_bytes(), markdown.read_bytes()) == before
     assert not list(tmp_path.glob(".*.tmp"))
+
+
+def test_recovery_copy_survives_failed_rollback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If both the second write and rollback fail, do not erase old JSON bytes."""
+    spec = importlib.util.spec_from_file_location("charnock_editor_double_failure", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        editor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(editor)
+    finally:
+        sys.path.pop(0)
+    article, markdown, _ = _files(tmp_path)
+    original_json, original_md = article.read_bytes(), markdown.read_bytes()
+    original_replace = os.replace
+    calls = 0
+
+    def fail_write_and_restore(
+        src: str | os.PathLike[str], dst: str | os.PathLike[str]
+    ) -> None:
+        nonlocal calls
+        calls += 1
+        if calls in (2, 3):
+            raise OSError(f"simulated failure at replace #{calls}")
+        original_replace(src, dst)
+
+    monkeypatch.setattr(editor.os, "replace", fail_write_and_restore)
+    with pytest.raises(RuntimeError, match="backup\\(s\\) retained") as caught:
+        editor._write_pair(article, markdown, '{"revision":"changed"}\\n', "Changed\\n")
+    assert calls == 3
+    assert article.read_bytes() != original_json  # rollback was blocked
+    assert markdown.read_bytes() == original_md
+    saved = list(tmp_path.glob(".*.rollback"))
+    assert len(saved) == 1
+    assert saved[0].read_bytes() == original_json
+    assert str(saved[0]) in str(caught.value)
+    assert "first error" in str(caught.value)
+    assert not list(tmp_path.glob(".*.tmp"))
+    # Operator can restore exact original bytes from the retained backup.
+    original_replace(saved[0], article)
+    assert (article.read_bytes(), markdown.read_bytes()) == (original_json, original_md)
