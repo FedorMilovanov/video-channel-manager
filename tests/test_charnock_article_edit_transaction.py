@@ -311,13 +311,13 @@ def test_stale_lock_is_never_removed_automatically(tmp_path: Path) -> None:
     """A crash remnant requires inspection; it never authorizes a risky retry."""
     article, markdown, patch = _files(tmp_path)
     lock = Path(str(article.resolve()) + ".charnock-edit.lock")
-    lock.write_text("pid=unknown\\n", encoding="utf-8")
+    lock.write_text("pid=unknown\n", encoding="utf-8")
     before = (article.read_bytes(), markdown.read_bytes())
     try:
         outcome = _run(article, markdown, patch)
         assert outcome.returncode != 0
         assert "inspect before manual removal" in outcome.stderr
-        assert lock.read_text(encoding="utf-8") == "pid=unknown\\n"
+        assert lock.read_text(encoding="utf-8") == "pid=unknown\n"
         assert (article.read_bytes(), markdown.read_bytes()) == before
     finally:
         lock.unlink()
