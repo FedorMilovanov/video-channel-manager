@@ -76,6 +76,7 @@ def setup(monkeypatch: pytest.MonkeyPatch, root: Path, *, existing_reissue: str 
     if existing_reissue:
         original["scheduled_reissue"] = {
             "state": existing_reissue,
+            "provider_effect": "verified_by_api" if existing_reissue == "sent" else "may_exist_until_reconciled",
             "run_id": "421",
             "run_attempt": 1,
             "github_sha": SHA,
@@ -264,6 +265,31 @@ def test_one_verified_telegram_send_and_no_replay(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="already attempted"):
         m.execute(args)
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("effect", "message_id"),
+    [
+        ("may_exist_until_reconciled", 1701),
+        ("unverified", 1701),
+        (None, 1701),
+        ("verified_by_api", MESSAGE),
+        ("verified_by_api", True),
+        ("verified_by_api", 0),
+    ],
+)
+def test_verify_requires_api_ack_and_distinct_numeric_id_before_any_public_read(monkeypatch, tmp_path, effect, message_id):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path, existing_reissue="sent")
+    args.stage = "verify"
+    receipt = original["scheduled_reissue"]
+    receipt["provider_effect"] = effect
+    receipt["new_message_id"] = message_id
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_new_public_post", lambda **_: pytest.fail("No provider readback on invalid receipt"))
+    monkeypatch.setattr(m, "save_ledger", lambda *a: pytest.fail("No durable ledger write on invalid receipt"))
+    with pytest.raises(RuntimeError, match="provider-acknowledged"):
+        m.execute(args)
+    assert ledger == snapshot
 
 
 def test_verification_requires_public_readback_and_no_resend(monkeypatch, tmp_path):
