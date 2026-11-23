@@ -5,9 +5,9 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -33,28 +33,51 @@ def _files(tmp_path: Path, *, json_footer: bool = True) -> tuple[Path, Path, Pat
         ],
     }
     if json_footer:
-        article["blocks"].append({"type": "paragraph", "block_id": "p-2", "text": FOOTER})
+        article["blocks"].append(
+            {"type": "paragraph", "block_id": "p-2", "text": FOOTER}
+        )
     article_path = tmp_path / "candidate.json"
     markdown_path = tmp_path / "candidate.md"
     patch_path = tmp_path / "patch.json"
-    article_path.write_text(json.dumps(article, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    readable = {**article, "blocks": article["blocks"] + (
-        [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}] if not json_footer else []
-    )}
+    article_path.write_text(
+        json.dumps(article, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    extra = [] if json_footer else [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}]
+    readable = {**article, "blocks": article["blocks"] + extra}
     markdown_path.write_text(render_markdown(readable), encoding="utf-8")
-    patch_path.write_text(json.dumps({"replace": {"p-1": "After **bold**"}}, ensure_ascii=False), encoding="utf-8")
+    patch_path.write_text(
+        json.dumps({"replace": {"p-1": "After **bold**"}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
     return article_path, markdown_path, patch_path
 
 
-def _run(article: Path, markdown: Path, patch: Path) -> subprocess.CompletedProcess[str]:
+def _run(
+    article: Path, markdown: Path, patch: Path
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(SCRIPT), "--article", str(article), "--markdown", str(markdown),
-         "--patch", str(patch), "--revision", "candidate-reviewed"],
-        capture_output=True, text=True, check=False,
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--article",
+            str(article),
+            "--markdown",
+            str(markdown),
+            "--patch",
+            str(patch),
+            "--revision",
+            "candidate-reviewed",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
 
-def test_editor_updates_json_and_markdown_when_source_credit_is_real(tmp_path: Path) -> None:
+def test_editor_updates_json_and_markdown_when_source_credit_is_real(
+    tmp_path: Path,
+) -> None:
     article, markdown, patch = _files(tmp_path)
     result = _run(article, markdown, patch)
     assert result.returncode == 0, result.stderr
@@ -74,9 +97,14 @@ def test_editor_rejects_markdown_only_credit_without_writing(tmp_path: Path) -> 
     assert (article.read_bytes(), markdown.read_bytes()) == before
 
 
-def test_editor_rejects_preexisting_parity_drift_without_writing(tmp_path: Path) -> None:
+def test_editor_rejects_preexisting_parity_drift_without_writing(
+    tmp_path: Path,
+) -> None:
     article, markdown, patch = _files(tmp_path)
-    markdown.write_text(markdown.read_text(encoding="utf-8").replace("Before", "Out of sync"), encoding="utf-8")
+    markdown.write_text(
+        markdown.read_text(encoding="utf-8").replace("Before", "Out of sync"),
+        encoding="utf-8",
+    )
     before = (article.read_bytes(), markdown.read_bytes())
     result = _run(article, markdown, patch)
     assert result.returncode != 0
@@ -86,7 +114,9 @@ def test_editor_rejects_preexisting_parity_drift_without_writing(tmp_path: Path)
 
 def test_editor_rejects_patch_that_erases_source_credit(tmp_path: Path) -> None:
     article, markdown, patch = _files(tmp_path)
-    patch.write_text(json.dumps({"replace": {"p-2": "No credit now"}}), encoding="utf-8")
+    patch.write_text(
+        json.dumps({"replace": {"p-2": "No credit now"}}), encoding="utf-8"
+    )
     before = (article.read_bytes(), markdown.read_bytes())
     result = _run(article, markdown, patch)
     assert result.returncode != 0
@@ -111,7 +141,9 @@ def test_pair_writer_restores_json_if_second_replace_fails(
     original_replace = os.replace
     calls = 0
 
-    def fail_second_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+    def fail_second_replace(
+        src: str | os.PathLike[str], dst: str | os.PathLike[str]
+    ) -> None:
         nonlocal calls
         calls += 1
         if calls == 2:
