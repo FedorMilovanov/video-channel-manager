@@ -162,6 +162,31 @@ def test_claim_preserves_original_and_prevents_duplicate(monkeypatch, tmp_path):
         m.execute(args)
 
 
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("telegram_chat_id", CHAT + 1),
+        ("telegram_chat_id", None),
+        ("telegram_chat_id", str(CHAT)),
+        ("telegram_message_id", str(MESSAGE)),
+        ("telegram_message_id", True),
+    ],
+)
+def test_damaged_original_delivery_identity_blocks_prepare_before_any_provider_contact(
+    monkeypatch, tmp_path, field, bad_value
+):
+    args, ledger, original, _ = setup(monkeypatch, tmp_path)
+    original[field] = bad_value
+    snapshot = copy.deepcopy(ledger)
+    monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: pytest.fail("No provider contact"))
+    monkeypatch.setattr(m, "_proof_page", lambda *_: pytest.fail("No provider contact"))
+    monkeypatch.setattr(m, "save_ledger", lambda *_: pytest.fail("No ledger mutation"))
+    with pytest.raises(RuntimeError, match="Source ledger identity"):
+        m.execute(args)
+    assert ledger == snapshot
+    assert "scheduled_reissue" not in original
+
+
 def test_original_live_message_blocks_new_claim(monkeypatch, tmp_path):
     args, _, original, _ = setup(monkeypatch, tmp_path)
     monkeypatch.setattr(m, "_prove_owner_deletion", lambda *_: (_ for _ in ()).throw(RuntimeError("still visible")))
