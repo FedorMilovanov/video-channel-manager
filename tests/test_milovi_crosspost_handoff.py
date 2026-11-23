@@ -8,7 +8,9 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+import typer
 
+from video_channel_manager.cli.milovi import crosspost_plan
 from video_channel_manager.milovi_crosspost_handoff import (
     HandoffError,
     ROUTES,
@@ -183,3 +185,52 @@ def test_source_id_validated_before_file_access(tmp_path: Path) -> None:
     sha = digest(write_json(path, data))
     with pytest.raises(HandoffError, match="Invalid YouTube"):
         build(path, sha)
+
+
+def test_cli_handoff_creates_atomic_output_and_accepts_identical_repeat(tmp_path: Path) -> None:
+    index, sha, _, _ = fixture(tmp_path)
+    target = tmp_path / "nested" / "handoff.json"
+
+    crosspost_plan(index, "2026-11-23", "2026-11-28", target, sha)
+    first = target.read_bytes()
+    payload = json.loads(first)
+    assert payload["source_count"] == 1
+    assert payload["destination_count"] == 6
+    assert payload["provider_writes_performed"] is False
+    assert not target.with_name(target.name + ".tmp").exists()
+
+    crosspost_plan(index, "2026-11-23", "2026-11-28", target, sha)
+    assert target.read_bytes() == first
+
+
+def test_cli_handoff_rejects_conflicting_output_without_overwrite(tmp_path: Path) -> None:
+    index, sha, _, _ = fixture(tmp_path)
+    target = tmp_path / "output.json"
+    target.write_text("existing owner data", encoding="utf-8")
+
+    with pytest.raises(typer.BadParameter, match="different bytes"):
+        crosspost_plan(index, "2026-11-23", "2026-11-28", target, sha)
+    assert target.read_text(encoding="utf-8") == "existing owner data"
+
+
+def test_cli_handoff_rejects_stale_temp_file(tmp_path: Path) -> None:
+    index, sha, _, _ = fixture(tmp_path)
+    target = tmp_path / "output.json"
+    scratch = target.with_name(target.name + ".tmp")
+    scratch.write_text("previous incomplete attempt", encoding="utf-8")
+
+    with pytest.raises(typer.BadParameter, match="Incomplete temporary output"):
+        crosspost_plan(index, "2026-11-23", "2026-11-28", target, sha)
+    assert not target.exists()
+    assert scratch.read_text(encoding="utf-8") == "previous incomplete attempt"
+
+
+def test_cli_handoff_refuses_invalid_date_and_index_sha(tmp_path: Path) -> None:
+    index, sha, _, _ = fixture(tmp_path)
+    target = tmp_path / "output.json"
+
+    with pytest.raises(typer.BadParameter, match="Crosspost handoff refused"):
+        crosspost_plan(index, "bad-date", "2026-11-28", target, sha)
+    with pytest.raises(typer.BadParameter, match="Frozen index"):
+        crosspost_plan(index, "2026-11-23", "2026-11-28", target, "0" * 64)
+    assert not target.exists()
