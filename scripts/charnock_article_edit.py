@@ -179,7 +179,7 @@ def _exclusive_pair_lock(article_path: Path, markdown_path: Path) -> Iterator[No
                 ) from None
             acquired.append(lock)
             with os.fdopen(fd, "w", encoding="utf-8") as stream:
-                stream.write(f"pid={os.getpid()}\\n")
+                stream.write(f"pid={os.getpid()}\n")
         yield
     finally:
         for lock in reversed(acquired):
