@@ -249,7 +249,9 @@ def _select_due(
     if (
         original.get("state") != "published"
         or original.get("provider_effect") != "verified"
+        or type(original.get("telegram_message_id")) is not int
         or original.get("telegram_message_id") != entry["deleted_telegram_message_id"]
+        or original.get("telegram_chat_id") != -1001295216957
         or original.get("telegraph_url") != entry["verified_telegraph_url"]
         or original.get("article_sha256")
         != entry.get("historical_source_article_sha256", entry["source_article_sha256"])
