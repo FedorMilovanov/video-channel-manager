@@ -585,11 +585,15 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         return {"stage": "sent", "publication_id": args.publication_id, "message_id": new_id}
 
     if args.stage == "verify":
-        if receipt.get("state") != "sent":
-            raise RuntimeError("Only a confirmed send can be read back")
+        if receipt.get("state") != "sent" or receipt.get("provider_effect") != "verified_by_api":
+            raise RuntimeError("Only a provider-acknowledged send can be read back")
         verified_message_id = receipt.get("new_message_id")
-        if not isinstance(verified_message_id, int) or verified_message_id <= 0:
-            raise RuntimeError("Missing provider-acknowledged replacement message identity")
+        if (
+            type(verified_message_id) is not int
+            or verified_message_id <= 0
+            or verified_message_id == source["deleted_telegram_message_id"]
+        ):
+            raise RuntimeError("Missing or invalid provider-acknowledged replacement message identity")
         _prove_new_public_post(message_id=verified_message_id, telegraph_url=source["verified_telegraph_url"])
         receipt.update(
             state="verified", provider_effect="verified", verified_at_moscow=now.astimezone(MOSCOW).isoformat()
