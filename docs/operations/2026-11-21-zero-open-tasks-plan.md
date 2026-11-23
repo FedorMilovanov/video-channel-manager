@@ -176,8 +176,10 @@ receipts и переменные этим PR не менялись. Нужна �
   dry-run без POST и закрытый proxy port блокирует dispatch; старые wrapper SHA — только backups.
   Task был включён, interactive-only; без работающего ПК/локального proxy доставка не гарантирована.
   Ответы public-root GET через proxy не доказывают Meta ingestion или причину всех `1363008`.
-  Repo-изменение отслеживается отдельно в [#1093](https://github.com/FedorMilovanov/video-channel-manager/pull/1093);
-  owner-local wrapper не доказывает его merge/deployment. Ни auto-switch HTTPS, ни новые hosting,
+  Repo-изменение [#1093](https://github.com/FedorMilovanov/video-channel-manager/pull/1093)
+  слито как `a78bf4e6c46bba5f3831bf9cdf514c6d940e3168`; exact head
+  `9946067ca830d0cd7684d4b8d84d78e7299117a6` прошёл CI, дерево совпадает с merge.
+  Однако owner-local wrapper не доказывает deployment этого commit. Ни auto-switch HTTPS, ни новые hosting,
   retry, изменение task или второй writer из этих наблюдений не следуют.
 - **#809, Milovi Telegram:** на 22.11 все 15 video окон истекли без verified ledger receipt;
   ранний Paris-Brest подавляет оригинал 17.11, окно Croissant 21.11 без verified ledger receipt,
@@ -197,10 +199,13 @@ receipts и переменные этим PR не менялись. Нужна �
   receipts, права, состояние и контроль единственного owner-local writer для остальных выпусков.
 - **#1036, Legendary Poet Telegram:** общий бот и target уже проверяли read-only 18–19.11;
   не создавать новый. [Точный Git blob MP3](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7083322026)
-  проверен по размеру и SHA-256 `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`,
-  но listening, права, deployed HTTP и кандидатная обложка не подтверждены. Частичный public scan
-  не доказал отсутствие дубля; профиль записи выключен. Нужны свежая сверка, редакционная и
-  правовая приёмка, release/ledger и отдельное разрешение; `sendAudio` не выполнялся.
+  проверен по размеру и SHA-256 `10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8`;
+  [полный локальный decode](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7087633303)
+  прошёл без ошибок, 9 011 270 stereo frames — 187,734792 с. Это не listening; ID3 и неслитый
+  site ledger называют разные Suno ID, связь которых не установлена (не доказательство разных записей).
+  Права, deployed HTTP, Windows bundle и отдельная кандидатная обложка не подтверждены. Частичный public
+  scan не доказал отсутствие дубля; профиль записи выключен. Нужны свежая сверка происхождения,
+  редакционная и правовая приёмка, release/ledger и отдельное разрешение; `sendAudio` здесь не выполнялся.
 - **#810, LordChrist Shorts:** свежий owner AuditPackage, exact media и права, отсутствие дублей,
   новые даты и один проверенный canary; исторические слоты не догонять и второй writer не заводить.
 
