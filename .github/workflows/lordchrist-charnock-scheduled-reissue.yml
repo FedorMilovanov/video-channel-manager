@@ -99,7 +99,10 @@ jobs:
           from datetime import datetime
           from pathlib import Path
           from zoneinfo import ZoneInfo
-          from video_channel_manager.lordchrist_charnock_reschedule import scheduled_reissue_preflight_status
+          from video_channel_manager.lordchrist_charnock_reschedule import (
+              approved_reissue_entry,
+              scheduled_reissue_preflight_status,
+          )
 
           now=datetime.now(ZoneInfo("Europe/Moscow"))
           data=json.loads(Path(os.environ["MANIFEST"]).read_text("utf-8"))
@@ -123,7 +126,10 @@ jobs:
           if response.get("encoding")!="base64":
               raise SystemExit("Protected state response encoding is not verified")
           state=json.loads(base64.b64decode(response["content"],validate=False).decode("utf-8"))
-          status=scheduled_reissue_preflight_status(state,matches[0])
+          # Resolve the SHA-pinned #10 source+media v2 binding read-only.
+          # All other articles keep the original manifest identity/guards.
+          approved=approved_reissue_entry(Path("."),matches[0])
+          status=scheduled_reissue_preflight_status(state,approved)
           if status=="verified":
               print("Charnock edition already reissued and verified; backup trigger is a no-op")
               raise SystemExit(0)
