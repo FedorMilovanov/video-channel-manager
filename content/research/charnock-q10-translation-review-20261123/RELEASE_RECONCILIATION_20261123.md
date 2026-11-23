@@ -48,7 +48,7 @@ Checks below used the public `getPage` `ok:true` response, without Telegra.ph ac
 - Public `ok:true`, expected title/author; 55 nodes, 13 blockquotes; final © Gutenberg credit absent.
 
 **№13 public page:** https://telegra.ph/Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05
-- Public `ok:true`, expected title/author; 56 nodes, 13 blockquotes; final © Gutenberg credit absent. Separate q-3/q-19 quotation boundaries and SEND HOLD must be reviewed independently of the credit.
+- Public `ok:true`, expected title/author; 56 nodes, 13 blockquotes; final © Gutenberg credit absent. The five quotation repairs from 21 Nov are already present in canonical QC JSON and public text. In particular q-3 includes an explicit `[…]` for the omitted English argument and appears **merged with the next Telegraph blockquote** via a visible `…` separator; q-19 exactly matches the longer current quote including flies, Ps. 10:4 and its conclusion. These content fixes are not pending re-application. **Telegram SEND HOLD remains enforced** independent of the © credit.
 
 ## What remains to close safely
 
