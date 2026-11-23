@@ -102,44 +102,75 @@ def _state(args: argparse.Namespace) -> dict[str, Any]:
     return json.loads(args.ledger.read_text(encoding="utf-8"))["entries"][PUB_ID]
 
 
+def test_exact_reconciled_jude_claim_is_provider_inert_and_cannot_be_replayed(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    execution.publication_id = staged.JUDE_PUBLICATION_ID
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Prepare must never reach a provider"))
+    result = staged.execute(execution)
+    assert result["state"] == "page_dispatch_claimed"
+    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    entry = ledger["entries"][staged.JUDE_PUBLICATION_ID]
+    assert entry["provider_effect"] == "unknown_until_reconciled"
+    assert entry["run_id"] == execution.run_id
+    assert entry["github_sha"] == execution.github_sha
+    assert entry["article_sha256"].startswith("sha256:")
+    assert entry["cover_sha256"].startswith("sha256:")
+    before = execution.ledger.read_bytes()
+    with pytest.raises(RuntimeError, match="already exists in durable state"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+def test_reconciled_jude_first_claim_is_provider_inert_and_not_repeatable(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    execution.publication_id = staged.JUDE_PUBLICATION_ID
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Claim must not reach provider"))
+    out = staged.execute(execution)
+    assert out["state"] == "page_dispatch_claimed"
+    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    entry = ledger["entries"][staged.JUDE_PUBLICATION_ID]
+    assert entry["provider_effect"] == "unknown_until_reconciled"
+    assert entry["run_id"] == execution.run_id
+    assert entry["github_sha"] == execution.github_sha
+    assert entry["article_sha256"].startswith("sha256:")
+    assert entry["cover_sha256"].startswith("sha256:")
+    before = execution.ledger.read_bytes()
+    with pytest.raises(RuntimeError, match="already exists in durable state"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
 @pytest.mark.parametrize(
     ("stage", "existing_state"),
     [
-        ("prepare-page", None),
         ("send-page", "page_dispatch_claimed"),
         ("prepare-telegram", "page_published"),
         ("send-telegram", "telegram_dispatch_claimed"),
     ],
 )
-def test_unreconciled_jude_is_held_before_ledger_or_provider_on_every_stage(
+def test_reconciled_jude_rejects_unverified_or_incomplete_claims(
     execution: argparse.Namespace,
     monkeypatch: pytest.MonkeyPatch,
     stage: str,
-    existing_state: str | None,
+    existing_state: str,
 ) -> None:
     execution.stage = stage
     execution.publication_id = staged.JUDE_PUBLICATION_ID
-    if existing_state is not None:
-        ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
-        ledger["entries"][execution.publication_id] = {
-            "publication_id": execution.publication_id,
-            "state": existing_state,
-            "run_id": execution.run_id,
-            "run_attempt": 1,
-            "github_sha": execution.github_sha,
-            "provider_effect": "unknown_until_reconciled",
-        }
-        save_ledger(execution.ledger, ledger)
+    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    ledger["entries"][execution.publication_id] = {
+        "publication_id": execution.publication_id,
+        "state": existing_state,
+        "run_id": execution.run_id,
+        "run_attempt": 1,
+        "github_sha": execution.github_sha,
+        "provider_effect": "unknown_until_reconciled",
+    }
+    save_ledger(execution.ledger, ledger)
     before = execution.ledger.read_bytes()
-    # Normal workflow approvals and credentials cannot override the incident hold.
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_POSTING_ENABLED", "true")
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID", staged.JUDE_PUBLICATION_ID)
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_APPROVED_ARTICLE_BLOB_SHA", staged.JUDE_ARTICLE_GIT_BLOB)
-    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
-    monkeypatch.setenv("LORDCHRIST_TELEGRAM_BOT_TOKEN", "test-token")
-    monkeypatch.setattr(staged, "_ledger", lambda *_: pytest.fail("Hold must stop before ledger access"))
-    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Hold must stop before provider access"))
-    with pytest.raises(RuntimeError, match="queued_run_43098273140_target_unknown"):
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Unverified claim must not reach provider"))
+    with pytest.raises(RuntimeError, match="Article or cover changed after durable intent"):
         staged.execute(execution)
     assert execution.ledger.read_bytes() == before
 
@@ -160,7 +191,7 @@ def test_renaming_exact_jude_article_cannot_bypass_staged_hold(
     before = execution.ledger.read_bytes()
     monkeypatch.setattr(staged, "build_telegraph_payload", lambda *a, **kw: pytest.fail("Held blob must not render"))
     monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Hold must stop before provider access"))
-    with pytest.raises(RuntimeError, match="queued_run_43098273140_target_unknown"):
+    with pytest.raises(RuntimeError, match="Jude article identity is immutable"):
         staged.execute(execution)
     assert execution.ledger.read_bytes() == before
 
