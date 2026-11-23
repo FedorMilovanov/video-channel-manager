@@ -70,6 +70,7 @@ def test_proposed_translation_changes_only_plain_span_and_revision() -> None:
     assert proposed["blocks"][-1] == base["blocks"][-1]
     assert proposed["document_id"] == "lordchrist-telegraph-charnock-11"
 
+
 def test_proposed_q10_translation_retains_unique_top_level_block_ids() -> None:
     """Translation work may change one quotation span, never collide with the bibliography anchor."""
     base = json.loads(BASE.read_text(encoding="utf-8"))
