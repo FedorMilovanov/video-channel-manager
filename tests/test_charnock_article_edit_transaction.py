@@ -43,7 +43,11 @@ def _files(tmp_path: Path, *, json_footer: bool = True) -> tuple[Path, Path, Pat
         json.dumps(article, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    extra = [] if json_footer else [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}]
+    extra = (
+        []
+        if json_footer
+        else [{"type": "paragraph", "block_id": "p-2", "text": FOOTER}]
+    )
     readable = {**article, "blocks": article["blocks"] + extra}
     markdown_path.write_text(render_markdown(readable), encoding="utf-8")
     patch_path.write_text(
