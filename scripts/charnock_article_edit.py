@@ -133,7 +133,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--patch", required=True, type=Path)
     parser.add_argument("--revision", required=True)
     parser.add_argument(
-        "--markdown", type=Path, help="Markdown source to rewrite (default: JSON sibling)"
+        "--markdown",
+        type=Path,
+        help="Markdown source to rewrite (default: JSON sibling)",
     )
     args = parser.parse_args(argv)
 
