@@ -7,8 +7,8 @@ historical manifest or make current QC content masquerade as 2026-11-05 bytes.
 
 from __future__ import annotations
 
-import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -26,8 +26,17 @@ HISTORICAL = {
 }
 
 
-def _blob(raw: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+def _tracked_blob(path: Path) -> str:
+    """Hash the working tree through Git clean filters (LF/Windows CRLF safe)."""
+    relative = path.relative_to(ROOT).as_posix()
+    result = subprocess.run(
+        ["git", "hash-object", f"--path={relative}", "--", relative],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
 
 
 def _by_publication(items: list[dict], publication_id: str) -> dict:
@@ -38,7 +47,7 @@ def _by_publication(items: list[dict], publication_id: str) -> dict:
 
 def test_old_approved_incident_manifest_is_unchanged() -> None:
     raw = MANIFEST.read_bytes()
-    assert _blob(raw) == HISTORICAL_MANIFEST_GIT_BLOB
+    assert _tracked_blob(MANIFEST) == HISTORICAL_MANIFEST_GIT_BLOB
     data = json.loads(raw)
     assert data["timezone"] == "Europe/Moscow"
     assert data["release_time"] == "12:00"
@@ -61,7 +70,7 @@ def test_historical_authority_does_not_silently_bind_current_qc_article(ordinal:
 
     article_path = ROOT / current["article"]["path"]
     assert article_path.parent == ARTICLE_DIR
-    actual_current_blob = _blob(article_path.read_bytes())
+    actual_current_blob = _tracked_blob(article_path)
     assert current["article"]["git_blob_sha"] == actual_current_blob
     assert original["verified_telegraph_url"].startswith("https://telegra.ph/")
     # This discrepancy is NOT a license to mutate the old manifest to the QC hash.
