@@ -22,11 +22,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-from datetime import date
 import os
-from pathlib import Path
+import re
 import tempfile
+from datetime import date
+from pathlib import Path
 from typing import Any
 
 from charnock_article_render_md import iter_text, render_markdown
@@ -64,7 +64,6 @@ def find_block(blocks: list[dict[str, Any]], block_id: str) -> tuple[int, dict[s
     raise SystemExit(f"block not found: {block_id}")
 
 
-
 def _require_source_credit(article: dict[str, Any]) -> None:
     """The only publishable source credit is the one carried in JSON blocks."""
     blocks = article.get("blocks")
@@ -81,14 +80,19 @@ def _require_source_credit(article: dict[str, Any]) -> None:
 def _stage_bytes(target: Path, contents: bytes) -> Path:
     """Stage same-directory data for a safe replace across filesystem volumes."""
     with tempfile.NamedTemporaryFile(
-        mode="wb", prefix=f".{target.name}.", suffix=".tmp",
-        dir=target.parent, delete=False
+        mode="wb",
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+        delete=False,
     ) as stream:
         stream.write(contents)
         return Path(stream.name)
 
 
-def _write_pair(article_path: Path, markdown_path: Path, json_text: str, markdown_text: str) -> None:
+def _write_pair(
+    article_path: Path, markdown_path: Path, json_text: str, markdown_text: str
+) -> None:
     """Update both files, restoring the prior JSON if the second replace fails."""
     originals = (
         (article_path, article_path.read_bytes(), json_text.encode("utf-8")),
