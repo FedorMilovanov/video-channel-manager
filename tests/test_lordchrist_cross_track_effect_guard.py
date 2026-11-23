@@ -16,6 +16,18 @@ ROOT = Path(__file__).resolve().parents[1]
 LEGACY_CLI = ROOT / "src/video_channel_manager/telegram_cli.py"
 
 
+def test_sealed_successor_release_json_has_byte_preserving_lf_checkout() -> None:
+    # Byte-bound Git blob/digest gates must see the exact committed LF bytes
+    # even when the operator's Windows Git has core.autocrlf=true.
+    attributes = set((ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines())
+    for name in (
+        "quote-depth-audit-v1.json",
+        "quote-depth-replacements-v1.json",
+        "successor-translation-ledger-v1.json",
+    ):
+        assert f"content/telegram/lordchrist/{name} text eol=lf" in attributes
+
+
 @dataclass(frozen=True)
 class Entry:
     publication_id: str
