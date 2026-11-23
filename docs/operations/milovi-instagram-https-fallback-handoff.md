@@ -25,6 +25,13 @@ soundtrack rights. The existing owner task was still enabled at that checkpoint;
 confirm its current state rather than creating another writer. Future slots do
 not inherit permission to auto-switch to HTTPS or to host new files.
 
+The repository proxy-routing change [#1093](https://github.com/FedorMilovanov/video-channel-manager/pull/1093)
+merged on 22 November 23:32 UTC as `a78bf4e6c46bba5f3831bf9cdf514c6d940e3168`;
+the exact PR head `9946067ca830d0cd7684d4b8d84d78e7299117a6` passed CI and its
+tree matches the merge tree. This is repository evidence, **not proof of
+owner-local deployment**, Meta ingestion, a Reel receipt or fresh execution
+authority. The old unknown/failed effects and no-replay boundary still apply.
+
 ## Historical evidence, 13 November 2026 (Europe/Moscow)
 
 The Windows daily 19:00 writer runs. Local SQL and independent authenticated **GET**
