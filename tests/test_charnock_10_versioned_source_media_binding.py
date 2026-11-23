@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -55,6 +56,24 @@ def _args() -> SimpleNamespace:
         repo_root=ROOT,
         publication_id=PUBLICATION,
     )
+
+
+
+def test_exactly_pinned_json_sources_check_out_as_lf_on_windows() -> None:
+    """Hardcoded raw Git-blob checks require LF even if core.autocrlf is true."""
+    paths = (
+        m.MANIFEST,
+        m.V2_BINDING,
+        Path("content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-10.json"),
+    )
+    result = subprocess.run(
+        ["git", "check-attr", "eol", "--", *(path.as_posix() for path in paths)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.splitlines() == [f"{path.as_posix()}: eol: lf" for path in paths]
 
 
 def test_pinned_legacy_manifest_and_v2_binding_are_distinct() -> None:
