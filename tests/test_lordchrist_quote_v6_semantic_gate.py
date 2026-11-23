@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -265,3 +266,38 @@ def test_no_telegram_http_after_prepared_intent_if_editorial_approval_revoked(mo
     with pytest.raises(SemanticApprovalHold, match="revoked"):
         owner.send(tmp_path)
     assert ledger_path.exists()
+
+@pytest.mark.parametrize("editorially_approved", [False, True])
+def test_late_scheduled_quote_hold_is_not_reported_as_a_provider_failure(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], editorially_approved: bool
+) -> None:
+    # Regression: GitHub's 07:23 UTC schedule started after 21:00 Moscow on
+    # 23 Nov, when all 18 pending v6 entries were still on editorial HOLD.
+    # HOLD must be a clean no-op; genuinely approved late sends must still fail.
+    queue = publisher.release_and_queue(ROOT)
+    ledger = initialize_ledger(queue)
+    untouched = ledger.model_copy(deep=True)
+    monkeypatch.setattr(publisher, "release_and_queue", lambda _root: queue)
+    monkeypatch.setattr(publisher, "load_ledger", lambda _path, _queue: ledger)
+    monkeypatch.setattr(publisher, "guard_cross_track", lambda _root: None)
+    monkeypatch.setattr(publisher, "utc_now", lambda: datetime(2026, 11, 23, 19, 23, tzinfo=UTC))
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setattr(
+        publisher, "target_from_provider", lambda: pytest.fail("Telegram preflight on a blocked/late slot")
+    )
+    monkeypatch.setattr(
+        publisher, "save_ledger", lambda *_args: pytest.fail("protected ledger mutated before preflight")
+    )
+    monkeypatch.setattr(
+        publisher, "prepare_next", lambda *_args, **_kwargs: pytest.fail("dispatch envelope on blocked/late slot")
+    )
+    if editorially_approved:
+        monkeypatch.setattr(publisher, "require_semantic_approval", lambda *_args: None)
+        with pytest.raises(ValueError, match="too late"):
+            publisher.prepare(ROOT, mode="scheduled", expected_id=None)
+    else:
+        assert publisher.prepare(ROOT, mode="scheduled", expected_id=None) == 3
+        result = json.loads(capsys.readouterr().out)
+        assert result["prepared"] is False
+        assert result["reason"] == "editorial_hold"
+    assert ledger == untouched
