@@ -522,7 +522,14 @@ class YouTubeCommentWriter(HttpClientOwner):
         video_id: str,
         expected_channel_id: str,
         text: str,
+        expected_owned_comments: dict[str, str] | None = None,
     ) -> TopLevelCommentSnapshot:
+        """Create an independent comment; explicit additions bind the reviewed owner state.
+
+        None preserves the legacy first-comment-only workflow. A supplied map
+        binds existing owner comment IDs to their canonical text SHA-256 hashes.
+        No count cap is imposed on separately reviewed additions.
+        """
         normalized = validate_comment_text(text)
         identity = self.read_video_identity(video_id)
         if identity.channel_id != expected_channel_id:
@@ -535,7 +542,13 @@ class YouTubeCommentWriter(HttpClientOwner):
         for item in owned:
             if comments_equivalent(item.text, normalized):
                 return item
-        if owned:
+        if expected_owned_comments is not None:
+            actual_owned = {item.comment_id: item.text_sha256 for item in owned}
+            if actual_owned != expected_owned_comments:
+                raise YouTubeCommentConflictError(
+                    f"Reviewed owner comment state changed for {video_id}; no POST sent."
+                )
+        elif owned:
             ids = ", ".join(item.comment_id for item in owned)
             raise YouTubeCommentConflictError(
                 f"Video {video_id} already has {len(owned)} different top-level channel comment(s): {ids}."
