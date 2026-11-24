@@ -321,8 +321,8 @@ def _lord_god_wall_plan(plan: WavePlan) -> bool:
 def _youtube_comment_plan(plan: WavePlan) -> bool:
     return (
         len(plan.operations) == 1
-        and plan.policy_version == YOUTUBE_COMMENT_POLICY_VERSION
         and plan.operations[0].operation_kind == YOUTUBE_COMMENT_OPERATION_KIND
+        and plan.policy_version == YOUTUBE_COMMENT_POLICY_VERSION
     )
 
 
