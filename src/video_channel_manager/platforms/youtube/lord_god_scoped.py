@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 import hashlib
+import json
 import re
 from urllib.parse import parse_qs, urlsplit
 
@@ -18,8 +19,10 @@ from video_channel_manager.platforms.youtube.chapter_release import (
     CHAPTER_RULESET,
     chapter_stamp as _chapter_stamp,
     require_review,
+    require_panorama_owner_evidence,
 )
 from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text, validate_copy_plan
+from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
 
 LORD_GOD_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
 RULESET = "lord-god-scoped-legacy-shelf-removal-v1"
@@ -284,56 +287,10 @@ def _reviewed_archive_gap(
     return len(normalized_cue) >= 16 and " ".join(next_text.casefold().split()).startswith(normalized_cue)
 
 
-def build_one_video_chapter_plan(
-    audit: dict[str, Any],
-    audit_file: Path,
-    previous_plan: dict[str, Any],
-    previous_file: Path,
-    review: dict[str, Any],
-    review_file: Path,
-    transcript_database: Path,
-    *,
-    video_id: str,
-) -> tuple[dict[str, Any], str]:
-    """Sign one transcript-grounded chapter appendix; no API or provider writes.
-
-    The existing guarded YouTube copy executor MUST separately preflight the
-    current description, OAuth identity, and complete before/after postflight.
-    """
-    video = _owner_video(audit, video_id)
-    missing = _missing_metadata_exceptions(audit, video_id)
-    validate_copy_plan(previous_plan)
-    if video.get("privacy_status") != "public":
-        raise ValueError("Chapter edits require a public owner video")
-    if (
-        previous_plan.get("target_channel_id") != LORD_GOD_CHANNEL
-        or previous_plan.get("project_key") != "lord-god-strength"
-        or previous_plan.get("link_profile") != "lord-god-strength"
-        or previous_plan.get("source_audit_sha256") != _digest(audit_file)
-        or previous_plan.get("source_audit_snapshot_id") != audit.get("snapshot_id")
-    ):
-        raise ValueError("Previous editorial plan is not bound to the exact owner source")
-    ops = previous_plan["operations"]
-    if len(ops) != 1 or ops[0].get("video_id") != video_id:
-        raise ValueError("Previous editorial plan must contain exactly the target video")
-    old = ops[0]
-    if (
-        old.get("channel_id") != LORD_GOD_CHANNEL
-        or old.get("title") != video.get("title")
-        or old.get("expected_revision") != video.get("revision")
-        or old.get("before_description") != video.get("description")
-    ):
-        raise ValueError("Original owner video and prior editorial plan have drifted")
-    expected_ids = sorted([video_id, *missing])
-    if previous_plan.get("checked_video_ids") != expected_ids:
-        raise ValueError("Previous plan lost explicit owner metadata gaps")
-    unresolved = previous_plan["unresolved"]
-    if sorted(str(x.get("video_id")) for x in unresolved) != missing or any(
-        x.get("channel_id") != LORD_GOD_CHANNEL
-        or not any(e.get("code") == "youtube.owner-upload-metadata-gap" for e in x.get("errors", []))
-        for x in unresolved
-    ):
-        raise ValueError("Previous plan unresolved metadata exception ledger changed")
+def _validated_chapter_appendix(
+    review: dict[str, Any], review_file: Path, transcript_database: Path, *, video_id: str, before: str
+) -> tuple[str, dict[str, Any]]:
+    """Shared semantic and archive contract for both owner-evidence routes."""
     if (
         review.get("schema") != "lordgod-chapter-editorial-review-v2"
         or review.get("owner_channel_id") != LORD_GOD_CHANNEL
@@ -344,7 +301,6 @@ def build_one_video_chapter_plan(
         or review.get("provider_writes") != 0
     ):
         raise ValueError("Chapter review is not a non-executable exact-owner review")
-    before = old["after_description"]
     if (
         review.get("source_description_sha256") != sha256_text(before)
         or "Таймкоды:" in before
@@ -435,14 +391,7 @@ def build_one_video_chapter_plan(
 
     require_review(review, review_file, video_id=video_id, before=before, after=after)
 
-    plan = deepcopy(previous_plan)
-    plan["ruleset"] = CHAPTER_RULESET
-    plan["generated_at"] = datetime.now(UTC).isoformat()
-    plan["source_chapter_review"] = str(review_file.resolve())
-    plan["source_chapter_review_sha256"] = _digest(review_file)
-    plan["source_previous_editorial_plan"] = str(previous_file.resolve())
-    plan["source_previous_editorial_plan_sha256"] = _digest(previous_file)
-    plan["chapter_evidence"] = {
+    evidence = {
         "transcript_database": str(transcript_database.resolve()),
         "video_id": video_id,
         "source_chunk_count": len(fragments),
@@ -455,6 +404,72 @@ def build_one_video_chapter_plan(
         "chapter_review_sha256": _digest(review_file),
         "player_ui_visual_check_pending": True,
     }
+    return after, evidence
+
+
+def build_one_video_chapter_plan(
+    audit: dict[str, Any],
+    audit_file: Path,
+    previous_plan: dict[str, Any],
+    previous_file: Path,
+    review: dict[str, Any],
+    review_file: Path,
+    transcript_database: Path,
+    *,
+    video_id: str,
+) -> tuple[dict[str, Any], str]:
+    """Sign one transcript-grounded chapter appendix; no API or provider writes.
+
+    The existing guarded YouTube copy executor MUST separately preflight the
+    current description, OAuth identity, and complete before/after postflight.
+    """
+    video = _owner_video(audit, video_id)
+    missing = _missing_metadata_exceptions(audit, video_id)
+    validate_copy_plan(previous_plan)
+    if video.get("privacy_status") != "public":
+        raise ValueError("Chapter edits require a public owner video")
+    if (
+        previous_plan.get("target_channel_id") != LORD_GOD_CHANNEL
+        or previous_plan.get("project_key") != "lord-god-strength"
+        or previous_plan.get("link_profile") != "lord-god-strength"
+        or previous_plan.get("source_audit_sha256") != _digest(audit_file)
+        or previous_plan.get("source_audit_snapshot_id") != audit.get("snapshot_id")
+    ):
+        raise ValueError("Previous editorial plan is not bound to the exact owner source")
+    ops = previous_plan["operations"]
+    if len(ops) != 1 or ops[0].get("video_id") != video_id:
+        raise ValueError("Previous editorial plan must contain exactly the target video")
+    old = ops[0]
+    if (
+        old.get("channel_id") != LORD_GOD_CHANNEL
+        or old.get("title") != video.get("title")
+        or old.get("expected_revision") != video.get("revision")
+        or old.get("before_description") != video.get("description")
+    ):
+        raise ValueError("Original owner video and prior editorial plan have drifted")
+    expected_ids = sorted([video_id, *missing])
+    if previous_plan.get("checked_video_ids") != expected_ids:
+        raise ValueError("Previous plan lost explicit owner metadata gaps")
+    unresolved = previous_plan["unresolved"]
+    if sorted(str(x.get("video_id")) for x in unresolved) != missing or any(
+        x.get("channel_id") != LORD_GOD_CHANNEL
+        or not any(e.get("code") == "youtube.owner-upload-metadata-gap" for e in x.get("errors", []))
+        for x in unresolved
+    ):
+        raise ValueError("Previous plan unresolved metadata exception ledger changed")
+    before = old["after_description"]
+    after, evidence = _validated_chapter_appendix(
+        review, review_file, transcript_database, video_id=video_id, before=before
+    )
+    chapters = review["chapters"]
+    plan = deepcopy(previous_plan)
+    plan["ruleset"] = CHAPTER_RULESET
+    plan["generated_at"] = datetime.now(UTC).isoformat()
+    plan["source_chapter_review"] = str(review_file.resolve())
+    plan["source_chapter_review_sha256"] = _digest(review_file)
+    plan["source_previous_editorial_plan"] = str(previous_file.resolve())
+    plan["source_previous_editorial_plan_sha256"] = _digest(previous_file)
+    plan["chapter_evidence"] = evidence
     plan["fix_code_counts"] = {"reviewed_transcript_semantic_chapters": len(chapters)}
     plan["operations"][0].update(
         ruleset=CHAPTER_RULESET,
@@ -480,3 +495,83 @@ def build_one_video_chapter_plan(
         "Player chapter UI confirmation remains separate.\n"
     )
     return plan, report
+
+
+def build_panorama_owner_chapter_plan(
+    owner_file: Path,
+    playlist_file: Path,
+    source_file: Path,
+    review_file: Path,
+    transcript_database: Path,
+    *,
+    video_id: str,
+) -> tuple[dict[str, Any], str]:
+    """Use a real exact-ID owner receipt, not a fabricated full-channel audit."""
+    from video_channel_manager.platforms.youtube.chapter_release import load_panorama_owner_evidence
+
+    review = json.loads(review_file.read_text(encoding="utf-8-sig"))
+    if not isinstance(review, dict):
+        raise ValueError("Expected reviewed chapter object")
+    proof = load_panorama_owner_evidence(owner_file, playlist_file, source_file, video_id=video_id)
+    before = proof["description"]
+    after, evidence = _validated_chapter_appendix(
+        review, review_file, transcript_database, video_id=video_id, before=before
+    )
+    if review.get("original") != proof["original"] or review.get("episode") != proof["episode"]:
+        raise ValueError("Review episode or original source differs from the frozen register")
+    if review["chapters"][-1]["second"] > proof["duration_seconds"] - 10:
+        raise ValueError("Final chapter is outside actual provider duration")
+    plan = {
+        "ruleset": CHAPTER_RULESET,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "target_channel_id": LORD_GOD_CHANNEL,
+        "project_key": "lord-god-strength",
+        "link_profile": "lord-god-strength",
+        "youtube_channel_id": LORD_GOD_CHANNEL,
+        "vk_community_id": 60805374,
+        "vk_owner_id": -60805374,
+        "read_only": True,
+        "scoped_review_only": True,
+        "source_scope": "exact-panorama-owner-v1",
+        "source_audit_sha256": _digest(owner_file),
+        "source_owner_receipt": str(owner_file.resolve()),
+        "source_playlist_receipt": str(playlist_file.resolve()),
+        "source_playlist_sha256": _digest(playlist_file),
+        "source_original_register": str(source_file.resolve()),
+        "source_original_register_sha256": _digest(source_file),
+        "source_chapter_review": str(review_file.resolve()),
+        "source_chapter_review_sha256": _digest(review_file),
+        "chapter_evidence": evidence,
+        "videos_checked": 1,
+        "operations_count": 1,
+        "blocked_operations_count": 0,
+        "unresolved_error_videos": 0,
+        "unresolved": [],
+        "fix_code_counts": {"reviewed_transcript_semantic_chapters": len(review["chapters"])},
+        "operations": [
+            {
+                "operation": "replace_video_description",
+                "platform": "youtube",
+                "ruleset": CHAPTER_RULESET,
+                "channel_id": LORD_GOD_CHANNEL,
+                "video_id": video_id,
+                "title": proof["title"],
+                "expected_revision": proof["revision"],
+                "before_description": before,
+                "after_description": after,
+                "before_sha256": sha256_text(before),
+                "after_sha256": sha256_text(after),
+                "fixes": [{"code": "reviewed_transcript_semantic_chapters", "count": len(review["chapters"])}],
+            }
+        ],
+    }
+    finalize_copy_plan(plan, checked_video_ids=[video_id])
+    require_lord_god_youtube_presentation(plan)
+    require_panorama_owner_evidence(plan, review)
+    return plan, (
+        "# Exact-owner Panorama chapter appendix (offline only)\n\n"
+        f"Target: {video_id}; episode {proof['episode']}.\n"
+        "Checked scope: exactly one owner video, not an uploads inventory.\n"
+        f"Plan SHA-256: {plan['plan_sha256']}\n"
+        "Requires fresh live preflight, editorial/operator confirmation, quota and owner/public verification.\n"
+    )

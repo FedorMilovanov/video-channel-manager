@@ -23,6 +23,7 @@ from video_channel_manager.platforms.youtube.chapter_release import (
 from video_channel_manager.platforms.youtube.lord_god_scoped import (
     LORD_GOD_CHANNEL,
     build_one_video_chapter_plan,
+    build_panorama_owner_chapter_plan,
 )
 
 VID = "npqnKxVt44Q"
@@ -425,3 +426,214 @@ def test_caption_boundary_in_reviewed_short_archive_gap(tmp_path: Path, variant:
             build_one_video_chapter_plan(
                 audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID
             )
+
+
+def panorama_owner_fixture(tmp_path: Path):
+    from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+
+    _, _, _, _, review, review_file, db = fixture(tmp_path)
+    original = "https://www.slovo.org/resursy/propovedi/panorama-biblii-27-kniga-test/"
+    before = (
+        "Алексей Коломийцев объясняет содержание книги пророка.\n"
+        "Лекция раскрывает основные темы и исторический контекст.\n\n"
+        "*Изучение Писания*\n_Учебная лекция._\n"
+        f"{original}\nhttps://www.youtube.com/playlist?list={PANORAMA_PLAYLIST}"
+    )
+    raw = {
+        "id": VID,
+        "snippet": {
+            "channelId": LORD_GOD_CHANNEL,
+            "title": "Панорама Библии - 27",
+            "description": before,
+            "defaultLanguage": "ru",
+            "defaultAudioLanguage": "ru",
+            "tags": ["Библия"],
+            "categoryId": "27",
+        },
+        "contentDetails": {"duration": "PT1H7M"},
+        "status": {"privacyStatus": "public"},
+        "localizations": {"ru": {"title": "Панорама Библии - 27", "description": before}},
+    }
+    owner = {
+        "schema": "panorama-exact-owner-one-probe-v1",
+        "status": "OWNER_READ_SUCCESS",
+        "read_only": True,
+        "provider_writes": 0,
+        "api_read_operations": 1,
+        "video_id": VID,
+        "owner_channel_id_expected": LORD_GOD_CHANNEL,
+        "owner_channel_id": LORD_GOD_CHANNEL,
+        "title": raw["snippet"]["title"],
+        "description_sha256": sha256_text(before),
+        "revision": canonical_sha256(raw),
+        "locale_keys": ["ru"],
+        "raw": raw,
+    }
+    playlist = {
+        "schema": "panorama-current-owner-playlist-v1",
+        "playlist_id": PANORAMA_PLAYLIST,
+        "owner_channel_id": LORD_GOD_CHANNEL,
+        "memberships": [
+            {
+                "position": i,
+                "video_id": VID if i == 26 else f"test-{i}",
+                "video_owner": LORD_GOD_CHANNEL,
+                "video_title": raw["snippet"]["title"] if i == 26 else f"Lecture {i}",
+            }
+            for i in range(68)
+        ],
+    }
+    sources = {
+        "schema": "panorama-68-exact-original-sources-verified-v1",
+        "catalogue": "https://www.slovo.org/resursy/serii/panorama-biblii/",
+        "items": [
+            {
+                "number": i,
+                "ok": True,
+                "url": original if i == 27 else f"https://www.slovo.org/resursy/propovedi/test-{i}/",
+            }
+            for i in range(1, 69)
+        ],
+    }
+    after = before + "\n\nТаймкоды:\n" + "\n".join(c["stamp"] + " " + c["heading"] for c in review["chapters"])
+    review.update(
+        episode=27,
+        original=original,
+        source_description_sha256=sha256_text(before),
+        proposed_description_sha256=sha256_text(after),
+    )
+    review["semantic_review"]["description_sha256"] = sha256_text(after)
+    paths = [tmp_path / "owner.json", tmp_path / "playlist.json", tmp_path / "sources.json", review_file]
+    for f, payload in zip(paths, (owner, playlist, sources, review), strict=True):
+        f.write_text(json.dumps(payload), encoding="utf-8")
+    return owner, playlist, sources, review, paths, db
+
+
+def test_exact_panorama_owner_append_and_execution_gate(tmp_path: Path):
+    owner, playlist, sources, review, paths, db = panorama_owner_fixture(tmp_path)
+    plan, report = build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+    validate_copy_plan(plan)
+    assert plan["checked_video_ids"] == [VID]
+    assert plan["unresolved"] == []
+    assert plan["source_scope"] == "exact-panorama-owner-v1"
+    assert "source_audit_snapshot_id" not in plan
+    assert "source_previous_editorial_plan" not in plan
+    assert plan["operations"][0]["before_description"] == owner["raw"]["snippet"]["description"]
+    assert plan["operations"][0]["expected_revision"] == owner["revision"]
+    assert "fresh live preflight" in report
+    require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+    paths[1].write_text(json.dumps(playlist) + " ", encoding="utf-8")
+    with pytest.raises(ValueError, match="artifact missing or changed"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "foreign",
+        "revision",
+        "tags",
+        "locale",
+        "private",
+        "audio",
+        "source",
+        "playlist",
+        "position",
+        "title",
+        "hold",
+        "duration",
+        "receipt",
+        "missing_raw",
+        "incomplete_raw",
+        "missing_url",
+        "episode",
+    ],
+)
+def test_exact_panorama_owner_refuses_invalid_evidence(tmp_path: Path, case: str):
+    owner, playlist, sources, review, paths, db = panorama_owner_fixture(tmp_path)
+    raw = owner["raw"]
+    if case == "foreign":
+        raw["snippet"]["channelId"] = "foreign"
+    elif case == "revision":
+        owner["revision"] = "bad"
+    elif case == "tags":
+        raw["snippet"].pop("tags")
+    elif case == "locale":
+        raw["localizations"]["ru"].pop("description")
+    elif case == "private":
+        raw["status"]["privacyStatus"] = "private"
+    elif case == "audio":
+        raw["snippet"]["defaultAudioLanguage"] = "en-US"
+    elif case == "source":
+        sources["items"][26]["url"] += "wrong"
+    elif case == "playlist":
+        playlist["playlist_id"] = "wrong"
+    elif case == "position":
+        playlist["memberships"][26]["position"] = 25
+    elif case == "title":
+        playlist["memberships"][26]["video_title"] = "wrong"
+    elif case == "hold":
+        review["editorial_approval"] = "HOLD"
+    elif case == "duration":
+        raw["contentDetails"]["duration"] = "PT1M"
+    elif case == "receipt":
+        owner["status"] = "READ_FAILED"
+    elif case == "missing_raw":
+        owner.pop("raw")
+    elif case == "incomplete_raw":
+        raw.pop("localizations")
+    elif case == "missing_url":
+        raw["snippet"]["description"] = "Missing primary source"
+        owner["description_sha256"] = sha256_text(raw["snippet"]["description"])
+    elif case == "episode":
+        review["episode"] = 28
+    if case != "revision":
+        owner["revision"] = canonical_sha256(raw)
+    for f, payload in zip(paths, (owner, playlist, sources, review), strict=True):
+        f.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError):
+        build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+
+
+def test_exact_panorama_cli_is_offline_and_refuses_output_overwrite(tmp_path: Path, monkeypatch):
+    import sys
+    from scripts import autofix_youtube_copy
+
+    owner, playlist, sources, review, paths, db = panorama_owner_fixture(tmp_path)
+    plan_path = tmp_path / "plan.json"
+    report_path = tmp_path / "report.md"
+    args = [
+        "autofix_youtube_copy.py",
+        str(paths[0]),
+        "--panorama-playlist-receipt",
+        str(paths[1]),
+        "--panorama-source-register",
+        str(paths[2]),
+        "--lord-god-chapters-review",
+        str(paths[3]),
+        "--archive-transcript-db",
+        str(db),
+        "--target-video-id",
+        VID,
+        "--plan-output",
+        str(plan_path),
+        "--report-output",
+        str(report_path),
+    ]
+    original_bytes = [f.read_bytes() for f in paths]
+    monkeypatch.setattr(sys, "argv", args)
+    assert autofix_youtube_copy.main() == 0
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    validate_copy_plan(plan)
+    output_before = plan_path.read_bytes()
+    with pytest.raises(SystemExit) as err:
+        autofix_youtube_copy.main()
+    assert err.value.code == 2
+    assert plan_path.read_bytes() == output_before
+    monkeypatch.setattr(
+        sys, "argv", args[:-4] + ["--plan-output", str(paths[0]), "--report-output", str(tmp_path / "new.md")]
+    )
+    with pytest.raises(SystemExit) as err:
+        autofix_youtube_copy.main()
+    assert err.value.code == 2
+    assert [f.read_bytes() for f in paths] == original_bytes

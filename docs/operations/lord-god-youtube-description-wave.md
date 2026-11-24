@@ -16,6 +16,8 @@ Record independent stages (prepared, structural QA, semantic editorial review, e
 
 Historical Panorama audit: run scripts/audit_panorama_chapter_evidence.py with the frozen exact-owner playlist, source register, read-only archive DB, evidence directory and a new output path. It maps legacy time/timestamp schemas, validates caption hashes and locators, detects noncanonical hour stamps and fixed-grid risk, and never authorizes writes. A real caption locator is not proof of the semantic transition. Preserve old receipts; prioritize correction by actual severity, not by bulk cosmetic changes.
 
+Already-clean Panorama episodes use the same canonical offline planner with the exact owner-read receipt as input, --panorama-playlist-receipt, --panorama-source-register, --lord-god-chapters-review, --archive-transcript-db and --target-video-id (no --previous-editorial-plan). The receipt must contain the complete original videos.list response and matching raw revision, title, source description SHA, public RU metadata, tags and localization fields; exact 68-episode frozen membership and source registers bind the selected recording and its original link. This explicitly checks one owner video, not the entire uploads inventory. Both planning and guarded execution recheck source artifact digests. Existing full AuditPackage/metadata-gap workflows retain their original contract. A saved snapshot is not fresh write authority, and no preliminary PUT or manufactured AuditPackage is permitted. The reviewed appendix must fit the actual provider duration as well as archive evidence; HOLD cannot become approved by formatting or hashing.
+
 ## Runtime provenance, OAuth directory and agent handoff
 
 - Resolve the exact current remote `main` SHA; inspect the source checkout's

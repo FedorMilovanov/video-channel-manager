@@ -177,6 +177,150 @@ def require_review(review: dict[str, Any], review_path: Path, *, video_id: str, 
                 raise ValueError("Caption boundary cue is not in the cited original event")
 
 
+PANORAMA_PLAYLIST = "PLu2Bhoh2caiVnr044VEc_MLE_8nGHcVmL"
+
+
+def load_panorama_owner_evidence(
+    owner_file: Path, playlist_file: Path, source_file: Path, *, video_id: str
+) -> dict[str, Any]:
+    """Validate the exact provider response plus immutable series/source identity.
+
+    A receipt is historical evidence, never fresh write authority or a quota grant.
+    """
+    owner, playlist, sources = (
+        json.loads(p.read_text(encoding="utf-8-sig")) for p in (owner_file, playlist_file, source_file)
+    )
+    if not all(isinstance(v, dict) for v in (owner, playlist, sources)):
+        raise ValueError("Expected exact Panorama evidence objects")
+    raw = owner.get("raw")
+    if not isinstance(raw, dict):
+        raise ValueError("Missing complete owner response")
+    snippet, status, details, locales = (raw.get(k) for k in ("snippet", "status", "contentDetails", "localizations"))
+    if (
+        not isinstance(snippet, dict)
+        or not isinstance(status, dict)
+        or not isinstance(details, dict)
+        or not isinstance(locales, dict)
+    ):
+        raise ValueError("Incomplete owner metadata/localization response")
+    before = snippet.get("description")
+    title = snippet.get("title")
+    revision = canonical_sha256(raw)
+    if (
+        owner.get("schema") != "panorama-exact-owner-one-probe-v1"
+        or owner.get("status") != "OWNER_READ_SUCCESS"
+        or owner.get("read_only") is not True
+        or owner.get("provider_writes") != 0
+        or owner.get("api_read_operations") != 1
+        or owner.get("video_id") != video_id
+        or owner.get("owner_channel_id_expected") != LORD_GOD_OWNER_CHANNEL
+        or owner.get("owner_channel_id") != LORD_GOD_OWNER_CHANNEL
+        or raw.get("id") != video_id
+        or snippet.get("channelId") != LORD_GOD_OWNER_CHANNEL
+        or status.get("privacyStatus") != "public"
+        or snippet.get("defaultLanguage") != "ru"
+        or snippet.get("defaultAudioLanguage") != "ru"
+        or not isinstance(snippet.get("tags"), list)
+        or not all(isinstance(t, str) for t in snippet["tags"])
+        or not isinstance(snippet.get("categoryId"), str)
+        or not isinstance(title, str)
+        or not title.strip()
+        or owner.get("title") != title
+        or not isinstance(before, str)
+        or not before.strip()
+        or _chapter_lines(before)
+        or owner.get("description_sha256") != sha256_text(before)
+        or owner.get("revision") != revision
+        or owner.get("locale_keys") != sorted(locales)
+        or not all(
+            isinstance(v, dict) and isinstance(v.get("title"), str) and isinstance(v.get("description"), str)
+            for v in locales.values()
+        )
+    ):
+        raise ValueError("Exact owner receipt identity, revision, chapter state or metadata mismatch")
+    duration = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", str(details.get("duration", "")))
+    if not duration:
+        raise ValueError("Missing exact provider duration")
+    seconds = sum(int(v or 0) * m for v, m in zip(duration.groups(), (3600, 60, 1), strict=True))
+    if seconds < 30:
+        raise ValueError("Invalid provider duration")
+    members = playlist.get("memberships")
+    items = sources.get("items")
+    if (
+        playlist.get("schema") != "panorama-current-owner-playlist-v1"
+        or playlist.get("playlist_id") != PANORAMA_PLAYLIST
+        or playlist.get("owner_channel_id") != LORD_GOD_OWNER_CHANNEL
+        or not isinstance(members, list)
+        or len(members) != 68
+        or not all(isinstance(m, dict) for m in members)
+        or {m.get("position") for m in members} != set(range(68))
+        or len({m.get("video_id") for m in members}) != 68
+        or any(m.get("video_owner") != LORD_GOD_OWNER_CHANNEL for m in members)
+        or sources.get("schema") != "panorama-68-exact-original-sources-verified-v1"
+        or sources.get("catalogue") != "https://www.slovo.org/resursy/serii/panorama-biblii/"
+        or not isinstance(items, list)
+        or len(items) != 68
+        or not all(isinstance(m, dict) for m in items)
+        or {m.get("number") for m in items} != set(range(1, 69))
+    ):
+        raise ValueError("Frozen Panorama playlist/source register is incomplete or foreign")
+    member = next((m for m in members if m.get("video_id") == video_id), None)
+    if member is None or member.get("video_title") != title:
+        raise ValueError("Video is absent from the frozen series or title changed")
+    episode = member["position"] + 1
+    source = next(m for m in items if m["number"] == episode)
+    original = source.get("url")
+    urls = set(re.findall(r"https?://[^\s<>\"'«»]+", before))
+    if (
+        source.get("ok") is not True
+        or not isinstance(original, str)
+        or not original.startswith("https://www.slovo.org/resursy/propovedi/")
+        or original not in urls
+        or f"https://www.youtube.com/playlist?list={PANORAMA_PLAYLIST}" not in urls
+    ):
+        raise ValueError("Exact primary source or series playlist is missing from the owner description")
+    return {
+        "description": before,
+        "title": title,
+        "revision": revision,
+        "duration_seconds": seconds,
+        "episode": episode,
+        "original": original,
+    }
+
+
+def require_panorama_owner_evidence(plan: dict[str, Any], review: dict[str, Any]) -> None:
+    if plan.get("source_scope") != "exact-panorama-owner-v1":
+        raise ValueError("Expected exact Panorama owner scope")
+    paths = []
+    for name, digest in (
+        ("source_owner_receipt", "source_audit_sha256"),
+        ("source_playlist_receipt", "source_playlist_sha256"),
+        ("source_original_register", "source_original_register_sha256"),
+    ):
+        value = plan.get(name)
+        if not isinstance(value, str):
+            raise ValueError("Missing exact owner/source artifact path")
+        path = Path(value)
+        if not path.is_absolute() or not path.is_file() or digest_file(path) != plan.get(digest):
+            raise ValueError("Exact owner/source artifact missing or changed")
+        paths.append(path)
+    op = plan["operations"][0]
+    proof = load_panorama_owner_evidence(*paths, video_id=op["video_id"])
+    if (
+        plan["checked_video_ids"] != [op["video_id"]]
+        or len(plan["operations"]) != 1
+        or plan["unresolved"]
+        or op["before_description"] != proof["description"]
+        or op["title"] != proof["title"]
+        or op["expected_revision"] != proof["revision"]
+        or review.get("original") != proof["original"]
+        or review.get("episode") != proof["episode"]
+        or review["chapters"][-1]["second"] > proof["duration_seconds"] - 10
+    ):
+        raise ValueError("Plan does not match the exact owner/source receipt")
+
+
 def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_review_sha256: str = "") -> None:
     """Block stale chapter effects and generic planner bypass before OAuth/API."""
     if not execute or plan.get("target_channel_id") != LORD_GOD_OWNER_CHANNEL:
@@ -210,3 +354,5 @@ def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_revi
         if not isinstance(review, dict):
             raise ValueError("Invalid chapter review object")
         require_review(review, review_path, video_id=video_id, before=before, after=after)
+        if plan.get("source_scope") == "exact-panorama-owner-v1":
+            require_panorama_owner_evidence(plan, review)
