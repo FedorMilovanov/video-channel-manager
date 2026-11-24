@@ -203,7 +203,6 @@ def prepare(root: Path, *, mode: str, expected_id: str | None) -> int:
     ledger = load_ledger(path, queue)
     guard_cross_track(root)
     now = utc_now()
-    validate_schedule(mode, now)
     post, reason = strict_next_post(queue, ledger)
     if post is None:
         print(json.dumps({"prepared": False, "reason": reason}))
@@ -221,6 +220,9 @@ def prepare(root: Path, *, mode: str, expected_id: str | None) -> int:
     except SemanticApprovalHold as exc:
         print(json.dumps({"prepared": False, "reason": "editorial_hold", "detail": str(exc)}, ensure_ascii=False))
         return 3
+    # A blocked editorial release is never a due slot; an approved late run
+    # still fails closed before any Telegram preflight or protected-state write.
+    validate_schedule(mode, now)
     proof, _token = target_from_provider()
     result = prepare_next(
         queue,
