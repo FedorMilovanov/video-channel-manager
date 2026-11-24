@@ -65,6 +65,8 @@ For audience replies about lifespan, dates or chronology, use exact source-backe
 
 ## 3. First paragraph
 
+**Lord God — уточнение владельца 2026-11-24:** весь первый связный блок плейлистов (любое количество, включая один) имеет обычные подписи и общий заголовок без маркеров выделения. Последующий самостоятельный блок после пустой строки может использовать жирные подписи. Не смешивать стили внутри первого блока; не перемещать ссылки и не нарушать две чистые содержательные строки Lord God. Это не меняет отдельный стандарт двух верхних плейлистов Legendary Poet или формат комментариев. См. [матрицу Lord God](operations/lord-god-youtube-agent-decision-contract.md).
+
 The first meaningful paragraph and the exact project-defined opening preview lines must be clean; for Legendary Poet v3.1 only the first two playlist labels are plain, while the subsequent social labels remain bold; follow `docs/youtube-description-rendering-standard.md` and the exact project contract:
 
 - normally 2–4 sentences;
