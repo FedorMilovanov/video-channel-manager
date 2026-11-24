@@ -25,7 +25,13 @@ from video_channel_manager.platforms.http import (
 from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import (
+    ProjectQuotaGuard,
+    TokenStore,
+    YouTubeQuotaBlocked,
+    quota_exhaustion_reason,
+    reserve_shared_quota,
+)
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 # Observed official YouTube videos.update PUT ReadTimeouts clustered near the
@@ -158,6 +164,9 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(
             http_client,
             timeout=45.0,
@@ -203,6 +212,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                     timeout=_MUTATION_RESPONSE_TIMEOUT if require_write else self._http_client.timeout,
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=operation,
                 method=method,
                 resource=resource,
@@ -211,7 +221,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 sleep=self._request_sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeWriteError(str(exc)) from exc
 
         response = result.response
@@ -226,6 +236,9 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 pass
             kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
             safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            quota_reason = quota_exhaustion_reason(response)
+            if quota_reason is not None:
+                safe_message = f"{quota_reason}: {safe_message}"
             raise YouTubeWriteError(
                 f"YouTube API {response.status_code} in {resource}: {safe_message} "
                 f"[kind={kind.value} attempts={result.attempts}]"
@@ -337,23 +350,24 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             body["localizations"] = preserved
             parts = "snippet,localizations"
 
-        self._request(
-            "PUT",
-            "videos",
-            params={"part": parts},
-            json_body=body,
-            require_write=True,
-        )
-        verified = self.read_description(current.video_id)
-        if not descriptions_equivalent(verified.description, new_description):
-            raise YouTubeWriteError(f"Verification failed after updating description for {current.video_id}.")
-        drift = _postwrite_metadata_drift(current, verified, new_description)
-        if drift:
-            raise YouTubeWriteError(
-                f"Postflight metadata drift after updating description for {current.video_id}: "
-                f"{', '.join(drift)}. Reconcile the video before another write."
+        with reserve_shared_quota(self._quota_guard, 50 + self.retry_policy.max_attempts, YouTubeWriteError):
+            self._request(
+                "PUT",
+                "videos",
+                params={"part": parts},
+                json_body=body,
+                require_write=True,
             )
-        return verified
+            verified = self.read_description(current.video_id)
+            if not descriptions_equivalent(verified.description, new_description):
+                raise YouTubeWriteError(f"Verification failed after updating description for {current.video_id}.")
+            drift = _postwrite_metadata_drift(current, verified, new_description)
+            if drift:
+                raise YouTubeWriteError(
+                    f"Postflight metadata drift after updating description for {current.video_id}: "
+                    f"{', '.join(drift)}. Reconcile the video before another write."
+                )
+            return verified
 
     def replace_localized_description(
         self,
@@ -421,39 +435,40 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         if replacement == live_locales:
             return current
 
-        self._request(
-            "PUT",
-            "videos",
-            params={"part": "localizations"},
-            json_body={"id": video_id, "localizations": replacement},
-            require_write=True,
-        )
-        verified = self.read_description(video_id)
-        expected_raw = copy.deepcopy(current.raw)
-        expected_raw["localizations"] = replacement
-        expected = VideoDescriptionSnapshot(
-            video_id=current.video_id,
-            channel_id=current.channel_id,
-            title=current.title,
-            description=current.description,
-            revision=current.revision,
-            raw=expected_raw,
-        )
-        drift = _postwrite_metadata_drift(expected, verified, current.description)
-        if verified.description != current.description:
-            drift.append("snippet.description")
-        if _dict_field(verified.raw, "localizations") != replacement:
-            drift.append("localizations.exact_map")
-        if _dict_field(current.raw, "contentDetails").get("duration") != _dict_field(
-            verified.raw, "contentDetails"
-        ).get("duration"):
-            drift.append("contentDetails.duration")
-        if drift:
-            raise YouTubeWriteError(
-                f"Localized postflight drift for {video_id}: {', '.join(sorted(set(drift)))}. "
-                "Reconcile by GET; do not replay the PUT."
+        with reserve_shared_quota(self._quota_guard, 50 + self.retry_policy.max_attempts, YouTubeWriteError):
+            self._request(
+                "PUT",
+                "videos",
+                params={"part": "localizations"},
+                json_body={"id": video_id, "localizations": replacement},
+                require_write=True,
             )
-        return verified
+            verified = self.read_description(video_id)
+            expected_raw = copy.deepcopy(current.raw)
+            expected_raw["localizations"] = replacement
+            expected = VideoDescriptionSnapshot(
+                video_id=current.video_id,
+                channel_id=current.channel_id,
+                title=current.title,
+                description=current.description,
+                revision=current.revision,
+                raw=expected_raw,
+            )
+            drift = _postwrite_metadata_drift(expected, verified, current.description)
+            if verified.description != current.description:
+                drift.append("snippet.description")
+            if _dict_field(verified.raw, "localizations") != replacement:
+                drift.append("localizations.exact_map")
+            if _dict_field(current.raw, "contentDetails").get("duration") != _dict_field(
+                verified.raw, "contentDetails"
+            ).get("duration"):
+                drift.append("contentDetails.duration")
+            if drift:
+                raise YouTubeWriteError(
+                    f"Localized postflight drift for {video_id}: {', '.join(sorted(set(drift)))}. "
+                    "Reconcile by GET; do not replay the PUT."
+                )
+            return verified
 
     def replace_description(
         self,
