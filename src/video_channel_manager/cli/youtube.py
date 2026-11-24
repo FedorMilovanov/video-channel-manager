@@ -15,6 +15,7 @@ from rich.table import Table
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.models import ChannelRecord
+from video_channel_manager.editorial._project_profiles import CHANNEL_ID_TO_PROJECT_KEY, require_youtube_project_identity
 from video_channel_manager.platforms.youtube import (
     AccountNotFoundError,
     ChannelIdentity,
@@ -29,6 +30,8 @@ from video_channel_manager.platforms.youtube import (
     YouTubeApiClient,
     YouTubeApiError,
     YouTubeDescriptionWriter,
+    YouTubeCommentWriter,
+    comments_equivalent,
     YouTubeInventoryService,
     YouTubeWriteError,
 )
@@ -52,6 +55,7 @@ from video_channel_manager.platforms.youtube.panorama_format_release import (
     require_no_format_intent,
 )
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
+from video_channel_manager.platforms.youtube.comment_plan import validate_comment_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
@@ -886,6 +890,112 @@ def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         raise ValueError(f"YouTube recovery evidence at {path} is not a JSON object.")
     return value
+
+
+@youtube_app.command("apply-comment-add")
+def apply_comment_add(
+    plan: Annotated[Path, typer.Argument(help="Reviewed single additional-comment plan")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Add one distinct approved comment; never replace existing comments or replay an uncertain POST."""
+    prepare_windows_youtube_console()
+    try:
+        payload = json.loads(plan.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Expected a comment plan object.")
+        errors = validate_comment_plan(payload)
+        if errors:
+            raise ValueError("; ".join(errors))
+        if payload.get("mode") != "reviewed-additional-comment":
+            raise ValueError("Expected reviewed-additional-comment mode.")
+        if payload["channel_id"] != confirm_channel or payload["account_alias"] != account:
+            raise ValueError("Plan channel/account confirmation mismatch.")
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None:
+            raise ValueError("Unregistered YouTube channel.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        operation = payload["operations"][0]
+        video_id = operation["video_id"]
+        text = operation["comment_text"]
+        expected = operation["expected_owned_comments"]
+        if execute and payload["plan_sha256"] != confirm_plan_sha256:
+            raise ValueError("Execution requires the exact reviewed --confirm-plan-sha256.")
+        settings = get_settings()
+        root = settings.data_dir
+        effect_key = hashlib.sha256(
+            json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
+        ).hexdigest()
+        intent = root / "reports" / f"youtube-comment-add-{effect_key}-intent.json"
+        receipt = root / "reports" / f"youtube-comment-add-{effect_key}-result.json"
+        lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+        store, config, api = _components(account, client_secret)
+        writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
+
+        def owned() -> list[Any]:
+            return [item for item in writer.list_top_level_comments(video_id) if item.author_channel_id == confirm_channel]
+
+        def persist(path: Path, data: dict[str, Any]) -> None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as handle:
+                json.dump(data, handle, ensure_ascii=False, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
+
+        try:
+            with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel):
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                    raise ValueError("OAuth owner does not match reviewed channel.")
+                identity = writer.read_video_identity(video_id)
+                if identity.channel_id != confirm_channel or identity.privacy_status != "public":
+                    raise ValueError("Exact public video identity mismatch.")
+                before = owned()
+                matches = [item for item in before if comments_equivalent(item.text, text)]
+                if len(matches) > 1:
+                    raise ValueError("Duplicate matching owner comments require review; no POST sent.")
+                if matches:
+                    console.print(f"Already present: {matches[0].comment_id}. No POST sent.")
+                    return
+                if intent.exists() or receipt.exists():
+                    raise ValueError("Existing intent/result requires reconciliation; never replay an uncertain POST.")
+                if {item.comment_id: item.text_sha256 for item in before} != expected:
+                    raise ValueError("Reviewed owner comment state changed; no POST sent.")
+                console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
+                if not execute:
+                    console.print("Dry-run only. No POST sent.")
+                    return
+                persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
+                created = writer.create_top_level_comment(
+                    video_id=video_id, expected_channel_id=confirm_channel, text=text, expected_owned_comments=expected,
+                )
+                verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
+                if (
+                    verified.comment_id != created.comment_id
+                    or verified.author_channel_id != confirm_channel
+                    or verified.video_id != video_id
+                    or not comments_equivalent(verified.text, text)
+                ):
+                    raise ValueError("Independent comment verification failed; reconcile without replay.")
+                after = owned()
+                after_map = {item.comment_id: item.text_sha256 for item in after}
+                if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
+                    raise ValueError("Owner comment set changed; reconcile without replay.")
+                persist(receipt, {
+                    "status": "verified", "video_id": video_id, "channel_id": confirm_channel,
+                    "comment_id": verified.comment_id, "comment_sha256": verified.text_sha256,
+                    "existing_preserved": sorted(expected), "plan_sha256": payload["plan_sha256"],
+                })
+                console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
+        finally:
+            writer.close()
+            api.close()
+    except (OSError, ValueError, YouTubeWriteError, YouTubeApiError) as exc:
+        console.print(f"Additional comment blocked or pending reconciliation: {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("apply-localization-fix")
