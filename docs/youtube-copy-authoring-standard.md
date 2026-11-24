@@ -16,9 +16,9 @@ If rules differ, the more specific canonical document above wins.
 
 
 
-### 2026-11-14 — обязательные жирные подписи ссылок
+### 2026-11-24 — чистый SHARE и выразительные комментарии
 
-Во всех новых ручных пакетах The Legendary Poet подписи двух верхних плейлистов Description, четырёх соцссылок и ссылок в комментариях должны быть жирными: `*Подпись:* URL`. Двоеточие входит внутрь `*...*`; сам URL не выделяется. Требование не относится к основному литературному абзацу: он начинается без каких-либо маркеров. Исключение для SHORTS: только две жирные подписи плейлистов.
+Уточнение владельца заменяет правило от 2026-11-14 о жирных подписях в начале Description. У нового пакета The Legendary Poet верхние два плейлиста, четыре соцссылки и первый литературный абзац — чистый текст; подписи `Подпись: URL` без маркеров. У Shorts две первые содержательные строки чистые. Правило применяется к предпросмотру Description, а не к комментариям: в закрепе и дополнительных комментариях сохраняются жирные подписи `*Подпись:* URL`, смысловые эмодзи и курсив. Сохранять точные URL, в том числе подчёркивания внутри ID, и порядок ссылок. Подробный контракт: [v3.1](youtube-metadata-package-master-v3.1.md) и [стандарт рендеринга](youtube-description-rendering-standard.md). Не переписывать автоматически опубликованные материалы.
 
 Проверка `*«О, я хочу безумно жить…»*,` и аналогичных конструкций с пунктуацией после закрывающего маркера обязательна до выпуска. Нельзя автоматически сдвигать запятые и точки; нужно переписать предложение, сохраняя авторские цитаты и смысл, а затем проверить фактическое выделение на публичной странице YouTube.
 
@@ -65,7 +65,7 @@ For audience replies about lifespan, dates or chronology, use exact source-backe
 
 ## 3. First paragraph
 
-The first paragraph is the share-preview boundary and follows `docs/youtube-description-rendering-standard.md`:
+The first meaningful paragraph and any opening link block together form the minimum clean share-preview zone; follow `docs/youtube-description-rendering-standard.md` and the exact project contract:
 
 - normally 2–4 sentences;
 - no `*` / `_` wrappers;
