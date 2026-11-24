@@ -43,7 +43,9 @@ from video_channel_manager.lordchrist_telegraph_publisher import (
     load_telegraph_queue,
 )
 
-MEDIA_BASE = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/c1bafa972e91d536fc56d86e53b4ce6f3502f37d"
+MEDIA_BASE = (
+    "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/c1bafa972e91d536fc56d86e53b4ce6f3502f37d"
+)
 CANDIDATES = {
     "11": (
         "content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json",
@@ -209,10 +211,7 @@ def gh_json(endpoint: str, *, fields: dict[str, Any] | None = None) -> dict[str,
 
 def require_current_main() -> str:
     sha = os.environ.get("GITHUB_SHA", "")
-    if (
-        re.fullmatch(r"[a-f0-9]{40}", sha) is None
-        or gh_json(f"repos/{REPOSITORY}/commits/main").get("sha") != sha
-    ):
+    if re.fullmatch(r"[a-f0-9]{40}", sha) is None or gh_json(f"repos/{REPOSITORY}/commits/main").get("sha") != sha:
         raise UnsafeRevision("Current protected main changed; stop")
     return sha
 
