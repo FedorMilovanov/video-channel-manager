@@ -5,18 +5,6 @@ This file contains **durable rules**, not a history of old waves or commit SHAs.
 ## SHORTOREZ / Manrope 01 / local media intake
 For SHORTOREZ/Q&A Russian vertical Shorts **when the operator selected Manrope 01**, read [docs/operations/shorts-manrope01-largev3-cpu-review.md](docs/operations/shorts-manrope01-largev3-cpu-review.md) before producing, reviewing or delivering media. Other projects retain their independently approved styles. This operator-selected style requires **Manrope 800, yellow per-word highlighting, source-aware opening, Large-v3 CPU INT8** on the affected Windows machine, and independent ASS/FFprobe/listening gates. Existing 16:9 long-form masters do **not** receive burned subtitles in this workflow. No silent Small/CUDA fallback; TECH_QA never implies editorial, rights or provider write approval.
 
-## Shared workstation and Remote Commander resource policy
-
-Follow the shared [local execution resource protocol](https://github.com/FedorMilovanov/AuditRepo/blob/ad9b5c3df44985a5f7aba2fbb283dd8178b1c92d/LOCAL_EXECUTION_RESOURCE_PROTOCOL.md) (canonical path in AuditRepo; use integrated current authority when available). These minimum rules are mandatory independently of link availability:
-
-- Prefer GitHub connector/API for source, diffs, issues, PRs, commits, CI and artifacts; hosted sandbox/CI for builds and full browser matrices; authorized provider API for provider operations. Use Remote Desktop Commander (RDC) only for genuinely device-bound evidence or actions, with reason and bounded scope. No local inventory for a docs-only GitHub change.
-- Batch related local commands, compact outputs and retain one process/call ID. Reconcile timeout/unknown effects before replay; no rapid polling, redundant clones/builds, account enumeration or account switching to evade service limits.
-- Before resource-heavy work on the owner's Windows machine, verify fresh system Commit, free RAM, disk and shared admission. Warn at 75% Commit, deny new heavy jobs at 80%, diagnose at 90%; deny if free RAM < 6 GiB, target disk free < 15 GiB or admission/counters unknown. Until a verified common controller exists, maximum one heavy job machine-wide with positive coordination; otherwise hosted CI or HOLD. After verified rollout, maximum two controlled slots. Never run parallel browser engines within a slot.
-- No local Windows WebKit or CUDA by default; exceptions need explicit owner approval and bounded isolated execution. Browser probe 10 min, heavy build/QA 20 min by default; approved long media jobs require an explicit deadline. Close contexts/browsers/servers in finally and use an external watchdog for hangs; clean only the identified owned process tree, never owner tabs, other agents or dirty worktrees.
-- Report actual transport, RDC calls used, exact evidence, completion/cleanup and HOLD. Do not bypass existing evidence, rights, publication, security, visual acceptance or required exact-head checks to save resources. A written policy alone is not proof of a deployed controller.
-
-This extends, never relaxes, the nonintrusive-desktop contract. Use official provider API/connector and exact-ID verification under existing write/quota gates; RDC is for verified local media/files, device-bound processing or approved handoff, not repository status, drafting, or provider readback available through the official API. Long FFmpeg/ASR jobs require a separately justified deadline and disk reserve.
-
 ## Read order
 
 Before changing provider-facing, workflow, state, release, or artifact code, read only the sources relevant to the task, in this order:
@@ -134,7 +122,7 @@ For class 3: after its PR/scope closes, delete the ref where supported; if ref d
 
 ## Browser and wrapper rules
 
-**Non-disruptive desktop is the default.** Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
+**Non-disruptive desktop is the default.** Shared machine resource admission, Remote Commander call economy and local WebKit/CUDA restrictions are mandatory under the same contract; use GitHub/API/hosted CI first. Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
 
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.
 
