@@ -212,7 +212,12 @@ def load_recovery_calendar_v3(repo_root: Path, *, require_approved: bool = False
             or slot.get("existing_telegraph_url") != old["verified_telegraph_url"]
         ):
             raise RuntimeError("V3 historical publication identity drifted")
-        for field in ("source_blob", "queue_article_git_blob_sha", "reviewed_cover_git_blob_sha", "original_github_sha"):
+        for field in (
+            "source_blob",
+            "queue_article_git_blob_sha",
+            "reviewed_cover_git_blob_sha",
+            "original_github_sha",
+        ):
             if re.fullmatch(r"[0-9a-f]{40}", str(slot.get(field, ""))) is None:
                 raise RuntimeError("Malformed V3 source Git identity")
         for field in ("source_sha256", "rendered_article_sha256", "original_cover_sha256", "announcement_sha256"):
