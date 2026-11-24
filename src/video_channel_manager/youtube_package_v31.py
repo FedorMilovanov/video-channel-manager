@@ -129,8 +129,16 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     _check_two_playlists(desc_lines, "description", errors)
     # External share cards may expose raw YouTube markup; URLs are opaque.
     if any(re.search(r"[*_]", _LINK_RE.sub("", line)) for line in desc_lines[:2]):
-        errors.append(CopyIssue("description", "share_prefix_markup", "Две верхние подписи плейлистов Description — без маркеров выделения."))
-    expected_formatted_playlists = ["*" + label + ":* " + url for label, _, url in (line.partition(": ") for line in desc_lines[:2])]
+        errors.append(
+            CopyIssue(
+                "description",
+                "share_prefix_markup",
+                "Две верхние подписи плейлистов Description — без маркеров выделения.",
+            )
+        )
+    expected_formatted_playlists = [
+        "*" + label + ":* " + url for label, _, url in (line.partition(": ") for line in desc_lines[:2])
+    ]
     if desc_lines[2:3] != [""] or desc_lines[3:7] != list(_SOCIAL) or desc_lines[7:8] != [""]:
         errors.append(CopyIssue("description", "social_order", "Четыре соцссылки — в порядке v3.1."))
     sections = [p.strip() for p in description.split("\n\n") if p.strip()]
@@ -164,7 +172,9 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     short_lines = _normal_lines(shorts)
     preview = [line for line in short_lines if line.strip()][:2]
     if len(preview) < 2 or any(re.search(r"[*_]", line) or _LINK_RE.search(line) for line in preview):
-        errors.append(CopyIssue("shorts", "share_prefix_markup", "Первые две содержательные строки SHORTS — без маркеров и URL."))
+        errors.append(
+            CopyIssue("shorts", "share_prefix_markup", "Первые две содержательные строки SHORTS — без маркеров и URL.")
+        )
     short_playlists = [line for line in short_lines if line.startswith("*Плейлист «")]
     if short_playlists != expected_formatted_playlists:
         errors.append(
