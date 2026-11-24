@@ -43,6 +43,7 @@ from video_channel_manager.platforms.youtube.copy_execution import (
     reconcile_copy_operations,
     verify_copy_operations,
 )
+from video_channel_manager.platforms.youtube.chapter_release import require_chapter_release
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
@@ -515,6 +516,9 @@ def apply_copy_fixes(
     backup_output: Annotated[Path | None, typer.Option("--backup-output")] = None,
     result_output: Annotated[Path | None, typer.Option("--result-output")] = None,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+    confirm_chapter_review_sha256: Annotated[
+        str, typer.Option("--confirm-chapter-review-sha256", help="Exact approved chapter review file SHA-256")
+    ] = "",
 ) -> None:
     """Preflight or apply description-guarded fixes with retries, postflight, and rollback."""
 
@@ -540,6 +544,7 @@ def apply_copy_fixes(
             confirm_target=confirm_target,
             confirm_after_sha256=confirm_after_sha256,
         )
+        require_chapter_release(payload, execute=execute, confirm_review_sha256=confirm_chapter_review_sha256)
         store, _, writer = _writer_components(account, client_secret)
     except (AccountNotFoundError, OSError, ValueError) as exc:
         console.print(f"[red]Cannot load copy-fix plan:[/red] {exc}")
@@ -598,6 +603,13 @@ def apply_copy_fixes(
                 backup_output = settings.data_dir / "reports" / f"youtube-copy-backup-{timestamp}.json"
             if result_output is None:
                 result_output = settings.data_dir / "reports" / f"youtube-copy-apply-{timestamp}.json"
+
+            # The exact approved chapter artifact may have changed during preflight.
+            try:
+                require_chapter_release(payload, execute=True, confirm_review_sha256=confirm_chapter_review_sha256)
+            except (OSError, ValueError) as exc:
+                console.print(f"[red]Chapter release blocked; no YouTube write:[/red] {exc}")
+                raise typer.Exit(code=2) from exc
 
             # Before dispatching a YouTube write, reserve both unique journal
             # paths and prove that their volume has sufficient free space.
