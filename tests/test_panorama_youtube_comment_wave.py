@@ -654,6 +654,7 @@ def test_panorama_cli_reports_adapter_initialization_rejection(tmp_path: Path, m
     assert exc.value.exit_code == 3
     assert not (tmp_path / "journal").exists()
 
+
 def _reviewed_artifact(
     tmp_path: Path, *, content: bytes | None = None, filename: str = "panorama-reviewed-comment.json"
 ) -> tuple[WaveSourceEvidence, WaveOperation, Path]:
