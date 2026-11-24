@@ -165,7 +165,6 @@ def test_real_client_path_stops_other_canonical_adapters_without_provider_calls(
     assert requests == ["GET"]
 
 
-
 @pytest.mark.parametrize("mode", ["ok", "foreign", "missing", "duplicate"])
 def test_recent_candidates_are_bounded_and_channel_bound(tmp_path: Path, mode: str) -> None:
     store = TokenStore(tmp_path)
