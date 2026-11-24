@@ -410,3 +410,53 @@ def test_post_receipt_alone_never_verifies_publication(tmp_path: Path, outcome: 
     with pytest.raises(UnknownProviderOutcomeError, match="independent readback uncertain"):
         adapter.execute(_operation())
     assert fake.creates == 1
+
+
+def test_ambiguous_create_blocks_fresh_adapter_and_changed_operation(tmp_path: Path) -> None:
+    first, first_writer = _adapter(tmp_path)
+    first_writer.error = RuntimeError("provider may have accepted the comment")
+    with pytest.raises(UnknownProviderOutcomeError):
+        first.execute(_operation())
+    assert first_writer.creates == 1
+
+    # A different journal/plan may have a new operation ID and no visible comment yet.
+    changed_text = TEXT + "\nДополнительная мысль."
+    changed = _operation(
+        payload_patch={"comment_text": changed_text, "comment_sha256": comment_text_sha256(changed_text)}
+    )
+    assert changed.operation_id != _operation().operation_id
+    restarted, fresh_writer = _adapter(tmp_path)
+    for operation in (_operation(), changed):
+        with pytest.raises(OperationRejectedError, match="prior first-comment dispatch reservation"):
+            restarted.execute(operation)
+    assert fresh_writer.creates == 0
+
+
+def test_verified_comment_cannot_be_recreated_after_disappearance(tmp_path: Path) -> None:
+    first, writer = _adapter(tmp_path)
+    first.execute(_operation())
+    assert writer.creates == 1
+    restarted, fresh_writer = _adapter(tmp_path)
+    with pytest.raises(OperationRejectedError, match="prior first-comment dispatch reservation"):
+        restarted.execute(_operation())
+    assert fresh_writer.creates == 0
+
+
+def test_reservation_storage_failure_blocks_before_dispatch(tmp_path: Path) -> None:
+    directory = tmp_path / "youtube"
+    directory.mkdir()
+    (directory / "panorama-first-comment-reservations.sqlite3").write_bytes(b"not a SQLite database")
+    adapter, writer = _adapter(tmp_path)
+    with pytest.raises(OperationRejectedError, match="Cannot durably reserve"):
+        adapter.execute(_operation())
+    assert writer.creates == 0
+
+
+def test_preflight_rejection_does_not_consume_first_comment_target(tmp_path: Path) -> None:
+    rejected, writer = _adapter(tmp_path, FakeCommentWriter(title="wrong title"))
+    with pytest.raises(OperationRejectedError, match="title drifted"):
+        rejected.execute(_operation())
+    assert writer.creates == 0
+    accepted, fresh_writer = _adapter(tmp_path)
+    assert accepted.execute(_operation())["publication_verified"] is True
+    assert fresh_writer.creates == 1
