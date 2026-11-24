@@ -2,8 +2,8 @@ name: Lordchrist Charnock reviewed scheduled reissue
 
 on:
   schedule:
-    # Original 12:00 Moscow target; GitHub schedule may arrive late or be dropped.
-    - cron: "0 9 * * 2,5"
+    # Reviewed V3 12:05 Moscow target; GitHub schedule may arrive late or be dropped.
+    - cron: "5 9 * * 2,5"
     # Independent off-minute attempts on the SAME reviewed Moscow date.
     # Durable terminal-readback guard below skips an already verified reissue.
     # No next-day catch-up; existing 12:00–13:59 Moscow lease is unchanged.
@@ -56,6 +56,8 @@ jobs:
       ENABLED: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_ENABLED }}
       APPROVED_MANIFEST_SHA256: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256 }}
       REVIEWED_PUBLICATION_ID: ${{ inputs.publication_id }}
+      RECOVERY_CALENDAR_VERSION: "3"
+      APPROVED_CALENDAR_V3_SHA256: ${{ vars.LORDCHRIST_CHARNOCK_RECOVERY_V3_SHA256 }}
     steps:
       - name: Checkout current main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -100,17 +102,18 @@ jobs:
           from pathlib import Path
           from zoneinfo import ZoneInfo
           from video_channel_manager.lordchrist_charnock_reschedule import (
-              approved_reissue_entry,
+              load_recovery_calendar_v3,
+              require_v3_release,
               scheduled_reissue_preflight_status,
           )
 
           now=datetime.now(ZoneInfo("Europe/Moscow"))
-          data=json.loads(Path(os.environ["MANIFEST"]).read_text("utf-8"))
-          matches=[i for i in data["items"] if i["scheduled_on_moscow"]==now.date().isoformat()]
+          entries=load_recovery_calendar_v3(Path("."),require_approved=True)
+          matches=[i for i in entries if i["scheduled_on_moscow"]==now.date().isoformat()]
           if not matches:
               print("No Charnock replacement due today; no provider effect")
               raise SystemExit(0)
-          if now.hour not in (12,13):
+          if now.hour not in (12,13) or (now.hour == 12 and now.minute < 5):
               raise SystemExit("Late/early scheduled run: no catch-up")
           if len(matches)!=1:
               raise SystemExit("Ambiguous Charnock scheduled date")
@@ -126,13 +129,13 @@ jobs:
           if response.get("encoding")!="base64":
               raise SystemExit("Protected state response encoding is not verified")
           state=json.loads(base64.b64decode(response["content"],validate=False).decode("utf-8"))
-          # Resolve the SHA-pinned #10 source+media v2 binding read-only.
-          # All other articles keep the original manifest identity/guards.
-          approved=approved_reissue_entry(Path("."),matches[0])
+          # The same resolved V3 identity is used by every executor stage.
+          approved=matches[0]
           status=scheduled_reissue_preflight_status(state,approved)
           if status=="verified":
               print("Charnock edition already reissued and verified; backup trigger is a no-op")
               raise SystemExit(0)
+          require_v3_release(approved)
           with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as out:
               print("publication_id="+matches[0]["publication_id"],file=out)
           PY
