@@ -15,10 +15,10 @@ from video_channel_manager.editorial._project_profiles import LEGENDARY_POET_AUT
 _PROJECT_LINKS = PROJECT_LINK_PROFILES["legendary-poet"]
 _SINGING_POETS = "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
 _SOCIAL = (
-    "VK: https://vk.ru/thelegendarypoet",
-    "Телеграм: https://t.me/thelegendarypoet",
-    "Рутуб: https://rutube.ru/channel/74579453/",
-    "Сайт: https://thelegendarypoet.ru/",
+    "*VK:* https://vk.ru/thelegendarypoet",
+    "*Телеграм:* https://t.me/thelegendarypoet",
+    "*Рутуб:* https://rutube.ru/channel/74579453/",
+    "*Сайт:* https://thelegendarypoet.ru/",
 )
 _LINK_RE = re.compile(r"https?://[^\s<>]+")
 _FENCE_RE = re.compile(r"(?ms)^```[ \t]*\r?\n(.*?)\r?\n```[ \t]*$")
@@ -128,8 +128,8 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     desc_lines = _normal_lines(description)
     _check_two_playlists(desc_lines, "description", errors)
     # External share cards may expose raw YouTube markup; URLs are opaque.
-    if any(re.search(r"[*_]", _LINK_RE.sub("", line)) for line in desc_lines[:7]):
-        errors.append(CopyIssue("description", "share_prefix_markup", "Верхние ссылки Description — без маркеров выделения."))
+    if any(re.search(r"[*_]", _LINK_RE.sub("", line)) for line in desc_lines[:2]):
+        errors.append(CopyIssue("description", "share_prefix_markup", "Две верхние подписи плейлистов Description — без маркеров выделения."))
     expected_formatted_playlists = ["*" + label + ":* " + url for label, _, url in (line.partition(": ") for line in desc_lines[:2])]
     if desc_lines[2:3] != [""] or desc_lines[3:7] != list(_SOCIAL) or desc_lines[7:8] != [""]:
         errors.append(CopyIssue("description", "social_order", "Четыре соцссылки — в порядке v3.1."))
