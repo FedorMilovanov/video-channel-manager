@@ -1,0 +1,23 @@
+{
+  "accepted_candidate_blob": "5e22ddf59873b818e77f0ddb21ec6d701b55793d",
+  "after_count": 56,
+  "after_sha256": "c45a1c131f1f7106f1b807a3b0d11c52876dfd4e5559b93466e4cb0b41f569a8",
+  "article": "12",
+  "before_count": 55,
+  "before_sha256": "e6c0376ca891eb932f952896a845fff52a2473d7c2d4fed14af713366cbb26c8",
+  "changed_node_indices": [
+    55
+  ],
+  "claimed_at_utc": "2026-11-24T12:10:22.703055+00:00",
+  "cover_sha256": "sha256:09c2c61268ad07d3d989ca91c02ff33cdc44b0f50a21c861442b769304f63c16",
+  "effect": "READY_FOR_REVIEW_NO_POST",
+  "github_sha": "920057a7a68b117187a1c4ae1c42164d1f792008",
+  "media_base_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/c1bafa972e91d536fc56d86e53b4ce6f3502f37d",
+  "old_article_blob": "e7ea215bcea907747363f41dc0bc4443f58269a8",
+  "path": "Nelzya-dokazat-chto-Boga-net-shest-otvetov-somnevayushchemusya-11-05",
+  "provider_write_attempted": false,
+  "publication_id": "lordchrist-telegraph-charnock-12",
+  "run_id": "45390893978",
+  "state": "claimed_may_exist",
+  "url": "https://telegra.ph/Nelzya-dokazat-chto-Boga-net-shest-otvetov-somnevayushchemusya-11-05"
+}
