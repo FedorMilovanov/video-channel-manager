@@ -53,6 +53,10 @@ These are **historical owner-provider readbacks**, not a fresh proof of every it
 
 **Closure for the report:** explanation and viewer-side remedy documented. **Owner visual comparison of an exact watch page remains unverified**; do not claim provider-side anomaly fixed or audio settings corrected.
 
+### Owner priority update — 2026-11-24
+
+For Russian original music/poetry on Legendary Poet, the owner prioritizes Russian-facing titles and descriptions for viewers using foreign VPN endpoints. The earlier recommendation to preserve English for discoverability is not blanket authorization for further metadata localization. Suspend new foreign title/description writes for Russian originals pending a per-video owner decision; continue preparing verified captions independently. Existing localizations must not be silently removed or overwritten. A reviewed migration must preserve exact original RU fields, archive all current locale objects, compare same-ID viewer rendering (including preferred Russian language), and use exact-ID before/after verification. Removing supplied locale objects cannot guarantee that platform-generated translations stop. The historical rollout counts below remain evidence, not the revised publication target. See the 2026-11-24 clarification in `../youtube-metadata-package-master-v3.1.md`.
+
 ## 3. Legendary Poet localization state — post-issue-body receipts
 
 The original body of issue #903 is a **historical pilot checkpoint**. Its statement “NO foreign subtitle publication verified” has been superseded by subsequent **owner-verified issue comments and local release receipts**, not by the creation of this document.
