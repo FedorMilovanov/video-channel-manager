@@ -213,9 +213,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 jitter=self._jitter,
             )
         except YouTubeQuotaBlocked as exc:
-            return None, ReleaseProviderResult(
-                provider_effect="confirmed_absent", evidence={"quota_blocked": str(exc)}
-            )
+            return None, ReleaseProviderResult(provider_effect="confirmed_absent", evidence={"quota_blocked": str(exc)})
         except HttpTransportFailure as exc:
             known_no_dispatch = exc.cause_type in {
                 "ConnectError",
@@ -468,9 +466,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 jitter=self._jitter,
             )
         except YouTubeQuotaBlocked as exc:
-            return ReleaseProviderResult(
-                provider_effect="may_exist", evidence={"status_query_quota_blocked": str(exc)}
-            )
+            return ReleaseProviderResult(provider_effect="may_exist", evidence={"status_query_quota_blocked": str(exc)})
         except HttpTransportFailure as exc:
             return ReleaseProviderResult(
                 provider_effect="may_exist",
