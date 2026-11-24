@@ -296,12 +296,12 @@
       "release_candidate_sha256": "sha256:7d28ad725a336d4ea8cdf7b2ef0d817dfe518d313f750d071b62b8bc071b5f41",
       "provider_payload_sha256": "sha256:f30396bb6c71a18b66221923b73ab9ce830c696b271d4685b8335e7b908f736c",
       "ledger_relative_path": "content/telegram/milovi-cake/feed/milovi-feed-20261124-001.json",
-      "state": "dispatching",
-      "provider_effect": "may_exist",
+      "state": "published",
+      "provider_effect": "verified",
       "intent_id": "976aa35d8de02f7627499e9cdb6ea66f",
-      "message_id": null,
-      "message_url": null,
-      "updated_at_utc": "2026-11-24T16:25:30.921414Z"
+      "message_id": 30,
+      "message_url": "https://t.me/MiloviCake/30",
+      "updated_at_utc": "2026-11-24T16:25:38.034941Z"
     }
   }
 }
