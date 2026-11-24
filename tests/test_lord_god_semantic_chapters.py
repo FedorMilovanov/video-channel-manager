@@ -637,3 +637,39 @@ def test_exact_panorama_cli_is_offline_and_refuses_output_overwrite(tmp_path: Pa
         autofix_youtube_copy.main()
     assert err.value.code == 2
     assert [f.read_bytes() for f in paths] == original_bytes
+
+
+@pytest.mark.parametrize("scope", [None, "unknown", "legacy-audit-package-v1"])
+def test_panorama_scope_cannot_be_removed_or_relabelled(tmp_path: Path, scope):
+    _, _, _, _, paths, db = panorama_owner_fixture(tmp_path)
+    plan, _ = build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+    if scope is None:
+        plan.pop("source_scope")
+    else:
+        plan["source_scope"] = scope
+    finalize_copy_plan(plan, checked_video_ids=[VID])
+    with pytest.raises(ValueError, match="scope|bound chapter source"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+@pytest.mark.parametrize("legacy", [True, False])
+def test_chapter_executor_rederives_and_refuses_changed_transcript(tmp_path: Path, legacy: bool):
+    if legacy:
+        plan, _ = build(tmp_path)
+        db = Path(plan["chapter_evidence"]["transcript_database"])
+    else:
+        _, _, _, _, paths, db = panorama_owner_fixture(tmp_path)
+        plan, _ = build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.execute("UPDATE transcript_chunks SET text=text || ' extra' WHERE video_id=? AND start_ms=3900000", (VID,))
+    with pytest.raises(ValueError, match="re-derived"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+def test_panorama_resealed_operation_drift_refused(tmp_path: Path):
+    _, _, _, _, paths, db = panorama_owner_fixture(tmp_path)
+    plan, _ = build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+    plan["operations"][0]["expected_revision"] = "sha256:altered"
+    finalize_copy_plan(plan, checked_video_ids=[VID])
+    with pytest.raises(ValueError, match="re-derived"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])

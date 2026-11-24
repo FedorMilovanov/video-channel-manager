@@ -354,5 +354,61 @@ def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_revi
         if not isinstance(review, dict):
             raise ValueError("Invalid chapter review object")
         require_review(review, review_path, video_id=video_id, before=before, after=after)
-        if plan.get("source_scope") == "exact-panorama-owner-v1":
-            require_panorama_owner_evidence(plan, review)
+        _require_rederived_chapter_plan(plan, review_path, video_id=video_id)
+
+
+def _require_rederived_chapter_plan(plan: dict[str, Any], review_path: Path, *, video_id: str) -> None:
+    """Re-derive the offline plan rather than trusting its editable provenance labels."""
+    from sqlite3 import Error as SQLiteError
+
+    from video_channel_manager.platforms.youtube.lord_god_scoped import (
+        build_one_video_chapter_plan,
+        build_panorama_owner_chapter_plan,
+    )
+
+    def bound_path(name: str, digest: str) -> Path:
+        value = plan.get(name)
+        if not isinstance(value, str):
+            raise ValueError("Missing bound chapter source artifact")
+        path = Path(value)
+        if not path.is_absolute() or not path.is_file() or digest_file(path) != plan.get(digest):
+            raise ValueError("Exact owner/source artifact missing or changed")
+        return path
+
+    evidence = plan.get("chapter_evidence")
+    if not isinstance(evidence, dict) or not isinstance(evidence.get("transcript_database"), str):
+        raise ValueError("Missing bound transcript source")
+    db = Path(evidence["transcript_database"])
+    if not db.is_absolute() or not db.is_file():
+        raise ValueError("Missing bound transcript database")
+    try:
+        scope = plan.get("source_scope")
+        if scope == "exact-panorama-owner-v1":
+            expected, _ = build_panorama_owner_chapter_plan(
+                bound_path("source_owner_receipt", "source_audit_sha256"),
+                bound_path("source_playlist_receipt", "source_playlist_sha256"),
+                bound_path("source_original_register", "source_original_register_sha256"),
+                review_path,
+                db,
+                video_id=video_id,
+            )
+        elif scope == "legacy-audit-package-v1":
+            audit_path = bound_path("source_audit_package", "source_audit_sha256")
+            previous_path = bound_path("source_previous_editorial_plan", "source_previous_editorial_plan_sha256")
+            expected, _ = build_one_video_chapter_plan(
+                json.loads(audit_path.read_text(encoding="utf-8-sig")),
+                audit_path,
+                json.loads(previous_path.read_text(encoding="utf-8-sig")),
+                previous_path,
+                json.loads(review_path.read_text(encoding="utf-8-sig")),
+                review_path,
+                db,
+                video_id=video_id,
+            )
+        else:
+            raise ValueError("Chapter plan must declare one supported owner evidence scope")
+    except SQLiteError as exc:
+        raise ValueError("Cannot revalidate bound chapter transcript source") from exc
+    excluded = {"generated_at", "plan_sha256"}
+    if {k: v for k, v in plan.items() if k not in excluded} != {k: v for k, v in expected.items() if k not in excluded}:
+        raise ValueError("Chapter plan differs from its re-derived owner and transcript evidence")

@@ -21,7 +21,12 @@ from video_channel_manager.platforms.youtube.chapter_release import (
     require_review,
     require_panorama_owner_evidence,
 )
-from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text, validate_copy_plan
+from video_channel_manager.platforms.youtube.copy_plan import (
+    canonical_sha256,
+    finalize_copy_plan,
+    sha256_text,
+    validate_copy_plan,
+)
 from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
 
 LORD_GOD_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
@@ -395,6 +400,7 @@ def _validated_chapter_appendix(
         "transcript_database": str(transcript_database.resolve()),
         "video_id": video_id,
         "source_chunk_count": len(fragments),
+        "source_fragments_sha256": canonical_sha256(fragments),
         "chapter_source_chunk_indices": [x["index"] for x in chapters],
         "source_first_ms": fragments[0][0],
         "source_last_ms": fragments[-1][1],
@@ -464,6 +470,8 @@ def build_one_video_chapter_plan(
     chapters = review["chapters"]
     plan = deepcopy(previous_plan)
     plan["ruleset"] = CHAPTER_RULESET
+    plan["source_scope"] = "legacy-audit-package-v1"
+    plan["source_audit_package"] = str(audit_file.resolve())
     plan["generated_at"] = datetime.now(UTC).isoformat()
     plan["source_chapter_review"] = str(review_file.resolve())
     plan["source_chapter_review_sha256"] = _digest(review_file)
