@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,10 +11,12 @@ from video_channel_manager.platforms.youtube.comments import comment_text_sha256
 from video_channel_manager.wave_engine.cli import _youtube_comment_plan
 from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
+    EvidenceArtifact,
     MutationClass,
     ProjectBinding,
     WaveOperation,
     WaveOperationSpec,
+    WaveSourceEvidence,
 )
 from video_channel_manager.wave_engine.youtube_comment_provider import (
     LordGodYouTubeCommentAdapter,
@@ -649,3 +653,86 @@ def test_panorama_cli_reports_adapter_initialization_rejection(tmp_path: Path, m
         )
     assert exc.value.exit_code == 3
     assert not (tmp_path / "journal").exists()
+
+def _reviewed_artifact(
+    tmp_path: Path, *, content: bytes | None = None, filename: str = "panorama-reviewed-comment.json"
+) -> tuple[WaveSourceEvidence, WaveOperation, Path]:
+    original = _operation()
+    path = tmp_path / filename
+    raw = content if content is not None else json.dumps(original.payload, ensure_ascii=False).encode("utf-8")
+    path.write_bytes(raw)
+    source = WaveSourceEvidence.build(
+        project=original.project,
+        policy_version=original.policy_version,
+        artifacts=(EvidenceArtifact(path=filename, sha256=hashlib.sha256(raw).hexdigest()),),
+    )
+    operation = WaveOperation.build(
+        sequence=0,
+        project=source.project,
+        source_snapshot_id=source.source_snapshot_id,
+        policy_version=source.policy_version,
+        spec=WaveOperationSpec(
+            order_key="0003-comment",
+            operation_kind=original.operation_kind,
+            mutation_class=original.mutation_class,
+            payload=original.payload,
+        ),
+    )
+    return source, operation, path
+
+
+def test_exact_reviewed_artifact_dispatch(tmp_path: Path) -> None:
+    source, operation, _ = _reviewed_artifact(tmp_path)
+    fake = FakeCommentWriter()
+    adapter = LordGodYouTubeCommentAdapter(
+        writer=fake, data_dir=tmp_path, review_source=source, repository_root=tmp_path
+    )
+    assert adapter.execute(operation)["publication_verified"] is True
+    assert fake.creates == 1
+
+
+@pytest.mark.parametrize("defect", ["different-copy", "duplicate-key", "wrong-filename", "changed-bytes", "wrong-snapshot"])
+def test_source_binding_rejects_resealed_or_drifted_copy(tmp_path: Path, defect: str) -> None:
+    original = _operation()
+    kwargs: dict[str, object] = {}
+    if defect == "different-copy":
+        other = dict(original.payload)
+        other["comment_text"] += "\nDifferent."
+        other["comment_sha256"] = comment_text_sha256(other["comment_text"])
+        kwargs["content"] = json.dumps(other, ensure_ascii=False).encode("utf-8")
+    elif defect == "duplicate-key":
+        raw = json.dumps(original.payload, ensure_ascii=False)
+        kwargs["content"] = (raw[:-1] + ', "review_status": "approved"}').encode("utf-8")
+    elif defect == "wrong-filename":
+        kwargs["filename"] = "unrelated.json"
+    source, operation, path = _reviewed_artifact(tmp_path, **kwargs)
+    if defect == "changed-bytes":
+        path.write_bytes(path.read_bytes() + b"\n")
+    elif defect == "wrong-snapshot":
+        operation = original
+    fake = FakeCommentWriter()
+    adapter = LordGodYouTubeCommentAdapter(
+        writer=fake, data_dir=tmp_path, review_source=source, repository_root=tmp_path
+    )
+    with pytest.raises(OperationRejectedError, match="reviewed comment|Reviewed comment|reviewed comment source"):
+        adapter.execute(operation)
+    assert fake.reads == fake.creates == 0
+    assert not (tmp_path / "youtube").exists()
+
+
+def test_direct_real_writer_requires_review_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+    from video_channel_manager.wave_engine import youtube_comment_provider
+
+    class OfflineRealWriter(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, *args: object, **kwargs: object) -> dict[str, object]:
+            pytest.fail("Unbound direct real-adapter call must not contact YouTube")
+
+    monkeypatch.setattr(youtube_comment_provider, "is_ci_environment", lambda: False)
+    adapter = LordGodYouTubeCommentAdapter(writer=OfflineRealWriter(), data_dir=tmp_path)
+    with pytest.raises(OperationRejectedError, match="Exact reviewed comment source"):
+        adapter.execute(_operation())
+    assert not (tmp_path / "youtube").exists()
