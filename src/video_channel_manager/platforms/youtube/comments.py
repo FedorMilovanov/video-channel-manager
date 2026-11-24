@@ -25,7 +25,7 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.writer import YouTubeWriteError, YouTubeWriteScopeError
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -194,6 +194,9 @@ class YouTubeCommentWriter(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(
             http_client,
             timeout=45.0,
@@ -240,6 +243,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                     json=json_body,
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=operation,
                 method=method,
                 resource=resource,
@@ -248,7 +252,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeCommentError(str(exc)) from exc
 
         response = result.response

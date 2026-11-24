@@ -25,7 +25,7 @@ from video_channel_manager.platforms.http import (
 from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
 from video_channel_manager.youtube_provider_semantics import playlist_item_video_id
 from video_channel_manager.youtube_release_state import ProviderEffect
 from video_channel_manager.youtube_upload_plan import canonical_sha256
@@ -116,6 +116,9 @@ class YouTubeReleaseProvider(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(http_client, timeout=90.0, follow_redirects=True)
         self.api_base_url = api_base_url.rstrip("/")
         self.upload_api_base_url = upload_api_base_url.rstrip("/")
@@ -156,6 +159,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                     headers=request_headers,
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=HttpOperationClass.SAFE_READ,
                 method=method,
                 resource=resource,
@@ -164,7 +168,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeReleaseProviderError(str(exc)) from exc
         response = result.response
         if response.status_code >= 400:
@@ -199,6 +203,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                     content=content,
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=HttpOperationClass.AMBIGUOUS_MUTATION,
                 method=method,
                 resource=resource,
@@ -206,6 +211,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 limiter=self.request_limiter,
                 sleep=self._sleep,
                 jitter=self._jitter,
+            )
+        except YouTubeQuotaBlocked as exc:
+            return None, ReleaseProviderResult(
+                provider_effect="confirmed_absent", evidence={"quota_blocked": str(exc)}
             )
         except HttpTransportFailure as exc:
             known_no_dispatch = exc.cause_type in {
@@ -449,6 +458,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                     content=b"",
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=HttpOperationClass.SAFE_READ,
                 method="PUT",
                 resource="videos.insert.resumable-status",
@@ -456,6 +466,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 limiter=self.request_limiter,
                 sleep=self._sleep,
                 jitter=self._jitter,
+            )
+        except YouTubeQuotaBlocked as exc:
+            return ReleaseProviderResult(
+                provider_effect="may_exist", evidence={"status_query_quota_blocked": str(exc)}
             )
         except HttpTransportFailure as exc:
             return ReleaseProviderResult(

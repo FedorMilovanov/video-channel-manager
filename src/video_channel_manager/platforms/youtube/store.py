@@ -3,8 +3,14 @@ from __future__ import annotations
 import json
 import os
 import re
+import sqlite3
+from collections.abc import Callable, Iterator
+from contextlib import closing, contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import httpx
 
 from video_channel_manager.platforms.youtube.models import OAuthToken, YouTubeAccount
 
@@ -104,3 +110,116 @@ class TokenStore:
                 os.chmod(path, 0o600)
             except OSError:
                 pass
+
+
+
+class YouTubeQuotaBlocked(RuntimeError):
+    """The local quota gate prevented dispatch, or could not persist a known rejection."""
+
+
+def quota_exhaustion_reason(response: httpx.Response) -> str | None:
+    """Do not latch OAuth failures, permissions, or temporary rate limits."""
+    if response.status_code != 403:
+        return None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("error"), dict):
+        return None
+    error = payload["error"]
+    errors = error.get("errors")
+    reasons = (
+        {str(item.get("reason")) for item in errors if isinstance(item, dict) and item.get("reason")}
+        if isinstance(errors, list)
+        else set()
+    )
+    for reason in ("quotaExceeded", "dailyLimitExceeded"):
+        if reason in reasons:
+            return reason
+    # Older responses may omit the structured reason. Accept only Google's
+    # specific exhaustion wording, never a generic mention of "quota".
+    if not reasons:
+        message = str(error.get("message") or "").casefold()
+        if "you have exceeded your" in message and "quota" in message:
+            return "quotaExceeded"
+    return None
+
+
+class ProjectQuotaGuard:
+    """Durable same-host, shared-data-root quota stop and dispatch counter.
+
+    Each admitted attempt is recorded before HTTP, including retries and
+    failures. The provider's actual balance is NOT inferred from these local
+    counters. A rejection with an ambiguous quota bucket conservatively stops
+    all new admissions for this project for the current Pacific calendar day.
+    Requests already admitted or in flight cannot be recalled.
+    """
+
+    def __init__(
+        self,
+        path: Path,
+        account: str,
+        *,
+        now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    ) -> None:
+        self.path = path
+        self.account = account
+        self.now = now
+
+    @classmethod
+    def for_client(cls, data_dir: Path | None, client_id: str, account: str) -> "ProjectQuotaGuard | None":
+        # Google Desktop OAuth IDs embed the Cloud project number before the
+        # hyphen. Distinct channel aliases and clients with that number share
+        # the same database. Synthetic fixture IDs do not identify a project.
+        match = re.fullmatch(r"(\d+)-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com", client_id)
+        if match is None:
+            return None
+        if data_dir is None:
+            raise YouTubeQuotaBlocked("YouTube quota guard requires the canonical shared data directory")
+        return cls(data_dir.resolve() / "youtube" / "quota" / f"{match.group(1)}.sqlite3", account)
+
+    def _day(self) -> str:
+        return self.now().astimezone(ZoneInfo("America/Los_Angeles")).date().isoformat()
+
+    @contextmanager
+    def _transaction(self) -> Iterator[sqlite3.Connection]:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with closing(sqlite3.connect(self.path, timeout=10)) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                db.execute("CREATE TABLE IF NOT EXISTS stops (day TEXT PRIMARY KEY, reason TEXT NOT NULL)")
+                db.execute(
+                    "CREATE TABLE IF NOT EXISTS attempts (day TEXT, account TEXT, method TEXT, "
+                    "resource TEXT, count INTEGER NOT NULL, PRIMARY KEY(day, account, method, resource))"
+                )
+                yield db
+        except (OSError, sqlite3.Error) as exc:
+            raise YouTubeQuotaBlocked("YouTube quota ledger unavailable; stop and reconcile") from exc
+
+    def __call__(
+        self,
+        request: Callable[[], httpx.Response],
+        method: str,
+        resource: str,
+    ) -> httpx.Response:
+        day = self._day()
+        with self._transaction() as db:
+            stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
+            if stop is not None:
+                raise YouTubeQuotaBlocked(
+                    f"YouTube project quota blocked for Pacific day {day}: {stop[0]}; no dispatch"
+                )
+            db.execute(
+                "INSERT INTO attempts VALUES (?, ?, ?, ?, 1) "
+                "ON CONFLICT(day, account, method, resource) DO UPDATE SET count = count + 1",
+                (day, self.account, method.upper(), resource),
+            )
+        response = request()
+        reason = quota_exhaustion_reason(response)
+        if reason is not None:
+            with self._transaction() as db:
+                # A delayed response at midnight is conservatively latched
+                # for the day on which the refusal was observed.
+                db.execute("INSERT OR REPLACE INTO stops VALUES (?, ?)", (self._day(), reason))
+        return response

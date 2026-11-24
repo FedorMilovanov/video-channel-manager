@@ -31,7 +31,7 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 _DURATION_RE = re.compile(
@@ -112,6 +112,9 @@ class YouTubeApiClient(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(
             http_client,
             timeout=45.0,
@@ -141,6 +144,7 @@ class YouTubeApiClient(HttpClientOwner):
                     headers={"Authorization": f"Bearer {access_token}"},
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=HttpOperationClass.SAFE_READ,
                 method="GET",
                 resource=resource,
@@ -149,7 +153,7 @@ class YouTubeApiClient(HttpClientOwner):
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeApiError(str(exc)) from exc
 
         response = result.response

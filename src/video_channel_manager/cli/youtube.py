@@ -48,6 +48,7 @@ from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
 )
+from video_channel_manager.platforms.youtube.store import YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
 console = Console()
@@ -59,6 +60,8 @@ def _is_youtube_quota_exhaustion(exc: BaseException) -> bool:
 
     if not isinstance(exc, YouTubeWriteError):
         return False
+    if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+        return True
     message = str(exc).casefold()
     return "youtube api 403" in message and ("quota" in message or "dailylimitexceeded" in message)
 
@@ -174,6 +177,7 @@ class _CandidateOAuthTokenStore(TokenStore):
     """In-memory candidate grant: do not replace a real alias until identity matches."""
 
     def __init__(self, token: OAuthToken) -> None:
+        super().__init__(get_settings().data_dir)
         self._token = token
 
     def load_token(self, alias: str) -> OAuthToken:
