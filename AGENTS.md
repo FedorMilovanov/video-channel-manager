@@ -73,6 +73,8 @@ Identity must be stable under irrelevant changes.
 
 The default `VCM_DATA_DIR=./data` is **relative to the process working directory**. A manual `youtube login` launched from the user's home and an agent's `youtube scan` in a repository checkout can silently read **different valid token files under the same alias**, with different scopes. For any YouTube provider write, use the **same verified absolute `VCM_DATA_DIR`** as the owner's successfully authorized session and confirm the `video-manager youtube accounts` storage path, actual granted scopes and exact owner channel ID independently. Set an absolute `VCM_YOUTUBE_CLIENT_SECRET_FILE` where needed. Never copy tokens between directories, silently switch to an older read-only token, print secrets, or infer permissions from an alias alone. Command output and audit records must identify the resolved storage directory (no token bytes).
 
+Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](docs/operations/youtube-shared-project-quota.md): use the canonical official client, verified Cloud-project identity and shared quota stop record, exact-ID bounded reads, and mandatory verification reserve. Never switch accounts/projects to circumvent quota or confuse Remote credits with provider quota.
+
 ## Provider mutation boundary
 
 Release/content approval and provider execution authority are separate gates.

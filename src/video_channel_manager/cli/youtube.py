@@ -49,6 +49,7 @@ from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
 )
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
 console = Console()
@@ -60,6 +61,8 @@ def _is_youtube_quota_exhaustion(exc: BaseException) -> bool:
 
     if not isinstance(exc, YouTubeWriteError):
         return False
+    if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+        return True
     message = str(exc).casefold()
     return "youtube api 403" in message and ("quota" in message or "dailylimitexceeded" in message)
 
@@ -175,6 +178,7 @@ class _CandidateOAuthTokenStore(TokenStore):
     """In-memory candidate grant: do not replace a real alias until identity matches."""
 
     def __init__(self, token: OAuthToken) -> None:
+        super().__init__(get_settings().data_dir)
         self._token = token
 
     def load_token(self, alias: str) -> OAuthToken:
@@ -396,6 +400,93 @@ def channels(
     console.print(table)
     if not records:
         console.print("[yellow]No channels returned. Verify which Google or Brand Account was selected.[/yellow]")
+
+
+def _local_quota_guard(client_secret: Path | None) -> ProjectQuotaGuard:
+    settings = get_settings()
+    config = InstalledClientConfig.from_file(client_secret or settings.youtube_client_secret_file)
+    guard = ProjectQuotaGuard.for_client(settings.data_dir, config.client_id, "quota-operator")
+    if guard is None:
+        raise ValueError("Cannot derive the Google Cloud project number from the installed OAuth client.")
+    return guard
+
+
+@youtube_app.command("quota-status")
+def quota_status(
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Report local quota accounting without contacting Google."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota status failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("quota-configure")
+def quota_configure(
+    project_number: Annotated[str, typer.Option("--confirm-project-number")],
+    day: Annotated[str, typer.Option("--pacific-day")],
+    shared: Annotated[int, typer.Option("--shared", min=0)],
+    search: Annotated[int, typer.Option("--search", min=0)],
+    uploads: Annotated[int, typer.Option("--uploads", min=0)],
+    evidence: Annotated[
+        str, typer.Option("--evidence", help="Non-secret reference to reviewed Cloud Console evidence")
+    ],
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Enable one immutable daily LOCAL allowance, not a Google quota grant."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        if project_number != guard.path.stem:
+            raise ValueError("Google Cloud project number mismatch; no local allowance changed.")
+        guard.configure_day(
+            day=day, allowances={"shared": shared, "search": search, "uploads": uploads}, evidence=evidence
+        )
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota configuration failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("recent")
+def recent(
+    account: Annotated[str, typer.Option("--account", "-a")],
+    channel_id: Annotated[str, typer.Option("--channel", help="Exact YouTube owner channel ID")],
+    limit: Annotated[int, typer.Option("--limit", min=1, max=50)] = 10,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Read one bounded uploads page for exact-ID candidate discovery, without writes."""
+
+    prepare_windows_youtube_console()
+    try:
+        _, _, client = _components(account, client_secret)
+        with client:
+            if channel_id not in {item.ref.remote_id for item in client.list_my_channels()}:
+                raise ValueError("Requested --channel does not belong to the authenticated --account.")
+            records = client.list_recent_videos(channel_id, limit=limit)
+        console.print_json(
+            data={
+                "scope": "bounded_recent_upload_candidates_not_full_inventory",
+                "channel_id": channel_id,
+                "limit": limit,
+                "items": [
+                    {
+                        "video_id": item.ref.remote_id,
+                        "title": item.title,
+                        "duration_seconds": item.duration_seconds,
+                        "published_at": item.published_at.isoformat() if item.published_at else None,
+                        "privacy_status": item.privacy_status,
+                        "file_details": item.metadata.get("fileDetails"),
+                    }
+                    for item in records
+                ],
+            }
+        )
+    except (AccountNotFoundError, OAuthFlowError, OSError, ValueError, YouTubeApiError) as exc:
+        console.print(f"[red]YouTube recent lookup failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("scan")

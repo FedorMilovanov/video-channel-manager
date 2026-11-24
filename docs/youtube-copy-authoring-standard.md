@@ -55,6 +55,14 @@ Use concrete images, conflicts, formal decisions, historical facts and musical/v
 
 Strong evaluative words require a concrete reason. AI-assisted music/visual work is described as interpretation or experiment, never as an improvement of the literary original.
 
+### Owner rule — historical copy, no obvious meta-narration (2026-11-24)
+
+For The Legendary Poet historical/visual Shorts, this rule applies to **descriptions, pinned comments, additional author comments and audience replies**. Write about the documented historical subject rather than explain the on-screen joke or retell what viewers can see. Reject formulaic statements such as «на этом историческом контрасте построена шутка», «поэт оказался в нашем времени», «это художественная постановка», «не документальная съёмка» and equivalent padding. Do not invent speech, quotations or events; any mandatory synthetic-content disclosure belongs in the appropriate platform field, and any genuinely necessary factual attribution must be precise and proportionate. Do not suppress mandatory disclosure.
+
+A request for 50+ sources means a research ledger, not 50 URL lines in the public description. Record the actual page title, URL, access/review state, claim(s) supported and source family (archive/primary, institutional, specialist, derivative, or discovery-only). Deduplicate mirrored material; distinguish discovered URLs from opened/read pages and independent sources. Map each substantive factual paragraph to checked evidence. Unverified details stay out of final copy; retain the source ledger as an editorial artifact. Use the historical-depth exception in `youtube-metadata-package-master-v3.1.md` §5b for requested extended comments, not the ordinary five-block validator.
+
+For audience replies about lifespan, dates or chronology, use exact source-backed birth/death dates and calendar differences (not subtraction of year numbers alone). Distinguish approximate claims from exact dates without scolding; preserve the owner's requested tone, avoid filler, and do not invent or assume that a drafted reply was posted. When dates are recorded in old/new style, label the calendar and calculate using the same calendar throughout.
+
 ## 3. First paragraph
 
 The first paragraph is the share-preview boundary and follows `docs/youtube-description-rendering-standard.md`:
