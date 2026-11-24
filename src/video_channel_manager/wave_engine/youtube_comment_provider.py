@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import sqlite3
 from contextlib import closing
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -20,6 +21,7 @@ from video_channel_manager.platforms.youtube.comments import (
     validate_comment_text,
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
+from video_channel_manager.wave_engine.canonical import is_ci_environment
 from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import MutationClass, WaveOperation
 
@@ -57,16 +59,20 @@ class LordGodYouTubeCommentAdapter:
         if account_alias != YOUTUBE_COMMENT_ACCOUNT:
             raise ValueError("YouTube comment wave requires exact approved owner account alias")
         self.account_alias = account_alias
+        self._owns_writer = writer is None
         if writer is None:
             from video_channel_manager.config import get_settings
             from video_channel_manager.platforms.youtube.models import InstalledClientConfig
-            from video_channel_manager.platforms.youtube.store import TokenStore
+            from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore
 
             settings = get_settings()
             if not settings.data_dir.is_absolute():
                 raise ValueError("YouTube comment wave requires the canonical absolute VCM_DATA_DIR")
+            config = InstalledClientConfig.from_file(settings.youtube_client_secret_file)
+            if ProjectQuotaGuard.for_client(settings.data_dir, config.client_id, account_alias) is None:
+                raise ValueError("YouTube comment wave requires an identifiable Google Cloud quota project")
             writer = YouTubeCommentWriter(
-                client_config=InstalledClientConfig.from_file(settings.youtube_client_secret_file),
+                client_config=config,
                 token_store=TokenStore(settings.data_dir),
                 account_alias=account_alias,
             )
@@ -97,10 +103,16 @@ class LordGodYouTubeCommentAdapter:
             raise OperationRejectedError("YouTube comment title is not an exact normalized title")
         if p["review_status"] != "approved" or not p["reviewed_at"].strip():
             raise OperationRejectedError("YouTube comment must have a record-specific editorial approval")
-        if not p["source_url"].startswith("https://www.slovo.org/resursy/propovedi/panorama-biblii-"):
-            raise OperationRejectedError("YouTube comment source URL must be its first-party sermon page")
+        try:
+            reviewed_at = datetime.fromisoformat(p["reviewed_at"])
+        except ValueError as exc:
+            raise OperationRejectedError("YouTube comment review timestamp must be timezone-aware ISO 8601") from exc
+        if reviewed_at.utcoffset() is None:
+            raise OperationRejectedError("YouTube comment review timestamp must include a timezone")
         episode_title = re.search(r"Панорама Библии\s*-\s*(\d+)\s*\|", p["video_title"])
-        episode_source = re.search(r"/panorama-biblii-(\d+)-[a-z0-9-]+/?$", p["source_url"])
+        episode_source = re.fullmatch(
+            r"https://www\.slovo\.org/resursy/propovedi/panorama-biblii-(\d+)-[a-z0-9-]+/?", p["source_url"]
+        )
         if not episode_title or not episode_source or episode_title.group(1) != episode_source.group(1):
             raise OperationRejectedError("YouTube comment source page does not match the exact episode number")
         try:
@@ -109,7 +121,7 @@ class LordGodYouTubeCommentAdapter:
             raise OperationRejectedError(f"Invalid YouTube comment formatting: {exc}") from exc
         if normalized != p["comment_text"]:
             raise OperationRejectedError("YouTube comment has unexpected whitespace normalization")
-        if p["source_url"] not in normalized:
+        if p["source_url"] not in normalized.split():
             raise OperationRejectedError("YouTube comment must link the exact primary sermon source")
         if comment_text_sha256(normalized) != p["comment_sha256"]:
             raise OperationRejectedError("YouTube comment SHA256 differs from reviewed copy")
@@ -126,8 +138,14 @@ class LordGodYouTubeCommentAdapter:
 
     def _assert_authenticated_owner(self) -> None:
         mine = self.writer._request("GET", "channels", params={"part": "id", "mine": "true", "maxResults": 5})
-        actual = [str(item.get("id") or "") for item in mine.get("items") or []]
-        if actual != [YOUTUBE_COMMENT_OWNER]:
+        items = mine.get("items")
+        if (
+            not isinstance(items, list)
+            or len(items) != 1
+            or not isinstance(items[0], dict)
+            or items[0].get("id") != YOUTUBE_COMMENT_OWNER
+            or mine.get("nextPageToken") is not None
+        ):
             raise OperationRejectedError("OAuth grant belongs to a different YouTube channel")
 
     def _reserve_first_comment(self, operation: WaveOperation, payload: dict[str, str]) -> None:
@@ -166,14 +184,16 @@ class LordGodYouTubeCommentAdapter:
 
     def execute(self, operation: WaveOperation) -> Mapping[str, Any]:
         p = self._validated_payload(operation)
+        if (self._owns_writer or isinstance(self.writer, YouTubeCommentWriter)) and is_ci_environment():
+            raise OperationRejectedError("YouTube comment writes require the persistent owner runtime, not CI")
         if self.data_dir is None:
             raise OperationRejectedError("No durable local owner lock directory was supplied")
         lock = self.data_dir / "locks" / (f"youtube-{self.account_alias}-{YOUTUBE_COMMENT_OWNER}.lock")
         with local_youtube_write_lock(lock, account=self.account_alias, channel_id=YOUTUBE_COMMENT_OWNER):
             self._assert_authenticated_owner()
             identity = self.writer.read_video_identity(p["video_id"])
-            if identity.channel_id != YOUTUBE_COMMENT_OWNER:
-                raise OperationRejectedError("YouTube video belongs to a different owner")
+            if identity.video_id != p["video_id"] or identity.channel_id != YOUTUBE_COMMENT_OWNER:
+                raise OperationRejectedError("YouTube video identity or owner differs from the reviewed target")
             if identity.title != p["video_title"]:
                 raise OperationRejectedError("YouTube title drifted after editorial review")
             if identity.privacy_status != "public":
@@ -232,8 +252,8 @@ class LordGodYouTubeCommentAdapter:
         p = self._validated_payload(operation)
         self._assert_authenticated_owner()
         identity = self.writer.read_video_identity(p["video_id"])
-        if identity.channel_id != YOUTUBE_COMMENT_OWNER:
-            raise ValueError("YouTube reconciliation channel mismatch")
+        if identity.video_id != p["video_id"] or identity.channel_id != YOUTUBE_COMMENT_OWNER:
+            raise ValueError("YouTube reconciliation video or channel mismatch")
         owned = self._owned(video_id=p["video_id"])
         matching = [comment for comment in owned if comments_equivalent(comment.text, p["comment_text"])]
         if len(matching) != 1:
