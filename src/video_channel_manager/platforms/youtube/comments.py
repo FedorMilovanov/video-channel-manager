@@ -405,8 +405,10 @@ class YouTubeCommentWriter(HttpClientOwner):
                     seen_comment_ids.add(snapshot.comment_id)
                     records.append(snapshot)
                 raw_token = payload.get("nextPageToken")
-                if strict_moderation and raw_token is not None and (
-                    not isinstance(raw_token, str) or not raw_token.strip()
+                if (
+                    strict_moderation
+                    and raw_token is not None
+                    and (not isinstance(raw_token, str) or not raw_token.strip())
                 ):
                     raise YouTubeCommentError("YouTube returned an invalid moderation page token.")
                 next_token = str(raw_token or "").strip()
