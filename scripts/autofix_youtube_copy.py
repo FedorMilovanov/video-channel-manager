@@ -22,6 +22,8 @@ from video_channel_manager.platforms.youtube.lord_god_scoped import (
     build_panorama_owner_chapter_plan,
 )
 
+from video_channel_manager.platforms.youtube.panorama_format_release import build_format_correction_plan
+
 RULESET = "youtube-copy-safe-v2"
 
 
@@ -272,6 +274,8 @@ def main() -> int:
     parser.add_argument(
         "--previous-editorial-plan", type=Path, help="Prior signed owner-video description release plan"
     )
+    parser.add_argument("--panorama-format-candidate", type=Path, help="Exact-owner historical format candidate")
+    parser.add_argument("--panorama-format-review", type=Path, help="Independent format-only review")
     parser.add_argument("--panorama-playlist-receipt", type=Path, help="Frozen exact-owner Panorama playlist")
     parser.add_argument("--panorama-source-register", type=Path, help="Frozen exact 68-episode source register")
     parser.add_argument("--archive-transcript-db", type=Path, help="Archived timestamped SQLite transcript source")
@@ -286,14 +290,31 @@ def main() -> int:
 
     try:
         payload = json.loads(args.input.read_text(encoding="utf-8-sig"))
-        exact_owner_mode = bool(args.panorama_playlist_receipt or args.panorama_source_register)
-        if exact_owner_mode and not (
+        format_mode = bool(args.panorama_format_candidate or args.panorama_format_review)
+        exact_owner_mode = bool(args.panorama_playlist_receipt or args.panorama_source_register or format_mode)
+        if format_mode and not (
             args.panorama_playlist_receipt
             and args.panorama_source_register
-            and args.lord_god_chapters_review
+            and args.panorama_format_candidate
+            and args.panorama_format_review
             and args.target_video_id
-            and args.archive_transcript_db
+            and not args.archive_transcript_db
             and not args.previous_editorial_plan
+        ):
+            raise ValueError(
+                "Format correction requires exact owner, both registers, candidate, independent review and target"
+            )
+        if (
+            exact_owner_mode
+            and not format_mode
+            and not (
+                args.panorama_playlist_receipt
+                and args.panorama_source_register
+                and args.lord_god_chapters_review
+                and args.target_video_id
+                and args.archive_transcript_db
+                and not args.previous_editorial_plan
+            )
         ):
             raise ValueError(
                 "Exact Panorama owner mode requires both registers, chapter review, target and transcript DB; no prior plan"
@@ -306,6 +327,7 @@ def main() -> int:
             bool(args.lord_god_preview),
             bool(args.lord_god_chapters_review),
             bool(args.lord_god_retired_appeal_review),
+            format_mode,
         ]
         if sum(selected_modes) > 1:
             raise ValueError("Lord God reviewed cleanup modes are mutually exclusive")
@@ -317,6 +339,16 @@ def main() -> int:
                 payload, args.input, review, args.lord_god_retired_appeal_review, video_id=args.target_video_id
             )
             unresolved_count = len(plan["unresolved"])
+        elif format_mode:
+            plan, report = build_format_correction_plan(
+                args.input,
+                args.panorama_playlist_receipt,
+                args.panorama_source_register,
+                args.panorama_format_candidate,
+                args.panorama_format_review,
+                video_id=args.target_video_id,
+            )
+            unresolved_count = 0
         elif exact_owner_mode:
             plan, report = build_panorama_owner_chapter_plan(
                 args.input,
