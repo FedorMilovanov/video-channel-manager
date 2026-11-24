@@ -25,7 +25,13 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
+from video_channel_manager.platforms.youtube.store import (
+    ProjectQuotaGuard,
+    TokenStore,
+    YouTubeQuotaBlocked,
+    quota_exhaustion_reason,
+    reserve_shared_quota,
+)
 from video_channel_manager.platforms.youtube.writer import YouTubeWriteError, YouTubeWriteScopeError
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -268,6 +274,11 @@ class YouTubeCommentWriter(HttpClientOwner):
             except ValueError:
                 pass
             safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            quota_reason = quota_exhaustion_reason(response)
+            if quota_reason is not None:
+                raise YouTubeCommentError(f"YouTube API 403 ({quota_reason}): {safe_message}") from YouTubeQuotaBlocked(
+                    quota_reason
+                )
             if reason == "commentsDisabled":
                 raise YouTubeCommentsDisabledError(safe_message)
             kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
@@ -372,10 +383,17 @@ class YouTubeCommentWriter(HttpClientOwner):
         )
 
     def list_top_level_comments(self, video_id: str) -> list[TopLevelCommentSnapshot]:
+        return self._list_top_level_comments(video_id)
+
+    def _list_top_level_comments(
+        self, video_id: str, *, max_pages_per_status: int | None = None
+    ) -> list[TopLevelCommentSnapshot]:
+        """A bounded result is only usable for positive exact-ID discovery, never absence."""
         records: list[TopLevelCommentSnapshot] = []
         seen_comment_ids: set[str] = set()
         for moderation_status in _MODERATION_STATES:
             page_token: str | None = None
+            pages = 0
             while True:
                 params: QueryParams = {
                     "part": "snippet",
@@ -389,10 +407,11 @@ class YouTubeCommentWriter(HttpClientOwner):
                     params["pageToken"] = page_token
                 try:
                     payload = self._request("GET", "commentThreads", params=params)
-                except YouTubeCommentError:
-                    if moderation_status == "published":
+                except YouTubeCommentError as exc:
+                    if moderation_status == "published" or isinstance(exc.__cause__, YouTubeQuotaBlocked):
                         raise
                     break
+                pages += 1
                 for item in _dict_items(payload):
                     snapshot = self._parse_thread(item)
                     if snapshot.comment_id in seen_comment_ids:
@@ -400,7 +419,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                     seen_comment_ids.add(snapshot.comment_id)
                     records.append(snapshot)
                 next_token = str(payload.get("nextPageToken") or "").strip()
-                if not next_token:
+                if not next_token or (max_pages_per_status is not None and pages >= max_pages_per_status):
                     break
                 page_token = next_token
         return records
@@ -439,17 +458,22 @@ class YouTubeCommentWriter(HttpClientOwner):
         comment_id: str,
         video_id: str,
         channel_id: str,
+        bounded: bool = False,
     ) -> TopLevelCommentSnapshot | None:
         try:
             direct = self.read_comment(comment_id, video_id=video_id, channel_id=channel_id)
-        except YouTubeCommentError:
+        except YouTubeCommentError as exc:
+            if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+                raise
             direct = None
         if direct is not None:
             return direct
-        return next(
-            (item for item in self.list_top_level_comments(video_id) if item.comment_id == comment_id),
-            None,
+        candidates = (
+            self._list_top_level_comments(video_id, max_pages_per_status=1)
+            if bounded
+            else self.list_top_level_comments(video_id)
         )
+        return next((item for item in candidates if item.comment_id == comment_id), None)
 
     def _verify_comment_eventually(
         self,
@@ -469,8 +493,14 @@ class YouTubeCommentWriter(HttpClientOwner):
                     comment_id=comment_id,
                     video_id=video_id,
                     channel_id=channel_id,
+                    bounded=True,
                 )
             except YouTubeCommentError as exc:
+                if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+                    raise YouTubeCommentError(
+                        f"Comment {comment_id} write response accepted but exact readback blocked by quota; "
+                        "reconcile this ID, do not replay."
+                    ) from exc.__cause__
                 last_error = exc
                 continue
             if verified is None:
@@ -511,31 +541,36 @@ class YouTubeCommentWriter(HttpClientOwner):
                 f"Video {video_id} already has {len(owned)} different top-level channel comment(s): {ids}."
             )
 
-        payload = self._request(
-            "POST",
-            "commentThreads",
-            params={"part": "snippet"},
-            json_body={
-                "snippet": {
-                    "channelId": expected_channel_id,
-                    "videoId": video_id,
-                    "topLevelComment": {"snippet": {"textOriginal": normalized}},
-                }
-            },
-            require_write=True,
-        )
-        created = self._parse_thread(payload)
-        if created.video_id != video_id or created.channel_id != expected_channel_id:
-            raise YouTubeCommentError(f"YouTube created a comment on an unexpected target for {video_id}.")
-        if created.author_channel_id != expected_channel_id or not comments_equivalent(created.text, normalized):
-            raise YouTubeCommentError(f"YouTube returned an unexpected created comment for {video_id}.")
-        return self._verify_comment_eventually(
-            video_id=video_id,
-            channel_id=expected_channel_id,
-            comment_id=created.comment_id,
-            expected_text=normalized,
-            fallback=created,
-        )
+        with reserve_shared_quota(
+            self._quota_guard,
+            50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts,
+            YouTubeCommentError,
+        ):
+            payload = self._request(
+                "POST",
+                "commentThreads",
+                params={"part": "snippet"},
+                json_body={
+                    "snippet": {
+                        "channelId": expected_channel_id,
+                        "videoId": video_id,
+                        "topLevelComment": {"snippet": {"textOriginal": normalized}},
+                    }
+                },
+                require_write=True,
+            )
+            created = self._parse_thread(payload)
+            if created.video_id != video_id or created.channel_id != expected_channel_id:
+                raise YouTubeCommentError(f"YouTube created a comment on an unexpected target for {video_id}.")
+            if created.author_channel_id != expected_channel_id or not comments_equivalent(created.text, normalized):
+                raise YouTubeCommentError(f"YouTube returned an unexpected created comment for {video_id}.")
+            return self._verify_comment_eventually(
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                comment_id=created.comment_id,
+                expected_text=normalized,
+                fallback=created,
+            )
 
     def update_top_level_comment(
         self,
@@ -564,28 +599,32 @@ class YouTubeCommentWriter(HttpClientOwner):
             raise YouTubeCommentConflictError(
                 f"Comment {comment_id} text changed after review; refusing to overwrite it."
             )
-        payload = self._request(
-            "PUT",
-            "comments",
-            params={"part": "snippet"},
-            json_body={"id": comment_id, "snippet": {"textOriginal": normalized_new}},
-            require_write=True,
-        )
-        updated = self._parse_direct_comment(
-            payload,
-            video_id=video_id,
-            channel_id=expected_channel_id,
-        )
-        if updated.comment_id != comment_id:
-            raise YouTubeCommentError(f"YouTube returned an unexpected comment ID after updating {comment_id}.")
-        return self._verify_comment_eventually(
-            video_id=video_id,
-            channel_id=expected_channel_id,
-            comment_id=comment_id,
-            expected_text=normalized_new,
-            fallback=updated,
-        )
-
+        with reserve_shared_quota(
+            self._quota_guard,
+            50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts,
+            YouTubeCommentError,
+        ):
+            payload = self._request(
+                "PUT",
+                "comments",
+                params={"part": "snippet"},
+                json_body={"id": comment_id, "snippet": {"textOriginal": normalized_new}},
+                require_write=True,
+            )
+            updated = self._parse_direct_comment(
+                payload,
+                video_id=video_id,
+                channel_id=expected_channel_id,
+            )
+            if updated.comment_id != comment_id:
+                raise YouTubeCommentError(f"YouTube returned an unexpected comment ID after updating {comment_id}.")
+            return self._verify_comment_eventually(
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                comment_id=comment_id,
+                expected_text=normalized_new,
+                fallback=updated,
+            )
 
 __all__ = [
     "TopLevelCommentSnapshot",

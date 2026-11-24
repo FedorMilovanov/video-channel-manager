@@ -423,3 +423,19 @@ class ProjectQuotaGuard:
                 # for the day on which the refusal was observed.
                 db.execute("INSERT OR REPLACE INTO stops VALUES (?, ?)", (self._day(), reason))
         return response
+
+
+
+@contextmanager
+def reserve_shared_quota(
+    guard: ProjectQuotaGuard | None, units: int, error_type: type[RuntimeError]
+) -> Iterator[None]:
+    """Keep quota errors in the existing adapter's public error hierarchy."""
+    if guard is None:
+        yield
+        return
+    try:
+        with guard.reserve(units):
+            yield
+    except YouTubeQuotaBlocked as exc:
+        raise error_type(str(exc)) from exc

@@ -10,7 +10,7 @@ import httpx
 
 from video_channel_manager.platforms.http import RequestRateLimiter, RetryPolicy
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import TokenStore, reserve_shared_quota
 from video_channel_manager.platforms.youtube.writer import (
     VideoDescriptionSnapshot,
     YouTubeDescriptionWriter as BaseYouTubeDescriptionWriter,
@@ -66,34 +66,37 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         current: VideoDescriptionSnapshot,
         new_description: str,
     ) -> VideoDescriptionSnapshot:
-        try:
-            return super()._write_description(current=current, new_description=new_description)
-        except YouTubeWriteError as exc:
-            expected_message = f"Verification failed after updating description for {current.video_id}."
-            drift_prefix = f"Postflight metadata drift after updating description for {current.video_id}:"
-            if str(exc) != expected_message and not str(exc).startswith(drift_prefix):
-                raise
-            if not self._verification_delays:
-                raise
+        with reserve_shared_quota(
+            self._quota_guard, 50 + (1 + len(self._verification_delays)) * self.retry_policy.max_attempts, YouTubeWriteError
+        ):
+            try:
+                return super()._write_description(current=current, new_description=new_description)
+            except YouTubeWriteError as exc:
+                expected_message = f"Verification failed after updating description for {current.video_id}."
+                drift_prefix = f"Postflight metadata drift after updating description for {current.video_id}:"
+                if str(exc) != expected_message and not str(exc).startswith(drift_prefix):
+                    raise
+                if not self._verification_delays:
+                    raise
 
-        last_snapshot: VideoDescriptionSnapshot | None = None
-        last_drift: list[str] = []
-        for delay in self._verification_delays:
-            if delay:
-                self._sleep(delay)
-            last_snapshot = self.read_description(current.video_id)
-            if not descriptions_equivalent(last_snapshot.description, new_description):
-                continue
-            last_drift = _postwrite_metadata_drift(current, last_snapshot, new_description)
-            if not last_drift:
-                return last_snapshot
+            last_snapshot: VideoDescriptionSnapshot | None = None
+            last_drift: list[str] = []
+            for delay in self._verification_delays:
+                if delay:
+                    self._sleep(delay)
+                last_snapshot = self.read_description(current.video_id)
+                if not descriptions_equivalent(last_snapshot.description, new_description):
+                    continue
+                last_drift = _postwrite_metadata_drift(current, last_snapshot, new_description)
+                if not last_drift:
+                    return last_snapshot
 
-        observed = "unavailable" if last_snapshot is None else last_snapshot.revision
-        extra = f"; metadata drift: {', '.join(last_drift)}" if last_drift else ""
-        raise YouTubeWriteError(
-            f"Verification failed after updating description for {current.video_id} "
-            f"after {1 + len(self._verification_delays)} reads; last revision: {observed}{extra}."
-        )
+            observed = "unavailable" if last_snapshot is None else last_snapshot.revision
+            extra = f"; metadata drift: {', '.join(last_drift)}" if last_drift else ""
+            raise YouTubeWriteError(
+                f"Verification failed after updating description for {current.video_id} "
+                f"after {1 + len(self._verification_delays)} reads; last revision: {observed}{extra}."
+            )
 
     def replace_localized_description(
         self,
@@ -116,61 +119,64 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         old localized text. Only the base writer can issue a PUT; this recovery
         path never calls it again and requires exact locale + metadata equality.
         """
-        try:
-            return super().replace_localized_description(
-                video_id=video_id,
-                expected_channel_id=expected_channel_id,
-                expected_title=expected_title,
-                expected_primary_description=expected_primary_description,
-                expected_snippet_fields=expected_snippet_fields,
-                expected_privacy=expected_privacy,
-                expected_duration=expected_duration,
-                expected_localizations=expected_localizations,
-                language=language,
-                expected_localized_description=expected_localized_description,
-                new_description=new_description,
+        with reserve_shared_quota(
+            self._quota_guard, 50 + (2 + len(self._verification_delays)) * self.retry_policy.max_attempts, YouTubeWriteError
+        ):
+            try:
+                return super().replace_localized_description(
+                    video_id=video_id,
+                    expected_channel_id=expected_channel_id,
+                    expected_title=expected_title,
+                    expected_primary_description=expected_primary_description,
+                    expected_snippet_fields=expected_snippet_fields,
+                    expected_privacy=expected_privacy,
+                    expected_duration=expected_duration,
+                    expected_localizations=expected_localizations,
+                    language=language,
+                    expected_localized_description=expected_localized_description,
+                    new_description=new_description,
+                )
+            except YouTubeWriteError as exc:
+                # Preflight conflicts, HTTP failures, quota and ambiguous PUT
+                # responses never enter this read-only consistency path.
+                if not str(exc).startswith(f"Localized postflight drift for {video_id}:"):
+                    raise
+                if not self._verification_delays:
+                    raise
+
+            expected_map = copy.deepcopy(expected_localizations)
+            expected_map[language]["description"] = new_description
+            last_failed: list[str] = []
+            for delay in self._verification_delays:
+                if delay:
+                    self._sleep(delay)
+                observed = self.read_description(video_id)
+                snippet = observed.raw.get("snippet") or {}
+                protected = {key: snippet.get(key) for key in expected_snippet_fields}
+                failures = []
+                if observed.channel_id != expected_channel_id:
+                    failures.append("channel_id")
+                if observed.title != expected_title:
+                    failures.append("title")
+                if observed.description != expected_primary_description:
+                    failures.append("snippet.description")
+                if protected != expected_snippet_fields:
+                    failures.append("snippet.protected_fields")
+                if observed.raw.get("localizations") != expected_map:
+                    failures.append("localizations.exact_map")
+                if (observed.raw.get("status") or {}).get("privacyStatus") != expected_privacy:
+                    failures.append("status.privacyStatus")
+                if (observed.raw.get("contentDetails") or {}).get("duration") != expected_duration:
+                    failures.append("contentDetails.duration")
+                if not failures:
+                    return observed
+                last_failed = failures
+
+            raise YouTubeWriteError(
+                f"Localized postflight still mismatched after {1 + len(self._verification_delays)} "
+                f"safe GET reads for {video_id}: {', '.join(last_failed)}. "
+                "The PUT must not be retried; reconcile against the owner API."
             )
-        except YouTubeWriteError as exc:
-            # Preflight conflicts, HTTP failures, quota and ambiguous PUT
-            # responses never enter this read-only consistency path.
-            if not str(exc).startswith(f"Localized postflight drift for {video_id}:"):
-                raise
-            if not self._verification_delays:
-                raise
-
-        expected_map = copy.deepcopy(expected_localizations)
-        expected_map[language]["description"] = new_description
-        last_failed: list[str] = []
-        for delay in self._verification_delays:
-            if delay:
-                self._sleep(delay)
-            observed = self.read_description(video_id)
-            snippet = observed.raw.get("snippet") or {}
-            protected = {key: snippet.get(key) for key in expected_snippet_fields}
-            failures = []
-            if observed.channel_id != expected_channel_id:
-                failures.append("channel_id")
-            if observed.title != expected_title:
-                failures.append("title")
-            if observed.description != expected_primary_description:
-                failures.append("snippet.description")
-            if protected != expected_snippet_fields:
-                failures.append("snippet.protected_fields")
-            if observed.raw.get("localizations") != expected_map:
-                failures.append("localizations.exact_map")
-            if (observed.raw.get("status") or {}).get("privacyStatus") != expected_privacy:
-                failures.append("status.privacyStatus")
-            if (observed.raw.get("contentDetails") or {}).get("duration") != expected_duration:
-                failures.append("contentDetails.duration")
-            if not failures:
-                return observed
-            last_failed = failures
-
-        raise YouTubeWriteError(
-            f"Localized postflight still mismatched after {1 + len(self._verification_delays)} "
-            f"safe GET reads for {video_id}: {', '.join(last_failed)}. "
-            "The PUT must not be retried; reconcile against the owner API."
-        )
 
     def restore_description_if_current(
         self,

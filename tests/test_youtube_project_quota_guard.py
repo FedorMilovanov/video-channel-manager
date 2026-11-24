@@ -332,3 +332,59 @@ def test_concurrent_reservation_cannot_exceed_configured_allowance(tmp_path: Pat
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         assert sorted(pool.map(run, ("poet", "lord-god"))) == [False, True]
+
+
+@pytest.mark.parametrize("allowance,expected_puts", [(54, 0), (55, 1)])
+def test_description_reserves_write_and_read_retry_headroom(
+    tmp_path: Path, allowance: int, expected_puts: int
+) -> None:
+    store = TokenStore(tmp_path)
+    store.save_token(
+        "poet",
+        OAuthToken(
+            access_token="fake",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            scopes=[YOUTUBE_FORCE_SSL_SCOPE],
+        ),
+    )
+    config = InstalledClientConfig(client_id="123-abc.apps.googleusercontent.com", client_secret="fake")
+    guard = ProjectQuotaGuard.for_client(tmp_path, config.client_id, "other-channel")
+    assert guard is not None
+    day = guard.budget_status()["pacific_day"]
+    assert isinstance(day, str)
+    guard.configure_day(
+        day=day, allowances={"shared": allowance, "search": 0, "uploads": 0}, evidence="console"
+    )
+    description = "old"
+    puts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal description, puts
+        if request.method == "PUT":
+            puts += 1
+            with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+                guard(lambda: pytest.fail("verification reserve was stolen"), "GET", "videos")
+            description = "new"
+        item = {
+            "id": "video",
+            "snippet": {"channelId": "channel", "title": "title", "description": description, "categoryId": "22"},
+            "contentDetails": {"duration": "PT10S"},
+            "status": {"privacyStatus": "public"},
+        }
+        return httpx.Response(200, json=item if request.method == "PUT" else {"items": [item]})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http:
+        writer = YouTubeDescriptionWriter(client_config=config, token_store=store, account_alias="poet", http_client=http)
+        kwargs = {
+            "video_id": "video",
+            "expected_channel_id": "channel",
+            "expected_revision": "reviewed",
+            "expected_description": "old",
+            "new_description": "new",
+        }
+        if expected_puts:
+            assert writer.replace_description(**kwargs).description == "new"
+        else:
+            with pytest.raises(YouTubeWriteError, match="allowance exhausted"):
+                writer.replace_description(**kwargs)
+    assert puts == expected_puts
