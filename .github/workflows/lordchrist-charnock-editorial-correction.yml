@@ -51,7 +51,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
       - name: Public GET and exact plan (no Telegraph credential)
         if: inputs.mode == 'plan'
         run: python -m scripts.charnock_telegraph_credit_revision --page "$PAGE"
