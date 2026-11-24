@@ -14,6 +14,8 @@ The v2 planner rechecks immutable review bytes, source fragments and caption eve
 
 Record independent stages (prepared, structural QA, semantic editorial review, exact owner/write authority, quota budget, owner full readback, public chapter recognition). If the public watch player still shows an older description, keep public-sync HOLD; do not replay PUT. The historical 28/68 owner vs 27/68 public checkpoint is not a fresh inventory. No new chapters or comments may be counted as published on the basis of local review.
 
+Historical Panorama audit: run scripts/audit_panorama_chapter_evidence.py with the frozen exact-owner playlist, source register, read-only archive DB, evidence directory and a new output path. It maps legacy time/timestamp schemas, validates caption hashes and locators, detects noncanonical hour stamps and fixed-grid risk, and never authorizes writes. A real caption locator is not proof of the semantic transition. Preserve old receipts; prioritize correction by actual severity, not by bulk cosmetic changes.
+
 ## Runtime provenance, OAuth directory and agent handoff
 
 - Resolve the exact current remote `main` SHA; inspect the source checkout's
