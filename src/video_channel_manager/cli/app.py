@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import platform
 import shutil
+from contextlib import closing
 from pathlib import Path
 from typing import Annotated
 
@@ -131,7 +132,8 @@ def db_init() -> None:
 
     settings = get_settings()
     settings.ensure_runtime_directories()
-    Database(settings.database_url).create_schema()
+    with closing(Database(settings.database_url)) as database:
+        database.create_schema()
     console.print("[green]Database schema initialized.[/green]")
 
 
