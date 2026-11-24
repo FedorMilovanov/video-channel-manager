@@ -714,7 +714,7 @@ def test_source_binding_rejects_resealed_or_drifted_copy(tmp_path: Path, defect:
     adapter = LordGodYouTubeCommentAdapter(
         writer=fake, data_dir=tmp_path, review_source=source, repository_root=tmp_path
     )
-    with pytest.raises(OperationRejectedError, match="reviewed comment|Reviewed comment|reviewed comment source"):
+    with pytest.raises(OperationRejectedError, match="[Rr]eviewed.comment"):
         adapter.execute(operation)
     assert fake.reads == fake.creates == 0
     assert not (tmp_path / "youtube").exists()
