@@ -13,3 +13,9 @@ content/telegram/lordchrist/successor-translation-ledger-v1.json text eol=lf
 
 # Exact SHA-256 of the approved Instagram quote plan is over LF Git blob bytes.
 content/instagram/lord-god-strength-quote-cloud-20261111.json text eol=lf
+
+# Charnock exact credit correction: the executor pins these three reviewed Git
+# blobs. Preserve raw bytes on Windows; do not normalize inside the hash gate.
+content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json text eol=lf
+content/research/charnock-source-credit-candidates-20261123/charnock-12.json text eol=lf
+content/research/charnock-source-credit-candidates-20261123/charnock-13.json text eol=lf
