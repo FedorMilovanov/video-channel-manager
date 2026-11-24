@@ -15,10 +15,10 @@ from video_channel_manager.editorial._project_profiles import LEGENDARY_POET_AUT
 _PROJECT_LINKS = PROJECT_LINK_PROFILES["legendary-poet"]
 _SINGING_POETS = "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
 _SOCIAL = (
-    "*VK:* https://vk.ru/thelegendarypoet",
-    "*Телеграм:* https://t.me/thelegendarypoet",
-    "*Рутуб:* https://rutube.ru/channel/74579453/",
-    "*Сайт:* https://thelegendarypoet.ru/",
+    "VK: https://vk.ru/thelegendarypoet",
+    "Телеграм: https://t.me/thelegendarypoet",
+    "Рутуб: https://rutube.ru/channel/74579453/",
+    "Сайт: https://thelegendarypoet.ru/",
 )
 _LINK_RE = re.compile(r"https?://[^\s<>]+")
 _FENCE_RE = re.compile(r"(?ms)^```[ \t]*\r?\n(.*?)\r?\n```[ \t]*$")
@@ -59,16 +59,16 @@ def _check_two_playlists(lines: Sequence[str], block: str, errors: list[CopyIssu
     if len(lines) < 2:
         errors.append(CopyIssue(block, "missing_playlists", "Нужны два первых плейлиста."))
         return
-    prefix = "*Плейлист «"
+    prefix = "Плейлист «"
     first = lines[0]
-    if not first.startswith(prefix) or "»:* https://www.youtube.com/playlist?list=" not in first:
+    if not first.startswith(prefix) or "»: https://www.youtube.com/playlist?list=" not in first:
         errors.append(CopyIssue(block, "author_playlist", "Первая строка — авторский плейлист с открытым URL."))
-    second = f"*Плейлист «Поющие Поэты»:* {_SINGING_POETS}"
+    second = f"Плейлист «Поющие Поэты»: {_SINGING_POETS}"
     if lines[1] != second:
         errors.append(CopyIssue(block, "singers_playlist", "Вторая строка — точный плейлист «Поющие Поэты»."))
     if "Поющие Поэты" in first or "Эксперименты AI" in first:
         errors.append(CopyIssue(block, "not_author_playlist", "Первая ссылка должна вести на авторский плейлист."))
-    match = re.fullmatch(r"\*Плейлист «([^»]+)»:\* (https://www[.]youtube[.]com/playlist[?]list=[^\s]+)", first)
+    match = re.fullmatch(r"Плейлист «([^»]+)»: (https://www[.]youtube[.]com/playlist[?]list=[^\s]+)", first)
     if match:
         poet, url = match.groups()
         expected = LEGENDARY_POET_AUTHOR_PLAYLISTS.get(poet)
@@ -127,6 +127,10 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         errors.append(CopyIssue("description", "description_length", "Description: 3500–4600 символов."))
     desc_lines = _normal_lines(description)
     _check_two_playlists(desc_lines, "description", errors)
+    # External share cards may expose raw YouTube markup; URLs are opaque.
+    if any(re.search(r"[*_]", _LINK_RE.sub("", line)) for line in desc_lines[:7]):
+        errors.append(CopyIssue("description", "share_prefix_markup", "Верхние ссылки Description — без маркеров выделения."))
+    expected_formatted_playlists = ["*" + label + ":* " + url for label, _, url in (line.partition(": ") for line in desc_lines[:2])]
     if desc_lines[2:3] != [""] or desc_lines[3:7] != list(_SOCIAL) or desc_lines[7:8] != [""]:
         errors.append(CopyIssue("description", "social_order", "Четыре соцссылки — в порядке v3.1."))
     sections = [p.strip() for p in description.split("\n\n") if p.strip()]
@@ -158,8 +162,11 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     if "*" in shorts_without_urls or "_" in shorts_without_urls or any(link in shorts for link in _SOCIAL):
         errors.append(CopyIssue("shorts", "short_format", "SHORTS — без выделений и социальных ссылок."))
     short_lines = _normal_lines(shorts)
+    preview = [line for line in short_lines if line.strip()][:2]
+    if len(preview) < 2 or any(re.search(r"[*_]", line) or _LINK_RE.search(line) for line in preview):
+        errors.append(CopyIssue("shorts", "share_prefix_markup", "Первые две содержательные строки SHORTS — без маркеров и URL."))
     short_playlists = [line for line in short_lines if line.startswith("*Плейлист «")]
-    if short_playlists != desc_lines[:2]:
+    if short_playlists != expected_formatted_playlists:
         errors.append(
             CopyIssue(
                 "shorts",
@@ -181,7 +188,7 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
     if len([line for line in pin_lines if line.startswith("_") and line.endswith("_")]) not in (1, 2):
         errors.append(CopyIssue("pin", "pin_poem_lines", "Нужно 1–2 отдельные _точные строки стихотворения_."))
     pin_playlists = [line for line in pin_lines if line.startswith("*Плейлист «")]
-    if pin_playlists != desc_lines[:2]:
+    if pin_playlists != expected_formatted_playlists:
         errors.append(
             CopyIssue(
                 "pin",
