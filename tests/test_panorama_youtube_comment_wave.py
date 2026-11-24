@@ -691,7 +691,9 @@ def test_exact_reviewed_artifact_dispatch(tmp_path: Path) -> None:
     assert fake.creates == 1
 
 
-@pytest.mark.parametrize("defect", ["different-copy", "duplicate-key", "wrong-filename", "changed-bytes", "wrong-snapshot"])
+@pytest.mark.parametrize(
+    "defect", ["different-copy", "duplicate-key", "wrong-filename", "changed-bytes", "wrong-snapshot"]
+)
 def test_source_binding_rejects_resealed_or_drifted_copy(tmp_path: Path, defect: str) -> None:
     original = _operation()
     kwargs: dict[str, object] = {}
