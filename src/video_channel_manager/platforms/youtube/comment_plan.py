@@ -46,12 +46,16 @@ def video_id_set_sha256(video_ids: list[str]) -> str:
 
 
 def _valid_owner_comment_map(value: object) -> bool:
-    return isinstance(value, dict) and bool(value) and all(
-        isinstance(key, str)
-        and bool(key.strip())
-        and isinstance(digest, str)
-        and re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is not None
-        for key, digest in value.items()
+    return (
+        isinstance(value, dict)
+        and bool(value)
+        and all(
+            isinstance(key, str)
+            and bool(key.strip())
+            and isinstance(digest, str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is not None
+            for key, digest in value.items()
+        )
     )
 
 
@@ -240,9 +244,7 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
         if action == "update" and (expected_id is None or expected_text is None):
             errors.append(f"{prefix}: update requires exact existing comment ID and text")
         owned_map = raw.get("expected_owned_comments")
-        if "expected_owned_comments" in raw and (
-            action != "create" or not _valid_owner_comment_map(owned_map)
-        ):
+        if "expected_owned_comments" in raw and (action != "create" or not _valid_owner_comment_map(owned_map)):
             errors.append(f"{prefix}.expected_owned_comments requires a nonempty exact create ID/hash map")
         if owned_map is not None and payload.get("mode") != "reviewed-additional-comment":
             errors.append(f"{prefix}: additional create requires reviewed-additional-comment mode")
