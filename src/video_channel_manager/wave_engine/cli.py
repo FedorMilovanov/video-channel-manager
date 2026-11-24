@@ -518,7 +518,11 @@ def apply(
         )
     else:
         try:
-            adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+            adapter = LordGodYouTubeCommentAdapter(
+                account_alias=youtube_account,
+                review_source=source,
+                repository_root=repository_root,
+            )
         except (OSError, RuntimeError, ValueError) as exc:
             console.print(f"[red]YouTube comment adapter initialization rejected:[/red] {exc}")
             raise typer.Exit(code=3) from exc
