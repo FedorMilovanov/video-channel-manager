@@ -17,10 +17,19 @@ The proposed rich-text q-10 preserves the English sequence of examples, its dist
 
 ## Provenance and guards
 
-- Base: content/research/charnock-source-credit-candidates-20261123/charnock-11.json on main (source-credit research candidate, Git blob 0e56d11cbaa1032d6ae4857ac32e641bd1ad2067).
+- Base: content/research/charnock-source-credit-candidates-20261123/charnock-11.json on main (source-credit research candidate, Git blob 9f6bf6403d852723ec240e1839239652e44b4012).
 - Proposed standalone document: content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json.
 - Approved article №11 JSON Git blob must remain d42392bb593de4f89d36a12a3548f459efe41090.
 - Differences are confined to revision and the first plain-text span of rich q-10. The previous source-credit candidate was not overwritten.
 - tests/test_charnock_q10_translation_candidate.py asserts the exact candidate delta and fixed approved SHA.
 
 **Still blocked:** scientific/translation independent review, separate versioned editorial approval, Telegraph in-place edit plan and provider readback, source/queue/media-base binding, rights review, Telegram send. No changes to approved manifest, queue, schedule, ledger, workflow, live Telegraph or Telegram. See https://github.com/FedorMilovanov/video-channel-manager/issues/997.
+
+## 23 November block-ID QA
+
+The final proposed source-credit footer has the unique top-level `block_id=p-27`
+(previously duplicated an earlier `p-26`). The baseline source-credit
+candidate and this q-10 translation proposal use exactly the same footer ID.
+Only the footer's internal addressing changed; rendered content and the
+existing single-quote translation candidate remain unchanged. Dedicated
+uniqueness tests now protect the source-credit and translation sidecars.
