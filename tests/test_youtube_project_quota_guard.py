@@ -18,6 +18,7 @@ from video_channel_manager.platforms.youtube.store import (
     ProjectQuotaGuard,
     TokenStore,
     YouTubeQuotaBlocked,
+    quota_cost,
     quota_exhaustion_reason,
 )
 from video_channel_manager.platforms.youtube.writer import YouTubeDescriptionWriter, YouTubeWriteError
@@ -216,3 +217,118 @@ def test_recent_candidates_are_bounded_and_channel_bound(tmp_path: Path, mode: s
             with pytest.raises(YouTubeApiError):
                 client.list_recent_videos("UC1", limit=2)
     assert calls == ["channels", "playlistItems", "videos"]
+
+
+@pytest.mark.parametrize(
+    "method,resource,expected",
+    [
+        ("GET", "videos", ("shared", 1)),
+        ("PUT", "videos", ("shared", 50)),
+        ("POST", "commentThreads", ("shared", 50)),
+        ("GET", "captions", ("shared", 50)),
+        ("POST", "captions.insert", ("shared", 400)),
+        ("PUT", "captions.update", ("shared", 450)),
+        ("GET", "captions.download", ("shared", 200)),
+        ("GET", "search", ("search", 1)),
+        ("POST", "videos.insert.resumable-session", ("uploads", 1)),
+        ("PUT", "videos.insert.resumable-status", ("uploads", 1)),
+        ("GET", "unknown", None),
+    ],
+)
+def test_weighted_method_costs(method: str, resource: str, expected: tuple[str, int] | None) -> None:
+    assert quota_cost(method, resource) == expected
+
+
+def test_local_allowance_reserves_postflight_against_another_channel(tmp_path: Path) -> None:
+    first = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "poet")
+    second = ProjectQuotaGuard(first.path, "lord-god")
+    day = first.budget_status()["pacific_day"]
+    assert isinstance(day, str)
+    first.configure_day(day=day, allowances={"shared": 55, "search": 1, "uploads": 0}, evidence="reviewed console")
+    with first.reserve(54):
+        assert first(lambda: httpx.Response(200), "PUT", "videos").status_code == 200
+        assert second(lambda: httpx.Response(200), "GET", "videos").status_code == 200
+        with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+            second(lambda: pytest.fail("reserved postflight allowance was stolen"), "GET", "videos")
+        with first.reserve(4):
+            assert first(lambda: httpx.Response(200), "GET", "videos").status_code == 200
+        assert second(lambda: httpx.Response(200), "GET", "search").status_code == 200
+        with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+            second(lambda: pytest.fail("search bucket exhausted"), "GET", "search")
+    assert second(lambda: httpx.Response(200), "GET", "videos").status_code == 200
+    with pytest.raises(YouTubeQuotaBlocked, match="Unpriced"):
+        second(lambda: pytest.fail("unknown method under configured policy"), "GET", "unknown")
+    with pytest.raises(ValueError, match="already configured"):
+        first.configure_day(day=day, allowances={"shared": 99, "search": 9, "uploads": 9}, evidence="no refill")
+    status = first.budget_status()
+    assert status["google_remaining"] is None
+    assert status["buckets"] == {
+        "shared": {"estimated_units": 53, "reserved_units": 0, "local_remaining": 2},
+        "search": {"estimated_units": 1, "reserved_units": 0, "local_remaining": 0},
+        "uploads": {"estimated_units": 0, "reserved_units": 0, "local_remaining": 0},
+    }
+
+
+def test_allowance_is_additional_to_existing_local_estimates_and_expires(tmp_path: Path) -> None:
+    now = datetime(2026, 11, 24, 7, 59, tzinfo=UTC)
+    guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "poet", now=lambda: now)
+    guard(lambda: httpx.Response(200), "PUT", "videos")
+    guard(lambda: httpx.Response(200), "GET", "unpriced")
+    assert guard.budget_status()["unpriced_attempts"] == 1
+    guard.configure_day(
+        day="2026-11-23", allowances={"shared": 1, "search": 0, "uploads": 0}, evidence="reviewed console"
+    )
+    guard(lambda: httpx.Response(200), "GET", "videos")
+    with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+        guard(lambda: pytest.fail("allowance exhausted"), "GET", "videos")
+    now += timedelta(minutes=1)
+    with pytest.raises(YouTubeQuotaBlocked, match="allowance.*missing"):
+        guard(lambda: pytest.fail("stale day"), "GET", "videos")
+    guard.configure_day(
+        day="2026-11-24", allowances={"shared": 1, "search": 0, "uploads": 0}, evidence="new day"
+    )
+    guard(lambda: httpx.Response(200), "GET", "videos")
+
+
+def test_reservation_failure_releases_unused_units_but_retains_attempts(tmp_path: Path) -> None:
+    guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "poet")
+    day = guard.budget_status()["pacific_day"]
+    assert isinstance(day, str)
+    guard.configure_day(day=day, allowances={"shared": 50, "search": 0, "uploads": 0}, evidence="console")
+    with pytest.raises(httpx.ConnectError):
+        with guard.reserve(50):
+            def fail() -> httpx.Response:
+                raise httpx.ConnectError("synthetic failure")
+            guard(fail, "GET", "videos")
+    with guard.reserve(49):
+        with pytest.raises(YouTubeQuotaBlocked, match="Nested"):
+            with guard.reserve(50):
+                pytest.fail("nested reservation exceeded")
+        with pytest.raises(YouTubeQuotaBlocked, match="day or bucket changed"):
+            guard(lambda: pytest.fail("wrong bucket"), "GET", "search")
+        with pytest.raises(YouTubeQuotaBlocked, match="reservation exhausted"):
+            guard(lambda: pytest.fail("insufficient reservation"), "PUT", "videos")
+    assert guard(lambda: httpx.Response(200), "GET", "videos").status_code == 200
+
+
+def test_concurrent_reservation_cannot_exceed_configured_allowance(tmp_path: Path) -> None:
+    from threading import Barrier
+
+    guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "operator")
+    day = guard.budget_status()["pacific_day"]
+    assert isinstance(day, str)
+    guard.configure_day(day=day, allowances={"shared": 50, "search": 0, "uploads": 0}, evidence="console")
+    barrier = Barrier(2)
+
+    def run(alias: str) -> bool:
+        local = ProjectQuotaGuard(guard.path, alias)
+        barrier.wait(timeout=5)
+        try:
+            with local.reserve(50):
+                local(lambda: httpx.Response(200), "PUT", "videos")
+            return True
+        except YouTubeQuotaBlocked:
+            return False
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(run, ("poet", "lord-god"))) == [False, True]

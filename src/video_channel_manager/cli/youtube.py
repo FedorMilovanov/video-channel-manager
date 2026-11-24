@@ -49,7 +49,7 @@ from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
 )
-from video_channel_manager.platforms.youtube.store import YouTubeQuotaBlocked
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
 console = Console()
@@ -400,6 +400,52 @@ def channels(
     console.print(table)
     if not records:
         console.print("[yellow]No channels returned. Verify which Google or Brand Account was selected.[/yellow]")
+
+
+def _local_quota_guard(client_secret: Path | None) -> ProjectQuotaGuard:
+    settings = get_settings()
+    config = InstalledClientConfig.from_file(client_secret or settings.youtube_client_secret_file)
+    guard = ProjectQuotaGuard.for_client(settings.data_dir, config.client_id, "quota-operator")
+    if guard is None:
+        raise ValueError("Cannot derive the Google Cloud project number from the installed OAuth client.")
+    return guard
+
+
+@youtube_app.command("quota-status")
+def quota_status(
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Report local quota accounting without contacting Google."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota status failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("quota-configure")
+def quota_configure(
+    project_number: Annotated[str, typer.Option("--confirm-project-number")],
+    day: Annotated[str, typer.Option("--pacific-day")],
+    shared: Annotated[int, typer.Option("--shared", min=0)],
+    search: Annotated[int, typer.Option("--search", min=0)],
+    uploads: Annotated[int, typer.Option("--uploads", min=0)],
+    evidence: Annotated[str, typer.Option("--evidence", help="Non-secret reference to reviewed Cloud Console evidence")],
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Enable one immutable daily LOCAL allowance, not a Google quota grant."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        if project_number != guard.path.stem:
+            raise ValueError("Google Cloud project number mismatch; no local allowance changed.")
+        guard.configure_day(
+            day=day, allowances={"shared": shared, "search": search, "uploads": uploads}, evidence=evidence
+        )
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota configuration failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("recent")

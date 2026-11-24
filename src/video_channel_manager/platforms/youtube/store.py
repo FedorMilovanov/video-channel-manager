@@ -4,8 +4,10 @@ import json
 import os
 import re
 import sqlite3
+import uuid
 from collections.abc import Callable, Iterator
 from contextlib import closing, contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -145,12 +147,52 @@ def quota_exhaustion_reason(response: httpx.Response) -> str | None:
     return None
 
 
+# Cost table: https://developers.google.com/youtube/data/determine_quota_cost
+# The documented search and video-insert buckets are separate from shared units.
+# For resumable media/status HTTP attempts, conservatively charge one upload
+# allowance per dispatch; that estimate is NOT a Google usage receipt.
+_QUOTA_BUCKETS = ("shared", "search", "uploads")
+_READ_ONE = {"channels", "videos", "playlists", "playlistItems", "commentThreads", "comments"}
+_QUOTA_COSTS = {
+    ("GET", "videos.read-exact"): ("shared", 1),
+    ("GET", "playlistItems.list"): ("shared", 1),
+    ("GET", "search"): ("search", 1),
+    ("GET", "search.list"): ("search", 1),
+    ("GET", "captions"): ("shared", 50),
+    ("GET", "captions.list"): ("shared", 50),
+    ("GET", "captions.download"): ("shared", 200),
+    ("POST", "captions"): ("shared", 400),
+    ("POST", "captions.insert"): ("shared", 400),
+    ("PUT", "captions"): ("shared", 450),
+    ("PUT", "captions.update"): ("shared", 450),
+    ("POST", "commentThreads"): ("shared", 50),
+    ("PUT", "comments"): ("shared", 50),
+    ("PUT", "videos"): ("shared", 50),
+    ("PUT", "videos.update.metadata-status"): ("shared", 50),
+    ("PUT", "videos.update.visibility"): ("shared", 50),
+    ("POST", "playlistItems.insert"): ("shared", 50),
+    ("POST", "thumbnails.set"): ("shared", 50),
+    ("POST", "videos.insert.resumable-session"): ("uploads", 1),
+    ("PUT", "videos.insert.resumable-media"): ("uploads", 1),
+    ("PUT", "videos.insert.resumable-status"): ("uploads", 1),
+}
+
+
+def quota_cost(method: str, resource: str) -> tuple[str, int] | None:
+    method = method.upper()
+    if method == "GET" and resource in _READ_ONE:
+        return "shared", 1
+    return _QUOTA_COSTS.get((method, resource))
+
+
 class ProjectQuotaGuard:
     """Durable same-host, shared-data-root quota stop and dispatch counter.
 
     Each admitted attempt is recorded before HTTP, including retries and
     failures. The provider's actual balance is NOT inferred from these local
-    counters. A rejection with an ambiguous quota bucket conservatively stops
+    counters. When explicitly configured, daily bucket allowances and bounded
+    operation reservations enforce local admission ceilings. A rejection with
+    an ambiguous quota bucket conservatively stops
     all new admissions for this project for the current Pacific calendar day.
     Requests already admitted or in flight cannot be recalled.
     """
@@ -165,6 +207,7 @@ class ProjectQuotaGuard:
         self.path = path
         self.account = account
         self.now = now
+        self._active: ContextVar[tuple[str, str, str] | None] = ContextVar("youtube_quota_reservation", default=None)
 
     @classmethod
     def for_client(cls, data_dir: Path | None, client_id: str, account: str) -> "ProjectQuotaGuard | None":
@@ -192,9 +235,149 @@ class ProjectQuotaGuard:
                     "CREATE TABLE IF NOT EXISTS attempts (day TEXT, account TEXT, method TEXT, "
                     "resource TEXT, count INTEGER NOT NULL, PRIMARY KEY(day, account, method, resource))"
                 )
+                db.execute(
+                    "CREATE TABLE IF NOT EXISTS quota_usage (day TEXT, bucket TEXT, account TEXT, "
+                    "units INTEGER NOT NULL, PRIMARY KEY(day, bucket, account))"
+                )
+                db.execute(
+                    "CREATE TABLE IF NOT EXISTS quota_limits (day TEXT, bucket TEXT, ceiling INTEGER NOT NULL, "
+                    "evidence TEXT NOT NULL, PRIMARY KEY(day, bucket))"
+                )
+                db.execute(
+                    "CREATE TABLE IF NOT EXISTS quota_reservations (id TEXT PRIMARY KEY, day TEXT NOT NULL, "
+                    "bucket TEXT NOT NULL, account TEXT NOT NULL, remaining INTEGER NOT NULL)"
+                )
                 yield db
         except (OSError, sqlite3.Error) as exc:
             raise YouTubeQuotaBlocked("YouTube quota ledger unavailable; stop and reconcile") from exc
+
+    @staticmethod
+    def _totals(db: sqlite3.Connection, day: str, bucket: str) -> tuple[int, int]:
+        spent = db.execute(
+            "SELECT COALESCE(SUM(units), 0) FROM quota_usage WHERE day = ? AND bucket = ?", (day, bucket)
+        ).fetchone()[0]
+        held = db.execute(
+            "SELECT COALESCE(SUM(remaining), 0) FROM quota_reservations WHERE day = ? AND bucket = ?",
+            (day, bucket),
+        ).fetchone()[0]
+        return int(spent), int(held)
+
+    @staticmethod
+    def _configured(db: sqlite3.Connection) -> bool:
+        return db.execute("SELECT 1 FROM quota_limits LIMIT 1").fetchone() is not None
+
+    @classmethod
+    def _check_day(cls, db: sqlite3.Connection, day: str) -> None:
+        stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
+        if stop is not None:
+            raise YouTubeQuotaBlocked(f"YouTube project quota blocked for Pacific day {day}: {stop[0]}; no dispatch")
+        if cls._configured(db) and db.execute(
+            "SELECT 1 FROM quota_limits WHERE day = ?", (day,)
+        ).fetchone() is None:
+            raise YouTubeQuotaBlocked(f"YouTube quota allowance for Pacific day {day} is missing; no dispatch")
+
+    @classmethod
+    def _check_capacity(cls, db: sqlite3.Connection, day: str, bucket: str, units: int) -> None:
+        limit = db.execute(
+            "SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
+        ).fetchone()
+        if limit is not None:
+            spent, held = cls._totals(db, day, bucket)
+            if spent + held + units > int(limit[0]):
+                raise YouTubeQuotaBlocked(f"YouTube local {bucket} quota allowance exhausted; no dispatch")
+
+    def configure_day(self, *, day: str, allowances: dict[str, int], evidence: str) -> None:
+        """Record a one-time additional local allowance from a reviewed Console snapshot.
+
+        The operator must first pause competing writers and account for other
+        clients. This does not query or set Google's actual quota. No silent refill.
+        """
+        if (
+            set(allowances) != set(_QUOTA_BUCKETS)
+            or any(type(value) is not int or not 0 <= value <= 1_000_000_000 for value in allowances.values())
+            or not evidence.strip()
+        ):
+            raise ValueError("Three non-negative bucket allowances and non-secret evidence are required.")
+        with self._transaction() as db:
+            if day != self._day():
+                raise ValueError("Allowance must be for the current Pacific calendar day.")
+            if db.execute("SELECT 1 FROM quota_limits WHERE day = ?", (day,)).fetchone() is not None:
+                raise ValueError("Today's quota allowance is already configured; no refill.")
+            if db.execute("SELECT 1 FROM quota_reservations WHERE day = ?", (day,)).fetchone() is not None:
+                raise ValueError("Active reservations exist; pause and reconcile operators first.")
+            for bucket, units in allowances.items():
+                spent, _ = self._totals(db, day, bucket)
+                db.execute("INSERT INTO quota_limits VALUES (?, ?, ?, ?)", (day, bucket, spent + units, evidence))
+
+    def budget_status(self) -> dict[str, object]:
+        """Local estimates only; no provider request and no inferred grant."""
+        with self._transaction() as db:
+            day = self._day()
+            buckets: dict[str, dict[str, int | None]] = {}
+            for bucket in _QUOTA_BUCKETS:
+                spent, held = self._totals(db, day, bucket)
+                limit = db.execute(
+                    "SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
+                ).fetchone()
+                buckets[bucket] = {
+                    "estimated_units": spent,
+                    "reserved_units": held,
+                    "local_remaining": None if limit is None else int(limit[0]) - spent - held,
+                }
+            stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
+            unpriced, _ = self._totals(db, day, "unpriced")
+            return {
+                "pacific_day": day,
+                "quota_policy_enabled": self._configured(db),
+                "provider_stop": None if stop is None else str(stop[0]),
+                "buckets": buckets,
+                "unpriced_attempts": unpriced,
+                "google_remaining": None,
+            }
+
+    @contextmanager
+    def reserve(self, units: int, *, bucket: str = "shared") -> Iterator[None]:
+        """Hold a bounded operation's write and verification allowance atomically."""
+        if type(units) is not int or units <= 0 or bucket not in _QUOTA_BUCKETS:
+            raise ValueError("A positive reservation and known quota bucket are required.")
+        active = self._active.get()
+        with self._transaction() as db:
+            day = self._day()
+            self._check_day(db, day)
+            if active is not None:
+                reservation_id, reserved_day, reserved_bucket = active
+                remaining = db.execute(
+                    "SELECT remaining FROM quota_reservations WHERE id = ?", (reservation_id,)
+                ).fetchone()
+                if reserved_day != day or reserved_bucket != bucket or remaining is None or int(remaining[0]) < units:
+                    raise YouTubeQuotaBlocked("Nested YouTube quota reservation cannot be satisfied; no dispatch")
+            else:
+                self._check_capacity(db, day, bucket, units)
+                reservation_id = uuid.uuid4().hex
+                db.execute(
+                    "INSERT INTO quota_reservations VALUES (?, ?, ?, ?, ?)",
+                    (reservation_id, day, bucket, self.account, units),
+                )
+        if active is not None:
+            yield
+            return
+        token = self._active.set((reservation_id, day, bucket))
+        try:
+            yield
+        except BaseException as error:
+            try:
+                self._release(reservation_id)
+            except YouTubeQuotaBlocked as cleanup:
+                error.add_note(str(cleanup))
+            raise
+        else:
+            self._release(reservation_id)
+        finally:
+            self._active.reset(token)
+
+    def _release(self, reservation_id: str) -> None:
+        with self._transaction() as db:
+            db.execute("DELETE FROM quota_reservations WHERE id = ?", (reservation_id,))
 
     def __call__(
         self,
@@ -202,13 +385,31 @@ class ProjectQuotaGuard:
         method: str,
         resource: str,
     ) -> httpx.Response:
-        day = self._day()
+        cost = quota_cost(method, resource)
         with self._transaction() as db:
-            stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
-            if stop is not None:
-                raise YouTubeQuotaBlocked(
-                    f"YouTube project quota blocked for Pacific day {day}: {stop[0]}; no dispatch"
+            day = self._day()
+            self._check_day(db, day)
+            active = self._active.get()
+            if cost is None and (active is not None or self._configured(db)):
+                raise YouTubeQuotaBlocked("Unpriced YouTube API method under quota policy; no dispatch")
+            bucket, units = cost if cost is not None else ("unpriced", 1)
+            if active is not None:
+                reservation_id, reserved_day, reserved_bucket = active
+                if reserved_day != day or reserved_bucket != bucket:
+                    raise YouTubeQuotaBlocked("YouTube quota reservation day or bucket changed; no dispatch")
+                result = db.execute(
+                    "UPDATE quota_reservations SET remaining = remaining - ? WHERE id = ? AND remaining >= ?",
+                    (units, reservation_id, units),
                 )
+                if result.rowcount != 1:
+                    raise YouTubeQuotaBlocked("YouTube operation quota reservation exhausted; no dispatch")
+            else:
+                self._check_capacity(db, day, bucket, units)
+            db.execute(
+                "INSERT INTO quota_usage VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(day, bucket, account) DO UPDATE SET units = units + excluded.units",
+                (day, bucket, self.account, units),
+            )
             db.execute(
                 "INSERT INTO attempts VALUES (?, ?, ?, ?, 1) "
                 "ON CONFLICT(day, account, method, resource) DO UPDATE SET count = count + 1",
