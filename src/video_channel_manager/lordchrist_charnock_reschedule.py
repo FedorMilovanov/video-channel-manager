@@ -186,6 +186,15 @@ def scheduled_reissue_preflight_status(ledger: dict[str, Any], manifest_entry: d
         and receipt.get("provider_effect") == "verified"
         and type(receipt.get("new_message_id")) is int
         and receipt["new_message_id"] > 0
+        and receipt["new_message_id"] != manifest_entry["deleted_telegram_message_id"]
+        and original.get("state") == "published"
+        and original.get("provider_effect") == "verified"
+        and type(original.get("telegram_message_id")) is int
+        and original["telegram_message_id"] == manifest_entry["deleted_telegram_message_id"]
+        and original.get("telegram_chat_id") == -1001295216957
+        and original.get("telegraph_url") == manifest_entry["verified_telegraph_url"]
+        and original.get("article_sha256")
+        == manifest_entry.get("historical_source_article_sha256", manifest_entry["source_article_sha256"])
         and all(receipt.get(key) == value for key, value in expected.items())
     ):
         return "verified"
@@ -240,7 +249,9 @@ def _select_due(
     if (
         original.get("state") != "published"
         or original.get("provider_effect") != "verified"
+        or type(original.get("telegram_message_id")) is not int
         or original.get("telegram_message_id") != entry["deleted_telegram_message_id"]
+        or original.get("telegram_chat_id") != -1001295216957
         or original.get("telegraph_url") != entry["verified_telegraph_url"]
         or original.get("article_sha256")
         != entry.get("historical_source_article_sha256", entry["source_article_sha256"])
@@ -502,6 +513,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         or receipt.get("source_article_sha256") != payload.article_sha256
         or receipt.get("telegraph_url") != source["verified_telegraph_url"]
         or receipt.get("scheduled_on_moscow") != source["scheduled_on_moscow"]
+        or receipt.get("original_deleted_message_id") != source["deleted_telegram_message_id"]
         or receipt.get("binding_git_blob_sha") != source.get("binding_git_blob_sha")
     ):
         raise RuntimeError("Reissue intent/reviewed payload drift; fail closed")
@@ -509,6 +521,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.stage == "send":
         if receipt.get("state") != "claimed":
             raise RuntimeError("Send-once already attempted; no replay")
+        if receipt.get("provider_effect") != "may_exist_until_reconciled":
+            raise RuntimeError("Claimed Telegram provider effect drifted; reconcile without resend")
         _prove_owner_deletion(source)
         _proof_page(source, payload)
         profile = load_channel_profile(args.repo_root / DEFAULT_PROFILE_PATH)
@@ -576,11 +590,15 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         return {"stage": "sent", "publication_id": args.publication_id, "message_id": new_id}
 
     if args.stage == "verify":
-        if receipt.get("state") != "sent":
-            raise RuntimeError("Only a confirmed send can be read back")
+        if receipt.get("state") != "sent" or receipt.get("provider_effect") != "verified_by_api":
+            raise RuntimeError("Only a provider-acknowledged send can be read back")
         verified_message_id = receipt.get("new_message_id")
-        if not isinstance(verified_message_id, int) or verified_message_id <= 0:
-            raise RuntimeError("Missing provider-acknowledged replacement message identity")
+        if (
+            type(verified_message_id) is not int
+            or verified_message_id <= 0
+            or verified_message_id == source["deleted_telegram_message_id"]
+        ):
+            raise RuntimeError("Missing or invalid provider-acknowledged replacement message identity")
         _prove_new_public_post(message_id=verified_message_id, telegraph_url=source["verified_telegraph_url"])
         receipt.update(
             state="verified", provider_effect="verified", verified_at_moscow=now.astimezone(MOSCOW).isoformat()

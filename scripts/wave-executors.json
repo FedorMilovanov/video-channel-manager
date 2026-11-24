@@ -736,7 +736,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "d6ad137499d92f5285cf493bc1f451d6e3c7ecbbe3b5b02537adaa39aaa94188",
+      "sha256": "4c191f35671b982d4b3dcb1f07eb2a7ef11ca3004f12f5adcecd85b636d1c656",
       "status": "independent_tool"
     },
     {
@@ -788,7 +788,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "ce178b611482e993cfdb829e6091768c18281f35db6438cd8724fe4638fe3fe2",
+      "sha256": "836417d7ed6288f7b7136bb8772ff04d95a0c58cff92bad71afc5541647742ed",
       "status": "independent_tool"
     },
     {
@@ -1532,6 +1532,18 @@
       "provider_write_capable": false,
       "callers": [],
       "private_imports": []
+    },
+    {
+      "callers": [
+        ".github/workflows/lordchrist-charnock-editorial-correction.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/charnock_telegraph_credit_revision.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "b55c2a427e47d220a22426acf0bcfce1670e1021b25849d57cd22d54513fc88d",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",
