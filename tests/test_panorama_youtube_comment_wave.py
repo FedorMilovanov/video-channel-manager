@@ -551,6 +551,7 @@ def test_strict_inventory_rejects_conflicting_duplicate_identity() -> None:
     with pytest.raises(YouTubeCommentError, match="conflicting duplicate comments"):
         StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
 
+
 @pytest.mark.parametrize("timestamp", ["not-a-date", "2026-11-23", "2026-11-23T18:00:00"])
 def test_invalid_review_timestamp_blocks_before_provider(tmp_path: Path, timestamp: str) -> None:
     adapter, fake = _adapter(tmp_path)
@@ -621,9 +622,7 @@ def test_actual_owner_video_id_must_match_reviewed_target(tmp_path: Path) -> Non
     assert fake.creates == 0
 
 
-def test_panorama_cli_reports_adapter_initialization_rejection(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_panorama_cli_reports_adapter_initialization_rejection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import typer
 
     from video_channel_manager.wave_engine import cli
