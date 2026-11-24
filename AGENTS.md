@@ -37,10 +37,7 @@ For any request to prepare, correct, audit or hand off **YouTube titles, descrip
 
 For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
 [docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
-In addition to signed copy-plan and project presentation validation, its
-non-deletion guard preserves original chapters, translation/source credits,
-primary links and relevant playlist IDs. A passing format check is not
-permission to discard source evidence or retry an uncertain provider write.
+In addition to signed copy-plan and project presentation validation, its non-deletion guard preserves original chapters, translation/source credits, primary links and relevant playlist IDs. A passing format check is not permission to discard source evidence or retry an uncertain provider write.
 For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
