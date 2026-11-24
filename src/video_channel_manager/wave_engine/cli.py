@@ -517,7 +517,11 @@ def apply(
             repository_root=repository_root,
         )
     else:
-        adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+        try:
+            adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+        except (OSError, RuntimeError, ValueError) as exc:
+            console.print(f"[red]YouTube comment adapter initialization rejected:[/red] {exc}")
+            raise typer.Exit(code=3) from exc
     journal_existed_before = journal_directory.exists()
     try:
         result = WaveEngine().apply(
@@ -620,7 +624,11 @@ def reconcile(
             repository_root=repository_root,
         )
     else:
-        adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+        try:
+            adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+        except (OSError, RuntimeError, ValueError) as exc:
+            console.print(f"[red]YouTube comment adapter initialization rejected:[/red] {exc}")
+            raise typer.Exit(code=3) from exc
     try:
         reconciliation = WaveEngine().reconcile(
             plan=plan,
