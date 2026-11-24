@@ -8,6 +8,7 @@ import importlib.util
 import json
 import sqlite3
 import subprocess
+from contextlib import closing
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -149,7 +150,7 @@ def test_postflight_rereads_ledger_and_requires_meta_proof(tmp_path, monkeypatch
     release = root / "release.json"
     content = json.dumps({"instagram_account_id": postflight.ACCOUNT, "items": items}).encode()
     release.write_bytes(content)
-    with sqlite3.connect(db) as conn:
+    with closing(sqlite3.connect(db)) as conn, conn:
         conn.execute(
             "CREATE TABLE instagram_publications("
             "publication_key TEXT PRIMARY KEY, account_id TEXT, status TEXT, "
@@ -168,7 +169,7 @@ def test_postflight_rereads_ledger_and_requires_meta_proof(tmp_path, monkeypatch
     proof_calls = []
 
     def fake_reconcile(_row, _found, _db):
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn, conn:
             conn.execute(
                 "UPDATE instagram_publications SET status='published', provider_media_id=? WHERE publication_key=?",
                 ("18012345678901234", row["publication_key"]),
