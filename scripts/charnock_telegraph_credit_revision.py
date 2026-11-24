@@ -14,7 +14,9 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
+import tempfile
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -79,11 +81,25 @@ def load_pair(key: str, repo_root: Path = ROOT) -> tuple[dict[str, Any], Any, An
     candidate_path = Path(path)
     if blob_sha((repo_root / candidate_path).read_bytes()) != expected:
         raise UnsafeRevision("Accepted correction source bytes changed")
-    new = build_telegraph_payload(
-        repo_root,
-        replace(item, article_path=candidate_path, article_blob=expected),
-        media_base_url=MEDIA_BASE,
-    )
+    # Research revisions can exceed the provider schema's 32-character revision
+    # limit. Render only a transient projection; pin the original candidate bytes
+    # above, preserve every authored field, and never rewrite research evidence.
+    candidate = json.loads((repo_root / candidate_path).read_bytes())
+    candidate["revision"] = f"charnock-{key}-credit-20261124"
+    assert item.cover_path is not None
+    with tempfile.TemporaryDirectory(prefix="charnock-credit-preview-") as directory:
+        root = Path(directory)
+        projected = root / candidate_path
+        projected.parent.mkdir(parents=True)
+        projected.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+        cover = root / item.cover_path
+        cover.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(repo_root / item.cover_path, cover)
+        new = build_telegraph_payload(
+            root,
+            replace(item, article_path=candidate_path, article_blob=expected),
+            media_base_url=MEDIA_BASE,
+        )
     for field in (
         "publication_id",
         "title",
