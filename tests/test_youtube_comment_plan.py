@@ -87,14 +87,23 @@ def test_additional_comment_plan_binds_existing_comment_ids_and_digests() -> Non
 
     before = {"comment-1": comment_text_sha256("First history")}
     operation = make_comment_operation(
-        action="create", channel_id="channel-1", video_id="video-1", video_title="Title",
-        comment_text="Independent second history", source_ids=["source-2"],
-        reviewed_at="2026-11-24T19:00:00+00:00", expected_owned_comments=before,
+        action="create",
+        channel_id="channel-1",
+        video_id="video-1",
+        video_title="Title",
+        comment_text="Independent second history",
+        source_ids=["source-2"],
+        reviewed_at="2026-11-24T19:00:00+00:00",
+        expected_owned_comments=before,
     )
     plan = build_comment_plan(
-        account_alias="legendary-poet", channel_id="channel-1", source_snapshot="snapshot-1",
-        source_snapshot_generated_at="2026-11-24T18:59:00+00:00", inventory_video_ids=["video-1"],
-        operations=[operation], mode="reviewed-additional-comment",
+        account_alias="legendary-poet",
+        channel_id="channel-1",
+        source_snapshot="snapshot-1",
+        source_snapshot_generated_at="2026-11-24T18:59:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-additional-comment",
     )
     assert not validate_comment_plan(plan)
     changed = deepcopy(plan)
