@@ -401,6 +401,45 @@ def channels(
         console.print("[yellow]No channels returned. Verify which Google or Brand Account was selected.[/yellow]")
 
 
+@youtube_app.command("recent")
+def recent(
+    account: Annotated[str, typer.Option("--account", "-a")],
+    channel_id: Annotated[str, typer.Option("--channel", help="Exact YouTube owner channel ID")],
+    limit: Annotated[int, typer.Option("--limit", min=1, max=50)] = 10,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Read one bounded uploads page for exact-ID candidate discovery, without writes."""
+
+    prepare_windows_youtube_console()
+    try:
+        _, _, client = _components(account, client_secret)
+        with client:
+            if channel_id not in {item.ref.remote_id for item in client.list_my_channels()}:
+                raise ValueError("Requested --channel does not belong to the authenticated --account.")
+            records = client.list_recent_videos(channel_id, limit=limit)
+        console.print_json(
+            data={
+                "scope": "bounded_recent_upload_candidates_not_full_inventory",
+                "channel_id": channel_id,
+                "limit": limit,
+                "items": [
+                    {
+                        "video_id": item.ref.remote_id,
+                        "title": item.title,
+                        "duration_seconds": item.duration_seconds,
+                        "published_at": item.published_at.isoformat() if item.published_at else None,
+                        "privacy_status": item.privacy_status,
+                        "file_details": item.metadata.get("fileDetails"),
+                    }
+                    for item in records
+                ],
+            }
+        )
+    except (AccountNotFoundError, OAuthFlowError, OSError, ValueError, YouTubeApiError) as exc:
+        console.print(f"[red]YouTube recent lookup failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 @youtube_app.command("scan")
 def scan(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",

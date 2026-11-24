@@ -160,3 +160,57 @@ def test_real_client_path_stops_other_canonical_adapters_without_provider_calls(
         assert status.provider_effect == "may_exist"
         assert "status_query_quota_blocked" in status.evidence
     assert requests == ["GET"]
+
+
+
+@pytest.mark.parametrize("mode", ["ok", "foreign", "missing", "duplicate"])
+def test_recent_candidates_are_bounded_and_channel_bound(tmp_path: Path, mode: str) -> None:
+    store = TokenStore(tmp_path)
+    store.save_token("poet", OAuthToken(access_token="fake", expires_at=datetime.now(UTC) + timedelta(hours=1)))
+    config = InstalledClientConfig(client_id="fake", client_secret="fake")
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        resource = request.url.path.rsplit("/", 1)[-1]
+        calls.append(resource)
+        assert "pageToken" not in request.url.params
+        if resource == "channels":
+            return httpx.Response(
+                200, json={"items": [{"id": "UC1", "contentDetails": {"relatedPlaylists": {"uploads": "UU1"}}}]}
+            )
+        if resource == "playlistItems":
+            assert request.url.params["maxResults"] == "2"
+            return httpx.Response(
+                200,
+                json={
+                    "items": [{"contentDetails": {"videoId": value}} for value in ("A", "B")],
+                    "nextPageToken": "must-not-follow",
+                },
+            )
+        assert resource == "videos" and request.url.params["id"] == "A,B"
+        ids = {"ok": ["B", "A"], "foreign": ["A", "B"], "missing": ["A"], "duplicate": ["A", "A"]}[mode]
+        return httpx.Response(
+            200,
+            json={
+                "items": [
+                    {
+                        "id": value,
+                        "snippet": {"channelId": "UC2" if mode == "foreign" else "UC1", "title": value},
+                        "contentDetails": {"duration": "PT10S"},
+                        "fileDetails": {"fileName": f"{value}.mp4"},
+                    }
+                    for value in ids
+                ]
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http:
+        client = YouTubeApiClient(client_config=config, token_store=store, account_alias="poet", http_client=http)
+        if mode == "ok":
+            records = client.list_recent_videos("UC1", limit=2)
+            assert [item.ref.remote_id for item in records] == ["A", "B"]
+            assert records[0].metadata["fileDetails"]["fileName"] == "A.mp4"
+        else:
+            with pytest.raises(YouTubeApiError):
+                client.list_recent_videos("UC1", limit=2)
+    assert calls == ["channels", "playlistItems", "videos"]

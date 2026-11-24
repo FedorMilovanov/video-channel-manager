@@ -25,7 +25,12 @@ from video_channel_manager.platforms.http import (
 from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
+from video_channel_manager.platforms.youtube.store import (
+    ProjectQuotaGuard,
+    TokenStore,
+    YouTubeQuotaBlocked,
+    quota_exhaustion_reason,
+)
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 # Observed official YouTube videos.update PUT ReadTimeouts clustered near the
@@ -230,6 +235,9 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 pass
             kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
             safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            quota_reason = quota_exhaustion_reason(response)
+            if quota_reason is not None:
+                safe_message = f"{quota_reason}: {safe_message}"
             raise YouTubeWriteError(
                 f"YouTube API {response.status_code} in {resource}: {safe_message} "
                 f"[kind={kind.value} attempts={result.attempts}]"
