@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any, cast
 
@@ -51,7 +52,7 @@ def case(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     evidence_path = tmp_path / "pilot.json"
     evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
     db_path = tmp_path / "ledger.sqlite"
-    with sqlite3.connect(db_path) as db:
+    with closing(sqlite3.connect(db_path)) as db, db:
         db.execute("CREATE TABLE instagram_publications (account_id TEXT, publication_key TEXT)")
     verify_calls: list[str] = []
     monkeypatch.setattr(
@@ -141,7 +142,7 @@ def test_local_video_digest_and_caption_are_immutable(case: dict[str, Any]) -> N
 
 
 def test_any_previous_source_attempt_blocks_rekey(case: dict[str, Any]) -> None:
-    with sqlite3.connect(case["db_path"]) as db:
+    with closing(sqlite3.connect(case["db_path"])) as db, db:
         db.execute(
             "INSERT INTO instagram_publications VALUES (?, ?)",
             (handoff.ACCOUNT, "lord-god-strength.2026-11-22.article-heart.local-v1"),
@@ -152,7 +153,7 @@ def test_any_previous_source_attempt_blocks_rekey(case: dict[str, Any]) -> None:
 
 
 def test_previous_other_account_does_not_block(case: dict[str, Any]) -> None:
-    with sqlite3.connect(case["db_path"]) as db:
+    with closing(sqlite3.connect(case["db_path"])) as db, db:
         db.execute(
             "INSERT INTO instagram_publications VALUES (?, ?)",
             ("17841407843933779", "milovi-cake.2026-11-22.article-heart.local-v1"),

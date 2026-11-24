@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -238,7 +239,7 @@ def main() -> int:
     if archive_digest != args.expected_archive_sha256.removeprefix("sha256:"):
         raise ValueError("archive database SHA mismatch: STOP")
     # SQLite is read-only. No YouTube token or HTTP client is imported.
-    with sqlite3.connect(f"file:{args.archive_db.resolve().as_posix()}?mode=ro", uri=True) as archive:
+    with closing(sqlite3.connect(f"file:{args.archive_db.resolve().as_posix()}?mode=ro", uri=True)) as archive:
         result = build_checkpoint(
             scan,
             archive,

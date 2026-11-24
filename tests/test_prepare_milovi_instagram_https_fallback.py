@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import httpx
@@ -80,7 +81,7 @@ def release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, object
 
     monkeypatch.setattr(module, "verify_local_reel", fake_local_validator)
     db = tmp_path / "publications.db"
-    with sqlite3.connect(db) as conn:
+    with closing(sqlite3.connect(db)) as conn, conn:
         conn.execute(
             "CREATE TABLE instagram_publications "
             "(publication_key TEXT, account_id TEXT, status TEXT, provider_media_id TEXT)"
@@ -170,7 +171,7 @@ def test_remote_bytes_have_to_match_the_frozen_source(release: dict[str, object]
 def test_existing_attempt_blocks_new_key_even_when_provider_media_id_is_null(
     release: dict[str, object],
 ) -> None:
-    with sqlite3.connect(release["db"]) as conn:
+    with closing(sqlite3.connect(release["db"])) as conn, conn:
         conn.execute(
             "INSERT INTO instagram_publications VALUES (?, ?, ?, ?)",
             (
@@ -214,7 +215,7 @@ def test_historical_day_is_never_eligible(release: dict[str, object]) -> None:
 def test_underscore_in_youtube_id_is_not_a_sql_like_wildcard(
     release: dict[str, object],
 ) -> None:
-    with sqlite3.connect(release["db"]) as conn:
+    with closing(sqlite3.connect(release["db"])) as conn, conn:
         conn.execute(
             "INSERT INTO instagram_publications VALUES (?, ?, ?, ?)",
             (
