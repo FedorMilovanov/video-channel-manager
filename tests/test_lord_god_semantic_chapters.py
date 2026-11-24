@@ -10,9 +10,15 @@ from pathlib import Path
 import pytest
 
 from video_channel_manager.platforms.youtube.copy_plan import (
+    canonical_sha256,
     finalize_copy_plan,
     sha256_text,
     validate_copy_plan,
+)
+from video_channel_manager.platforms.youtube.chapter_release import (
+    require_chapter_release,
+    RETIRED_PLAN_SHA256,
+    RETIRED_EFFECTS,
 )
 from video_channel_manager.platforms.youtube.lord_god_scoped import (
     LORD_GOD_CHANNEL,
@@ -142,9 +148,35 @@ def fixture(tmp_path: Path) -> tuple[dict, Path, dict, Path, dict, Path, Path]:
             "source_excerpt": CHUNKS[2][2][:24],
         },
     ]
+    events = []
+    for i, entry in enumerate(entries):
+        start = entry["second"] * 1000
+        events.append({"tStartMs": start, "segs": [{"utf8": CHUNKS[i][2]}]})
+        entry["semantic_boundary"] = "APPROVED"
+        entry["boundary_evidence"] = {
+            "start_ms": start,
+            "event_index": i,
+            "cue": entry["cue"],
+            "note": "Synthetic test fixture: verified topic start",
+        }
+    captions = tmp_path / "synthetic-ru.json3"
+    captions.write_text(json.dumps({"events": events}), encoding="utf-8")
     suffix = "\n\nТаймкоды:\n" + "\n".join(x["stamp"] + " " + x["heading"] for x in entries)
     review = {
-        "schema": "lordgod-chapter-editorial-review-v1",
+        "schema": "lordgod-chapter-editorial-review-v2",
+        "editorial_approval": "APPROVED",
+        "semantic_review": {
+            "reviewer": "test-fixture (not real approval)",
+            "reviewed_at": "2026-11-24T00:00:00+00:00",
+            "basis": "exact_ru_caption_boundaries",
+            "recording_video_id": VID,
+            "evidence_file": captions.name,
+            "evidence_sha256": _sha_bytes(captions),
+            "chapters_sha256": canonical_sha256(entries),
+            "description_sha256": sha256_text(PUBLISHED_AFTER + suffix),
+            "boundary_count": len(entries),
+            "all_boundaries_reviewed": True,
+        },
         "video_id": VID,
         "owner_channel_id": LORD_GOD_CHANNEL,
         "source_description_sha256": sha256_text(PUBLISHED_AFTER),
@@ -173,6 +205,7 @@ def build(tmp_path: Path, mutate=None):
         previous["plan_sha256"] = "outdated"  # normalized by finalize below
         finalize_copy_plan(previous, checked_video_ids=previous["checked_video_ids"])
         previous_file.write_text(json.dumps(previous), encoding="utf-8")
+        review_file.write_text(json.dumps(review), encoding="utf-8")
     return build_one_video_chapter_plan(
         audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID
     )
@@ -190,6 +223,7 @@ def test_signed_chapter_plan_is_append_only_and_preserves_missing_ids(tmp_path: 
     assert plan["chapter_evidence"]["all_cues_verified"] is True
     assert plan["chapter_evidence"]["player_ui_visual_check_pending"] is True
     assert "fresh live preflight" in report
+    require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
 
 
 @pytest.mark.parametrize(
@@ -217,6 +251,12 @@ def test_signed_chapter_plan_is_append_only_and_preserves_missing_ids(tmp_path: 
         (lambda a, p, r: r["chapters"][2].update(second=125), "archival transcript cue"),
         (lambda a, p, r: r.update(proposed_description_sha256="sha256:bad"), "final description hash"),
         (lambda a, p, r: r.update(chapters=r["chapters"][:2]), "three and forty"),
+        (lambda a, p, r: r.update(editorial_approval="HOLD"), "not approved"),
+        (lambda a, p, r: r.update(schema="lordgod-chapter-editorial-review-v1"), "non-executable"),
+        (lambda a, p, r: r["semantic_review"].update(all_boundaries_reviewed=False), "incomplete"),
+        (lambda a, p, r: r["semantic_review"].update(reviewed_at="2026-11-24T00:00:00"), "offset-aware"),
+        (lambda a, p, r: r["semantic_review"].update(chapters_sha256="sha256:bad"), "incomplete"),
+        (lambda a, p, r: r["semantic_review"].update(evidence_file="missing.json3"), "missing or changed"),
     ],
 )
 def test_wrong_source_or_chapter_fails_closed(tmp_path: Path, mutator, message: str) -> None:
@@ -229,3 +269,110 @@ def test_missing_transcript_is_blocked(tmp_path: Path) -> None:
     db.unlink()
     with pytest.raises(ValueError, match="database is missing"):
         build_one_video_chapter_plan(audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID)
+
+
+def test_execution_needs_exact_independent_review_hash(tmp_path: Path) -> None:
+    plan, _ = build(tmp_path)
+    with pytest.raises(ValueError, match="confirm-chapter-review-sha256"):
+        require_chapter_release(plan, execute=True)
+    require_chapter_release(plan, execute=False)
+    review = Path(plan["source_chapter_review"])
+    review.write_text(review.read_text(encoding="utf-8") + " ", encoding="utf-8")
+    with pytest.raises(ValueError, match="missing or changed"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+def test_generic_plan_cannot_bypass_new_chapter_gate(tmp_path: Path) -> None:
+    plan, _ = build(tmp_path)
+    plan["ruleset"] = plan["operations"][0]["ruleset"] = "generic-copy"
+    finalize_copy_plan(plan, checked_video_ids=plan["checked_video_ids"])
+    with pytest.raises(ValueError, match="semantic chapter ruleset"):
+        require_chapter_release(plan, execute=True)
+
+
+@pytest.mark.parametrize("digest", sorted(RETIRED_PLAN_SHA256))
+def test_retired_plan_digest_is_execution_only_block(digest: str) -> None:
+    plan = {"target_channel_id": LORD_GOD_CHANNEL, "plan_sha256": digest, "operations": []}
+    require_chapter_release(plan, execute=False)
+    with pytest.raises(ValueError, match="SUPERSEDED_DO_NOT_REPLAY"):
+        require_chapter_release(plan, execute=True)
+
+
+def test_retired_effect_registry_contains_all_four_exact_targets() -> None:
+    assert set(RETIRED_EFFECTS) == {"FgXzTeSj3ro", "LsaLPgYqBlM", "rkz_7hE4F9E", "tSexgfSCgT8"}
+
+
+def test_caption_event_cue_and_timestamp_must_match(tmp_path: Path) -> None:
+    audit, audit_file, previous, previous_file, review, review_file, db = fixture(tmp_path)
+    review["chapters"][1]["boundary_evidence"]["cue"] = "Invented cue"
+    review["semantic_review"]["chapters_sha256"] = canonical_sha256(review["chapters"])
+    review_file.write_text(json.dumps(review), encoding="utf-8")
+    with pytest.raises(ValueError, match="not in the cited original event"):
+        build_one_video_chapter_plan(audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID)
+
+
+def test_caption_boundary_inside_archive_chunk_is_supported(tmp_path: Path) -> None:
+    audit, audit_file, previous, previous_file, review, review_file, db = fixture(tmp_path)
+    chapter = review["chapters"][1]
+    chapter.update(second=125, stamp="02:05")
+    chapter["boundary_evidence"]["start_ms"] = 125_500
+    captions = tmp_path / review["semantic_review"]["evidence_file"]
+    obj = json.loads(captions.read_text(encoding="utf-8"))
+    obj["events"][1]["tStartMs"] = 125_500
+    captions.write_text(json.dumps(obj), encoding="utf-8")
+    after = PUBLISHED_AFTER + "\n\nТаймкоды:\n" + "\n".join(x["stamp"] + " " + x["heading"] for x in review["chapters"])
+    review["proposed_description_sha256"] = sha256_text(after)
+    review["semantic_review"].update(
+        evidence_sha256=_sha_bytes(captions),
+        chapters_sha256=canonical_sha256(review["chapters"]),
+        description_sha256=sha256_text(after),
+    )
+    review_file.write_text(json.dumps(review), encoding="utf-8")
+    plan, _ = build_one_video_chapter_plan(
+        audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID
+    )
+    assert "02:05 " in plan["operations"][0]["after_description"]
+
+
+def test_legacy_chapter_plan_refused_before_oauth(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import typer
+    from types import SimpleNamespace
+    from video_channel_manager.cli import youtube
+
+    plan, _ = build(tmp_path)
+    plan["ruleset"] = plan["operations"][0]["ruleset"] = "lord-god-one-video-semantic-chapters-v1"
+    finalize_copy_plan(plan, checked_video_ids=plan["checked_video_ids"])
+    plan_file = tmp_path / "old-plan.json"
+    plan_file.write_text(json.dumps(plan), encoding="utf-8")
+
+    def no_oauth(*args, **kwargs):
+        pytest.fail("A retired chapter ruleset reached OAuth/provider initialization")
+
+    monkeypatch.setattr(youtube, "prepare_windows_youtube_console", lambda: None)
+    monkeypatch.setattr(youtube, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path))
+    monkeypatch.setattr(youtube, "require_lord_god_youtube_presentation", lambda payload: None)
+    monkeypatch.setattr(youtube, "_writer_components", no_oauth)
+    with pytest.raises(typer.Exit) as failure:
+        youtube.apply_copy_fixes(
+            plan_file,
+            account="fedor-milovanov",
+            confirm_channel=LORD_GOD_CHANNEL,
+            execute=True,
+            confirm_target=VID,
+            confirm_after_sha256=plan["operations"][0]["after_sha256"],
+            backup_output=tmp_path / "backup.json",
+            result_output=tmp_path / "result.json",
+        )
+    assert failure.value.exit_code == 2
+    assert not (tmp_path / "backup.json").exists()
+    assert not (tmp_path / "result.json").exists()
+
+
+def test_resealed_retired_effect_cannot_execute(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    plan, _ = build(tmp_path)
+    monkeypatch.setitem(RETIRED_EFFECTS, VID, plan["operations"][0]["after_sha256"])
+    plan["generated_at"] = "resealed"
+    finalize_copy_plan(plan, checked_video_ids=plan["checked_video_ids"])
+    require_chapter_release(plan, execute=False)
+    with pytest.raises(ValueError, match="retired chapter effect"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])

@@ -41,6 +41,7 @@ In addition to signed copy-plan and project presentation validation, its
 non-deletion guard preserves original chapters, translation/source credits,
 primary links and relevant playlist IDs. A passing format check is not
 permission to discard source evidence or retry an uncertain provider write.
+For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 

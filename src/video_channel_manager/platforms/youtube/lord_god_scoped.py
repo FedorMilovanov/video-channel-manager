@@ -14,6 +14,11 @@ import hashlib
 import re
 from urllib.parse import parse_qs, urlsplit
 
+from video_channel_manager.platforms.youtube.chapter_release import (
+    CHAPTER_RULESET,
+    chapter_stamp as _chapter_stamp,
+    require_review,
+)
 from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text, validate_copy_plan
 
 LORD_GOD_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
@@ -247,17 +252,6 @@ def _validate_project_copy(audit: dict[str, Any], *, video_id: str, after: str) 
                 raise ValueError("Unproven or unrelated YouTube playlist in cleaned description")
 
 
-CHAPTER_RULESET = "lord-god-one-video-semantic-chapters-v1"
-
-
-def _chapter_stamp(second: int) -> str:
-    if second < 0:
-        raise ValueError("Negative chapter start")
-    if second >= 3600:
-        return f"{second // 3600}:{second % 3600 // 60:02d}:{second % 60:02d}"
-    return f"{second // 60:02d}:{second % 60:02d}"
-
-
 def build_one_video_chapter_plan(
     audit: dict[str, Any],
     audit_file: Path,
@@ -309,7 +303,7 @@ def build_one_video_chapter_plan(
     ):
         raise ValueError("Previous plan unresolved metadata exception ledger changed")
     if (
-        review.get("schema") != "lordgod-chapter-editorial-review-v1"
+        review.get("schema") != "lordgod-chapter-editorial-review-v2"
         or review.get("owner_channel_id") != LORD_GOD_CHANNEL
         or review.get("video_id") != video_id
         or review.get("is_executable_plan") is not False
@@ -366,12 +360,20 @@ def build_one_video_chapter_plan(
             or len(excerpt) < 8
         ):
             raise ValueError("Invalid source-anchored chapter metadata")
-        start_ms, _, source_text = fragments[chunk_index]
+        start_ms, end_ms, source_text = fragments[chunk_index]
         source_text = str(source_text or "")
-        anchored_seconds = int(start_ms // 1000)
+        boundary = chapter.get("boundary_evidence", {})
+        boundary_ms = boundary.get("start_ms") if isinstance(boundary, dict) else None
         if (
             (index == 0 and (second != 0 or chunk_index != 0))
-            or (index > 0 and anchored_seconds != second)
+            or (
+                index > 0
+                and (
+                    type(boundary_ms) is not int
+                    or not start_ms <= boundary_ms < end_ms
+                    or boundary_ms // 1000 != second
+                )
+            )
             or cue.casefold() not in source_text.casefold()
             or not source_text.startswith(excerpt)
         ):
@@ -389,6 +391,8 @@ def build_one_video_chapter_plan(
     if len(after.encode("utf-8")) > 5000 or sha256_text(after) != review.get("proposed_description_sha256"):
         raise ValueError("Review final description hash or size is inconsistent")
 
+    require_review(review, review_file, video_id=video_id, before=before, after=after)
+
     plan = deepcopy(previous_plan)
     plan["ruleset"] = CHAPTER_RULESET
     plan["generated_at"] = datetime.now(UTC).isoformat()
@@ -404,6 +408,8 @@ def build_one_video_chapter_plan(
         "source_first_ms": fragments[0][0],
         "source_last_ms": fragments[-1][1],
         "all_cues_verified": True,
+        "editorial_approval": "APPROVED",
+        "chapter_review_sha256": _digest(review_file),
         "player_ui_visual_check_pending": True,
     }
     plan["fix_code_counts"] = {"reviewed_transcript_semantic_chapters": len(chapters)}
