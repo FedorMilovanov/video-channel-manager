@@ -53,6 +53,14 @@ These are **historical owner-provider readbacks**, not a fresh proof of every it
 
 **Closure for the report:** explanation and viewer-side remedy documented. **Owner visual comparison of an exact watch page remains unverified**; do not claim provider-side anomaly fixed or audio settings corrected.
 
+### 2026-11-24 — уточнение владельца: русскоязычная аудитория прежде локализации метаданных
+
+The owner explicitly identifies foreign-language title/description display for Russian-speaking viewers on foreign VPN endpoints as a release-quality problem. A correct `snippet.defaultLanguage=ru` is necessary but does not force every watch page to display Russian. YouTube uses viewer language, location and watch history; viewer preferred-language settings are a mitigation, not a publisher-controlled guarantee. See the official [translated video display](https://support.google.com/youtube/answer/7296123) and [preferred languages](https://support.google.com/youtube/answer/13339776) guidance.
+
+For new Russian-original music and poetry releases, do not automatically populate foreign title/description localizations. Prefer source-aligned, reviewed foreign captions while preserving Russian audio and source metadata. An international metadata experiment requires a separately reviewed exact-ID plan and owner decision. A bilingual localization (Russian original title followed by a short translated title where length permits) may be considered, not treated as a guaranteed fix or default. Do not delete existing foreign locales or overwrite previous owner edits en masse: preserve immutable before-state and translations, assess one exact video, explicitly approve removals/changes, then verify the complete remaining locale map and unchanged snippet/status/captions. Do not promise that deleting manual translations will disable YouTube's own automatic translation.
+
+This supersedes the automatic foreign-metadata expansion recommendation in section 2 and the metadata rollout direction of #903 **for Russian-original poetry/music** pending revised owner review. It does not cancel subtitle research, alter original-language exceptions, or create provider execution authority. Existing historical receipts remain true. The current exact release `j26u8q441Lk` has previously verified Russian plus ten foreign metadata locales; no removal is authorized by this documentation change alone.
+
 ## 3. Legendary Poet localization state — post-issue-body receipts
 
 The original body of issue #903 is a **historical pilot checkpoint**. Its statement “NO foreign subtitle publication verified” has been superseded by subsequent **owner-verified issue comments and local release receipts**, not by the creation of this document.
