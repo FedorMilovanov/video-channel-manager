@@ -545,9 +545,7 @@ class YouTubeCommentWriter(HttpClientOwner):
         if expected_owned_comments is not None:
             actual_owned = {item.comment_id: item.text_sha256 for item in owned}
             if actual_owned != expected_owned_comments:
-                raise YouTubeCommentConflictError(
-                    f"Reviewed owner comment state changed for {video_id}; no POST sent."
-                )
+                raise YouTubeCommentConflictError(f"Reviewed owner comment state changed for {video_id}; no POST sent.")
         elif owned:
             ids = ", ".join(item.comment_id for item in owned)
             raise YouTubeCommentConflictError(
