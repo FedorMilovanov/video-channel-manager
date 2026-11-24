@@ -1,6 +1,16 @@
 {
   "executors": [
     {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/audit_panorama_chapter_evidence.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "4974f37eeba3eb5a192473ed40dd2e4fca5ebfc2421510026c205da9e658a374",
+      "status": "independent_tool"
+    },
+    {
       "callers": [
         "scripts/sync_youtube_to_vk_textsafe.py"
       ],
