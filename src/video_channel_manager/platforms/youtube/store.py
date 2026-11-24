@@ -271,16 +271,12 @@ class ProjectQuotaGuard:
         stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
         if stop is not None:
             raise YouTubeQuotaBlocked(f"YouTube project quota blocked for Pacific day {day}: {stop[0]}; no dispatch")
-        if cls._configured(db) and db.execute(
-            "SELECT 1 FROM quota_limits WHERE day = ?", (day,)
-        ).fetchone() is None:
+        if cls._configured(db) and db.execute("SELECT 1 FROM quota_limits WHERE day = ?", (day,)).fetchone() is None:
             raise YouTubeQuotaBlocked(f"YouTube quota allowance for Pacific day {day} is missing; no dispatch")
 
     @classmethod
     def _check_capacity(cls, db: sqlite3.Connection, day: str, bucket: str, units: int) -> None:
-        limit = db.execute(
-            "SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
-        ).fetchone()
+        limit = db.execute("SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)).fetchone()
         if limit is not None:
             spent, held = cls._totals(db, day, bucket)
             if spent + held + units > int(limit[0]):
@@ -425,11 +421,8 @@ class ProjectQuotaGuard:
         return response
 
 
-
 @contextmanager
-def reserve_shared_quota(
-    guard: ProjectQuotaGuard | None, units: int, error_type: type[RuntimeError]
-) -> Iterator[None]:
+def reserve_shared_quota(guard: ProjectQuotaGuard | None, units: int, error_type: type[RuntimeError]) -> Iterator[None]:
     """Keep quota errors in the existing adapter's public error hierarchy."""
     if guard is None:
         yield

@@ -67,7 +67,9 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         new_description: str,
     ) -> VideoDescriptionSnapshot:
         with reserve_shared_quota(
-            self._quota_guard, 50 + (1 + len(self._verification_delays)) * self.retry_policy.max_attempts, YouTubeWriteError
+            self._quota_guard,
+            50 + (1 + len(self._verification_delays)) * self.retry_policy.max_attempts,
+            YouTubeWriteError,
         ):
             try:
                 return super()._write_description(current=current, new_description=new_description)
@@ -120,7 +122,9 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         path never calls it again and requires exact locale + metadata equality.
         """
         with reserve_shared_quota(
-            self._quota_guard, 50 + (2 + len(self._verification_delays)) * self.retry_policy.max_attempts, YouTubeWriteError
+            self._quota_guard,
+            50 + (2 + len(self._verification_delays)) * self.retry_policy.max_attempts,
+            YouTubeWriteError,
         ):
             try:
                 return super().replace_localized_description(

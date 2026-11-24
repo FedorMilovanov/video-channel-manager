@@ -451,3 +451,45 @@ def test_comment_mutation_timeout_is_attempted_once(tmp_path: Path) -> None:
 
     assert "upload.example" not in str(captured.value)
     assert post_calls == 1
+
+
+def test_terminal_quota_after_accepted_comment_does_not_fallback_or_replay(tmp_path: Path) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        calls.append((request.method, request.url.path))
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads" and request.method == "GET":
+            return httpx.Response(200, json={"items": []})
+        if request.url.path == "/commentThreads" and request.method == "POST":
+            return httpx.Response(200, json=_thread("comment-1", "Approved"))
+        if request.url.path == "/comments":
+            return httpx.Response(403, json={"error": {"message": "Rejected", "errors": [{"reason": "quotaExceeded"}]}})
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle), verify_delays_seconds=(0.0, 0.0))
+    with pytest.raises(YouTubeCommentError, match="Comment comment-1 write response accepted"):
+        writer.create_top_level_comment(video_id="video-1", expected_channel_id="channel-1", text="Approved")
+    assert calls.count(("POST", "/commentThreads")) == 1
+    assert calls[-2:] == [("POST", "/commentThreads"), ("GET", "/comments")]
+
+
+def test_quota_in_moderation_preflight_is_not_treated_as_empty_inventory(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        calls.append(request.method)
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        assert request.method == "GET"
+        if request.url.params["moderationStatus"] == "published":
+            return httpx.Response(200, json={"items": []})
+        return httpx.Response(
+            403, json={"error": {"message": "Rejected", "errors": [{"reason": "dailyLimitExceeded"}]}}
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentError, match="dailyLimitExceeded"):
+        writer.create_top_level_comment(video_id="video-1", expected_channel_id="channel-1", text="Approved")
+    assert calls == ["GET", "GET", "GET"]

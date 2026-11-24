@@ -284,9 +284,7 @@ def test_allowance_is_additional_to_existing_local_estimates_and_expires(tmp_pat
     now += timedelta(minutes=1)
     with pytest.raises(YouTubeQuotaBlocked, match="allowance.*missing"):
         guard(lambda: pytest.fail("stale day"), "GET", "videos")
-    guard.configure_day(
-        day="2026-11-24", allowances={"shared": 1, "search": 0, "uploads": 0}, evidence="new day"
-    )
+    guard.configure_day(day="2026-11-24", allowances={"shared": 1, "search": 0, "uploads": 0}, evidence="new day")
     guard(lambda: httpx.Response(200), "GET", "videos")
 
 
@@ -297,8 +295,10 @@ def test_reservation_failure_releases_unused_units_but_retains_attempts(tmp_path
     guard.configure_day(day=day, allowances={"shared": 50, "search": 0, "uploads": 0}, evidence="console")
     with pytest.raises(httpx.ConnectError):
         with guard.reserve(50):
+
             def fail() -> httpx.Response:
                 raise httpx.ConnectError("synthetic failure")
+
             guard(fail, "GET", "videos")
     with guard.reserve(49):
         with pytest.raises(YouTubeQuotaBlocked, match="Nested"):
@@ -335,9 +335,7 @@ def test_concurrent_reservation_cannot_exceed_configured_allowance(tmp_path: Pat
 
 
 @pytest.mark.parametrize("allowance,expected_puts", [(54, 0), (55, 1)])
-def test_description_reserves_write_and_read_retry_headroom(
-    tmp_path: Path, allowance: int, expected_puts: int
-) -> None:
+def test_description_reserves_write_and_read_retry_headroom(tmp_path: Path, allowance: int, expected_puts: int) -> None:
     store = TokenStore(tmp_path)
     store.save_token(
         "poet",
@@ -352,9 +350,7 @@ def test_description_reserves_write_and_read_retry_headroom(
     assert guard is not None
     day = guard.budget_status()["pacific_day"]
     assert isinstance(day, str)
-    guard.configure_day(
-        day=day, allowances={"shared": allowance, "search": 0, "uploads": 0}, evidence="console"
-    )
+    guard.configure_day(day=day, allowances={"shared": allowance, "search": 0, "uploads": 0}, evidence="console")
     description = "old"
     puts = 0
 
@@ -374,7 +370,9 @@ def test_description_reserves_write_and_read_retry_headroom(
         return httpx.Response(200, json=item if request.method == "PUT" else {"items": [item]})
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as http:
-        writer = YouTubeDescriptionWriter(client_config=config, token_store=store, account_alias="poet", http_client=http)
+        writer = YouTubeDescriptionWriter(
+            client_config=config, token_store=store, account_alias="poet", http_client=http
+        )
         kwargs = {
             "video_id": "video",
             "expected_channel_id": "channel",

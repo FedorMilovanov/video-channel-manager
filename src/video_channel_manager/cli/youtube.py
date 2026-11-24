@@ -431,7 +431,9 @@ def quota_configure(
     shared: Annotated[int, typer.Option("--shared", min=0)],
     search: Annotated[int, typer.Option("--search", min=0)],
     uploads: Annotated[int, typer.Option("--uploads", min=0)],
-    evidence: Annotated[str, typer.Option("--evidence", help="Non-secret reference to reviewed Cloud Console evidence")],
+    evidence: Annotated[
+        str, typer.Option("--evidence", help="Non-secret reference to reviewed Cloud Console evidence")
+    ],
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
 ) -> None:
     """Enable one immutable daily LOCAL allowance, not a Google quota grant."""
