@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "docs/audits/2026-11-20-lordchrist-quote-v6-18-bilingual-lexical-and-format-previews-inert.json"
 SOURCE = ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
 EXPECTED = {9, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
-NEW_TRANSLATIONS = {9, 20, 21, 22, 23, 30}
+NEW_TRANSLATIONS = {9, 12, 15, 16, 20, 21, 22, 23, 30}
 DERIVATIVE_LEGACY_EDITS: set[int] = set()
 ARTICLE_L1 = {16, 22, 27}
 
@@ -96,6 +96,17 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
         old_text = html.unescape(re.sub(r"<[^>]+>", "", old_by_num[number]["html_text"]))
         if number not in NEW_TRANSLATIONS | DERIVATIVE_LEGACY_EDITS:
             assert item["proposed_quote_text_ru"] in old_text
+
+    assert "избрание по свободной Божьей воле" in by_num[12]["proposed_quote_text_ru"]
+    assert "распознать то, что Он открывает о Своих намерениях" in by_num[15]["proposed_quote_text_ru"]
+    assert "верность совести" in by_num[15]["proposed_quote_text_ru"]
+    assert "безусловно необходимы" in by_num[16]["proposed_quote_text_ru"]
+    for number in (12, 15, 16):
+        entry = by_num[number]
+        assert "7143481654" in entry["underlying_draft_ref"]
+        assert all(
+            check["proposed_russian"] in entry["proposed_quote_text_ru"] for check in entry["selected_lexical_checkpoints"]
+        )
 
     assert by_num[22]["proposed_quote_text_ru"].startswith("Христианское довольство —")
     assert "заклятых лицемеров" not in by_num[23]["proposed_quote_text_ru"]
