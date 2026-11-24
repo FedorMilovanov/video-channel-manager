@@ -219,11 +219,15 @@ The authoritative registry is `docs/operations/project-identity-registry.md`.
 - Rutube: https://rutube.ru/channel/74579453/
 - Site: `https://thelegendarypoet.ru/` remains a legacy registered value pending a fresh operational check.
 
+## Comment count — owner clarification 2026-11-24
+
+For both editorial projects, a single substantial owner comment is the normal choice, not a quota. Add a second only when it offers a distinct, documented fact chain or meaningful independent analysis not already developed in the description or first comment. Do not split one argument into two posts or repeat promotional links merely to increase comment count. If research yields no second useful angle, stop at one; three or more require separate editorial justification and owner authorization. Choose at most one pin. The second comment normally remains an independent unpinned top-level comment. Keep paragraphs, meaningful native emphasis and tasteful emoji in text/link labels; SHARE-clean opening rules apply to descriptions, not comments. Read all existing owner comments, preserve their IDs and approved text, review the exact new copy, and require exact-state additional-create authorization through the canonical executor (#1116). If the executor does not support it, report the draft as HOLD, not published; never bypass the duplicate guard.
+
 ## Existing comments
 
 - No channel comment: an approved `create` operation may be planned.
 - Identical channel comment: already applied; skip.
-- One different channel comment: review it before deciding whether to update.
+- One different channel comment: review it; either retain it, update that exact ID with approval, or plan a distinct additional comment only under the explicit additional-create contract.
 - Multiple channel comments: never choose automatically.
 - Viewer comments only: the channel may still create one approved top-level comment.
 - Comments disabled: no workaround or browser automation.
