@@ -498,15 +498,26 @@ def test_panorama_cli_rejects_ci_even_with_operator_confirmation(
     assert not (tmp_path / "journal").exists()
 
 
-def test_strict_inventory_cannot_be_bounded() -> None:
-    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+@pytest.mark.parametrize("overflow", [False, True])
+def test_strict_inventory_page_bound_never_returns_partial_result(overflow: bool) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
 
     class StubCommentsAPI(YouTubeCommentWriter):
         def __init__(self) -> None:
-            pass
+            self.calls = 0
 
-    with pytest.raises(ValueError, match="Strict moderation inventory cannot be bounded"):
-        StubCommentsAPI()._list_top_level_comments(VIDEO_ID, strict_moderation=True, max_pages_per_status=1)
+        def _request(self, *args: object, **kwargs: object) -> dict[str, object]:
+            self.calls += 1
+            return {"items": [], "nextPageToken": "more"} if overflow else {"items": []}
+
+    stub = StubCommentsAPI()
+    if overflow:
+        with pytest.raises(YouTubeCommentError, match="reserved page limit"):
+            stub.list_top_level_comments(VIDEO_ID, strict_moderation=True, max_pages_per_status=1)
+        assert stub.calls == 1
+    else:
+        assert stub.list_top_level_comments(VIDEO_ID, strict_moderation=True, max_pages_per_status=1) == []
+        assert stub.calls == 3
 
 
 @pytest.mark.parametrize("bounded", [False, True])
@@ -783,3 +794,109 @@ def test_real_panorama_writer_requires_reviewed_current_quota_before_get(
         adapter.execute(operation)
     assert writer.requests == (1 if case == "configured" else 0)
     assert not (tmp_path / "youtube" / "panorama-first-comment-reservations.sqlite3").exists()
+
+
+@pytest.mark.parametrize("case", ["ok", "insufficient", "outer_overflow", "inner_overflow", "race", "post_overflow"])
+def test_guarded_comment_atomic_quota_and_exhaustive_inventory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    from datetime import UTC, datetime
+
+    import httpx
+
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+    from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, YouTubeQuotaBlocked
+    from video_channel_manager.wave_engine import youtube_comment_provider
+
+    source, operation, _ = _reviewed_artifact(tmp_path)
+    current = datetime(2026, 11, 24, 18, tzinfo=UTC)
+    guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "fedor-milovanov", now=lambda: current)
+    other = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "other", now=lambda: current)
+    # One attempt, one verification round, one page/status:
+    # 50 + 4 writer units + 3 identity reads + 9 inventory pages = 66.
+    guard.configure_day(
+        day="2026-11-24",
+        allowances={"shared": 65 if case == "insufficient" else 66, "search": 0, "uploads": 0},
+        evidence="offline test evidence",
+    )
+    marker = tmp_path / "youtube" / "panorama-first-comment-reservations.sqlite3"
+    comment = {
+        "id": "comment-id",
+        "snippet": {"authorChannelId": {"value": YOUTUBE_COMMENT_OWNER}, "textOriginal": TEXT},
+    }
+    thread = {
+        "id": "thread-id",
+        "snippet": {"videoId": VIDEO_ID, "channelId": YOUTUBE_COMMENT_OWNER, "topLevelComment": comment},
+    }
+
+    class OfflineRealWriter(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            self._quota_guard = guard
+            self.verify_delays_seconds = (0.0,)
+            self.retry_policy = SimpleNamespace(max_attempts=1)
+            self.requests = 0
+            self.inventories = 0
+            self.posts = 0
+
+        def _request(
+            self, method: str, resource: str, *, params: dict[str, object], **kwargs: object
+        ) -> dict[str, object]:
+            def dispatch() -> httpx.Response:
+                self.requests += 1
+                if resource == "channels":
+                    with pytest.raises(YouTubeQuotaBlocked):
+                        other(lambda: pytest.fail("Competing request dispatched"), "GET", "videos")
+                    return httpx.Response(200, json={"items": [{"id": YOUTUBE_COMMENT_OWNER}]})
+                if resource == "videos":
+                    return httpx.Response(
+                        200,
+                        json={
+                            "items": [
+                                {
+                                    "id": VIDEO_ID,
+                                    "snippet": {"channelId": YOUTUBE_COMMENT_OWNER, "title": TITLE},
+                                    "status": {"privacyStatus": "public"},
+                                }
+                            ]
+                        },
+                    )
+                if method == "POST":
+                    assert marker.exists()
+                    self.posts += 1
+                    return httpx.Response(200, json=thread)
+                if resource == "comments":
+                    return httpx.Response(200, json={"items": [comment]})
+                assert resource == "commentThreads"
+                if params["moderationStatus"] == "published":
+                    self.inventories += 1
+                    if (
+                        (case == "outer_overflow" and self.inventories == 1)
+                        or (case == "inner_overflow" and self.inventories == 2)
+                        or (case == "post_overflow" and self.posts)
+                    ):
+                        return httpx.Response(200, json={"items": [], "nextPageToken": "more"})
+                    if self.posts or (case == "race" and self.inventories == 2):
+                        return httpx.Response(200, json={"items": [thread]})
+                return httpx.Response(200, json={"items": []})
+
+            return guard(dispatch, method, resource).json()
+
+    monkeypatch.setattr(youtube_comment_provider, "is_ci_environment", lambda: False)
+    monkeypatch.setattr(youtube_comment_provider, "_MAX_INVENTORY_PAGES_PER_STATUS", 1)
+    writer = OfflineRealWriter()
+    adapter = LordGodYouTubeCommentAdapter(
+        writer=writer, data_dir=tmp_path, review_source=source, repository_root=tmp_path
+    )
+    if case == "ok":
+        assert adapter.execute(operation)["publication_verified"] is True
+    elif case == "post_overflow":
+        with pytest.raises(UnknownProviderOutcomeError, match="independent readback uncertain"):
+            adapter.execute(operation)
+    else:
+        with pytest.raises(OperationRejectedError):
+            adapter.execute(operation)
+    assert writer.posts == (1 if case in {"ok", "post_overflow"} else 0)
+    assert marker.exists() == bool(writer.posts)
+    if case == "insufficient":
+        assert writer.requests == 0
+    assert guard.budget_status()["buckets"]["shared"]["reserved_units"] == 0

@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 import sqlite3
-from contextlib import closing
+from contextlib import closing, nullcontext
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
@@ -32,6 +32,8 @@ YOUTUBE_COMMENT_POLICY_VERSION = "lord-god-panorama-comment-wave-v1"
 YOUTUBE_COMMENT_OWNER = "UCeSJsC6go2c9pdJCuUI1BYA"
 YOUTUBE_COMMENT_ACCOUNT = "fedor-milovanov"
 REVIEWED_COMMENT_ARTIFACT = "panorama-reviewed-comment.json"
+# A policy ceiling, not evidence of actual inventory or available Google quota.
+_MAX_INVENTORY_PAGES_PER_STATUS = 10
 _VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 _APPROVED_FIELDS = frozenset(
     {
@@ -172,7 +174,13 @@ class LordGodYouTubeCommentAdapter:
 
     def _owned(self, *, video_id: str) -> list[Any]:
         try:
-            all_comments = self.writer.list_top_level_comments(video_id, strict_moderation=True)
+            all_comments = (
+                self.writer.list_top_level_comments(
+                    video_id, strict_moderation=True, max_pages_per_status=_MAX_INVENTORY_PAGES_PER_STATUS
+                )
+                if isinstance(self.writer, YouTubeCommentWriter)
+                else self.writer.list_top_level_comments(video_id, strict_moderation=True)
+            )
         except YouTubeCommentError as exc:
             raise OperationRejectedError(
                 "YouTube moderation inventory is incomplete; comment publication prohibited"
@@ -243,63 +251,92 @@ class LordGodYouTubeCommentAdapter:
         lock = self.data_dir / "locks" / (f"youtube-{self.account_alias}-{YOUTUBE_COMMENT_OWNER}.lock")
         with local_youtube_write_lock(lock, account=self.account_alias, channel_id=YOUTUBE_COMMENT_OWNER):
             self._require_reviewed_quota()
-            self._assert_authenticated_owner()
-            identity = self.writer.read_video_identity(p["video_id"])
-            if identity.video_id != p["video_id"] or identity.channel_id != YOUTUBE_COMMENT_OWNER:
-                raise OperationRejectedError("YouTube video identity or owner differs from the reviewed target")
-            if identity.title != p["video_title"]:
-                raise OperationRejectedError("YouTube title drifted after editorial review")
-            if identity.privacy_status != "public":
-                raise OperationRejectedError("YouTube target video must remain public")
-            owned = self._owned(video_id=p["video_id"])
-            if owned:
-                raise OperationRejectedError(
-                    "Existing owner-authored top-level comment: no unreviewed overwrite or second comment"
-                )
-            self._require_reviewed_quota()
-            self._reserve_first_comment(operation, p)
-            # Never clear the reservation, even after a rejected or uncertain POST.
+            real_writer = isinstance(self.writer, YouTubeCommentWriter)
+            reservation = (
+                self.writer.reserve_guarded_comment_wave(max_pages_per_status=_MAX_INVENTORY_PAGES_PER_STATUS)
+                if real_writer
+                else nullcontext()
+            )
+            target_reserved = False
+
+            def reserve_target() -> None:
+                nonlocal target_reserved
+                self._reserve_first_comment(operation, p)
+                target_reserved = True
+
             try:
-                created = self.writer.create_top_level_comment(
-                    video_id=p["video_id"],
-                    expected_channel_id=YOUTUBE_COMMENT_OWNER,
-                    text=p["comment_text"],
-                )
+                with reservation:
+                    self._assert_authenticated_owner()
+                    identity = self.writer.read_video_identity(p["video_id"])
+                    if identity.video_id != p["video_id"] or identity.channel_id != YOUTUBE_COMMENT_OWNER:
+                        raise OperationRejectedError("YouTube video identity or owner differs from the reviewed target")
+                    if identity.title != p["video_title"]:
+                        raise OperationRejectedError("YouTube title drifted after editorial review")
+                    if identity.privacy_status != "public":
+                        raise OperationRejectedError("YouTube target video must remain public")
+                    owned = self._owned(video_id=p["video_id"])
+                    if owned:
+                        raise OperationRejectedError(
+                            "Existing owner-authored top-level comment: no unreviewed overwrite or second comment"
+                        )
+                    # Claim the durable target only after the real writer's own strict preflight
+                    # and nested quota admission, immediately before the possible POST.
+                    if real_writer:
+                        created = self.writer.create_top_level_comment(
+                            video_id=p["video_id"],
+                            expected_channel_id=YOUTUBE_COMMENT_OWNER,
+                            text=p["comment_text"],
+                            strict_inventory_max_pages=_MAX_INVENTORY_PAGES_PER_STATUS,
+                            before_dispatch=reserve_target,
+                        )
+                    else:
+                        reserve_target()
+                        created = self.writer.create_top_level_comment(
+                            video_id=p["video_id"],
+                            expected_channel_id=YOUTUBE_COMMENT_OWNER,
+                            text=p["comment_text"],
+                        )
+                    if (
+                        created.video_id != p["video_id"]
+                        or created.author_channel_id != YOUTUBE_COMMENT_OWNER
+                        or not comments_equivalent(created.text, p["comment_text"])
+                        or not created.comment_id
+                    ):
+                        raise UnknownProviderOutcomeError(
+                            "YouTube reported a mismatched comment after dispatch; manual reconciliation required"
+                        )
+                    # The shared writer may fall back to the POST receipt after unsuccessful GETs.
+                    # This wave requires an independent, complete owner-inventory readback.
+                    try:
+                        observed = self._owned(video_id=p["video_id"])
+                        if (
+                            len(observed) != 1
+                            or observed[0].comment_id != created.comment_id
+                            or not comments_equivalent(observed[0].text, p["comment_text"])
+                        ):
+                            raise ValueError("Independent comment inventory does not match the create receipt")
+                    except Exception as exc:
+                        raise UnknownProviderOutcomeError(
+                            "YouTube comment independent readback uncertain; reconcile with GET only, never blind retry"
+                        ) from exc
+                    return {
+                        "video_id": p["video_id"],
+                        "channel_id": YOUTUBE_COMMENT_OWNER,
+                        "comment_id": created.comment_id,
+                        "comment_sha256": p["comment_sha256"],
+                        "publication_verified": True,
+                    }
+            except UnknownProviderOutcomeError:
+                raise
             except Exception as exc:
-                raise UnknownProviderOutcomeError(
-                    f"YouTube comment dispatch or postflight uncertain ({type(exc).__name__}); "
-                    "reconcile with read-only checks, never blind retry"
-                ) from exc
-            if (
-                created.video_id != p["video_id"]
-                or created.author_channel_id != YOUTUBE_COMMENT_OWNER
-                or not comments_equivalent(created.text, p["comment_text"])
-                or not created.comment_id
-            ):
-                raise UnknownProviderOutcomeError(
-                    "YouTube reported a mismatched comment after dispatch; manual reconciliation required"
-                )
-            # The shared writer may fall back to the POST receipt after unsuccessful GETs.
-            # This wave requires an independent, complete owner-inventory readback.
-            try:
-                observed = self._owned(video_id=p["video_id"])
-                if (
-                    len(observed) != 1
-                    or observed[0].comment_id != created.comment_id
-                    or not comments_equivalent(observed[0].text, p["comment_text"])
-                ):
-                    raise ValueError("Independent comment inventory does not match the create receipt")
-            except Exception as exc:
-                raise UnknownProviderOutcomeError(
-                    "YouTube comment independent readback uncertain; reconcile with GET only, never blind retry"
-                ) from exc
-            return {
-                "video_id": p["video_id"],
-                "channel_id": YOUTUBE_COMMENT_OWNER,
-                "comment_id": created.comment_id,
-                "comment_sha256": p["comment_sha256"],
-                "publication_verified": True,
-            }
+                if target_reserved:
+                    raise UnknownProviderOutcomeError(
+                        f"YouTube comment dispatch or postflight uncertain ({type(exc).__name__}); "
+                        "reconcile with read-only checks, never blind retry"
+                    ) from exc
+                if isinstance(exc, OperationRejectedError):
+                    raise
+                raise OperationRejectedError(f"YouTube comment quota admission or preflight rejected: {exc}") from exc
 
     def reconcile(self, operation: WaveOperation) -> Mapping[str, Any]:
         """GET-only outcome reconciliation; never creates or edits a comment."""
