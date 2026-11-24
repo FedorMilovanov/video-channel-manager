@@ -6,11 +6,13 @@ intent, the wave journal, a matching owner, and two operator write gates.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sqlite3
 from contextlib import closing
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 from video_channel_manager.platforms.youtube.comments import (
@@ -21,14 +23,15 @@ from video_channel_manager.platforms.youtube.comments import (
     validate_comment_text,
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
-from video_channel_manager.wave_engine.canonical import is_ci_environment
+from video_channel_manager.wave_engine.canonical import is_ci_environment, resolve_repository_relative_path
 from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
-from video_channel_manager.wave_engine.models import MutationClass, WaveOperation
+from video_channel_manager.wave_engine.models import MutationClass, WaveOperation, WaveSourceEvidence
 
 YOUTUBE_COMMENT_OPERATION_KIND = "youtube.comment.create"
 YOUTUBE_COMMENT_POLICY_VERSION = "lord-god-panorama-comment-wave-v1"
 YOUTUBE_COMMENT_OWNER = "UCeSJsC6go2c9pdJCuUI1BYA"
 YOUTUBE_COMMENT_ACCOUNT = "fedor-milovanov"
+REVIEWED_COMMENT_ARTIFACT = "panorama-reviewed-comment.json"
 _VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 _APPROVED_FIELDS = frozenset(
     {
@@ -55,11 +58,15 @@ class LordGodYouTubeCommentAdapter:
         account_alias: str = YOUTUBE_COMMENT_ACCOUNT,
         writer: YouTubeCommentWriter | None = None,
         data_dir: Path | None = None,
+        review_source: WaveSourceEvidence | None = None,
+        repository_root: Path | None = None,
     ) -> None:
         if account_alias != YOUTUBE_COMMENT_ACCOUNT:
             raise ValueError("YouTube comment wave requires exact approved owner account alias")
         self.account_alias = account_alias
         self._owns_writer = writer is None
+        self.review_source = review_source
+        self.repository_root = repository_root
         if writer is None:
             from video_channel_manager.config import get_settings
             from video_channel_manager.platforms.youtube.models import InstalledClientConfig
@@ -127,6 +134,42 @@ class LordGodYouTubeCommentAdapter:
             raise OperationRejectedError("YouTube comment SHA256 differs from reviewed copy")
         return p
 
+    def _assert_reviewed_source(self, operation: WaveOperation, payload: dict[str, str]) -> None:
+        source = self.review_source
+        if source is None or self.repository_root is None:
+            raise OperationRejectedError("Exact reviewed comment source and repository root are required")
+        if (
+            source.project != operation.project
+            or source.policy_version != operation.policy_version
+            or source.source_snapshot_id != operation.source_snapshot_id
+        ):
+            raise OperationRejectedError("Reviewed comment source identity differs from the operation")
+        matches = [
+            artifact for artifact in source.artifacts if PurePosixPath(artifact.path).name == REVIEWED_COMMENT_ARTIFACT
+        ]
+        if len(matches) != 1:
+            raise OperationRejectedError("Source must bind exactly one panorama-reviewed-comment.json artifact")
+
+        def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            result: dict[str, Any] = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("Duplicate reviewed comment JSON key")
+                result[key] = value
+            return result
+
+        try:
+            artifact = matches[0]
+            path = resolve_repository_relative_path(self.repository_root, artifact.path, require_file=True)
+            raw = path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != artifact.sha256:
+                raise ValueError("Reviewed artifact SHA-256 drift")
+            reviewed = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_object)
+        except (OSError, ValueError) as exc:
+            raise OperationRejectedError("Cannot verify exact reviewed comment source artifact") from exc
+        if not isinstance(reviewed, dict) or reviewed != payload:
+            raise OperationRejectedError("Operation payload differs from exact reviewed comment artifact")
+
     def _owned(self, *, video_id: str) -> list[Any]:
         try:
             all_comments = self.writer.list_top_level_comments(video_id, strict_moderation=True)
@@ -186,6 +229,8 @@ class LordGodYouTubeCommentAdapter:
         p = self._validated_payload(operation)
         if (self._owns_writer or isinstance(self.writer, YouTubeCommentWriter)) and is_ci_environment():
             raise OperationRejectedError("YouTube comment writes require the persistent owner runtime, not CI")
+        if self._owns_writer or isinstance(self.writer, YouTubeCommentWriter) or self.review_source is not None:
+            self._assert_reviewed_source(operation, p)
         if self.data_dir is None:
             raise OperationRejectedError("No durable local owner lock directory was supplied")
         lock = self.data_dir / "locks" / (f"youtube-{self.account_alias}-{YOUTUBE_COMMENT_OWNER}.lock")
