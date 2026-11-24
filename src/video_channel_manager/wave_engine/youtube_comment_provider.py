@@ -191,6 +191,13 @@ class LordGodYouTubeCommentAdapter:
         ):
             raise OperationRejectedError("OAuth grant belongs to a different YouTube channel")
 
+    def _require_reviewed_quota(self) -> None:
+        if isinstance(self.writer, YouTubeCommentWriter):
+            try:
+                self.writer.require_reviewed_shared_allowance()
+            except YouTubeCommentError as exc:
+                raise OperationRejectedError(f"YouTube comment quota admission rejected: {exc}") from exc
+
     def _reserve_first_comment(self, operation: WaveOperation, payload: dict[str, str]) -> None:
         """Commit an irreversible target reservation before any possible POST.
 
@@ -235,6 +242,7 @@ class LordGodYouTubeCommentAdapter:
             raise OperationRejectedError("No durable local owner lock directory was supplied")
         lock = self.data_dir / "locks" / (f"youtube-{self.account_alias}-{YOUTUBE_COMMENT_OWNER}.lock")
         with local_youtube_write_lock(lock, account=self.account_alias, channel_id=YOUTUBE_COMMENT_OWNER):
+            self._require_reviewed_quota()
             self._assert_authenticated_owner()
             identity = self.writer.read_video_identity(p["video_id"])
             if identity.video_id != p["video_id"] or identity.channel_id != YOUTUBE_COMMENT_OWNER:
@@ -248,6 +256,7 @@ class LordGodYouTubeCommentAdapter:
                 raise OperationRejectedError(
                     "Existing owner-authored top-level comment: no unreviewed overwrite or second comment"
                 )
+            self._require_reviewed_quota()
             self._reserve_first_comment(operation, p)
             # Never clear the reservation, even after a rejected or uncertain POST.
             try:

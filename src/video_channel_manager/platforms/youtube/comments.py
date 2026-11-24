@@ -216,6 +216,16 @@ class YouTubeCommentWriter(HttpClientOwner):
         cleaned_delays = tuple(max(0.0, float(item)) for item in verify_delays_seconds)
         self.verify_delays_seconds = cleaned_delays or (0.0,)
 
+    def require_reviewed_shared_allowance(self) -> None:
+        """Check local evidence for the bounded create/verification cost, without API access."""
+        if self._quota_guard is None:
+            raise YouTubeCommentError("Reviewed shared YouTube quota allowance is required.")
+        units = 50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts
+        try:
+            self._quota_guard.require_reviewed_allowance(units)
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeCommentError(str(exc)) from exc
+
     def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
         if token.needs_refresh():

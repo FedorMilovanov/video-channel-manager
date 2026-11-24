@@ -739,3 +739,47 @@ def test_direct_real_writer_requires_review_source(tmp_path: Path, monkeypatch: 
     with pytest.raises(OperationRejectedError, match="Exact reviewed comment source"):
         adapter.execute(_operation())
     assert not (tmp_path / "youtube").exists()
+
+
+@pytest.mark.parametrize("case", ["unconfigured", "expired", "insufficient", "configured", "no_guard"])
+def test_real_panorama_writer_requires_reviewed_current_quota_before_get(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    from datetime import UTC, datetime
+
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+    from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard
+    from video_channel_manager.wave_engine import youtube_comment_provider
+
+    source, operation, _ = _reviewed_artifact(tmp_path)
+    current = datetime(2026, 11, 24, 18, tzinfo=UTC)
+    guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "fedor-milovanov", now=lambda: current)
+    if case in {"expired", "insufficient", "configured"}:
+        guard.configure_day(
+            day="2026-11-24",
+            allowances={"shared": 1 if case == "insufficient" else 1000, "search": 0, "uploads": 0},
+            evidence="offline test evidence",
+        )
+    if case == "expired":
+        current = datetime(2026, 11, 25, 18, tzinfo=UTC)
+
+    class OfflineRealWriter(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            self._quota_guard = None if case == "no_guard" else guard
+            self.verify_delays_seconds = (0.0,)
+            self.retry_policy = SimpleNamespace(max_attempts=1)
+            self.requests = 0
+
+        def _request(self, *args: object, **kwargs: object) -> dict[str, object]:
+            self.requests += 1
+            return {"items": [{"id": "wrong-owner"}]}
+
+    monkeypatch.setattr(youtube_comment_provider, "is_ci_environment", lambda: False)
+    writer = OfflineRealWriter()
+    adapter = LordGodYouTubeCommentAdapter(
+        writer=writer, data_dir=tmp_path, review_source=source, repository_root=tmp_path
+    )
+    with pytest.raises(OperationRejectedError, match="OAuth grant" if case == "configured" else "quota admission"):
+        adapter.execute(operation)
+    assert writer.requests == (1 if case == "configured" else 0)
+    assert not (tmp_path / "youtube" / "panorama-first-comment-reservations.sqlite3").exists()

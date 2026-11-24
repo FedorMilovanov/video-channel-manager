@@ -305,6 +305,20 @@ class ProjectQuotaGuard:
                 spent, _ = self._totals(db, day, bucket)
                 db.execute("INSERT INTO quota_limits VALUES (?, ?, ?, ?)", (day, bucket, spent + units, evidence))
 
+    def require_reviewed_allowance(self, units: int, *, bucket: str = "shared") -> None:
+        """Require explicit current-day local evidence without granting or reserving quota."""
+        if type(units) is not int or units <= 0 or bucket not in _QUOTA_BUCKETS:
+            raise ValueError("A positive allowance requirement and known quota bucket are required.")
+        with self._transaction() as db:
+            day = self._day()
+            self._check_day(db, day)
+            evidence = db.execute(
+                "SELECT evidence FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
+            ).fetchone()
+            if evidence is None or not str(evidence[0]).strip():
+                raise YouTubeQuotaBlocked("Reviewed current-day YouTube quota allowance is required; no dispatch")
+            self._check_capacity(db, day, bucket, units)
+
     def budget_status(self) -> dict[str, object]:
         """Local estimates only; no provider request and no inferred grant."""
         with self._transaction() as db:
