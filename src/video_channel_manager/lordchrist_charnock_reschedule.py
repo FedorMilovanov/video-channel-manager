@@ -51,6 +51,32 @@ V2_PUBLICATION_ID = "lordchrist-telegraph-charnock-10"
 V3_CALENDAR = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-recovery-calendar-v3-20261124.json")
 V3_CALENDAR_IDS = frozenset(f"lordchrist-telegraph-charnock-{i:02d}" for i in (6, 7, 8, 10, 11, 12, 13))
 V3_APPROVAL_ENV = "APPROVED_CALENDAR_V3_SHA256"
+V3_SLOT_FIELDS = frozenset(
+    {
+        "publication_id",
+        "scheduled_on_moscow",
+        "previous_scheduled_on_moscow",
+        "legacy_article_git_blob_sha",
+        "original_article_sha256",
+        "original_cover_sha256",
+        "original_github_sha",
+        "original_deleted_telegram_message_id",
+        "existing_telegraph_url",
+        "queue_article_git_blob_sha",
+        "source_path",
+        "source_blob",
+        "source_sha256",
+        "projected_revision",
+        "rendered_article_sha256",
+        "reviewed_tree_sha256",
+        "public_raw_sha256",
+        "reviewed_node_count",
+        "reviewed_cover_git_blob_sha",
+        "announcement_sha256",
+        "announcement_chars",
+        "release_approval",
+    }
+)
 LIVE_WINDOW_HOUR = (12, 13)
 # Article 13's public page was corrected in place on 2026-11-21 (q-3, q-9,
 # q-11, q-12, q-19).  The hold is now a Telegram send/reissue gate only:
@@ -169,8 +195,8 @@ def load_recovery_calendar_v3(repo_root: Path, *, require_approved: bool = False
     seen_ids: set[str] = set()
     seen_dates: set[str] = set()
     for slot in data["slots"]:
-        if not isinstance(slot, dict):
-            raise RuntimeError("Malformed V3 recovery slot")
+        if not isinstance(slot, dict) or set(slot) != V3_SLOT_FIELDS:
+            raise RuntimeError("Unexpected V3 recovery slot fields")
         pub_id = slot.get("publication_id")
         day = slot.get("scheduled_on_moscow")
         if pub_id not in V3_CALENDAR_IDS or pub_id in seen_ids or not isinstance(day, str) or day in seen_dates:
@@ -249,6 +275,31 @@ def require_v3_release(entry: dict[str, Any]) -> None:
         for field in ("rights_receipt", "editorial_receipt")
     ):
         raise RuntimeError("V3 recovery awaits separate rights and editorial release evidence")
+
+
+def _require_v3_day_available(queue: list[Any], ledger: dict[str, Any], publication_id: str, day: date) -> None:
+    """Block a new conflicting article; historical incident slots are not new bookings."""
+    incident_ids = V3_CALENDAR_IDS | {"lordchrist-telegraph-charnock-09"}
+    if any(item.publication_id not in incident_ids and item.scheduled_on == day for item in queue):
+        raise RuntimeError("V3 recovery date conflicts with another article in the current queue")
+    for other_id, other in ledger["entries"].items():
+        if other_id == publication_id:
+            continue
+        reissue = other.get("scheduled_reissue")
+        if isinstance(reissue, dict) and reissue.get("scheduled_on_moscow") == day.isoformat():
+            raise RuntimeError("V3 recovery date already claimed by another article")
+        for field in ("telegram_published_at_utc", "telegram_claimed_at_utc"):
+            stamp = other.get(field)
+            if stamp is None:
+                continue
+            try:
+                parsed = datetime.fromisoformat(stamp)
+                if parsed.tzinfo is None:
+                    raise ValueError("Timestamp lacks timezone")
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("Unverifiable article receipt date; reconcile calendar") from exc
+            if parsed.astimezone(MOSCOW).date() == day:
+                raise RuntimeError("V3 recovery date already occupied by another article")
 
 
 def _render_v3_payload(repo_root: Path, item: Any, entry: dict[str, Any], *, media_url: str) -> Any:
@@ -361,6 +412,13 @@ def scheduled_reissue_preflight_status(ledger: dict[str, Any], manifest_entry: d
         and original.get("telegraph_url") == manifest_entry["verified_telegraph_url"]
         and original.get("article_sha256")
         == manifest_entry.get("historical_source_article_sha256", manifest_entry["source_article_sha256"])
+        and (
+            not manifest_entry.get("media_base_revision")
+            or (
+                original.get("github_sha") == manifest_entry["original_github_sha"]
+                and original.get("cover_sha256") == manifest_entry["original_cover_sha256"]
+            )
+        )
         and all(receipt.get(key) == value for key, value in expected.items())
     ):
         return "verified"
@@ -412,6 +470,8 @@ def _select_due(
         require_v3_release(entry)
     queue = load_telegraph_queue(args.repo_root / DEFAULT_QUEUE_PATH, args.repo_root)
     item = _find_item(queue, args.publication_id)
+    if use_v3 and args.stage != "verify":
+        _require_v3_day_available(queue, ledger, args.publication_id, local.date())
     queue_date = date.fromisoformat(entry["previous_scheduled_on_moscow"]) if use_v3 else local.date()
     queue_blob = entry["queue_article_git_blob_sha"] if use_v3 else entry["article_git_blob_sha"]
     if not item.is_ready or item.scheduled_on != queue_date or item.channel_post is None:

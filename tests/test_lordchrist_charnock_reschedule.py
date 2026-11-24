@@ -953,3 +953,46 @@ def test_v3_changed_announcement_stops_before_any_provider_contact(monkeypatch):
     monkeypatch.setattr(m.httpx, "get", lambda *a, **k: pytest.fail("Preview never contacts providers"))
     with pytest.raises(RuntimeError, match="announcement drifted"):
         m._select_due(args, ledger, now=datetime.fromisoformat(entry["scheduled_on_moscow"] + "T12:05:00+03:00"))
+
+
+@pytest.mark.parametrize("field", ["deleted_telegram_message_id", "verified_telegraph_url", "binding_git_blob_sha"])
+def test_v3_unexpected_fields_cannot_overwrite_immutable_history(tmp_path, field):
+    data = _copy_v3_contract(tmp_path)
+    data["slots"][0][field] = "injected"
+    (tmp_path / m.V3_CALENDAR).write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="Unexpected V3 recovery slot fields"):
+        m.load_recovery_calendar_v3(tmp_path)
+
+
+def test_v3_new_conflicting_queue_slot_is_blocked(monkeypatch):
+    entry = m.load_recovery_calendar_v3(V3_ROOT)[0]
+    now = datetime.fromisoformat(entry["scheduled_on_moscow"] + "T12:05:00+03:00")
+    args = argparse.Namespace(
+        stage="preview", calendar_v3=True, repo_root=V3_ROOT, publication_id=entry["publication_id"]
+    )
+    real_loader = m.load_telegraph_queue
+
+    def conflicting(*args, **kwargs):
+        return [
+            *real_loader(*args, **kwargs),
+            SimpleNamespace(publication_id="lordchrist-telegraph-new-history", scheduled_on=now.date()),
+        ]
+
+    monkeypatch.setattr(m, "load_telegraph_queue", conflicting)
+    with pytest.raises(RuntimeError, match="conflicts with another article"):
+        m._select_due(args, _v3_ledger(entry), now=now)
+
+
+@pytest.mark.parametrize(
+    ("other", "message"),
+    [
+        ({"telegram_published_at_utc": "2026-11-26T21:30:00+00:00"}, "already occupied"),
+        ({"telegram_claimed_at_utc": "2026-11-27T08:00:00+00:00"}, "already occupied"),
+        ({"scheduled_reissue": {"scheduled_on_moscow": "2026-11-27", "state": "claimed"}}, "already claimed"),
+        ({"telegram_published_at_utc": "2026-11-27T08:00:00"}, "Unverifiable article receipt date"),
+    ],
+)
+def test_v3_day_collision_in_protected_ledger_is_fail_closed(other, message):
+    day = datetime.fromisoformat("2026-11-27T12:05:00+03:00").date()
+    with pytest.raises(RuntimeError, match=message):
+        m._require_v3_day_available([], {"entries": {"other-article": other}}, ARTICLE, day)
