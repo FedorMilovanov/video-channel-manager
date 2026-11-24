@@ -13,6 +13,7 @@ from scripts.charnock_article_render_md import iter_text, render_markdown
 ROOT = Path(__file__).resolve().parents[1]
 ARTICLE_DIR = ROOT / "content/telegram/lordchrist/telegraph-v1/charnock"
 CANDIDATE_DIR = ROOT / "content/research/charnock-source-credit-candidates-20261123"
+Q10_PROPOSAL = ROOT / "content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json"
 KEYS = ("01b", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13")
 LEGACY_WITH_MISSING_LIVE_CREDIT = {
     "11": "d42392bb593de4f89d36a12a3548f459efe41090",
@@ -26,6 +27,8 @@ def approved_article_path(key: str) -> Path:
 
 
 def reviewed_article_path(key: str) -> Path:
+    if key == "11":
+        return Q10_PROPOSAL
     if key in LEGACY_WITH_MISSING_LIVE_CREDIT:
         return CANDIDATE_DIR / f"charnock-{key}.json"
     return approved_article_path(key)
@@ -33,7 +36,7 @@ def reviewed_article_path(key: str) -> Path:
 
 @pytest.mark.parametrize("key", KEYS)
 def test_reviewed_markdown_is_exactly_the_rendered_json(key: str) -> None:
-    """All 13 reviewed forms match; 11–13 are separate, unreleased candidates."""
+    """All 13 reviewed forms match; 11–13 retain separate provider-inert corrections."""
     document = json.loads(reviewed_article_path(key).read_text(encoding="utf-8"))
     markdown = approved_article_path(key).with_suffix(".md").read_text(encoding="utf-8")
     assert render_markdown(document).rstrip("\n") == markdown.rstrip("\n")
@@ -57,7 +60,7 @@ def test_legacy_live_source_is_unchanged_and_not_mistaken_for_candidate(key: str
     actual_blob = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
     assert actual_blob == blob_sha
     approved = json.loads(raw)
-    candidate = json.loads(reviewed_article_path(key).read_text(encoding="utf-8"))
+    candidate = json.loads((CANDIDATE_DIR / f"charnock-{key}.json").read_text(encoding="utf-8"))
     # Only editorial metadata and the final source-credit block differ.
     assert len(candidate["blocks"]) == len(approved["blocks"]) + 1
     assert candidate["blocks"][:-1] == approved["blocks"]
