@@ -101,6 +101,10 @@ YouTube uses `*bold*` and `_italic_` (not Markdown double asterisks). A comma, p
 
 The incident was reproduced on two Lord God Q&A №54 owner comments: the malformed `_греческий текст сохранился_,` and `_не оправдывать себя_,` passed the older length/encoding-only comment validator. This is a **preflight rejection**, not an instruction to silently rewrite the punctuation in an arbitrary phrase; preserve exact meaning and review punctuation before submitting new copy. External connectors such as `*Джон МакАртур* — богослов` remain outside the emphasis. Existing public comments are not a reason for unrelated bulk edits.
 
+## The Legendary Poet — expressive typography (owner clarification 2026-11-24)
+
+For `legendary-poet` author comments and pinned comments, tasteful contextual emoji are explicitly permitted both beside link labels and inside the literary or historical prose. Select them individually to support meaning, readability and visual rhythm; never insert them mechanically. Use native YouTube `*bold*` for important dates, names and factual highlights and `_italic_` for exact quotations, verse and expressive conclusions. Preserve source fidelity, paragraph breaks and native punctuation. Do not impose a blanket emoji prohibition or a mechanical numeric cap on meaningful emoji in these comments. The generic decorative-marker guidance below concerns gratuitous decoration, not this project-specific permission. Avoid emoji-only lines, visual clutter and engagement bait. No relaxation of fact checks, duplicate guards, write authorization or exact-ID readback.
+
 ## Visual style
 
 The style is compact and readable on desktop and mobile.
