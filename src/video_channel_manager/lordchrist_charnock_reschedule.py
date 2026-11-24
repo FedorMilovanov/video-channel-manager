@@ -12,8 +12,11 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import tempfile
 import time
-from datetime import datetime
+from dataclasses import replace
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -45,6 +48,9 @@ V2_BINDING = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-10
 V2_BINDING_GIT_BLOB = "7708abcac315acd32794dfdc52e4676278a85c81"
 LEGACY_MANIFEST_GIT_BLOB = "9bbacf42933da605ca8f47a4708d23dd18971a8b"
 V2_PUBLICATION_ID = "lordchrist-telegraph-charnock-10"
+V3_CALENDAR = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock-recovery-calendar-v3-20261124.json")
+V3_CALENDAR_IDS = frozenset(f"lordchrist-telegraph-charnock-{i:02d}" for i in (6, 7, 8, 10, 11, 12, 13))
+V3_APPROVAL_ENV = "APPROVED_CALENDAR_V3_SHA256"
 LIVE_WINDOW_HOUR = (12, 13)
 # Article 13's public page was corrected in place on 2026-11-21 (q-3, q-9,
 # q-11, q-12, q-19).  The hold is now a Telegram send/reissue gate only:
@@ -125,6 +131,166 @@ def approved_reissue_entry(repo_root: Path, legacy_entry: dict[str, Any]) -> dic
         "reviewed_node_count": approved["reviewed_node_count"],
         "binding_git_blob_sha": V2_BINDING_GIT_BLOB,
     }
+
+
+def load_recovery_calendar_v3(repo_root: Path, *, require_approved: bool = False) -> list[dict[str, Any]]:
+    """Resolve the delegated dates without rewriting the historical queue or receipt.
+
+    The reviewed technical plan is not authority to send. Live execution also
+    requires an exact separately approved calendar digest and per-item evidence.
+    """
+    old_raw = (repo_root / MANIFEST).read_bytes()
+    if _file_git_blob_sha(old_raw) != LEGACY_MANIFEST_GIT_BLOB:
+        raise RuntimeError("Historical Charnock release authority drifted")
+    raw = (repo_root / V3_CALENDAR).read_bytes()
+    if require_approved and (
+        os.environ.get("ENABLED") != "true"
+        or os.environ.get("APPROVED_MANIFEST_SHA256") != hashlib.sha256(old_raw).hexdigest()
+        or os.environ.get(V3_APPROVAL_ENV) != hashlib.sha256(raw).hexdigest()
+    ):
+        raise RuntimeError("Exact V3 recovery execution approval missing")
+    data = json.loads(raw)
+    if (
+        not isinstance(data, dict)
+        or data.get("schema_name") != "video-channel-manager.lordchrist-charnock-recovery-calendar"
+        or data.get("schema_version") != 3
+        or data.get("channel") != "@lordchrist"
+        or data.get("timezone") != "Europe/Moscow"
+        or data.get("nominal_time") != "12:05"
+        or data.get("legacy_manifest_git_blob_sha") != LEGACY_MANIFEST_GIT_BLOB
+        or data.get("verified_exclusion")
+        != {"publication_id": "lordchrist-telegraph-charnock-09", "telegram_message_id": 1630}
+        or re.fullmatch(r"[0-9a-f]{40}", str(data.get("media_base_revision", ""))) is None
+        or not isinstance(data.get("slots"), list)
+    ):
+        raise RuntimeError("Malformed V3 Charnock recovery calendar")
+    historical = {entry["publication_id"]: entry for entry in json.loads(old_raw)["items"]}
+    entries: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    seen_dates: set[str] = set()
+    for slot in data["slots"]:
+        if not isinstance(slot, dict):
+            raise RuntimeError("Malformed V3 recovery slot")
+        pub_id = slot.get("publication_id")
+        day = slot.get("scheduled_on_moscow")
+        if pub_id not in V3_CALENDAR_IDS or pub_id in seen_ids or not isinstance(day, str) or day in seen_dates:
+            raise RuntimeError("Duplicate or unauthorized V3 recovery identity/date")
+        if date.fromisoformat(day).isoformat() != day or date.fromisoformat(day).weekday() not in (1, 4):
+            raise RuntimeError("V3 recovery must keep the Tuesday/Friday calendar")
+        old = historical[pub_id]
+        if (
+            slot.get("previous_scheduled_on_moscow") != old["scheduled_on_moscow"]
+            or slot.get("legacy_article_git_blob_sha") != old["article_git_blob_sha"]
+            or slot.get("original_article_sha256") != old["source_article_sha256"]
+            or slot.get("original_deleted_telegram_message_id") != old["deleted_telegram_message_id"]
+            or slot.get("existing_telegraph_url") != old["verified_telegraph_url"]
+        ):
+            raise RuntimeError("V3 historical publication identity drifted")
+        for field in ("source_blob", "queue_article_git_blob_sha", "reviewed_cover_git_blob_sha", "original_github_sha"):
+            if re.fullmatch(r"[0-9a-f]{40}", str(slot.get(field, ""))) is None:
+                raise RuntimeError("Malformed V3 source Git identity")
+        for field in ("source_sha256", "rendered_article_sha256", "original_cover_sha256", "announcement_sha256"):
+            if re.fullmatch(r"sha256:[0-9a-f]{64}", str(slot.get(field, ""))) is None:
+                raise RuntimeError("Malformed V3 source/announcement digest")
+        for field in ("reviewed_tree_sha256", "public_raw_sha256"):
+            if re.fullmatch(r"[0-9a-f]{64}", str(slot.get(field, ""))) is None:
+                raise RuntimeError("Malformed V3 page digest")
+        if (
+            type(slot.get("reviewed_node_count")) is not int
+            or slot["reviewed_node_count"] <= 0
+            or type(slot.get("announcement_chars")) is not int
+            or not 1 <= slot["announcement_chars"] <= 4096
+            or not isinstance(slot.get("source_path"), str)
+        ):
+            raise RuntimeError("Malformed V3 source or announcement size")
+        source_path = Path(slot["source_path"])
+        if source_path.is_absolute() or ".." in source_path.parts:
+            raise RuntimeError("Unsafe V3 source path")
+        if slot.get("projected_revision") is not None and slot["projected_revision"] != (
+            f"charnock-{pub_id[-2:]}-credit-20261124"
+        ):
+            raise RuntimeError("Unreviewed V3 render projection")
+        # A slot identity is stable when a different slot is reviewed or when
+        # release approval changes. The whole-file approval digest remains a
+        # separate execution gate. Never use a changed date to replay a receipt.
+        binding = {
+            "legacy_manifest_git_blob_sha": LEGACY_MANIFEST_GIT_BLOB,
+            "media_base_revision": data["media_base_revision"],
+            "slot": {key: value for key, value in slot.items() if key != "release_approval"},
+        }
+        binding_blob = _file_git_blob_sha(
+            json.dumps(binding, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        )
+        entries.append(
+            {
+                **old,
+                **slot,
+                "article_git_blob_sha": slot["source_blob"],
+                "source_article_sha256": slot["rendered_article_sha256"],
+                "historical_source_article_sha256": old["source_article_sha256"],
+                "media_base_revision": data["media_base_revision"],
+                "reviewed_normalized_tree_sha256": slot["reviewed_tree_sha256"],
+                "binding_git_blob_sha": binding_blob,
+            }
+        )
+        seen_ids.add(pub_id)
+        seen_dates.add(day)
+    if seen_ids != V3_CALENDAR_IDS:
+        raise RuntimeError("Incomplete V3 recovery calendar")
+    return entries
+
+
+def require_v3_release(entry: dict[str, Any]) -> None:
+    if entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
+        raise RuntimeError("Charnock 13 TELEGRAM SEND HOLD remains independent of the calendar")
+    approval = entry.get("release_approval")
+    if not isinstance(approval, dict) or any(
+        not isinstance(approval.get(field), str) or not approval[field].strip()
+        for field in ("rights_receipt", "editorial_receipt")
+    ):
+        raise RuntimeError("V3 recovery awaits separate rights and editorial release evidence")
+
+
+def _render_v3_payload(repo_root: Path, item: Any, entry: dict[str, Any], *, media_url: str) -> Any:
+    source_path = Path(entry["source_path"])
+    if not (repo_root / source_path).resolve().is_relative_to(repo_root.resolve()):
+        raise RuntimeError("V3 source path escapes the repository")
+    raw = (repo_root / source_path).read_bytes()
+    if (
+        _file_git_blob_sha(raw) != entry["article_git_blob_sha"]
+        or "sha256:" + hashlib.sha256(raw).hexdigest() != entry["source_sha256"]
+    ):
+        raise RuntimeError("V3 reviewed source bytes drifted")
+    if entry.get("projected_revision") is None:
+        if item.article_path != source_path or item.article_blob != entry["article_git_blob_sha"]:
+            raise RuntimeError("V3 canonical source differs from the historical queue")
+        payload = build_telegraph_payload(repo_root, item, media_base_url=media_url)
+    else:
+        # Exact projection used by the already verified in-place editor:
+        # only the schema-limited revision metadata changes, never authored text.
+        candidate = json.loads(raw)
+        candidate["revision"] = entry["projected_revision"]
+        with tempfile.TemporaryDirectory(prefix="charnock-recovery-preview-") as directory:
+            root = Path(directory)
+            projected = root / source_path
+            projected.parent.mkdir(parents=True)
+            projected.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+            cover = root / item.cover_path
+            cover.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(repo_root / item.cover_path, cover)
+            payload = build_telegraph_payload(
+                root,
+                replace(item, article_path=source_path, article_blob=entry["article_git_blob_sha"]),
+                media_base_url=media_url,
+            )
+    announcement = render_channel_post(item.channel_post, entry["verified_telegraph_url"])
+    if (
+        announcement.visible_char_count != entry["announcement_chars"]
+        or "sha256:" + hashlib.sha256(announcement.html_text.encode("utf-8")).hexdigest()
+        != entry["announcement_sha256"]
+    ):
+        raise RuntimeError("V3 reviewed Telegram announcement drifted")
+    return payload
 
 
 def _require_approved_recovery_trigger(args: argparse.Namespace) -> None:
@@ -219,29 +385,44 @@ def _select_due(
         or len(manifest.get("items", [])) != 8
     ):
         raise RuntimeError("Unreviewed or malformed incident reschedule manifest")
-    matches = [x for x in manifest["items"] if x["scheduled_on_moscow"] == local.date().isoformat()]
+    use_v3 = getattr(args, "calendar_v3", False) or os.environ.get("RECOVERY_CALENDAR_VERSION") == "3"
+    if args.stage != "preview" and (args.repo_root / V3_CALENDAR).exists() and not use_v3:
+        raise RuntimeError("Versioned calendar required for live recovery")
+    entries = (
+        load_recovery_calendar_v3(args.repo_root, require_approved=args.stage != "preview")
+        if use_v3
+        else manifest["items"]
+    )
+    if use_v3 and args.stage != "verify" and local.hour == 12 and local.minute < 5:
+        raise RuntimeError("V3 recovery starts at 12:05 Moscow")
+    matches = [x for x in entries if x["scheduled_on_moscow"] == local.date().isoformat()]
     if len(matches) != 1:
         raise RuntimeError("Exactly one reviewed Charnock edition must be due today")
     entry = matches[0]
     if entry["publication_id"] != args.publication_id:
         raise RuntimeError("Requested article is not the sole due Charnock article")
-    entry = approved_reissue_entry(args.repo_root, entry)
+    if not use_v3:
+        entry = approved_reissue_entry(args.repo_root, entry)
     if args.stage in ("prepare", "send") and entry["publication_id"] in CHARNOCK_EDITORIAL_HOLDS:
         raise RuntimeError(
             "Charnock 13 TELEGRAM SEND HOLD: the existing page was corrected in place "
             "2026-11-21; no send or reissue is authorized by that correction"
         )
+    if use_v3 and args.stage in ("prepare", "send"):
+        require_v3_release(entry)
     queue = load_telegraph_queue(args.repo_root / DEFAULT_QUEUE_PATH, args.repo_root)
     item = _find_item(queue, args.publication_id)
-    if not item.is_ready or item.scheduled_on != local.date() or item.channel_post is None:
+    queue_date = date.fromisoformat(entry["previous_scheduled_on_moscow"]) if use_v3 else local.date()
+    queue_blob = entry["queue_article_git_blob_sha"] if use_v3 else entry["article_git_blob_sha"]
+    if not item.is_ready or item.scheduled_on != queue_date or item.channel_post is None:
         raise RuntimeError("Actual editorial queue date/status differs from incident manifest")
-    if item.article_blob != entry["article_git_blob_sha"] or item.article_path is None:
+    if item.article_blob != queue_blob or item.article_path is None:
         raise RuntimeError("Latest reviewed article is not the approved immutable Git blob")
     if entry.get("reviewed_cover_git_blob_sha") and item.cover_blob != entry["reviewed_cover_git_blob_sha"]:
         raise RuntimeError("Current Charnock cover file is not the approved Git blob")
     data = (args.repo_root / item.article_path).read_bytes()
     actual = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
-    if actual != entry["article_git_blob_sha"]:
+    if actual != queue_blob:
         raise RuntimeError("Article file bytes changed since approval")
     original = ledger.get("entries", {}).get(args.publication_id)
     if not isinstance(original, dict):
@@ -273,7 +454,11 @@ def _select_due(
         raise RuntimeError("Original Charnock receipt/media provenance drift")
     media_revision = entry.get("media_base_revision", source_sha)
     media_url = "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/" + media_revision
-    payload = build_telegraph_payload(args.repo_root, item, media_base_url=media_url)
+    payload = (
+        _render_v3_payload(args.repo_root, item, entry, media_url=media_url)
+        if use_v3
+        else build_telegraph_payload(args.repo_root, item, media_base_url=media_url)
+    )
     if payload.article_sha256 != entry["source_article_sha256"]:
         raise RuntimeError("Corrected source is not byte-identical to its verified Telegraph edition")
     if entry.get("reviewed_normalized_tree_sha256"):
@@ -283,7 +468,7 @@ def _select_due(
             or _normalized_telegraph_digest(payload.nodes, retain_heading_ids=True)
             != entry["reviewed_normalized_tree_sha256"]
         ):
-            raise RuntimeError("Reviewed Charnock #10 rendered nodes or cover drifted")
+            raise RuntimeError("Reviewed Charnock rendered nodes or cover drifted")
     return entry, item, payload, original
 
 
@@ -618,6 +803,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default="")
     parser.add_argument("--run-attempt", type=int, default=0)
     parser.add_argument("--github-sha", default="")
+    parser.add_argument("--calendar-v3", action="store_true", help="Resolve the reviewed versioned recovery calendar")
     parser.add_argument("--now", help="Only in provider-free preview; never accepted for live stages")
     args = parser.parse_args(argv)
     print(json.dumps(execute(args), ensure_ascii=False))

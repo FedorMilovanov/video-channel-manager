@@ -832,3 +832,124 @@ def test_disallow_unreviewed_event_types(monkeypatch):
         monkeypatch.setenv("GITHUB_EVENT_NAME", name)
         with pytest.raises(RuntimeError, match="owner-only"):
             m._require_approved_recovery_trigger(args)
+
+
+# V3 uses the real source and cover bytes, but never contacts a provider.
+V3_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _v3_ledger(entry):
+    return {
+        "entries": {
+            entry["publication_id"]: {
+                "state": "published",
+                "provider_effect": "verified",
+                "telegram_message_id": entry["deleted_telegram_message_id"],
+                "telegram_chat_id": CHAT,
+                "telegraph_url": entry["verified_telegraph_url"],
+                "article_sha256": entry["historical_source_article_sha256"],
+                "cover_sha256": entry["original_cover_sha256"],
+                "github_sha": entry["original_github_sha"],
+            }
+        }
+    }
+
+
+@pytest.mark.parametrize("number", ["06", "07", "08", "10", "11", "12", "13"])
+def test_v3_real_calendar_preview_exact_reviewed_sources_and_announcements(number, monkeypatch):
+    monkeypatch.delenv("RECOVERY_CALENDAR_VERSION", raising=False)
+    entries = m.load_recovery_calendar_v3(V3_ROOT)
+    entry = next(row for row in entries if row["publication_id"].endswith("-" + number))
+    args = argparse.Namespace(
+        stage="preview", calendar_v3=True, repo_root=V3_ROOT, publication_id=entry["publication_id"]
+    )
+    ledger = _v3_ledger(entry)
+    snapshot = copy.deepcopy(ledger)
+    now = datetime.fromisoformat(entry["scheduled_on_moscow"] + "T12:05:00+03:00")
+    resolved, _, payload, _ = m._select_due(args, ledger, now=now)
+    assert resolved == entry
+    assert payload.article_sha256 == entry["source_article_sha256"]
+    assert len(payload.nodes) == entry["reviewed_node_count"]
+    assert ledger == snapshot
+    assert entry["release_approval"] is None
+    with pytest.raises(RuntimeError, match="release evidence|TELEGRAM SEND HOLD"):
+        m.require_v3_release(entry)
+
+
+def test_v3_never_reuses_verified_09_or_expired_10_slot(monkeypatch):
+    monkeypatch.delenv("RECOVERY_CALENDAR_VERSION", raising=False)
+    entries = m.load_recovery_calendar_v3(V3_ROOT)
+    assert len(entries) == 7
+    assert not any(entry["publication_id"].endswith("-09") for entry in entries)
+    entry = next(row for row in entries if row["publication_id"].endswith("-10"))
+    assert entry["scheduled_on_moscow"] == "2026-12-18"
+    assert entry["previous_scheduled_on_moscow"] == "2026-11-24"
+    args = argparse.Namespace(
+        stage="preview", calendar_v3=True, repo_root=V3_ROOT, publication_id=entry["publication_id"]
+    )
+    ledger = _v3_ledger(entry)
+    with pytest.raises(RuntimeError, match="due today"):
+        m._select_due(args, ledger, now=datetime(2026, 11, 24, 12, 5, tzinfo=m.MOSCOW))
+    with pytest.raises(RuntimeError, match="starts at 12:05"):
+        m._select_due(args, ledger, now=datetime(2026, 12, 18, 12, 4, tzinfo=m.MOSCOW))
+
+
+def _copy_v3_contract(root):
+    for path in (m.MANIFEST, m.V3_CALENDAR):
+        target = root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((V3_ROOT / path).read_bytes())
+    return json.loads((root / m.V3_CALENDAR).read_bytes())
+
+
+def test_v3_separate_execution_digest_and_review_gate(tmp_path, monkeypatch):
+    data = _copy_v3_contract(tmp_path)
+    monkeypatch.setenv("ENABLED", "true")
+    monkeypatch.setenv("APPROVED_MANIFEST_SHA256", hashlib.sha256((tmp_path / m.MANIFEST).read_bytes()).hexdigest())
+    monkeypatch.delenv(m.V3_APPROVAL_ENV, raising=False)
+    with pytest.raises(RuntimeError, match="execution approval"):
+        m.load_recovery_calendar_v3(tmp_path, require_approved=True)
+    raw = (tmp_path / m.V3_CALENDAR).read_bytes()
+    monkeypatch.setenv(m.V3_APPROVAL_ENV, hashlib.sha256(raw).hexdigest())
+    entries = m.load_recovery_calendar_v3(tmp_path, require_approved=True)
+    with pytest.raises(RuntimeError, match="release evidence"):
+        m.require_v3_release(entries[0])
+    data["slots"][0]["release_approval"] = {"rights_receipt": "synthetic", "editorial_receipt": "synthetic"}
+    (tmp_path / m.V3_CALENDAR).write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="execution approval"):
+        m.load_recovery_calendar_v3(tmp_path, require_approved=True)
+    changed = m.load_recovery_calendar_v3(tmp_path)
+    assert changed[0]["binding_git_blob_sha"] == entries[0]["binding_git_blob_sha"]
+    assert changed[1]["binding_git_blob_sha"] == entries[1]["binding_git_blob_sha"]
+    hold = next(row for row in changed if row["publication_id"].endswith("-13"))
+    hold["release_approval"] = {"rights_receipt": "synthetic", "editorial_receipt": "synthetic"}
+    with pytest.raises(RuntimeError, match="TELEGRAM SEND HOLD"):
+        m.require_v3_release(hold)
+
+
+@pytest.mark.parametrize("field", ["publication_id", "scheduled_on_moscow", "original_deleted_telegram_message_id"])
+def test_v3_refuses_duplicate_dates_or_identity_drift(tmp_path, field):
+    data = _copy_v3_contract(tmp_path)
+    data["slots"][0][field] = data["slots"][1][field]
+    (tmp_path / m.V3_CALENDAR).write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="identity/date|identity drifted"):
+        m.load_recovery_calendar_v3(tmp_path)
+
+
+def test_v3_changed_announcement_stops_before_any_provider_contact(monkeypatch):
+    entries = m.load_recovery_calendar_v3(V3_ROOT)
+    entry = entries[0]
+    args = argparse.Namespace(
+        stage="preview", calendar_v3=True, repo_root=V3_ROOT, publication_id=entry["publication_id"]
+    )
+    ledger = _v3_ledger(entry)
+    original_render = m.render_channel_post
+
+    def drift(*args, **kwargs):
+        rendered = original_render(*args, **kwargs)
+        return SimpleNamespace(visible_char_count=rendered.visible_char_count, html_text=rendered.html_text + "!")
+
+    monkeypatch.setattr(m, "render_channel_post", drift)
+    monkeypatch.setattr(m.httpx, "get", lambda *a, **k: pytest.fail("Preview never contacts providers"))
+    with pytest.raises(RuntimeError, match="announcement drifted"):
+        m._select_due(args, ledger, now=datetime.fromisoformat(entry["scheduled_on_moscow"] + "T12:05:00+03:00"))
