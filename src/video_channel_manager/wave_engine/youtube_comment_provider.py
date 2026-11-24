@@ -7,6 +7,9 @@ intent, the wave journal, a matching owner, and two operator write gates.
 from __future__ import annotations
 
 import re
+import sqlite3
+from contextlib import closing
+from pathlib import Path
 from typing import Any, Mapping
 
 from video_channel_manager.platforms.youtube.comments import (
@@ -49,7 +52,7 @@ class LordGodYouTubeCommentAdapter:
         *,
         account_alias: str = YOUTUBE_COMMENT_ACCOUNT,
         writer: YouTubeCommentWriter | None = None,
-        data_dir: Any | None = None,
+        data_dir: Path | None = None,
     ) -> None:
         if account_alias != YOUTUBE_COMMENT_ACCOUNT:
             raise ValueError("YouTube comment wave requires exact approved owner account alias")
@@ -60,6 +63,8 @@ class LordGodYouTubeCommentAdapter:
             from video_channel_manager.platforms.youtube.store import TokenStore
 
             settings = get_settings()
+            if not settings.data_dir.is_absolute():
+                raise ValueError("YouTube comment wave requires the canonical absolute VCM_DATA_DIR")
             writer = YouTubeCommentWriter(
                 client_config=InstalledClientConfig.from_file(settings.youtube_client_secret_file),
                 token_store=TokenStore(settings.data_dir),
@@ -67,7 +72,7 @@ class LordGodYouTubeCommentAdapter:
             )
             data_dir = settings.data_dir
         self.writer = writer
-        self.data_dir = data_dir
+        self.data_dir = data_dir.resolve() if data_dir is not None else None
 
     @staticmethod
     def _validated_payload(operation: WaveOperation) -> dict[str, str]:
@@ -125,6 +130,40 @@ class LordGodYouTubeCommentAdapter:
         if actual != [YOUTUBE_COMMENT_OWNER]:
             raise OperationRejectedError("OAuth grant belongs to a different YouTube channel")
 
+    def _reserve_first_comment(self, operation: WaveOperation, payload: dict[str, str]) -> None:
+        """Commit an irreversible target reservation before any possible POST.
+
+        Unlike the caller-selected wave journal, this index is shared by all
+        plans and journals on the canonical owner data store. Neither changed
+        copy nor a new operation ID permits a second dispatch. The wave journal
+        remains the receipt/result authority; this index is only a write barrier.
+        """
+        if self.data_dir is None:
+            raise OperationRejectedError("No durable local owner lock directory was supplied")
+        database = self.data_dir / "youtube" / "panorama-first-comment-reservations.sqlite3"
+        try:
+            database.parent.mkdir(parents=True, exist_ok=True)
+            with closing(sqlite3.connect(database, timeout=5.0)) as connection:
+                connection.execute("PRAGMA synchronous=FULL")
+                with connection:
+                    connection.execute(
+                        "CREATE TABLE IF NOT EXISTS first_comment_reservations ("
+                        "channel_id TEXT NOT NULL, video_id TEXT NOT NULL, "
+                        "operation_id TEXT NOT NULL, comment_sha256 TEXT NOT NULL, "
+                        "PRIMARY KEY (channel_id, video_id))"
+                    )
+                    connection.execute(
+                        "INSERT INTO first_comment_reservations "
+                        "(channel_id, video_id, operation_id, comment_sha256) VALUES (?, ?, ?, ?)",
+                        (YOUTUBE_COMMENT_OWNER, payload["video_id"], operation.operation_id, payload["comment_sha256"]),
+                    )
+        except sqlite3.IntegrityError as exc:
+            raise OperationRejectedError(
+                "A prior first-comment dispatch reservation exists; reconcile its original journal, never replay"
+            ) from exc
+        except (OSError, sqlite3.Error) as exc:
+            raise OperationRejectedError("Cannot durably reserve the first-comment target; no POST allowed") from exc
+
     def execute(self, operation: WaveOperation) -> Mapping[str, Any]:
         p = self._validated_payload(operation)
         if self.data_dir is None:
@@ -144,7 +183,8 @@ class LordGodYouTubeCommentAdapter:
                 raise OperationRejectedError(
                     "Existing owner-authored top-level comment: no unreviewed overwrite or second comment"
                 )
-            # No second dispatch, even if postflight is uncertain.
+            self._reserve_first_comment(operation, p)
+            # Never clear the reservation, even after a rejected or uncertain POST.
             try:
                 created = self.writer.create_top_level_comment(
                     video_id=p["video_id"],
