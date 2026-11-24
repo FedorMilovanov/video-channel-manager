@@ -45,7 +45,9 @@ def test_project_stop_survives_new_instances_and_resets_at_pacific_midnight(tmp_
         ]
 
 
-@pytest.mark.parametrize("reason", ["userRateLimitExceeded", "rateLimitExceeded", "insufficientPermissions", "forbidden"])
+@pytest.mark.parametrize(
+    "reason", ["userRateLimitExceeded", "rateLimitExceeded", "insufficientPermissions", "forbidden"]
+)
 def test_nonquota_rejection_does_not_stop_project(tmp_path: Path, reason: str) -> None:
     guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "poet")
     assert guard(lambda: _rejection(reason), "GET", "videos").status_code == 403
@@ -57,9 +59,10 @@ def test_reason_detection_is_narrow() -> None:
     assert quota_exhaustion_reason(httpx.Response(403, text="invalid JSON")) is None
     assert quota_exhaustion_reason(httpx.Response(403, json=[])) is None
     assert quota_exhaustion_reason(httpx.Response(403, json={"error": {"message": "quota text"}})) is None
-    assert quota_exhaustion_reason(
-        httpx.Response(403, json={"error": {"message": "You have exceeded your quota."}})
-    ) == "quotaExceeded"
+    assert (
+        quota_exhaustion_reason(httpx.Response(403, json={"error": {"message": "You have exceeded your quota."}}))
+        == "quotaExceeded"
+    )
 
 
 def test_project_key_is_not_the_alias_or_oauth_client(tmp_path: Path) -> None:
