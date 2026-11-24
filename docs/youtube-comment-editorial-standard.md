@@ -164,6 +164,12 @@ Rules:
 - never invent a playlist URL;
 - project link kinds must resolve through `record.project_key`.
 
+## Adaptive comment count — owner clarification 2026-11-24
+
+For both editorial channels the normal choice is one valuable comment; zero is appropriate where nothing independently useful can be added. Two or more may be chosen when each contributes a distinct evidence-backed subject (for example manuscript history versus later musical reception). Never require two by template, split one idea for volume, or classify all multiple owner comments as duplicates. At most one can be pinned. Formatting and source requirements are unchanged; verify existing comments and avoid exact duplicates.
+
+For a deliberately reviewed additional top-level comment, use the canonical comment plan with mode `reviewed-additional-comment`, one create operation and `expected_owned_comments` (exact current owner comment ID → canonical text SHA-256 map). Use `video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID` for preflight and the same command with `--execute --confirm-plan-sha256 SHA` for the separately authorized write. The command preserves prior comments, skips already present text, verifies the owner/video and records durable intent before dispatch. An uncertain POST requires read-only reconciliation, not another POST. Automatic missing-comment and legacy release flows retain their first-comment-only semantics; the explicit mode has no fixed total number of comments per video. Do not revive retired comment executors.
+
 ## Variable composition, not templates
 
 Comments must share standards, not sentences. Variation comes from a different fact family, a work-specific or sermon-specific heading, sentence rhythm, an independently useful conclusion, and links appropriate to the exact target.
