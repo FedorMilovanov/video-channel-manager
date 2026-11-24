@@ -250,6 +250,7 @@
     "src/video_channel_manager/platforms/youtube/lord_god_source_preservation.py": 90.0,
     "src/video_channel_manager/platforms/youtube/models.py": 83.75,
     "src/video_channel_manager/platforms/youtube/oauth.py": 54.83,
+    "src/video_channel_manager/platforms/youtube/panorama_format_release.py": 88.04,
     "src/video_channel_manager/platforms/youtube/renderers.py": 80.51,
     "src/video_channel_manager/platforms/youtube/resilient_writer.py": 90.0,
     "src/video_channel_manager/platforms/youtube/service.py": 94.11,

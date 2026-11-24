@@ -65,7 +65,15 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         *,
         current: VideoDescriptionSnapshot,
         new_description: str,
+        require_exact_state: bool = False,
     ) -> VideoDescriptionSnapshot:
+        if require_exact_state:
+            # The strict base path verifies exact metadata and performs only one
+            # dispatch. Do not fall back to the relaxed consistency verifier.
+            # Any unresolved result requires independent owner reconciliation.
+            return super()._write_description(
+                current=current, new_description=new_description, require_exact_state=True
+            )
         with reserve_shared_quota(
             self._quota_guard,
             50 + (1 + len(self._verification_delays)) * self.retry_policy.max_attempts,
