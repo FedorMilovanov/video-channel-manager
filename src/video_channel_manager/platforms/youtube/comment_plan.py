@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections import Counter
 from copy import deepcopy
 from datetime import UTC, datetime
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 from video_channel_manager.platforms.youtube.comments import comment_text_sha256, validate_comment_text
 
@@ -25,6 +26,7 @@ class CommentOperation(TypedDict):
     expected_comment_id: str | None
     expected_comment_text: str | None
     expected_comment_sha256: str | None
+    expected_owned_comments: NotRequired[dict[str, str]]
     source_ids: list[str]
     review_status: Literal["approved"]
     reviewed_at: str
@@ -43,6 +45,14 @@ def video_id_set_sha256(video_ids: list[str]) -> str:
     return _sha256(normalized)
 
 
+def _valid_owner_comment_map(value: object) -> bool:
+    return isinstance(value, dict) and bool(value) and all(
+        isinstance(key, str) and bool(key.strip()) and isinstance(digest, str)
+        and re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is not None
+        for key, digest in value.items()
+    )
+
+
 def operation_id_for(
     *,
     action: CommentAction,
@@ -51,18 +61,19 @@ def operation_id_for(
     comment_sha256: str,
     expected_comment_id: str | None,
     expected_comment_sha256: str | None,
+    expected_owned_comments: dict[str, str] | None = None,
 ) -> str:
-    digest = _sha256(
-        {
+    identity: dict[str, Any] = {
             "action": action,
             "channel_id": channel_id,
             "video_id": video_id,
             "comment_sha256": comment_sha256,
             "expected_comment_id": expected_comment_id,
-            "expected_comment_sha256": expected_comment_sha256,
-        }
-    )
-    return digest.removeprefix("sha256:")[:24]
+        "expected_comment_sha256": expected_comment_sha256,
+    }
+    if expected_owned_comments is not None:
+        identity["expected_owned_comments"] = expected_owned_comments
+    return _sha256(identity).removeprefix("sha256:")[:24]
 
 
 def make_comment_operation(
@@ -76,6 +87,7 @@ def make_comment_operation(
     reviewed_at: str,
     expected_comment_id: str | None = None,
     expected_comment_text: str | None = None,
+    expected_owned_comments: dict[str, str] | None = None,
 ) -> CommentOperation:
     normalized = validate_comment_text(comment_text)
     expected_normalized = validate_comment_text(expected_comment_text) if expected_comment_text is not None else None
@@ -83,6 +95,10 @@ def make_comment_operation(
         raise ValueError("Create operations cannot declare an expected existing comment.")
     if action == "update" and (not expected_comment_id or expected_normalized is None):
         raise ValueError("Update operations require expected_comment_id and expected_comment_text.")
+    if expected_owned_comments is not None and (
+        action != "create" or not _valid_owner_comment_map(expected_owned_comments)
+    ):
+        raise ValueError("Additional create requires a nonempty exact owner comment ID/hash map.")
     cleaned_sources = sorted({item.strip() for item in source_ids if item.strip()})
     if not cleaned_sources:
         raise ValueError("Approved comment operations require at least one source_id or editorial-rule ID.")
@@ -95,8 +111,9 @@ def make_comment_operation(
         comment_sha256=comment_sha,
         expected_comment_id=expected_comment_id,
         expected_comment_sha256=expected_sha,
+        expected_owned_comments=expected_owned_comments,
     )
-    return {
+    operation: CommentOperation = {
         "operation_id": operation_id,
         "action": action,
         "channel_id": channel_id,
@@ -111,6 +128,9 @@ def make_comment_operation(
         "review_status": "approved",
         "reviewed_at": reviewed_at,
     }
+    if expected_owned_comments is not None:
+        operation["expected_owned_comments"] = dict(expected_owned_comments)
+    return operation
 
 
 def _plan_without_digest(payload: dict[str, Any]) -> dict[str, Any]:
@@ -215,6 +235,17 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}: create cannot include expected existing comment data")
         if action == "update" and (expected_id is None or expected_text is None):
             errors.append(f"{prefix}: update requires exact existing comment ID and text")
+        owned_map = raw.get("expected_owned_comments")
+        if "expected_owned_comments" in raw and (
+            action != "create" or not _valid_owner_comment_map(owned_map)
+        ):
+            errors.append(f"{prefix}.expected_owned_comments requires a nonempty exact create ID/hash map")
+        if owned_map is not None and payload.get("mode") != "reviewed-additional-comment":
+            errors.append(f"{prefix}: additional create requires reviewed-additional-comment mode")
+        if payload.get("mode") == "reviewed-additional-comment" and (
+            not _valid_owner_comment_map(owned_map) or len(operations) != 1
+        ):
+            errors.append(f"{prefix}: additional comment plan must bind one exact reviewed addition")
         source_ids = raw.get("source_ids")
         if not isinstance(source_ids, list) or not source_ids or not all(str(item).strip() for item in source_ids):
             errors.append(f"{prefix}.source_ids must contain at least one nonblank ID")
@@ -227,6 +258,7 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             comment_sha256=comment_sha,
             expected_comment_id=expected_id,
             expected_comment_sha256=expected_sha,
+            expected_owned_comments=owned_map if isinstance(owned_map, dict) else None,
         )
         operation_id = str(raw.get("operation_id") or "")
         if operation_id != expected_operation_id:
