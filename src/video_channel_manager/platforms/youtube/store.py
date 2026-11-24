@@ -112,7 +112,6 @@ class TokenStore:
                 pass
 
 
-
 class YouTubeQuotaBlocked(RuntimeError):
     """The local quota gate prevented dispatch, or could not persist a known rejection."""
 
