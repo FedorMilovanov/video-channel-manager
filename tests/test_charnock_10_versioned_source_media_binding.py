@@ -179,9 +179,11 @@ def test_versioned_receipt_must_pin_new_target_and_binding() -> None:
         m.scheduled_reissue_preflight_status(ledger, entry)
 
 
-def test_workflow_checks_v2_binding_before_redundant_schedule() -> None:
+def test_workflow_checks_v3_binding_before_redundant_schedule() -> None:
     flow = (ROOT / ".github/workflows/lordchrist-charnock-scheduled-reissue.yml").read_text(encoding="utf-8")
-    assert 'approved=approved_reissue_entry(Path("."),matches[0])' in flow
+    assert 'entries=load_recovery_calendar_v3(Path("."),require_approved=True)' in flow
+    assert "approved=matches[0]" in flow
+    assert "require_v3_release(approved)" in flow
     assert "scheduled_reissue_preflight_status(state,approved)" in flow
     assert "APPROVED_MANIFEST_SHA256" in flow
     assert "github.event_name == 'schedule'" in flow
