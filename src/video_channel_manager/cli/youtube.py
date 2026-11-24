@@ -15,7 +15,10 @@ from rich.table import Table
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.models import ChannelRecord
-from video_channel_manager.editorial._project_profiles import CHANNEL_ID_TO_PROJECT_KEY, require_youtube_project_identity
+from video_channel_manager.editorial._project_profiles import (
+    CHANNEL_ID_TO_PROJECT_KEY,
+    require_youtube_project_identity,
+)
 from video_channel_manager.platforms.youtube import (
     AccountNotFoundError,
     ChannelIdentity,
@@ -936,7 +939,9 @@ def apply_comment_add(
         writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
 
         def owned() -> list[Any]:
-            return [item for item in writer.list_top_level_comments(video_id) if item.author_channel_id == confirm_channel]
+            return [
+                item for item in writer.list_top_level_comments(video_id) if item.author_channel_id == confirm_channel
+            ]
 
         def persist(path: Path, data: dict[str, Any]) -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -970,7 +975,10 @@ def apply_comment_add(
                     return
                 persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
                 created = writer.create_top_level_comment(
-                    video_id=video_id, expected_channel_id=confirm_channel, text=text, expected_owned_comments=expected,
+                    video_id=video_id,
+                    expected_channel_id=confirm_channel,
+                    text=text,
+                    expected_owned_comments=expected,
                 )
                 verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
                 if (
@@ -984,11 +992,18 @@ def apply_comment_add(
                 after_map = {item.comment_id: item.text_sha256 for item in after}
                 if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
                     raise ValueError("Owner comment set changed; reconcile without replay.")
-                persist(receipt, {
-                    "status": "verified", "video_id": video_id, "channel_id": confirm_channel,
-                    "comment_id": verified.comment_id, "comment_sha256": verified.text_sha256,
-                    "existing_preserved": sorted(expected), "plan_sha256": payload["plan_sha256"],
-                })
+                persist(
+                    receipt,
+                    {
+                        "status": "verified",
+                        "video_id": video_id,
+                        "channel_id": confirm_channel,
+                        "comment_id": verified.comment_id,
+                        "comment_sha256": verified.text_sha256,
+                        "existing_preserved": sorted(expected),
+                        "plan_sha256": payload["plan_sha256"],
+                    },
+                )
                 console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
         finally:
             writer.close()
