@@ -212,7 +212,9 @@ def test_share_prefix_rejects_raw_markers_but_preserves_bold_comments() -> None:
     assert "social_order" in {item.code for item in validate_five_block_package(bad_social)}
     assert "share_prefix_markup" not in {item.code for item in validate_five_block_package(bad_social)}
     bad_short = pkg.replace("Поэтические образы Сергея Есенина", "*Поэтические образы Сергея Есенина*", 1)
-    assert any(item.block == "shorts" and item.code == "share_prefix_markup" for item in validate_five_block_package(bad_short))
+    assert any(
+        item.block == "shorts" and item.code == "share_prefix_markup" for item in validate_five_block_package(bad_short)
+    )
 
 
 def test_playlist_labels_allow_bold_only_in_shorts_and_pin() -> None:
