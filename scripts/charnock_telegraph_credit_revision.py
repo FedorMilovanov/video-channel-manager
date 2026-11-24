@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.charnock_telegraph_qc_reissue import (
+    MANIFEST_RELATIVE,
     QUEUE_PATH,
     ROOT,
     check_live_page,
@@ -62,7 +63,7 @@ def same_tree(live: Any, reviewed: Any) -> bool:
 def load_pair(key: str, repo_root: Path = ROOT) -> tuple[dict[str, Any], Any, Any]:
     if key not in CANDIDATES:
         raise UnsafeRevision("Only articles 11–13 are in this correction")
-    manifest = load_manifest()
+    manifest = load_manifest(repo_root / MANIFEST_RELATIVE)
     contract = manifest[key]
     old = reviewed_payload(key, repo_root=repo_root, media_base_url=MEDIA_BASE, manifest=manifest)
     queue = load_telegraph_queue(repo_root / QUEUE_PATH, repo_root)
@@ -76,16 +77,21 @@ def load_pair(key: str, repo_root: Path = ROOT) -> tuple[dict[str, Any], Any, An
         replace(item, article_path=candidate_path, article_blob=expected),
         media_base_url=MEDIA_BASE,
     )
-    for field in ("publication_id", "title", "author_name", "author_url", "cover_url", "cover_sha256",
-                  "inline_media_urls"):
+    for field in (
+        "publication_id",
+        "title",
+        "author_name",
+        "author_url",
+        "cover_url",
+        "cover_sha256",
+        "inline_media_urls",
+    ):
         if getattr(old, field) != getattr(new, field):
             raise UnsafeRevision("Correction changed page identity or media")
     return contract, old, new
 
 
-def prepare_nodes(
-    key: str, live: list[Any], old: list[Any], new: list[Any]
-) -> tuple[str, list[Any], list[int]]:
+def prepare_nodes(key: str, live: list[Any], old: list[Any], new: list[Any]) -> tuple[str, list[Any], list[int]]:
     """Return a raw-live-preserving surgical patch; fail closed on any drift."""
     if key not in CANDIDATES or len(new) != len(old) + 1:
         raise UnsafeRevision("Unexpected candidate node count")
