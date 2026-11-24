@@ -363,7 +363,9 @@ def test_add_independent_comment_preserves_prior_comments_and_is_idempotent(tmp_
         if request.url.path == "/videos":
             return httpx.Response(200, json={"items": [_video()]})
         if request.url.path == "/commentThreads" and request.method == "GET":
-            return httpx.Response(200, json={"items": existing if request.url.params["moderationStatus"] == "published" else []})
+            return httpx.Response(
+                200, json={"items": existing if request.url.params["moderationStatus"] == "published" else []}
+            )
         if request.url.path == "/commentThreads" and request.method == "POST":
             posts.append(request)
             text = json.loads(request.content)["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
@@ -378,8 +380,10 @@ def test_add_independent_comment_preserves_prior_comments_and_is_idempotent(tmp_
     reviewed = {item.comment_id: item.text_sha256 for item in writer.list_top_level_comments("video-1")}
     for _ in range(2):
         result = writer.create_top_level_comment(
-            video_id="video-1", expected_channel_id="channel-1",
-            text="Second historical subject", expected_owned_comments=reviewed,
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Second historical subject",
+            expected_owned_comments=reviewed,
         )
         assert result.comment_id == "comment-2"
     assert len(posts) == 1
@@ -393,14 +397,23 @@ def test_add_rejects_stale_reviewed_owner_state_before_post(tmp_path: Path, revi
         if request.url.path == "/videos":
             return httpx.Response(200, json={"items": [_video()]})
         if request.url.path == "/commentThreads":
-            return httpx.Response(200, json={"items": [_thread("comment-1", "Older channel comment")] if request.url.params["moderationStatus"] == "published" else []})
+            return httpx.Response(
+                200,
+                json={
+                    "items": [_thread("comment-1", "Older channel comment")]
+                    if request.url.params["moderationStatus"] == "published"
+                    else []
+                },
+            )
         raise AssertionError(request.url)
 
     writer = _writer(tmp_path, httpx.MockTransport(handle))
     with pytest.raises(YouTubeCommentConflictError, match="Reviewed owner comment state changed"):
         writer.create_top_level_comment(
-            video_id="video-1", expected_channel_id="channel-1",
-            text="New approved comment", expected_owned_comments=reviewed,
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="New approved comment",
+            expected_owned_comments=reviewed,
         )
 
 
