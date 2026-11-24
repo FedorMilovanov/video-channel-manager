@@ -6,7 +6,8 @@ import random
 import json
 import time
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, TypeAlias
 
@@ -290,6 +291,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         *,
         current: VideoDescriptionSnapshot,
         new_description: str,
+        require_exact_state: bool = False,
     ) -> VideoDescriptionSnapshot:
         snippet = _dict_field(current.raw, "snippet")
         title = str(snippet.get("title") or "").strip()
@@ -350,6 +352,25 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             body["localizations"] = preserved
             parts = "snippet,localizations"
 
+        if require_exact_state:
+            if (
+                not isinstance(current.raw.get("localizations"), dict)
+                or not isinstance(tags, list)
+                or not all(isinstance(tag, str) for tag in tags)
+                or snippet.get("title") != title
+                or snippet.get("categoryId") != category_id
+                or not snippet.get("defaultLanguage")
+                or not snippet.get("defaultAudioLanguage")
+                or not _dict_field(current.raw, "contentDetails").get("duration")
+                or not _dict_field(current.raw, "status").get("privacyStatus")
+                or not new_description.strip()
+                or len(new_description.encode("utf-8")) > 5000
+            ):
+                raise YouTubeWriteError("Incomplete exact owner state; no PUT sent.")
+            primary = current.raw["localizations"].get(snippet["defaultLanguage"])
+            if primary is not None and primary["description"] != current.description:
+                raise YouTubeWriteError("Primary locale differs from source description; no PUT sent.")
+
         with reserve_shared_quota(self._quota_guard, 50 + self.retry_policy.max_attempts, YouTubeWriteError):
             self._request(
                 "PUT",
@@ -362,6 +383,19 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             if not descriptions_equivalent(verified.description, new_description):
                 raise YouTubeWriteError(f"Verification failed after updating description for {current.video_id}.")
             drift = _postwrite_metadata_drift(current, verified, new_description)
+            if require_exact_state:
+                if verified.description != new_description:
+                    drift.append("snippet.description.exact")
+                if verified.raw.get("localizations") != body.get("localizations"):
+                    drift.append("localizations.exact_map")
+                if _dict_field(verified.raw, "status") != _dict_field(current.raw, "status"):
+                    drift.append("status.exact")
+                if _dict_field(verified.raw, "contentDetails").get("duration") != _dict_field(
+                    current.raw, "contentDetails"
+                ).get("duration"):
+                    drift.append("contentDetails.duration")
+                if _dict_field(verified.raw, "snippet").get("tags") != tags:
+                    drift.append("snippet.tags.exact")
             if drift:
                 raise YouTubeWriteError(
                     f"Postflight metadata drift after updating description for {current.video_id}: "
@@ -470,6 +504,30 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 )
             return verified
 
+    @contextmanager
+    def reserve_exact_description_execution(self) -> Iterator[None]:
+        """Reserve preflight, predispatch GET, PUT and both verification GETs."""
+        guard = self._quota_guard
+        if guard is None:
+            raise YouTubeWriteError("Exact historical execution requires a shared project quota guard")
+        units = 50 + 4 * self.retry_policy.max_attempts
+        try:
+            status = guard.budget_status()
+            buckets = status.get("buckets")
+            shared = buckets.get("shared") if isinstance(buckets, dict) else None
+            remaining = shared.get("local_remaining") if isinstance(shared, dict) else None
+            if (
+                status.get("quota_policy_enabled") is not True
+                or status.get("provider_stop") is not None
+                or type(remaining) is not int
+                or remaining < units
+            ):
+                raise YouTubeWriteError("Exact historical execution requires reviewed current shared quota headroom")
+            with guard.reserve(units):
+                yield
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeWriteError(str(exc)) from exc
+
     def replace_description(
         self,
         *,
@@ -478,11 +536,18 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         expected_revision: str,
         expected_description: str,
         new_description: str,
+        require_exact_state: bool = False,
     ) -> VideoDescriptionSnapshot:
         current = self.read_description(video_id)
         if current.channel_id != expected_channel_id:
             raise YouTubeRevisionConflictError(
                 f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
+            )
+        if require_exact_state and (
+            current.revision != expected_revision or current.description != expected_description
+        ):
+            raise YouTubeRevisionConflictError(
+                f"Exact owner state changed for {video_id}; no PUT sent. Re-audit before proceeding."
             )
         if not descriptions_equivalent(current.description, expected_description):
             raise YouTubeRevisionConflictError(
@@ -494,6 +559,8 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         # title/tags/category and replaces only a description whose text still
         # matches the expected state, revision drift alone is not a conflict.
         _ = expected_revision
+        if require_exact_state:
+            return self._write_description(current=current, new_description=new_description, require_exact_state=True)
         return self._write_description(current=current, new_description=new_description)
 
     def restore_description_if_current(

@@ -42,8 +42,15 @@ from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     reconcile_copy_operations,
     verify_copy_operations,
+    verify_exact_description_postflight,
 )
 from video_channel_manager.platforms.youtube.chapter_release import require_chapter_release
+from video_channel_manager.platforms.youtube.panorama_format_release import (
+    FORMAT_RULESET,
+    format_intent_path,
+    persist_format_intent,
+    require_no_format_intent,
+)
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
@@ -574,6 +581,7 @@ def apply_copy_fixes(
     settings = get_settings()
     try:
         payload = _load_copy_fix_plan(plan)
+        exact_format = payload.get("ruleset") == FORMAT_RULESET
         # Project-bound YouTube display/retired-contact rules run BEFORE any OAuth or API use.
         require_lord_god_youtube_presentation(payload)
         raw_operations = payload["operations"]
@@ -593,6 +601,12 @@ def apply_copy_fixes(
             confirm_after_sha256=confirm_after_sha256,
         )
         require_chapter_release(payload, execute=execute, confirm_review_sha256=confirm_chapter_review_sha256)
+        intent_path = None
+        if exact_format and execute:
+            if account != "fedor-milovanov":
+                raise ValueError("Historical format execution requires the canonical Lord God OAuth alias")
+            intent_path = format_intent_path(settings.data_dir, operations[0]["video_id"])
+            require_no_format_intent(intent_path)
         store, _, writer = _writer_components(account, client_secret)
     except (AccountNotFoundError, OSError, ValueError) as exc:
         console.print(f"[red]Cannot load copy-fix plan:[/red] {exc}")
@@ -603,14 +617,18 @@ def apply_copy_fixes(
         local_youtube_write_lock(lock_path, account=account, channel_id=confirm_channel) if execute else nullcontext()
     )
 
+    quota_context = writer.reserve_exact_description_execution() if exact_format and execute else nullcontext()
     try:
-        with lock_context:
+        with lock_context, quota_context:
+            if intent_path is not None:
+                require_no_format_intent(intent_path)
             try:
                 with console.status(f"Preflighting {len(operations)} descriptions against live YouTube…"):
                     preflight = preflight_copy_operations(
                         operations,
                         confirm_channel=confirm_channel,
                         writer=writer,
+                        **({"require_exact_state": True} if payload.get("ruleset") == FORMAT_RULESET else {}),
                         require_plan_title=(
                             payload.get("target_channel_id") == LORD_GOD_OWNER_CHANNEL
                             and payload.get("project_key") == "lord-god-strength"
@@ -627,7 +645,12 @@ def apply_copy_fixes(
                 f"Channel: {confirm_channel}"
             )
             if not execute:
-                console.print("Dry-run only. Re-run with --execute after authorizing --write access.")
+                if exact_format:
+                    console.print(
+                        "Exact historical dry-run only; independent approval and reviewed shared quota required."
+                    )
+                else:
+                    console.print("Dry-run only. Re-run with --execute after authorizing --write access.")
                 return
 
             try:
@@ -731,7 +754,13 @@ def apply_copy_fixes(
                     result["summary"]["attempted"] = len(attempted)
                     _write_json(result_output, result)
 
+                    if intent_path is not None:
+                        persist_format_intent(
+                            intent_path, payload, result_path=result_output, backup_path=backup_output
+                        )
+                        # The immutable marker is retained even when the next GET fails.
                     verified = writer.replace_description(
+                        **({"require_exact_state": True} if exact_format else {}),
                         video_id=str(operation["video_id"]),
                         expected_channel_id=str(operation["channel_id"]),
                         expected_revision=str(operation["expected_revision"]),
@@ -751,11 +780,17 @@ def apply_copy_fixes(
                     _write_json(result_output, result)
                     console.print(f"[green]Updated and verified[/green] {verified.video_id} — {verified.title}")
 
-                postflight_failures = verify_copy_operations(
-                    preflight.prepared,
-                    confirm_channel=confirm_channel,
-                    writer=writer,
-                )
+                if exact_format:
+                    verify_exact_description_postflight(
+                        preflight.prepared[0], confirm_channel=confirm_channel, writer=writer, verified=verified
+                    )
+                    postflight_failures = []
+                else:
+                    postflight_failures = verify_copy_operations(
+                        preflight.prepared,
+                        confirm_channel=confirm_channel,
+                        writer=writer,
+                    )
                 result["postflight_failures"] = postflight_failures
                 if postflight_failures:
                     failed_ids = ", ".join(item["video_id"] for item in postflight_failures)
@@ -767,10 +802,10 @@ def apply_copy_fixes(
                 # Quota may disappear AFTER YouTube has accepted and verified the PUT.
                 # An immediate rollback would use another quota-costly PUT and could
                 # undo a successful change. Persist the unknown terminal state instead.
-                quota_reconciliation_pending = bool(attempted) and _is_youtube_quota_exhaustion(exc)
+                quota_reconciliation_pending = bool(attempted) and (exact_format or _is_youtube_quota_exhaustion(exc))
                 if quota_reconciliation_pending:
                     console.print(
-                        "[yellow]YouTube quota exhausted after a write attempt; "
+                        "[yellow]YouTube write result requires reconciliation; "
                         "no rollback or replay. Fresh owner reconciliation is required.[/yellow]"
                     )
                 else:
@@ -815,7 +850,7 @@ def apply_copy_fixes(
                     result["status"] = "failed_rolled_back" if rollback_failed == 0 else "failed_partial_rollback"
                     result["error"] = failure
             else:
-                result["status"] = "completed"
+                result["status"] = "owner_verified_public_qa_pending" if exact_format else "completed"
 
             result["finished_at"] = datetime.now(UTC).isoformat()
             _write_json(result_output, result)
@@ -825,11 +860,16 @@ def apply_copy_fixes(
                 if isinstance(interrupted, KeyboardInterrupt):
                     raise interrupted
                 raise typer.Exit(code=2)
-            console.print(
-                f"[bold green]Completed {len(applied)} verified description updates; "
-                f"final postflight verified the whole batch.[/bold green]"
-            )
-    except YouTubeWriteError as exc:
+            if exact_format:
+                console.print(
+                    "[green]Exact owner postflight verified; public chapter recognition remains pending.[/green]"
+                )
+            else:
+                console.print(
+                    f"[bold green]Completed {len(applied)} verified description updates; "
+                    f"final postflight verified the whole batch.[/bold green]"
+                )
+    except (YouTubeWriteError, ValueError, OSError) as exc:
         console.print(f"[red]YouTube write safety error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
@@ -1090,6 +1130,7 @@ def reconcile_copy_fixes(
     try:
         payload = _load_copy_fix_plan(plan)
         validate_copy_plan(payload)
+        exact_format = payload.get("ruleset") == FORMAT_RULESET
         # Historical signed plans may predate today's publication/source-preservation
         # gate. They must remain readable for no-replay incident reconciliation.
         # This command performs owner GET only; the apply command retains the
@@ -1156,6 +1197,7 @@ def reconcile_copy_fixes(
                 "failed_rolled_back",
                 "failed_partial_rollback",
                 "pending_reconciliation",
+                "owner_verified_public_qa_pending",
             }:
                 raise ValueError("Unsupported or missing result terminal/intermediate status.")
             for field in ("attempted", "applied"):
@@ -1173,12 +1215,15 @@ def reconcile_copy_fixes(
             payload["operations"],
             confirm_channel=confirm_channel,
             writer=writer,
+            **({"require_exact_state": True} if exact_format else {}),
         )
         live_states = [str(row["state"]) for row in rows]
         if any(state == "live_third_state" for state in live_states):
             outcome = "manual_or_concurrent_description_conflict"
         elif all(state == "live_after" for state in live_states):
-            if receipt_state == "completed" and backup_state == "bound_backup" and receipt is not None:
+            if exact_format:
+                outcome = "historical_format_live_after_public_qa_pending"
+            elif receipt_state == "completed" and backup_state == "bound_backup" and receipt is not None:
                 summary = receipt.get("summary")
                 complete = (
                     isinstance(summary, dict)
