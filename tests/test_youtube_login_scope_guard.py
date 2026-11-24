@@ -11,7 +11,7 @@ from typer.testing import CliRunner
 
 import video_channel_manager.cli.youtube as youtube_cli
 from video_channel_manager.cli.app import app
-from video_channel_manager.platforms.youtube.models import OAuthToken
+from video_channel_manager.platforms.youtube.models import ChannelIdentity, OAuthToken, YouTubeAccount
 from video_channel_manager.platforms.youtube.oauth import YOUTUBE_FORCE_SSL_SCOPE, YOUTUBE_READONLY_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
 
@@ -31,6 +31,19 @@ def _token(access_token: str, scopes: list[str]) -> OAuthToken:
 def _install(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, received_token: OAuthToken) -> tuple[TokenStore, dict]:
     store = TokenStore(tmp_path)
     store.save_token("milovi-cake", _token("existing-readonly", [YOUTUBE_READONLY_SCOPE]))
+    store.save_account(
+        YouTubeAccount(
+            alias="milovi-cake",
+            token_file=str(store.token_path("milovi-cake")),
+            channels=[
+                ChannelIdentity(
+                    channel_id=MILOVI_CHANNEL,
+                    title="Milovi Cake",
+                    url=f"https://www.youtube.com/channel/{MILOVI_CHANNEL}",
+                )
+            ],
+        )
+    )
     calls: dict[str, object] = {"clients": 0, "requested_scopes": ()}
     monkeypatch.setattr(
         youtube_cli,
@@ -67,6 +80,9 @@ def _install(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, received_token: OA
                 )
             ]
 
+        def close(self) -> None:
+            return None
+
     monkeypatch.setattr(youtube_cli, "InstalledOAuthFlow", FakeFlow)
     monkeypatch.setattr(youtube_cli, "YouTubeApiClient", FakeClient)
     return store, calls
@@ -84,7 +100,7 @@ def test_denied_write_scope_fails_without_replacing_existing_token_or_registry(
     assert "No account token was saved or replaced" in normalized_output
     assert "Authorized YouTube account alias" not in result.stdout
     assert store.load_token("milovi-cake").access_token == "existing-readonly"
-    assert not store.registry_path.exists()
+    assert store.get_account("milovi-cake").channels[0].channel_id == MILOVI_CHANNEL
     assert calls["requested_scopes"] == (YOUTUBE_FORCE_SSL_SCOPE,)
     assert calls["clients"] == 0
 

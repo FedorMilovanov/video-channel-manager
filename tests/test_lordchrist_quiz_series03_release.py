@@ -136,9 +136,9 @@ def test_series03_editorial_hold_blocks_all_provider_writes_before_dispatch() ->
     )[0]
     assert 'if [[ "$EVENT_NAME" == "schedule" ]]; then' in operation_gate
     assert 'OPERATION="publish"' in operation_gate
-    assert 'if [[ "$OPERATION" == "publish" ]]; then' in operation_gate
+    assert 'if [[ "$OPERATION" != "validate" ]]; then' in operation_gate
     assert "Series 03 publication on editorial hold after owner rejection" in operation_gate
-    assert operation_gate.index('if [[ "$OPERATION" == "publish" ]]; then') < operation_gate.index(
+    assert operation_gate.index('if [[ "$OPERATION" != "validate" ]]; then') < operation_gate.index(
         'case "$OPERATION" in'
     )
     assert operation_gate.index("exit 3") < operation_gate.index('case "$OPERATION" in')
@@ -160,15 +160,11 @@ def test_series03_is_not_historical_release_or_deleted_poll() -> None:
     assert all(x.scheduled_at > datetime.fromisoformat("2026-11-14T16:05:00+03:00") for x in new.items)
 
 
-def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
-    """Exercise the first scheduled Series 03 prepare, not just workflow text.
-
-    Provider-inert: the historical manual receipt is reconstructed in memory.
-    No Telegram calls or protected-state modifications are possible here.
-    """
+def test_synthetic_quiz_first_slot_is_gated_by_manual_canary_and_time() -> None:
+    """Exercise timing with synthetic identities and no provider access."""
     from datetime import UTC
 
-    from video_channel_manager.telegram_multichannel_release import load_release
+    from quiz_fixture_helpers import FIXTURE_ONE, fake_one, fake_profile_binding, fake_series
     from video_channel_manager.telegram_multichannel_state import (
         initialize_ledger,
         mark_published,
@@ -179,12 +175,9 @@ def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
         GenericTargetProof,
     )
 
-    profile = load_channel_profile(ROOT / "content/telegram/channels/lordchrist-rich.json")
-    binding = load_target_binding(ROOT / "content/telegram/channels/lordchrist-target-binding.json", profile)
-    canary = load_release(
-        ROOT / "content/telegram/lordchrist/quiz/archived-old-queues/lordchrist-quiz-city-of-palms-runtime.json"
-    )
-    release = load_release(series_runtime_path(SERIES))
+    profile, binding = fake_profile_binding()
+    _, canary = fake_one(profile, binding)
+    _, release = fake_series(profile, binding, source_id=SERIES)
     canary_ledger = initialize_ledger(canary)
     series_ledger = initialize_ledger(release)
 
@@ -217,7 +210,7 @@ def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
         github_workflow_sha="2" * 40,
         mode="manual",
         target=exact_target(old_time),
-        expected_publication_id="lordchrist-quiz-city-of-palms",
+        expected_publication_id=FIXTURE_ONE,
         now=old_time,
     )
     assert manual.envelope is not None
@@ -233,7 +226,7 @@ def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
             chat_id=binding.chat_id,
             chat_username=binding.chat_username,
             message_id=1591,
-            message_url="https://t.me/lordchrist/1591",
+            message_url="https://t.me/quizfixture/1591",
             verified_at_utc=datetime(2026, 10, 29, 17, 23, tzinfo=UTC),
         ),
     )
@@ -266,11 +259,11 @@ def test_series03_first_slot_is_gated_by_real_manual_canary_and_time() -> None:
 
     eligible = scheduled(due_at, with_canary=True)
     assert eligible.envelope is not None
-    assert eligible.envelope.publication_id == "lordchrist-quiz-s03-atonement-goat"
+    assert eligible.envelope.publication_id == "lordchrist-quiz-fixture-atonement-goat"
     assert eligible.envelope.dispatch_mode == "scheduled"
-    assert series_ledger.entries["lordchrist-quiz-s03-atonement-goat"].state == "dispatching"
+    assert series_ledger.entries["lordchrist-quiz-fixture-atonement-goat"].state == "dispatching"
     assert all(
         item.state == "pending"
         for publication_id, item in series_ledger.entries.items()
-        if publication_id != "lordchrist-quiz-s03-atonement-goat"
+        if publication_id != "lordchrist-quiz-fixture-atonement-goat"
     )

@@ -1,33 +1,39 @@
-"""Prevent a superseded Charnock #13 review from acting as a release grant."""
+"""Charnock #13: the historical HOLD is closed for content, but not for sending."""
 
+from __future__ import annotations
+
+import hashlib
 import json
-from hashlib import sha1
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_Q19_SOURCE_EVIDENCE = (
-    "EN, Use IV (конец Discourse I): Our minds are a beam from God; and, therefore, as the be"
-    "ams of the sun, when they touch the earth, should reflect back upon God. [ПРОПУЩЕННЫЙ В "
-    "РУССКОЙ ЦИТАТЕ ФРАГМЕНТ: As we seem to deny the being of God not to think of him; we see"
-    "m also to unsoul our souls in misemploying the activity of them any other way, like flie"
-    "s, to be oftener on dunghills than flowers. It is made the black mark of an ungodly man,"
-    " or an atheist, that “God is not in all his thoughts” (Psalm 10:4).] What comfort can be"
-    " had in the being of God without thinking of him with reverence and delight? A God forgo"
-    "tten is as good as no God to us. [eBook #53527 / текст по изданию 1853 г.; английские гр"
-    "аницы повторно сверены в публичной транскрипции Pristine Grace, Discourse I, Use IV, абз"
-    ". 574–575, 2026-11-18; перевод канала; русская цитата сокращена и содержит […]]"
-)
-
+CANDIDATE = ROOT / "content/research/charnock-13-quotation-gap-candidate-20261117.json"
+CANDIDATE_MD = ROOT / "content/research/charnock-13-quotation-gap-candidate-20261117.md"
+ARTICLE = ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-13.json"
 REVIEW = ROOT / "content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-13-проверка.md"
+QUEUE = ROOT / "content/telegram/lordchrist/telegraph-v1/article-queue.json"
 
 
-def test_charnock_13_current_verdict_is_hold_and_old_ready_verdict_retired() -> None:
+def _load(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _quote(document: dict, block_id: str) -> str:
+    block = next(item for item in document["blocks"] if item["block_id"] == block_id)
+    pieces = block["blocks"][0]["text"]
+    return "".join(piece if isinstance(piece, str) else piece["text"] for piece in pieces)
+
+
+def test_current_status_is_content_corrected_and_send_held() -> None:
     text = REVIEW.read_text(encoding="utf-8")
     assert text.startswith("# Проверка Telegraph-издания 13 (2026-10-25)")
-    assert "ДЕЙСТВУЮЩИЙ СТАТУС — EDITORIAL/PUBLICATION_HOLD" in text[:750]
+    head = text[:900]
+    assert "ДЕЙСТВУЮЩИЙ СТАТУС — TELEGRAM SEND HOLD" in head
+    assert "in place" in head and "21.11.2026" in head
+    for block in ("q-3", "q-9", "q-11", "q-12", "q-19"):
+        assert block in head
     assert "ИСТОРИЧЕСКИЙ ВЕРДИКТ" in text
     assert "SUPERSEDED" in text
-    assert "q-3" in text and "q-19" in text
     assert "Вердикт: **готово к Telegraph-публикации" not in text
 
 
@@ -35,70 +41,40 @@ def test_charnock_13_writer_hold_is_not_only_documentary() -> None:
     source = (ROOT / "src/video_channel_manager/lordchrist_charnock_reschedule.py").read_text(encoding="utf-8")
     assert 'CHARNOCK_EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})' in source
     assert 'args.stage in ("prepare", "send")' in source
+    assert "TELEGRAM SEND HOLD" in source
 
 
-def test_charnock_13_quotation_omissions_are_visibly_marked() -> None:
-    """Two documented jumps must never masquerade as uninterrupted Charnock quotations."""
-    candidate_directory = ROOT / "content/research"
-    data = json.loads(
-        (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.json").read_text(encoding="utf-8")
+def test_all_five_canonical_quote_gaps_are_closed_or_marked() -> None:
+    article = _load(ARTICLE)
+    q3, q9, q11, q12, q19 = (_quote(article, f"q-{n}") for n in (3, 9, 11, 12, 19))
+    assert "без прикрас. […] Немедленно пресекайте" in q3
+    assert "Молча подавляйте" not in q3
+    assert "Если мы колеблемся в этом начале" in q9
+    assert "сладость" in q9
+    assert "Чем более мы утверждаемся" in q11
+    assert "Пс. 103:31" in q12 and "урок о творении" in q12
+    assert "мухам" in q19 and "Пс. 10:4" in q19
+    assert "так и активность наших душ" not in q19
+    assert article["revision"] == "charnock-13-qc-20261121"
+
+
+def test_canonical_blob_is_synchronised_with_the_queue() -> None:
+    payload = ARTICLE.read_bytes()
+    blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
+    queue = _load(QUEUE)
+    matches = [item for item in queue["items"] if item["publication_id"] == "lordchrist-telegraph-charnock-13"]
+    assert len(matches) == 1
+    assert matches[0]["article"]["git_blob_sha"] == blob
+
+
+def test_research_candidate_is_frozen_historical_evidence() -> None:
+    assert hashlib.sha256(CANDIDATE.read_bytes()).hexdigest() == (
+        "d647368dac7786b8f877c6c7882beafa0d95d89c61b85674b221db09d0327125"
     )
-    markdown = (candidate_directory / "charnock-13-quotation-gap-candidate-20261117.md").read_text(encoding="utf-8")
-    # Active canonical article remains byte-for-byte pinned to reviewed SHA.
-    current = REVIEW.parent / "lordchrist-telegraph-charnock-13.json"
-    payload = current.read_bytes()
-    blob = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
-    assert sha1(blob).hexdigest() == "cc9b20e98cb88c14b7c3ec739a4c07c4f738cae9"
-    joins = {
-        "q-3": ("без прикрас. […] Немедленно пресекайте", "без прикрас. Молча подавляйте"),
-        "q-19": ("отражаться обратно к Богу. […] Что за утешение", "душ должна обращаться к Нему. Что за утешение"),
-    }
-    for block_id, (explicit, naked) in joins.items():
-        block = next(block for block in data["blocks"] if block.get("block_id") == block_id)
-        text = "".join(part if isinstance(part, str) else part.get("text", "") for part in block["blocks"][0]["text"])
-        assert explicit in text and naked not in text
-        assert explicit in markdown and naked not in markdown
-    assert "EDITORIAL/PUBLICATION_HOLD" in REVIEW.read_text(encoding="utf-8")
-
-
-def test_charnock_13_candidate_is_exactly_the_reviewed_delta() -> None:
-    """The sidecar cannot silently acquire unreviewed text or publication changes."""
-    candidate = ROOT / "content/research"
-    article = REVIEW.parent
-    originals = {
-        "json": (article / "lordchrist-telegraph-charnock-13.json").read_text(encoding="utf-8"),
-        "md": (article / "lordchrist-telegraph-charnock-13.md").read_text(encoding="utf-8"),
-    }
-    expected_replacements = [
-        (
-            "без прикрас. Молча подавляйте такие внушения, давайте им отставку; противопоставьте им всю систему природы сражаться против них, ",
-            "без прикрас. […] Немедленно пресекайте такие внушения, отвергайте их; противопоставляйте им всё устроение природы, чтобы оно сражалось против них, ",
-        ),
-        (
-            "Наши умы — луч от Бога; и потому, как лучи солнца, коснувшись земли, "
-            "должны отражаться обратно к Богу, так и активность наших душ должна "
-            "обращаться к Нему. Что за утешение",
-            "Наши умы — луч от Бога; поэтому они, подобно лучам солнца, "
-            "коснувшимся земли, должны отражаться обратно к Богу. […] Что за утешение",
-        ),
-    ]
-    for suffix, original in originals.items():
-        expected = original
-        if suffix == "json":
-            expected = expected.replace('"updated_at": "2026-11-04"', '"updated_at": "2026-11-18"')
-            expected = expected.replace(
-                '"revision": "charnock-13-v1"',
-                '"revision": "charnock-13-v2-editorial-candidate"',
-            )
-        for previous, correction in expected_replacements:
-            assert expected.count(previous) == 1
-            expected = expected.replace(previous, correction)
-        if suffix == "json":
-            payload = json.loads(expected)
-            matching = [source for source in payload["sources"] if source["source_id"] == "src-19-charnock"]
-            assert len(matching) == 1
-            matching[0]["verified_on"] = "2026-11-18"
-            matching[0]["evidence"] = EXPECTED_Q19_SOURCE_EVIDENCE
-            expected = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-        target = candidate / f"charnock-13-quotation-gap-candidate-20261117.{suffix}"
-        assert target.read_text(encoding="utf-8") == expected
+    assert hashlib.sha256(CANDIDATE_MD.read_bytes()).hexdigest() == (
+        "0fc50fdde58070fab103d6254c22925b9d56b4ff1cc7f0e2533a815d239975ae"
+    )
+    candidate = _load(CANDIDATE)
+    assert candidate["revision"] == "charnock-13-v2-editorial-candidate"
+    assert "[…]" in _quote(candidate, "q-3")
+    assert "[…]" in _quote(candidate, "q-19")

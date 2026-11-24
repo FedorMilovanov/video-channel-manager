@@ -31,7 +31,13 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     assert "LORDCHRIST_CHARNOCK_RECOVERY_ENABLED" in data
     assert "LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256" in data
     assert "now.hour not in (12,13)" in data
-    assert "scheduled_reissue_preflight_status(state,matches[0])" in data
+    # The v2 source/media binding is resolved read-only before the immutable
+    # ledger preflight.  #10 may use only its separately pinned reviewed source,
+    # and every other article retains the historic manifest entry unchanged.
+    assert 'approved=approved_reissue_entry(Path("."),matches[0])' in data
+    assert "scheduled_reissue_preflight_status(state,approved)" in data
+    assert "APPROVED_MANIFEST_SHA256" in data
+    assert '[[ "$(sha256sum "$MANIFEST"' in data
     assert "github.event_name == 'workflow_dispatch'" in data
     assert "github.actor == 'FedorMilovanov'" in data
     assert "inputs.confirm == 'RUN_APPROVED_CHARNOCK_SLOT_ONCE'" in data

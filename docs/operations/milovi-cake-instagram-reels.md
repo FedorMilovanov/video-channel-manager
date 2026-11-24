@@ -2,6 +2,13 @@
 
 Owner: Issue #790. Status: **provider-inert preparation only**.
 
+This is the historical 5 November preview, not the later production schedule.
+The owner subsequently verified the exact Milovi Instagram identity and
+[reported later ledger/writer checkpoints](https://github.com/FedorMilovanov/video-channel-manager/issues/790#issuecomment-7085944239);
+see [current state](current-state.md) and the [HTTPS incident handoff](milovi-instagram-https-fallback-handoff.md).
+A preview, a later owner GET, or a registered identity does not authorize a
+new provider mutation or a second writer.
+
 ## Exact identities and boundaries
 
 - Project: `milovi-cake`

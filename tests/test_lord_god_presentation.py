@@ -135,9 +135,9 @@ def test_shelf_removal_rejects_short_source_only_card_and_orphan_heading() -> No
         "\nSermons: https://youtube.com/channel/" + LORD_GOD_OWNER_CHANNEL + "/playlists?sort=dd&shelf_id=3"
     )
     proposed = "Original: https://youtube.com/shorts/Bp27Wqi6j5I\n\nConferences:"
-    # The standalone short-format check permits this before/after; the
-    # shelf transition gate must reject the empty viewer-facing content.
-    assert presentation_issues(proposed) == []
+    # The universal preview gate and the shelf transition gate both reject
+    # the source-only replacement before any provider access.
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(proposed)
     issues = forward_longform_editorial_issues(original, proposed)
     assert "shelf_cleanup_missing_two_plain_intro_lines" in issues
     assert "shelf_cleanup_dangling_navigation_heading" in issues
@@ -240,9 +240,31 @@ def test_bad_markers_and_old_administrative_info_fail_closed(modification, expec
 
 
 def test_short_description_may_be_plain_but_not_a_donation_request() -> None:
-    short = "Проповедь о смирении и верности Христу. https://gospod-bog.ru/"
+    short = (
+        "Проповедь посвящена смирению и верности Иисусу Христу.\n"
+        "Автор объясняет, почему это важно для жизни христианина.\n\n"
+        "https://gospod-bog.ru/"
+    )
+    assert len(short) < 350
     assert presentation_issues(short) == []
+    require_lord_god_youtube_presentation(_plan(short))
     assert "retired_fundraising_or_payment" in presentation_issues(short + "\nСбербанк: 1234 5678 9012 3456")
+
+
+@pytest.mark.parametrize(
+    "short",
+    [
+        "Джон МакАртур объясняет, как христианам понимать библейское наставление.",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\n*Оригинальная беседа:* https://example.org",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\nhttps://example.org/original",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\n🎙️ Дополнительное объяснение находится в полном выпуске.",
+    ],
+)
+def test_short_under_350_needs_two_plain_raw_preview_lines(short: str) -> None:
+    assert len(short) < 350
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(short)
+    with pytest.raises(ValueError, match="share_preview_first_two_lines_not_plain"):
+        require_lord_god_youtube_presentation(_plan(short))
 
 
 def test_mismatched_project_or_corrupted_plan_fails_closed() -> None:

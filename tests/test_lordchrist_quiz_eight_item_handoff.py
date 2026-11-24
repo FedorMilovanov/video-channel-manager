@@ -93,7 +93,8 @@ def test_future_release_cannot_be_signed_without_independent_exact_item_reviews(
     }
     signoff_file = tmp_path / "lordchrist-quiz-series-04-editorial-signoff.json"
     signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
-    quiz.require_future_series_editorial_signoff(series)
+    with pytest.raises(ValueError, match="provenance is not independently verified"):
+        quiz.require_future_series_editorial_signoff(series)
     fake_review_fixture["items"][0]["source_sha256"] = "sha256:wrong"
     signoff_file.write_text(json.dumps(fake_review_fixture, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(ValueError, match="missing exact independent evidence"):

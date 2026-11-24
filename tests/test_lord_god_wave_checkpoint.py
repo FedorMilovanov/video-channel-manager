@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -59,7 +60,7 @@ def archive() -> sqlite3.Connection:
 
 
 def checkpoint(snapshot: dict, hold_ids: set[str]) -> dict:
-    with archive() as db:
+    with closing(archive()) as db, db:
         return module.build_checkpoint(snapshot, db, hold_ids, limit=25, scan_digest="scan", archive_digest="archive")
 
 
@@ -87,7 +88,7 @@ def test_fail_closed_on_wrong_owner_and_overlapping_ids() -> None:
 
 
 def test_fail_closed_on_missing_hold_set_or_unreasonable_limit() -> None:
-    with archive() as db:
+    with closing(archive()) as db, db:
         with pytest.raises(ValueError, match="HOLD"):
             module.build_checkpoint(scan(), db, set(), limit=25, scan_digest="a", archive_digest="b")
         with pytest.raises(ValueError, match="limit"):
@@ -142,7 +143,7 @@ def historical_report() -> dict:
 
 def test_historical_hold_report_excludes_previously_blocked_id() -> None:
     assert module.historical_review_holds(historical_report()) == {B}
-    with archive() as db:
+    with closing(archive()) as db, db:
         result = module.build_checkpoint(
             scan(),
             db,

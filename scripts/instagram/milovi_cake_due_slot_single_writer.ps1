@@ -51,6 +51,17 @@ if ($DryRun) {
     })
 }
 if ($match.Count -eq 0) {
+    # A delayed -Execute invocation must never look like a successful dispatch.
+    # This is an incident signal only: the expired slot is never replayed.
+    if ($Execute) {
+        $expiredToday = @($Rows | Where-Object {
+            $slot = [datetime]$_.proposed_moscow_slot
+            $slot.Date -eq $Msk.Date -and $Msk -ge $slot.AddMinutes(18)
+        })
+        if ($expiredToday.Count -gt 0) {
+            throw ('MILOVI_EXACT_WINDOW_CLOSED_NO_DISPATCH=' + $NowClock)
+        }
+    }
     Write-Output ('NO_DUE_SLOT_FOR_MOSCOW_TIME=' + $NowClock)
     exit 0
 }

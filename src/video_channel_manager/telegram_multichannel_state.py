@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
+from video_channel_manager.telegram_editorial_hold import require_execution_not_held
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
@@ -265,6 +266,7 @@ def skip_expired_pending(
     *,
     now: datetime | None = None,
 ) -> tuple[str, ...]:
+    require_execution_not_held(release)
     effective_now = now or utc_now()
     if effective_now.tzinfo is None:
         raise ValueError("stale-publication check timestamp must be timezone-aware")
@@ -289,6 +291,7 @@ def skip_expired_pending(
 
 
 def initialize_ledger(release: GenericReleaseQueue) -> GenericPublicationLedger:
+    require_execution_not_held(release)
     if not release.release_authorized:
         raise ValueError("publication ledger initialization requires an authorized immutable release")
     return GenericPublicationLedger(
@@ -447,6 +450,7 @@ def prepare_next(
     scheduled_canary_approval: OwnerScheduledCanaryApproval | None = None,
     verified_canary: tuple[GenericReleaseQueue, GenericPublicationLedger] | None = None,
 ) -> PreparedGenericDispatch:
+    require_execution_not_held(release)
     prepared_at = now or utc_now()
     if prepared_at.tzinfo is None:
         raise ValueError("prepare timestamp must be timezone-aware")

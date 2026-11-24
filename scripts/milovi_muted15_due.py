@@ -13,10 +13,20 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from video_channel_manager.milovi_telegram_feed import (
+    EXPECTED_BOT_ID,
+    EXPECTED_BOT_USERNAME,
+    EXPECTED_CHAT_ID,
+    PROJECT_KEY,
+    exact_paths,
+    require_never_attempted_pending,
+    require_raw_receipt_identifiers,
     state_check,
     state_init,
     validate_bundle,
 )
+from video_channel_manager.telegram_multichannel_release import load_release
+from video_channel_manager.telegram_multichannel_state import load_ledger
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 
 PLAN = Path("content/telegram/milovi-cake/november-muted15-editorial-plan-20261106.json")
 EXPECTED_REF = "agent/milovi-video-muted15-80ee7f9fea"
@@ -90,7 +100,7 @@ def reviewed_items() -> list[dict]:
 
 def due_row(now: datetime, rows: list[dict]) -> dict | None:
     """Decide only inside one exact 2026 daily 19:00 Moscow two-hour slot."""
-    if now.tzinfo is None:
+    if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError("current clock must be timezone-aware")
     local = now.astimezone(MOSCOW)
     if local.year != 2026 or local.month != 11 or not 8 <= local.day <= 22:
@@ -104,23 +114,81 @@ def due_row(now: datetime, rows: list[dict]) -> dict | None:
     return row
 
 
-def exact_state_decision(row: dict, *, checkout: Path) -> bool:
+def _require_clean_pending(pid: str, *, checkout: Path) -> None:
+    require_never_attempted_pending(pid, state_checkout=checkout)
+
+
+def _require_exact_verified_receipt(row: dict, *, checkout: Path, as_of: datetime) -> None:
+    """Validate recorded terminal evidence, never a live provider read or retry permission.
+
+    The ledger's attempted timestamp is the durable intent/preparation time;
+    it does not independently prove when Telegram received the request. A
+    verified response can arrive after the lease, but not after ``as_of``.
+    """
+    pid = row["publication_id"]
+    paths = exact_paths(pid)
+    release = load_release(paths["release"])
+    slot = datetime.fromisoformat(row["scheduled_at_proposal"])
+    mismatch = (
+        f"video receipt target, message identity or reviewed slot is inconsistent: {pid}; reconcile without replay"
+    )
+    if not (
+        slot.tzinfo is not None
+        and slot.utcoffset() is not None
+        and len(release.items) == 1
+        and release.items[0].publication_id == release.release_id == pid
+        and isinstance(release.items[0].payload, GenericVideoPayload)
+        and release.items[0].scheduled_at == slot
+        and release.project_key == PROJECT_KEY
+        and release.channel_username.casefold() == CHANNEL.casefold()
+        and release.chat_id == EXPECTED_CHAT_ID
+        and release.bot_id == EXPECTED_BOT_ID
+        and (release.bot_username or "").casefold() == EXPECTED_BOT_USERNAME.casefold()
+        and release.digest == row.get("release_digest")
+        and release.candidate_digest() == row.get("release_candidate_sha256")
+        and release.items[0].payload.provider_payload_sha256 == row.get("provider_payload_sha256")
+    ):
+        raise ValueError(mismatch)
+
+    ledger_path = checkout / paths["ledger"]
+    require_raw_receipt_identifiers(pid, state_checkout=checkout)
+    entry = load_ledger(ledger_path, release).entries[pid]
+    username = entry.actual_chat_username
+    bot_username = entry.bot_username
+    attempted = entry.attempted_at_utc
+    verified_at = entry.published_at_utc
+    if not (
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.message_id is not None
+        and entry.message_id > 0
+        and entry.actual_chat_id == release.chat_id
+        and entry.bot_id == release.bot_id
+        and isinstance(username, str)
+        and username.casefold() == release.channel_username.lstrip("@").casefold()
+        and isinstance(bot_username, str)
+        and bot_username.casefold() == (release.bot_username or "").casefold()
+        and entry.message_url == f"https://t.me/{username}/{entry.message_id}"
+        and attempted is not None
+        and slot <= attempted < slot + MAX_LAG
+        and verified_at is not None
+        and verified_at <= as_of
+    ):
+        raise ValueError(mismatch)
+
+
+def exact_state_decision(row: dict, *, checkout: Path, now: datetime | None = None) -> bool:
     """Read authoritative ledger/index without changing or initializing anything."""
+    observed_at = now if now is not None else datetime.now(UTC)
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("current clock must be timezone-aware")
     pid = row["publication_id"]
     result = state_check(pid, state_checkout=checkout)
-    ledger = _read_json(checkout / "content/telegram/milovi-cake/feed" / (pid + ".json"))
-    entry = ledger.get("entries", {}).get(pid)
-    if not isinstance(entry, dict):
-        raise ValueError("missing exact durable state entry")
     if result["state"] == "published" and result["provider_effect"] == "verified":
-        if not isinstance(entry.get("message_id"), int) or entry["message_id"] <= 0:
-            raise ValueError("published record without verified Telegram receipt")
-        if not entry.get("message_url"):
-            raise ValueError("published record without message URL")
+        _require_exact_verified_receipt(row, checkout=checkout, as_of=observed_at)
         return False
     if result["state"] == "pending" and result["provider_effect"] == "impossible":
-        if entry.get("intent_id") is not None or entry.get("message_id") is not None:
-            raise ValueError("pending record has an unresolved provider intent")
+        _require_clean_pending(pid, checkout=checkout)
         state_check(pid, state_checkout=checkout, require_publishable=True)
         return True
     raise ValueError("provider state is unresolved; refusing repeat or blind send")
@@ -134,7 +202,7 @@ def missed_delivery_windows(now: datetime, rows: list[dict], *, checkout: Path) 
     Only previously elapsed exact slots are checked; upcoming items remain
     untouched and the result never authorizes replay.
     """
-    if now.tzinfo is None:
+    if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError("overdue audit clock must be timezone-aware")
     clock = now.astimezone(MOSCOW)
     missed: list[str] = []
@@ -146,8 +214,10 @@ def missed_delivery_windows(now: datetime, rows: list[dict], *, checkout: Path) 
         receipt = state_check(pid, state_checkout=checkout)
         state, effect = receipt["state"], receipt["provider_effect"]
         if state == "published" and effect == "verified":
+            _require_exact_verified_receipt(row, checkout=checkout, as_of=clock)
             continue
         if state == "pending" and effect == "impossible":
+            _require_clean_pending(pid, checkout=checkout)
             missed.append(pid)
             continue
         raise ValueError(f"expired Milovi slot has unsafe or inconsistent provider state: {pid}")
@@ -205,7 +275,7 @@ def main() -> int:
         raise ValueError("due validation needs exact state checkout and output")
     current = datetime.now(UTC)
     row = due_row(current, rows)
-    permit = row is not None and exact_state_decision(row, checkout=args.state_checkout)
+    permit = row is not None and exact_state_decision(row, checkout=args.state_checkout, now=current)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("a", encoding="utf-8") as out:
         out.write("dispatch=" + ("true" if permit else "false") + "\n")

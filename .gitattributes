@@ -1,0 +1,21 @@
+# Charnock #10: keep byte-pinned historical/reviewed JSON checkout bytes
+# identical to the stored Git blobs on Windows with core.autocrlf=true.
+# Scoped only to these three approved identities; no repository-wide EOL change.
+content/telegram/lordchrist/telegraph-v1/charnock/charnock-reschedule-2026.json text eol=lf
+content/telegram/lordchrist/telegraph-v1/charnock/charnock-10-source-media-binding-v2-20261123.json text eol=lf
+content/telegram/lordchrist/telegraph-v1/charnock/lordchrist-telegraph-charnock-10.json text eol=lf
+
+# Quote-depth/successor cryptographic bindings compare original Git blob bytes.
+# Pin checkout to LF on Windows; never normalize/downgrade runtime SHA gates.
+content/telegram/lordchrist/quote-depth-audit-v1.json text eol=lf
+content/telegram/lordchrist/quote-depth-replacements-v1.json text eol=lf
+content/telegram/lordchrist/successor-translation-ledger-v1.json text eol=lf
+
+# Exact SHA-256 of the approved Instagram quote plan is over LF Git blob bytes.
+content/instagram/lord-god-strength-quote-cloud-20261111.json text eol=lf
+
+# Charnock exact credit correction: the executor pins these three reviewed Git
+# blobs. Preserve raw bytes on Windows; do not normalize inside the hash gate.
+content/research/charnock-q10-translation-review-20261123/charnock-11-q10-proposed.json text eol=lf
+content/research/charnock-source-credit-candidates-20261123/charnock-12.json text eol=lf
+content/research/charnock-source-credit-candidates-20261123/charnock-13.json text eol=lf

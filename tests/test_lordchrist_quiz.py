@@ -91,36 +91,39 @@ def test_trial_quiz_runtime_is_the_authorized_build_of_the_spec() -> None:
     assert payload.explanation == spec.explanation
 
 
-def _write_stale_ledger(state_checkout: Path, *, published: bool) -> Path:
+def _write_stale_ledger(state_checkout: Path, publication_id: str, *, published: bool) -> Path:
     from video_channel_manager.lordchrist_quiz import ledger_relative_path, state_init
 
-    target = state_checkout / ledger_relative_path(PUBLICATION_ID)
-    assert state_init(PUBLICATION_ID, state_checkout) == target
+    target = state_checkout / ledger_relative_path(publication_id)
+    assert state_init(publication_id, state_checkout) == target
     payload = json.loads(target.read_text(encoding="utf-8"))
     payload["release_digest"] = "sha256:" + "0" * 64  # bound to a superseded release
     if published:
         # A touched (no longer pending) entry must block re-initialization.
-        payload["entries"][PUBLICATION_ID]["state"] = "skipped"
+        payload["entries"][publication_id]["state"] = "skipped"
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return target
 
 
-def test_state_init_reinitializes_only_a_provably_untouched_stale_ledger(tmp_path: Path) -> None:
+def test_state_init_reinitializes_only_a_provably_untouched_stale_ledger(tmp_path: Path, monkeypatch) -> None:
     import pytest
+    from quiz_fixture_helpers import FIXTURE_ONE, fake_one, fake_profile_binding
 
-    from video_channel_manager.lordchrist_quiz import load_quiz_release, runtime_path, state_init
+    from video_channel_manager import lordchrist_quiz as quiz
     from video_channel_manager.telegram_multichannel_state import load_ledger
 
-    target = _write_stale_ledger(tmp_path, published=False)
-    release = load_quiz_release(runtime_path(PUBLICATION_ID))
-    assert state_init(PUBLICATION_ID, tmp_path) == target
-    ledger = load_ledger(target, release)  # now bound to the current release
+    profile, binding = fake_profile_binding()
+    spec, release = fake_one(profile, binding)
+    monkeypatch.setattr(quiz, "_load_bundle", lambda _id: (spec, release))
+    target = _write_stale_ledger(tmp_path, FIXTURE_ONE, published=False)
+    assert quiz.state_init(FIXTURE_ONE, tmp_path) == target
+    ledger = load_ledger(target, release)
     assert ledger.release_digest == release.digest
 
     other = tmp_path / "published-case"
-    _write_stale_ledger(other, published=True)
+    _write_stale_ledger(other, FIXTURE_ONE, published=True)
     with pytest.raises(ValueError, match="provably untouched"):
-        state_init(PUBLICATION_ID, other)
+        quiz.state_init(FIXTURE_ONE, other)
 
 
 SERIES_ID = "lordchrist-quiz-series-01"

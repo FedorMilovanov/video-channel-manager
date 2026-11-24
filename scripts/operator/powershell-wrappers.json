@@ -208,7 +208,7 @@
       "status": "scoped_release",
       "project_key": "milovi-cake",
       "provider_write_capable": true,
-      "sha256": "78d7cf8370ca2c30cfc3ae2318495df6f1098d31e6309e5df695857a401fe4da",
+      "sha256": "45152f6d6b419fdade39c49132a82f8e758eba91a23e580b2357452bf381d18c",
       "reason": "14 Nov 2026 approved one-slot HTTPS route; retains the existing exclusive daily writer lock; default original source lanes unchanged."
     },
     {

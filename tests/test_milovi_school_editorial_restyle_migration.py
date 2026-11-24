@@ -73,3 +73,26 @@ def test_legacy_revision_refuses_candidate_identity_drift(tmp_path: Path) -> Non
     ip.write_text(json.dumps(idx, ensure_ascii=False) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="not pinned"):
         school.initialize_all(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("dispatch_mode", "scheduled"),
+        ("github_sha", "b" * 40),
+        ("github_workflow_sha", "c" * 40),
+        ("actual_chat_id", -1002215328390),
+        ("last_error", "prior attempt unresolved"),
+    ],
+)
+def test_legacy_migration_never_erases_stale_attempt_provenance(tmp_path: Path, field: str, value: object) -> None:
+    _create_legacy_pending_fixture(tmp_path)
+    pid = "milovi-feed-20261125-001"
+    ledger_path = tmp_path / FEED / f"{pid}.json"
+    data = json.loads(ledger_path.read_text(encoding="utf-8"))
+    data["entries"][pid][field] = value
+    ledger_path.write_text(json.dumps(data), encoding="utf-8")
+    before = {p: p.read_bytes() for p in (tmp_path / FEED).glob("*.json")}
+    with pytest.raises(ValueError, match="reconcile without replay"):
+        school.initialize_all(tmp_path)
+    assert {p: p.read_bytes() for p in before} == before

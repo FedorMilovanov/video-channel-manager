@@ -43,6 +43,23 @@ VIDEO_EVIDENCE_SHA256 = "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed
 MUTED_VIDEO_VARIANTS_PATH = Path("content/telegram/milovi-cake/accepted-video-variants-2026-11.json")
 RETIRED_PUBLICATIONS_PATH = Path("content/telegram/milovi-cake/retired-publications-2026-11.json")
 MUTED_PROVENANCE_SHA256 = "sha256:9657c47381b923394cee72d7dd832174f69de8293e648b0ae68876a58f8309be"
+PENDING_NULL_ATTEMPT_FIELDS = (
+    "intent_id",
+    "dispatch_mode",
+    "workflow_run_id",
+    "workflow_run_attempt",
+    "github_sha",
+    "github_workflow_sha",
+    "attempted_at_utc",
+    "published_at_utc",
+    "message_id",
+    "message_url",
+    "actual_chat_id",
+    "actual_chat_username",
+    "bot_id",
+    "bot_username",
+    "last_error",
+)
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -75,6 +92,47 @@ def exact_paths(publication_id: str) -> dict[str, Path]:
         "ledger": STATE_ROOT / f"{publication_id}.json",
         "index": INDEX_RELATIVE_PATH,
     }
+
+
+def require_never_attempted_pending(publication_id: str, *, state_checkout: Path) -> None:
+    """Reject missing or contradictory raw provenance without changing the ledger.
+
+    This is stricter than generic ``pending/not_dispatched`` recovery: it is
+    only for an explicitly ``pending/impossible`` never-attempted record. The
+    caller must separately validate its exact release and index identities.
+    """
+    paths = exact_paths(publication_id)
+    ledger = _read_json(state_checkout / paths["ledger"])
+    entries = ledger.get("entries")
+    entry = entries.get(publication_id) if isinstance(entries, dict) else None
+    if not (
+        isinstance(entry, dict)
+        and entry.get("state") == "pending"
+        and entry.get("provider_effect") == "impossible"
+        and all(field in entry and entry[field] is None for field in PENDING_NULL_ATTEMPT_FIELDS)
+    ):
+        raise ValueError(
+            f"pending record has an unresolved provider intent or provenance: {publication_id}; "
+            "reconcile without replay"
+        )
+
+
+def require_raw_receipt_identifiers(publication_id: str, *, state_checkout: Path) -> None:
+    """Reject JSON coercion of message, chat and bot identifiers in both state files."""
+    paths = exact_paths(publication_id)
+    ledger_entries = _read_json(state_checkout / paths["ledger"]).get("entries")
+    index_entries = _read_json(state_checkout / paths["index"]).get("entries")
+    entry = ledger_entries.get(publication_id) if isinstance(ledger_entries, dict) else None
+    indexed = index_entries.get(publication_id) if isinstance(index_entries, dict) else None
+    if not (
+        isinstance(entry, dict)
+        and isinstance(indexed, dict)
+        and type(entry.get("message_id")) is int
+        and type(entry.get("actual_chat_id")) is int
+        and type(entry.get("bot_id")) is int
+        and type(indexed.get("message_id")) is int
+    ):
+        raise ValueError(f"Milovi receipt has non-integer raw identities: {publication_id}; reconcile without replay")
 
 
 class MiloviExecutionAuthority(BaseModel):

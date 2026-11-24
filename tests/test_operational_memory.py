@@ -71,6 +71,284 @@ def test_wave14_history_remains_machine_readable_but_not_live_state() -> None:
     assert "Issue #154 remains **artifact-level open**" not in current
 
 
+def test_lordchrist_checkpoint_preserves_no_replay_and_editorial_holds() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    overlay = current.split("## LordChrist publication checkpoint", 1)[1].split("## Completion", 1)[0]
+
+    for fact in (
+        "[ordered queue](2026-11-21-zero-open-tasks-plan.md)",
+        "[release calendar](2026-11-21-release-calendar.md)",
+        "**QUIZ: EDITORIAL HOLD.**",
+        "Local signoff JSON is not review provenance or authority",
+        "`may_exist`",
+        "#09 is already verified as Telegram message **1630**",
+        "never repeat it",
+        "do not increase pages 04/05",
+        "`43098273140`",
+        "unknown inputs",
+        "do not replay or cancel blindly",
+        "never publish at night",
+    ):
+        assert fact in overlay
+    assert "Next planned item 8: 17 November" not in current
+    for name in ("2026-11-21-zero-open-tasks-plan.md", "2026-11-21-release-calendar.md"):
+        assert (OPERATIONS_DIR / name).is_file()
+
+
+def test_november_22_readbacks_preserve_uncertainty_and_no_replay() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    milovi = current.split("## Telegram / Milovi Cake / Issue #353", 1)[1].split("## ", 1)[0]
+    lordchrist = current.split("## LordChrist publication checkpoint", 1)[1].split("## Completion", 1)[0]
+
+    for fact in (
+        "20 `pending/impossible`",
+        "two historical `published/verified`",
+        "not complete Telegram history",
+        "https://t.me/MiloviCake/28?embed=1",
+        "https://t.me/MiloviCake/29?embed=1",
+        "Neither deletion nor the relationship of #28 and #29 is established",
+        "never substitute an ID or resend",
+        "does not create a reliable on-time scheduler",
+    ):
+        assert fact in milovi
+    assert "#1617 but returned “Post not found” for #1623" in lordchrist
+    assert "not proof of deletion" in lordchrist
+    assert "different cover URLs" in lordchrist
+    assert "issuecomment-7084081762" in lordchrist
+
+
+def test_owner_checkpoints_separate_read_access_ledger_and_authority() -> None:
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    plan = " ".join(plan.split())
+
+    for fact in (
+        "issuecomment-7085551248",
+        "does not confirm a quota grant",
+        "issuecomment-7085944239",
+        "has no media ID, not a verified Reel receipt",
+        "issuecomment-7088810705",
+        "not an independent inspection or proof of a new Reel",
+        "fixed pin must not be presumed current after `main` moves",
+        "milovi-instagram-https-fallback-handoff.md",
+    ):
+        assert fact in current
+    for fact in (
+        "186/186 Poet, 152/152 Milovi и 1 881/1 887 Lord God",
+        "не полный аудит drafts вне uploads playlist",
+        "quota decision не подтверждено",
+        "4 original-audio `published` с media ID, 7 `terminal_failure`",
+        "18341870875261465`, но без media ID",
+        "заблокирована security layer; обходить нельзя",
+        "issuecomment-7086329857",
+        "a78bf4e6c46bba5f3831bf9cdf514c6d940e3168",
+        "9946067ca830d0cd7684d4b8d84d78e7299117a6",
+        "Сам результат repo не доказывает deployment",
+        "issuecomment-7088810705",
+        "owner-reported evidence, не самостоятельная проверка ПК и не Reel receipt",
+        "Фиксированный pin не доказывает текущий `main` после его движения",
+        "Ни auto-switch HTTPS, ни новые hosting",
+    ):
+        assert fact in plan
+
+
+def test_milovi_https_handoff_preserves_expired_window_and_unknown_effect() -> None:
+    handoff = (OPERATIONS_DIR / "milovi-instagram-https-fallback-handoff.md").read_text(encoding="utf-8")
+    future = handoff.split("## Safe handoff when public hosting is separately authorized", 1)[1]
+    assert "14 November window below is historical and has expired" in handoff
+    assert "container `18341870875261465`, with **no provider media ID**" in handoff
+    assert "not proof that a provider effect is absent" in handoff
+    assert "Do not retry that key or source" in handoff
+    assert "a78bf4e6c46bba5f3831bf9cdf514c6d940e3168" in handoff
+    assert "9946067ca830d0cd7684d4b8d84d78e7299117a6" in handoff
+    assert "not proof of owner-local deployment" in " ".join(handoff.replace("**", "").split())
+    assert "old unknown/failed effects and no-replay boundary still apply" in handoff
+    assert "--day '<approved-future-date-YYYY-MM-DD>'" in future
+    assert "--day '2026-11-14'" not in future
+    assert "approval was limited to that expired window" in future
+    assert "The only prospective exception" not in handoff
+
+
+def test_milovi_owner_runtime_report_is_dated_and_not_a_reel_receipt() -> None:
+    handoff = (OPERATIONS_DIR / "milovi-instagram-https-fallback-handoff.md").read_text(encoding="utf-8")
+    checkpoint = handoff.split("### Owner-reported clean-runtime checkpoint", 1)[1].split("## Historical evidence", 1)[
+        0
+    ]
+    checkpoint = " ".join(checkpoint.replace("**", "").split())
+
+    for fact in (
+        "23 November 01:01 UTC",
+        "issuecomment-7088810705",
+        "not independently inspected the Windows machine",
+        "MILOVI-CAKE-Instagram-Reels",
+        "Enabled/Ready",
+        "23 November 19:00 Europe/Moscow at that checkpoint",
+        "488e5380` with 96 dirty paths",
+        r"H:\VCM-MILOVI-RUNTIME-PIN-20261123",
+        "then-current `main` `b312ce3afaa922282b66ddf513dce24fd94d80d6`",
+        "35 Instagram/HTTP-inventory test modules exited 0",
+        "VCM_INSTAGRAM_META_PROXY_URL=http://127.0.0.1:10808",
+        "d6f98412a81e3d34540e9e052b8cb53ce02fe924f3763d3dcb927752228ff91b",
+        "1a0ddbeb8f5c3c57e0f1fd95c99120950a995580d480cb4b0b70634e3d1d13ec",
+        "byte-identical backup, not the current wrapper at this checkpoint",
+        "OXC3BjtlU1g",
+        "17841407843933779",
+        "READ-ONLY PREFLIGHT SUCCESS; NO POST",
+        "Neither dry-run nor that quota snapshot proves ingestion or publication",
+        "independent soundtrack rights remain unverified",
+        "does not establish whether dispatch also compares the remote `main`",
+        "not a second writer or an unreviewed task change",
+        "0/6 confirmed Meta scheduled slots",
+        "no result for the next slot is implied",
+    ):
+        assert fact in checkpoint
+
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    assert "issuecomment-7088810705" in inventory
+    assert "старые неизвестные/неуспешные эффекты не повторять" in inventory
+
+
+def test_lermontov_decode_is_not_listening_or_release_authority() -> None:
+    onboarding = (OPERATIONS_DIR / "legendary-poet-telegram-audio-onboarding.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    checkpoint = onboarding.split("## Provider-free source decode", 1)[1].split("## Shared-bot onboarding", 1)[0]
+
+    for fact in (
+        "issuecomment-7087633303",
+        "9da6847c5ee5008981fa154b1b95d87d6809cf01",
+        "10cc0f069970a75b49d33a95cf7bf514fc25be3f1069ddf2a5437e2ea090c3e8",
+        "9,011,270 stereo sample frames",
+        "f5626af91887032d79c9c1fc30d53a5b248a9b8fd8eff13a5c8c33176c85b818",
+        "not a fresh production-HTTP or Windows-bundle check",
+        "do not prove audible clipping or its absence",
+        "246e82d9-16a8-4ddb-875d-24ba9c065019",
+        "24fab091-1baf-46f9-bed0-8ddbe0af5be7",
+        "The relation between these IDs is unverified",
+        "neither metadata nor that draft proves different audio",
+        "do not rewrite tags or replace the accepted MP3 SHA",
+        "must not be substituted",
+        "nothing conclusive about other commits or the owner's Windows bundle",
+        "Independent human listening and editorial/rights review",
+        "historical 19 November proposed slot has expired",
+        "grants no provider authority",
+    ):
+        assert fact in checkpoint.replace("**", "")
+    for text in (plan, inventory):
+        assert "issuecomment-7087633303" in text
+        assert "не listening" in text or "не прослушивание" in text
+        assert "`sendAudio` здесь не выполнялся" in text
+
+
+def test_jude_reconciliation_preserves_contradiction_and_scoped_guard() -> None:
+    incident = (OPERATIONS_DIR / "2026-11-22-jude-actions-reconciliation.md").read_text(encoding="utf-8")
+    for fact in (
+        "43098273140",
+        "116713949914",
+        "`Cannot cancel a workflow run that is completed`",
+        "`status=queued`",
+        "`conclusion=null`",
+        "Повторную или принудительную отмену",
+        "0 jobs",
+        "0 artifacts",
+        "33 последующих",
+        "нефильтрованным traversal",
+        "45014714988",
+        "только заголовки одного аккаунта",
+        "не останавливает",
+        "не проверяет GitHub live, занятость сегодняшнего дня и время суток",
+    ):
+        assert fact in incident
+    calendar = (OPERATIONS_DIR / "2026-11-21-release-calendar.md").read_text(encoding="utf-8")
+    assert "**не подтверждённая отмена**" in calendar
+    assert "2026-11-22-jude-actions-reconciliation.md" in calendar
+    assert "блокирует все четыре этапа" in calendar
+
+
+def test_legendary_poet_inventory_keeps_done_edits_and_project_identity() -> None:
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    poet = inventory.split("Legendary Poet:", 1)[1].split("Lord God:", 1)[0]
+    lord_god = inventory.split("Lord God:", 1)[1].split("LordChrist Shorts / видео:", 1)[0]
+
+    assert "все 7/7 исправлений" in poet
+    assert "уже выполнены на checkpoint; не повторять" in poet
+    assert "8g_4EVWFb1g" in poet and "UgyUMAfJqC8hdzxSnfF4AaABAg" in poet
+    assert "Lf0h4yXPVng" in poet and "комментарий только draft" in poet
+    assert "WizaG8S085g::en-US" in poet and "`may_exist`" in poet
+    assert "`reconciled_absent_after_403`" in poet
+    assert "Это не доказывает отсутствия сейчас" in poet
+    assert "#789" in poet and "#778" in poet
+    assert "#789" not in lord_god and "#778" not in lord_god
+    assert "#869" in lord_god
+
+
+def test_legendary_poet_comment_checkpoint_keeps_research_separate_from_publication() -> None:
+    inventory = (OPERATIONS_DIR / "2026-11-21-open-work.md").read_text(encoding="utf-8")
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    poet = inventory.split("- **#782**", 1)[1].split("- **#903**", 1)[0]
+    queued = plan.split("- **#782:**", 1)[1].split("- **#903:**", 1)[0]
+
+    for text in (poet, queued):
+        assert "issuecomment-7078589769" in text
+        assert "Lf0h4yXPVng" in text and "8g_4EVWFb1g" in text
+        assert "audio_unverified" in text
+        assert "не отправлен" in text
+        assert "Решение владельца — ждать; не публиковать кандидата Есенина до нового решения" in text
+        assert "pin" in text and "readback" in text
+    assert "финальные строки и год — по музею, не по самой рукописи" in poet
+    assert "на 06.11" in poet and "нынешнее наличие других owner-комментариев не установлено" in poet
+    assert "не заменяет exact-operation" in poet
+    assert "API POST не доказывают текущий закреп" in queued
+
+
+def test_charnock_due_date_previews_remain_hypothetical_and_provider_free() -> None:
+    calendar = (OPERATIONS_DIR / "2026-11-21-release-calendar.md").read_text(encoding="utf-8")
+    assert "issuecomment-7078609772" in calendar
+    assert "provider-free preview с гипотетическим" in calendar
+    assert "для №10–12 поштучно остановился" in calendar
+    assert "не реальные будущие запуски, не live readback" in calendar
+    assert "текущие release variables через эту интеграцию не прочитаны (403)" in calendar
+
+
+def test_charnock_qc_history_keeps_limited_evidence_and_retired_editor() -> None:
+    runbook = (OPERATIONS_DIR / "charnock-qc-reissue-20261121.md").read_text(encoding="utf-8")
+    audit = (ROOT / "docs/audits/2026-11-21-charnock-qc-reissue-execution-log.md").read_text(encoding="utf-8")
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    assert "`--execute` останавливается до любого GET" in runbook
+    assert "`VISIBLE_TEXT_MISMATCH`" in runbook and "ненулевой exit" in runbook
+    assert "не доказывает" in runbook and "независимую редакционную приёмку" in runbook
+    assert "не новая\n> полная сверка 13 страниц" in audit
+    assert "**`new_sha256` целевого payload**" in audit and "`old_sha256`" in audit
+    assert "он отличается от `new_sha256` для 13/13" in audit
+    assert "old SHAs/external copies are not stopped" in current
+    assert "not a fresh full-series provider readback" in current
+
+
+def test_platform_inventory_preserves_existing_reel_and_vk_wall_evidence() -> None:
+    plan = (OPERATIONS_DIR / "2026-11-21-zero-open-tasks-plan.md").read_text(encoding="utf-8")
+    blok = plan.split("- **#778,", 1)[1].split("- **#792,", 1)[0]
+    milovi = plan.split("- **#792,", 1)[1].split("- **#790,", 1)[0]
+
+    assert "18125909824868306" in blok and "#АлександрПушкин" in blok
+    assert "тело существующего Reel" in blok and "уже называло Блока" in blok
+    assert "не создавать Reel заново" in blok and "старый полный caption-план устарел" in blok
+    assert "27/27" in milovi and "19 отдельных Clip-вложений" in milovi and "все 18" in milovi
+    assert "Восемь прочих ordinary video" in milovi and "уже загружены" in milovi
+    assert "`acodec=None` означает **звук неизвестен**" in milovi
+    assert "не автоматическая отмена, перепубликация" in milovi
+    assert "issuecomment-7051382962" in milovi and "issuecomment-7052639277" in milovi
+
+
+def test_caption_reconciliation_is_historical_and_not_retry_authority() -> None:
+    quota = (OPERATIONS_DIR / "youtube-api-quota-and-viewer-language-2026-11-13.md").read_text(encoding="utf-8")
+    correction = next(line for line in quota.splitlines() if "reconciled_absent_after_403" in line)
+    assert "WizaG8S085g::en-US" in correction
+    assert "two owner `captions.list` reads" in correction
+    assert "**12 November**" in correction
+    assert "**not** proof of present-day absence or permission to insert" in correction
+    assert "issuecomment-6874475550" in correction
+
+
 def test_agent_instructions_preserve_current_identity_and_execution_boundaries() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
