@@ -1532,6 +1532,18 @@
       "provider_write_capable": false,
       "callers": [],
       "private_imports": []
+    },
+    {
+      "callers": [
+        ".github/workflows/lordchrist-charnock-editorial-correction.yml"
+      ],
+      "direct_entrypoint": true,
+      "path": "scripts/charnock_telegraph_credit_revision.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "b43d0500b20ada51cffca62d6f28b04b26081c0a45d6bdc9001788fdf7d4aa4f",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",
