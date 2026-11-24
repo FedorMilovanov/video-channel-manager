@@ -210,6 +210,7 @@ def execute_http_request(
     retry_policy: RetryPolicy | None = None,
     limiter: RequestRateLimiter | None = None,
     response_classifier: Callable[[httpx.Response], HttpFailureKind | None] | None = None,
+    attempt_guard: Callable[[Callable[[], httpx.Response], str, str], httpx.Response] | None = None,
     sleep: Callable[[float], None] = time.sleep,
     jitter: Callable[[], float] = random.random,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
@@ -228,7 +229,7 @@ def execute_http_request(
     for attempt in range(1, max_attempts + 1):
         active_limiter.wait()
         try:
-            response = request()
+            response = request() if attempt_guard is None else attempt_guard(request, method, resource)
         except httpx.HTTPError as exc:
             if operation is HttpOperationClass.SAFE_READ and attempt < max_attempts:
                 sleep(

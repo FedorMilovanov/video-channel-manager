@@ -492,3 +492,61 @@ def test_panorama_cli_rejects_ci_even_with_operator_confirmation(
         )
     assert exc.value.exit_code == 3
     assert not (tmp_path / "journal").exists()
+
+
+def test_strict_inventory_cannot_be_bounded() -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+    with pytest.raises(ValueError, match="Strict moderation inventory cannot be bounded"):
+        StubCommentsAPI()._list_top_level_comments(VIDEO_ID, strict_moderation=True, max_pages_per_status=1)
+
+
+@pytest.mark.parametrize("bounded", [False, True])
+def test_quota_block_never_returns_partial_inventory(bounded: bool) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+    from video_channel_manager.platforms.youtube.store import YouTubeQuotaBlocked
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            if params["moderationStatus"] == "published":
+                return {"items": []}
+            raise YouTubeCommentError("quota blocked") from YouTubeQuotaBlocked("terminal")
+
+    with pytest.raises(YouTubeCommentError, match="quota blocked"):
+        StubCommentsAPI()._list_top_level_comments(VIDEO_ID, max_pages_per_status=1 if bounded else None)
+
+
+def test_strict_inventory_rejects_conflicting_duplicate_identity() -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError, YouTubeCommentWriter
+
+    class StubCommentsAPI(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, method: str, resource: str, *, params: dict[str, object]) -> dict[str, object]:
+            author = "other-channel" if params["moderationStatus"] == "published" else YOUTUBE_COMMENT_OWNER
+            return {
+                "items": [
+                    {
+                        "id": "thread-id",
+                        "snippet": {
+                            "videoId": VIDEO_ID,
+                            "channelId": YOUTUBE_COMMENT_OWNER,
+                            "topLevelComment": {
+                                "id": "comment-id",
+                                "snippet": {"authorChannelId": {"value": author}, "textOriginal": TEXT},
+                            },
+                        },
+                    }
+                ]
+            }
+
+    with pytest.raises(YouTubeCommentError, match="conflicting duplicate comments"):
+        StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
