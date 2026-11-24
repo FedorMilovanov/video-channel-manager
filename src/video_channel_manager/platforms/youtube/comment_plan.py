@@ -47,7 +47,9 @@ def video_id_set_sha256(video_ids: list[str]) -> str:
 
 def _valid_owner_comment_map(value: object) -> bool:
     return isinstance(value, dict) and bool(value) and all(
-        isinstance(key, str) and bool(key.strip()) and isinstance(digest, str)
+        isinstance(key, str)
+        and bool(key.strip())
+        and isinstance(digest, str)
         and re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is not None
         for key, digest in value.items()
     )
@@ -64,11 +66,11 @@ def operation_id_for(
     expected_owned_comments: dict[str, str] | None = None,
 ) -> str:
     identity: dict[str, Any] = {
-            "action": action,
-            "channel_id": channel_id,
-            "video_id": video_id,
-            "comment_sha256": comment_sha256,
-            "expected_comment_id": expected_comment_id,
+        "action": action,
+        "channel_id": channel_id,
+        "video_id": video_id,
+        "comment_sha256": comment_sha256,
+        "expected_comment_id": expected_comment_id,
         "expected_comment_sha256": expected_comment_sha256,
     }
     if expected_owned_comments is not None:
@@ -198,6 +200,8 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
         return errors
     if len(operations) > 500:
         errors.append("operations exceed the hard safety cap of 500")
+    if payload.get("mode") == "reviewed-additional-comment" and len(operations) != 1:
+        errors.append("additional comment plan must contain one reviewed addition")
 
     operation_ids: list[str] = []
     video_ids: list[str] = []
