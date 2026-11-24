@@ -11,14 +11,16 @@
   ],
   "claimed_at_utc": "2026-11-24T10:21:42.043713+00:00",
   "cover_sha256": "sha256:14e017c89623f51d76e06a80bbc636765026f2284a4c0832b83894b98507d5f6",
-  "effect": "READY_FOR_REVIEW_NO_POST",
+  "effect": "VERIFIED_IN_PLACE",
   "github_sha": "a8a68a24eade7390064bd0d4f91a36e6875d0553",
   "media_base_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/c1bafa972e91d536fc56d86e53b4ce6f3502f37d",
   "old_article_blob": "d42392bb593de4f89d36a12a3548f459efe41090",
   "path": "Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05",
-  "provider_write_attempted": false,
+  "provider_readback_sha256": "fec92fe6d74ba9a272564cebaae5560ca60a2b37cf56c797bc74f4da358c1bb7",
+  "provider_write_attempted": true,
   "publication_id": "lordchrist-telegraph-charnock-11",
   "run_id": "45371782881",
-  "state": "claimed_may_exist",
-  "url": "https://telegra.ph/Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05"
+  "state": "verified",
+  "url": "https://telegra.ph/Nebo-ne-molchit-sudy-chudesa-i-prorochestva-11-05",
+  "verified_at_utc": "2026-11-24T10:21:44.798968+00:00"
 }
