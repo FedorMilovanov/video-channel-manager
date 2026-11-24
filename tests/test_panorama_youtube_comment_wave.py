@@ -550,3 +550,103 @@ def test_strict_inventory_rejects_conflicting_duplicate_identity() -> None:
 
     with pytest.raises(YouTubeCommentError, match="conflicting duplicate comments"):
         StubCommentsAPI().list_top_level_comments(VIDEO_ID, strict_moderation=True)
+
+@pytest.mark.parametrize("timestamp", ["not-a-date", "2026-11-23", "2026-11-23T18:00:00"])
+def test_invalid_review_timestamp_blocks_before_provider(tmp_path: Path, timestamp: str) -> None:
+    adapter, fake = _adapter(tmp_path)
+    with pytest.raises(OperationRejectedError, match="review timestamp"):
+        adapter.execute(_operation(payload_patch={"reviewed_at": timestamp}))
+    assert fake.reads == fake.creates == 0
+
+
+def test_source_url_must_be_an_exact_standalone_link(tmp_path: Path) -> None:
+    adapter, fake = _adapter(tmp_path)
+    text = TEXT + "not-the-reviewed-link"
+    with pytest.raises(OperationRejectedError, match="exact primary sermon source"):
+        adapter.execute(_operation(payload_patch={"comment_text": text, "comment_sha256": comment_text_sha256(text)}))
+    assert fake.reads == fake.creates == 0
+
+
+@pytest.mark.parametrize(
+    "mine",
+    [
+        {},
+        {"items": {"id": YOUTUBE_COMMENT_OWNER}},
+        {"items": [None]},
+        {"items": [{"id": YOUTUBE_COMMENT_OWNER}], "nextPageToken": "another-page"},
+        {"items": [{"id": YOUTUBE_COMMENT_OWNER}, {"id": "another-channel"}]},
+    ],
+)
+def test_owner_inventory_must_be_complete(tmp_path: Path, mine: dict[str, object]) -> None:
+    class IncompleteOwnerWriter(FakeCommentWriter):
+        def _request(self, method: str, resource: str, *, params: dict[str, str | int]) -> dict[str, object]:
+            return mine
+
+    adapter, fake = _adapter(tmp_path, IncompleteOwnerWriter())
+    with pytest.raises(OperationRejectedError, match="OAuth grant"):
+        adapter.execute(_operation())
+    assert fake.reads == fake.creates == 0
+
+
+def test_real_writer_cannot_dispatch_via_direct_ci_adapter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
+    from video_channel_manager.wave_engine import youtube_comment_provider
+
+    class OfflineRealWriter(YouTubeCommentWriter):
+        def __init__(self) -> None:
+            pass
+
+        def _request(self, *args: object, **kwargs: object) -> dict[str, object]:
+            pytest.fail("Direct real-adapter CI must not access the provider")
+
+    monkeypatch.setattr(youtube_comment_provider, "is_ci_environment", lambda: True)
+    adapter = LordGodYouTubeCommentAdapter(writer=OfflineRealWriter(), data_dir=tmp_path)
+    with pytest.raises(OperationRejectedError, match="persistent owner runtime, not CI"):
+        adapter.execute(_operation())
+    assert not (tmp_path / "youtube").exists()
+
+
+def test_actual_owner_video_id_must_match_reviewed_target(tmp_path: Path) -> None:
+    class WrongVideoWriter(FakeCommentWriter):
+        def read_video_identity(self, video_id: str) -> SimpleNamespace:
+            identity = super().read_video_identity(video_id)
+            identity.video_id = "another-video"
+            return identity
+
+    adapter, fake = _adapter(tmp_path, WrongVideoWriter())
+    with pytest.raises(OperationRejectedError, match="video identity or owner"):
+        adapter.execute(_operation())
+    with pytest.raises(ValueError, match="reconciliation video or channel mismatch"):
+        adapter.reconcile(_operation())
+    assert fake.creates == 0
+
+
+def test_panorama_cli_reports_adapter_initialization_rejection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import typer
+
+    from video_channel_manager.wave_engine import cli
+
+    plan = SimpleNamespace(policy_version=YOUTUBE_COMMENT_POLICY_VERSION, operations=[_operation()])
+    monkeypatch.setattr(cli, "_validated_apply_documents", lambda **kwargs: (None, plan, None))
+    monkeypatch.setattr(cli, "_article_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_video_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_video_wall_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_lord_god_wall_plan", lambda _: False)
+    monkeypatch.setattr(cli, "is_ci_environment", lambda: False)
+
+    def invalid_config(**kwargs: object) -> None:
+        raise ValueError("YouTube comment wave requires the canonical absolute VCM_DATA_DIR")
+
+    monkeypatch.setattr(cli, "LordGodYouTubeCommentAdapter", invalid_config)
+    with pytest.raises(typer.Exit) as exc:
+        cli.apply(
+            source_path=tmp_path / "source.json",
+            plan_path=tmp_path / "plan.json",
+            intent_path=tmp_path / "intent.json",
+            journal_directory=tmp_path / "journal",
+            enable_provider_writes=True,
+        )
+    assert exc.value.exit_code == 3
+    assert not (tmp_path / "journal").exists()
