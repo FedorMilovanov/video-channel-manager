@@ -20,10 +20,10 @@ def make_package() -> str:
     )
     social = "\n".join(
         [
-            "VK: https://vk.ru/thelegendarypoet",
-            "Телеграм: https://t.me/thelegendarypoet",
-            "Рутуб: https://rutube.ru/channel/74579453/",
-            "Сайт: https://thelegendarypoet.ru/",
+            "*VK:* https://vk.ru/thelegendarypoet",
+            "*Телеграм:* https://t.me/thelegendarypoet",
+            "*Рутуб:* https://rutube.ru/channel/74579453/",
+            "*Сайт:* https://thelegendarypoet.ru/",
         ]
     )
     paragraphs = []
@@ -82,7 +82,7 @@ def test_detect_wrong_playlist_id_and_placeholder() -> None:
 def test_detect_markdown_links_and_no_youtube_emphasis() -> None:
     pkg = (
         make_package()
-        .replace("VK:", "*VK:*")
+        .replace("*VK:*", "**VK:**")
         .replace("https://vk.ru/thelegendarypoet", "[VK](https://vk.ru/thelegendarypoet)")
     )
     codes = {item.code for item in validate_five_block_package(pkg)}
@@ -114,7 +114,7 @@ def test_foreign_admin_link_fails_closed() -> None:
 
 
 def test_description_rejects_wrong_soclink_order_and_too_few_paragraphs() -> None:
-    pkg = make_package().replace("VK: https://vk.ru/thelegendarypoet", "VK: https://vk.com/thelegendarypoet")
+    pkg = make_package().replace("*VK:* https://vk.ru/thelegendarypoet", "*VK:* https://vk.com/thelegendarypoet")
     pkg = pkg.replace("Литературный абзац 6.", "Литературный абзац 5.")
     assert "social_order" in {item.code for item in validate_five_block_package(pkg)}
 
@@ -125,7 +125,7 @@ def test_short_link_with_underscore_does_not_count_as_italic() -> None:
 
 
 def test_missing_social_and_invalid_pin_are_rejected() -> None:
-    pkg = make_package().replace("Сайт: https://thelegendarypoet.ru/", "Сайт: ")
+    pkg = make_package().replace("*Сайт:* https://thelegendarypoet.ru/", "*Сайт:* ")
     pkg = pkg.replace("*«Поэтический цикл»*", "«Поэтический цикл»")
     codes = {item.code for item in validate_five_block_package(pkg)}
     assert "social_order" in codes
@@ -208,8 +208,9 @@ def test_share_prefix_rejects_raw_markers_but_preserves_bold_comments() -> None:
     assert not validate_five_block_package(pkg)
     bad = pkg.replace("Плейлист «Сергей Есенин»: ", "*Плейлист «Сергей Есенин»:* ", 1)
     assert "share_prefix_markup" in {item.code for item in validate_five_block_package(bad)}
-    bad_social = pkg.replace("VK: https://", "*VK:* https://", 1)
-    assert "share_prefix_markup" in {item.code for item in validate_five_block_package(bad_social)}
+    bad_social = pkg.replace("*VK:* https://", "VK: https://", 1)
+    assert "social_order" in {item.code for item in validate_five_block_package(bad_social)}
+    assert "share_prefix_markup" not in {item.code for item in validate_five_block_package(bad_social)}
     bad_short = pkg.replace("Поэтические образы Сергея Есенина", "*Поэтические образы Сергея Есенина*", 1)
     assert any(item.block == "shorts" and item.code == "share_prefix_markup" for item in validate_five_block_package(bad_short))
 
