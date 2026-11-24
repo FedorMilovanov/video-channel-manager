@@ -30,6 +30,7 @@ def preflight_copy_operations(
     confirm_channel: str,
     writer: Any,
     require_plan_title: bool = False,
+    require_exact_state: bool = False,
 ) -> CopyPreflight:
     """Classify every operation by live description state.
 
@@ -68,6 +69,18 @@ def preflight_copy_operations(
             if current.title != planned_title:
                 raise YouTubeRevisionConflictError(
                     f"Live video {video_id} title differs from its signed plan; stop and re-review the original source."
+                )
+
+        if require_exact_state:
+            if current.description == after:
+                # Exact after-state needs separate read-only reconciliation of
+                # protected metadata; never infer completion or send a second PUT.
+                raise YouTubeRevisionConflictError(
+                    f"Exact after-state already present for {video_id}; reconcile by read-only QA."
+                )
+            if current.description != before or current.revision != expected_revision:
+                raise YouTubeRevisionConflictError(
+                    f"Exact owner state changed for {video_id}; re-audit before proceeding."
                 )
 
         if descriptions_equivalent(current.description, after):

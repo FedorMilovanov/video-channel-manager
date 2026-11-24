@@ -44,6 +44,7 @@ from video_channel_manager.platforms.youtube.copy_execution import (
     verify_copy_operations,
 )
 from video_channel_manager.platforms.youtube.chapter_release import require_chapter_release
+from video_channel_manager.platforms.youtube.panorama_format_release import FORMAT_RULESET
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
@@ -611,6 +612,7 @@ def apply_copy_fixes(
                         operations,
                         confirm_channel=confirm_channel,
                         writer=writer,
+                        **({"require_exact_state": True} if payload.get("ruleset") == FORMAT_RULESET else {}),
                         require_plan_title=(
                             payload.get("target_channel_id") == LORD_GOD_OWNER_CHANNEL
                             and payload.get("project_key") == "lord-god-strength"

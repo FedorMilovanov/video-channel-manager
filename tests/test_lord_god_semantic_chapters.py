@@ -673,3 +673,146 @@ def test_panorama_resealed_operation_drift_refused(tmp_path: Path):
     finalize_copy_plan(plan, checked_video_ids=[VID])
     with pytest.raises(ValueError, match="re-derived"):
         require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+@pytest.mark.parametrize("case", ["pass", "owner_drift", "metadata", "duration", "register", "foreign"])
+def test_exact_owner_historical_format_candidate_is_never_executable(tmp_path: Path, case: str):
+    import hashlib
+
+    from scripts.audit_panorama_chapter_evidence import bind_format_preview_to_owner
+    from video_channel_manager.platforms.youtube.chapter_release import normalize_existing_chapter_stamps
+
+    owner, playlist, sources, _, paths, _ = panorama_owner_fixture(tmp_path)
+    owner_file, playlist_file, source_file, _ = paths
+    raw = owner["raw"]
+    inventory = [("00:00", "Opening"), ("15:00", "Source"), ("65:00", "Canon")]
+    before = raw["snippet"]["description"] + "\n\n" + "\n".join(f"{stamp} {heading}" for stamp, heading in inventory)
+    after = normalize_existing_chapter_stamps(before, inventory, duration_seconds=4020)
+    raw["snippet"]["description"] = before
+    raw["localizations"]["ru"]["description"] = before
+    owner["description_sha256"] = sha256_text(before)
+    owner["revision"] = canonical_sha256(raw)
+
+    def write(path, value):
+        path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    old_plan = tmp_path / f"{VID}-plan.json"
+    old_sha = write(
+        old_plan, {"operations": [{"video_id": VID, "after_description": before, "after_sha256": sha256_text(before)}]}
+    )
+    chapters = [
+        {"stamp": stamp, "heading": heading, "second": second, "canonical_stamp": canonical}
+        for (stamp, heading), second, canonical in zip(
+            inventory, [0, 900, 3900], ["00:00", "15:00", "1:05:00"], strict=True
+        )
+    ]
+    audit_file = tmp_path / "historical-audit.json"
+    audit_sha = write(
+        audit_file,
+        {
+            "schema": "panorama-historical-chapter-evidence-audit-v2",
+            "owner_channel_id": LORD_GOD_CHANNEL,
+            "is_executable_plan": False,
+            "frozen_playlist_sha256": hashlib.sha256(playlist_file.read_bytes()).hexdigest(),
+            "source_register_sha256": hashlib.sha256(source_file.read_bytes()).hexdigest(),
+            "results": [{"video_id": VID, "episode": 27, "chapters": chapters, "last_tail_ms": 120000}],
+        },
+    )
+    preview_file = tmp_path / "historical-preview.json"
+    write(
+        preview_file,
+        {
+            "schema": "panorama-format-only-review-report-v1",
+            "project_key": "lord-god-strength",
+            "owner_channel_id": LORD_GOD_CHANNEL,
+            "source_audit": audit_file.name,
+            "source_audit_sha256": audit_sha,
+            "is_executable_plan": False,
+            "semantic_approval": False,
+            "fresh_owner_snapshot": False,
+            "provider_reads": 0,
+            "provider_writes": 0,
+            "items": [
+                {
+                    "episode": 27,
+                    "video_id": VID,
+                    "historical_plan": old_plan.name,
+                    "historical_plan_sha256": old_sha,
+                    "before_description": before,
+                    "before_sha256": sha256_text(before).removeprefix("sha256:"),
+                    "proposed_description": after,
+                    "proposed_sha256": sha256_text(after).removeprefix("sha256:"),
+                    "proposed_utf8_bytes": len(after.encode()),
+                    "changes": chapters[2:],
+                }
+            ],
+        },
+    )
+    if case == "owner_drift":
+        raw["snippet"]["description"] += " "
+        owner["description_sha256"] = sha256_text(raw["snippet"]["description"])
+    elif case == "metadata":
+        raw["snippet"].pop("tags")
+    elif case == "duration":
+        raw["contentDetails"]["duration"] = "PT1H"
+    elif case == "register":
+        sources["items"][0]["url"] += "changed"
+        write(source_file, sources)
+    elif case == "foreign":
+        raw["snippet"]["channelId"] = "foreign"
+    owner["revision"] = canonical_sha256(raw)
+    write(owner_file, owner)
+    args = (audit_file, preview_file, owner_file, playlist_file, source_file)
+    if case != "pass":
+        with pytest.raises(ValueError):
+            bind_format_preview_to_owner(*args, video_id=VID)
+    else:
+        candidate = bind_format_preview_to_owner(*args, video_id=VID)
+        assert candidate["proposed_description"] == after
+        assert candidate["owner_revision"] == owner["revision"]
+        assert candidate["format_review"] == candidate["execution"] == "HOLD"
+        assert candidate["is_executable_plan"] is candidate["semantic_approval"] is False
+        with pytest.raises(ValueError):
+            validate_copy_plan(candidate)
+
+        from video_channel_manager.platforms.youtube.panorama_format_release import (
+            build_format_correction_plan,
+            require_format_correction_plan,
+        )
+        from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan
+        from video_channel_manager.platforms.youtube.chapter_release import digest_file
+
+        candidate_file = tmp_path / "candidate.json"
+        write(candidate_file, candidate)
+        review_file = tmp_path / "format-review.json"
+        review = {
+            "schema": "panorama-existing-chapter-format-review-v1",
+            "owner_channel_id": LORD_GOD_CHANNEL,
+            "video_id": VID,
+            "candidate_sha256": digest_file(candidate_file),
+            "before_sha256": sha256_text(before),
+            "after_sha256": sha256_text(after),
+            "format_review": "APPROVED",
+            "semantic_approval": False,
+            "reviewer": "synthetic test fixture only",
+            "reviewed_at": "2026-11-24T12:00:00+00:00",
+        }
+        write(review_file, review)
+        plan, _ = build_format_correction_plan(
+            owner_file, playlist_file, source_file, candidate_file, review_file, video_id=VID
+        )
+        require_format_correction_plan(plan)
+        require_chapter_release(plan, execute=False)
+        with pytest.raises(ValueError, match="execution HOLD"):
+            require_chapter_release(plan, execute=True, confirm_review_sha256=digest_file(review_file))
+        plan["operations"][0]["expected_revision"] = "resealed-wrong-revision"
+        finalize_copy_plan(plan, checked_video_ids=[VID])
+        with pytest.raises(ValueError, match="re-derived"):
+            require_format_correction_plan(plan)
+        review["format_review"] = "HOLD"
+        write(review_file, review)
+        with pytest.raises(ValueError, match="format review"):
+            build_format_correction_plan(
+                owner_file, playlist_file, source_file, candidate_file, review_file, video_id=VID
+            )

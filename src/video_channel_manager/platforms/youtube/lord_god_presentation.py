@@ -238,8 +238,17 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
     operation = plan["operations"][0]
     if operation.get("channel_id") != LORD_GOD_OWNER_CHANNEL:
         raise ValueError("Lord God presentation gate: operation owner mismatch")
+    from video_channel_manager.platforms.youtube.panorama_format_release import (
+        FORMAT_RULESET,
+        require_format_correction_plan,
+    )
+
     problems = presentation_issues(str(operation.get("after_description", "")))
-    problems.extend(source_preservation_issues(operation["before_description"], operation["after_description"]))
+    if plan.get("ruleset") == FORMAT_RULESET:
+        require_format_correction_plan(plan)
+        # Re-derivation already proves every non-timestamp byte is preserved.
+    else:
+        problems.extend(source_preservation_issues(operation["before_description"], operation["after_description"]))
     problems.extend(forward_longform_editorial_issues(operation["before_description"], operation["after_description"]))
     if problems:
         raise ValueError(

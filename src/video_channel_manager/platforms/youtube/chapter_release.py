@@ -54,6 +54,56 @@ def _chapter_lines(text: str) -> tuple[str, ...]:
     return tuple(line.strip() for line in text.splitlines() if _CHAPTER.match(line))
 
 
+def normalize_existing_chapter_stamps(
+    description: str, chapters: list[tuple[str, str]], *, duration_seconds: int
+) -> str:
+    """Format-only preview: preserve every other character and absolute second.
+
+    The explicit ordered chapter inventory must cover every chapter-like line.
+    This pure helper does not grant editorial or provider write authority.
+    """
+    if type(duration_seconds) is not int or duration_seconds < 30 or not 3 <= len(chapters) <= 40:
+        raise ValueError("Invalid existing chapter inventory or duration")
+    if len({stamp for stamp, _ in chapters}) != len(chapters):
+        raise ValueError("Duplicate existing chapter stamp")
+    if _chapter_lines(description) != tuple(f"{stamp} {heading}" for stamp, heading in chapters):
+        raise ValueError("Existing chapter inventory differs from exact description")
+    replacements: dict[str, str] = {}
+    previous = -10
+    for index, (stamp, heading) in enumerate(chapters):
+        if not re.fullmatch(r"[0-9]{1,4}:[0-9]{2}(?::[0-9]{2})?", stamp):
+            raise ValueError("Invalid existing chapter stamp")
+        if not heading or heading.strip() != heading or len(heading.splitlines()) != 1:
+            raise ValueError("Invalid existing chapter heading")
+        parts = [int(part) for part in stamp.split(":")]
+        if parts[-1] >= 60 or (len(parts) == 3 and parts[-2] >= 60):
+            raise ValueError("Invalid existing chapter clock component")
+        second = sum(part * 60**i for i, part in enumerate(reversed(parts)))
+        if (index == 0 and second != 0) or second - previous < 10 or second > duration_seconds - 10:
+            raise ValueError("Invalid existing chapter timeline")
+        canonical = chapter_stamp(second)
+        if canonical != stamp:
+            replacements[f"{stamp} {heading}"] = f"{canonical} {heading}"
+        previous = second
+    if not replacements:
+        raise ValueError("No noncanonical chapter stamps to correct")
+    lines = description.splitlines(keepends=True)
+    seen: set[str] = set()
+    for index, line in enumerate(lines):
+        raw = line.rstrip("\r\n")
+        if raw in replacements:
+            if raw in seen:
+                raise ValueError("Duplicate exact chapter line")
+            seen.add(raw)
+            lines[index] = replacements[raw] + line[len(raw) :]
+    if seen != replacements.keys():
+        raise ValueError("Existing chapter line is not in supported plain format")
+    after = "".join(lines)
+    if len(after.encode("utf-8")) > 5000:
+        raise ValueError("Corrected description exceeds UTF-8 limit")
+    return after
+
+
 def render_chapter_appendix(chapters: Any) -> str:
     if not isinstance(chapters, list) or not 3 <= len(chapters) <= 40:
         raise ValueError("Chapter release requires three to forty approved chapters")
@@ -181,7 +231,7 @@ PANORAMA_PLAYLIST = "PLu2Bhoh2caiVnr044VEc_MLE_8nGHcVmL"
 
 
 def load_panorama_owner_evidence(
-    owner_file: Path, playlist_file: Path, source_file: Path, *, video_id: str
+    owner_file: Path, playlist_file: Path, source_file: Path, *, video_id: str, existing_chapters: bool = False
 ) -> dict[str, Any]:
     """Validate the exact provider response plus immutable series/source identity.
 
@@ -228,7 +278,7 @@ def load_panorama_owner_evidence(
         or owner.get("title") != title
         or not isinstance(before, str)
         or not before.strip()
-        or _chapter_lines(before)
+        or bool(_chapter_lines(before)) != existing_chapters
         or owner.get("description_sha256") != sha256_text(before)
         or owner.get("revision") != revision
         or owner.get("locale_keys") != sorted(locales)
@@ -323,6 +373,16 @@ def require_panorama_owner_evidence(plan: dict[str, Any], review: dict[str, Any]
 
 def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_review_sha256: str = "") -> None:
     """Block stale chapter effects and generic planner bypass before OAuth/API."""
+    from video_channel_manager.platforms.youtube.panorama_format_release import (
+        FORMAT_RULESET,
+        require_format_correction_plan,
+    )
+
+    if plan.get("ruleset") == FORMAT_RULESET:
+        require_format_correction_plan(plan)
+        if execute:
+            raise ValueError("Historical format execution HOLD: shared quota and CLI integration required")
+        return
     if not execute or plan.get("target_channel_id") != LORD_GOD_OWNER_CHANNEL:
         return
     if plan.get("plan_sha256") in RETIRED_PLAN_SHA256:
