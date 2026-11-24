@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -133,7 +134,7 @@ def build_format_correction_plan(
         "source_format_candidate_sha256": digest_file(candidate_file),
         "source_chapter_review": str(review_file.resolve()),
         "source_chapter_review_sha256": digest_file(review_file),
-        "release_hold": "SHARED_QUOTA_AND_EXECUTION_INTEGRATION_REQUIRED",
+        "release_hold": "EXACT_OPERATOR_CONFIRMATION_AND_SHARED_QUOTA_REQUIRED",
         "semantic_approval": False,
         "videos_checked": 1,
         "operations_count": 1,
@@ -162,7 +163,7 @@ def build_format_correction_plan(
     return plan, (
         f"# Exact-owner format-only review plan: {video_id}\n\n"
         f"Changed timestamp tokens: {len(changes)}. Absolute seconds and other text unchanged.\n"
-        "No semantic approval or provider execution authority; shared quota integration HOLD.\n"
+        "No semantic approval or provider execution authority; exact confirmation and shared quota required.\n"
     )
 
 
@@ -192,3 +193,44 @@ def require_format_correction_plan(plan: dict[str, Any]) -> None:
     ignored = {"generated_at", "plan_sha256"}
     if {k: v for k, v in plan.items() if k not in ignored} != {k: v for k, v in expected.items() if k not in ignored}:
         raise ValueError("Format plan differs from independently re-derived owner evidence")
+
+
+def format_intent_path(data_dir: Path, video_id: str) -> Path:
+    """One durable same-object intent, independent of plan filenames and aliases."""
+    if not data_dir.is_absolute() or not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+        raise ValueError("Absolute canonical data directory and exact video ID required")
+    return data_dir / "youtube" / "format-intents" / LORD_GOD_OWNER_CHANNEL / f"{video_id}.json"
+
+
+def require_no_format_intent(path: Path) -> None:
+    if path.exists() or path.is_symlink():
+        raise ValueError(
+            "Historical correction intent exists; independent read-only reconciliation required, never replay"
+        )
+
+
+def persist_format_intent(path: Path, plan: dict[str, Any], *, result_path: Path, backup_path: Path) -> None:
+    """Exclusive write-ahead evidence. Never delete on failure, even before PUT."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    op = plan["operations"][0]
+    payload = {
+        "schema": "panorama-format-one-shot-intent-v1",
+        "status": "dispatch_intent_no_replay",
+        "created_at": datetime.now(UTC).isoformat(),
+        "owner_channel_id": LORD_GOD_OWNER_CHANNEL,
+        "video_id": op["video_id"],
+        "plan_sha256": plan["plan_sha256"],
+        "before_sha256": op["before_sha256"],
+        "after_sha256": op["after_sha256"],
+        "source_revision": op["expected_revision"],
+        "review_sha256": plan["source_chapter_review_sha256"],
+        "result_path": str(result_path.resolve()),
+        "backup_path": str(backup_path.resolve()),
+    }
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError as exc:
+        raise ValueError("Historical correction intent already exists; do not replay") from exc

@@ -146,11 +146,42 @@ def verify_copy_operations(
     return failures
 
 
+def verify_exact_description_postflight(
+    operation: dict[str, Any], *, confirm_channel: str, writer: Any, verified: Any
+) -> None:
+    """Independent owner GET must agree with the exact verified PUT snapshot."""
+    current = writer.read_description(operation["video_id"])
+    if (
+        current.video_id != operation["video_id"]
+        or current.channel_id != confirm_channel
+        or current.title != operation["title"]
+        or current.description != operation["after_description"]
+        or current.raw.get("localizations") != verified.raw.get("localizations")
+        or current.raw.get("status") != verified.raw.get("status")
+        or current.raw.get("contentDetails", {}).get("duration")
+        != verified.raw.get("contentDetails", {}).get("duration")
+        or any(
+            current.raw.get("snippet", {}).get(key) != verified.raw.get("snippet", {}).get(key)
+            for key in (
+                "channelId",
+                "title",
+                "description",
+                "categoryId",
+                "tags",
+                "defaultLanguage",
+                "defaultAudioLanguage",
+            )
+        )
+    ):
+        raise YouTubeRevisionConflictError("Independent exact postflight mismatch; reconcile by GET, never replay")
+
+
 def reconcile_copy_operations(
     operations: list[dict[str, Any]],
     *,
     confirm_channel: str,
     writer: Any,
+    require_exact_state: bool = False,
 ) -> list[dict[str, Any]]:
     """Read owner snapshots only; classify exact before/after/third description states.
 
@@ -184,9 +215,10 @@ def reconcile_copy_operations(
             raise YouTubeRevisionConflictError(
                 f"Owner mismatch for live video {video_id}: {live.channel_id} != {confirm_channel}"
             )
-        if descriptions_equivalent(live.description, after):
+        compare = (lambda left, right: left == right) if require_exact_state else descriptions_equivalent
+        if compare(live.description, after):
             state = "live_after"
-        elif descriptions_equivalent(live.description, before):
+        elif compare(live.description, before):
             state = "live_before"
         else:
             state = "live_third_state"

@@ -6,7 +6,8 @@ import random
 import json
 import time
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, TypeAlias
 
@@ -502,6 +503,30 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                     "Reconcile by GET; do not replay the PUT."
                 )
             return verified
+
+    @contextmanager
+    def reserve_exact_description_execution(self) -> Iterator[None]:
+        """Reserve preflight, predispatch GET, PUT and both verification GETs."""
+        guard = self._quota_guard
+        if guard is None:
+            raise YouTubeWriteError("Exact historical execution requires a shared project quota guard")
+        units = 50 + 4 * self.retry_policy.max_attempts
+        try:
+            status = guard.budget_status()
+            buckets = status.get("buckets")
+            shared = buckets.get("shared") if isinstance(buckets, dict) else None
+            remaining = shared.get("local_remaining") if isinstance(shared, dict) else None
+            if (
+                status.get("quota_policy_enabled") is not True
+                or status.get("provider_stop") is not None
+                or type(remaining) is not int
+                or remaining < units
+            ):
+                raise YouTubeWriteError("Exact historical execution requires reviewed current shared quota headroom")
+            with guard.reserve(units):
+                yield
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeWriteError(str(exc)) from exc
 
     def replace_description(
         self,

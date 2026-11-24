@@ -381,7 +381,12 @@ def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_revi
     if plan.get("ruleset") == FORMAT_RULESET:
         require_format_correction_plan(plan)
         if execute:
-            raise ValueError("Historical format execution HOLD: shared quota and CLI integration required")
+            if plan.get("plan_sha256") in RETIRED_PLAN_SHA256 or any(
+                RETIRED_EFFECTS.get(op["video_id"]) == sha256_text(op["after_description"]) for op in plan["operations"]
+            ):
+                raise ValueError("SUPERSEDED_DO_NOT_REPLAY: retired chapter effect or plan")
+            if confirm_review_sha256 != plan["source_chapter_review_sha256"]:
+                raise ValueError("Historical format execution requires independent --confirm-chapter-review-sha256")
         return
     if not execute or plan.get("target_channel_id") != LORD_GOD_OWNER_CHANNEL:
         return

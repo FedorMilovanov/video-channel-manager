@@ -804,8 +804,9 @@ def test_exact_owner_historical_format_candidate_is_never_executable(tmp_path: P
         )
         require_format_correction_plan(plan)
         require_chapter_release(plan, execute=False)
-        with pytest.raises(ValueError, match="execution HOLD"):
-            require_chapter_release(plan, execute=True, confirm_review_sha256=digest_file(review_file))
+        with pytest.raises(ValueError, match="confirm-chapter-review"):
+            require_chapter_release(plan, execute=True)
+        require_chapter_release(plan, execute=True, confirm_review_sha256=digest_file(review_file))
         plan["operations"][0]["expected_revision"] = "resealed-wrong-revision"
         finalize_copy_plan(plan, checked_video_ids=[VID])
         with pytest.raises(ValueError, match="re-derived"):
