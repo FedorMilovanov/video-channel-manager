@@ -6,6 +6,8 @@ import copy
 
 import pytest
 
+from scripts import charnock_telegraph_credit_revision as revision
+
 from scripts.charnock_telegraph_credit_revision import load_pair, prepare_nodes, same_tree
 from scripts.charnock_telegraph_surgical_revision import UnsafeRevision
 
@@ -48,3 +50,63 @@ def test_unrelated_candidate_mutation_rejected() -> None:
     changed[0]["children"][0]["attrs"]["src"] = "https://example.invalid/other.jpg"
     with pytest.raises(UnsafeRevision, match="only append"):
         prepare_nodes("12", old.nodes, old.nodes, changed)
+
+
+def test_apply_requires_durable_claim_before_single_provider_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    live = {
+        "path": "existing",
+        "url": "https://telegra.ph/existing",
+        "title": "Original",
+        "author_name": "Господь Бог",
+        "author_url": "https://t.me/lordchrist",
+        "image_url": "https://example.invalid/cover.jpg",
+        "content": [{"tag": "figure"}, {"tag": "p", "children": ["original"]}],
+    }
+    proposed = [*live["content"], {"tag": "p", "children": ["credit"]}]
+    before = revision.sha_content(live["content"])
+    after = revision.sha_content(proposed)
+    result = {
+        "path": "existing",
+        "effect": "READY_FOR_REVIEW_NO_POST",
+        "before_sha256": before,
+        "after_sha256": after,
+    }
+    monkeypatch.setattr(revision, "require_owner_dispatch", lambda key: ("a" * 40, before, after))
+    monkeypatch.setattr(revision, "build_plan", lambda key: (result, live, proposed))
+    monkeypatch.setattr(revision, "require_current_main", lambda: "a" * 40)
+    monkeypatch.setattr(revision, "verify_ownership", lambda token, path: calls.append("ownership"))
+    monkeypatch.setenv("LORDCHRIST_TELEGRAPH_ACCESS_TOKEN", "test-token")
+
+    def persist(key: str, data: dict, *, previous_blob: str | None = None) -> str:
+        if data["state"] == "claimed_may_exist":
+            assert previous_blob is None
+            calls.append("claim")
+        else:
+            assert previous_blob == "b" * 40
+            calls.append("verified")
+        return "b" * 40
+
+    def fetch(path: str) -> dict:
+        return {**live, "content": proposed} if "post" in calls else live
+
+    def post(path: str, fields: dict) -> dict:
+        assert calls == ["ownership", "claim"]
+        calls.append("post")
+        return {"path": "existing"}
+
+    monkeypatch.setattr(revision, "persist_receipt", persist)
+    monkeypatch.setattr(revision, "get_public_page", fetch)
+    monkeypatch.setattr(revision, "post_form", post)
+    assert revision.apply("11")["state"] == "verified"
+    assert calls == ["ownership", "claim", "post", "verified"]
+
+    calls.clear()
+
+    def existing_claim(*args: object, **kwargs: object) -> str:
+        raise UnsafeRevision("Existing claim")
+
+    monkeypatch.setattr(revision, "persist_receipt", existing_claim)
+    with pytest.raises(UnsafeRevision, match="Existing claim"):
+        revision.apply("11")
+    assert calls == ["ownership"]
