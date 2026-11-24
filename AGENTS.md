@@ -154,7 +154,7 @@ Merge only when all are true:
 - review threads are clean;
 - provider side effects performed during implementation/tests are exactly those explicitly authorized (normally zero).
 
-An infrastructure incident or old green run never substitutes for exact-current-head green CI.
+An infrastructure incident or old green run never substitutes for exact-current-head green CI. Register new package modules in the coverage ratchet with measured floors and new scripts in scripts/wave-executors.json with exact digests and provider capability; preserve existing thresholds.
 
 Operational-memory/state synchronization is a separate, small change after a runtime/code baseline moves. Do not duplicate historical audit material into `AGENTS.md`.
 

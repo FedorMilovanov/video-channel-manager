@@ -376,3 +376,52 @@ def test_resealed_retired_effect_cannot_execute(tmp_path: Path, monkeypatch: pyt
     require_chapter_release(plan, execute=False)
     with pytest.raises(ValueError, match="retired chapter effect"):
         require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+
+
+@pytest.mark.parametrize(
+    "variant",
+    ["exact", "unreviewed", "wrong_end", "wrong_start", "wrong_previous", "large_gap", "different_cue", "audio_basis"],
+)
+def test_caption_boundary_in_reviewed_short_archive_gap(tmp_path: Path, variant: str) -> None:
+    audit, audit_file, previous, previous_file, review, review_file, db = fixture(tmp_path)
+    previous_end = 116_200 if variant != "large_gap" else 110_000
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.execute("UPDATE transcript_chunks SET end_ms=? WHERE video_id=? AND start_ms=0", (previous_end, VID))
+    ch = review["chapters"][1]
+    ch.update(second=117, stamp="01:57")
+    cue = "Грамматический анализ"
+    if variant == "different_cue":
+        cue = "и контекст текста"
+    gap = {
+        "reviewed": variant != "unreviewed",
+        "previous_chunk_index": 2 if variant == "wrong_previous" else 0,
+        "previous_end_ms": previous_end - 1 if variant == "wrong_end" else previous_end,
+        "next_start_ms": 120_001 if variant == "wrong_start" else 120_000,
+    }
+    ch["boundary_evidence"].update(start_ms=117_000, cue=cue, archive_gap=gap)
+    captions = tmp_path / review["semantic_review"]["evidence_file"]
+    data = json.loads(captions.read_text(encoding="utf-8"))
+    data["events"][1]["tStartMs"] = 117_000
+    captions.write_text(json.dumps(data), encoding="utf-8")
+    after = PUBLISHED_AFTER + "\n\nТаймкоды:\n" + "\n".join(x["stamp"] + " " + x["heading"] for x in review["chapters"])
+    review["proposed_description_sha256"] = sha256_text(after)
+    review["semantic_review"].update(
+        evidence_sha256=_sha_bytes(captions),
+        chapters_sha256=canonical_sha256(review["chapters"]),
+        description_sha256=sha256_text(after),
+    )
+    if variant == "audio_basis":
+        review["semantic_review"]["basis"] = "exact_ru_audio_boundaries"
+    review_file.write_text(json.dumps(review), encoding="utf-8")
+    if variant == "exact":
+        plan, _ = build_one_video_chapter_plan(
+            audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID
+        )
+        assert plan["chapter_evidence"]["reviewed_archive_gap_chapter_ordinals"] == [1]
+        assert "\n01:57 " in plan["operations"][0]["after_description"]
+        require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
+    else:
+        with pytest.raises(ValueError, match="archival transcript cue"):
+            build_one_video_chapter_plan(
+                audit, audit_file, previous, previous_file, review, review_file, db, video_id=VID
+            )

@@ -252,6 +252,38 @@ def _validate_project_copy(audit: dict[str, Any], *, video_id: str, after: str) 
                 raise ValueError("Unproven or unrelated YouTube playlist in cleaned description")
 
 
+def _reviewed_archive_gap(
+    fragments: list[tuple[int, int, str]],
+    chunk_index: int,
+    boundary: dict[str, Any],
+    boundary_ms: int,
+    basis: str,
+) -> bool:
+    """A real caption cue can precede the next archive chunk by a few seconds.
+
+    Not an ASR-nearest fallback: both adjacent timestamps and the exact
+    caption phrase in the next chunk prefix must be independently reviewed.
+    """
+    gap = boundary.get("archive_gap")
+    if basis != "exact_ru_caption_boundaries" or chunk_index < 1 or not isinstance(gap, dict):
+        return False
+    previous_end = fragments[chunk_index - 1][1]
+    next_start, _, next_text = fragments[chunk_index]
+    cue = boundary.get("cue")
+    if (
+        gap.get("reviewed") is not True
+        or gap.get("previous_chunk_index") != chunk_index - 1
+        or gap.get("previous_end_ms") != previous_end
+        or gap.get("next_start_ms") != next_start
+        or not previous_end <= boundary_ms < next_start
+        or not 0 < next_start - previous_end <= 5_000
+        or not isinstance(cue, str)
+    ):
+        return False
+    normalized_cue = " ".join(cue.casefold().split())
+    return len(normalized_cue) >= 16 and " ".join(next_text.casefold().split()).startswith(normalized_cue)
+
+
 def build_one_video_chapter_plan(
     audit: dict[str, Any],
     audit_file: Path,
@@ -338,6 +370,9 @@ def build_one_video_chapter_plan(
     ends_at = int(fragments[-1][1] // 1000)
     times: list[int] = []
     rendered: list[str] = []
+    reviewed_gaps: list[int] = []
+    approval = review.get("semantic_review")
+    basis = str(approval.get("basis", "")) if isinstance(approval, dict) else ""
     for index, chapter in enumerate(chapters):
         if not isinstance(chapter, dict):
             raise ValueError("Every reviewed chapter must be an object")
@@ -364,14 +399,19 @@ def build_one_video_chapter_plan(
         source_text = str(source_text or "")
         boundary = chapter.get("boundary_evidence", {})
         boundary_ms = boundary.get("start_ms") if isinstance(boundary, dict) else None
+        inside_chunk = type(boundary_ms) is int and start_ms <= boundary_ms < end_ms
+        verified_gap = (
+            not inside_chunk
+            and type(boundary_ms) is int
+            and isinstance(boundary, dict)
+            and _reviewed_archive_gap(fragments, chunk_index, boundary, boundary_ms, basis)
+        )
         if (
             (index == 0 and (second != 0 or chunk_index != 0))
             or (
                 index > 0
                 and (
-                    type(boundary_ms) is not int
-                    or not start_ms <= boundary_ms < end_ms
-                    or boundary_ms // 1000 != second
+                    type(boundary_ms) is not int or not (inside_chunk or verified_gap) or boundary_ms // 1000 != second
                 )
             )
             or cue.casefold() not in source_text.casefold()
@@ -382,6 +422,8 @@ def build_one_video_chapter_plan(
             raise ValueError("Chapter timestamps not increasing or too close")
         if chapter.get("stamp") != _chapter_stamp(second):
             raise ValueError("Chapter stamp does not match absolute seconds")
+        if index > 0 and verified_gap:
+            reviewed_gaps.append(index)
         times.append(second)
         rendered.append(f"{_chapter_stamp(second)} {heading.strip()}")
     if ends_at - times[-1] < 10:
@@ -408,6 +450,7 @@ def build_one_video_chapter_plan(
         "source_first_ms": fragments[0][0],
         "source_last_ms": fragments[-1][1],
         "all_cues_verified": True,
+        "reviewed_archive_gap_chapter_ordinals": reviewed_gaps,
         "editorial_approval": "APPROVED",
         "chapter_review_sha256": _digest(review_file),
         "player_ui_visual_check_pending": True,
