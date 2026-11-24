@@ -460,3 +460,35 @@ def test_preflight_rejection_does_not_consume_first_comment_target(tmp_path: Pat
     accepted, fresh_writer = _adapter(tmp_path)
     assert accepted.execute(_operation())["publication_verified"] is True
     assert fresh_writer.creates == 1
+
+
+def test_panorama_cli_rejects_ci_even_with_operator_confirmation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import typer
+
+    from video_channel_manager.wave_engine import cli
+
+    plan = SimpleNamespace(policy_version=YOUTUBE_COMMENT_POLICY_VERSION, operations=[_operation()])
+    monkeypatch.setattr(cli, "_validated_apply_documents", lambda **kwargs: (None, plan, None))
+    monkeypatch.setattr(cli, "_article_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_video_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_video_wall_plan", lambda _: False)
+    monkeypatch.setattr(cli, "_lord_god_wall_plan", lambda _: False)
+    monkeypatch.setattr(cli, "is_ci_environment", lambda: True)
+
+    def unexpected_adapter(**kwargs: object) -> None:
+        pytest.fail("CI must not construct a provider writer")
+
+    monkeypatch.setattr(cli, "LordGodYouTubeCommentAdapter", unexpected_adapter)
+    with pytest.raises(typer.Exit) as exc:
+        cli.apply(
+            source_path=tmp_path / "source.json",
+            plan_path=tmp_path / "plan.json",
+            intent_path=tmp_path / "intent.json",
+            journal_directory=tmp_path / "journal",
+            enable_provider_writes=True,
+            ci_operator_confirmation="operator-supplied-token",
+        )
+    assert exc.value.exit_code == 3
+    assert not (tmp_path / "journal").exists()
