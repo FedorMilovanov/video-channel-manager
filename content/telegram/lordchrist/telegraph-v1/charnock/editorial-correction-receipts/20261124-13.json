@@ -1,0 +1,23 @@
+{
+  "accepted_candidate_blob": "cd6b6771c0299660c84fc95cef1caf5d8c0424d8",
+  "after_count": 57,
+  "after_sha256": "5b7049c5f06d4e35a6be692a1f507ee62c26739e11f5441d44f977574e2bc4e5",
+  "article": "13",
+  "before_count": 56,
+  "before_sha256": "5cb778291268737558b13994734e86072066d84ec0ad88c1e88f953fe011f6b2",
+  "changed_node_indices": [
+    56
+  ],
+  "claimed_at_utc": "2026-11-24T12:11:36.898882+00:00",
+  "cover_sha256": "sha256:8dd5431b214c8174d9ae2d7908984deb6ffa5972e5e39e4fb604dee7fb45d32a",
+  "effect": "READY_FOR_REVIEW_NO_POST",
+  "github_sha": "920057a7a68b117187a1c4ae1c42164d1f792008",
+  "media_base_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/c1bafa972e91d536fc56d86e53b4ce6f3502f37d",
+  "old_article_blob": "eedc00889bb2e907bbcc91de914d8ddf68f1737c",
+  "path": "Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05",
+  "provider_write_attempted": false,
+  "publication_id": "lordchrist-telegraph-charnock-13",
+  "run_id": "45391050974",
+  "state": "claimed_may_exist",
+  "url": "https://telegra.ph/Utverditsya-i-poklonitsya-chem-zakanchivaetsya-beseda-o-bytii-Boga-11-05"
+}
