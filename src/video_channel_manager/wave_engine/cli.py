@@ -15,6 +15,7 @@ from video_channel_manager.wave_engine.article_prepare import (
 )
 from video_channel_manager.wave_engine.canonical import (
     file_sha256,
+    is_ci_environment,
     read_json_object,
     resolve_repository_relative_path,
     write_json_atomic,
@@ -467,6 +468,9 @@ def apply(
         console.print(
             "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
+        raise typer.Exit(code=3)
+    if _youtube_comment_plan(plan) and is_ci_environment():
+        console.print("[red]Rejected:[/red] Panorama comment writes require the persistent owner runtime, not CI.")
         raise typer.Exit(code=3)
     if journal_directory is None:
         raise typer.BadParameter(
