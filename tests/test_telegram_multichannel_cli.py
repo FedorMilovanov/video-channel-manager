@@ -334,7 +334,9 @@ def test_prepare_accepts_one_target_source_without_extra_flags() -> None:
 
 
 @pytest.mark.parametrize("interrupted", [False, True])
-def test_persisted_send_claim_blocks_replay_even_with_new_output_path(monkeypatch, tmp_path: Path, interrupted: bool) -> None:
+def test_persisted_send_claim_blocks_replay_even_with_new_output_path(
+    monkeypatch, tmp_path: Path, interrupted: bool
+) -> None:
     profile, release, ledger, envelope = _prepared_runtime()
     ledger_path = tmp_path / "ledger.json"
     output = tmp_path / "outcome.json"
