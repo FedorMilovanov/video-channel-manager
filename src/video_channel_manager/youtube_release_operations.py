@@ -372,14 +372,32 @@ def release_status_summary(release: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def status(args: argparse.Namespace) -> int:
-    plan = load_json_object(Path(args.plan).resolve())
+def read_release_status(plan_path: Path, data_dir: Path) -> dict[str, Any]:
+    """Inspect an exact local release, without contacting a provider or changing state."""
+    if not data_dir.is_absolute():
+        raise UploadPlanError("Release status requires an explicit absolute data directory.")
+    plan = load_json_object(plan_path.resolve())
     validate_release_plan(plan, verify_files=False)
-    stable_journal = journal_path(
-        Path(args.data_dir).resolve(),
-        str(plan["upload_key_sha256"]),
-    )
+    stable_journal = journal_path(data_dir.resolve(), str(plan["upload_key_sha256"]))
     journal = read_json(stable_journal)
+    expected = {
+        "project_key": plan["project_key"],
+        "account_alias": plan["account_alias"],
+        "target_channel_id": plan["target_channel_id"],
+        "upload_key_sha256": plan["upload_key_sha256"],
+        "media_sha256": plan["media"]["sha256"],
+    }
+    for field, value in expected.items():
+        if journal.get(field) != value:
+            raise UploadPlanError(f"Release status journal identity mismatch: {field}.")
     release = release_from_journal(journal, plan=plan)
-    print(json.dumps(release_status_summary(release), ensure_ascii=False, indent=2))
+    return {
+        **release_status_summary(release),
+        **expected,
+    }
+
+
+def status(args: argparse.Namespace) -> int:
+    report = read_release_status(Path(args.plan), Path(args.data_dir))
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
