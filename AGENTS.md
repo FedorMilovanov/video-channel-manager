@@ -1,5 +1,4 @@
 # Repository agent operating contract
-
 ## ENGINEERING FIRST — общий принцип работы (25.11.2026)
 **Меньше координационной суеты — больше реальной инженерной работы за одну волну.** Общий регламент всех проектов: [AuditRepo Operating Model — ENGINEERING FIRST](https://github.com/FedorMilovanov/AuditRepo/blob/main/AUDITREPO_OPERATING_MODEL.md) ([policy PR #590](https://github.com/FedorMilovanov/AuditRepo/pull/590)). Прямая директива владельца действует немедленно.
 По умолчанию агент самостоятельно закрывает порученный scope от диагностики до проверенного результата, включая связанные мелочи; «Продолжай» — следующий полезный блок в текущем сеансе. MAX — только явно назначенная или уже действующая роль в конкретном направлении, не обязательный режим: наличие runbook не активирует его и не расширяет полномочия. При действующем MAX он сам закрывает доступные исправления и интеграцию, делегирует только целостные пакеты, когда полезны параллельность, специализация или независимая приёмка. Один содержательный handoff по готовому пакету либо немедленная эскалация реального блокера. Без микропоручений, повторных неизменных статусов, искусственных квот и новых уровней управления. При HOLD — независимая разрешённая работа. Сохранять единственного writer, обязательные проверки, независимую приёмку, безопасность, права, ресурсные и релизные ограничения.
@@ -10,7 +9,6 @@ This file contains **durable rules**, not a history of old waves or commit SHAs.
 For SHORTOREZ/Q&A Russian vertical Shorts **when the operator selected Manrope 01**, read [docs/operations/shorts-manrope01-largev3-cpu-review.md](docs/operations/shorts-manrope01-largev3-cpu-review.md) before producing, reviewing or delivering media. Other projects retain their independently approved styles. This operator-selected style requires **Manrope 800, yellow per-word highlighting, source-aware opening, Large-v3 CPU INT8** on the affected Windows machine, and independent ASS/FFprobe/listening gates. Existing 16:9 long-form masters do **not** receive burned subtitles in this workflow. No silent Small/CUDA fallback; TECH_QA never implies editorial, rights or provider write approval.
 
 ## Read order
-
 Before changing provider-facing, workflow, state, release, or artifact code, read only the sources relevant to the task, in this order:
 
 1. `docs/operations/current-state.md` — current operational interpretation and provider boundaries.
