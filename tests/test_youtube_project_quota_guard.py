@@ -386,3 +386,57 @@ def test_description_reserves_write_and_read_retry_headroom(tmp_path: Path, allo
             with pytest.raises(YouTubeWriteError, match="allowance exhausted"):
                 writer.replace_description(**kwargs)
     assert puts == expected_puts
+
+
+def test_approved_project_rolls_over_without_daily_operator_action(tmp_path: Path) -> None:
+    now = datetime(2026, 11, 25, 7, 59, tzinfo=UTC)
+    path = tmp_path / "quota.sqlite3"
+    first = ProjectQuotaGuard(path, "lord-god", now=lambda: now, project_number="1067074369047")
+    second = ProjectQuotaGuard(path, "poet", now=lambda: now, project_number="1067074369047")
+    assert first.budget_status()["approved_grant_active"] is True
+    assert first.budget_status()["buckets"]["shared"]["local_remaining"] == 99_000
+    first.configure_day(
+        day="2026-11-24", allowances={"shared": 1, "search": 0, "uploads": 0}, evidence="tighter console limit"
+    )
+    with first.reserve(1, require_reviewed=True):
+        first(lambda: httpx.Response(200), "GET", "videos")
+    with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+        second.require_reviewed_allowance(1)
+    now += timedelta(minutes=1)
+    second.require_reviewed_allowance(55)
+    with second.reserve(55, require_reviewed=True):
+        second(lambda: httpx.Response(200), "PUT", "videos")
+        second(lambda: httpx.Response(200), "GET", "videos.list")
+    assert first.budget_status()["buckets"]["shared"]["local_remaining"] == 98_949
+    assert first.budget_status()["google_remaining"] is None
+
+
+def test_approved_grant_does_not_override_provider_stop_or_other_projects(tmp_path: Path) -> None:
+    now = datetime(2026, 11, 25, 12, tzinfo=UTC)
+    guard = ProjectQuotaGuard(tmp_path / "approved.sqlite3", "poet", now=lambda: now, project_number="1067074369047")
+    other = ProjectQuotaGuard(tmp_path / "other.sqlite3", "poet", now=lambda: now, project_number="123")
+    with pytest.raises(YouTubeQuotaBlocked, match="Reviewed"):
+        other.require_reviewed_allowance(1)
+    assert guard(lambda: _rejection("quotaExceeded"), "GET", "videos").status_code == 403
+    with pytest.raises(YouTubeQuotaBlocked, match="quota blocked"):
+        guard.require_reviewed_allowance(1)
+    now += timedelta(days=1)
+    guard.require_reviewed_allowance(1)
+    now = datetime(2027, 5, 24, 12, tzinfo=UTC)
+    assert not guard.budget_status()["approved_grant_active"]
+    with pytest.raises(YouTubeQuotaBlocked, match="Reviewed"):
+        guard.require_reviewed_allowance(1)
+
+
+def test_approved_grant_bound_to_canonical_oauth_project_and_shared_bucket(tmp_path: Path) -> None:
+    guard = ProjectQuotaGuard.for_client(tmp_path, "1067074369047-abc.apps.googleusercontent.com", "milovi")
+    assert guard is not None
+    guard.now = lambda: datetime(2026, 11, 25, 12, tzinfo=UTC)
+    assert guard.budget_status()["approved_grant_active"]
+    assert quota_cost("POST", "playlistItems") == ("shared", 50)
+    assert quota_cost("GET", "channels.list") == ("shared", 1)
+    with guard.reserve(50, require_reviewed=True):
+        guard(lambda: httpx.Response(200), "POST", "playlistItems")
+    with pytest.raises(YouTubeQuotaBlocked, match="allowance exhausted"):
+        with guard.reserve(91, bucket="search"):
+            pytest.fail("separate search ceiling must remain enforced")
