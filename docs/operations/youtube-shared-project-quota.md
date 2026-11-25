@@ -10,6 +10,58 @@ For multiple channels sharing a Cloud project, coordinate aggregate planned unit
 
 The canonical clients' project quota guard records each admitted request attempt in a SQLite journal under the common absolute data directory (`data/youtube/quota/<project-number>.sqlite3`) and conservatively stops new admissions after a confirmed daily quota refusal, until the next Pacific day. The journal is local accounting, not Google's authoritative remaining balance; previously admitted/in-flight requests and other hosts/clients are not controlled by it. For unknown video IDs use `video-manager youtube recent --account <alias> --channel <exact-id> --limit 10` (one page; candidate discovery only), then verify the exact ID. A missing candidate never authorizes a full scan automatically.
 
+## Current verified grant — 25 November 2026 (Moscow date)
+
+The previous 10,000-unit default and pending-extension application are historical
+for **Video Channel Manager**, Google Cloud project **1067074369047**. The original
+Google API Services approval was read and recorded in
+[#903](https://github.com/FedorMilovanov/video-channel-manager/issues/903#issuecomment-7146163038):
+**110,000 shared units per Pacific day**, increase of 100,000 units, for six months,
+within the approved application use case. The owner-supplied Console screenshot
+recorded in [#795](https://github.com/FedorMilovanov/video-channel-manager/issues/795#issuecomment-7148907683)
+confirms the grant is applied:
+
+| Console quota bucket | Approved daily limit | Usage at screenshot (historical) |
+| --- | ---: | ---: |
+| Queries per day (shared) | 110000 | 1167 |
+| Search Queries per day | 100 | 0 |
+| Video Uploads per day | 100 | 0 |
+| Video Batch Get Stats Queries per day | 10000 | 0 |
+
+Screenshot SHA-256: `4197013c40bc052328f2ada0b35e0c94f1f07be3c8f57418e887193da47776ec`.
+The last bucket is not an additional allowance for existing shared/search/upload
+methods or a new supported client route. These are ceilings, not current remaining
+balances. Six-month expiry/renewal and actual Console limits must be checked,
+not inferred indefinitely from the dated approval. Do not resubmit the old
+application or block work merely because the November 13 status was pending.
+
+### Automatic coordinated admission, not daily manual permission
+
+For the verified project only, the canonical guard uses the approved grant from
+Pacific 2026-11-24 through 2027-05-23 inclusive, conservatively ending before
+the six-month anniversary pending renewal. Local estimated ceilings are
+99,000 shared units and 90 search/upload allowances per Pacific day (10% margin
+for outside clients and reconciliation). This is a shared ceiling, not a
+per-agent grant or Google's actual remaining balance. The new day rolls over
+automatically; an already-authorized ordinary operation does not need a daily
+Console screenshot or operator command. Use one canonical absolute VCM data
+root and project-number journal across all aliases. Coordinate MP3Bot and
+outside clients; if actual remaining is lower or accounting diverges, the
+coordinator applies a tighter reviewed daily allowance and reconciles before
+new admissions. The effective ceiling is the smaller of that allowance and
+the grant-backed ceiling. Provider quota stops still take precedence; no
+blind retries, project switching, or claim that local accounting proves
+actual remaining. At expiry or for other projects, grant-backed reviewed
+admission is unavailable; use verified current-day evidence where required.
+Planning weights are advisory only.
+
+The owner authorizes the bounded business operation once. Agents independently
+perform routine read-only discovery, preparation, exact-target validation,
+internal manifests and postflight for that scope without repeated owner
+permissions or manually entered hashes. Escalate only genuine scope changes,
+unresolved effects, missing evidence or irreversible actions. Do not replace
+the approved-use-case, identity, editorial/rights or no-replay requirements.
+
 ## Local weighted allowances and reservations
 
 The journal estimates the cost of each admitted attempt by its method and quota bucket, separately from its request counter. See the official table above. Resumable upload session, media and status attempts are conservatively estimated at one upload allowance each; they are not an authoritative Google usage measurement. Unknown methods are recorded as unpriced in observation-only mode and rejected when a local budget is enabled.
@@ -20,7 +72,7 @@ The journal estimates the cost of each admitted attempt by its method and quota 
 video-manager youtube quota-configure --confirm-project-number PROJECT_NUMBER --pacific-day YYYY-MM-DD --shared UNITS --search CALLS --uploads CALLS --evidence REVIEW_REFERENCE
 ```
 
-Use the actual project number, Pacific day and reviewed remaining headroom, not the defaults or a pending grant. Choose conservative additional allowances, not today's total grant; use zero for unused buckets. Evidence must be a non-secret reference. Configuration is one-time per Pacific day, cannot refill silently and rejects active reservations. Once enabled, a new Pacific day requires a new reviewed allocation before API dispatch. Until enabled, the journal observes costs and terminal stops without claiming an available provider balance.
+Use the actual project number, Pacific day and reviewed remaining headroom, not the defaults or a pending grant. Choose conservative additional allowances, not today's total grant; use zero only for buckets unused by the entire coordinated project allocation, not a single agent's lane. Evidence must be a non-secret reference. Manual configuration is one-time per Pacific day, cannot refill silently and rejects active reservations. An active approved project grant supplies automatic estimated ceilings; a manual allowance can only tighten them. Other projects retain the existing manual/observation behavior. No mode claims an available Google provider balance.
 
 A bounded `ProjectQuotaGuard.reserve(...)` context atomically holds units for a single operation and its verification; concurrent unreserved requests and other reservations cannot spend them. Each admitted attempt consumes its reservation, including transport failures. Unused units are released on normal/exceptional exit; a process crash leaves a conservative hold for that day rather than silently recovering it. Cross-midnight or cross-bucket consumption stops. A reservation without a configured allowance does **not** prove Google headroom.
 

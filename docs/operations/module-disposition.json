@@ -22,15 +22,6 @@
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
-      "module": "video_channel_manager.instagram.daily_queue",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_instagram_daily_queue.py"
-      ],
-      "statements": 211,
-      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
-    },
-    {
       "module": "video_channel_manager.lordchrist_peasants1525_term_pages",
       "status": "archived_canary",
       "evidence": "tests/test_lordchrist_peasants1525_term_pages.py",
