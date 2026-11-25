@@ -9,10 +9,17 @@ import pytest
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_cli import _send_exact_payload, main
-from video_channel_manager.telegram_multichannel_outcome import apply_provider_outcome
+from video_channel_manager.telegram_multichannel_cli import (
+    _load_local_outcome,
+    _preflight_release_target,
+    _send_exact_payload,
+    _send_persisted_once,
+    main,
+    parser,
+)
+from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome, apply_provider_outcome
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, save_release
-from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next
+from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next, save_ledger
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
 from video_channel_manager.telegram_target_binding import load_target_binding
 
@@ -245,3 +252,245 @@ def test_low_level_initialize_ledger_rejects_unauthorized_candidate() -> None:
 
     with pytest.raises(ValueError, match="authorized immutable release"):
         initialize_ledger(candidate)
+
+
+def test_integrated_preflight_uses_exact_release_binding(monkeypatch) -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    release = _authorized_release()
+    binding = load_target_binding(BINDING_PATH, profile)
+    _, _, _, envelope = _prepared_runtime()
+    calls = []
+
+    def preflight(selected, **kwargs):
+        calls.append((selected, kwargs))
+        return envelope.target
+
+    monkeypatch.setenv(profile.bot_token_env, "offline-test-token")
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.preflight_channel", preflight)
+    assert _preflight_release_target(profile, release, BINDING_PATH) == envelope.target
+    assert calls == [
+        (
+            profile,
+            {
+                "token": "offline-test-token",
+                "expected_chat_id": binding.chat_id,
+                "expected_bot_id": binding.bot_id,
+                "expected_bot_username": binding.bot_username,
+            },
+        )
+    ]
+
+
+@pytest.mark.parametrize("case", ["disabled", "unauthorized", "wrong_digest", "wrong_chat"])
+def test_integrated_preflight_rejects_invalid_authority_before_network(monkeypatch, case: str) -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    release = _authorized_release()
+    if case == "disabled":
+        profile = profile.model_copy(update={"provider_writes_authorized": False})
+    elif case == "unauthorized":
+        release = _candidate_release()
+    elif case == "wrong_digest":
+        release = release.model_copy(update={"target_binding_sha256": "sha256:" + "0" * 64})
+    else:
+        release = release.model_copy(update={"chat_id": -12345})
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("invalid profile or release must not reach the provider")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.preflight_channel", unexpected)
+    with pytest.raises(ValueError, match="write-disabled|not authorized|binding differs"):
+        _preflight_release_target(profile, release, BINDING_PATH)
+
+
+def test_prepare_accepts_one_target_source_without_extra_flags() -> None:
+    args = [
+        "prepare",
+        "--profile",
+        "profile.json",
+        "--release",
+        "release.json",
+        "--ledger",
+        "ledger.json",
+        "--mode",
+        "manual",
+        "--publication-id",
+        "sample-id",
+        "--run-id",
+        "1",
+        "--run-attempt",
+        "1",
+        "--github-sha",
+        GITHUB_SHA,
+        "--github-workflow-sha",
+        WORKFLOW_SHA,
+        "--envelope-output",
+        "envelope.json",
+    ]
+    assert parser().parse_args(args + ["--binding", "binding.json"]).binding == Path("binding.json")
+    assert parser().parse_args(args + ["--target-proof", "proof.json"]).target_proof == Path("proof.json")
+    with pytest.raises(SystemExit):
+        parser().parse_args(args)
+    with pytest.raises(SystemExit):
+        parser().parse_args(args + ["--binding", "binding.json", "--target-proof", "proof.json"])
+
+
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_persisted_send_claim_blocks_replay_even_with_new_output_path(
+    monkeypatch, tmp_path: Path, interrupted: bool
+) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    output = tmp_path / "outcome.json"
+    save_ledger(ledger_path, ledger)
+    calls = []
+
+    def send(*args):
+        calls.append(args)
+        if interrupted:
+            raise RuntimeError("simulated crash after possible provider dispatch")
+        return GenericProviderOutcome(
+            schema_name="video-channel-manager.telegram-generic-provider-outcome",
+            schema_version=1,
+            publication_id=envelope.publication_id,
+            provider_payload_sha256=envelope.provider_payload_sha256,
+            intent_id=envelope.intent_id,
+            provider_effect="may_exist",
+            retryable=False,
+            error="offline ambiguous effect",
+        )
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", send)
+    if interrupted:
+        with pytest.raises(RuntimeError, match="simulated crash"):
+            _send_persisted_once(profile, release, ledger_path, envelope, output)
+        assert not output.exists()
+    else:
+        outcome = _send_persisted_once(profile, release, ledger_path, envelope, output)
+        assert GenericProviderOutcome.model_validate_json(output.read_text(encoding="utf-8")) == outcome
+
+    with pytest.raises(ValueError, match="intent already claimed|outcome already exists"):
+        _send_persisted_once(profile, release, ledger_path, envelope, tmp_path / "other-outcome.json")
+    assert len(calls) == 1
+    assert load_ledger(ledger_path, release).entries[envelope.publication_id].provider_effect == "may_exist"
+
+
+def test_persisted_send_rejects_wrong_intent_before_claim(monkeypatch, tmp_path: Path) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    ledger.entries[envelope.publication_id].intent_id = "different-persisted-intent"
+    save_ledger(ledger_path, ledger)
+
+    def unexpected(*args):
+        pytest.fail("invalid intent must not reach the sender")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", unexpected)
+    with pytest.raises(ValueError, match="persisted ledger intent differs"):
+        _send_persisted_once(profile, release, ledger_path, envelope, tmp_path / "outcome.json")
+    assert not (tmp_path / ".ledger.json.dispatch-claims").exists()
+
+
+def test_recover_local_outcome_after_export_failure(monkeypatch, tmp_path: Path) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    release_path = tmp_path / "release.json"
+    envelope_path = tmp_path / "envelope.json"
+    save_ledger(ledger_path, ledger)
+    save_release(release_path, release)
+    envelope_path.write_text(envelope.model_dump_json(), encoding="utf-8")
+    # A file as the output parent makes export fail after the canonical result is saved.
+    blocked_parent = tmp_path / "blocked"
+    blocked_parent.write_text("not a directory", encoding="utf-8")
+    calls = []
+
+    def send(*args):
+        calls.append(args)
+        return GenericProviderOutcome(
+            schema_name="video-channel-manager.telegram-generic-provider-outcome",
+            schema_version=1,
+            publication_id=envelope.publication_id,
+            provider_payload_sha256=envelope.provider_payload_sha256,
+            intent_id=envelope.intent_id,
+            provider_effect="not_dispatched",
+            retryable=True,
+            error="offline connection failure",
+        )
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", send)
+    with pytest.raises(OSError):
+        _send_persisted_once(profile, release, ledger_path, envelope, blocked_parent / "outcome.json")
+    assert _load_local_outcome(ledger_path, envelope).provider_effect == "not_dispatched"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram_multichannel_cli",
+            "recover-outcome",
+            "--release",
+            str(release_path),
+            "--ledger",
+            str(ledger_path),
+            "--envelope",
+            str(envelope_path),
+        ],
+    )
+    assert main() == 0
+    assert len(calls) == 1
+    entry = load_ledger(ledger_path, release).entries[envelope.publication_id]
+    assert entry.state == "pending"
+    assert entry.intent_id is None
+    with pytest.raises(ValueError, match="conservative dispatching state"):
+        main()
+
+
+@pytest.mark.parametrize("bound", [False, True])
+def test_apply_outcome_split_job_requires_intent_binding(monkeypatch, tmp_path: Path, bound: bool) -> None:
+    _, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    release_path = tmp_path / "release.json"
+    envelope_path = tmp_path / "envelope.json"
+    outcome_path = tmp_path / "outcome.json"
+    save_ledger(ledger_path, ledger)
+    save_release(release_path, release)
+    envelope_path.write_text(envelope.model_dump_json(), encoding="utf-8")
+    outcome = GenericProviderOutcome(
+        schema_name="video-channel-manager.telegram-generic-provider-outcome",
+        schema_version=1,
+        publication_id=envelope.publication_id,
+        provider_payload_sha256=envelope.provider_payload_sha256,
+        intent_id=envelope.intent_id if bound else None,
+        provider_effect="not_dispatched",
+        retryable=True,
+        error="offline connection failure",
+    )
+    outcome_path.write_text(outcome.model_dump_json(exclude_none=True), encoding="utf-8")
+    before = ledger_path.read_bytes()
+    assert not (tmp_path / ".ledger.json.dispatch-claims").exists()
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("applying a receipt must never invoke the sender")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", unexpected)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram_multichannel_cli",
+            "apply-outcome",
+            "--release",
+            str(release_path),
+            "--ledger",
+            str(ledger_path),
+            "--envelope",
+            str(envelope_path),
+            "--outcome",
+            str(outcome_path),
+        ],
+    )
+    if not bound:
+        with pytest.raises(ValueError, match="no intent binding"):
+            main()
+        assert ledger_path.read_bytes() == before
+    else:
+        assert main() == 0
+        assert load_ledger(ledger_path, release).entries[envelope.publication_id].state == "pending"

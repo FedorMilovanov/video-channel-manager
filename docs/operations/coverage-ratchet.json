@@ -361,6 +361,7 @@
     "src/video_channel_manager/wave_engine/package_a.py": 86.22,
     "src/video_channel_manager/wave_engine/package_a_cli.py": 98.48,
     "src/video_channel_manager/wave_engine/reconciliation.py": 90.16,
+    "src/video_channel_manager/wave_engine/youtube_comment_provider.py": 84.16,
     "src/video_channel_manager/wave_engine/vk_article_provider.py": 66.24,
     "src/video_channel_manager/wave_engine/vk_lord_god_wall_provider.py": 64.6,
     "src/video_channel_manager/wave_engine/vk_video_prepare.py": 66.95,

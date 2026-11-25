@@ -152,7 +152,7 @@
       "status": "provider_inert",
       "project_key": "legendary-poet",
       "provider_write_capable": false,
-      "sha256": "928a61fab72bffcab59bdfc662c02f80ae122f121b5a1649c84b3f6ff0140e58",
+      "sha256": "4c9c923fc29b162ff5090a3be87a2e1bf5710877c01f2394608ab9f6954414e6",
       "reason": "Provider-inert Instagram daily Reel preparation/staging/plan wrapper; forces Meta writes off and never executes provider publish."
     },
     {

@@ -80,6 +80,8 @@ Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](
 ## Provider mutation boundary
 Release/content approval and provider execution authority are separate gates.
 
+**Bounded owner instruction = operational scope.** A clear owner request authorizes the requested business operations and necessary child steps within its stated target, timing and scope. Routine read-only discovery, preparation, editorial QA, validation, exact-ID checks and technical confirmations are agent work, not additional owner permissions. Derive hashes, manifests, journal paths and required confirmation arguments from the accepted payload; do not ask the owner to supply them. No per-video repeat approval for an already authorized batch. Preserve genuine release/rights/editorial gates, protected state and no-replay checks; do not infer a different target, publication window, destructive operation or broader scope. Scope HOLD to the affected object or shared resource; continue independent authorized work. Historical audits are evidence, not new active prohibitions. An inaccessible unrelated archive or stale historical report alone must not block a fresh exact candidate with adequate evidence. Use the canonical grant-backed quota journal; no arbitrary per-agent budget or daily manual quota permission for the approved project.
+
 Before any provider mutation:
 
 1. prove canonical project/target identity before credentials are relied on;

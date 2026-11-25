@@ -57,6 +57,21 @@ This staged boundary is intentional:
 - scheduled mutation requires a verified manual canary;
 - a channel-specific renderer/editorial adapter may vary, but transport/state/release mechanics stay generic.
 
+## Operator-facing simplicity
+
+Treat the owner's explicit, exact operation instruction as one business
+authorization, not a succession of confirmations for the same unchanged
+payload. The operator/runtime owns digest derivation, target preflight, durable
+intent, verification and receipts. Keep independent content/rights review where
+required, the channel kill switch, state ownership, and no-replay protections;
+do not conflate technical completion with permission to publish.
+
+For existing authorized releases, `telegram_multichannel_cli prepare --binding`
+loads the pinned binding and performs fresh preflight internally. It is mutually
+exclusive with the existing `--target-proof` input; no duplicate proof file or
+preflight is needed. The remaining one-command operator path must orchestrate
+the same protected state lifecycle rather than introduce another sender.
+
 ## What still counts as legacy debt
 
 The old Lordchrist editorial models contain Lordchrist-specific literals and primary-source rules. They are no longer the template for new channels, but they have not yet been deleted because the live Lordchrist publisher depends on them. Removal happens only after a proven generic migration, not as part of the Svodka activation.
