@@ -14,6 +14,7 @@ from video_channel_manager.youtube_release_operations import (
     prepare_plan,
     record_manual_evidence,
     release_from_journal,
+    release_status_summary,
     status,
     verify_remote_against_evidence,
     video_id_from_release,
@@ -26,6 +27,7 @@ from video_channel_manager.youtube_release_plan import (
 from video_channel_manager.youtube_release_state import (
     build_release_state,
     child_by_id,
+    mark_existing_target_absent,
     mark_existing_target_adopted,
     prepare_child,
     transition_child,
@@ -474,7 +476,7 @@ def test_record_manual_evidence_rejects_unreviewed_or_wrong_child(tmp_path: Path
         )
 
 
-def test_status_prints_exact_release_state(capsys, tmp_path: Path) -> None:
+def test_status_prints_safe_release_summary(capsys, tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(json.dumps(plan), encoding="utf-8")
@@ -496,9 +498,81 @@ def test_status_prints_exact_release_state(capsys, tmp_path: Path) -> None:
     )
     journal["release_plan_sha256"] = plan["release_plan_sha256"]
     write_json_atomic(stable, journal)
+    before = stable.read_bytes()
     assert status(argparse.Namespace(plan=plan_path, data_dir=tmp_path / "state")) == 0
     printed = json.loads(capsys.readouterr().out)
     assert printed["release_plan_sha256"] == plan["release_plan_sha256"]
+    assert printed["disposition"] == "review_pending_child"
+    assert printed["next_child_id"] == "processing-private"
+    assert printed["grants_execution_authority"] is False
+    assert stable.read_bytes() == before
+
+
+def test_release_status_summary_never_exposes_runtime(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    state = mark_existing_target_absent(
+        build_release_state(
+            upload_key_sha256=plan["upload_key_sha256"],
+            release_plan_sha256=plan["release_plan_sha256"],
+        ),
+        evidence={"reviewed": True},
+    )
+    state = prepare_child(state, child_id="upload-session", payload={"start": True})
+    state = transition_child(
+        state,
+        child_id="upload-session",
+        provider_effect="verified",
+        evidence={"session_created": True},
+        runtime_updates={"session_url": "https://example.invalid/private-session", "future": {"secret": "private"}},
+    )
+    snapshot = json.dumps(state, sort_keys=True)
+    summary = release_status_summary(state)
+    assert summary["next_child_id"] == "upload"
+    assert summary["disposition"] == "review_pending_child"
+    assert summary["provider_writes_performed"] == 0
+    assert all("runtime" not in child for child in summary["children"])
+    assert "private-session" not in json.dumps(summary)
+    assert "secret" not in json.dumps(summary)
+    assert json.dumps(state, sort_keys=True) == snapshot
+
+
+def test_release_status_summary_reports_ambiguous_effect(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    state = mark_existing_target_absent(
+        build_release_state(
+            upload_key_sha256=plan["upload_key_sha256"],
+            release_plan_sha256=plan["release_plan_sha256"],
+        ),
+        evidence={"reviewed": True},
+    )
+    state = prepare_child(state, child_id="upload-session", payload={"start": True})
+    state = transition_child(state, child_id="upload-session", provider_effect="may_exist")
+    summary = release_status_summary(state)
+    assert summary["disposition"] == "reconcile_read_only"
+    assert summary["blocking_child_ids"] == ["upload-session"]
+    assert summary["next_child_id"] is None
+    assert summary["grants_execution_authority"] is False
+
+
+def test_release_status_summary_complete_does_not_authorize_writes(tmp_path: Path) -> None:
+    plan = _plan(tmp_path)
+    state = mark_existing_target_absent(
+        build_release_state(
+            upload_key_sha256=plan["upload_key_sha256"],
+            release_plan_sha256=plan["release_plan_sha256"],
+        ),
+        evidence={"reviewed": True},
+    )
+    for child in state["children"][1:]:
+        child_id = child["child_id"]
+        state = prepare_child(state, child_id=child_id, payload={"fixture": child_id})
+        state = transition_child(state, child_id=child_id, provider_effect="verified", evidence={"fixture": True})
+    summary = release_status_summary(state)
+    assert summary["disposition"] == "complete"
+    assert summary["next_child_id"] is None
+    assert summary["blocking_child_ids"] == []
+    assert summary["verified_child_count"] == summary["child_count"] - 1
+    assert summary["grants_execution_authority"] is False
 
 
 def test_stable_upload_key_for_live_evidence_matches_release_plan(tmp_path: Path) -> None:
