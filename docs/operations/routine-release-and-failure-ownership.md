@@ -26,6 +26,8 @@ Do not diagnose a client rejection as a provider quota failure, and do not infer
 
 `youtube_release_operations.status` returns a versioned **diagnostic projection**, not a raw journal or executable plan. It reports `review_pending_child`, `reconcile_read_only` or `complete` based on the validated existing state machine; a pending child is not permission to execute it. The output deliberately excludes all runtime data (including resumable upload URLs), raw responses and attempt-local parameters. It does not change persisted state, create a provider client or grant execution authority. `provider_writes_performed=0` describes only the status operation, not the historical release.
 
+The supported local-only CLI is `video-manager youtube release-status --plan <exact-plan.json> --data-dir <absolute-canonical-data-root>`. It requires the explicit data root rather than guessing from the working directory, validates the plan and matching journal identity, and returns a machine-readable diagnostic report. A missing or invalid journal exits with a diagnostic error, not proof of provider absence. No OAuth or provider quota is used. This command cannot publish, reconcile, or authorize execution.
+
 If a child is `may_exist`, report that child and no executable next child. Verified-child count excludes the separate successful existing-target absence proof; completion is derived from the canonical state machine, not the count. A completed release can contain explicit confirmed-absence evidence. Never replace the canonical ledger with the projection.
 
 ## Incident record and escalation
