@@ -18,6 +18,7 @@ from video_channel_manager.platforms.youtube.writer import (
     YouTubeWriteError,
     _postwrite_metadata_drift,
     descriptions_equivalent,
+    localization_postflight_drift,
 )
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -163,23 +164,17 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
                 if delay:
                     self._sleep(delay)
                 observed = self.read_description(video_id)
-                snippet = observed.raw.get("snippet") or {}
-                protected = {key: snippet.get(key) for key in expected_snippet_fields}
-                failures = []
-                if observed.channel_id != expected_channel_id:
-                    failures.append("channel_id")
-                if observed.title != expected_title:
-                    failures.append("title")
-                if observed.description != expected_primary_description:
-                    failures.append("snippet.description")
-                if protected != expected_snippet_fields:
-                    failures.append("snippet.protected_fields")
-                if observed.raw.get("localizations") != expected_map:
-                    failures.append("localizations.exact_map")
-                if (observed.raw.get("status") or {}).get("privacyStatus") != expected_privacy:
-                    failures.append("status.privacyStatus")
-                if (observed.raw.get("contentDetails") or {}).get("duration") != expected_duration:
-                    failures.append("contentDetails.duration")
+                failures = localization_postflight_drift(
+                    observed,
+                    video_id=video_id,
+                    channel_id=expected_channel_id,
+                    title=expected_title,
+                    primary_description=expected_primary_description,
+                    snippet_fields=expected_snippet_fields,
+                    privacy=expected_privacy,
+                    duration=expected_duration,
+                    localizations=expected_map,
+                )
                 if not failures:
                     return observed
                 last_failed = failures

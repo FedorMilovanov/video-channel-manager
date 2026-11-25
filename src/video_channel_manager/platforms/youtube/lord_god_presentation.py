@@ -371,3 +371,69 @@ def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, An
         "is_executable_plan": False,
         "execution_authorized": False,
     }
+
+
+def verify_panorama_russian_metadata_readback(
+    candidate: dict[str, Any],
+    owner: dict[str, Any],
+    playlist: dict[str, Any],
+    observed: dict[str, Any],
+) -> dict[str, Any]:
+    """Re-derive the reduction and verify owner metadata, not execution or captions."""
+    from video_channel_manager.platforms.youtube.writer import (
+        VideoDescriptionSnapshot,
+        localization_postflight_drift,
+    )
+
+    video_id = candidate.get("video_id")
+    if not isinstance(video_id, str):
+        raise ValueError("Missing exact candidate video ID")
+    if candidate != plan_panorama_russian_metadata(owner, playlist, video_id=video_id):
+        raise ValueError("Russian-first candidate differs from bound owner evidence")
+    before = owner["raw"]
+    snippet = before["snippet"]
+    observed_snippet = observed.get("snippet")
+    if not isinstance(observed_snippet, dict):
+        raise ValueError("Incomplete readback snippet")
+    snapshot = VideoDescriptionSnapshot(
+        video_id=observed.get("id", ""),
+        channel_id=observed_snippet.get("channelId", ""),
+        title=observed_snippet.get("title", ""),
+        description=observed_snippet.get("description", ""),
+        revision=canonical_sha256(observed),
+        raw=observed,
+    )
+    drift = localization_postflight_drift(
+        snapshot,
+        video_id=video_id,
+        channel_id=LORD_GOD_OWNER_CHANNEL,
+        title=snippet["title"],
+        primary_description=snippet["description"],
+        snippet_fields={
+            key: snippet[key] for key in ("title", "categoryId", "tags", "defaultLanguage", "defaultAudioLanguage")
+        },
+        privacy=before["status"]["privacyStatus"],
+        duration=before["contentDetails"]["duration"],
+        localizations=candidate["after_localizations"],
+    )
+    # Protect complete returned status and content details, not just privacy and duration.
+    for part in ("status", "contentDetails"):
+        if observed.get(part) != before[part]:
+            drift.append(f"{part}.exact")
+    # Localized presentation may change with locale selection; all other snippet fields must survive.
+    if {k: v for k, v in observed_snippet.items() if k != "localized"} != {
+        k: v for k, v in snippet.items() if k != "localized"
+    }:
+        drift.append("snippet.exact")
+    return {
+        "video_id": video_id,
+        "candidate_sha256": canonical_sha256(candidate),
+        "observed_revision": snapshot.revision,
+        "metadata_matches": not drift,
+        "drift": sorted(set(drift)),
+        "captions_verified": False,
+        "public_display_verified": False,
+        "execution_authorized": False,
+        "provider_reads": 0,
+        "provider_writes": 0,
+    }

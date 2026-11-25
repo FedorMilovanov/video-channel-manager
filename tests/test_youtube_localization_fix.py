@@ -590,3 +590,25 @@ def test_localization_postwrite_persistent_language_drift_is_not_accepted(
     with pytest.raises(YouTubeWriteError, match="still mismatched after 3 safe GET reads"):
         writer.replace_localized_description(**_args(original))
     assert methods == ["GET", "PUT", "GET", "GET", "GET"]
+
+
+@pytest.mark.parametrize("delays", [(), (0.0, 0.0)])
+def test_localization_postflight_missing_tags_never_verifies(tmp_path: Path, delays: tuple[float, ...]) -> None:
+    original = _raw()
+    current = copy.deepcopy(original)
+    original["snippet"]["tags"] = []
+    current["snippet"]["tags"] = []
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "PUT":
+            current["localizations"] = json.loads(request.content)["localizations"]
+            current["snippet"].pop("tags")
+            return httpx.Response(200, json=current)
+        return httpx.Response(200, json={"items": [current]})
+
+    writer = _writer(tmp_path, handle, verification_delays=delays)
+    with pytest.raises(YouTubeWriteError, match="snippet.protected_fields"):
+        writer.replace_localized_description(**_args(original))
+    assert methods == ["GET", "PUT", *(["GET"] * (1 + len(delays)))]

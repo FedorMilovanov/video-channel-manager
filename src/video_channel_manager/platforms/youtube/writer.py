@@ -146,6 +146,41 @@ def _postwrite_metadata_drift(
     return drift
 
 
+def localization_postflight_drift(
+    observed: VideoDescriptionSnapshot,
+    *,
+    video_id: str,
+    channel_id: str,
+    title: str,
+    primary_description: str,
+    snippet_fields: dict[str, Any],
+    privacy: str,
+    duration: str,
+    localizations: dict[str, dict[str, str]],
+) -> list[str]:
+    """One strict readback contract for immediate and delayed full-map verification."""
+    failures = []
+    snippet = _dict_field(observed.raw, "snippet")
+    if observed.video_id != video_id or observed.raw.get("id") != video_id:
+        failures.append("video_id")
+    if observed.channel_id != channel_id or snippet.get("channelId") != channel_id:
+        failures.append("channel_id")
+    if observed.title != title or snippet.get("title") != title:
+        failures.append("title")
+    if observed.description != primary_description or snippet.get("description") != primary_description:
+        failures.append("snippet.description")
+    if any(key not in snippet or snippet[key] != value for key, value in snippet_fields.items()):
+        failures.append("snippet.protected_fields")
+    # An omitted property is not evidence of an explicit empty map.
+    if observed.raw.get("localizations") != localizations:
+        failures.append("localizations.exact_map")
+    if _dict_field(observed.raw, "status").get("privacyStatus") != privacy:
+        failures.append("status.privacyStatus")
+    if _dict_field(observed.raw, "contentDetails").get("duration") != duration:
+        failures.append("contentDetails.duration")
+    return failures
+
+
 class YouTubeDescriptionWriter(HttpClientOwner):
     """Narrow YouTube writer for guarded description replacement only."""
 
@@ -478,25 +513,17 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 require_write=True,
             )
             verified = self.read_description(video_id)
-            expected_raw = copy.deepcopy(current.raw)
-            expected_raw["localizations"] = replacement
-            expected = VideoDescriptionSnapshot(
-                video_id=current.video_id,
-                channel_id=current.channel_id,
-                title=current.title,
-                description=current.description,
-                revision=current.revision,
-                raw=expected_raw,
+            drift = localization_postflight_drift(
+                verified,
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                title=expected_title,
+                primary_description=expected_primary_description,
+                snippet_fields=expected_snippet_fields,
+                privacy=expected_privacy,
+                duration=expected_duration,
+                localizations=replacement,
             )
-            drift = _postwrite_metadata_drift(expected, verified, current.description)
-            if verified.description != current.description:
-                drift.append("snippet.description")
-            if _dict_field(verified.raw, "localizations") != replacement:
-                drift.append("localizations.exact_map")
-            if _dict_field(current.raw, "contentDetails").get("duration") != _dict_field(
-                verified.raw, "contentDetails"
-            ).get("duration"):
-                drift.append("contentDetails.duration")
             if drift:
                 raise YouTubeWriteError(
                     f"Localized postflight drift for {video_id}: {', '.join(sorted(set(drift)))}. "

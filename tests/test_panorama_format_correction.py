@@ -287,3 +287,85 @@ def test_panorama_russian_metadata_fails_closed(defect: str) -> None:
     owner["revision"] = "invalid" if defect == "bad_revision" else canonical_sha256(raw)
     with pytest.raises(ValueError):
         plan_panorama_russian_metadata(owner, playlist, video_id=target)
+
+
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "none",
+        "missing_map",
+        "old_map",
+        "changed_russian",
+        "changed_audio",
+        "changed_tags",
+        "changed_status",
+        "changed_details",
+        "changed_thumbnail",
+        "wrong_id",
+        "wrong_owner",
+        "localized_view_only",
+    ],
+)
+def test_panorama_russian_metadata_readback(defect: str) -> None:
+    from video_channel_manager.platforms.youtube.lord_god_presentation import (
+        plan_panorama_russian_metadata,
+        verify_panorama_russian_metadata_readback,
+    )
+
+    owner, playlist = _russian_metadata_evidence()
+    candidate = plan_panorama_russian_metadata(owner, playlist, video_id=owner["video_id"])
+    after = copy.deepcopy(owner["raw"])
+    after["localizations"] = copy.deepcopy(candidate["after_localizations"])
+    if defect == "missing_map":
+        after.pop("localizations")
+    elif defect == "old_map":
+        after["localizations"] = copy.deepcopy(owner["raw"]["localizations"])
+    elif defect == "changed_russian":
+        after["snippet"]["description"] += " drift"
+    elif defect == "changed_audio":
+        after["snippet"]["defaultAudioLanguage"] = "en"
+    elif defect == "changed_tags":
+        after["snippet"].pop("tags")
+    elif defect == "changed_status":
+        after["status"]["embeddable"] = False
+    elif defect == "changed_details":
+        after["contentDetails"]["caption"] = "false"
+    elif defect == "changed_thumbnail":
+        after["snippet"]["thumbnails"] = {"default": {"url": "other"}}
+    elif defect == "wrong_id":
+        after["id"] = "other000000"
+    elif defect == "wrong_owner":
+        after["snippet"]["channelId"] = "other"
+    elif defect == "localized_view_only":
+        after["snippet"]["localized"] = {"title": "Панорама", "description": "Русский"}
+    report = verify_panorama_russian_metadata_readback(candidate, owner, playlist, after)
+    assert report["metadata_matches"] is (defect in {"none", "localized_view_only"})
+    assert not report["captions_verified"] and not report["public_display_verified"]
+    assert report["execution_authorized"] is False
+    assert report["provider_reads"] == report["provider_writes"] == 0
+
+
+def test_panorama_empty_map_readback_must_be_explicit_and_candidate_rederived() -> None:
+    from video_channel_manager.platforms.youtube.lord_god_presentation import (
+        plan_panorama_russian_metadata,
+        verify_panorama_russian_metadata_readback,
+    )
+
+    owner, playlist = _russian_metadata_evidence()
+    raw = owner["raw"]
+    raw["localizations"] = {"en-US": raw["localizations"]["en-US"]}
+    owner["revision"] = canonical_sha256(raw)
+    owner["locale_keys"] = ["en-US"]
+    candidate = plan_panorama_russian_metadata(owner, playlist, video_id=owner["video_id"])
+    after = copy.deepcopy(raw)
+    after["localizations"] = {}
+    assert verify_panorama_russian_metadata_readback(candidate, owner, playlist, after)["metadata_matches"]
+    after.pop("localizations")
+    assert not verify_panorama_russian_metadata_readback(candidate, owner, playlist, after)["metadata_matches"]
+    with pytest.raises(ValueError, match="differs from bound"):
+        verify_panorama_russian_metadata_readback({**candidate, "execution_authorized": True}, owner, playlist, after)
+    with pytest.raises(ValueError, match="Missing exact candidate video ID"):
+        verify_panorama_russian_metadata_readback({}, owner, playlist, after)
+    after.pop("snippet")
+    with pytest.raises(ValueError, match="Incomplete readback snippet"):
+        verify_panorama_russian_metadata_readback(candidate, owner, playlist, after)
