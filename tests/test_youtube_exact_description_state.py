@@ -205,9 +205,9 @@ def test_exact_outer_budget_covers_all_four_reads_and_put(tmp_path, case):
     import httpx
 
     guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "fedor-milovanov")
-    writer = Mock()
+    writer = object.__new__(YouTubeDescriptionWriter)
     writer._quota_guard = guard
-    writer.retry_policy.max_attempts = 2
+    writer.retry_policy = Mock(max_attempts=2)
     if case != "unconfigured":
         guard.configure_day(
             day=guard.budget_status()["pacific_day"],

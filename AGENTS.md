@@ -1,11 +1,8 @@
 # Repository agent operating contract
 
 ## ENGINEERING FIRST — общий принцип работы (25.11.2026)
-
 **Меньше координационной суеты — больше реальной инженерной работы за одну волну.** Общий регламент всех проектов: [AuditRepo Operating Model — ENGINEERING FIRST](https://github.com/FedorMilovanov/AuditRepo/blob/main/AUDITREPO_OPERATING_MODEL.md) ([policy PR #590](https://github.com/FedorMilovanov/AuditRepo/pull/590)). Прямая директива владельца действует немедленно.
-
 По умолчанию агент самостоятельно закрывает порученный scope от диагностики до проверенного результата, включая связанные мелочи; «Продолжай» — следующий полезный блок в текущем сеансе. MAX — только явно назначенная или уже действующая роль в конкретном направлении, не обязательный режим: наличие runbook не активирует его и не расширяет полномочия. При действующем MAX он сам закрывает доступные исправления и интеграцию, делегирует только целостные пакеты, когда полезны параллельность, специализация или независимая приёмка. Один содержательный handoff по готовому пакету либо немедленная эскалация реального блокера. Без микропоручений, повторных неизменных статусов, искусственных квот и новых уровней управления. При HOLD — независимая разрешённая работа. Сохранять единственного writer, обязательные проверки, независимую приёмку, безопасность, права, ресурсные и релизные ограничения.
-
 
 This file contains **durable rules**, not a history of old waves or commit SHAs. Historical audits remain evidence; they do not control new work.
 
@@ -50,7 +47,6 @@ In addition to signed copy-plan and project presentation validation, its non-del
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
 ## Adaptive reasoning contract
-
 Before implementation or provider-capable handoff, establish:
 
 - requested outcome independent of the old mechanism;
@@ -64,7 +60,6 @@ Before implementation or provider-capable handoff, establish:
 Preserve partial success. Resume from the first unverified child operation instead of replaying successful parents. Do not add ceremony that cannot change a decision, block a defect class, or prove a postcondition.
 
 ## Identity and provenance
-
 Identity must be stable under irrelevant changes.
 
 - Provider/project identity is selected by canonical project + exact target IDs, never by credential name alone.
@@ -83,7 +78,6 @@ The default `VCM_DATA_DIR=./data` is **relative to the process working directory
 Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](docs/operations/youtube-shared-project-quota.md): use the canonical official client, verified Cloud-project identity and shared quota stop record, exact-ID bounded reads, and mandatory verification reserve. Never switch accounts/projects to circumvent quota or confuse Remote credits with provider quota.
 
 ## Provider mutation boundary
-
 Release/content approval and provider execution authority are separate gates.
 
 Before any provider mutation:
@@ -104,7 +98,6 @@ Unknown provider outcomes remain blocking. `may_exist`, accepted, processing, or
 Upload, processing/visibility, metadata, thumbnail, playlist creation, membership, wall publication, and other remote changes are separate child operations. Preserve verified parent/child success and resume only the first unverified child.
 
 ## Runtime and state writers
-
 - One provider account/browser profile/state branch/concurrency namespace has one write owner at a time.
 - A single already-authorized VK browser profile/session may be reused across multiple registered project communities when the same VK user manages them; a browser profile is authentication context, not project identity.
 - Do not create a new per-project VK browser profile merely for isolation when a known-working authorized profile already exists. Before every `browser_ui_write`, prove the exact `project_key`, `community_id`, and `owner_id` on the active target surface before file selection or mutation.

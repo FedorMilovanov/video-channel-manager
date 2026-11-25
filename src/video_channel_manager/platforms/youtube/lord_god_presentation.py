@@ -447,9 +447,7 @@ def verify_panorama_russian_metadata_readback(
     }
 
 
-def inventory_panorama_russian_metadata(
-    playlist: dict[str, Any], owners: list[dict[str, Any]]
-) -> dict[str, Any]:
+def inventory_panorama_russian_metadata(playlist: dict[str, Any], owners: list[dict[str, Any]]) -> dict[str, Any]:
     """Account for every lecture once; archived clean metadata is not live verification."""
     members = _panorama_members(playlist)
     member_ids = {member["video_id"] for member in members}

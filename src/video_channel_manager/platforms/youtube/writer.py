@@ -557,9 +557,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             or _dict_field(items[0], "snippet").get("channelId") != LORD_GOD_OWNER_CHANNEL
         ):
             raise YouTubeRevisionConflictError("Panorama playlist owner proof failed; no PUT sent.")
-        expected = {
-            (m["position"], m["video_id"], m["video_owner"], m["video_title"]) for m in playlist["memberships"]
-        }
+        expected = {(m["position"], m["video_id"], m["video_owner"], m["video_title"]) for m in playlist["memberships"]}
         observed = []
         params: QueryParams = {"part": "snippet", "playlistId": PANORAMA_PLAYLIST, "maxResults": 50}
         token: Any = None
