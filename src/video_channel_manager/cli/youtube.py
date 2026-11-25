@@ -929,6 +929,9 @@ def apply_comment_add(
             raise ValueError("Execution requires the exact reviewed --confirm-plan-sha256.")
         settings = get_settings()
         root = settings.data_dir
+        if execute and not root.is_absolute():
+            raise ValueError("Use the verified absolute VCM_DATA_DIR for comment writes.")
+        inventory_pages = 10
         effect_key = hashlib.sha256(
             json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
         ).hexdigest()
@@ -940,7 +943,11 @@ def apply_comment_add(
 
         def owned() -> list[Any]:
             return [
-                item for item in writer.list_top_level_comments(video_id) if item.author_channel_id == confirm_channel
+                item
+                for item in writer.list_top_level_comments(
+                    video_id, strict_moderation=True, max_pages_per_status=inventory_pages
+                )
+                if item.author_channel_id == confirm_channel
             ]
 
         def persist(path: Path, data: dict[str, Any]) -> None:
@@ -955,56 +962,84 @@ def apply_comment_add(
                 channels = api.list_my_channels()
                 if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
                     raise ValueError("OAuth owner does not match reviewed channel.")
-                identity = writer.read_video_identity(video_id)
-                if identity.channel_id != confirm_channel or identity.privacy_status != "public":
-                    raise ValueError("Exact public video identity mismatch.")
-                before = owned()
-                matches = [item for item in before if comments_equivalent(item.text, text)]
-                if len(matches) > 1:
-                    raise ValueError("Duplicate matching owner comments require review; no POST sent.")
-                if matches:
-                    console.print(f"Already present: {matches[0].comment_id}. No POST sent.")
-                    return
-                if intent.exists() or receipt.exists():
-                    raise ValueError("Existing intent/result requires reconciliation; never replay an uncertain POST.")
-                if {item.comment_id: item.text_sha256 for item in before} != expected:
-                    raise ValueError("Reviewed owner comment state changed; no POST sent.")
-                console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
-                if not execute:
-                    console.print("Dry-run only. No POST sent.")
-                    return
-                persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
-                created = writer.create_top_level_comment(
-                    video_id=video_id,
-                    expected_channel_id=confirm_channel,
-                    text=text,
-                    expected_owned_comments=expected,
+                reservation = (
+                    writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    if execute
+                    else nullcontext()
                 )
-                verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
-                if (
-                    verified.comment_id != created.comment_id
-                    or verified.author_channel_id != confirm_channel
-                    or verified.video_id != video_id
-                    or not comments_equivalent(verified.text, text)
-                ):
-                    raise ValueError("Independent comment verification failed; reconcile without replay.")
-                after = owned()
-                after_map = {item.comment_id: item.text_sha256 for item in after}
-                if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
-                    raise ValueError("Owner comment set changed; reconcile without replay.")
-                persist(
-                    receipt,
-                    {
-                        "status": "verified",
-                        "video_id": video_id,
-                        "channel_id": confirm_channel,
-                        "comment_id": verified.comment_id,
-                        "comment_sha256": verified.text_sha256,
-                        "existing_preserved": sorted(expected),
-                        "plan_sha256": payload["plan_sha256"],
-                    },
-                )
-                console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
+                with reservation:
+                    identity = writer.read_video_identity(video_id)
+                    if (
+                        identity.video_id != video_id
+                        or identity.channel_id != confirm_channel
+                        or identity.privacy_status != "public"
+                        or identity.title != operation["video_title"]
+                    ):
+                        raise ValueError("Exact public video identity or reviewed title mismatch.")
+                    before = owned()
+                    matches = [item for item in before if comments_equivalent(item.text, text)]
+                    if len(matches) > 1:
+                        raise ValueError("Duplicate matching owner comments require review; no POST sent.")
+                    if matches:
+                        match = matches[0]
+                        if {item.comment_id: item.text_sha256 for item in before} != {
+                            **expected,
+                            match.comment_id: match.text_sha256,
+                        }:
+                            raise ValueError(
+                                "Existing match but reviewed owner comment state differs; reconcile without POST."
+                            )
+                        console.print(f"Already present: {match.comment_id}. No POST sent.")
+                        return
+                    if intent.exists() or receipt.exists():
+                        raise ValueError(
+                            "Existing intent/result requires reconciliation; never replay an uncertain POST."
+                        )
+                    if {item.comment_id: item.text_sha256 for item in before} != expected:
+                        raise ValueError("Reviewed owner comment state changed; no POST sent.")
+                    console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
+                    if not execute:
+                        console.print("Dry-run only. No POST sent.")
+                        return
+
+                    def reserve_intent() -> None:
+                        persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
+
+                    created = writer.create_top_level_comment(
+                        video_id=video_id,
+                        expected_channel_id=confirm_channel,
+                        text=text,
+                        expected_owned_comments=expected,
+                        strict_inventory_max_pages=inventory_pages,
+                        before_dispatch=reserve_intent,
+                        expected_video_title=operation["video_title"],
+                        expected_privacy_status="public",
+                    )
+                    verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
+                    if (
+                        verified.comment_id != created.comment_id
+                        or verified.author_channel_id != confirm_channel
+                        or verified.video_id != video_id
+                        or not comments_equivalent(verified.text, text)
+                    ):
+                        raise ValueError("Independent comment verification failed; reconcile without replay.")
+                    after = owned()
+                    after_map = {item.comment_id: item.text_sha256 for item in after}
+                    if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
+                        raise ValueError("Owner comment set changed; reconcile without replay.")
+                    persist(
+                        receipt,
+                        {
+                            "status": "verified",
+                            "video_id": video_id,
+                            "channel_id": confirm_channel,
+                            "comment_id": verified.comment_id,
+                            "comment_sha256": verified.text_sha256,
+                            "existing_preserved": sorted(expected),
+                            "plan_sha256": payload["plan_sha256"],
+                        },
+                    )
+                    console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
         finally:
             writer.close()
             api.close()

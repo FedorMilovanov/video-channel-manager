@@ -15,6 +15,7 @@ from video_channel_manager.wave_engine.article_prepare import (
 )
 from video_channel_manager.wave_engine.canonical import (
     file_sha256,
+    is_ci_environment,
     read_json_object,
     resolve_repository_relative_path,
     write_json_atomic,
@@ -54,6 +55,12 @@ from video_channel_manager.wave_engine.vk_video_wall_provider import (
     VK_VIDEO_WALL_LEGACY_PREFLIGHT_FLOOD_ERROR,
     VK_VIDEO_WALL_OPERATION_KIND,
     VkPostponedVideoWallAdapter,
+)
+from video_channel_manager.wave_engine.youtube_comment_provider import (
+    YOUTUBE_COMMENT_ACCOUNT,
+    YOUTUBE_COMMENT_OPERATION_KIND,
+    YOUTUBE_COMMENT_POLICY_VERSION,
+    LordGodYouTubeCommentAdapter,
 )
 
 
@@ -311,6 +318,14 @@ def _lord_god_wall_plan(plan: WavePlan) -> bool:
     }
 
 
+def _youtube_comment_plan(plan: WavePlan) -> bool:
+    return (
+        len(plan.operations) == 1
+        and plan.operations[0].operation_kind == YOUTUBE_COMMENT_OPERATION_KIND
+        and plan.policy_version == YOUTUBE_COMMENT_POLICY_VERSION
+    )
+
+
 def _plan_label(plan: WavePlan) -> str:
     if _article_plan(plan):
         return "Article"
@@ -320,6 +335,8 @@ def _plan_label(plan: WavePlan) -> str:
         return "VK video wall"
     if _lord_god_wall_plan(plan):
         return "Lord God VK wall"
+    if _youtube_comment_plan(plan):
+        return "Lord God YouTube comment"
     return "Wave"
 
 
@@ -430,6 +447,7 @@ def apply(
     repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
     journal_directory: Annotated[Path | None, typer.Option("--journal-directory")] = None,
     vk_account: Annotated[str, typer.Option("--vk-account")] = VK_ARTICLE_ACCOUNT_ALIAS,
+    youtube_account: Annotated[str, typer.Option("--youtube-account")] = YOUTUBE_COMMENT_ACCOUNT,
     enable_provider_writes: Annotated[bool, typer.Option("--enable-provider-writes")] = False,
     ci_operator_confirmation: Annotated[str, typer.Option("--ci-operator-confirmation")] = "",
 ) -> None:
@@ -440,10 +458,19 @@ def apply(
         repository_root=repository_root,
         enable_provider_writes=enable_provider_writes,
     )
-    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan) or _lord_god_wall_plan(plan)):
+    if not (
+        _article_plan(plan)
+        or _video_plan(plan)
+        or _video_wall_plan(plan)
+        or _lord_god_wall_plan(plan)
+        or _youtube_comment_plan(plan)
+    ):
         console.print(
             "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
+        raise typer.Exit(code=3)
+    if _youtube_comment_plan(plan) and is_ci_environment():
+        console.print("[red]Rejected:[/red] Panorama comment writes require the persistent owner runtime, not CI.")
         raise typer.Exit(code=3)
     if journal_directory is None:
         raise typer.BadParameter(
@@ -467,6 +494,7 @@ def apply(
         | VkNativeVideoUploadAdapter
         | VkPostponedVideoWallAdapter
         | LordGodPostponedWallAdapter
+        | LordGodYouTubeCommentAdapter
     )
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
@@ -483,11 +511,21 @@ def apply(
         adapter = VkPostponedVideoWallAdapter(
             account_alias=vk_account,
         )
-    else:
+    elif _lord_god_wall_plan(plan):
         adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
             repository_root=repository_root,
         )
+    else:
+        try:
+            adapter = LordGodYouTubeCommentAdapter(
+                account_alias=youtube_account,
+                review_source=source,
+                repository_root=repository_root,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            console.print(f"[red]YouTube comment adapter initialization rejected:[/red] {exc}")
+            raise typer.Exit(code=3) from exc
     journal_existed_before = journal_directory.exists()
     try:
         result = WaveEngine().apply(
@@ -541,6 +579,7 @@ def reconcile(
     output_path: Annotated[Path, typer.Option("--output", "-o")],
     repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
     vk_account: Annotated[str, typer.Option("--vk-account")] = VK_ARTICLE_ACCOUNT_ALIAS,
+    youtube_account: Annotated[str, typer.Option("--youtube-account")] = YOUTUBE_COMMENT_ACCOUNT,
 ) -> None:
     request = _read_model(request_path, WaveReconciliationRequest)
     plan = _read_model(plan_path, WavePlan)
@@ -549,7 +588,13 @@ def reconcile(
         request.assert_matches(plan, result)
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint=str(request_path)) from exc
-    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan) or _lord_god_wall_plan(plan)):
+    if not (
+        _article_plan(plan)
+        or _video_plan(plan)
+        or _video_wall_plan(plan)
+        or _lord_god_wall_plan(plan)
+        or _youtube_comment_plan(plan)
+    ):
         console.print(
             f"[red]Rejected:[/red] no production reconciliation adapter is registered for {request.self_digest}."
         )
@@ -560,6 +605,7 @@ def reconcile(
         | VkNativeVideoUploadAdapter
         | VkPostponedVideoWallAdapter
         | LordGodPostponedWallAdapter
+        | LordGodYouTubeCommentAdapter
     )
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
@@ -576,11 +622,17 @@ def reconcile(
         adapter = VkPostponedVideoWallAdapter(
             account_alias=vk_account,
         )
-    else:
+    elif _lord_god_wall_plan(plan):
         adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
             repository_root=repository_root,
         )
+    else:
+        try:
+            adapter = LordGodYouTubeCommentAdapter(account_alias=youtube_account)
+        except (OSError, RuntimeError, ValueError) as exc:
+            console.print(f"[red]YouTube comment adapter initialization rejected:[/red] {exc}")
+            raise typer.Exit(code=3) from exc
     try:
         reconciliation = WaveEngine().reconcile(
             plan=plan,

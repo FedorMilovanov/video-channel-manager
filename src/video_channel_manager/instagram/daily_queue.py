@@ -4,11 +4,14 @@ import hashlib
 import json
 import math
 import re
+import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from sqlalchemy.engine import make_url
 
 DailyItemStatus = Literal["ready", "published", "rights_review"]
 
@@ -364,6 +367,55 @@ def build_legendary_poet_daily_queue(
         rights_review_count=statuses.count("rights_review"),
         items=tuple(items),
     )
+
+
+def select_daily_queue_item(
+    queue: InstagramDailyQueue, database_url: str, source_id: str | None = None
+) -> InstagramDailyQueueItem | None:
+    """Use the same read-only durable ledger for explicit and automatic preparation.
+
+    This Windows operator supports a configured file-backed SQLite ledger only.
+    An absent or unreadable ledger is not proof of absent provider effects.
+    """
+    url = make_url(database_url)
+    if url.get_backend_name() != "sqlite" or not url.database or url.database == ":memory:" or url.query:
+        raise ValueError("Instagram daily preparation requires an existing file-backed SQLite ledger")
+    database = Path(url.database).resolve()
+    if not database.is_file():
+        raise ValueError("Instagram durable ledger is missing; reconcile before advancing")
+    with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as connection:
+        rows = connection.execute("select publication_key, account_id, status from instagram_publications").fetchall()
+    states = {key: (account_id, status) for key, account_id, status in rows}
+
+    ready = sorted(
+        (item for item in queue.items if item.status == "ready"),
+        key=lambda item: item.scheduled_at or queue.start_at,
+    )
+    if not ready:
+        raise ValueError("Queue has no ready Instagram Reels")
+    if source_id:
+        ready = [item for item in ready if item.source_id == source_id]
+        if not ready:
+            raise ValueError(f"SourceId {source_id!r} is not a ready queue item")
+
+    for item in ready:
+        state = states.get(item.publication_key)
+        if state is None:
+            return item
+        account_id, status = state
+        if account_id != queue.account_id:
+            raise ValueError("Instagram durable ledger account differs from the queue target")
+        if status == "published":
+            if source_id:
+                raise ValueError(f"SourceId {source_id!r} is already published according to the durable ledger")
+            continue
+        if status != "planned":
+            raise ValueError(
+                f"Instagram daily queue is fail-closed on {item.publication_key}: "
+                f"durable ledger status is {status}; reconcile before advancing"
+            )
+        return item
+    return None
 
 
 def queue_sha256(queue: InstagramDailyQueue) -> str:

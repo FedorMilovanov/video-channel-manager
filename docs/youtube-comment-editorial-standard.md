@@ -166,7 +166,7 @@ Rules:
 
 ## Adaptive comment count — owner clarification 2026-11-24
 
-For both editorial channels the normal choice is one valuable comment; zero is appropriate where nothing independently useful can be added. Two or more may be chosen when each contributes a distinct evidence-backed subject (for example manuscript history versus later musical reception). Never require two by template, split one idea for volume, or classify all multiple owner comments as duplicates. At most one can be pinned. Formatting and source requirements are unchanged; verify existing comments and avoid exact duplicates.
+For both editorial channels the normal choice is one valuable comment; zero is appropriate where nothing independently useful can be added. A second may be chosen when it contributes a distinct evidence-backed subject (for example manuscript history versus later musical reception) not already developed in the description or first comment; three or more require separate editorial justification and owner authorization. Never require two by template, split one idea for volume, or classify all multiple owner comments as duplicates. At most one can be pinned. Formatting and source requirements are unchanged; verify existing comments and avoid exact duplicates.
 
 For a deliberately reviewed additional top-level comment, use the canonical comment plan with mode `reviewed-additional-comment`, one create operation and `expected_owned_comments` (exact current owner comment ID → canonical text SHA-256 map). Use `video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID` for preflight and the same command with `--execute --confirm-plan-sha256 SHA` for the separately authorized write. The command preserves prior comments, skips already present text, verifies the owner/video and records durable intent before dispatch. An uncertain POST requires read-only reconciliation, not another POST. Automatic missing-comment and legacy release flows retain their first-comment-only semantics; the explicit mode has no fixed total number of comments per video. Do not revive retired comment executors.
 
@@ -224,10 +224,6 @@ The authoritative registry is `docs/operations/project-identity-registry.md`.
 - Telegram: https://t.me/thelegendarypoet
 - Rutube: https://rutube.ru/channel/74579453/
 - Site: `https://thelegendarypoet.ru/` remains a legacy registered value pending a fresh operational check.
-
-## Comment count — owner clarification 2026-11-24
-
-For both editorial projects, a single substantial owner comment is the normal choice, not a quota. Add a second only when it offers a distinct, documented fact chain or meaningful independent analysis not already developed in the description or first comment. Do not split one argument into two posts or repeat promotional links merely to increase comment count. If research yields no second useful angle, stop at one; three or more require separate editorial justification and owner authorization. Choose at most one pin. The second comment normally remains an independent unpinned top-level comment. Keep paragraphs, meaningful native emphasis and tasteful emoji in text/link labels; SHARE-clean opening rules apply to descriptions, not comments. Read all existing owner comments, preserve their IDs and approved text, review the exact new copy, and require exact-state additional-create authorization through the canonical executor (#1116). If the executor does not support it, report the draft as HOLD, not published; never bypass the duplicate guard.
 
 ## Existing comments
 
