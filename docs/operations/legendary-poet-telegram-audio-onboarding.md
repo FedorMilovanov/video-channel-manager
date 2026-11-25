@@ -42,6 +42,37 @@ Independent human listening and editorial/rights review, an exact JPEG and capti
 
 **Transport boundary:** discovery succeeded through the generic Telegram Bot API read-only transport without restarting, logging out or changing MP3Bot's separate Local Bot API runtime. The 4.8 MB audio does not justify changing the working bot server. A fresh exact-target preflight is required immediately before any future send.
 
+### Operator experience and single owner instruction
+
+The owner's explicit instruction to publish an exact MP3 to this channel is the
+business authorization for that operation, not a request to manually calculate
+hashes, set internal flags or approve the same unchanged operation repeatedly.
+The operator must capture the instruction once with the exact selected master,
+caption/artwork, channel and requested timing; derive the internal release,
+intent and receipts using the existing reviewed runtime. A materially different
+asset, caption, target, timing or previously uncertain effect is a different
+decision. Never manufacture independent rights/editorial evidence or resolve
+historical duplicate uncertainty by assumption.
+
+The current implementation is incomplete: this profile remains disabled and
+the protected channel state is not initialized. The 25 November Yesenin Steel
+Blizzard owner request in [#1036](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7163639718)
+is distinct from the historical Lermontov candidate above; do not apply the
+old media or caption to it. The remaining engineering scope is one canonical
+operator entrypoint, safe protected state initialization/migration, channel-wide
+duplicate and unresolved-effect checks across releases, automatic durable
+intent and result persistence, and no-replay reconciliation. The owner need
+not manipulate those artifacts. A network timeout is a transport diagnosis,
+not a reason to demand the same authorization again. A verified connection
+failure before dispatch can resume the same authorized intent through the
+existing outcome state machine; ambiguous dispatch cannot be blindly repeated.
+
+The generic `prepare --binding` route performs fresh exact-target preflight
+inside preparation for an already authorized release/profile; it replaces
+the separate proof-file creation and handoff, without a second preflight.
+Existing `--target-proof` workflows remain compatible. It is not a publisher,
+does not enable a disabled channel, and is only the first orchestration step.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.

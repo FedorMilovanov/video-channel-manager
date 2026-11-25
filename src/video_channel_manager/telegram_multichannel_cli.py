@@ -36,6 +36,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     GenericPollPayload,
     GenericTargetProof,
     TelegramApiError,
+    preflight_channel,
     send_message_once,
     send_photo_once,
     send_poll_once,
@@ -46,6 +47,8 @@ from video_channel_manager.telegram_publication_freshness import (
     publication_freshness,
     skip_expired_pending_by_freshness,
 )
+
+from video_channel_manager.telegram_target_binding import load_target_binding
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
@@ -67,7 +70,9 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--profile", type=Path, required=True)
     prepare.add_argument("--release", type=Path, required=True)
     prepare.add_argument("--ledger", type=Path, required=True)
-    prepare.add_argument("--target-proof", type=Path, required=True)
+    target_source = prepare.add_mutually_exclusive_group(required=True)
+    target_source.add_argument("--target-proof", type=Path, help="Use an existing fresh target proof.")
+    target_source.add_argument("--binding", type=Path, help="Run exact pinned-target preflight within prepare.")
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     prepare.add_argument("--publication-id")
     prepare.add_argument("--scheduled-canary-authorization", type=Path)
@@ -165,6 +170,30 @@ def _token(profile: TelegramChannelProfile) -> str:
     if not token:
         raise ValueError(f"missing Telegram token in {profile.bot_token_env}")
     return token
+
+
+def _preflight_release_target(
+    profile: TelegramChannelProfile, release: GenericReleaseQueue, binding_path: Path
+) -> GenericTargetProof:
+    """Resolve the pinned release target without a separate proof-file handoff."""
+    _require_runtime_profile(profile, release)
+    binding = load_target_binding(binding_path, profile)
+    if (
+        release.target_binding_sha256 != binding.digest
+        or release.chat_id != binding.chat_id
+        or release.bot_id != binding.bot_id
+        or (release.bot_username or "").casefold() != binding.bot_username.casefold()
+    ):
+        raise ValueError("pinned Telegram binding differs from exact release-bound target")
+    target = preflight_channel(
+        profile,
+        token=_token(profile),
+        expected_chat_id=binding.chat_id,
+        expected_bot_id=binding.bot_id,
+        expected_bot_username=binding.bot_username,
+    )
+    _require_release_target(release, target)
+    return target
 
 
 def _configured_max_publication_lag_minutes() -> int | None:
@@ -403,7 +432,11 @@ def main() -> int:
             expected_publication_id=args.publication_id,
             recover_stale_predecessors=args.recover_stale_predecessors,
         )
-        target = _load_model(args.target_proof, GenericTargetProof)
+        target = (
+            _preflight_release_target(profile, release, args.binding)
+            if args.binding is not None
+            else _load_model(args.target_proof, GenericTargetProof)
+        )
         owner_canary = (
             _read_scheduled_canary_authorization(args.scheduled_canary_authorization)
             if args.scheduled_canary_authorization is not None

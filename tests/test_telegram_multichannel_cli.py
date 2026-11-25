@@ -9,7 +9,7 @@ import pytest
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_cli import _send_exact_payload, main
+from video_channel_manager.telegram_multichannel_cli import _preflight_release_target, _send_exact_payload, main, parser
 from video_channel_manager.telegram_multichannel_outcome import apply_provider_outcome
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, save_release
 from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next
@@ -245,3 +245,83 @@ def test_low_level_initialize_ledger_rejects_unauthorized_candidate() -> None:
 
     with pytest.raises(ValueError, match="authorized immutable release"):
         initialize_ledger(candidate)
+
+
+def test_integrated_preflight_uses_exact_release_binding(monkeypatch) -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    release = _authorized_release()
+    binding = load_target_binding(BINDING_PATH, profile)
+    _, _, _, envelope = _prepared_runtime()
+    calls = []
+
+    def preflight(selected, **kwargs):
+        calls.append((selected, kwargs))
+        return envelope.target
+
+    monkeypatch.setenv(profile.bot_token_env, "offline-test-token")
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.preflight_channel", preflight)
+    assert _preflight_release_target(profile, release, BINDING_PATH) == envelope.target
+    assert calls == [
+        (
+            profile,
+            {
+                "token": "offline-test-token",
+                "expected_chat_id": binding.chat_id,
+                "expected_bot_id": binding.bot_id,
+                "expected_bot_username": binding.bot_username,
+            },
+        )
+    ]
+
+
+@pytest.mark.parametrize("case", ["disabled", "unauthorized", "wrong_digest", "wrong_chat"])
+def test_integrated_preflight_rejects_invalid_authority_before_network(monkeypatch, case: str) -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    release = _authorized_release()
+    if case == "disabled":
+        profile = profile.model_copy(update={"provider_writes_authorized": False})
+    elif case == "unauthorized":
+        release = _candidate_release()
+    elif case == "wrong_digest":
+        release = release.model_copy(update={"target_binding_sha256": "sha256:" + "0" * 64})
+    else:
+        release = release.model_copy(update={"chat_id": -12345})
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("invalid profile or release must not reach the provider")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.preflight_channel", unexpected)
+    with pytest.raises(ValueError, match="write-disabled|not authorized|binding differs"):
+        _preflight_release_target(profile, release, BINDING_PATH)
+
+
+def test_prepare_accepts_one_target_source_without_extra_flags() -> None:
+    args = [
+        "prepare",
+        "--profile",
+        "profile.json",
+        "--release",
+        "release.json",
+        "--ledger",
+        "ledger.json",
+        "--mode",
+        "manual",
+        "--publication-id",
+        "sample-id",
+        "--run-id",
+        "1",
+        "--run-attempt",
+        "1",
+        "--github-sha",
+        GITHUB_SHA,
+        "--github-workflow-sha",
+        WORKFLOW_SHA,
+        "--envelope-output",
+        "envelope.json",
+    ]
+    assert parser().parse_args(args + ["--binding", "binding.json"]).binding == Path("binding.json")
+    assert parser().parse_args(args + ["--target-proof", "proof.json"]).target_proof == Path("proof.json")
+    with pytest.raises(SystemExit):
+        parser().parse_args(args)
+    with pytest.raises(SystemExit):
+        parser().parse_args(args + ["--binding", "binding.json", "--target-proof", "proof.json"])
