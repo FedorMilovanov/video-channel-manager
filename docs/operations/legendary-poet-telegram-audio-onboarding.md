@@ -42,12 +42,147 @@ Independent human listening and editorial/rights review, an exact JPEG and capti
 
 **Transport boundary:** discovery succeeded through the generic Telegram Bot API read-only transport without restarting, logging out or changing MP3Bot's separate Local Bot API runtime. The 4.8 MB audio does not justify changing the working bot server. A fresh exact-target preflight is required immediately before any future send.
 
+### Operator experience and single owner instruction
+
+The owner's explicit instruction to publish an exact MP3 to this channel is the
+business authorization for that operation, not a request to manually calculate
+hashes, set internal flags or approve the same unchanged operation repeatedly.
+The operator must capture the instruction once with the exact selected master,
+caption/artwork, channel and requested timing; derive the internal release,
+intent and receipts using the existing reviewed runtime. A materially different
+asset, caption, target, timing or previously uncertain effect is a different
+decision. Never manufacture independent rights/editorial evidence or resolve
+historical duplicate uncertainty by assumption.
+
+The current implementation is incomplete: this profile remains disabled and
+the protected channel state is not initialized. The 25 November Yesenin Steel
+Blizzard owner request in [#1036](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7163639718)
+is distinct from the historical Lermontov candidate above; do not apply the
+old media or caption to it. The remaining operational scope is safe protected state initialization
+from reviewed channel history and exact release acceptance; the canonical
+entrypoint and remote state transaction/recovery are described below. The owner need
+not manipulate those artifacts. A network timeout is a transport diagnosis,
+not a reason to demand the same authorization again. A verified connection
+failure before dispatch can resume the same authorized intent through the
+existing outcome state machine; ambiguous dispatch cannot be blindly repeated.
+
+The generic `prepare --binding` route performs fresh exact-target preflight
+inside preparation for an already authorized release/profile; it replaces
+the separate proof-file creation and handoff, without a second preflight.
+Existing `--target-proof` workflows remain compatible. It is not a publisher,
+does not enable a disabled channel, and is only the first orchestration step.
+
+The existing `send-once` command consumes the exact persisted intent using an
+exclusive claim beside the canonical resolved ledger before provider dispatch.
+The claim is retained across process interruption, and the outcome is written
+atomically. A second invocation with a different output path cannot replay
+that intent on the same ledger. A claim without an outcome requires read-only
+reconciliation; never delete it to force a retry. This local protection does
+not establish cross-host or cross-release duplicate coverage and does not
+replace the protected channel state, serialization or exact provider receipt.
+
+New outcomes carry the exact dispatch intent ID. The canonical outcome is
+saved beside its claim before exporting the workflow receipt. If export fails,
+`recover-outcome` applies the saved result to the matching unresolved ledger
+without another provider call; a missing result remains an unresolved effect.
+Older archived outcomes can still be read by the existing schema, but cannot
+mutate a ledger without an exact matching intent ID, even on a separate job
+or host with no local claim. A local claimed attempt additionally requires
+the exact canonical result. Historical unbound outcomes require independent
+attempt-bound reconciliation; never fill in an intent ID from a newer attempt.
+
+The read-only `audit-audio-history` primitive compares the exact MP3 SHA-256
+across supplied authorized releases and their matching ledgers. A verified or
+possibly dispatched historical match is surfaced even when the release ID or
+caption changes. It rejects foreign channels and mismatched or repeated
+ledgers. An empty result covers only the supplied release ledgers, not
+unobserved provider history, retagged/reencoded audio or concurrent writers.
+It is an internal building block for protected channel-state orchestration,
+not another owner approval or standalone publication authorization.
+
+### Canonical audio channel state
+
+The generic audio prepare and send-once CLI paths now derive their channel-wide
+history from the canonical checkout layout, not from a caller-selected list:
+
+```text
+content/telegram/<project_key>/audio-releases/<release_id>/release.json
+content/telegram/<project_key>/audio-releases/<release_id>/ledger.json
+```
+
+The same project directory must contain a tracked
+`audio-history-baseline.json` (schema
+`video-channel-manager.telegram-audio-history-baseline`, version 1).
+It records the exact project/profile/channel/chat, cutover and review UTC
+timestamps, reviewer, SHA-256 of retained source evidence, and known
+pre-cutover audio posts' numeric message IDs, original media SHA-256 and
+publication timestamps. Prefer complete coverage where obtainable. When
+unrelated old posts are inaccessible, use explicit `coverage=candidate_specific`
+with a truthful `coverage_note` and `assessed_media_sha256` entries only for
+exact candidates supported by retained evidence (for example verified source
+creation after the old publication period plus a candidate-specific search).
+This is not a claim of complete historical absence. An unassessed candidate,
+known matching digest, missing baseline or foreign channel still blocks.
+On the cutover day, partial history must also document `complete_since_utc`
+at or before the channel-local day start to preserve the daily cap; after
+that day, managed receipts are sufficient for today's cap. The operator
+maintains this evidence internally, without asking the owner to confirm
+technical digests or inaccessible unrelated archive posts. From cutover
+onward the protected state must be the sole writer. Never fabricate a
+review, proof of novelty, or complete inventory. The runtime validates
+the bound assessment and known receipts, not the truth of external evidence.
+
+All existing audio releases must be retained in the same protected state
+branch. The gate rejects known duplicate bytes or publication IDs, other
+unresolved audio dispatches (even different bytes), and the channel-wide
+daily verified limit. The current exact persisted intent is allowed at the
+send stage, not any other attempt. Missing/mismatched state fails closed.
+No new owner flags are needed. Audio send-once additionally requires the
+canonical repository origin and a clean, complete checkout at the exact
+current remote channel state. It persists an exclusive claim for the already
+committed intent using a unique non-forced Git commit and verifies remote
+readback before the existing sender can run. A stale clone, losing push,
+existing claim or uncertain Git result stops before dispatch. This does not
+prove that historical Telegram posts outside the ledgers are covered.
+Audio prepare now commits the exact intent envelope and ledger together
+before exporting the envelope. Audio send-once requires that tracked
+envelope and commits the result and resulting ledger together before
+exporting a receipt. A failed post-dispatch Git update retains the local
+result and remote claim. Use the existing `recover-outcome` with the same
+profile, release, ledger and envelope on that checkout. It validates the
+committed claim and immutable intent, reconstructs the exact ledger
+transition, and finishes only the corresponding two-path outcome commit
+or recognizes an already accepted commit. No Telegram call or write-gate
+activation is required for recovery. A diverged remote, missing local
+result or unrelated checkout changes must be reconciled independently,
+never replayed. Generic apply-outcome is not an alternate audio writer.
+After the protected branch has been initialized with reviewed history, the
+provider-free `register-audio` command takes the exact authorized release,
+profile, pinned binding and clean state checkout. It commits the immutable
+release and initial ledger together with non-forced push/readback; repeat
+registration of identical content is a no-op. An unreviewed release,
+missing baseline, foreign binding or changed content under an existing
+release ID is rejected. A partially inventoried baseline can register a
+reviewed release; the candidate-specific history assessment is required
+at dispatch, not as an extra registration barrier. Registration does not enable provider writes and
+does not create an absent state branch.
+
+The single manual `publish-audio` command reuses the existing prepare and
+send-once paths, performs pinned preflight, and records remote intent,
+claim and result in order. It accepts the exact reviewed publication ID
+and existing release/state paths; workflow provenance is derived from
+GitHub Actions environment variables unless supplied explicitly. Its
+receipt output must be a new file outside the state checkout. A repeat
+against completed state does not send. Protected state initialization and
+history reconciliation remain required.
+Do not use another writer or delete a claim to force a replay.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.
 2. Freeze one exact `GenericAudioPayload` with unmodified MP3 SHA-256/bytes, proven thumbnail, title/performer/duration, verified HTML caption and UTF-16 entities; do not claim the site URL works until HTTP 200 is confirmed.
 3. Separately review/authorize the immutable `GenericReleaseQueue`, initialize the dedicated state ledger and obtain an operation-specific execution gate. This discovery itself is **not** authority to post.
-4. Use only the current-main `telegram_multichannel_cli` workflow `initialize-ledger → prepare → verify-intent → send-once → apply-outcome`, recording durable intent before `sendAudio`. A possible remote effect `may_exist` blocks any blind repeat.
+4. After authorized protected state initialization, use the current-main `telegram_multichannel_cli publish-audio` manual path for one exact audio publication. It performs prepare and send-once internally; never apply the audio outcome a second time. A possible remote effect `may_exist` blocks any blind repeat.
 5. Verify the exact returned numeric chat ID, actual MP3, caption/entities, positive message ID and permalink `https://t.me/thelegendarypoet/<message_id>`; store the immutable receipt before reporting success.
 
 Until that exact verified receipt exists, the state is **target binding verified, audio publication not dispatched**.
