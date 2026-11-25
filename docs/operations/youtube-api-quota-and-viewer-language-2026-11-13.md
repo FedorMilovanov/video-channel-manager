@@ -5,6 +5,14 @@
 **Related owning tracker:** [Legendary Poet multilingual rollout #903](https://github.com/FedorMilovanov/video-channel-manager/issues/903).  
 **Do not substitute** for [project identities](project-identity-registry.md), the current operating contract, or the separate project `lord-god-strength`.
 
+> **Current-status correction, 25 November 2026:** Google approved the extension for
+> Cloud project 1067074369047, and the owner Console shows 110000 shared units/day
+> (plus separate search/upload limits). The pending-grant statements below are
+> historical November 13 evidence, not an active quota hold. See the
+> [current shared quota runbook](youtube-shared-project-quota.md#current-verified-grant--25-november-2026-moscow-date)
+> and [Console evidence](https://github.com/FedorMilovanov/video-channel-manager/issues/795#issuecomment-7148907683).
+> Actual remaining and local daily allocation still require current evidence.
+
 ## 1. API compliance and quota — verified versus pending
 
 | Item | Evidence and state | Action |
@@ -72,7 +80,7 @@ This quota form concerned a combined API client used by multiple authorized chan
 | Gate | Minimum evidence for closure | Owner |
 | --- | --- | --- |
 | Quota application receipt | Official confirmation page **and** Google acknowledgment email | **Closed** 2026-11-13 |
-| Quota increase granted | Actual Google response **and** verified current quota/project limit | **Open** |
+| Quota increase granted | Actual Google response **and** verified current quota/project limit | **Closed 25 November 2026**; see current shared quota runbook. |
 | Original-language viewer complaint | Confirmed viewer preferred-language settings and same-ID VPN on/off comparison; distinct from owner API original/locale readback | **Explained; viewer comparison pending** |
 | Four suspicious `en-US` audio annotations and two missing values | Verified spoken/produced original audio + exact current provider state; only then decide whether to update | **Separate, open; no mass fix** |
 | Multilingual content completion | Full fresh owner inventory and per-video locale/caption acceptance with explicit rights/HOLD exceptions | **Open (#903)** |
@@ -137,7 +145,7 @@ Do not send a reply claiming a completed demo until the file is recorded, review
 - Main technical blocker previously observed: `403 quotaExceeded` on a subsequent `videos.list`; no blind retries.
 
 
-### 5.5 Reviewer screencast delivered — 2026-11-13 (latest checkpoint)
+### 5.5 Reviewer screencast delivered — 2026-11-13 (historical checkpoint)
 
 **The Google-specified additional screencast was recorded, published, directly downloaded by an unauthenticated HTTP client (status 200), and supplied by a reply in the existing Google API Services email thread on 13 November 2026.** This fulfills the owner's action of *sending evidence*, **not** Google review approval or acceptance of its sufficiency.
 
@@ -150,5 +158,5 @@ Do not send a reply claiming a completed demo until the file is recorded, review
 - **Privacy:** no access/refresh tokens, passwords, login codes, account cookies or secret OAuth callback URLs were included. A rejected first attempt recorded the unrelated desktop; that wrong MP4 and its associated preview frames were **deleted locally and never uploaded/shared**.
 - **Local file:** `%USERPROFILE%\Downloads\YouTube_API_Quota_Evidence_20261113\Video_Channel_Manager_Real_CLI_YouTube_API_Reviewer_20261113.mp4`; step log and SHA-checked evidence remain in the same local evidence directory (not Git).
 
-**Next owner-independent hinge:** await Google's explicit assessment of **screencast adequacy and quota increase**. An eventual reviewer request for a new live provider-writing segment would require a separate safe quota window, exact target and authorized write gate; the submitted read-only/historical recording cannot by itself prove new API writes in a quota-exhausted window. Do not state approval until Google confirms it and the granted project quota is verified. Do not re-send the same letter without a reason.
+**Historical next hinge (superseded 25 November):** await Google's explicit assessment of **screencast adequacy and quota increase**. An eventual reviewer request for a new live provider-writing segment would require a separate safe quota window, exact target and authorized write gate; the submitted read-only/historical recording cannot by itself prove new API writes in a quota-exhausted window. Do not state approval until Google confirms it and the granted project quota is verified. Do not re-send the same letter without a reason.
 
