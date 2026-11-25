@@ -101,6 +101,7 @@ def _failure(
             "schema_version": 1,
             "publication_id": envelope.publication_id,
             "provider_payload_sha256": envelope.provider_payload_sha256,
+            "intent_id": envelope.intent_id,
             "provider_effect": effect,
             "retryable": retryable,
             "error": "provider rejected test request",
@@ -171,9 +172,15 @@ def test_verified_provider_outcome_becomes_published_with_exact_receipt() -> Non
         schema_version=1,
         publication_id=envelope.publication_id,
         provider_payload_sha256=envelope.provider_payload_sha256,
+        intent_id=envelope.intent_id,
         provider_effect="verified",
         receipt=receipt,
     )
+    before = ledger.model_dump_json()
+    legacy = outcome.model_copy(update={"intent_id": None})
+    with pytest.raises(ValueError, match="no intent binding"):
+        apply_provider_outcome(ledger, envelope, legacy)
+    assert ledger.model_dump_json() == before
     entry = apply_provider_outcome(ledger, envelope, outcome)
 
     assert entry.state == "published"
@@ -235,3 +242,32 @@ def test_outcome_from_previous_attempt_cannot_resolve_new_intent() -> None:
     with pytest.raises(ValueError, match="outcome intent differs"):
         apply_provider_outcome(ledger, prepared.envelope, prior)
     assert ledger.entries[first.publication_id].provider_effect == "may_exist"
+
+
+@pytest.mark.parametrize("effect", ["not_dispatched", "confirmed_absent", "may_exist"])
+def test_legacy_outcome_cannot_mutate_new_attempt(effect: str) -> None:
+    profile, _, release, ledger, first = _runtime()
+    prior = _failure(first, effect="confirmed_absent", retryable=True)
+    apply_provider_outcome(ledger, first, prior)
+    prepared = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="201",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="manual",
+        target=first.target,
+        expected_publication_id=first.publication_id,
+        now=first.prepared_at_utc,
+    )
+    assert prepared.envelope is not None
+    assert prepared.envelope.intent_id != first.intent_id
+    payload = _failure(first, effect=effect, retryable=effect != "may_exist").model_dump(mode="json")
+    del payload["intent_id"]
+    legacy = GenericProviderOutcome.model_validate(payload)
+    before = ledger.model_dump_json()
+    with pytest.raises(ValueError, match="no intent binding"):
+        apply_provider_outcome(ledger, prepared.envelope, legacy)
+    assert ledger.model_dump_json() == before

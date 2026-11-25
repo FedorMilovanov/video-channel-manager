@@ -86,9 +86,11 @@ New outcomes carry the exact dispatch intent ID. The canonical outcome is
 saved beside its claim before exporting the workflow receipt. If export fails,
 `recover-outcome` applies the saved result to the matching unresolved ledger
 without another provider call; a missing result remains an unresolved effect.
-Older archived outcomes can still be read by the existing schema, but a local
-claimed attempt requires the exact canonical result. This does not make
-legacy unbound outcomes safe to replay across attempts or machines.
+Older archived outcomes can still be read by the existing schema, but cannot
+mutate a ledger without an exact matching intent ID, even on a separate job
+or host with no local claim. A local claimed attempt additionally requires
+the exact canonical result. Historical unbound outcomes require independent
+attempt-bound reconciliation; never fill in an intent ID from a newer attempt.
 
 The read-only `audit-audio-history` primitive compares the exact MP3 SHA-256
 across supplied authorized releases and their matching ledgers. A verified or

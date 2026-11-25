@@ -85,7 +85,9 @@ def apply_provider_outcome(
     envelope: GenericDispatchEnvelope,
     outcome: GenericProviderOutcome,
 ) -> GenericLedgerEntry:
-    if outcome.intent_id is not None and outcome.intent_id != envelope.intent_id:
+    if outcome.intent_id is None:
+        raise ValueError("legacy provider outcome has no intent binding; reconcile before applying")
+    if outcome.intent_id != envelope.intent_id:
         raise ValueError("provider outcome intent differs from dispatch")
     if outcome.publication_id != envelope.publication_id:
         raise ValueError("provider outcome publication differs from dispatch")

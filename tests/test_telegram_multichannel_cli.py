@@ -441,3 +441,56 @@ def test_recover_local_outcome_after_export_failure(monkeypatch, tmp_path: Path)
     assert entry.intent_id is None
     with pytest.raises(ValueError, match="conservative dispatching state"):
         main()
+
+
+@pytest.mark.parametrize("bound", [False, True])
+def test_apply_outcome_split_job_requires_intent_binding(monkeypatch, tmp_path: Path, bound: bool) -> None:
+    _, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    release_path = tmp_path / "release.json"
+    envelope_path = tmp_path / "envelope.json"
+    outcome_path = tmp_path / "outcome.json"
+    save_ledger(ledger_path, ledger)
+    save_release(release_path, release)
+    envelope_path.write_text(envelope.model_dump_json(), encoding="utf-8")
+    outcome = GenericProviderOutcome(
+        schema_name="video-channel-manager.telegram-generic-provider-outcome",
+        schema_version=1,
+        publication_id=envelope.publication_id,
+        provider_payload_sha256=envelope.provider_payload_sha256,
+        intent_id=envelope.intent_id if bound else None,
+        provider_effect="not_dispatched",
+        retryable=True,
+        error="offline connection failure",
+    )
+    outcome_path.write_text(outcome.model_dump_json(exclude_none=True), encoding="utf-8")
+    before = ledger_path.read_bytes()
+    assert not (tmp_path / ".ledger.json.dispatch-claims").exists()
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("applying a receipt must never invoke the sender")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", unexpected)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram_multichannel_cli",
+            "apply-outcome",
+            "--release",
+            str(release_path),
+            "--ledger",
+            str(ledger_path),
+            "--envelope",
+            str(envelope_path),
+            "--outcome",
+            str(outcome_path),
+        ],
+    )
+    if not bound:
+        with pytest.raises(ValueError, match="no intent binding"):
+            main()
+        assert ledger_path.read_bytes() == before
+    else:
+        assert main() == 0
+        assert load_ledger(ledger_path, release).entries[envelope.publication_id].state == "pending"
