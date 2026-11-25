@@ -135,8 +135,14 @@ or recognizes an already accepted commit. No Telegram call or write-gate
 activation is required for recovery. A diverged remote, missing local
 result or unrelated checkout changes must be reconciled independently,
 never replayed. Generic apply-outcome is not an alternate audio writer.
-Protected state initialization, history reconciliation and the single
-operator entrypoint remain required.
+The single manual `publish-audio` command reuses the existing prepare and
+send-once paths, performs pinned preflight, and records remote intent,
+claim and result in order. It accepts the exact reviewed publication ID
+and existing release/state paths; workflow provenance is derived from
+GitHub Actions environment variables unless supplied explicitly. Its
+receipt output must be a new file outside the state checkout. A repeat
+against completed state does not send. Protected state initialization and
+history reconciliation remain required.
 Do not use another writer or delete a claim to force a replay.
 
 ### Required checks before the first audio post
@@ -144,7 +150,7 @@ Do not use another writer or delete a claim to force a replay.
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.
 2. Freeze one exact `GenericAudioPayload` with unmodified MP3 SHA-256/bytes, proven thumbnail, title/performer/duration, verified HTML caption and UTF-16 entities; do not claim the site URL works until HTTP 200 is confirmed.
 3. Separately review/authorize the immutable `GenericReleaseQueue`, initialize the dedicated state ledger and obtain an operation-specific execution gate. This discovery itself is **not** authority to post.
-4. Use only the current-main `telegram_multichannel_cli` workflow `initialize-ledger → prepare → verify-intent → send-once` for audio. Prepare and send-once persist remote intent and result respectively; never apply the audio outcome a second time. A possible remote effect `may_exist` blocks any blind repeat.
+4. After authorized protected state initialization, use the current-main `telegram_multichannel_cli publish-audio` manual path for one exact audio publication. It performs prepare and send-once internally; never apply the audio outcome a second time. A possible remote effect `may_exist` blocks any blind repeat.
 5. Verify the exact returned numeric chat ID, actual MP3, caption/entities, positive message ID and permalink `https://t.me/thelegendarypoet/<message_id>`; store the immutable receipt before reporting success.
 
 Until that exact verified receipt exists, the state is **target binding verified, audio publication not dispatched**.

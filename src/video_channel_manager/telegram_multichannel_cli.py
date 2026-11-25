@@ -95,6 +95,30 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--github-workflow-sha", required=True)
     prepare.add_argument("--envelope-output", type=Path, required=True)
 
+    publish = sub.add_parser("publish-audio", help="Prepare and publish one exact authorized audio item.")
+    publish.add_argument("--profile", type=Path, required=True)
+    publish.add_argument("--release", type=Path, required=True)
+    publish.add_argument("--ledger", type=Path, required=True)
+    publish.add_argument("--binding", type=Path, required=True)
+    publish.add_argument("--publication-id", required=True)
+    publish.add_argument("--outcome-output", type=Path, required=True)
+    for flag, env in (
+        ("--run-id", "GITHUB_RUN_ID"),
+        ("--run-attempt", "GITHUB_RUN_ATTEMPT"),
+        ("--github-sha", "GITHUB_SHA"),
+        ("--github-workflow-sha", "GITHUB_WORKFLOW_SHA"),
+    ):
+        value = os.environ.get(env)
+        publish.add_argument(flag, default=value, required=not value)
+    publish.set_defaults(
+        mode="manual",
+        target_proof=None,
+        scheduled_canary_authorization=None,
+        verified_manual_canary_release=None,
+        verified_manual_canary_ledger=None,
+        recover_stale_predecessors=False,
+    )
+
     verify = sub.add_parser("verify-intent")
     verify.add_argument("--release", type=Path, required=True)
     verify.add_argument("--ledger", type=Path, required=True)
@@ -745,7 +769,7 @@ def main() -> int:
         print(json.dumps({"valid": True, "states": counts, "release_digest": release.digest}, ensure_ascii=False))
         return 0
 
-    if args.command == "prepare":
+    if args.command in {"prepare", "publish-audio"}:
         release = load_release(args.release)
         require_execution_not_held(release)
         profile = load_channel_profile(args.profile)
@@ -757,10 +781,22 @@ def main() -> int:
             expected_publication_id=args.publication_id,
             recover_stale_predecessors=args.recover_stale_predecessors,
         )
-        next_item, _ = strict_next_item(release, ledger)
+        next_item, reason = strict_next_item(release, ledger)
+        if args.command == "publish-audio":
+            _require_runtime_profile(profile, release)
+            if next_item is None:
+                print(json.dumps({"prepared": False, "reason": reason}, ensure_ascii=False))
+                return 3
+            if next_item.publication_id != args.publication_id or not isinstance(
+                next_item.payload, GenericAudioPayload
+            ):
+                raise ValueError("publish-audio requires the exact strict-next audio publication")
         audio_state_root = None
         if next_item is not None and isinstance(next_item.payload, GenericAudioPayload):
             audio_state_root = _require_current_audio_state(profile, args.ledger.resolve())
+            handoff = args.outcome_output if args.command == "publish-audio" else args.envelope_output
+            if handoff.exists() or handoff.resolve().is_relative_to(audio_state_root):
+                raise ValueError("audio handoff must be a new file outside the durable state checkout")
             require_audio_channel_admission(release, args.ledger, next_item.publication_id)
         target = (
             _preflight_release_target(profile, release, args.binding)
@@ -801,6 +837,21 @@ def main() -> int:
             intent_path = _audio_intent_path(args.ledger, prepared.envelope)
             _write_model(intent_path, prepared.envelope)
             _persist_remote_audio_state(audio_state_root, profile, "intent", args.ledger.resolve(), intent_path)
+        if args.command == "publish-audio":
+            outcome = _send_persisted_once(profile, release, args.ledger, prepared.envelope, args.outcome_output)
+            print(
+                json.dumps(
+                    {
+                        "publication_id": outcome.publication_id,
+                        "intent_id": prepared.envelope.intent_id,
+                        "provider_effect": outcome.provider_effect,
+                        "message_url": outcome.receipt.message_url if outcome.receipt else None,
+                        "outcome": str(args.outcome_output),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 0 if outcome.provider_effect == "verified" else 4
         _write_model(args.envelope_output, prepared.envelope)
         print(
             json.dumps(

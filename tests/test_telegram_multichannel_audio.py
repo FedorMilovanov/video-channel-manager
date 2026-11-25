@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import subprocess
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ from video_channel_manager.telegram_multichannel_cli import (
     _require_current_audio_state,
     _state_git,
     _send_persisted_once,
+    main,
 )
 from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
@@ -613,3 +615,96 @@ def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_a
     with pytest.raises(ValueError, match="conservative dispatching state"):
         _send_persisted_once(profile, release, fresh / relative, envelope, tmp_path / "fresh-outcome.json")
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize("scenario", ["verified", "wrong_id", "disabled", "inside_state"])
+def test_publish_audio_command_uses_single_durable_executor(tmp_path, monkeypatch, scenario):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile(scenario != "disabled")
+    payload = _payload(profile, audio)
+    release = _history_release(profile, payload, "milovi-command-audio")
+    remote = tmp_path / "remote.git"
+    remote.mkdir()
+    _git(remote, "init", "--bare")
+    state = tmp_path / "state"
+    state.mkdir()
+    _git(state, "init", "-b", profile.state_branch)
+    _git(state, "config", "user.name", "test")
+    _git(state, "config", "user.email", "test@example.invalid")
+    path = _save_audio_state(
+        state / "content/telegram" / profile.project_key / "audio-releases",
+        release,
+        initialize_ledger(release),
+    )
+    _git(state, "add", ".")
+    _git(state, "commit", "-m", "initialize authorized release")
+    _git(state, "remote", "add", "origin", str(remote))
+    _git(state, "push", "origin", f"HEAD:refs/heads/{profile.state_branch}")
+    base = _git(state, "rev-parse", "HEAD")
+    profile_path = tmp_path / "profile.json"
+    profile_path.write_text(profile.model_dump_json(), encoding="utf-8")
+    binding = tmp_path / "binding.json"
+    calls = []
+    checks = []
+
+    def preflight(profile_arg, release_arg, binding_arg):
+        checks.append(binding_arg)
+        assert profile_arg == profile and release_arg == release
+        return _target(profile)
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, request=request, json=_result(payload))
+
+    def send(profile_arg, target, payload_arg, *, token, now=None):
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            return send_audio_once(profile_arg, target, payload_arg, token=token, client=client, now=NOW)
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._require_state_origin", lambda root: None)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._preflight_release_target", preflight)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.send_audio_once", send)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_state.utc_now", lambda: NOW)
+    monkeypatch.setenv(profile.bot_token_env, "offline-test")
+    monkeypatch.delenv("MAX_PUBLICATION_LAG_MINUTES", raising=False)
+    for key, value in (
+        ("GITHUB_RUN_ID", "123"),
+        ("GITHUB_RUN_ATTEMPT", "1"),
+        ("GITHUB_SHA", "1" * 40),
+        ("GITHUB_WORKFLOW_SHA", "2" * 40),
+    ):
+        monkeypatch.setenv(key, value)
+    output = state / "outcome.json" if scenario == "inside_state" else tmp_path / "outcome.json"
+    args = [
+        "telegram_multichannel_cli",
+        "publish-audio",
+        "--profile",
+        str(profile_path),
+        "--release",
+        str(path.parent / "release.json"),
+        "--ledger",
+        str(path),
+        "--binding",
+        str(binding),
+        "--publication-id",
+        "wrong-publication" if scenario == "wrong_id" else payload.publication_id,
+        "--outcome-output",
+        str(output),
+    ]
+    monkeypatch.setattr(sys, "argv", args)
+    if scenario != "verified":
+        with pytest.raises(ValueError, match="exact strict-next|write-disabled|outside the durable"):
+            main()
+        assert not checks and not calls and not output.exists()
+        assert _git(state, "rev-parse", "HEAD") == base
+        return
+
+    assert main() == 0
+    assert len(checks) == len(calls) == 1
+    result = GenericProviderOutcome.model_validate_json(output.read_text(encoding="utf-8"))
+    assert result.provider_effect == "verified"
+    assert result.receipt is not None and result.receipt.message_id == 891
+    assert _git(state, "rev-list", "--count", f"{base}..HEAD") == "3"
+    assert _git(state, "rev-parse", "HEAD") == _git(remote, "rev-parse", profile.state_branch)
+    assert load_ledger(path, release).entries[payload.publication_id].state == "published"
+    assert main() == 3
+    assert len(checks) == len(calls) == 1
