@@ -296,8 +296,12 @@ def _safe_error(exc: Exception) -> str:
 
 def _provider_effect(exc: TelegramApiError) -> GenericSendProviderEffect:
     effect = exc.provider_effect
-    if effect in {"not_dispatched", "confirmed_absent", "may_exist", "verified"}:
-        return effect
+    if effect == "not_dispatched":
+        return "not_dispatched"
+    if effect == "confirmed_absent":
+        return "confirmed_absent"
+    if effect == "verified":
+        return "verified"
     return "may_exist"
 
 
@@ -512,8 +516,8 @@ def _require_audio_state_checkout(profile: TelegramChannelProfile, root: Path, *
             path = directory / name
             if path.is_symlink() or not path.is_file() or path.relative_to(root).as_posix() not in paths:
                 raise ValueError("audio history must contain only tracked release and ledger pairs")
-    for path in paths:
-        if not (root / path).is_file() or (root / path).is_symlink():
+    for relative_path in paths:
+        if not (root / relative_path).is_file() or (root / relative_path).is_symlink():
             raise ValueError("audio state must contain the complete tracked channel history")
 
 

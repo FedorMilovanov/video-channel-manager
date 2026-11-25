@@ -114,17 +114,23 @@ The same project directory must contain a tracked
 `audio-history-baseline.json` (schema
 `video-channel-manager.telegram-audio-history-baseline`, version 1).
 It records the exact project/profile/channel/chat, cutover and review UTC
-timestamps, reviewer, SHA-256 of retained complete source evidence, and
-each pre-cutover audio post's numeric message ID, original media SHA-256
-and publication timestamp. Empty inventory is valid only after documented
-complete review, never because an embed is hidden or a Bot API history
-endpoint is unavailable. The operator supplies this evidence once at
-cutover, not an extra owner confirmation for every release. From cutover
-onward the protected state must be the sole writer. The runtime blocks
-missing/untracked or foreign baseline, matches against historical hashes,
-counts historical posts in the daily cap, and rejects overlap with managed
-receipts. It cannot itself attest to the truth or completeness of the
-review; no synthetic baseline may be committed.
+timestamps, reviewer, SHA-256 of retained source evidence, and known
+pre-cutover audio posts' numeric message IDs, original media SHA-256 and
+publication timestamps. Prefer complete coverage where obtainable. When
+unrelated old posts are inaccessible, use explicit `coverage=candidate_specific`
+with a truthful `coverage_note` and `assessed_media_sha256` entries only for
+exact candidates supported by retained evidence (for example verified source
+creation after the old publication period plus a candidate-specific search).
+This is not a claim of complete historical absence. An unassessed candidate,
+known matching digest, missing baseline or foreign channel still blocks.
+On the cutover day, partial history must also document `complete_since_utc`
+at or before the channel-local day start to preserve the daily cap; after
+that day, managed receipts are sufficient for today's cap. The operator
+maintains this evidence internally, without asking the owner to confirm
+technical digests or inaccessible unrelated archive posts. From cutover
+onward the protected state must be the sole writer. Never fabricate a
+review, proof of novelty, or complete inventory. The runtime validates
+the bound assessment and known receipts, not the truth of external evidence.
 
 All existing audio releases must be retained in the same protected state
 branch. The gate rejects known duplicate bytes or publication IDs, other
@@ -156,7 +162,9 @@ profile, pinned binding and clean state checkout. It commits the immutable
 release and initial ledger together with non-forced push/readback; repeat
 registration of identical content is a no-op. An unreviewed release,
 missing baseline, foreign binding or changed content under an existing
-release ID is rejected. Registration does not enable provider writes and
+release ID is rejected. A partially inventoried baseline can register a
+reviewed release; the candidate-specific history assessment is required
+at dispatch, not as an extra registration barrier. Registration does not enable provider writes and
 does not create an absent state branch.
 
 The single manual `publish-audio` command reuses the existing prepare and

@@ -441,6 +441,12 @@ class AudioHistoryBaseline(BaseModel):
     reviewed_by: str = Field(min_length=1, max_length=200)
     source_evidence_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     posts: tuple[HistoricalAudioPost, ...]
+    # Legacy v1 baselines claimed complete history. New incomplete inventories
+    # must state the gap and bind evidence to each exact assessed media digest.
+    coverage: Literal["complete", "candidate_specific"] = "complete"
+    coverage_note: str | None = Field(default=None, min_length=1, max_length=2000)
+    assessed_media_sha256: tuple[str, ...] = ()
+    complete_since_utc: datetime | None = None
 
     @model_validator(mode="after")
     def validate_inventory(self) -> "AudioHistoryBaseline":
@@ -455,6 +461,19 @@ class AudioHistoryBaseline(BaseModel):
             post.published_at_utc.utcoffset() is None or post.published_at_utc > self.cutover_utc for post in self.posts
         ):
             raise ValueError("historical audio must be dated at or before cutover")
+        if self.coverage == "candidate_specific":
+            if not self.coverage_note or not self.coverage_note.strip():
+                raise ValueError("partial audio history requires a coverage explanation")
+        elif self.assessed_media_sha256 or self.complete_since_utc is not None:
+            raise ValueError("complete audio history must not include partial-coverage fields")
+        if len(set(self.assessed_media_sha256)) != len(self.assessed_media_sha256) or any(
+            re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None for digest in self.assessed_media_sha256
+        ):
+            raise ValueError("candidate history assessment requires unique exact media digests")
+        if self.complete_since_utc is not None and (
+            self.complete_since_utc.utcoffset() is None or self.complete_since_utc > self.cutover_utc
+        ):
+            raise ValueError("recent audio history coverage must begin at or before cutover")
         return self
 
 
@@ -515,6 +534,17 @@ def require_audio_channel_admission(
     baseline = load_audio_history_baseline(release, ledger_path, now=current)
     if any(post.media_sha256 == item.payload.media_sha256 for post in baseline.posts):
         raise ValueError("audio already published in pre-cutover channel history")
+    if baseline.coverage == "candidate_specific":
+        if item.payload.media_sha256 not in baseline.assessed_media_sha256:
+            raise ValueError("exact audio candidate is not covered by the reviewed history assessment")
+        # Once the managed writer owns the channel, older inaccessible posts
+        # cannot affect today's publication cap. On the cutover day, however,
+        # the pre-cutover part of that day still needs reliable coverage.
+        day_start = current.astimezone(ZoneInfo(release.timezone)).replace(hour=0, minute=0, second=0, microsecond=0)
+        if baseline.cutover_utc >= day_start and (
+            baseline.complete_since_utc is None or baseline.complete_since_utc > day_start
+        ):
+            raise ValueError("pre-cutover history does not cover today's audio publication limit")
 
     history: list[tuple[GenericReleaseQueue, GenericPublicationLedger]] = []
     for directory in sorted(channel_dir.iterdir()):

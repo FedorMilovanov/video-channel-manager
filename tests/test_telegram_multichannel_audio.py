@@ -856,3 +856,54 @@ def test_register_audio_release_without_provider_access(tmp_path, monkeypatch, s
     head = _git(state, "rev-parse", "HEAD")
     assert _register_audio_release(profile, release, binding_path, state) == (path, False)
     assert _git(state, "rev-parse", "HEAD") == head
+
+
+@pytest.mark.parametrize("scenario", ["assessed", "unassessed", "known_duplicate", "cutover_gap", "cutover_covered"])
+def test_partial_history_is_exact_candidate_scoped(tmp_path, monkeypatch, scenario):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    release = _history_release(profile, payload, "milovi-candidate-history")
+    path = _save_audio_state(tmp_path / profile.project_key / "audio-releases", release, initialize_ledger(release))
+    baseline_path = audio_history_baseline_path(path)
+    original = AudioHistoryBaseline.model_validate_json(baseline_path.read_text(encoding="utf-8"))
+    same_day = scenario in {"cutover_gap", "cutover_covered"}
+    updates = {
+        "coverage": "candidate_specific",
+        "coverage_note": "Older hidden posts not inventoried; retained evidence covers exact candidate only.",
+        "assessed_media_sha256": () if scenario == "unassessed" else (payload.media_sha256,),
+        "cutover_utc": NOW - (timedelta(hours=1) if same_day else timedelta(days=1)),
+        "reviewed_at_utc": NOW,
+        "complete_since_utc": NOW - timedelta(days=1) if scenario == "cutover_covered" else None,
+        "posts": (
+            HistoricalAudioPost(
+                message_id=123,
+                media_sha256=payload.media_sha256,
+                published_at_utc=NOW - timedelta(days=2),
+            ),
+        )
+        if scenario == "known_duplicate"
+        else (),
+    }
+    baseline = AudioHistoryBaseline.model_validate({**original.model_dump(), **updates})
+    baseline_path.write_text(baseline.model_dump_json(), encoding="utf-8")
+    failures = {
+        "unassessed": "candidate is not covered",
+        "known_duplicate": "already published in pre-cutover",
+        "cutover_gap": "today's audio publication limit",
+    }
+    if scenario in failures:
+        with pytest.raises(ValueError, match=failures[scenario]):
+            require_audio_channel_admission(release, path, payload.publication_id, now=NOW)
+    else:
+        require_audio_channel_admission(release, path, payload.publication_id, now=NOW)
+
+
+def test_partial_history_cannot_claim_coverage_without_explanation(tmp_path, monkeypatch):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    release = _history_release(profile, _payload(profile, audio), "milovi-partial-invalid")
+    path = _save_audio_state(tmp_path / profile.project_key / "audio-releases", release, initialize_ledger(release))
+    original = AudioHistoryBaseline.model_validate_json(audio_history_baseline_path(path).read_text(encoding="utf-8"))
+    with pytest.raises(ValueError, match="coverage explanation"):
+        AudioHistoryBaseline.model_validate({**original.model_dump(), "coverage": "candidate_specific"})
