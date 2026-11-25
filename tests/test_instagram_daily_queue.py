@@ -164,9 +164,7 @@ def test_daily_selection_requires_existing_ledger_and_exact_account(tmp_path):
 
 def test_daily_selection_empty_and_complete_queue(tmp_path):
     queue = _queue()
-    ready = sorted(
-        (item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at
-    )
+    ready = sorted((item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at)
     url = _ledger(tmp_path, [(item.publication_key, queue.account_id, "published") for item in ready])
     assert select_daily_queue_item(queue, url) is None
     with pytest.raises(ValueError, match="not a ready queue item"):
