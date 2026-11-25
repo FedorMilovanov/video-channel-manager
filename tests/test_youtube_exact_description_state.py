@@ -205,9 +205,9 @@ def test_exact_outer_budget_covers_all_four_reads_and_put(tmp_path, case):
     import httpx
 
     guard = ProjectQuotaGuard(tmp_path / "quota.sqlite3", "fedor-milovanov")
-    writer = Mock()
+    writer = object.__new__(YouTubeDescriptionWriter)
     writer._quota_guard = guard
-    writer.retry_policy.max_attempts = 2
+    writer.retry_policy = Mock(max_attempts=2)
     if case != "unconfigured":
         guard.configure_day(
             day=guard.budget_status()["pacific_day"],
@@ -374,3 +374,24 @@ def test_exact_reconcile_preserves_byte_identity_and_never_grants_replay(descrip
     assert rows[0]["state"] == expected
     assert rows[0]["safe_to_replay"] is False
     writer.replace_description.assert_not_called()
+
+
+@pytest.mark.parametrize("keys", [[], ["ru"], ["ru", "ru-RU"], ["ru-RU"]])
+def test_chapter_description_write_preserves_reduced_locale_keys(keys):
+    writer = Mock()
+    writer._quota_guard = None
+    writer.retry_policy.max_attempts = 1
+    raw = _raw()
+    raw["localizations"] = {key: deepcopy(raw["localizations"]["ru"]) for key in keys}
+    after = deepcopy(raw)
+    after["snippet"]["description"] = "After"
+    for locale in after["localizations"].values():
+        locale["description"] = "After"
+    writer.read_description.return_value = _snapshot(after)
+    observed = YouTubeDescriptionWriter._write_description(
+        writer, current=_snapshot(raw), new_description="After", require_exact_state=True
+    )
+    assert observed.raw == after
+    writer._request.assert_called_once()
+    assert writer._request.call_args.kwargs["json_body"]["localizations"] == after["localizations"]
+    assert writer._request.call_args.kwargs["params"] == {"part": "snippet,localizations"}
