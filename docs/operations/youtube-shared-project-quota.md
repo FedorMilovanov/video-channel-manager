@@ -35,45 +35,32 @@ balances. Six-month expiry/renewal and actual Console limits must be checked,
 not inferred indefinitely from the dated approval. Do not resubmit the old
 application or block work merely because the November 13 status was pending.
 
-### One coordinated allocation, not per-agent quota permission
+### Automatic coordinated admission, not daily manual permission
 
-The owner-directed W36 quota update permits full use of the confirmed expansion
-within the existing approved use case and ordinary operation authority. Use one
-canonical absolute VCM data root and one project-number SQLite budget across
-`fedor-milovanov`, `legendary-poet`, and `milovi-cake`; coordinate MP3Bot and
-other clients that may consume the same Cloud project before allocating. A
-coordinator/operator must pause new competing admissions while capturing current
-Console remaining by bucket and applying the **single** local daily allocation.
-Do not run `quota-configure` independently from each channel or worktree.
+For the verified project only, the canonical guard uses the approved grant from
+Pacific 2026-11-24 through 2027-05-23 inclusive, conservatively ending before
+the six-month anniversary pending renewal. Local estimated ceilings are
+99,000 shared units and 90 search/upload allowances per Pacific day (10% margin
+for outside clients and reconciliation). This is a shared ceiling, not a
+per-agent grant or Google's actual remaining balance. The new day rolls over
+automatically; an already-authorized ordinary operation does not need a daily
+Console screenshot or operator command. Use one canonical absolute VCM data
+root and project-number journal across all aliases. Coordinate MP3Bot and
+outside clients; if actual remaining is lower or accounting diverges, the
+coordinator applies a tighter reviewed daily allowance and reconciles before
+new admissions. The effective ceiling is the smaller of that allowance and
+the grant-backed ceiling. Provider quota stops still take precedence; no
+blind retries, project switching, or claim that local accounting proves
+actual remaining. At expiry or for other projects, grant-backed reviewed
+admission is unavailable; use verified current-day evidence where required.
+Planning weights are advisory only.
 
-Planning starting point: allocate up to 90% of freshly verified remaining in
-each supported bucket (round down; retain at least 10% outside the allocation
-for other work/reconciliation). The coordinator can choose a different bounded
-margin when justified by actual usage and the approved operation plan. For the
-shared pool, 50% Lord God / 30% Legendary Poet / 10% Milovi / 10% shared reserve
-are **planning weights only**, not additional hard per-agent limits or separate
-Google grants. Rebalance work according to demand without resetting or
-multiplying the common budget. Never substitute the screenshot balance for
-today's remaining. Do not use the whole 110000 as an additional allowance.
-
-After one reviewed daily allocation, agents may perform their already-authorized
-bounded official API work and atomic reservations without a new manual quota
-approval or Console visit for each request, video, batch or agent. Do not impose
-the historical 10000 ceiling, arbitrary tiny per-agent limits, or repeat
-whole-channel scans merely to prove quota. Use local `quota-status` and the
-common reservation/circuit breaker. When remaining is inadequate, a fresh
-provider quota stop occurs, a reservation is uncertain, the Pacific day changes,
-the grant expires, or a new external consumer changes accounting, stop the
-affected admission and reconcile centrally. No per-agent refill, token/project
-switch, repeated blind quota probe, or relaxation of editorial/identity/write
-and postflight gates is authorized.
-
-At the evidence checkpoint, the local budget was still unconfigured
-([#903 coordination](https://github.com/FedorMilovanov/video-channel-manager/issues/903#issuecomment-7149331738)).
-The coordinator must record actual Console evidence, Pacific day, configured
-project/bucket allowances, canonical data root and post-configuration
-`quota-status` receipt. This document records the grant and operating policy;
-it is not that runtime receipt.
+The owner authorizes the bounded business operation once. Agents independently
+perform routine read-only discovery, preparation, exact-target validation,
+internal manifests and postflight for that scope without repeated owner
+permissions or manually entered hashes. Escalate only genuine scope changes,
+unresolved effects, missing evidence or irreversible actions. Do not replace
+the approved-use-case, identity, editorial/rights or no-replay requirements.
 
 ## Local weighted allowances and reservations
 
@@ -85,7 +72,7 @@ The journal estimates the cost of each admitted attempt by its method and quota 
 video-manager youtube quota-configure --confirm-project-number PROJECT_NUMBER --pacific-day YYYY-MM-DD --shared UNITS --search CALLS --uploads CALLS --evidence REVIEW_REFERENCE
 ```
 
-Use the actual project number, Pacific day and reviewed remaining headroom, not the defaults or a pending grant. Choose conservative additional allowances, not today's total grant; use zero only for buckets unused by the entire coordinated project allocation, not a single agent's lane. Evidence must be a non-secret reference. Configuration is one-time per Pacific day, cannot refill silently and rejects active reservations. Once enabled, a new Pacific day requires a new reviewed allocation before API dispatch. Until enabled, the journal observes costs and terminal stops without claiming an available provider balance.
+Use the actual project number, Pacific day and reviewed remaining headroom, not the defaults or a pending grant. Choose conservative additional allowances, not today's total grant; use zero only for buckets unused by the entire coordinated project allocation, not a single agent's lane. Evidence must be a non-secret reference. Manual configuration is one-time per Pacific day, cannot refill silently and rejects active reservations. An active approved project grant supplies automatic estimated ceilings; a manual allowance can only tighten them. Other projects retain the existing manual/observation behavior. No mode claims an available Google provider balance.
 
 A bounded `ProjectQuotaGuard.reserve(...)` context atomically holds units for a single operation and its verification; concurrent unreserved requests and other reservations cannot spend them. Each admitted attempt consumes its reservation, including transport failures. Unused units are released on normal/exceptional exit; a process crash leaves a conservative hold for that day rather than silently recovering it. Cross-midnight or cross-bucket consumption stops. A reservation without a configured allowance does **not** prove Google headroom.
 

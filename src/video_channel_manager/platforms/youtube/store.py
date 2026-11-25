@@ -152,6 +152,14 @@ def quota_exhaustion_reason(response: httpx.Response) -> str | None:
 # For resumable media/status HTTP attempts, conservatively charge one upload
 # allowance per dispatch; that estimate is NOT a Google usage receipt.
 _QUOTA_BUCKETS = ("shared", "search", "uploads")
+# Exact project, approved use case, six-month grant from 24 November 2026.
+# End conservatively at the start of the last Pacific date pending renewal.
+# Local ceilings reserve 10% for external consumers/reconciliation, not a
+# statement about Google's actual remaining balance.
+_APPROVED_PROJECT_NUMBER = "1067074369047"
+_APPROVED_GRANT_START = "2026-11-24"
+_APPROVED_GRANT_END_EXCLUSIVE = "2027-05-24"
+_APPROVED_LOCAL_CEILINGS = {"shared": 99_000, "search": 90, "uploads": 90}
 _READ_ONE = {"channels", "videos", "playlists", "playlistItems", "commentThreads", "comments"}
 _QUOTA_COSTS = {
     ("GET", "videos.read-exact"): ("shared", 1),
@@ -171,6 +179,7 @@ _QUOTA_COSTS = {
     ("PUT", "videos.update.metadata-status"): ("shared", 50),
     ("PUT", "videos.update.visibility"): ("shared", 50),
     ("POST", "playlistItems.insert"): ("shared", 50),
+    ("POST", "playlistItems"): ("shared", 50),
     ("POST", "thumbnails.set"): ("shared", 50),
     ("POST", "videos.insert.resumable-session"): ("uploads", 1),
     ("PUT", "videos.insert.resumable-media"): ("uploads", 1),
@@ -180,7 +189,7 @@ _QUOTA_COSTS = {
 
 def quota_cost(method: str, resource: str) -> tuple[str, int] | None:
     method = method.upper()
-    if method == "GET" and resource in _READ_ONE:
+    if method == "GET" and (resource in _READ_ONE or resource.removesuffix(".list") in _READ_ONE):
         return "shared", 1
     return _QUOTA_COSTS.get((method, resource))
 
@@ -203,9 +212,11 @@ class ProjectQuotaGuard:
         account: str,
         *,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        project_number: str | None = None,
     ) -> None:
         self.path = path
         self.account = account
+        self.project_number = project_number
         self.now = now
         self._active: ContextVar[tuple[str, str, str] | None] = ContextVar("youtube_quota_reservation", default=None)
 
@@ -219,7 +230,8 @@ class ProjectQuotaGuard:
             return None
         if data_dir is None:
             raise YouTubeQuotaBlocked("YouTube quota guard requires the canonical shared data directory")
-        return cls(data_dir.resolve() / "youtube" / "quota" / f"{match.group(1)}.sqlite3", account)
+        number = match.group(1)
+        return cls(data_dir.resolve() / "youtube" / "quota" / f"{number}.sqlite3", account, project_number=number)
 
     def _day(self) -> str:
         return self.now().astimezone(ZoneInfo("America/Los_Angeles")).date().isoformat()
@@ -262,24 +274,43 @@ class ProjectQuotaGuard:
         ).fetchone()[0]
         return int(spent), int(held)
 
-    @staticmethod
-    def _configured(db: sqlite3.Connection) -> bool:
-        return db.execute("SELECT 1 FROM quota_limits LIMIT 1").fetchone() is not None
+    def _grant_ceiling(self, day: str, bucket: str) -> int | None:
+        if (
+            self.project_number == _APPROVED_PROJECT_NUMBER
+            and _APPROVED_GRANT_START <= day < _APPROVED_GRANT_END_EXCLUSIVE
+        ):
+            return _APPROVED_LOCAL_CEILINGS.get(bucket)
+        return None
 
-    @classmethod
-    def _check_day(cls, db: sqlite3.Connection, day: str) -> None:
+    def _configured(self, db: sqlite3.Connection, day: str) -> bool:
+        return (
+            self._grant_ceiling(day, "shared") is not None
+            or db.execute("SELECT 1 FROM quota_limits LIMIT 1").fetchone() is not None
+        )
+
+    def _effective_ceiling(self, db: sqlite3.Connection, day: str, bucket: str) -> int | None:
+        manual = db.execute("SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)).fetchone()
+        grant = self._grant_ceiling(day, bucket)
+        if manual is None:
+            return grant
+        return int(manual[0]) if grant is None else min(int(manual[0]), grant)
+
+    def _check_day(self, db: sqlite3.Connection, day: str) -> None:
         stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
         if stop is not None:
             raise YouTubeQuotaBlocked(f"YouTube project quota blocked for Pacific day {day}: {stop[0]}; no dispatch")
-        if cls._configured(db) and db.execute("SELECT 1 FROM quota_limits WHERE day = ?", (day,)).fetchone() is None:
+        if (
+            self._grant_ceiling(day, "shared") is None
+            and self._configured(db, day)
+            and db.execute("SELECT 1 FROM quota_limits WHERE day = ?", (day,)).fetchone() is None
+        ):
             raise YouTubeQuotaBlocked(f"YouTube quota allowance for Pacific day {day} is missing; no dispatch")
 
-    @classmethod
-    def _check_capacity(cls, db: sqlite3.Connection, day: str, bucket: str, units: int) -> None:
-        limit = db.execute("SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)).fetchone()
+    def _check_capacity(self, db: sqlite3.Connection, day: str, bucket: str, units: int) -> None:
+        limit = self._effective_ceiling(db, day, bucket)
         if limit is not None:
-            spent, held = cls._totals(db, day, bucket)
-            if spent + held + units > int(limit[0]):
+            spent, held = self._totals(db, day, bucket)
+            if spent + held + units > limit:
                 raise YouTubeQuotaBlocked(f"YouTube local {bucket} quota allowance exhausted; no dispatch")
 
     def configure_day(self, *, day: str, allowances: dict[str, int], evidence: str) -> None:
@@ -306,7 +337,7 @@ class ProjectQuotaGuard:
                 db.execute("INSERT INTO quota_limits VALUES (?, ?, ?, ?)", (day, bucket, spent + units, evidence))
 
     def require_reviewed_allowance(self, units: int, *, bucket: str = "shared") -> None:
-        """Require explicit current-day local evidence without granting or reserving quota."""
+        """Require a reviewed manual ceiling or an active, project-bound approved grant."""
         if type(units) is not int or units <= 0 or bucket not in _QUOTA_BUCKETS:
             raise ValueError("A positive allowance requirement and known quota bucket are required.")
         with self._transaction() as db:
@@ -315,8 +346,9 @@ class ProjectQuotaGuard:
             self._require_reviewed_evidence(db, day, bucket)
             self._check_capacity(db, day, bucket, units)
 
-    @staticmethod
-    def _require_reviewed_evidence(db: sqlite3.Connection, day: str, bucket: str) -> None:
+    def _require_reviewed_evidence(self, db: sqlite3.Connection, day: str, bucket: str) -> None:
+        if self._grant_ceiling(day, bucket) is not None:
+            return
         evidence = db.execute(
             "SELECT evidence FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
         ).fetchone()
@@ -330,19 +362,18 @@ class ProjectQuotaGuard:
             buckets: dict[str, dict[str, int | None]] = {}
             for bucket in _QUOTA_BUCKETS:
                 spent, held = self._totals(db, day, bucket)
-                limit = db.execute(
-                    "SELECT ceiling FROM quota_limits WHERE day = ? AND bucket = ?", (day, bucket)
-                ).fetchone()
+                limit = self._effective_ceiling(db, day, bucket)
                 buckets[bucket] = {
                     "estimated_units": spent,
                     "reserved_units": held,
-                    "local_remaining": None if limit is None else int(limit[0]) - spent - held,
+                    "local_remaining": None if limit is None else limit - spent - held,
                 }
             stop = db.execute("SELECT reason FROM stops WHERE day = ?", (day,)).fetchone()
             unpriced, _ = self._totals(db, day, "unpriced")
             return {
                 "pacific_day": day,
-                "quota_policy_enabled": self._configured(db),
+                "quota_policy_enabled": self._configured(db, day),
+                "approved_grant_active": self._grant_ceiling(day, "shared") is not None,
                 "provider_stop": None if stop is None else str(stop[0]),
                 "buckets": buckets,
                 "unpriced_attempts": unpriced,
@@ -406,7 +437,7 @@ class ProjectQuotaGuard:
             day = self._day()
             self._check_day(db, day)
             active = self._active.get()
-            if cost is None and (active is not None or self._configured(db)):
+            if cost is None and (active is not None or self._configured(db, day)):
                 raise YouTubeQuotaBlocked("Unpriced YouTube API method under quota policy; no dispatch")
             bucket, units = cost if cost is not None else ("unpriced", 1)
             if active is not None:
