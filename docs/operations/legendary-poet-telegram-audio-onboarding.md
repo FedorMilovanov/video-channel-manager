@@ -58,10 +58,9 @@ The current implementation is incomplete: this profile remains disabled and
 the protected channel state is not initialized. The 25 November Yesenin Steel
 Blizzard owner request in [#1036](https://github.com/FedorMilovanov/video-channel-manager/issues/1036#issuecomment-7163639718)
 is distinct from the historical Lermontov candidate above; do not apply the
-old media or caption to it. The remaining engineering scope is one canonical
-operator entrypoint, safe protected state initialization/migration, channel-wide
-duplicate and unresolved-effect checks across releases, automatic durable
-intent and result persistence, and no-replay reconciliation. The owner need
+old media or caption to it. The remaining operational scope is safe protected state initialization
+from reviewed channel history and exact release acceptance; the canonical
+entrypoint and remote state transaction/recovery are described below. The owner need
 not manipulate those artifacts. A network timeout is a transport diagnosis,
 not a reason to demand the same authorization again. A verified connection
 failure before dispatch can resume the same authorized intent through the
@@ -110,6 +109,22 @@ history from the canonical checkout layout, not from a caller-selected list:
 content/telegram/<project_key>/audio-releases/<release_id>/release.json
 content/telegram/<project_key>/audio-releases/<release_id>/ledger.json
 ```
+
+The same project directory must contain a tracked
+`audio-history-baseline.json` (schema
+`video-channel-manager.telegram-audio-history-baseline`, version 1).
+It records the exact project/profile/channel/chat, cutover and review UTC
+timestamps, reviewer, SHA-256 of retained complete source evidence, and
+each pre-cutover audio post's numeric message ID, original media SHA-256
+and publication timestamp. Empty inventory is valid only after documented
+complete review, never because an embed is hidden or a Bot API history
+endpoint is unavailable. The operator supplies this evidence once at
+cutover, not an extra owner confirmation for every release. From cutover
+onward the protected state must be the sole writer. The runtime blocks
+missing/untracked or foreign baseline, matches against historical hashes,
+counts historical posts in the daily cap, and rejects overlap with managed
+receipts. It cannot itself attest to the truth or completeness of the
+review; no synthetic baseline may be committed.
 
 All existing audio releases must be retained in the same protected state
 branch. The gate rejects known duplicate bytes or publication IDs, other

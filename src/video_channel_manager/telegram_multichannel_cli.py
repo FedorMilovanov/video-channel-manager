@@ -26,6 +26,7 @@ from video_channel_manager.telegram_multichannel_state import (
     GenericPublicationLedger,
     OwnerScheduledCanaryApproval,
     audit_audio_history,
+    audio_history_baseline_path,
     initialize_ledger,
     load_ledger,
     prepare_next,
@@ -485,6 +486,10 @@ def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: P
         raise ValueError("audio state checkout must be clean before dispatch")
     if _state_git(root, "rev-parse", "HEAD") != _remote_state_head(root, profile.state_branch):
         raise ValueError("audio state checkout is not the exact current remote state")
+    baseline = audio_history_baseline_path(ledger_path)
+    relative_baseline = baseline.relative_to(root).as_posix()
+    if _state_git(root, "ls-files", "-v", "--", relative_baseline) != f"H {relative_baseline}":
+        raise ValueError("audio state requires a tracked reviewed history baseline")
     tracked = _state_git(root, "ls-files", "-v", "--", expected.as_posix()).splitlines()
     if not tracked or any(not line.startswith("H ") for line in tracked):
         raise ValueError("audio state must contain the complete tracked channel history")

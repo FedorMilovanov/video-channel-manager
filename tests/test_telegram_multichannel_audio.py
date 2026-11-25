@@ -31,7 +31,10 @@ from video_channel_manager.telegram_multichannel_outcome import GenericProviderO
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release
 from video_channel_manager.telegram_multichannel_state import (
+    AudioHistoryBaseline,
+    HistoricalAudioPost,
     audit_audio_history,
+    audio_history_baseline_path,
     initialize_ledger,
     load_ledger,
     prepare_next,
@@ -424,6 +427,22 @@ def _save_audio_state(root, release, ledger):
     save_release(directory / "release.json", release)
     ledger_path = directory / "ledger.json"
     save_ledger(ledger_path, ledger)
+    baseline_path = audio_history_baseline_path(ledger_path)
+    if not baseline_path.exists():
+        baseline = AudioHistoryBaseline(
+            schema_name="video-channel-manager.telegram-audio-history-baseline",
+            schema_version=1,
+            project_key=release.project_key,
+            channel_username=release.channel_username,
+            profile_sha256=release.profile_sha256,
+            chat_id=CHAT_ID,
+            cutover_utc=NOW - timedelta(days=1),
+            reviewed_at_utc=NOW - timedelta(days=1),
+            reviewed_by="offline fixture",
+            source_evidence_sha256="sha256:" + "a" * 64,
+            posts=(),
+        )
+        baseline_path.write_text(baseline.model_dump_json(), encoding="utf-8")
     return ledger_path
 
 
@@ -708,3 +727,45 @@ def test_publish_audio_command_uses_single_durable_executor(tmp_path, monkeypatc
     assert load_ledger(path, release).entries[payload.publication_id].state == "published"
     assert main() == 3
     assert len(checks) == len(calls) == 1
+
+
+@pytest.mark.parametrize("scenario", ["missing", "foreign", "duplicate", "daily_limit", "different"])
+def test_reviewed_pre_cutover_audio_history_admission(tmp_path, monkeypatch, scenario):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    release = _history_release(profile, payload, "milovi-baseline-audio")
+    path = _save_audio_state(tmp_path / profile.project_key / "audio-releases", release, initialize_ledger(release))
+    baseline_path = audio_history_baseline_path(path)
+    baseline = AudioHistoryBaseline.model_validate_json(baseline_path.read_text(encoding="utf-8"))
+    if scenario == "missing":
+        baseline_path.unlink()
+        expected = "baseline missing"
+    elif scenario == "foreign":
+        baseline = baseline.model_copy(update={"chat_id": CHAT_ID - 1})
+        expected = "differs from exact channel"
+    else:
+        same = scenario == "duplicate"
+        published = NOW - timedelta(hours=2) if scenario == "daily_limit" else NOW - timedelta(days=2)
+        baseline = baseline.model_copy(
+            update={
+                "cutover_utc": NOW - timedelta(hours=1),
+                "reviewed_at_utc": NOW,
+                "posts": tuple(
+                    HistoricalAudioPost(
+                        message_id=123 + index,
+                        media_sha256=payload.media_sha256 if same else "sha256:" + "b" * 64,
+                        published_at_utc=published,
+                    )
+                    for index in range(release.daily_verified_limit if scenario == "daily_limit" else 1)
+                ),
+            }
+        )
+        expected = "pre-cutover" if same else "daily verified limit"
+    if scenario != "missing":
+        baseline_path.write_text(baseline.model_dump_json(), encoding="utf-8")
+    if scenario == "different":
+        require_audio_channel_admission(release, path, payload.publication_id, now=NOW)
+    else:
+        with pytest.raises(ValueError, match=expected):
+            require_audio_channel_admission(release, path, payload.publication_id, now=NOW)

@@ -417,6 +417,72 @@ def audit_audio_history(
     return tuple(matches)
 
 
+class HistoricalAudioPost(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    message_id: int = Field(gt=0)
+    media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    published_at_utc: datetime
+
+
+class AudioHistoryBaseline(BaseModel):
+    """Reviewed pre-cutover inventory, not a provider history discovery tool."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-audio-history-baseline"]
+    schema_version: Literal[1]
+    project_key: str
+    channel_username: str
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    chat_id: int = Field(lt=0)
+    cutover_utc: datetime
+    reviewed_at_utc: datetime
+    reviewed_by: str = Field(min_length=1, max_length=200)
+    source_evidence_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    posts: tuple[HistoricalAudioPost, ...]
+
+    @model_validator(mode="after")
+    def validate_inventory(self) -> "AudioHistoryBaseline":
+        if self.cutover_utc.utcoffset() is None or self.reviewed_at_utc.utcoffset() is None:
+            raise ValueError("audio history baseline requires timezone-aware timestamps")
+        if self.reviewed_at_utc < self.cutover_utc or not self.reviewed_by.strip():
+            raise ValueError("audio history baseline requires review after cutover")
+        ids = {post.message_id for post in self.posts}
+        if len(ids) != len(self.posts):
+            raise ValueError("audio history baseline contains repeated message identities")
+        if any(
+            post.published_at_utc.utcoffset() is None or post.published_at_utc > self.cutover_utc for post in self.posts
+        ):
+            raise ValueError("historical audio must be dated at or before cutover")
+        return self
+
+
+def audio_history_baseline_path(ledger_path: Path) -> Path:
+    return ledger_path.resolve().parent.parent.parent / "audio-history-baseline.json"
+
+
+def load_audio_history_baseline(
+    release: GenericReleaseQueue, ledger_path: Path, *, now: datetime
+) -> AudioHistoryBaseline:
+    path = audio_history_baseline_path(ledger_path)
+    if path.is_symlink():
+        raise ValueError("audio history baseline must not be a symlink")
+    try:
+        baseline = AudioHistoryBaseline.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError("reviewed audio history baseline missing or invalid") from exc
+    if (
+        baseline.project_key != release.project_key
+        or baseline.channel_username.casefold() != release.channel_username.casefold()
+        or baseline.profile_sha256 != release.profile_sha256
+        or baseline.chat_id != release.chat_id
+        or baseline.reviewed_at_utc > now
+    ):
+        raise ValueError("audio history baseline differs from exact channel or review time")
+    return baseline
+
+
 def require_audio_channel_admission(
     release: GenericReleaseQueue,
     ledger_path: Path,
@@ -444,6 +510,11 @@ def require_audio_channel_admission(
         or channel_dir.parent.name != release.project_key
     ):
         raise ValueError("audio admission requires the canonical channel audio-releases state layout")
+
+    current = now or utc_now()
+    baseline = load_audio_history_baseline(release, ledger_path, now=current)
+    if any(post.media_sha256 == item.payload.media_sha256 for post in baseline.posts):
+        raise ValueError("audio already published in pre-cutover channel history")
 
     history: list[tuple[GenericReleaseQueue, GenericPublicationLedger]] = []
     for directory in sorted(channel_dir.iterdir()):
@@ -475,8 +546,11 @@ def require_audio_channel_admission(
         if not own_attempt(historical, ledger.entries[match.publication_id]):
             raise ValueError(f"audio already published or possibly dispatched: {match.publication_id}")
 
-    today = publication_local_date(now or utc_now(), release.timezone)
-    verified_today = 0
+    today = publication_local_date(current, release.timezone)
+    historical_ids = {post.message_id for post in baseline.posts}
+    verified_today = sum(
+        publication_local_date(post.published_at_utc, release.timezone) == today for post in baseline.posts
+    )
     for historical, ledger in history:
         for entry in ledger.entries.values():
             if entry.provider_effect in {"verified", "may_exist"} and entry.actual_chat_id != release.chat_id:
@@ -488,7 +562,11 @@ def require_audio_channel_admission(
             if entry.provider_effect == "verified":
                 if entry.publication_id == publication_id:
                     raise ValueError(f"publication ID already verified in audio history: {publication_id}")
+                if entry.message_id in historical_ids:
+                    raise ValueError("audio baseline and release ledgers overlap")
                 if entry.published_at_utc is not None:
+                    if entry.published_at_utc <= baseline.cutover_utc:
+                        raise ValueError("managed audio receipt predates history cutover")
                     verified_today += publication_local_date(entry.published_at_utc, release.timezone) == today
     if verified_today >= release.daily_verified_limit:
         raise ValueError("channel-wide audio daily verified limit already used")
