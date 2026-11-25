@@ -214,6 +214,7 @@ def _status_by_id(preflight: dict[str, Any]) -> dict[str, str]:
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     args = _parser().parse_args()
     if args.max_operations <= 0:
         raise SystemExit("--max-operations must be positive")

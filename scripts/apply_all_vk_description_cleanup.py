@@ -185,6 +185,7 @@ def _run_preflight(
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     args = _parser().parse_args()
     if args.community <= 0:
         raise SystemExit("--community must be a positive community ID")
