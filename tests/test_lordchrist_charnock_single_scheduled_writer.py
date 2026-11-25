@@ -42,10 +42,12 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     assert "github.event_name == 'workflow_dispatch'" in data
     assert "github.actor == 'FedorMilovanov'" in data
     assert "inputs.confirm == 'RUN_APPROVED_CHARNOCK_SLOT_ONCE'" in data
-    for number in range(9, 13):
+    for number in range(10, 13):
         assert f"inputs.publication_id == 'lordchrist-telegraph-charnock-{number:02d}'" in data
-    for number in (6, 7, 8, 13):
+        assert f"          - lordchrist-telegraph-charnock-{number:02d}" in data
+    for number in (6, 7, 8, 9, 13):
         assert f"inputs.publication_id == 'lordchrist-telegraph-charnock-{number:02d}'" not in data
+        assert f"          - lordchrist-telegraph-charnock-{number:02d}" not in data
     assert 'matches[0]["publication_id"] != os.environ.get("REVIEWED_PUBLICATION_ID")' in data
     assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
     assert "cancel-in-progress: false" in data

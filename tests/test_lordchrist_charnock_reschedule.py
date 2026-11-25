@@ -783,8 +783,9 @@ def test_send_refuses_if_network_preflight_crosses_1400(monkeypatch, tmp_path):
     assert original["scheduled_reissue"]["state"] == "claimed"
 
 
-def test_owner_dispatch_requires_real_event_payload_and_exact_approved_future_id(monkeypatch, tmp_path):
-    article = "lordchrist-telegraph-charnock-09"
+@pytest.mark.parametrize("number", ["10", "11", "12"])
+def test_owner_dispatch_requires_real_event_payload_and_exact_approved_future_id(monkeypatch, tmp_path, number):
+    article = "lordchrist-telegraph-charnock-" + number
     args = argparse.Namespace(publication_id=article)
     event_file = tmp_path / "github-event.json"
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
@@ -794,7 +795,7 @@ def test_owner_dispatch_requires_real_event_payload_and_exact_approved_future_id
     event_file.write_text(json.dumps(good), encoding="utf-8")
     m._require_approved_recovery_trigger(args)
 
-    for invalid_id in ("06", "07", "08", "13"):
+    for invalid_id in ("06", "07", "08", "09", "13"):
         args.publication_id = "lordchrist-telegraph-charnock-" + invalid_id
         with pytest.raises(RuntimeError, match="cannot restore"):
             m._require_approved_recovery_trigger(args)
@@ -807,7 +808,7 @@ def test_owner_dispatch_requires_real_event_payload_and_exact_approved_future_id
 
     bad = [
         {"inputs": {"publication_id": article, "confirm": "other"}},
-        {"inputs": {"publication_id": "lordchrist-telegraph-charnock-10", "confirm": m.OWNER_DISPATCH_CONFIRM}},
+        {"inputs": {"publication_id": "lordchrist-telegraph-charnock-09", "confirm": m.OWNER_DISPATCH_CONFIRM}},
         {"inputs": {}},
         {"not_inputs": True},
     ]
