@@ -73,6 +73,15 @@ the separate proof-file creation and handoff, without a second preflight.
 Existing `--target-proof` workflows remain compatible. It is not a publisher,
 does not enable a disabled channel, and is only the first orchestration step.
 
+The existing `send-once` command consumes the exact persisted intent using an
+exclusive claim beside the canonical resolved ledger before provider dispatch.
+The claim is retained across process interruption, and the outcome is written
+atomically. A second invocation with a different output path cannot replay
+that intent on the same ledger. A claim without an outcome requires read-only
+reconciliation; never delete it to force a retry. This local protection does
+not establish cross-host or cross-release duplicate coverage and does not
+replace the protected channel state, serialization or exact provider receipt.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.

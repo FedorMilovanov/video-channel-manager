@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypeVar
@@ -352,6 +353,52 @@ def _send_exact_payload(
     )
 
 
+def _send_persisted_once(
+    profile: TelegramChannelProfile,
+    release: GenericReleaseQueue,
+    ledger_path: Path,
+    envelope: GenericDispatchEnvelope,
+    outcome_path: Path,
+) -> GenericProviderOutcome:
+    """Consume a persisted intent once on the same canonical local ledger."""
+    require_execution_not_held(release)
+    _require_runtime_profile(profile, release)
+    _require_release_target(release, envelope.target)
+    ledger_path = ledger_path.resolve()
+    ledger = load_ledger(ledger_path, release)
+    verify_persisted_intent(release, ledger, envelope)
+    if outcome_path.exists():
+        raise ValueError("Telegram outcome already exists; apply or reconcile it, never resend")
+    claim_dir = ledger_path.parent / f".{ledger_path.name}.dispatch-claims"
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    intent_key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
+    claim = claim_dir / f"{intent_key}.json"
+    try:
+        with claim.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(envelope.model_dump_json() + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise ValueError("Telegram intent already claimed; reconcile existing outcome, never resend") from exc
+
+    # An interrupted process leaves its claim intact even when no outcome exists.
+    # The claim is local, not a substitute for protected state/concurrency.
+    outcome = _send_exact_payload(profile, release, ledger, envelope)
+    outcome_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", newline="\n", dir=outcome_path.parent, delete=False
+    ) as handle:
+        temporary = Path(handle.name)
+        handle.write(outcome.model_dump_json(indent=2) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    try:
+        temporary.replace(outcome_path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return outcome
+
+
 def main() -> int:
     args = parser().parse_args()
 
@@ -506,10 +553,8 @@ def main() -> int:
         release = load_release(args.release)
         require_execution_not_held(release)
         profile = load_channel_profile(args.profile)
-        ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
-        outcome = _send_exact_payload(profile, release, ledger, envelope)
-        _write_model(args.outcome_output, outcome)
+        outcome = _send_persisted_once(profile, release, args.ledger, envelope, args.outcome_output)
         print(
             json.dumps(
                 {

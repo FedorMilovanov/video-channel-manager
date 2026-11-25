@@ -9,10 +9,16 @@ import pytest
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_cli import _preflight_release_target, _send_exact_payload, main, parser
-from video_channel_manager.telegram_multichannel_outcome import apply_provider_outcome
+from video_channel_manager.telegram_multichannel_cli import (
+    _preflight_release_target,
+    _send_exact_payload,
+    _send_persisted_once,
+    main,
+    parser,
+)
+from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome, apply_provider_outcome
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, save_release
-from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next
+from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next, save_ledger
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
 from video_channel_manager.telegram_target_binding import load_target_binding
 
@@ -325,3 +331,55 @@ def test_prepare_accepts_one_target_source_without_extra_flags() -> None:
         parser().parse_args(args)
     with pytest.raises(SystemExit):
         parser().parse_args(args + ["--binding", "binding.json", "--target-proof", "proof.json"])
+
+
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_persisted_send_claim_blocks_replay_even_with_new_output_path(monkeypatch, tmp_path: Path, interrupted: bool) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    output = tmp_path / "outcome.json"
+    save_ledger(ledger_path, ledger)
+    calls = []
+
+    def send(*args):
+        calls.append(args)
+        if interrupted:
+            raise RuntimeError("simulated crash after possible provider dispatch")
+        return GenericProviderOutcome(
+            schema_name="video-channel-manager.telegram-generic-provider-outcome",
+            schema_version=1,
+            publication_id=envelope.publication_id,
+            provider_payload_sha256=envelope.provider_payload_sha256,
+            provider_effect="may_exist",
+            retryable=False,
+            error="offline ambiguous effect",
+        )
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", send)
+    if interrupted:
+        with pytest.raises(RuntimeError, match="simulated crash"):
+            _send_persisted_once(profile, release, ledger_path, envelope, output)
+        assert not output.exists()
+    else:
+        outcome = _send_persisted_once(profile, release, ledger_path, envelope, output)
+        assert GenericProviderOutcome.model_validate_json(output.read_text(encoding="utf-8")) == outcome
+
+    with pytest.raises(ValueError, match="intent already claimed"):
+        _send_persisted_once(profile, release, ledger_path, envelope, tmp_path / "other-outcome.json")
+    assert len(calls) == 1
+    assert load_ledger(ledger_path, release).entries[envelope.publication_id].provider_effect == "may_exist"
+
+
+def test_persisted_send_rejects_wrong_intent_before_claim(monkeypatch, tmp_path: Path) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger_path = tmp_path / "ledger.json"
+    ledger.entries[envelope.publication_id].intent_id = "different-persisted-intent"
+    save_ledger(ledger_path, ledger)
+
+    def unexpected(*args):
+        pytest.fail("invalid intent must not reach the sender")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", unexpected)
+    with pytest.raises(ValueError, match="persisted ledger intent differs"):
+        _send_persisted_once(profile, release, ledger_path, envelope, tmp_path / "outcome.json")
+    assert not (tmp_path / ".ledger.json.dispatch-claims").exists()
