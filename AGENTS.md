@@ -1,4 +1,7 @@
 # Repository agent operating contract
+## ENGINEERING FIRST — общий принцип работы (25.11.2026)
+**Меньше координационной суеты — больше реальной инженерной работы за одну волну.** Общий регламент всех проектов: [AuditRepo Operating Model — ENGINEERING FIRST](https://github.com/FedorMilovanov/AuditRepo/blob/main/AUDITREPO_OPERATING_MODEL.md) ([policy PR #590](https://github.com/FedorMilovanov/AuditRepo/pull/590)). Прямая директива владельца действует немедленно.
+По умолчанию агент самостоятельно закрывает порученный scope от диагностики до проверенного результата, включая связанные мелочи; «Продолжай» — следующий полезный блок в текущем сеансе. MAX — только явно назначенная или уже действующая роль в конкретном направлении, не обязательный режим: наличие runbook не активирует его и не расширяет полномочия. При действующем MAX он сам закрывает доступные исправления и интеграцию, делегирует только целостные пакеты, когда полезны параллельность, специализация или независимая приёмка. Один содержательный handoff по готовому пакету либо немедленная эскалация реального блокера. Без микропоручений, повторных неизменных статусов, искусственных квот и новых уровней управления. При HOLD — независимая разрешённая работа. Сохранять единственного writer, обязательные проверки, независимую приёмку, безопасность, права, ресурсные и релизные ограничения.
 
 This file contains **durable rules**, not a history of old waves or commit SHAs. Historical audits remain evidence; they do not control new work.
 
@@ -6,7 +9,6 @@ This file contains **durable rules**, not a history of old waves or commit SHAs.
 For SHORTOREZ/Q&A Russian vertical Shorts **when the operator selected Manrope 01**, read [docs/operations/shorts-manrope01-largev3-cpu-review.md](docs/operations/shorts-manrope01-largev3-cpu-review.md) before producing, reviewing or delivering media. Other projects retain their independently approved styles. This operator-selected style requires **Manrope 800, yellow per-word highlighting, source-aware opening, Large-v3 CPU INT8** on the affected Windows machine, and independent ASS/FFprobe/listening gates. Existing 16:9 long-form masters do **not** receive burned subtitles in this workflow. No silent Small/CUDA fallback; TECH_QA never implies editorial, rights or provider write approval.
 
 ## Read order
-
 Before changing provider-facing, workflow, state, release, or artifact code, read only the sources relevant to the task, in this order:
 
 1. `docs/operations/current-state.md` — current operational interpretation and provider boundaries.
@@ -38,12 +40,11 @@ For any request to prepare, correct, audit or hand off **YouTube titles, descrip
 For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
 [docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
 In addition to signed copy-plan and project presentation validation, its non-deletion guard preserves original chapters, translation/source credits, primary links and relevant playlist IDs. A passing format check is not permission to discard source evidence or retry an uncertain provider write.
-For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
+**Panorama Bible Russian-first (owner direction 25 Nov 2026, Issue #795):** for the exact 68-member series of `lord-god-strength`, Russian is the sole public title/description language, including the series playlist; foreign subtitles are preserved and encouraged, not foreign metadata. Do not add or restore foreign title/description localizations. Existing foreign metadata is removed only through separately reviewed exact full-map reduction with archived before-state, unchanged Russian text and captions, one authorized write and immediate/delayed verification; use `plan_panorama_russian_metadata` in the existing Lord God presentation module for offline candidate preparation. Missing map is unknown, not proof of removal. This scoped exception supersedes ordinary locale preservation only for the approved operation; no change to other projects or authority to publish. For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
 ## Adaptive reasoning contract
-
 Before implementation or provider-capable handoff, establish:
 
 - requested outcome independent of the old mechanism;
@@ -57,7 +58,6 @@ Before implementation or provider-capable handoff, establish:
 Preserve partial success. Resume from the first unverified child operation instead of replaying successful parents. Do not add ceremony that cannot change a decision, block a defect class, or prove a postcondition.
 
 ## Identity and provenance
-
 Identity must be stable under irrelevant changes.
 
 - Provider/project identity is selected by canonical project + exact target IDs, never by credential name alone.
@@ -76,8 +76,9 @@ The default `VCM_DATA_DIR=./data` is **relative to the process working directory
 Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](docs/operations/youtube-shared-project-quota.md): use the canonical official client, verified Cloud-project identity and shared quota stop record, exact-ID bounded reads, and mandatory verification reserve. Never switch accounts/projects to circumvent quota or confuse Remote credits with provider quota.
 
 ## Provider mutation boundary
-
 Release/content approval and provider execution authority are separate gates.
+
+**Bounded owner instruction = operational scope.** A clear owner request authorizes the requested business operations and necessary child steps within its stated target, timing and scope. Routine read-only discovery, preparation, editorial QA, validation, exact-ID checks and technical confirmations are agent work, not additional owner permissions. Derive hashes, manifests, journal paths and required confirmation arguments from the accepted payload; do not ask the owner to supply them. No per-video repeat approval for an already authorized batch. Preserve genuine release/rights/editorial gates, protected state and no-replay checks; do not infer a different target, publication window, destructive operation or broader scope. Scope HOLD to the affected object or shared resource; continue independent authorized work. Historical audits are evidence, not new active prohibitions. An inaccessible unrelated archive or stale historical report alone must not block a fresh exact candidate with adequate evidence. Use the canonical grant-backed quota journal; no arbitrary per-agent budget or daily manual quota permission for the approved project.
 
 Before any provider mutation:
 
@@ -97,7 +98,6 @@ Unknown provider outcomes remain blocking. `may_exist`, accepted, processing, or
 Upload, processing/visibility, metadata, thumbnail, playlist creation, membership, wall publication, and other remote changes are separate child operations. Preserve verified parent/child success and resume only the first unverified child.
 
 ## Runtime and state writers
-
 - One provider account/browser profile/state branch/concurrency namespace has one write owner at a time.
 - A single already-authorized VK browser profile/session may be reused across multiple registered project communities when the same VK user manages them; a browser profile is authentication context, not project identity.
 - Do not create a new per-project VK browser profile merely for isolation when a known-working authorized profile already exists. Before every `browser_ui_write`, prove the exact `project_key`, `community_id`, and `owner_id` on the active target surface before file selection or mutation.

@@ -8,7 +8,9 @@ validator for syntax while implementing this project's content constraints.
 
 from __future__ import annotations
 
+import copy
 import re
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -17,7 +19,7 @@ from video_channel_manager.editorial.youtube_copy import (
     ITALIC_SPAN_RE,
     validate_youtube_description,
 )
-from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
+from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256, sha256_text, validate_copy_plan
 from video_channel_manager.platforms.youtube.lord_god_source_preservation import (
     LORD_GOD_OWNER_CHANNEL,
     source_preservation_issues,
@@ -254,3 +256,263 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
         raise ValueError(
             "Lord God YouTube description is NOT cleanly formatted or retains obsolete content: " + ", ".join(problems)
         )
+
+
+def _panorama_members(playlist: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate the complete canonical membership once for individual and bulk review."""
+    from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+
+    members = playlist.get("memberships")
+    if (
+        playlist.get("schema") != "panorama-current-owner-playlist-v1"
+        or playlist.get("playlist_id") != PANORAMA_PLAYLIST
+        or playlist.get("owner_channel_id") != LORD_GOD_OWNER_CHANNEL
+        or not isinstance(members, list)
+        or len(members) != 68
+        or not all(
+            isinstance(m, dict)
+            and type(m.get("position")) is int
+            and isinstance(m.get("video_id"), str)
+            and re.fullmatch(r"[A-Za-z0-9_-]{11}", m["video_id"])
+            and m.get("video_owner") == LORD_GOD_OWNER_CHANNEL
+            for m in members
+        )
+        or {m["position"] for m in members} != set(range(68))
+        or len({m["video_id"] for m in members}) != 68
+    ):
+        raise ValueError("Invalid frozen Panorama owner membership")
+    return members
+
+
+def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, Any], *, video_id: str) -> dict[str, Any]:
+    """Plan an exact locale-map reduction offline; never grant write authority.
+
+    Scope is proven by the frozen 68-member owner playlist, not a title or URL
+    substring. Missing localization data is unknown, not an empty map.
+    """
+    from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+
+    members = _panorama_members(playlist)
+    member = next((m for m in members if m["video_id"] == video_id), None)
+    raw = owner.get("raw")
+    if member is None or not isinstance(raw, dict):
+        raise ValueError("Missing exact Panorama target evidence")
+    snippet = raw.get("snippet")
+    status = raw.get("status")
+    details = raw.get("contentDetails")
+    locales = raw.get("localizations")
+    if (
+        not isinstance(snippet, dict)
+        or not isinstance(status, dict)
+        or not isinstance(details, dict)
+        or not isinstance(locales, dict)
+    ):
+        raise ValueError("Incomplete owner response; do not infer absent locales")
+    title, description = snippet.get("title"), snippet.get("description")
+    if (
+        owner.get("schema") != "panorama-exact-owner-one-probe-v1"
+        or owner.get("status") != "OWNER_READ_SUCCESS"
+        or owner.get("read_only") is not True
+        or type(owner.get("provider_writes")) is not int
+        or owner.get("provider_writes") != 0
+        or type(owner.get("api_read_operations")) is not int
+        or owner.get("api_read_operations") != 1
+        or owner.get("video_id") != video_id
+        or owner.get("owner_channel_id_expected") != LORD_GOD_OWNER_CHANNEL
+        or owner.get("owner_channel_id") != LORD_GOD_OWNER_CHANNEL
+        or raw.get("id") != video_id
+        or snippet.get("channelId") != LORD_GOD_OWNER_CHANNEL
+        or status.get("privacyStatus") != "public"
+        or snippet.get("defaultLanguage") != "ru"
+        or snippet.get("defaultAudioLanguage") != "ru"
+        or not isinstance(title, str)
+        or not title.strip()
+        or title != member.get("video_title")
+        or title != owner.get("title")
+        or not isinstance(description, str)
+        or not description.strip()
+        or not isinstance(snippet.get("tags"), list)
+        or not all(isinstance(tag, str) for tag in snippet["tags"])
+        or not isinstance(snippet.get("categoryId"), str)
+        or not isinstance(details.get("duration"), str)
+        or not details["duration"]
+        or owner.get("revision") != canonical_sha256(raw)
+        or owner.get("description_sha256") != sha256_text(description)
+    ):
+        raise ValueError("Exact Russian owner evidence mismatch")
+    if not all(
+        isinstance(key, str)
+        and re.fullmatch(r"[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*", key)
+        and isinstance(value, dict)
+        and set(value) == {"title", "description"}
+        and isinstance(value["title"], str)
+        and bool(value["title"].strip())
+        and isinstance(value["description"], str)
+        for key, value in locales.items()
+    ):
+        raise ValueError("Malformed localization map")
+    if len({key.lower() for key in locales}) != len(locales) or owner.get("locale_keys") != sorted(locales):
+        raise ValueError("Localization inventory mismatch")
+    retained = {key: value for key, value in locales.items() if key.split("-")[0].lower() == "ru"}
+    if any(value != {"title": title, "description": description} for value in retained.values()):
+        raise ValueError("Russian localization differs from primary Russian metadata; review separately")
+    removed = sorted(set(locales) - set(retained))
+    return {
+        "schema": "panorama-russian-metadata-review-v1",
+        "project_key": "lord-god-strength",
+        "owner_channel_id": LORD_GOD_OWNER_CHANNEL,
+        "playlist_id": PANORAMA_PLAYLIST,
+        "episode": member["position"] + 1,
+        "video_id": video_id,
+        "owner_revision": canonical_sha256(raw),
+        "playlist_sha256": canonical_sha256(playlist),
+        "primary_title_sha256": sha256_text(title),
+        "primary_description_sha256": sha256_text(description),
+        "before_localizations": copy.deepcopy(locales),
+        "after_localizations": copy.deepcopy(retained),
+        "before_sha256": canonical_sha256(locales),
+        "after_sha256": canonical_sha256(retained),
+        "removed_locale_keys": removed,
+        "disposition": "REVIEW_REQUIRED" if removed else "NO_CHANGE",
+        "captions_action": "PRESERVE",
+        "provider_reads": 0,
+        "provider_writes": 0,
+        "is_executable_plan": False,
+        "execution_authorized": False,
+    }
+
+
+def require_panorama_russian_metadata_approval(
+    candidate: dict[str, Any],
+    owner: dict[str, Any],
+    playlist: dict[str, Any],
+    review: dict[str, Any],
+    *,
+    confirm_video_id: str,
+    confirm_after_sha256: str,
+) -> dict[str, Any]:
+    """Shared CLI/writer pre-auth guard; external human authority remains mandatory."""
+    expected = plan_panorama_russian_metadata(owner, playlist, video_id=confirm_video_id)
+    if (
+        candidate != expected
+        or expected["disposition"] != "REVIEW_REQUIRED"
+        or confirm_after_sha256 != expected["after_sha256"]
+        or review.get("schema") != "panorama-russian-metadata-approval-v1"
+        or review.get("candidate_sha256") != canonical_sha256(expected)
+        or review.get("approved") is not True
+        or not isinstance(review.get("reviewer"), str)
+        or not review["reviewer"].strip()
+        or not isinstance(review.get("reviewed_at"), str)
+        or datetime.fromisoformat(review["reviewed_at"]).utcoffset() is None
+    ):
+        raise ValueError("Exact independent reduction review and confirmation required.")
+    return expected
+
+
+def verify_panorama_russian_metadata_readback(
+    candidate: dict[str, Any],
+    owner: dict[str, Any],
+    playlist: dict[str, Any],
+    observed: dict[str, Any],
+) -> dict[str, Any]:
+    """Re-derive the reduction and verify owner metadata, not execution or captions."""
+    from video_channel_manager.platforms.youtube.writer import (
+        VideoDescriptionSnapshot,
+        localization_postflight_drift,
+    )
+
+    video_id = candidate.get("video_id")
+    if not isinstance(video_id, str):
+        raise ValueError("Missing exact candidate video ID")
+    if candidate != plan_panorama_russian_metadata(owner, playlist, video_id=video_id):
+        raise ValueError("Russian-first candidate differs from bound owner evidence")
+    before = owner["raw"]
+    snippet = before["snippet"]
+    observed_snippet = observed.get("snippet")
+    if not isinstance(observed_snippet, dict):
+        raise ValueError("Incomplete readback snippet")
+    snapshot = VideoDescriptionSnapshot(
+        video_id=observed.get("id", ""),
+        channel_id=observed_snippet.get("channelId", ""),
+        title=observed_snippet.get("title", ""),
+        description=observed_snippet.get("description", ""),
+        revision=canonical_sha256(observed),
+        raw=observed,
+    )
+    drift = localization_postflight_drift(
+        snapshot,
+        video_id=video_id,
+        channel_id=LORD_GOD_OWNER_CHANNEL,
+        title=snippet["title"],
+        primary_description=snippet["description"],
+        snippet_fields={
+            key: snippet[key] for key in ("title", "categoryId", "tags", "defaultLanguage", "defaultAudioLanguage")
+        },
+        privacy=before["status"]["privacyStatus"],
+        duration=before["contentDetails"]["duration"],
+        localizations=candidate["after_localizations"],
+    )
+    # Protect complete returned status and content details, not just privacy and duration.
+    for part in ("status", "contentDetails"):
+        if observed.get(part) != before[part]:
+            drift.append(f"{part}.exact")
+    # Localized presentation may change with locale selection; all other snippet fields must survive.
+    if {k: v for k, v in observed_snippet.items() if k != "localized"} != {
+        k: v for k, v in snippet.items() if k != "localized"
+    }:
+        drift.append("snippet.exact")
+    return {
+        "video_id": video_id,
+        "candidate_sha256": canonical_sha256(candidate),
+        "observed_revision": snapshot.revision,
+        "metadata_matches": not drift,
+        "drift": sorted(set(drift)),
+        "captions_verified": False,
+        "public_display_verified": False,
+        "execution_authorized": False,
+        "provider_reads": 0,
+        "provider_writes": 0,
+    }
+
+
+def inventory_panorama_russian_metadata(playlist: dict[str, Any], owners: list[dict[str, Any]]) -> dict[str, Any]:
+    """Account for every lecture once; archived clean metadata is not live verification."""
+    members = _panorama_members(playlist)
+    member_ids = {member["video_id"] for member in members}
+    receipts: dict[str, list[dict[str, Any]]] = {}
+    for owner in owners:
+        video_id = owner.get("video_id")
+        if not isinstance(video_id, str) or video_id not in member_ids:
+            raise ValueError("Owner receipt outside exact Panorama membership")
+        receipts.setdefault(video_id, []).append(owner)
+
+    counts = {"REVIEW_REQUIRED": 0, "NO_CHANGE": 0, "MISSING": 0, "HOLD": 0}
+    rows = []
+    for member in sorted(members, key=lambda item: item["position"]):
+        video_id = member["video_id"]
+        matches = receipts.get(video_id, [])
+        row: dict[str, Any] = {"video_id": video_id, "episode": member["position"] + 1}
+        if not matches:
+            row["disposition"] = "MISSING"
+        elif len(matches) != 1:
+            row.update(disposition="HOLD", reason="duplicate_owner_receipts")
+        else:
+            try:
+                candidate = plan_panorama_russian_metadata(matches[0], playlist, video_id=video_id)
+            except ValueError as exc:
+                row.update(disposition="HOLD", reason=str(exc))
+            else:
+                row.update(disposition=candidate["disposition"], candidate=candidate)
+        counts[row["disposition"]] += 1
+        rows.append(row)
+    return {
+        "schema": "panorama-russian-metadata-inventory-v1",
+        "playlist_sha256": canonical_sha256(playlist),
+        "counts": counts,
+        "episodes": rows,
+        "all_receipts_reviewable": counts["MISSING"] == counts["HOLD"] == 0,
+        "live_verified": False,
+        "execution_authorized": False,
+        "provider_reads": 0,
+        "provider_writes": 0,
+    }

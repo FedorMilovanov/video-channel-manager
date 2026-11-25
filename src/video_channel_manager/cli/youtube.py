@@ -1432,3 +1432,85 @@ def reconcile_copy_fixes(
     except (AccountNotFoundError, OSError, ValueError, YouTubeWriteError) as exc:
         console.print(f"[red]YouTube reconciliation stopped without provider writes:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("apply-panorama-russian-metadata")
+def apply_panorama_russian_metadata(
+    bundle: Annotated[Path, typer.Argument(help="JSON containing exact owner, playlist and candidate evidence")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "fedor-milovanov",
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    confirm_target: Annotated[str, typer.Option("--confirm-target")] = "",
+    confirm_after_sha256: Annotated[str, typer.Option("--confirm-after-sha256")] = "",
+    review_file: Annotated[Path | None, typer.Option("--review")] = None,
+    confirm_review_sha256: Annotated[str, typer.Option("--confirm-review-sha256")] = "",
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Offline review by default; one approved locale-map reduction with no replay."""
+    from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256
+    from video_channel_manager.platforms.youtube.lord_god_presentation import (
+        plan_panorama_russian_metadata,
+        require_panorama_russian_metadata_approval,
+    )
+
+    prepare_windows_youtube_console()
+    try:
+        payload = json.loads(bundle.read_text(encoding="utf-8-sig"))
+        if not isinstance(payload, dict) or not all(
+            isinstance(payload.get(key), dict) for key in ("owner", "playlist", "candidate")
+        ):
+            raise ValueError("Missing exact Panorama evidence bundle.")
+        owner, playlist, candidate = (payload[key] for key in ("owner", "playlist", "candidate"))
+        video_id = candidate.get("video_id")
+        if not isinstance(video_id, str):
+            raise ValueError("Missing exact candidate video ID.")
+        if candidate != plan_panorama_russian_metadata(owner, playlist, video_id=video_id):
+            raise ValueError("Candidate does not match the exact evidence.")
+        if account != "fedor-milovanov" or confirm_channel != LORD_GOD_OWNER_CHANNEL:
+            raise ValueError("Exact canonical Panorama owner account/channel required.")
+        if not execute:
+            console.print(
+                json.dumps(
+                    {
+                        "video_id": video_id,
+                        "disposition": candidate["disposition"],
+                        "removed_locale_keys": candidate["removed_locale_keys"],
+                        "after_sha256": candidate["after_sha256"],
+                        "provider_reads": 0,
+                        "provider_writes": 0,
+                    },
+                    ensure_ascii=True,
+                )
+            )
+            return
+        if review_file is None or review_file.resolve() == bundle.resolve():
+            raise ValueError("Separate independent approval file required.")
+        review = json.loads(review_file.read_text(encoding="utf-8-sig"))
+        if not isinstance(review, dict) or canonical_sha256(review) != confirm_review_sha256:
+            raise ValueError("Exact independently reviewed SHA-256 required.")
+        require_panorama_russian_metadata_approval(
+            candidate,
+            owner,
+            playlist,
+            review,
+            confirm_video_id=confirm_target,
+            confirm_after_sha256=confirm_after_sha256,
+        )
+        _, _, writer = _writer_components(account, client_secret)
+        try:
+            receipt = writer.reduce_panorama_localizations(
+                candidate=candidate,
+                owner=owner,
+                playlist=playlist,
+                review=review,
+                confirm_video_id=confirm_target,
+                confirm_after_sha256=confirm_after_sha256,
+            )
+        finally:
+            writer.close()
+        console.print(json.dumps(receipt, ensure_ascii=True, indent=2))
+    except (AccountNotFoundError, OSError, ValueError, YouTubeWriteError) as exc:
+        console.print(
+            f"[red]Panorama reduction blocked or requires read-only reconciliation; never replay:[/red] {exc}"
+        )
+        raise typer.Exit(code=2) from exc
