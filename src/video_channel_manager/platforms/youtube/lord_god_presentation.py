@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import re
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -379,6 +380,33 @@ def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, An
         "is_executable_plan": False,
         "execution_authorized": False,
     }
+
+
+def require_panorama_russian_metadata_approval(
+    candidate: dict[str, Any],
+    owner: dict[str, Any],
+    playlist: dict[str, Any],
+    review: dict[str, Any],
+    *,
+    confirm_video_id: str,
+    confirm_after_sha256: str,
+) -> dict[str, Any]:
+    """Shared CLI/writer pre-auth guard; external human authority remains mandatory."""
+    expected = plan_panorama_russian_metadata(owner, playlist, video_id=confirm_video_id)
+    if (
+        candidate != expected
+        or expected["disposition"] != "REVIEW_REQUIRED"
+        or confirm_after_sha256 != expected["after_sha256"]
+        or review.get("schema") != "panorama-russian-metadata-approval-v1"
+        or review.get("candidate_sha256") != canonical_sha256(expected)
+        or review.get("approved") is not True
+        or not isinstance(review.get("reviewer"), str)
+        or not review["reviewer"].strip()
+        or not isinstance(review.get("reviewed_at"), str)
+        or datetime.fromisoformat(review["reviewed_at"]).utcoffset() is None
+    ):
+        raise ValueError("Exact independent reduction review and confirmation required.")
+    return expected
 
 
 def verify_panorama_russian_metadata_readback(

@@ -410,3 +410,59 @@ def test_panorama_inventory_complete_and_foreign_receipt_rejected() -> None:
     assert report["all_receipts_reviewable"] and not report["live_verified"]
     with pytest.raises(ValueError, match="outside exact Panorama"):
         inventory_panorama_russian_metadata(playlist, [{**owner, "video_id": "other000000"}])
+
+
+@pytest.mark.parametrize("mode", ["dry_run", "wrong_target", "wrong_review_sha", "wrong_after", "approved", "tampered"])
+def test_panorama_cli_offline_review_and_exact_authority(tmp_path, monkeypatch, mode):
+    from unittest.mock import Mock
+
+    from typer.testing import CliRunner
+
+    from video_channel_manager.cli import youtube as cli
+    from video_channel_manager.platforms.youtube.lord_god_presentation import plan_panorama_russian_metadata
+
+    owner, playlist = _russian_metadata_evidence()
+    candidate = plan_panorama_russian_metadata(owner, playlist, video_id=owner["video_id"])
+    review = {
+        "schema": "panorama-russian-metadata-approval-v1",
+        "candidate_sha256": canonical_sha256(candidate),
+        "approved": True,
+        "reviewer": "independent",
+        "reviewed_at": "2026-11-25T12:00:00+00:00",
+    }
+    bundle = tmp_path / "bundle.json"
+    review_file = tmp_path / "review.json"
+    review_file.write_text(json.dumps(review), encoding="utf-8")
+    if mode == "tampered":
+        candidate["removed_locale_keys"] = []
+    bundle.write_text(json.dumps({"owner": owner, "playlist": playlist, "candidate": candidate}), encoding="utf-8")
+    writer = Mock()
+    writer.reduce_panorama_localizations.return_value = {"status": "owner_verified_public_qa_pending"}
+    components = Mock(return_value=(None, None, writer))
+    monkeypatch.setattr(cli, "_writer_components", components)
+    monkeypatch.setattr(cli, "prepare_windows_youtube_console", lambda: None)
+    args = ["apply-panorama-russian-metadata", str(bundle), "--confirm-channel", LORD_GOD_OWNER_CHANNEL]
+    if mode not in {"dry_run", "tampered"}:
+        args.extend(
+            [
+                "--execute",
+                "--confirm-target",
+                "other000000" if mode == "wrong_target" else owner["video_id"],
+                "--confirm-after-sha256",
+                "wrong" if mode == "wrong_after" else candidate["after_sha256"],
+                "--review",
+                str(review_file),
+                "--confirm-review-sha256",
+                "wrong" if mode == "wrong_review_sha" else canonical_sha256(review),
+            ]
+        )
+    result = CliRunner().invoke(cli.youtube_app, args)
+    assert result.exit_code == (0 if mode in {"dry_run", "approved"} else 2), result.output
+    if mode == "approved":
+        components.assert_called_once()
+        writer.reduce_panorama_localizations.assert_called_once()
+        writer.close.assert_called_once()
+    else:
+        components.assert_not_called()
+    if mode == "dry_run":
+        assert '"provider_writes": 0' in result.output

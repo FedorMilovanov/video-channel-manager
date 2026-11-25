@@ -10,7 +10,6 @@ import unicodedata
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -107,6 +106,15 @@ def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, A
     return [item for item in value if isinstance(item, dict)]
 
 
+def _mirrors_russian_primary(language: str, locale: dict[str, Any], snippet: dict[str, Any]) -> bool:
+    return (
+        snippet.get("defaultLanguage") == "ru"
+        and language.split("-")[0].lower() == "ru"
+        and locale.get("title") == snippet.get("title")
+        and locale.get("description") == snippet.get("description")
+    )
+
+
 def _postwrite_metadata_drift(
     before: VideoDescriptionSnapshot, after: VideoDescriptionSnapshot, new_description: str
 ) -> list[str]:
@@ -137,7 +145,7 @@ def _postwrite_metadata_drift(
             drift.append(f"localizations.{language}.title")
         original_description = str(original.get("description") or "")
         observed_description = str(observed.get("description") or "")
-        if language == old_snippet.get("defaultLanguage"):
+        if language == old_snippet.get("defaultLanguage") or _mirrors_russian_primary(language, original, old_snippet):
             # YouTube may synchronize the primary-language locale automatically.
             accepted = descriptions_equivalent(observed_description, original_description) or (
                 descriptions_equivalent(observed_description, new_description)
@@ -392,7 +400,9 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 preserved[language] = {
                     "title": locale["title"],
                     "description": (
-                        new_description if language == snippet["defaultLanguage"] else locale["description"]
+                        new_description
+                        if language == snippet["defaultLanguage"] or _mirrors_russian_primary(language, locale, snippet)
+                        else locale["description"]
                     ),
                 }
             body["localizations"] = preserved
@@ -616,26 +626,20 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         """One reviewed reduction, canonical lock/intent, no automatic replay."""
         from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256
         from video_channel_manager.platforms.youtube.lord_god_presentation import (
-            plan_panorama_russian_metadata,
+            require_panorama_russian_metadata_approval,
             verify_panorama_russian_metadata_readback,
         )
         from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
         video_id = confirm_video_id
-        expected = plan_panorama_russian_metadata(owner, playlist, video_id=video_id)
-        if (
-            candidate != expected
-            or expected["disposition"] != "REVIEW_REQUIRED"
-            or confirm_after_sha256 != expected["after_sha256"]
-            or review.get("schema") != "panorama-russian-metadata-approval-v1"
-            or review.get("candidate_sha256") != canonical_sha256(expected)
-            or review.get("approved") is not True
-            or not isinstance(review.get("reviewer"), str)
-            or not review["reviewer"].strip()
-            or not isinstance(review.get("reviewed_at"), str)
-            or datetime.fromisoformat(review["reviewed_at"]).utcoffset() is None
-        ):
-            raise ValueError("Exact independent reduction review and confirmation required.")
+        expected = require_panorama_russian_metadata_approval(
+            candidate,
+            owner,
+            playlist,
+            review,
+            confirm_video_id=video_id,
+            confirm_after_sha256=confirm_after_sha256,
+        )
         if os.environ.get("GITHUB_ACTIONS") == "true" or self.account_alias != "fedor-milovanov":
             raise YouTubeWriteError("Panorama reduction requires the canonical local owner runtime.")
         data_dir = self.token_store.data_dir
