@@ -219,6 +219,8 @@ def test_both_preview_formats_preserve_exact_quote_text() -> None:
     audit, _ = _data()
     for item in audit["entries"]:
         expected = item["proposed_quote_text_ru"]
+        assert expected == expected.strip(), item["sequence"]
+        assert all(line == line.rstrip() for line in expected.splitlines()), item["sequence"]
         markup = item["telegram_html_preview_inert"]
         markdown = item["reader_preview_markdown_ru"]
         if item["sequence"] in ARTICLE_L1:
