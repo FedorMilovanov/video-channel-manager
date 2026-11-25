@@ -41,6 +41,7 @@ if __name__ == "__main__":
 def _retired_mutation_error() -> RuntimeError:
     return RuntimeError("This historical VK mutation executor is retired; use the supported Wave/provider workflow.")
 
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -628,6 +629,7 @@ def print_plan(plan: dict[str, Any], plan_path: Path) -> None:
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--account", default=ACCOUNT_ALIAS, help=argparse.SUPPRESS)

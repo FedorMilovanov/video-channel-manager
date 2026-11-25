@@ -521,6 +521,7 @@ def _sleep(delay: float) -> None:
 
 
 def run(args: argparse.Namespace) -> Path:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     if not args.execute:
         raise ValueError("The final megawave requires the explicit --execute flag")
     if args.write_delay < 0:
@@ -763,6 +764,7 @@ def run(args: argparse.Namespace) -> Path:
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     args = _parser().parse_args()
     run(args)
     return 0
