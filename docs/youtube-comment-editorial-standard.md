@@ -105,6 +105,10 @@ The incident was reproduced on two Lord God Q&A №54 owner comments: the malfor
 
 The style is compact and readable on desktop and mobile.
 
+### The Legendary Poet — художественное оформление (уточнение владельца, 2026-11-24)
+
+Для `legendary-poet` эмодзи разрешены в заголовке, внутри содержательного текста и перед подписями ссылок, когда они художественно и смыслово уместны. Например, 📚 для рукописи, 🎼 для истории музыкального произведения, 🎧 для плейлиста. Число и место эмодзи определяются композицией, а не фиксированным лимитом: ограничения ниже «one contextual marker» и «more than four decorative markers» не применяются к этому проекту. Не превращать абзацы в декоративные списки, не использовать строки из одних эмодзи, не подменять факты символами. Жирным (`*...*`) выделять ключевые имена, даты, события и смысловые акценты; курсивом (`_..._`) — точные цитаты, стихотворные строки и выразительные мысли. Допустимы разные композиции двух самостоятельных комментариев; подписи ссылок остаются жирными, URL — открытыми, пунктуация — по действующему YouTube-native контракту. Это редакционное разрешение, а не изменение правил заголовков видео, не разрешение на новый provider write и не ослабление защиты от дублей.
+
 ### Allowed
 
 - one contextual marker in the factual heading;
@@ -159,6 +163,12 @@ Rules:
 - two or three links are preferred; four are allowed when a primary source genuinely adds value;
 - never invent a playlist URL;
 - project link kinds must resolve through `record.project_key`.
+
+## Adaptive comment count — owner clarification 2026-11-24
+
+For both editorial channels the normal choice is one valuable comment; zero is appropriate where nothing independently useful can be added. A second may be chosen when it contributes a distinct evidence-backed subject (for example manuscript history versus later musical reception) not already developed in the description or first comment; three or more require separate editorial justification and owner authorization. Never require two by template, split one idea for volume, or classify all multiple owner comments as duplicates. At most one can be pinned. Formatting and source requirements are unchanged; verify existing comments and avoid exact duplicates.
+
+For a deliberately reviewed additional top-level comment, use the canonical comment plan with mode `reviewed-additional-comment`, one create operation and `expected_owned_comments` (exact current owner comment ID → canonical text SHA-256 map). Use `video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID` for preflight and the same command with `--execute --confirm-plan-sha256 SHA` for the separately authorized write. The command preserves prior comments, skips already present text, verifies the owner/video and records durable intent before dispatch. An uncertain POST requires read-only reconciliation, not another POST. Automatic missing-comment and legacy release flows retain their first-comment-only semantics; the explicit mode has no fixed total number of comments per video. Do not revive retired comment executors.
 
 ## Variable composition, not templates
 
@@ -219,7 +229,7 @@ The authoritative registry is `docs/operations/project-identity-registry.md`.
 
 - No channel comment: an approved `create` operation may be planned.
 - Identical channel comment: already applied; skip.
-- One different channel comment: review it before deciding whether to update.
+- One different channel comment: review it; either retain it, update that exact ID with approval, or plan a distinct additional comment only under the explicit additional-create contract.
 - Multiple channel comments: never choose automatically.
 - Viewer comments only: the channel may still create one approved top-level comment.
 - Comments disabled: no workaround or browser automation.

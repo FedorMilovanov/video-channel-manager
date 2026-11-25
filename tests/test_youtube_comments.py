@@ -355,6 +355,68 @@ def test_create_refuses_a_different_existing_channel_comment(tmp_path: Path) -> 
     assert methods == ["GET", "GET", "GET", "GET"]
 
 
+def test_add_independent_comment_preserves_prior_comments_and_is_idempotent(tmp_path: Path) -> None:
+    existing = [_thread("comment-1", "First historical subject")]
+    posts = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads" and request.method == "GET":
+            return httpx.Response(
+                200, json={"items": existing if request.url.params["moderationStatus"] == "published" else []}
+            )
+        if request.url.path == "/commentThreads" and request.method == "POST":
+            posts.append(request)
+            text = json.loads(request.content)["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
+            created = _thread("comment-2", text)
+            existing.append(created)
+            return httpx.Response(200, json=created)
+        if request.url.path == "/comments":
+            return httpx.Response(200, json={"items": [_comment("comment-2", "Second historical subject")]})
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    reviewed = {item.comment_id: item.text_sha256 for item in writer.list_top_level_comments("video-1")}
+    for _ in range(2):
+        result = writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Second historical subject",
+            expected_owned_comments=reviewed,
+        )
+        assert result.comment_id == "comment-2"
+    assert len(posts) == 1
+    assert len(existing) == 2
+
+
+@pytest.mark.parametrize("reviewed", [{}, {"comment-1": "sha256:" + "0" * 64}, {"other-id": "sha256:" + "1" * 64}])
+def test_add_rejects_stale_reviewed_owner_state_before_post(tmp_path: Path, reviewed: dict[str, str]) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads":
+            return httpx.Response(
+                200,
+                json={
+                    "items": [_thread("comment-1", "Older channel comment")]
+                    if request.url.params["moderationStatus"] == "published"
+                    else []
+                },
+            )
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentConflictError, match="Reviewed owner comment state changed"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="New approved comment",
+            expected_owned_comments=reviewed,
+        )
+
+
 def test_update_requires_exact_reviewed_before_text(tmp_path: Path) -> None:
     def handle(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/comments":
