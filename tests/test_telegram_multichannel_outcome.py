@@ -211,3 +211,29 @@ def test_outcome_cannot_be_applied_to_a_different_payload() -> None:
 
     with pytest.raises(ValueError, match="payload digest differs"):
         apply_provider_outcome(ledger, envelope, outcome)
+
+
+def test_outcome_from_previous_attempt_cannot_resolve_new_intent() -> None:
+    profile, _, release, ledger, first = _runtime()
+    prior = _failure(first, effect="confirmed_absent", retryable=True).model_copy(
+        update={"intent_id": first.intent_id}
+    )
+    apply_provider_outcome(ledger, first, prior)
+    prepared = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="201",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="manual",
+        target=first.target,
+        expected_publication_id=first.publication_id,
+        now=first.prepared_at_utc,
+    )
+    assert prepared.envelope is not None
+    assert prepared.envelope.intent_id != first.intent_id
+    with pytest.raises(ValueError, match="outcome intent differs"):
+        apply_provider_outcome(ledger, prepared.envelope, prior)
+    assert ledger.entries[first.publication_id].provider_effect == "may_exist"

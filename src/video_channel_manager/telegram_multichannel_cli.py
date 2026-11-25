@@ -108,6 +108,11 @@ def parser() -> argparse.ArgumentParser:
     apply.add_argument("--envelope", type=Path, required=True)
     apply.add_argument("--outcome", type=Path, required=True)
 
+    recover = sub.add_parser("recover-outcome")
+    recover.add_argument("--release", type=Path, required=True)
+    recover.add_argument("--ledger", type=Path, required=True)
+    recover.add_argument("--envelope", type=Path, required=True)
+
     validate = sub.add_parser("validate-ledger")
     validate.add_argument("--release", type=Path, required=True)
     validate.add_argument("--ledger", type=Path, required=True)
@@ -266,6 +271,7 @@ def _failure_outcome(
         schema_version=1,
         publication_id=envelope.publication_id,
         provider_payload_sha256=envelope.provider_payload_sha256,
+        intent_id=envelope.intent_id,
         provider_effect=effect,
         retryable=retryable,
         error=error,
@@ -346,11 +352,46 @@ def _send_exact_payload(
         schema_version=1,
         publication_id=envelope.publication_id,
         provider_payload_sha256=envelope.provider_payload_sha256,
+        intent_id=envelope.intent_id,
         provider_effect="verified",
         retryable=False,
         error=None,
         receipt=receipt,
     )
+
+
+def _local_dispatch_paths(ledger_path: Path, envelope: GenericDispatchEnvelope) -> tuple[Path, Path]:
+    ledger_path = ledger_path.resolve()
+    claim_dir = ledger_path.parent / f".{ledger_path.name}.dispatch-claims"
+    intent_key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
+    return claim_dir / f"{intent_key}.json", claim_dir / f"{intent_key}.outcome.json"
+
+
+def _write_atomic_outcome(path: Path, outcome: GenericProviderOutcome) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=path.parent, delete=False
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(outcome.model_dump_json(indent=2) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _load_local_outcome(ledger_path: Path, envelope: GenericDispatchEnvelope) -> GenericProviderOutcome:
+    claim, result_path = _local_dispatch_paths(ledger_path, envelope)
+    if _load_model(claim, GenericDispatchEnvelope) != envelope:
+        raise ValueError("local dispatch claim differs from exact envelope")
+    outcome = _load_model(result_path, GenericProviderOutcome)
+    if outcome.intent_id != envelope.intent_id:
+        raise ValueError("local outcome intent differs from exact envelope")
+    return outcome
 
 
 def _send_persisted_once(
@@ -369,10 +410,10 @@ def _send_persisted_once(
     verify_persisted_intent(release, ledger, envelope)
     if outcome_path.exists():
         raise ValueError("Telegram outcome already exists; apply or reconcile it, never resend")
-    claim_dir = ledger_path.parent / f".{ledger_path.name}.dispatch-claims"
-    claim_dir.mkdir(parents=True, exist_ok=True)
-    intent_key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
-    claim = claim_dir / f"{intent_key}.json"
+    claim, result_path = _local_dispatch_paths(ledger_path, envelope)
+    if result_path.exists():
+        raise ValueError("Telegram outcome already exists; recover it, never resend")
+    claim.parent.mkdir(parents=True, exist_ok=True)
     try:
         with claim.open("x", encoding="utf-8", newline="\n") as handle:
             handle.write(envelope.model_dump_json() + "\n")
@@ -384,18 +425,11 @@ def _send_persisted_once(
     # An interrupted process leaves its claim intact even when no outcome exists.
     # The claim is local, not a substitute for protected state/concurrency.
     outcome = _send_exact_payload(profile, release, ledger, envelope)
-    outcome_path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", newline="\n", dir=outcome_path.parent, delete=False
-    ) as handle:
-        temporary = Path(handle.name)
-        handle.write(outcome.model_dump_json(indent=2) + "\n")
-        handle.flush()
-        os.fsync(handle.fileno())
-    try:
-        temporary.replace(outcome_path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    if outcome.intent_id != envelope.intent_id:
+        raise ValueError("new Telegram outcome is not bound to the consumed intent")
+    # Persist the canonical result before exporting it to the workflow handoff.
+    _write_atomic_outcome(result_path, outcome)
+    _write_atomic_outcome(outcome_path, outcome)
     return outcome
 
 
@@ -569,11 +603,18 @@ def main() -> int:
         )
         return 0 if outcome.provider_effect == "verified" else 4
 
-    if args.command == "apply-outcome":
+    if args.command in {"apply-outcome", "recover-outcome"}:
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
-        outcome = _load_model(args.outcome, GenericProviderOutcome)
+        verify_persisted_intent(release, ledger, envelope)
+        claim, _ = _local_dispatch_paths(args.ledger, envelope)
+        if args.command == "recover-outcome":
+            outcome = _load_local_outcome(args.ledger, envelope)
+        else:
+            outcome = _load_model(args.outcome, GenericProviderOutcome)
+            if claim.exists() and outcome != _load_local_outcome(args.ledger, envelope):
+                raise ValueError("exported Telegram outcome differs from canonical local outcome")
         entry = apply_provider_outcome(ledger, envelope, outcome)
         save_ledger(args.ledger, ledger)
         print(

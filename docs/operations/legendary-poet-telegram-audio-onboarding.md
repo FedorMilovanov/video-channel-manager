@@ -82,6 +82,14 @@ reconciliation; never delete it to force a retry. This local protection does
 not establish cross-host or cross-release duplicate coverage and does not
 replace the protected channel state, serialization or exact provider receipt.
 
+New outcomes carry the exact dispatch intent ID. The canonical outcome is
+saved beside its claim before exporting the workflow receipt. If export fails,
+`recover-outcome` applies the saved result to the matching unresolved ledger
+without another provider call; a missing result remains an unresolved effect.
+Older archived outcomes can still be read by the existing schema, but a local
+claimed attempt requires the exact canonical result. This does not make
+legacy unbound outcomes safe to replay across attempts or machines.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.

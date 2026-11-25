@@ -23,6 +23,8 @@ class GenericProviderOutcome(BaseModel):
     schema_version: Literal[1]
     publication_id: str = Field(min_length=5, max_length=96)
     provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    # Older archived outcomes lack this field; newly emitted outcomes bind the attempt.
+    intent_id: str | None = Field(default=None, min_length=16, max_length=128)
     provider_effect: GenericSendProviderEffect
     retryable: bool = False
     error: str | None = Field(default=None, max_length=1000)
@@ -83,6 +85,8 @@ def apply_provider_outcome(
     envelope: GenericDispatchEnvelope,
     outcome: GenericProviderOutcome,
 ) -> GenericLedgerEntry:
+    if outcome.intent_id is not None and outcome.intent_id != envelope.intent_id:
+        raise ValueError("provider outcome intent differs from dispatch")
     if outcome.publication_id != envelope.publication_id:
         raise ValueError("provider outcome publication differs from dispatch")
     if outcome.provider_payload_sha256 != envelope.provider_payload_sha256:
