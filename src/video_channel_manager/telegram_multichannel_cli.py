@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import json
 import os
+import secrets
+import subprocess
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -402,6 +404,93 @@ def _load_local_outcome(ledger_path: Path, envelope: GenericDispatchEnvelope) ->
     return outcome
 
 
+def _state_git(directory: Path, *args: str) -> str:
+    """Run bounded Git state operations without exposing remote credentials."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(directory), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("audio state Git operation unavailable; reconcile before retrying") from exc
+    if result.returncode != 0:
+        raise ValueError(f"audio state Git {args[0]} failed; reconcile before retrying")
+    return result.stdout.strip()
+
+
+def _require_state_origin(root: Path) -> None:
+    allowed = {
+        "https://github.com/fedormilovanov/video-channel-manager",
+        "git@github.com:fedormilovanov/video-channel-manager",
+        "ssh://git@github.com/fedormilovanov/video-channel-manager",
+    }
+    for flags in (("--all",), ("--push", "--all")):
+        url = _state_git(root, "remote", "get-url", *flags, "origin")
+        if url.casefold().removesuffix(".git") not in allowed:
+            raise ValueError("audio state origin must be the exact canonical repository")
+
+
+def _remote_state_head(root: Path, branch: str) -> str:
+    ref = f"refs/heads/{branch}"
+    expected = _state_git(root, "ls-remote", "--exit-code", "origin", ref).split()
+    if len(expected) != 2 or expected[1] != ref:
+        raise ValueError("audio state remote ref is missing or ambiguous")
+    return expected[0]
+
+
+def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
+    root = Path(_state_git(ledger_path.parent, "rev-parse", "--show-toplevel")).resolve()
+    relative = ledger_path.relative_to(root)
+    expected = Path("content/telegram") / profile.project_key / "audio-releases"
+    if relative.parent.parent != expected:
+        raise ValueError("audio ledger must be in the exact protected channel state checkout")
+    _require_state_origin(root)
+    if _state_git(root, "status", "--porcelain=v1", "--untracked-files=all"):
+        raise ValueError("audio state checkout must be clean before dispatch")
+    if _state_git(root, "rev-parse", "HEAD") != _remote_state_head(root, profile.state_branch):
+        raise ValueError("audio state checkout is not the exact current remote state")
+    tracked = _state_git(root, "ls-files", "-v", "--", expected.as_posix()).splitlines()
+    if not tracked or any(not line.startswith("H ") for line in tracked):
+        raise ValueError("audio state must contain the complete tracked channel history")
+    paths = {line[2:] for line in tracked}
+    for directory in (root / expected).iterdir():
+        for name in ("release.json", "ledger.json"):
+            path = directory / name
+            if path.is_symlink() or path.relative_to(root).as_posix() not in paths:
+                raise ValueError("audio history must contain only tracked release and ledger pairs")
+    return root
+
+
+def _persist_remote_audio_claim(root: Path, profile: TelegramChannelProfile, claim: Path) -> None:
+    relative = claim.relative_to(root).as_posix()
+    _state_git(root, "add", "--", relative)
+    # A unique commit is essential: two identical trees from the same parent
+    # must never let a losing push be mistaken for an already-up-to-date win.
+    nonce = secrets.token_hex(16)
+    _state_git(
+        root,
+        "-c",
+        "user.name=telegram-audio-state",
+        "-c",
+        "user.email=telegram-audio-state@users.noreply.github.com",
+        "commit",
+        "--only",
+        "-m",
+        f"Claim Telegram audio dispatch {nonce}",
+        "--",
+        relative,
+    )
+    claimed_head = _state_git(root, "rev-parse", "HEAD")
+    _state_git(root, "push", "--no-force", "--no-follow-tags", "origin", f"HEAD:refs/heads/{profile.state_branch}")
+    if _remote_state_head(root, profile.state_branch) != claimed_head:
+        raise ValueError("remote audio claim was not verified; reconcile before retrying")
+
+
 def _send_persisted_once(
     profile: TelegramChannelProfile,
     release: GenericReleaseQueue,
@@ -426,6 +515,11 @@ def _send_persisted_once(
     claim, result_path = _local_dispatch_paths(ledger_path, envelope)
     if result_path.exists():
         raise ValueError("Telegram outcome already exists; recover it, never resend")
+    if claim.exists():
+        raise ValueError("Telegram intent already claimed; reconcile existing outcome, never resend")
+    state_root = (
+        _require_current_audio_state(profile, ledger_path) if isinstance(item.payload, GenericAudioPayload) else None
+    )
     claim.parent.mkdir(parents=True, exist_ok=True)
     try:
         with claim.open("x", encoding="utf-8", newline="\n") as handle:
@@ -435,8 +529,10 @@ def _send_persisted_once(
     except FileExistsError as exc:
         raise ValueError("Telegram intent already claimed; reconcile existing outcome, never resend") from exc
 
-    # An interrupted process leaves its claim intact even when no outcome exists.
-    # The claim is local, not a substitute for protected state/concurrency.
+    # Audio claims must win the remote non-forced update before dispatch.
+    # An interrupted or losing process retains its claim and cannot send again.
+    if state_root is not None:
+        _persist_remote_audio_claim(state_root, profile, claim)
     outcome = _send_exact_payload(profile, release, ledger, envelope)
     if outcome.intent_id != envelope.intent_id:
         raise ValueError("new Telegram outcome is not bound to the consumed intent")

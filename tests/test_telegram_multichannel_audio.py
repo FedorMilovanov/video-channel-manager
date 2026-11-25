@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,8 @@ from video_channel_manager.telegram_multichannel_audio import (
     render_audio_payload,
     send_audio_once,
 )
+from video_channel_manager.telegram_multichannel_cli import _require_current_audio_state, _send_persisted_once
+from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release
 from video_channel_manager.telegram_multichannel_state import (
@@ -467,3 +470,93 @@ def test_audio_admission_rejects_incomplete_state_checkout(tmp_path, monkeypatch
         require_audio_channel_admission(release, ledger_path, payload.publication_id, now=NOW)
     with pytest.raises(ValueError, match="canonical channel"):
         require_audio_channel_admission(release, tmp_path / "ledger.json", payload.publication_id, now=NOW)
+
+
+def _git(directory: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(directory), *args], check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+@pytest.mark.parametrize("race_after_check", [False, True])
+def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_after_check):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    release = _history_release(profile, payload, "milovi-new-audio")
+    ledger = initialize_ledger(release)
+    prepared = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="123",
+        run_attempt="1",
+        github_sha="1" * 40,
+        github_workflow_sha="2" * 40,
+        mode="manual",
+        target=_target(profile),
+        expected_publication_id=payload.publication_id,
+        now=NOW,
+    )
+    assert prepared.envelope is not None
+    envelope = prepared.envelope
+    remote = tmp_path / "remote.git"
+    remote.mkdir()
+    _git(remote, "init", "--bare")
+    first = tmp_path / "first"
+    first.mkdir()
+    _git(first, "init", "-b", profile.state_branch)
+    _git(first, "config", "core.autocrlf", "false")
+    _git(first, "config", "user.name", "test")
+    _git(first, "config", "user.email", "test@example.invalid")
+    path = _save_audio_state(first / "content/telegram" / profile.project_key / "audio-releases", release, ledger)
+    relative = path.relative_to(first)
+    _git(first, "add", ".")
+    _git(first, "commit", "-m", "persist exact intent")
+    _git(first, "remote", "add", "origin", str(remote))
+    _git(first, "push", "origin", f"HEAD:refs/heads/{profile.state_branch}")
+    second = tmp_path / "second"
+    _git(tmp_path, "clone", "-b", profile.state_branch, str(remote), str(second))
+    calls = []
+
+    def send(*args):
+        calls.append(args)
+        return GenericProviderOutcome(
+            schema_name="video-channel-manager.telegram-generic-provider-outcome",
+            schema_version=1,
+            publication_id=envelope.publication_id,
+            provider_payload_sha256=envelope.provider_payload_sha256,
+            intent_id=envelope.intent_id,
+            provider_effect="may_exist",
+            error="offline ambiguous effect",
+        )
+
+    # Use an isolated local bare Git repository, never a live provider.
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._require_state_origin", lambda root: None)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", send)
+
+    def winner():
+        return _send_persisted_once(profile, release, path, envelope, tmp_path / "first-outcome.json")
+
+    if race_after_check:
+
+        def race(profile_arg, ledger_arg):
+            root = _require_current_audio_state(profile_arg, ledger_arg)
+            if root == second:
+                assert winner().provider_effect == "may_exist"
+            return root
+
+        monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._require_current_audio_state", race)
+    else:
+        assert winner().provider_effect == "may_exist"
+
+    with pytest.raises(ValueError, match="not the exact current remote state|Git push failed"):
+        _send_persisted_once(profile, release, second / relative, envelope, tmp_path / "second-outcome.json")
+    assert len(calls) == 1
+    assert not (tmp_path / "second-outcome.json").exists()
+
+    fresh = tmp_path / "fresh"
+    _git(tmp_path, "clone", "-b", profile.state_branch, str(remote), str(fresh))
+    with pytest.raises(ValueError, match="intent already claimed"):
+        _send_persisted_once(profile, release, fresh / relative, envelope, tmp_path / "fresh-outcome.json")
+    assert len(calls) == 1

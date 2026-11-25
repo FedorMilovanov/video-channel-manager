@@ -116,13 +116,16 @@ branch. The gate rejects known duplicate bytes or publication IDs, other
 unresolved audio dispatches (even different bytes), and the channel-wide
 daily verified limit. The current exact persisted intent is allowed at the
 send stage, not any other attempt. Missing/mismatched state fails closed.
-No new owner flags are needed. This is a check of the checked-out state;
-it does not prove that the branch is current or that historical Telegram
-posts outside these ledgers are covered. The orchestration must still
-initialize the protected state explicitly, reconcile prior provider history,
-serialize the channel writer, push intent with a non-forced remote update
-and verify the exact persisted remote state before mutation. Do not copy
-this checkout to create a second independent writer.
+No new owner flags are needed. Audio send-once additionally requires the
+canonical repository origin and a clean, complete checkout at the exact
+current remote channel state. It persists an exclusive claim for the already
+committed intent using a unique non-forced Git commit and verifies remote
+readback before the existing sender can run. A stale clone, losing push,
+existing claim or uncertain Git result stops before dispatch. This does not
+prove that historical Telegram posts outside the ledgers are covered.
+Protected state initialization, history reconciliation, automatic remote
+intent/result persistence and the single operator entrypoint remain required.
+Do not use another writer or delete a claim to force a replay.
 
 ### Required checks before the first audio post
 
