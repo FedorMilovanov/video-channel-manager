@@ -4,6 +4,7 @@ import ipaddress
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
 from pydantic import Field, SecretStr, field_validator
@@ -53,6 +54,7 @@ class AppSettings(BaseSettings):
     instagram_access_token: SecretStr | None = None
     instagram_writes_enabled: bool = False
     instagram_media_allowed_hosts: tuple[str, ...] = ()
+    instagram_meta_proxy_url: str | None = None
     instagram_request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     # Meta recommends checking a publishing container once per minute for no
     # more than five minutes. Explicit overrides remain possible for reviewed
@@ -86,6 +88,36 @@ class AppSettings(BaseSettings):
             return None
         normalized = value.strip()
         return normalized or None
+
+    @field_validator("instagram_meta_proxy_url")
+    @classmethod
+    def validate_instagram_meta_proxy_url(cls, value: str | None) -> str | None:
+        """Accept only a non-credentialed loopback HTTP proxy.
+
+        This explicitly routes Meta Graph + rupload without ever authorizing
+        an arbitrary external proxy to receive the application's HTTPS tunnels.
+        """
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip()
+        try:
+            parts = urlsplit(normalized)
+            port = parts.port
+        except ValueError as exc:
+            raise ValueError("Instagram Meta proxy must be http://127.0.0.1:<port>") from exc
+        if (
+            port is None
+            or not 1 <= port <= 65535
+            or normalized != f"http://127.0.0.1:{port}"
+            or parts.hostname != "127.0.0.1"
+            or parts.username is not None
+            or parts.password is not None
+            or parts.path
+            or parts.query
+            or parts.fragment
+        ):
+            raise ValueError("Instagram Meta proxy must be http://127.0.0.1:<port>")
+        return normalized
 
     @field_validator("instagram_media_allowed_hosts")
     @classmethod

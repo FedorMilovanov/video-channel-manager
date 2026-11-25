@@ -16,9 +16,9 @@ If rules differ, the more specific canonical document above wins.
 
 
 
-### 2026-11-14 — обязательные жирные подписи ссылок
+### 2026-11-24 — чистый SHARE и выразительные комментарии
 
-Во всех новых ручных пакетах The Legendary Poet подписи двух верхних плейлистов Description, четырёх соцссылок и ссылок в комментариях должны быть жирными: `*Подпись:* URL`. Двоеточие входит внутрь `*...*`; сам URL не выделяется. Требование не относится к основному литературному абзацу: он начинается без каких-либо маркеров. Исключение для SHORTS: только две жирные подписи плейлистов.
+Уточнение владельца заменяет правило от 2026-11-14 о жирных подписях в начале Description. У нового пакета The Legendary Poet две верхние подписи плейлистов `Подпись: URL` и первый литературный абзац — чистый текст; четыре следующие соцссылки после пустой строки сохраняют жирные подписи `*Подпись:* URL`. У Shorts две первые содержательные строки чистые. Правило применяется к предпросмотру Description, а не к комментариям: в закрепе и дополнительных комментариях сохраняются жирные подписи `*Подпись:* URL`, смысловые эмодзи и курсив. Сохранять точные URL, в том числе подчёркивания внутри ID, и порядок ссылок. Подробный контракт: [v3.1](youtube-metadata-package-master-v3.1.md) и [стандарт рендеринга](youtube-description-rendering-standard.md). Не переписывать автоматически опубликованные материалы.
 
 Проверка `*«О, я хочу безумно жить…»*,` и аналогичных конструкций с пунктуацией после закрывающего маркера обязательна до выпуска. Нельзя автоматически сдвигать запятые и точки; нужно переписать предложение, сохраняя авторские цитаты и смысл, а затем проверить фактическое выделение на публичной странице YouTube.
 
@@ -55,9 +55,19 @@ Use concrete images, conflicts, formal decisions, historical facts and musical/v
 
 Strong evaluative words require a concrete reason. AI-assisted music/visual work is described as interpretation or experiment, never as an improvement of the literary original.
 
+### Owner rule — historical copy, no obvious meta-narration (2026-11-24)
+
+For The Legendary Poet historical/visual Shorts, this rule applies to **descriptions, pinned comments, additional author comments and audience replies**. Write about the documented historical subject rather than explain the on-screen joke or retell what viewers can see. Reject formulaic statements such as «на этом историческом контрасте построена шутка», «поэт оказался в нашем времени», «это художественная постановка», «не документальная съёмка» and equivalent padding. Do not invent speech, quotations or events; any mandatory synthetic-content disclosure belongs in the appropriate platform field, and any genuinely necessary factual attribution must be precise and proportionate. Do not suppress mandatory disclosure.
+
+A request for 50+ sources means a research ledger, not 50 URL lines in the public description. Record the actual page title, URL, access/review state, claim(s) supported and source family (archive/primary, institutional, specialist, derivative, or discovery-only). Deduplicate mirrored material; distinguish discovered URLs from opened/read pages and independent sources. Map each substantive factual paragraph to checked evidence. Unverified details stay out of final copy; retain the source ledger as an editorial artifact. Use the historical-depth exception in `youtube-metadata-package-master-v3.1.md` §5b for requested extended comments, not the ordinary five-block validator.
+
+For audience replies about lifespan, dates or chronology, use exact source-backed birth/death dates and calendar differences (not subtraction of year numbers alone). Distinguish approximate claims from exact dates without scolding; preserve the owner's requested tone, avoid filler, and do not invent or assume that a drafted reply was posted. When dates are recorded in old/new style, label the calendar and calculate using the same calendar throughout.
+
 ## 3. First paragraph
 
-The first paragraph is the share-preview boundary and follows `docs/youtube-description-rendering-standard.md`:
+**Lord God — уточнение владельца 2026-11-24:** весь первый связный блок плейлистов (любое количество, включая один) имеет обычные подписи и общий заголовок без маркеров выделения. Последующий самостоятельный блок после пустой строки может использовать жирные подписи. Не смешивать стили внутри первого блока; не перемещать ссылки и не нарушать две чистые содержательные строки Lord God. Это не меняет отдельный стандарт двух верхних плейлистов Legendary Poet или формат комментариев. См. [матрицу Lord God](operations/lord-god-youtube-agent-decision-contract.md).
+
+The first meaningful paragraph and the exact project-defined opening preview lines must be clean; for Legendary Poet v3.1 only the first two playlist labels are plain, while the subsequent social labels remain bold; follow `docs/youtube-description-rendering-standard.md` and the exact project contract:
 
 - normally 2–4 sentences;
 - no `*` / `_` wrappers;

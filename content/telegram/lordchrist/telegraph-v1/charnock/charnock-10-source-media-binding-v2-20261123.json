@@ -1,0 +1,21 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-charnock-reissue-source-media-binding",
+  "schema_version": 2,
+  "publication_id": "lordchrist-telegraph-charnock-10",
+  "scheduled_on_moscow": "2026-11-24",
+  "channel": "@lordchrist",
+  "legacy_manifest_git_blob_sha": "9bbacf42933da605ca8f47a4708d23dd18971a8b",
+  "legacy_article_git_blob_sha": "1173a305bb192c0aec3606485c5b3664c95e8650",
+  "original_article_sha256": "sha256:b15e2658d1ed040c3bef62a7be226ed75a19fd0136bfd519ce0e89c42c43c7ae",
+  "original_cover_sha256": "sha256:d2fffe4e5c9f04c64eece0dd7d84d2e52d4907c6acf3b76092edd1895e9071d0",
+  "original_github_sha": "6f67b689f3de6ba811134bb4b49eff0e2fd9fee3",
+  "original_deleted_telegram_message_id": 1600,
+  "existing_telegraph_url": "https://telegra.ph/Sudya-kotorogo-nelzya-vyklyuchit-sovest-i-zhazhda-beskonechnogo-11-05",
+  "reviewed_article_git_blob_sha": "cb1819866d98348a184e98a2893ee847a02c0fdd",
+  "reviewed_article_sha256": "sha256:1302f2e9dfbc7660b93f4123fed572540677c5e347e2726508ee1a7f3c1e84e8",
+  "reviewed_cover_git_blob_sha": "c64a4582311e408f5734cdb66a35ee0f929ad5ce",
+  "reviewed_media_base_revision": "c1bafa972e91d536fc56d86e53b4ce6f3502f37d",
+  "reviewed_normalized_tree_sha256": "56b06597af499958efe515cf41ac9284d6c08e18046825ada34de322f7407db0",
+  "reviewed_node_count": 97,
+  "authority_policy": "Exact reviewed #10 QC source and existing Telegraph page only; no changes to historical manifest/ledger, missing slots 06-08, #09 verified receipt, #11-13 or publication schedules. Protected CI and versioned binding are required before a due-slot executor can use this identity."
+}

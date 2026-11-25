@@ -61,7 +61,9 @@ def test_retired_wave6_imported_dispatchers_refuse_before_provider_code(
         exec(compile(isolated, filename=str(source), mode="exec"), namespace, namespace)
         arguments: tuple[object, ...] = (object(),) if name == "run" else ()
         with pytest.raises(RuntimeError, match="VK_WAVE6_RETIRED_IMPORT_BLOCKED"):
-            namespace[name](*arguments)
+            dispatcher = namespace[name]
+            assert callable(dispatcher)
+            dispatcher(*arguments)
 
 
 def test_retired_import_guards_preserve_exact_wave6_inventory_and_other_modules() -> None:

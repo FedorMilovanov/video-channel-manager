@@ -5,7 +5,7 @@ Owner: Wave 3 / issue #69
 
 This inventory is enforced by `tests/test_http_client_inventory.py` in both directions: the test fails when a constructor appears in a file this document does not record, and it fails when this document records a file whose constructor count no longer matches the code. A direct `httpx.Client()` constructor is allowed only when its lifecycle and operation semantics are recorded below, with a count. Reusable provider classes must use `HttpClientOwner`; they may own one persistent client or borrow an injected client, but may not construct a client per request.
 
-The inventory is 30 reviewed constructors: 17 in `src/` across 12 modules and 13 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
+The inventory is 31 reviewed constructors: 18 in `src/` across 13 modules and 13 in reviewed one-shot scripts. Until 2026-10-22 this document claimed that `src/` had no constructor outside `platforms/http.py` while the test silently allowed 16 more in 11 modules: the rule was not the rule the code obeyed, and nothing compared the two.
 
 ## Reusable library paths
 
@@ -21,6 +21,7 @@ The inventory is 30 reviewed constructors: 17 in `src/` across 12 modules and 13
 | `VkThumbnailWriter` | owned or borrowed persistent client | safe upload-URL reservation plus ambiguous mutations | `video.getThumbUploadUrl` may use bounded retry; upload-server POST and `video.saveUploadedThumb` are single attempt, surface `retryable=False`, and never expose the opaque upload URL in errors. |
 | `HttpxTelegramRichMutationProvider` | owned or borrowed persistent client | exact same-credential read plus ambiguous `sendRichMessage` mutation | Uses `HttpClientOwner`; one bounded `getMe` read binds the credential to the expected bot before at most one `HttpOperationClass.AMBIGUOUS_MUTATION` POST. Mutation retries are zero, and ambiguous failures never trigger retry or the legacy `sendMessage` fallback. |
 | `SvodkaRichMediaProofReader` | owned or borrowed persistent client | two exact HTTPS media safe reads | Uses `HttpClientOwner` once for the bounded two-asset batch. Reads have explicit timeouts, no redirects or environment proxy inheritance, bounded safe-read retry, exact MIME/signature checks, and byte SHA-256 evidence; it has no Telegram credential or mutation method. |
+| Jude Telegraph account inspection | owned or borrowed client | bounded account-title reads | Uses `HttpClientOwner` for one complete double scan; redirects and environment proxy inheritance are disabled, each request has one attempt, and the owned client is closed on exit. Only two allowlisted read methods receive the account token; no provider write is possible. |
 
 The default limiter interval is zero. A nonzero VK interval must be explicitly configured or injected from a verified provider policy; the library does not invent a request-per-second value.
 
@@ -39,6 +40,7 @@ bounded retry; an ambiguous mutation gets zero transport retries and one attempt
 | `src/video_channel_manager/telegram_custom_emoji_harvest.py` | 1 | safe reads | Bounded public-page harvest with `retries=2`, redirects disabled, closed only when owned. |
 | `src/video_channel_manager/telegram_historical_media.py` | 1 | safe reads | `_build_acquisition_client()` builds one bounded acquisition client (redirects on, explicit timeouts) that the caller closes. |
 | `src/video_channel_manager/telegram_multichannel_transport.py` | 4 | safe reads plus ambiguous mutations | Two preflight clients with bounded safe-read retries and two publisher clients with `MUTATION_TRANSPORT_RETRIES == 0`; each closes only when owned. |
+| `src/video_channel_manager/telegram_multichannel_audio.py` | 1 | ambiguous mutation | `sendAudio` multipart client: exact MP3/JPEG bytes, channel identity and rich Telegram entities checked before one zero-retry POST; closed only when owned; ambiguous outcomes are may_exist. |
 | `src/video_channel_manager/telegram_multichannel_video.py` | 1 | ambiguous mutation | `sendVideo` client with `MUTATION_TRANSPORT_RETRIES == 0`, closed only when owned. |
 | `src/video_channel_manager/telegram_research_public_permalink_probe.py` | 1 | safe reads | Bounded public-page recovery scan with `retries=2` and redirects disabled. |
 | `src/video_channel_manager/telegram_research_update_probe.py` | 1 | safe reads | Probe client used only for `getWebhookInfo` and chat reads, closed only when owned. |

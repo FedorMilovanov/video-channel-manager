@@ -5,6 +5,14 @@
 **Related owning tracker:** [Legendary Poet multilingual rollout #903](https://github.com/FedorMilovanov/video-channel-manager/issues/903).  
 **Do not substitute** for [project identities](project-identity-registry.md), the current operating contract, or the separate project `lord-god-strength`.
 
+> **Current-status correction, 25 November 2026:** Google approved the extension for
+> Cloud project 1067074369047, and the owner Console shows 110000 shared units/day
+> (plus separate search/upload limits). The pending-grant statements below are
+> historical November 13 evidence, not an active quota hold. See the
+> [current shared quota runbook](youtube-shared-project-quota.md#current-verified-grant--25-november-2026-moscow-date)
+> and [Console evidence](https://github.com/FedorMilovanov/video-channel-manager/issues/795#issuecomment-7148907683).
+> Actual Google remaining requires current evidence; the approved project uses automatic shared local estimated ceilings, not a daily manual allocation.
+
 ## 1. API compliance and quota — verified versus pending
 
 | Item | Evidence and state | Action |
@@ -53,6 +61,23 @@ These are **historical owner-provider readbacks**, not a fresh proof of every it
 
 **Closure for the report:** explanation and viewer-side remedy documented. **Owner visual comparison of an exact watch page remains unverified**; do not claim provider-side anomaly fixed or audio settings corrected.
 
+### 2026-11-24 — owner policy: RUSSIAN FIRST / INTERNATIONAL READY (both channels)
+
+Applies to Russian-language originals and Russian-language presentations/translations on both `legendary-poet` and `lord-god-strength`. Russian accessibility is a release requirement, not a reason to abandon international discovery. Foreign VPN endpoints may contribute to YouTube choosing a foreign localization; creator-side `snippet.defaultLanguage=ru` alone does not force Russian display. [YouTube viewer language selection](https://support.google.com/youtube/answer/7296123), [preferred languages](https://support.google.com/youtube/answer/13339776), [API video resource](https://developers.google.com/youtube/data/reference/rest/v3/videos).
+
+**Russian-first metadata; foreign captions by default, foreign metadata only within the approved scope.** For Russian original music/poetry on Legendary Poet, do not add foreign title/description localizations without an explicit owner decision. The following bilingual design is a candidate only when foreign metadata is actually in scope. For the exact 68 Panorama Bible lecture IDs and series playlist, the later 25 November owner directive supersedes that design: Russian-only title/description, preserve and extend foreign captions, archive and remove foreign metadata through the reviewed exact-map migration. Do not recreate foreign locales. This does not guarantee that YouTube-generated translations stop.
+
+For separately authorized foreign metadata outside the Panorama exception:
+- Preserve the exact approved Russian default title and complete original description, actual audio-language annotation, captions, chapters, attribution, rights notices, source URLs and existing channel-specific layout. Do not translate or alter the actual audio without separate authorization; genuine foreign-language versions retain truthful language annotations.
+- In every proposed foreign title retain a recognizable Russian title/work or series, episode number where applicable, and creator/speaker identity; Russian comes first, followed by a concise idiomatic translated title/search phrase. Preserve full Russian title when it fits; otherwise submit a reviewed compact bilingual title without losing essential identity. Validate the platform title limit and legibility/truncation on mobile; the Russian default title stays unchanged. Do not use locale-code tricks, keyword spam or misleading language claims.
+- In every foreign description present a meaningful Russian opening and preserve Russian navigation, source/rights attribution, exact verified chapter times, and relevant project links. Prefer complete Russian original plus complete translation where they fit the supported limit. When that is not possible, preserve the full default Russian description untouched, retain substantive Russian essentials and a useful localized description with no duplicate URLs; consider an exact verified existing full Russian/translated text page on the project's site. Never fabricate a page or silently discard source material, legal notices or essential navigation to fit a limit. If the reviewed bilingual package cannot fit, HOLD the metadata change and continue source-aligned foreign subtitles. Disclose the trade-off: a short Russian section does not equal the full Russian original.
+- Prioritize reviewed Russian source captions and foreign subtitles, independently from metadata. International language coverage is not capped by this policy; use the approved per-project queue, semantic QA, audio alignment and quota gates. Preserve already verified foreign language assets and translations; no bulk removal or replacement.
+- Preserve project-specific description contracts: Lord God first two substantive clean raw lines (Russian in bilingual candidates), canonical source/rightsholder and Russian navigation; Legendary Poet retains two playlist lines then project links, Russian first literary paragraph. Use project-specific link IDs and title styles. For foreign bilingual text, no silent transfer of one project's rules to the other.
+- Before enabling catalog-wide rollout, produce two exact-ID candidate plans, one per channel; compare source and candidate text, Russian legibility, translated discovery terms, length, attribution, chapters/links and complete locale map. Review desktop/mobile and viewer-language behavior, including foreign locale selection and Russian preference; provider GET alone does not establish public rendering or ranking. If live change separately authorized: immutable before/after, shared quota, same channel lock, one full-map `part=localizations` mutation, independent readback, no blind retry. Never promise universal Russian display, a guaranteed ranking improvement or disabling platform automatic translation. Do not infer authority to modify all existing releases.
+- 2026-11-24 bounded owner API evidence: Lord God first Bible Panorama lecture `e5d1zaJWAoQ`: default/audio `ru`, Russian and en-US locales; title `Панорама Библии - 1 | Алексей Коломийцев | Библия – источник жизни`, Russian description 2,638 characters / 4,531 UTF-8 bytes, separate English description 969 characters. Legendary Poet `j26u8q441Lk`: default/audio `ru`, Russian plus ten foreign metadata locales verified; Russian description 4,313 characters / 7,675 bytes as actually returned by provider. Existing accepted payload length is not permission to assume the same limit on new bilingual writes. No provider mutations in this diagnostic. These are pilot candidates, not evidence for every lecture or video.
+
+This supersedes section 2's blanket recommendation to retain foreign-only metadata; the Legendary Poet opt-in and Panorama-specific Russian-only rules above take precedence. Coordinate #903 and #795 before execution; no independent competing writer, mass locale migration, deletion, or change to existing approvals. Historical provider receipts remain valid. The creator cannot select a metadata language by a viewer's nationality or VPN endpoint.
+
 ## 3. Legendary Poet localization state — post-issue-body receipts
 
 The original body of issue #903 is a **historical pilot checkpoint**. Its statement “NO foreign subtitle publication verified” has been superseded by subsequent **owner-verified issue comments and local release receipts**, not by the creation of this document.
@@ -61,7 +86,7 @@ At the latest independently recorded **12 November** wave checkpoint:
 - `NZISwKGIzGI` / Tyutchev `Silentium!`: **ten foreign caption tracks** `en-US,fr,es,de,it,pt-BR,pl,tr,ja,zh` verified as provider `serving`; their text was read back, with local per-child receipts. Existing Russian default title/description and the pre-existing English localization preserved.
 - Two other videos, `WizaG8S085g` (Lomonosov) and `hUwoFkvUyDE` (Lermontov), each gained nine new verified metadata localizations, with original RU and existing EN preserved. These are **metadata-only** receipts, not proof of captions.
 - **195 / 1,780 target locale metadata slots verified** on the 178-video 2026-11-12 baseline, so **1,585 slots remain unverified/missing** as of that checkpoint; this number must not be passed off as a live November 13 full inventory.
-- The first attempted `WizaG8S085g::en-US` caption insert got 403 quotaExceeded, with a prior `may_exist` journal state; **read-only reconcile first** after quota resumes. Never blindly reissue it or mark it absent from a rejection alone.
+- The first attempted `WizaG8S085g::en-US` caption insert got 403 quotaExceeded, with a prior `may_exist` journal state. The [14 November issue correction](https://github.com/FedorMilovanov/video-channel-manager/issues/903#issuecomment-6874475550) reports that `caption_release_two_20261112.json` recorded `reconciled_absent_after_403`, supported by two owner `captions.list` reads on **12 November**. That is a historical reconciliation, **not** proof of present-day absence or permission to insert: require fresh owner readback, quota availability, content/rights review and separate execution authority. Never infer absence from the 403 alone or blindly retry.
 
 Prewrite safeguards: exact `project_key=legendary-poet`, OAuth alias `legendary-poet`, channel ID `UC-78ys2S3cQ3lpqgXfo-SvQ`, exact video ID, all pre-existing localizations merged, preserve original RU and already verified English, bound content evidence, durable journal `may_exist` / `verified`, common write lock, no retry on HTTP uncertainty.
 
@@ -72,7 +97,7 @@ This quota form concerned a combined API client used by multiple authorized chan
 | Gate | Minimum evidence for closure | Owner |
 | --- | --- | --- |
 | Quota application receipt | Official confirmation page **and** Google acknowledgment email | **Closed** 2026-11-13 |
-| Quota increase granted | Actual Google response **and** verified current quota/project limit | **Open** |
+| Quota increase granted | Actual Google response **and** verified current quota/project limit | **Closed 25 November 2026**; see current shared quota runbook. |
 | Original-language viewer complaint | Confirmed viewer preferred-language settings and same-ID VPN on/off comparison; distinct from owner API original/locale readback | **Explained; viewer comparison pending** |
 | Four suspicious `en-US` audio annotations and two missing values | Verified spoken/produced original audio + exact current provider state; only then decide whether to update | **Separate, open; no mass fix** |
 | Multilingual content completion | Full fresh owner inventory and per-video locale/caption acceptance with explicit rights/HOLD exceptions | **Open (#903)** |
@@ -137,7 +162,7 @@ Do not send a reply claiming a completed demo until the file is recorded, review
 - Main technical blocker previously observed: `403 quotaExceeded` on a subsequent `videos.list`; no blind retries.
 
 
-### 5.5 Reviewer screencast delivered — 2026-11-13 (latest checkpoint)
+### 5.5 Reviewer screencast delivered — 2026-11-13 (historical checkpoint)
 
 **The Google-specified additional screencast was recorded, published, directly downloaded by an unauthenticated HTTP client (status 200), and supplied by a reply in the existing Google API Services email thread on 13 November 2026.** This fulfills the owner's action of *sending evidence*, **not** Google review approval or acceptance of its sufficiency.
 
@@ -150,5 +175,5 @@ Do not send a reply claiming a completed demo until the file is recorded, review
 - **Privacy:** no access/refresh tokens, passwords, login codes, account cookies or secret OAuth callback URLs were included. A rejected first attempt recorded the unrelated desktop; that wrong MP4 and its associated preview frames were **deleted locally and never uploaded/shared**.
 - **Local file:** `%USERPROFILE%\Downloads\YouTube_API_Quota_Evidence_20261113\Video_Channel_Manager_Real_CLI_YouTube_API_Reviewer_20261113.mp4`; step log and SHA-checked evidence remain in the same local evidence directory (not Git).
 
-**Next owner-independent hinge:** await Google's explicit assessment of **screencast adequacy and quota increase**. An eventual reviewer request for a new live provider-writing segment would require a separate safe quota window, exact target and authorized write gate; the submitted read-only/historical recording cannot by itself prove new API writes in a quota-exhausted window. Do not state approval until Google confirms it and the granted project quota is verified. Do not re-send the same letter without a reason.
+**Historical next hinge (superseded 25 November):** await Google's explicit assessment of **screencast adequacy and quota increase**. An eventual reviewer request for a new live provider-writing segment would require a separate safe quota window, exact target and authorized write gate; the submitted read-only/historical recording cannot by itself prove new API writes in a quota-exhausted window. Do not state approval until Google confirms it and the granted project quota is verified. Do not re-send the same letter without a reason.
 

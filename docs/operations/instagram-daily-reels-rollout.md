@@ -37,7 +37,8 @@ Meta write operations are not part of this operator.
 - `VCM_INSTAGRAM_WRITES_ENABLED=false` is forced by the daily operator.
 - A publication key with durable status `published` is skipped.
 - `planned` is safe to prepare idempotently.
-- Any non-final/non-planned status blocks the queue and requires reconciliation before advancing.
+- Both explicit source selection and automatic selection use the same Python guard, `video_channel_manager.instagram.daily_queue.select_daily_queue_item`, invoked by `scripts/operator/Invoke-InstagramDailyQueue.ps1`. Any selected non-final/non-planned status blocks preparation and requires reconciliation before advancing; the explicit source option is not a bypass.
+- The daily Windows operator reads the existing SQLite ledger specified by the same runtime configuration as the installed CLI, from the same working directory. A missing, unreadable, in-memory or unsupported database is not proof of an absent provider effect and blocks selection. A key bound to another account also blocks selection. This is a read-only preparation gate, not authorization for a new release or a cross-key duplicate check.
 - No blind retries of provider writes.
 - Publication keys are immutable.
 

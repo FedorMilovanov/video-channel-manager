@@ -1,6 +1,6 @@
-"""The verified 2026-10-29 manual quiz canary authorizes the same target in Series 02.
+"""Cross-release canary mechanics on synthetic non-LordChrist targets.
 
-Provider-inert regression coverage: never send a Telegram poll from these tests.
+Fixtures never authorize historic releases or contact Telegram.
 """
 
 import json
@@ -9,10 +9,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from quiz_fixture_helpers import FIXTURE_ONE, fake_one, fake_profile_binding, fake_series
 
-from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_cli import main
-from video_channel_manager.telegram_multichannel_release import load_release
+from video_channel_manager.telegram_multichannel_release import save_release
 from video_channel_manager.telegram_multichannel_state import (
     initialize_ledger,
     mark_published,
@@ -22,12 +22,8 @@ from video_channel_manager.telegram_multichannel_state import (
     save_ledger,
 )
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
-from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
-QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz/archived-old-queues"
-PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist-rich.json"
-BINDING_PATH = ROOT / "content/telegram/channels/lordchrist-target-binding.json"
 WORKFLOW_PATH = ROOT / ".github/retired-workflows/lordchrist-quiz-series-02-poster.yml"
 GITHUB_SHA = "1" * 40
 WORKFLOW_SHA = "2" * 40
@@ -53,10 +49,9 @@ def _target(profile, binding, now):
 
 
 def _case(*, published_canary=True):
-    profile = load_channel_profile(PROFILE_PATH)
-    binding = load_target_binding(BINDING_PATH, profile)
-    old_release = load_release(QUIZ_DIR / "lordchrist-quiz-city-of-palms-runtime.json")
-    new_release = load_release(QUIZ_DIR / "lordchrist-quiz-series-02-runtime.json")
+    profile, binding = fake_profile_binding()
+    _, old_release = fake_one(profile, binding)
+    _, new_release = fake_series(profile, binding)
     old_ledger = initialize_ledger(old_release)
     new_ledger = initialize_ledger(new_release)
 
@@ -85,15 +80,15 @@ def _case(*, published_canary=True):
             chat_id=binding.chat_id,
             chat_username=binding.chat_username,
             message_id=1591,
-            message_url="https://t.me/lordchrist/1591",
+            message_url="https://t.me/quizfixture/1591",
             verified_at_utc=datetime(2026, 10, 29, 17, 23, tzinfo=UTC),
         )
         mark_published(old_ledger, manual.envelope, receipt)
 
     due = datetime(2026, 11, 14, 10, 17, tzinfo=UTC)
     assert skip_expired_pending(new_release, new_ledger, now=due) == (
-        "lordchrist-quiz-s02-hagar",
-        "lordchrist-quiz-s02-ahab",
+        "lordchrist-quiz-fixture-hagar",
+        "lordchrist-quiz-fixture-ahab",
     )
     return profile, binding, old_release, old_ledger, new_release, new_ledger, due
 
@@ -124,10 +119,10 @@ def test_series02_accepts_verified_manual_canary_from_reviewed_original_release(
 
     with_canary = _prepare(case)
     assert with_canary.envelope is not None
-    assert with_canary.envelope.publication_id == "lordchrist-quiz-s02-jephthah"
+    assert with_canary.envelope.publication_id == "lordchrist-quiz-fixture-jephthah"
     assert with_canary.envelope.dispatch_mode == "scheduled"
-    assert case[5].entries["lordchrist-quiz-s02-jephthah"].state == "dispatching"
-    assert case[3].entries["lordchrist-quiz-city-of-palms"].state == "published"
+    assert case[5].entries["lordchrist-quiz-fixture-jephthah"].state == "dispatching"
+    assert case[3].entries[FIXTURE_ONE].state == "published"
 
 
 def test_unverified_external_canary_cannot_unlock_series02():
@@ -135,7 +130,7 @@ def test_unverified_external_canary_cannot_unlock_series02():
     blocked = _prepare(case)
     assert blocked.envelope is None
     assert blocked.reason == "scheduled execution requires a verified manual canary"
-    assert case[5].entries["lordchrist-quiz-s02-jephthah"].state == "pending"
+    assert case[5].entries["lordchrist-quiz-fixture-jephthah"].state == "pending"
 
 
 def test_wrong_bot_binding_cannot_unlock_series02():
@@ -143,7 +138,7 @@ def test_wrong_bot_binding_cannot_unlock_series02():
     foreign_release = case[2].model_copy(update={"bot_id": 1234567890})
     with pytest.raises(ValueError, match="ledger identity differs|external manual canary release differs"):
         _prepare(case, canary_release=foreign_release)
-    assert case[5].entries["lordchrist-quiz-s02-jephthah"].state == "pending"
+    assert case[5].entries["lordchrist-quiz-fixture-jephthah"].state == "pending"
 
 
 def test_external_canary_does_not_open_a_future_quiz_slot():
@@ -152,7 +147,7 @@ def test_external_canary_does_not_open_a_future_quiz_slot():
     not_due = _prepare(case, now=before)
     assert not_due.envelope is None
     assert "does not open until" in not_due.reason
-    assert case[5].entries["lordchrist-quiz-s02-jephthah"].state == "pending"
+    assert case[5].entries["lordchrist-quiz-fixture-jephthah"].state == "pending"
 
 
 def test_production_workflow_uses_old_verified_ledger_without_changing_release():
@@ -170,13 +165,19 @@ def test_production_workflow_uses_old_verified_ledger_without_changing_release()
     assert "Send exactly once through the canonical generic Telegram runtime" in workflow
 
 
-def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(monkeypatch, tmp_path, capsys):
+def test_real_cli_prepare_consumes_synthetic_verified_canary_without_provider(monkeypatch, tmp_path, capsys):
     case = _case()
-    profile, binding, _old_release, old_ledger, release, new_ledger, due = case
+    profile, binding, old_release, old_ledger, release, new_ledger, due = case
     old_path = tmp_path / "old-ledger.json"
     new_path = tmp_path / "series-ledger.json"
     target_path = tmp_path / "target.json"
     envelope_path = tmp_path / "dispatch.json"
+    profile_path = tmp_path / "profile.json"
+    old_release_path = tmp_path / "old-release.json"
+    new_release_path = tmp_path / "new-release.json"
+    profile_path.write_text(profile.model_dump_json(), encoding="utf-8")
+    save_release(old_release_path, old_release)
+    save_release(new_release_path, release)
     save_ledger(old_path, old_ledger)
     save_ledger(new_path, new_ledger)
     target_path.write_text(_target(profile, binding, due).model_dump_json(indent=2), encoding="utf-8")
@@ -188,9 +189,9 @@ def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(m
             "telegram_multichannel_cli",
             "prepare",
             "--profile",
-            str(PROFILE_PATH),
+            str(profile_path),
             "--release",
-            str(QUIZ_DIR / "lordchrist-quiz-series-02-runtime.json"),
+            str(new_release_path),
             "--ledger",
             str(new_path),
             "--target-proof",
@@ -198,7 +199,7 @@ def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(m
             "--mode",
             "scheduled",
             "--verified-manual-canary-release",
-            str(QUIZ_DIR / "lordchrist-quiz-city-of-palms-runtime.json"),
+            str(old_release_path),
             "--verified-manual-canary-ledger",
             str(old_path),
             "--run-id",
@@ -217,11 +218,11 @@ def test_real_cli_prepare_consumes_historical_verified_canary_without_provider(m
     assert main() == 0
     result = json.loads(capsys.readouterr().out)
     assert result["prepared"] is True
-    assert result["publication_id"] == "lordchrist-quiz-s02-jephthah"
+    assert result["publication_id"] == "lordchrist-quiz-fixture-jephthah"
     assert envelope_path.is_file()
     verified_new = load_ledger(new_path, release)
-    assert verified_new.entries["lordchrist-quiz-s02-jephthah"].state == "dispatching"
-    assert old_ledger.entries["lordchrist-quiz-city-of-palms"].state == "published"
+    assert verified_new.entries["lordchrist-quiz-fixture-jephthah"].state == "dispatching"
+    assert old_ledger.entries[FIXTURE_ONE].state == "published"
 
 
 def test_scheduled_workflow_omits_manual_only_publication_id_argument():
@@ -234,7 +235,7 @@ def test_scheduled_workflow_omits_manual_only_publication_id_argument():
     assert workflow.count("--publication-id") == 1
     # This is a genuine fail-closed contract in the generic dispatch state machine.
     case = _case()
-    profile, binding, _old_release, old_ledger, release, ledger, due = case
+    profile, binding, old_release, old_ledger, release, ledger, due = case
     blocked = prepare_next(
         profile,
         release,
@@ -246,12 +247,9 @@ def test_scheduled_workflow_omits_manual_only_publication_id_argument():
         mode="scheduled",
         target=_target(profile, binding, due),
         now=due,
-        expected_publication_id="lordchrist-quiz-s02-jephthah",
-        verified_canary=(
-            load_release(QUIZ_DIR / "lordchrist-quiz-city-of-palms-runtime.json"),
-            old_ledger,
-        ),
+        expected_publication_id="lordchrist-quiz-fixture-jephthah",
+        verified_canary=(old_release, old_ledger),
     )
     assert blocked.envelope is None
     assert blocked.reason == "scheduled execution must not carry a manual publication_id"
-    assert ledger.entries["lordchrist-quiz-s02-jephthah"].state == "pending"
+    assert ledger.entries["lordchrist-quiz-fixture-jephthah"].state == "pending"

@@ -35,12 +35,10 @@ For any request to prepare, correct, audit or hand off **YouTube titles, descrip
 
 ### Lord God YouTube description source-preservation routing
 
-For the lord-god-strength channel's YouTube description work, first read
+For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
 [docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
-In addition to signed copy-plan and project presentation validation, its
-non-deletion guard preserves original chapters, translation/source credits,
-primary links and relevant playlist IDs. A passing format check is not
-permission to discard source evidence or retry an uncertain provider write.
+In addition to signed copy-plan and project presentation validation, its non-deletion guard preserves original chapters, translation/source credits, primary links and relevant playlist IDs. A passing format check is not permission to discard source evidence or retry an uncertain provider write.
+For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
@@ -74,6 +72,8 @@ Identity must be stable under irrelevant changes.
 ### YouTube OAuth credential-store identity
 
 The default `VCM_DATA_DIR=./data` is **relative to the process working directory**. A manual `youtube login` launched from the user's home and an agent's `youtube scan` in a repository checkout can silently read **different valid token files under the same alias**, with different scopes. For any YouTube provider write, use the **same verified absolute `VCM_DATA_DIR`** as the owner's successfully authorized session and confirm the `video-manager youtube accounts` storage path, actual granted scopes and exact owner channel ID independently. Set an absolute `VCM_YOUTUBE_CLIENT_SECRET_FILE` where needed. Never copy tokens between directories, silently switch to an older read-only token, print secrets, or infer permissions from an alias alone. Command output and audit records must identify the resolved storage directory (no token bytes).
+
+Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](docs/operations/youtube-shared-project-quota.md): use the canonical official client, verified Cloud-project identity and shared quota stop record, exact-ID bounded reads, and mandatory verification reserve. Never switch accounts/projects to circumvent quota or confuse Remote credits with provider quota.
 
 ## Provider mutation boundary
 
@@ -110,7 +110,7 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 
 Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
 
-1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources.
+1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources. The `state/legendary-poet-telegram` ref is separately reserved for later initialized audio publication state, not an executable code source.
 2. **Content-addressed evidence refs** — the artifact store of a released media set. The ref name is the prefix of the accepted evidence digest, and runtime bindings reference it by name (for example `milovi_telegram_feed.VIDEO_ARTIFACT_REF` gates every Milovi `sendVideo`). These look like ordinary `agent/...` work branches and are not ephemeral.
 3. **Ephemeral work branches** — every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch.
 
@@ -122,7 +122,7 @@ For class 3: after its PR/scope closes, delete the ref where supported; if ref d
 
 ## Browser and wrapper rules
 
-**Non-disruptive desktop is the default.** Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
+**Non-disruptive desktop is the default.** Shared HEAVY-job admission and local WebKit/CUDA restrictions are mandatory; choose the most effective authorized transport, including RDC when it improves total cost, speed or quality. LIGHT/bounded MEDIUM need no per-call approval. Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
 
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.
 
@@ -156,7 +156,7 @@ Merge only when all are true:
 - review threads are clean;
 - provider side effects performed during implementation/tests are exactly those explicitly authorized (normally zero).
 
-An infrastructure incident or old green run never substitutes for exact-current-head green CI.
+An infrastructure incident or old green run never substitutes for exact-current-head green CI. Register new package modules in the coverage ratchet with measured floors and new scripts in scripts/wave-executors.json with exact digests and provider capability; preserve existing thresholds.
 
 Operational-memory/state synchronization is a separate, small change after a runtime/code baseline moves. Do not duplicate historical audit material into `AGENTS.md`.
 

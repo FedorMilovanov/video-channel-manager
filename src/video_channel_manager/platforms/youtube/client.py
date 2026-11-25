@@ -31,7 +31,7 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 _DURATION_RE = re.compile(
@@ -112,6 +112,9 @@ class YouTubeApiClient(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(
             http_client,
             timeout=45.0,
@@ -141,6 +144,7 @@ class YouTubeApiClient(HttpClientOwner):
                     headers={"Authorization": f"Bearer {access_token}"},
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=HttpOperationClass.SAFE_READ,
                 method="GET",
                 resource=resource,
@@ -149,7 +153,7 @@ class YouTubeApiClient(HttpClientOwner):
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeApiError(str(exc)) from exc
 
         response = result.response
@@ -259,7 +263,10 @@ class YouTubeApiClient(HttpClientOwner):
         items = _dict_items(payload)
         if len(items) != 1:
             raise YouTubeApiError(f"Video not found or inaccessible: {expected_id}")
-        raw = items[0]
+        return self._parse_exact_video(items[0], expected_id)
+
+    @staticmethod
+    def _parse_exact_video(raw: dict[str, Any], expected_id: str) -> VideoRecord:
         actual_id = str(raw.get("id") or "").strip()
         snippet = _dict_field(raw, "snippet")
         channel_id = str(snippet.get("channelId") or "").strip()
@@ -281,27 +288,89 @@ class YouTubeApiClient(HttpClientOwner):
             metadata=raw,
         )
 
+    def list_recent_videos(self, channel_id: str, *, limit: int = 10) -> list[VideoRecord]:
+        """Return candidates from ONE uploads page; never imply complete inventory.
+
+        A cache miss costs at most three logical list requests (plus bounded
+        transport retries). A caller must independently establish owner identity
+        and must verify exact candidate metadata before any write.
+        """
+        if not 1 <= limit <= 50:
+            raise ValueError("Recent upload candidate limit must be between 1 and 50.")
+        uploads = self._uploads_playlist_id(channel_id)
+        page = self._get(
+            "playlistItems",
+            params={"part": "contentDetails", "playlistId": uploads, "maxResults": limit},
+        )
+        items = _dict_items(page)
+        ids = [str(_dict_field(item, "contentDetails").get("videoId") or "").strip() for item in items]
+        if len(ids) > limit or any(not item for item in ids) or len(ids) != len(set(ids)):
+            raise YouTubeApiError("Invalid or repeated video IDs in bounded uploads page.")
+        if not ids:
+            return []
+        # Do not follow nextPageToken. An older target requires exact-ID input
+        # or a separately authorized inventory, never an implicit full scan.
+        details = self._get(
+            "videos",
+            params={"part": "snippet,contentDetails,status,fileDetails", "id": ",".join(ids), "maxResults": limit},
+        )
+        by_id: dict[str, VideoRecord] = {}
+        for raw in _dict_items(details):
+            item_id = str(raw.get("id") or "").strip()
+            if item_id not in ids or item_id in by_id:
+                raise YouTubeApiError("Unexpected or repeated video details in bounded uploads response.")
+            record = self._parse_exact_video(raw, item_id)
+            if record.ref.channel_id != channel_id:
+                raise YouTubeApiError("Bounded uploads response contained a video from another channel.")
+            by_id[item_id] = record
+        if set(by_id) != set(ids):
+            raise YouTubeApiError("Bounded uploads response omitted IDs; no unique target proven.")
+        return [by_id[item_id] for item_id in ids]
+
     def list_videos(self, channel_id: str) -> list[VideoRecord]:
         uploads_playlist = self._uploads_playlist_id(channel_id)
         playlist_items = self._list_all(
             "playlistItems",
             params={
-                "part": "contentDetails",
+                "part": "id,snippet,contentDetails,status",
                 "playlistId": uploads_playlist,
                 "maxResults": 50,
             },
         )
         ordered_ids: list[str] = []
+        item_id_by_video: dict[str, str] = {}
+        video_id_by_item: dict[str, str] = {}
+        confirmed_deleted: set[str] = set()
         for item in playlist_items:
             video_id = str(_dict_field(item, "contentDetails").get("videoId") or "").strip()
-            if video_id:
-                ordered_ids.append(video_id)
-
-        if len(ordered_ids) != len(set(ordered_ids)):
-            raise YouTubeApiError(
-                "Owner uploads pagination returned repeated video IDs; "
-                "use the read-only AuditPackage inventory diagnostics before planning changes."
-            )
+            if not video_id:
+                continue
+            playlist_item_id = str(item.get("id") or "").strip()
+            if playlist_item_id and video_id_by_item.get(playlist_item_id, video_id) != video_id:
+                raise YouTubeApiError("Owner uploads pagination returned a playlist item ID bound to multiple videos.")
+            if playlist_item_id:
+                video_id_by_item[playlist_item_id] = video_id
+            if video_id in item_id_by_video:
+                # A Google page may repeat the SAME upload playlist item at the
+                # page boundary. Never mistake it for a second uploaded video.
+                if not playlist_item_id or item_id_by_video[video_id] != playlist_item_id:
+                    raise YouTubeApiError(
+                        "Owner uploads pagination returned repeated video IDs with "
+                        "different or missing playlist item identities."
+                    )
+                continue
+            item_id_by_video[video_id] = playlist_item_id
+            ordered_ids.append(video_id)
+            snippet = _dict_field(item, "snippet")
+            status = _dict_field(item, "status")
+            if (
+                snippet.get("title") == "Deleted video"
+                and snippet.get("description") == "This video is unavailable."
+                and status.get("privacyStatus") == "privacyStatusUnspecified"
+            ):
+                # An explicit YouTube tombstone is distinct from an omitted
+                # LIVE upload. Do not infer deletion from a generic missing ID.
+                confirmed_deleted.add(video_id)
 
         raw_by_id: dict[str, dict[str, Any]] = {}
         for batch in _chunks(ordered_ids, 50):
@@ -318,7 +387,9 @@ class YouTubeApiClient(HttpClientOwner):
                 if item_id:
                     raw_by_id[item_id] = raw_item
 
-        missing_ids = [video_id for video_id in ordered_ids if video_id not in raw_by_id]
+        missing_ids = [
+            video_id for video_id in ordered_ids if video_id not in raw_by_id and video_id not in confirmed_deleted
+        ]
         if missing_ids:
             raise YouTubeApiError(
                 "YouTube videos.list omitted upload IDs from the owner uploads playlist: " + ",".join(missing_ids)
@@ -326,6 +397,9 @@ class YouTubeApiClient(HttpClientOwner):
 
         records: list[VideoRecord] = []
         for video_id in ordered_ids:
+            if video_id not in raw_by_id:
+                # Only provider-explicit Deleted video tombstones reach here.
+                continue
             video_payload = raw_by_id[video_id]
             snippet = _dict_field(video_payload, "snippet")
             details = _dict_field(video_payload, "contentDetails")

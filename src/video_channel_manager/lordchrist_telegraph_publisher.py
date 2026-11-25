@@ -745,7 +745,7 @@ def render_preview_html_page(payload: TelegraphPayload, post: RenderedChannelPos
   </div>
   <div id="view-iv" class="tph-paper hidden">
     <h1>{html.escape(payload.title)}</h1>
-    <div class="tph-byline"><a href="{html.escape(payload.author_url, quote=True)}">{html.escape(payload.author_name)}</a> · Серия «Стивен Чарнок. О бытии Бога»</div>
+    <div class="tph-byline"><a href="{html.escape(payload.author_url, quote=True)}">{html.escape(payload.author_name)}</a></div>
     {article_body_html}
   </div>
 </div>

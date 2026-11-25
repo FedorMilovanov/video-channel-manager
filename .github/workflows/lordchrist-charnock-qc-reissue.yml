@@ -1,0 +1,153 @@
+name: Lordchrist Charnock QC read-only comparison (owner only)
+run-name: charnock-qc-readonly-${{ inputs.page }}-${{ inputs.mode }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      page:
+        description: Existing Charnock page to compare (read-only)
+        required: true
+        type: choice
+        options:
+          - '01b'
+          - '02'
+          - '03'
+          - '04'
+          - '05'
+          - '06'
+          - '07'
+          - '08'
+          - '09'
+          - '10'
+          - '11'
+          - '12'
+          - '13'
+      mode:
+        description: Choose visible-text or stricter normalized node-tree comparison
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - reconcile
+          - structural-reconcile
+      media_base:
+        description: Compare media URLs against current main or the historical QC run
+        required: true
+        default: current-main
+        type: choice
+        options:
+          - current-main
+          - historical-qc-20261121
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lordchrist-charnock-qc-reissue
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.repository == 'FedorMilovanov/video-channel-manager' &&
+      github.ref == 'refs/heads/main' &&
+      (inputs.page == '01b' || inputs.page == '02' || inputs.page == '03' ||
+       inputs.page == '04' || inputs.page == '05' || inputs.page == '06' ||
+       inputs.page == '07' || inputs.page == '08' || inputs.page == '09' ||
+       inputs.page == '10' || inputs.page == '11' || inputs.page == '12' ||
+       inputs.page == '13')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Refuse replay, non-main, or moving HEAD
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+      - name: Check out pinned QC reader
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install pinned publisher runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Compare the public page without provider writes
+        shell: bash
+        env:
+          PYTHONPATH: src
+          REVIEWED_PAGE: ${{ inputs.page }}
+          MODE: ${{ inputs.mode }}
+          MEDIA_BASE: ${{ inputs.media_base }}
+        run: |
+          set -euo pipefail
+          echo "::notice title=charnock-qc-readonly-${REVIEWED_PAGE}::mode=${MODE} page=${REVIEWED_PAGE} media_base=${MEDIA_BASE}"
+          mkdir -p "$RUNNER_TEMP/charnock-qc-reissue-receipts"
+          if [[ "$MEDIA_BASE" == "current-main" ]]; then
+            media_revision="$GITHUB_SHA"
+          elif [[ "$MEDIA_BASE" == "historical-qc-20261121" ]]; then
+            # Recorded head of the completed 2026-11-21 QC runs; media URLs only.
+            media_revision="c1bafa972e91d536fc56d86e53b4ce6f3502f37d"
+          else
+            exit 3
+          fi
+          media_base_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${media_revision}"
+          args=(--page "$REVIEWED_PAGE" --media-base-url "$media_base_url"
+                --receipt-dir "$RUNNER_TEMP/charnock-qc-reissue-receipts")
+          if [[ "$MODE" == "reconcile" ]]; then
+            args+=(--reconcile)
+          elif [[ "$MODE" == "structural-reconcile" ]]; then
+            args+=(--reconcile --require-normalized-tree)
+          elif [[ "$MODE" != "dry-run" ]]; then
+            exit 3
+          fi
+          emit_comparison_summary() {
+            local summary
+            summary="$(python - "$RUNNER_TEMP/charnock-qc-reissue.log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          from scripts.charnock_telegraph_qc_reissue import annotation_summary
+
+          try:
+              outcome = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1])
+              if not isinstance(outcome, dict):
+                  raise ValueError("Not a comparison result")
+              print(json.dumps(annotation_summary(outcome), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+          except (OSError, ValueError, IndexError, TypeError):
+              print("No structured comparison was produced")
+          PY
+            )"
+            echo "::notice title=charnock-qc-readonly-result-${REVIEWED_PAGE}::${summary}"
+          }
+          if ! python -m scripts.charnock_telegraph_qc_reissue "${args[@]}" 2>&1 \
+              | tee "$RUNNER_TEMP/charnock-qc-reissue.log"; then
+            emit_comparison_summary
+            message="$(tail -n 2 "$RUNNER_TEMP/charnock-qc-reissue.log" | tr '\n' ' ' | cut -c1-900)"
+            echo "::error title=charnock-qc-readonly-${REVIEWED_PAGE}::${message}"
+            exit 3
+          fi
+          emit_comparison_summary
+          if [[ "$MODE" == "reconcile" || "$MODE" == "structural-reconcile" ]]; then
+            [[ "$(find "$RUNNER_TEMP/charnock-qc-reissue-receipts" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ]] || exit 4
+          fi
+      - name: Upload the read-only comparison receipt
+        if: always() && (inputs.mode == 'reconcile' || inputs.mode == 'structural-reconcile')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: charnock-qc-reissue-receipt-${{ inputs.page }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/charnock-qc-reissue-receipts/*.json
+          if-no-files-found: warn
+          retention-days: 30

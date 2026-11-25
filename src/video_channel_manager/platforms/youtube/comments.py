@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import random
+import re
 import time
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.editorial.youtube_copy import validate_youtube_description
 from video_channel_manager.platforms.http import (
     HttpClientOwner,
     HttpFailureKind,
@@ -23,7 +26,13 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import TokenStore
+from video_channel_manager.platforms.youtube.store import (
+    ProjectQuotaGuard,
+    TokenStore,
+    YouTubeQuotaBlocked,
+    quota_exhaustion_reason,
+    reserve_shared_quota,
+)
 from video_channel_manager.platforms.youtube.writer import YouTubeWriteError, YouTubeWriteScopeError
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -97,6 +106,31 @@ def validate_comment_text(value: str) -> str:
         raise ValueError(
             f"YouTube comment text is {len(normalized)} characters; the project safety limit is {_COMMENT_TEXT_LIMIT}."
         )
+    # YouTube-native emphasis is *bold* or _italic_, not Markdown **bold**.
+    # A comma/period/colon belonging to a highlighted phrase must be INSIDE
+    # its closing marker. Reject bad punctuation before any provider POST/PUT;
+    # never silently move punctuation because a semantic review may be needed.
+    if "*" in normalized or "_" in normalized:
+        blocking_emphasis_codes = {
+            "punctuation_outside_emphasis",
+            "duplicate_terminal_punctuation",
+            "unbalanced_bold",
+            "unbalanced_italic",
+            "bold_edge_space",
+            "italic_edge_space",
+        }
+        problems = [
+            finding.code
+            for finding in validate_youtube_description(normalized)
+            if finding.severity == "error" and finding.code in blocking_emphasis_codes
+        ]
+        # Any emphasized link label immediately followed by a bare URL must
+        # include its colon within the markers, including source labels whose
+        # wording is not on the generic validator's metadata-label allowlist.
+        if re.search(r"(?:\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w)):\s+https?://", normalized):
+            problems.append("source_link_label_colon_outside_emphasis")
+        if problems:
+            raise ValueError(f"YouTube comment native emphasis punctuation is invalid: {', '.join(problems)}.")
     return normalized
 
 
@@ -167,6 +201,9 @@ class YouTubeCommentWriter(HttpClientOwner):
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
+        self._quota_guard = ProjectQuotaGuard.for_client(
+            getattr(token_store, "data_dir", None), client_config.client_id, self.account_alias
+        )
         self._initialize_http_client(
             http_client,
             timeout=45.0,
@@ -179,6 +216,33 @@ class YouTubeCommentWriter(HttpClientOwner):
         self._jitter = jitter
         cleaned_delays = tuple(max(0.0, float(item)) for item in verify_delays_seconds)
         self.verify_delays_seconds = cleaned_delays or (0.0,)
+
+    def require_reviewed_shared_allowance(self) -> None:
+        """Check local evidence for the bounded create/verification cost, without API access."""
+        if self._quota_guard is None:
+            raise YouTubeCommentError("Reviewed shared YouTube quota allowance is required.")
+        units = 50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts
+        try:
+            self._quota_guard.require_reviewed_allowance(units)
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeCommentError(str(exc)) from exc
+
+    @contextmanager
+    def reserve_guarded_comment_wave(self, *, max_pages_per_status: int) -> Iterator[None]:
+        """Reserve both exhaustive preflights, mutation and independent readback in one budget."""
+        if type(max_pages_per_status) is not int or max_pages_per_status <= 0:
+            raise ValueError("A positive strict inventory page limit is required.")
+        if self._quota_guard is None:
+            raise YouTubeCommentError("Reviewed shared YouTube quota allowance is required.")
+        attempts = self.retry_policy.max_attempts
+        writer_units = 50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * attempts
+        # Owner GET, two exact video GETs, and three complete moderation inventories.
+        units = writer_units + (3 + 3 * len(_MODERATION_STATES) * max_pages_per_status) * attempts
+        try:
+            with self._quota_guard.reserve(units, require_reviewed=True):
+                yield
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeCommentError(str(exc)) from exc
 
     def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
@@ -213,6 +277,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                     json=json_body,
                 ),
                 provider="YouTube",
+                attempt_guard=self._quota_guard,
                 operation=operation,
                 method=method,
                 resource=resource,
@@ -221,7 +286,7 @@ class YouTubeCommentWriter(HttpClientOwner):
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
-        except HttpTransportFailure as exc:
+        except (HttpTransportFailure, YouTubeQuotaBlocked) as exc:
             raise YouTubeCommentError(str(exc)) from exc
 
         response = result.response
@@ -237,6 +302,11 @@ class YouTubeCommentWriter(HttpClientOwner):
             except ValueError:
                 pass
             safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            quota_reason = quota_exhaustion_reason(response)
+            if quota_reason is not None:
+                raise YouTubeCommentError(f"YouTube API 403 ({quota_reason}): {safe_message}") from YouTubeQuotaBlocked(
+                    quota_reason
+                )
             if reason == "commentsDisabled":
                 raise YouTubeCommentsDisabledError(safe_message)
             kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
@@ -340,11 +410,25 @@ class YouTubeCommentWriter(HttpClientOwner):
             raw=comment,
         )
 
-    def list_top_level_comments(self, video_id: str) -> list[TopLevelCommentSnapshot]:
+    def list_top_level_comments(
+        self, video_id: str, *, strict_moderation: bool = False, max_pages_per_status: int | None = None
+    ) -> list[TopLevelCommentSnapshot]:
+        return self._list_top_level_comments(
+            video_id, strict_moderation=strict_moderation, max_pages_per_status=max_pages_per_status
+        )
+
+    def _list_top_level_comments(
+        self, video_id: str, *, max_pages_per_status: int | None = None, strict_moderation: bool = False
+    ) -> list[TopLevelCommentSnapshot]:
+        """Strict bounded inventory succeeds only if all pages fit; never returns a partial result."""
+        if max_pages_per_status is not None and (type(max_pages_per_status) is not int or max_pages_per_status <= 0):
+            raise ValueError("A positive inventory page limit is required.")
         records: list[TopLevelCommentSnapshot] = []
-        seen_comment_ids: set[str] = set()
+        seen_comments: dict[str, TopLevelCommentSnapshot] = {}
         for moderation_status in _MODERATION_STATES:
             page_token: str | None = None
+            seen_page_tokens: set[str] = set()
+            pages = 0
             while True:
                 params: QueryParams = {
                     "part": "snippet",
@@ -358,19 +442,54 @@ class YouTubeCommentWriter(HttpClientOwner):
                     params["pageToken"] = page_token
                 try:
                     payload = self._request("GET", "commentThreads", params=params)
-                except YouTubeCommentError:
-                    if moderation_status == "published":
+                except YouTubeCommentError as exc:
+                    if (
+                        strict_moderation
+                        or moderation_status == "published"
+                        or isinstance(exc.__cause__, YouTubeQuotaBlocked)
+                    ):
                         raise
                     break
+                pages += 1
+                if strict_moderation:
+                    items = payload.get("items")
+                    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+                        raise YouTubeCommentError("YouTube returned a malformed moderation inventory.")
                 for item in _dict_items(payload):
                     snapshot = self._parse_thread(item)
-                    if snapshot.comment_id in seen_comment_ids:
+                    if strict_moderation and (snapshot.video_id != video_id or not snapshot.author_channel_id):
+                        raise YouTubeCommentError("YouTube moderation inventory has an unverified target or author.")
+                    prior = seen_comments.get(snapshot.comment_id)
+                    if prior is not None:
+                        if strict_moderation and (
+                            prior.video_id != snapshot.video_id
+                            or prior.channel_id != snapshot.channel_id
+                            or prior.author_channel_id != snapshot.author_channel_id
+                            or not comments_equivalent(prior.text, snapshot.text)
+                        ):
+                            raise YouTubeCommentError(
+                                "YouTube moderation inventory has conflicting duplicate comments."
+                            )
                         continue
-                    seen_comment_ids.add(snapshot.comment_id)
+                    seen_comments[snapshot.comment_id] = snapshot
                     records.append(snapshot)
-                next_token = str(payload.get("nextPageToken") or "").strip()
+                raw_token = payload.get("nextPageToken")
+                if (
+                    strict_moderation
+                    and raw_token is not None
+                    and (not isinstance(raw_token, str) or not raw_token.strip())
+                ):
+                    raise YouTubeCommentError("YouTube returned an invalid moderation page token.")
+                next_token = str(raw_token or "").strip()
                 if not next_token:
                     break
+                if max_pages_per_status is not None and pages >= max_pages_per_status:
+                    if strict_moderation:
+                        raise YouTubeCommentError("Strict moderation inventory exceeds its reserved page limit.")
+                    break
+                if next_token in seen_page_tokens:
+                    raise YouTubeCommentError("YouTube repeated a moderation page token.")
+                seen_page_tokens.add(next_token)
                 page_token = next_token
         return records
 
@@ -408,17 +527,22 @@ class YouTubeCommentWriter(HttpClientOwner):
         comment_id: str,
         video_id: str,
         channel_id: str,
+        bounded: bool = False,
     ) -> TopLevelCommentSnapshot | None:
         try:
             direct = self.read_comment(comment_id, video_id=video_id, channel_id=channel_id)
-        except YouTubeCommentError:
+        except YouTubeCommentError as exc:
+            if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+                raise
             direct = None
         if direct is not None:
             return direct
-        return next(
-            (item for item in self.list_top_level_comments(video_id) if item.comment_id == comment_id),
-            None,
+        candidates = (
+            self._list_top_level_comments(video_id, max_pages_per_status=1)
+            if bounded
+            else self.list_top_level_comments(video_id)
         )
+        return next((item for item in candidates if item.comment_id == comment_id), None)
 
     def _verify_comment_eventually(
         self,
@@ -438,8 +562,14 @@ class YouTubeCommentWriter(HttpClientOwner):
                     comment_id=comment_id,
                     video_id=video_id,
                     channel_id=channel_id,
+                    bounded=True,
                 )
             except YouTubeCommentError as exc:
+                if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+                    raise YouTubeCommentError(
+                        f"Comment {comment_id} write response accepted but exact readback blocked by quota; "
+                        "reconcile this ID, do not replay."
+                    ) from exc.__cause__
                 last_error = exc
                 continue
             if verified is None:
@@ -461,7 +591,13 @@ class YouTubeCommentWriter(HttpClientOwner):
         video_id: str,
         expected_channel_id: str,
         text: str,
+        strict_inventory_max_pages: int | None = None,
+        before_dispatch: Callable[[], None] | None = None,
+        expected_video_title: str | None = None,
+        expected_privacy_status: str | None = None,
+        expected_owned_comments: dict[str, str] | None = None,
     ) -> TopLevelCommentSnapshot:
+        """Create once; an additional comment binds the complete reviewed owner set."""
         normalized = validate_comment_text(text)
         identity = self.read_video_identity(video_id)
         if identity.channel_id != expected_channel_id:
@@ -469,42 +605,75 @@ class YouTubeCommentWriter(HttpClientOwner):
                 f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {identity.channel_id}."
             )
 
-        existing = self.list_top_level_comments(video_id)
+        if expected_video_title is not None and identity.title != expected_video_title:
+            raise YouTubeCommentConflictError("Video title drifted during guarded preflight; no dispatch.")
+        if expected_privacy_status is not None and identity.privacy_status != expected_privacy_status:
+            raise YouTubeCommentConflictError("Video privacy drifted during guarded preflight; no dispatch.")
+
+        existing = (
+            self.list_top_level_comments(
+                video_id, strict_moderation=True, max_pages_per_status=strict_inventory_max_pages
+            )
+            if strict_inventory_max_pages is not None or expected_owned_comments is not None
+            else self.list_top_level_comments(video_id)
+        )
         owned = [item for item in existing if item.author_channel_id == expected_channel_id]
-        for item in owned:
-            if comments_equivalent(item.text, normalized):
-                return item
-        if owned:
+        if expected_owned_comments is not None:
+            actual = {item.comment_id: item.text_sha256 for item in owned}
+            matches = [item for item in owned if comments_equivalent(item.text, normalized)]
+            if not expected_owned_comments or len(matches) > 1:
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+            if matches:
+                match = matches[0]
+                if actual == {**expected_owned_comments, match.comment_id: match.text_sha256}:
+                    return match
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+            if actual != expected_owned_comments:
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+        else:
+            if strict_inventory_max_pages is not None and owned:
+                raise YouTubeCommentConflictError("Owner comment appeared during guarded preflight; no dispatch.")
+            for item in owned:
+                if comments_equivalent(item.text, normalized):
+                    return item
+        if expected_owned_comments is None and owned:
             ids = ", ".join(item.comment_id for item in owned)
             raise YouTubeCommentConflictError(
                 f"Video {video_id} already has {len(owned)} different top-level channel comment(s): {ids}."
             )
 
-        payload = self._request(
-            "POST",
-            "commentThreads",
-            params={"part": "snippet"},
-            json_body={
-                "snippet": {
-                    "channelId": expected_channel_id,
-                    "videoId": video_id,
-                    "topLevelComment": {"snippet": {"textOriginal": normalized}},
-                }
-            },
-            require_write=True,
-        )
-        created = self._parse_thread(payload)
-        if created.video_id != video_id or created.channel_id != expected_channel_id:
-            raise YouTubeCommentError(f"YouTube created a comment on an unexpected target for {video_id}.")
-        if created.author_channel_id != expected_channel_id or not comments_equivalent(created.text, normalized):
-            raise YouTubeCommentError(f"YouTube returned an unexpected created comment for {video_id}.")
-        return self._verify_comment_eventually(
-            video_id=video_id,
-            channel_id=expected_channel_id,
-            comment_id=created.comment_id,
-            expected_text=normalized,
-            fallback=created,
-        )
+        with reserve_shared_quota(
+            self._quota_guard,
+            50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts,
+            YouTubeCommentError,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
+            payload = self._request(
+                "POST",
+                "commentThreads",
+                params={"part": "snippet"},
+                json_body={
+                    "snippet": {
+                        "channelId": expected_channel_id,
+                        "videoId": video_id,
+                        "topLevelComment": {"snippet": {"textOriginal": normalized}},
+                    }
+                },
+                require_write=True,
+            )
+            created = self._parse_thread(payload)
+            if created.video_id != video_id or created.channel_id != expected_channel_id:
+                raise YouTubeCommentError(f"YouTube created a comment on an unexpected target for {video_id}.")
+            if created.author_channel_id != expected_channel_id or not comments_equivalent(created.text, normalized):
+                raise YouTubeCommentError(f"YouTube returned an unexpected created comment for {video_id}.")
+            return self._verify_comment_eventually(
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                comment_id=created.comment_id,
+                expected_text=normalized,
+                fallback=created,
+            )
 
     def update_top_level_comment(
         self,
@@ -533,27 +702,32 @@ class YouTubeCommentWriter(HttpClientOwner):
             raise YouTubeCommentConflictError(
                 f"Comment {comment_id} text changed after review; refusing to overwrite it."
             )
-        payload = self._request(
-            "PUT",
-            "comments",
-            params={"part": "snippet"},
-            json_body={"id": comment_id, "snippet": {"textOriginal": normalized_new}},
-            require_write=True,
-        )
-        updated = self._parse_direct_comment(
-            payload,
-            video_id=video_id,
-            channel_id=expected_channel_id,
-        )
-        if updated.comment_id != comment_id:
-            raise YouTubeCommentError(f"YouTube returned an unexpected comment ID after updating {comment_id}.")
-        return self._verify_comment_eventually(
-            video_id=video_id,
-            channel_id=expected_channel_id,
-            comment_id=comment_id,
-            expected_text=normalized_new,
-            fallback=updated,
-        )
+        with reserve_shared_quota(
+            self._quota_guard,
+            50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts,
+            YouTubeCommentError,
+        ):
+            payload = self._request(
+                "PUT",
+                "comments",
+                params={"part": "snippet"},
+                json_body={"id": comment_id, "snippet": {"textOriginal": normalized_new}},
+                require_write=True,
+            )
+            updated = self._parse_direct_comment(
+                payload,
+                video_id=video_id,
+                channel_id=expected_channel_id,
+            )
+            if updated.comment_id != comment_id:
+                raise YouTubeCommentError(f"YouTube returned an unexpected comment ID after updating {comment_id}.")
+            return self._verify_comment_eventually(
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                comment_id=comment_id,
+                expected_text=normalized_new,
+                fallback=updated,
+            )
 
 
 __all__ = [

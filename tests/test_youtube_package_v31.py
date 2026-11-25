@@ -40,7 +40,7 @@ def make_package() -> str:
         ][i]
         paragraphs.append((body + emph)[:570])
     desc = (
-        f"*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}\n\n"
+        f"Плейлист «Сергей Есенин»: {YESENIN}\nПлейлист «Поющие Поэты»: {SINGING}\n\n"
         + social
         + "\n\n"
         + "\n\n".join(paragraphs)
@@ -168,8 +168,8 @@ def test_no_facts_or_executors_in_copy_module() -> None:
 def test_registered_but_wrong_author_playlist_fails() -> None:
     """Whitelisted link does not imply the link belongs to the named poet."""
     pkg = make_package().replace(
-        "*Плейлист «Сергей Есенин»:* " + YESENIN,
-        "*Плейлист «Сергей Есенин»:* https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        "Плейлист «Сергей Есенин»: " + YESENIN,
+        "Плейлист «Сергей Есенин»: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
     )
     assert "author_playlist_mismatch" in {item.code for item in validate_five_block_package(pkg)}
 
@@ -177,7 +177,7 @@ def test_registered_but_wrong_author_playlist_fails() -> None:
 def test_short_playlist_cannot_point_to_a_different_author() -> None:
     pkg = make_package()
     short = "*Плейлист «Сергей Есенин»:* " + YESENIN
-    ix = pkg.index(short, pkg.index(short) + 1)
+    ix = pkg.index(short)
     candidate = pkg[:ix] + pkg[ix:].replace(
         short,
         "*Плейлист «Михаил Лермонтов»:* https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
@@ -197,18 +197,24 @@ def test_pinned_comment_must_end_with_same_two_playlists() -> None:
 def test_author_registry_known_and_unsupported_names_are_rejected() -> None:
     pkg = make_package()
     candidate = pkg.replace(
-        "*Плейлист «Сергей Есенин»:* " + YESENIN,
-        "*Плейлист «Несуществующий автор»:* " + YESENIN,
+        "Плейлист «Сергей Есенин»: " + YESENIN,
+        "Плейлист «Несуществующий автор»: " + YESENIN,
     )
     assert "unknown_author" in {item.code for item in validate_five_block_package(candidate)}
 
 
-def test_plain_playlist_labels_fail_the_owner_bold_link_standard() -> None:
+def test_share_prefix_rejects_raw_markers_but_preserves_bold_comments() -> None:
     pkg = make_package()
-    bad = pkg.replace("*Плейлист «Сергей Есенин»:* ", "Плейлист «Сергей Есенин»: ", 1)
-    codes = {item.code for item in validate_five_block_package(bad)}
-    assert "author_playlist" in codes
     assert not validate_five_block_package(pkg)
+    bad = pkg.replace("Плейлист «Сергей Есенин»: ", "*Плейлист «Сергей Есенин»:* ", 1)
+    assert "share_prefix_markup" in {item.code for item in validate_five_block_package(bad)}
+    bad_social = pkg.replace("*VK:* https://", "VK: https://", 1)
+    assert "social_order" in {item.code for item in validate_five_block_package(bad_social)}
+    assert "share_prefix_markup" not in {item.code for item in validate_five_block_package(bad_social)}
+    bad_short = pkg.replace("Поэтические образы Сергея Есенина", "*Поэтические образы Сергея Есенина*", 1)
+    assert any(
+        item.block == "shorts" and item.code == "share_prefix_markup" for item in validate_five_block_package(bad_short)
+    )
 
 
 def test_playlist_labels_allow_bold_only_in_shorts_and_pin() -> None:

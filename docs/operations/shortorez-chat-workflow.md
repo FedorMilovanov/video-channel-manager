@@ -30,6 +30,8 @@ Example: `SHORTOREZ: https://youtu.be/k2Fh8aJfhOA — разобрать все 
 
 ## Separate presentation / publication routing (not an automatic upload)
 
+Before preparing Lord God YouTube Shorts metadata, read [the channel/surface decision matrix](lord-god-youtube-agent-decision-contract.md) together with [the provider-inert publishing adapter](shortorez-publication-routing.md). **Accepted MP4 or the 17-question Q&A54 inventory is not authority to upload**; the registered full source goes ahead of social links in a matched Short, below two unmarked introductory lines. Preserve raw YouTube emphasis syntax and review punctuation. Do not silently copy this layout to The Legendary Poet.
+
 - **YouTube Shorts / VK native Clips:** vertical or applicable square video, actual duration at most 180 seconds unless the provider's current rules establish otherwise. VK native Clips are not ordinary VK Video edits.
 - **Instagram Reels API:** historically allowed up to 900 seconds under the reviewed contract; verify the live API/account rules and format before planning upload. Telegram native video is not arbitrarily limited to 180/300 seconds; actual transport limits are checked separately.
 - **Speed adjustments:** at the owner's explicit opt-in only, a VK-only 1.05x/1.10x/1.15x/1.20x pitch-preserving copy of a **complete** accepted interval may fit 180 seconds. Keep a 1.00x original for TG/IG. Never silently speed up, chop off necessary context or call an accelerated technical pass a listening pass.

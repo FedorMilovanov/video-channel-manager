@@ -11,6 +11,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
+from video_channel_manager.telegram_editorial_hold import require_quiz_target_not_held
 from video_channel_manager.telegram_html_entities import (
     GenericMessageEntity,
     message_entities_match,
@@ -716,6 +717,10 @@ def send_poll_once(
     client: httpx.Client | None = None,
     now: datetime | None = None,
 ) -> GenericSendReceipt:
+    # This transport can be called directly, without the release CLI.
+    require_quiz_target_not_held(
+        channel_username=target.channel_username, chat_id=target.chat_id, poll_type=payload.poll_type
+    )
     _require_provider_write_authorized(profile)
     target_check_now = now or datetime.now(tz=UTC)
     _verified_target(profile, target, target_check_now)

@@ -152,7 +152,7 @@
       "status": "provider_inert",
       "project_key": "legendary-poet",
       "provider_write_capable": false,
-      "sha256": "928a61fab72bffcab59bdfc662c02f80ae122f121b5a1649c84b3f6ff0140e58",
+      "sha256": "4c9c923fc29b162ff5090a3be87a2e1bf5710877c01f2394608ab9f6954414e6",
       "reason": "Provider-inert Instagram daily Reel preparation/staging/plan wrapper; forces Meta writes off and never executes provider publish."
     },
     {
@@ -208,7 +208,7 @@
       "status": "scoped_release",
       "project_key": "milovi-cake",
       "provider_write_capable": true,
-      "sha256": "78d7cf8370ca2c30cfc3ae2318495df6f1098d31e6309e5df695857a401fe4da",
+      "sha256": "45152f6d6b419fdade39c49132a82f8e758eba91a23e580b2357452bf381d18c",
       "reason": "14 Nov 2026 approved one-slot HTTPS route; retains the existing exclusive daily writer lock; default original source lanes unchanged."
     },
     {

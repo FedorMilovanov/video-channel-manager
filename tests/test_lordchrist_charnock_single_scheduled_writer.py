@@ -14,7 +14,7 @@ def _cron_triggers(filename: str) -> list[str]:
 
 
 def test_only_charnock_reissue_owns_tuesday_friday_midday_schedule() -> None:
-    approved_triggers = ["0 9 * * 2,5", "11 9 * * 2,5", "37 9 * * 2,5", "11 10 * * 2,5"]
+    approved_triggers = ["5 9 * * 2,5", "11 9 * * 2,5", "37 9 * * 2,5", "11 10 * * 2,5"]
     assert _cron_triggers("lordchrist-charnock-scheduled-reissue.yml") == approved_triggers
     assert _cron_triggers("lordchrist-telegraph-poster.yml") == []
     assert _cron_triggers("lordchrist-telegram-poster.yml") == ["17 16 * * 1,3,6"]
@@ -31,14 +31,23 @@ def test_sole_scheduled_reissue_preserves_immutable_approval_and_no_backfill() -
     assert "LORDCHRIST_CHARNOCK_RECOVERY_ENABLED" in data
     assert "LORDCHRIST_CHARNOCK_RECOVERY_MANIFEST_SHA256" in data
     assert "now.hour not in (12,13)" in data
-    assert "scheduled_reissue_preflight_status(state,matches[0])" in data
+    # V3 selects the reviewed date and source before reading the immutable ledger.
+    assert 'entries=load_recovery_calendar_v3(Path("."),require_approved=True)' in data
+    assert "approved=matches[0]" in data
+    assert "require_v3_release(approved)" in data
+    assert "LORDCHRIST_CHARNOCK_RECOVERY_V3_SHA256" in data
+    assert "scheduled_reissue_preflight_status(state,approved)" in data
+    assert "APPROVED_MANIFEST_SHA256" in data
+    assert '[[ "$(sha256sum "$MANIFEST"' in data
     assert "github.event_name == 'workflow_dispatch'" in data
     assert "github.actor == 'FedorMilovanov'" in data
     assert "inputs.confirm == 'RUN_APPROVED_CHARNOCK_SLOT_ONCE'" in data
-    for number in range(9, 13):
+    for number in range(10, 13):
         assert f"inputs.publication_id == 'lordchrist-telegraph-charnock-{number:02d}'" in data
-    for number in (6, 7, 8, 13):
+        assert f"          - lordchrist-telegraph-charnock-{number:02d}" in data
+    for number in (6, 7, 8, 9, 13):
         assert f"inputs.publication_id == 'lordchrist-telegraph-charnock-{number:02d}'" not in data
+        assert f"          - lordchrist-telegraph-charnock-{number:02d}" not in data
     assert 'matches[0]["publication_id"] != os.environ.get("REVIEWED_PUBLICATION_ID")' in data
     assert "bash scripts/lordchrist_charnock_reschedule.sh" in data
     assert "cancel-in-progress: false" in data

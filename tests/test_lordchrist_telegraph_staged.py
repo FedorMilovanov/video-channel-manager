@@ -102,6 +102,89 @@ def _state(args: argparse.Namespace) -> dict[str, Any]:
     return json.loads(args.ledger.read_text(encoding="utf-8"))["entries"][PUB_ID]
 
 
+def test_exact_reconciled_jude_claim_is_provider_inert_and_cannot_be_replayed(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    execution.publication_id = staged.JUDE_PUBLICATION_ID
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Prepare must never reach a provider"))
+    result = staged.execute(execution)
+    assert result["state"] == "page_dispatch_claimed"
+    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    entry = ledger["entries"][staged.JUDE_PUBLICATION_ID]
+    assert entry["provider_effect"] == "unknown_until_reconciled"
+    assert entry["run_id"] == execution.run_id
+    assert entry["github_sha"] == execution.github_sha
+    assert entry["article_sha256"].startswith("sha256:")
+    assert entry["cover_sha256"].startswith("sha256:")
+    before = execution.ledger.read_bytes()
+    with pytest.raises(RuntimeError, match="already exists in durable state"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("stage", "existing_state"),
+    [
+        ("send-page", "page_dispatch_claimed"),
+        ("prepare-telegram", "page_published"),
+        ("send-telegram", "telegram_dispatch_claimed"),
+    ],
+)
+def test_reconciled_jude_rejects_unverified_or_incomplete_claims(
+    execution: argparse.Namespace,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    existing_state: str,
+) -> None:
+    execution.stage = stage
+    execution.publication_id = staged.JUDE_PUBLICATION_ID
+    ledger = json.loads(execution.ledger.read_text(encoding="utf-8"))
+    ledger["entries"][execution.publication_id] = {
+        "publication_id": execution.publication_id,
+        "state": existing_state,
+        "run_id": execution.run_id,
+        "run_attempt": 1,
+        "github_sha": execution.github_sha,
+        "provider_effect": "unknown_until_reconciled",
+    }
+    save_ledger(execution.ledger, ledger)
+    before = execution.ledger.read_bytes()
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Unverified claim must not reach provider"))
+    with pytest.raises(RuntimeError, match="Article or cover changed after durable intent"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize("stage", ["prepare-page", "send-page", "prepare-telegram", "send-telegram"])
+def test_renaming_exact_jude_article_cannot_bypass_staged_hold(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, stage: str
+) -> None:
+    queue = json.loads((ROOT / execution.queue).read_text(encoding="utf-8"))
+    item = next(item for item in queue["items"] if item["publication_id"] == staged.JUDE_PUBLICATION_ID)
+    assert item["article"]["git_blob_sha"] == staged.JUDE_ARTICLE_GIT_BLOB
+    item["publication_id"] = "lordchrist-renamed-jude-test"
+    queue_path = tmp_path / "renamed-queue.json"
+    queue_path.write_text(json.dumps(queue, ensure_ascii=False), encoding="utf-8")
+    execution.queue = queue_path
+    execution.publication_id = item["publication_id"]
+    execution.stage = stage
+    before = execution.ledger.read_bytes()
+    monkeypatch.setattr(staged, "build_telegraph_payload", lambda *a, **kw: pytest.fail("Held blob must not render"))
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Hold must stop before provider access"))
+    with pytest.raises(RuntimeError, match="Jude article identity is immutable"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+def test_jude_hold_matches_readonly_planner_and_account_probe() -> None:
+    from scripts import lordchrist_telegraph_backlog as backlog
+    from video_channel_manager import lordchrist_jude_telegraph_readonly as probe
+
+    assert backlog.PROPOSAL_ONLY_HOLDS[staged.JUDE_PUBLICATION_ID] == staged.JUDE_HOLD_REASON
+    assert probe.PUBLICATION_ID == staged.JUDE_PUBLICATION_ID
+    assert probe.ARTICLE_BLOB == staged.JUDE_ARTICLE_GIT_BLOB
+
+
 @pytest.mark.parametrize(
     "corruption",
     [

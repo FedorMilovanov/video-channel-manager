@@ -27,6 +27,40 @@ A successful HTTP 200 binary response is accepted only when Meta explicitly retu
 
 On upload failure, diagnostics record only a non-secret wire fingerprint: method, host, actual body length, HTTP `Content-Length`, `file_size`, `offset`, and request `Content-Type` presence/value. The one-time rupload path, authorization value, and access token are never recorded. Available Meta correlation headers include `x-fb-request-id`, `x-fb-trace-id`, and `Proxy-Status`.
 
+## Optional local Meta HTTP proxy (Windows / v2rayN)
+
+The published Python client normally inherits HTTPX's process network route.
+The Windows *browser/system* proxy is not necessarily inherited by the
+PowerShell-scheduled Python process. On the owner's connected desktop, the
+provider-inert 23 November 2026 network test made **all 6/6 direct root GETs**
+time out across `graph.facebook.com` and `rupload.facebook.com`;
+**all 6/6 routed GETs received actual HTTP replies** through the locally
+installed v2rayN proxy at `http://127.0.0.1:10808`. One routed GET returned
+HTTP 429; connectivity is not evidence that any future Meta upload will succeed.
+
+For an explicitly reviewed local environment, set
+`VCM_INSTAGRAM_META_PROXY_URL=http://127.0.0.1:10808` in the *sole* writer's
+process environment. The application accepts an **HTTP proxy on 127.0.0.1
+only**, with a numeric port, no credentials, URL path, query or fragment.
+The shared Graph/rupload HTTPX client and media verifier use that exact route,
+with ambient proxy overrides disabled; absent this setting, existing
+network behavior remains unchanged.
+
+A local proxy/Internet outage is a stop condition, not permission to switch
+accounts, silently retry a provider POST or change a publication key. Existing
+`instagram production preflight` remains GET-only and must confirm the exact
+account and publishing quota before an approved `-Execute`. Scheduled
+Windows jobs can run only when the machine, authenticated user session and
+v2rayN tunnel are available at the authorized due time; no cloud fallback is
+implied. Never persist access tokens in command lines, logs or proxy URLs.
+
+On 23 November the owner's already-installed single-writer PowerShell
+launcher was independently hardened with a fail-closed loopback-listener
+precheck and temporary `HTTPS_PROXY` / `HTTP_PROXY` environment settings
+for its existing installed runtime. Its updated exact-byte SHA and original
+backup are in the owner's local operator evidence; this *does not* constitute
+a GitHub merge or a live provider-upload acceptance.
+
 ## Public-HTTPS fallback
 
 If `rupload.facebook.com` continues to fail at the provider/OIL boundary, the preferred transport fallback is the already-reviewed public-URL publisher documented in `instagram-production-publishing.md`. This is a different transport and therefore requires a new reviewed publication key and fresh operation-specific authority.

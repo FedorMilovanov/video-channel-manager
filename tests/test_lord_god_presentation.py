@@ -78,6 +78,19 @@ def _plan(after: str = _DESCRIPTION) -> dict:
         ("*Формат:* вопрос и ответ", "new_redundant_speaker_format_topic_field"),
         ("*Тема:* избрание", "new_redundant_speaker_format_topic_field"),
         ("*Автор:* Джон МакАртур", "new_redundant_speaker_format_topic_field"),
+        ("*Главная мысль*", "new_template_summary_or_project_heading"),
+        ("*Важная мысль*", "new_template_summary_or_project_heading"),
+        ("*Содержание*", "new_template_summary_or_project_heading"),
+        ("*Проект*", "new_template_summary_or_project_heading"),
+        ("Corrupted source ????? ???", "new_text_encoding_corruption"),
+        ("Corrupted source \ufffd text", "new_text_encoding_corruption"),
+        (
+            "*Архивные серии канала (не все являются источником этого фрагмента)*",
+            "new_playlist_heading_misstates_subject",
+        ),
+        ("*Другие архивные подборки, не первоисточники*", "new_playlist_heading_misstates_subject"),
+        ("*Проверенные серии канала*", "new_playlist_heading_misstates_subject"),
+        ("*Серии, содержащие этот ролик*", "new_playlist_heading_misstates_subject"),
         (
             "*Исторические плейлисты канала (не обязательно содержат этот выпуск):*",
             "new_playlist_heading_misstates_subject",
@@ -122,9 +135,9 @@ def test_shelf_removal_rejects_short_source_only_card_and_orphan_heading() -> No
         "\nSermons: https://youtube.com/channel/" + LORD_GOD_OWNER_CHANNEL + "/playlists?sort=dd&shelf_id=3"
     )
     proposed = "Original: https://youtube.com/shorts/Bp27Wqi6j5I\n\nConferences:"
-    # The standalone short-format check permits this before/after; the
-    # shelf transition gate must reject the empty viewer-facing content.
-    assert presentation_issues(proposed) == []
+    # The universal preview gate and the shelf transition gate both reject
+    # the source-only replacement before any provider access.
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(proposed)
     issues = forward_longform_editorial_issues(original, proposed)
     assert "shelf_cleanup_missing_two_plain_intro_lines" in issues
     assert "shelf_cleanup_dangling_navigation_heading" in issues
@@ -141,6 +154,20 @@ def test_shelf_removal_accepts_two_plain_content_lines_for_short_clip() -> None:
         "\n\nOriginal: https://youtube.com/shorts/Bp27Wqi6j5I"
     )
     assert forward_longform_editorial_issues(original, proposed) == []
+
+
+def test_inherited_question_mark_placeholder_is_not_forced_into_retroactive_rewrite() -> None:
+    legacy = "Original unavailable: ?????"
+    proposed = _DESCRIPTION + "\n\n" + legacy
+    assert forward_longform_editorial_issues(legacy, proposed) == []
+
+
+def test_inherited_legacy_summary_and_playlist_headings_do_not_rewrite_sources() -> None:
+    old_heading = "*Главная мысль*"
+    old_playlist = "*Архивные серии канала (не все являются источником этого фрагмента)*"
+    existing = "Старые исходные сведения:\n" + old_heading + "\n" + old_playlist
+    updated = _DESCRIPTION + "\n\n" + old_heading + "\n" + old_playlist
+    assert forward_longform_editorial_issues(existing, updated) == []
 
 
 def test_inherited_exact_archive_source_label_does_not_force_mass_rewrite() -> None:
@@ -213,9 +240,31 @@ def test_bad_markers_and_old_administrative_info_fail_closed(modification, expec
 
 
 def test_short_description_may_be_plain_but_not_a_donation_request() -> None:
-    short = "Проповедь о смирении и верности Христу. https://gospod-bog.ru/"
+    short = (
+        "Проповедь посвящена смирению и верности Иисусу Христу.\n"
+        "Автор объясняет, почему это важно для жизни христианина.\n\n"
+        "https://gospod-bog.ru/"
+    )
+    assert len(short) < 350
     assert presentation_issues(short) == []
+    require_lord_god_youtube_presentation(_plan(short))
     assert "retired_fundraising_or_payment" in presentation_issues(short + "\nСбербанк: 1234 5678 9012 3456")
+
+
+@pytest.mark.parametrize(
+    "short",
+    [
+        "Джон МакАртур объясняет, как христианам понимать библейское наставление.",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\n*Оригинальная беседа:* https://example.org",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\nhttps://example.org/original",
+        "Джон МакАртур объясняет, как христианам понимать Писание.\n🎙️ Дополнительное объяснение находится в полном выпуске.",
+    ],
+)
+def test_short_under_350_needs_two_plain_raw_preview_lines(short: str) -> None:
+    assert len(short) < 350
+    assert "share_preview_first_two_lines_not_plain" in presentation_issues(short)
+    with pytest.raises(ValueError, match="share_preview_first_two_lines_not_plain"):
+        require_lord_god_youtube_presentation(_plan(short))
 
 
 def test_mismatched_project_or_corrupted_plan_fails_closed() -> None:

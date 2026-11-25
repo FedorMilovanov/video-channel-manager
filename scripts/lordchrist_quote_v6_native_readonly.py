@@ -56,6 +56,7 @@ class QuoteV6NativePost(BaseModel):
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     render_html_sha256: str = Field(pattern=SHA256_PATTERN)
     source: QuoteV6Source
+    presentation_style: Literal["legacy_blockquote", "inline_emphasis"] = "legacy_blockquote"
 
     @model_validator(mode="after")
     def exact_render_binding(self) -> "QuoteV6NativePost":
@@ -69,6 +70,8 @@ class QuoteV6NativePost(BaseModel):
             raise ValueError("attribution must occupy one line")
         if not self.attribution_line.removeprefix("— ").startswith(self.source.author + ","):
             raise ValueError("source author and reader attribution differ")
+        if self.presentation_style == "inline_emphasis":
+            return _validate_inline_emphasis(self)
         expected_html = (
             "<blockquote>"
             + html.escape(self.quote_text, quote=True)
@@ -238,3 +241,95 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def _validate_inline_emphasis(post: QuoteV6NativePost) -> QuoteV6NativePost:
+    """Proof for a restyled pending card; source bytes remain separate and immutable."""
+    match = re.fullmatch(r"([\s\S]+)\n<i>([\s\S]*?)</i>\n\n([^<>]+)", post.html_text)
+    if match is None:
+        raise ValueError("restyled message must be body, italic attribution, hashtag footer")
+    body_html, attribution, tags = match.groups()
+    bold_count, italic_count = body_html.count("<b>"), body_html.count("<i>")
+    if (
+        "<blockquote" in body_html.lower()
+        or not 1 <= bold_count + italic_count <= 2
+        or bold_count > 1
+        or italic_count > 1
+        or body_html.count("</b>") != bold_count
+        or body_html.count("</i>") != italic_count
+    ):
+        raise ValueError("restyle requires one or two balanced, meaning-led emphasis spans; no blockquote")
+    body_stripped = re.sub(r"</?(?:b|i)>", "", body_html)
+    if "<" in body_stripped or ">" in body_stripped:
+        raise ValueError("restyled body contains unsupported markup")
+    body = html.unescape(body_stripped)
+    if body not in post.quote_text[1:-1] or post.quote_text[1:-1].count(body) != 1:
+        raise ValueError("restyled quote must be one exact contiguous passage")
+    if body.startswith("«") and body.endswith("»"):
+        raise ValueError("restyled quote has duplicate outer quotation marks")
+    if html.unescape(attribution) != post.attribution_line or html.unescape(tags) != post.hashtags:
+        raise ValueError("reviewed author/hashtags differ from rendered text")
+    if "_" in post.hashtags or not 2 <= len(post.hashtags.split()) <= 6:
+        raise ValueError("new hashtags must use CamelCase, not underscores")
+    if post.text != body + "\n" + post.attribution_line + "\n\n" + post.hashtags:
+        raise ValueError("restyled visible text differs from rendered HTML")
+    if post.render_html_sha256 != _sha(post.html_text):
+        raise ValueError("restyled HTML hash changed")
+    payload = {
+        "publication_id": post.publication_id,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "html_text": post.html_text,
+        "parse_mode": "HTML",
+        "link_preview_disabled": True,
+    }
+    if post.source_payload_sha256 != _sha(_canonical(payload)):
+        raise ValueError("restyled provider payload hash does not bind exact HTML")
+    if post.source.original_ru_quote_sha256 != _sha(post.quote_text[1:-1]):
+        raise ValueError("original source quotation hash is not preserved")
+    if len(post.text.encode("utf-16-le")) // 2 > 4096:
+        raise ValueError("Telegram UTF-16 limit exceeded")
+    return post
+
+
+def build_restyled_quote_v6_native_queue(root: Path, *, manifest_path: Path | None = None) -> QuoteV6NativeQueue:
+    """Build a new digest-bound queue while keeping all published payloads verbatim.
+
+    This function does not modify a state ledger; the matching protected state
+    migration is required before any sender can use the new digest.
+    """
+    from scripts.lordchrist_quote_v6_restyle import build_restyle_preview
+
+    original = build_quote_v6_native_queue(root / SOURCE_PATH)
+    proposed = build_restyle_preview(root, **({"manifest_path": manifest_path} if manifest_path is not None else {}))
+    if proposed["original_queue_digest"] != original.digest:
+        raise ValueError("restyle is not bound to the source queue")
+    pending = {item["publication_id"]: item for item in proposed["items"]}
+    posts = []
+    for post in original.posts:
+        if post.publication_id not in pending:
+            posts.append(post)
+            continue
+        card = pending[post.publication_id]
+        raw = post.model_dump(mode="json")
+        raw.update(
+            {
+                "presentation_style": "inline_emphasis",
+                "text": card["text"],
+                "html_text": card["html_text"],
+                "hashtags": card["text"].split("\n\n")[-1],
+                "source_payload_sha256": card["provider_payload_sha256"],
+                "render_html_sha256": card["render_html_sha256"],
+            }
+        )
+        posts.append(QuoteV6NativePost.model_validate(raw))
+    return QuoteV6NativeQueue(
+        schema_name=NATIVE_SCHEMA,
+        schema_version=1,
+        project_key="lord-god-strength",
+        channel_username="@lordchrist",
+        release_state="provider_inert_candidate",
+        provider_writes_authorized=False,
+        candidate_digest=proposed["prospective_queue_digest"],
+        posts=tuple(posts),
+    )

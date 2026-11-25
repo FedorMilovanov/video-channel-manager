@@ -123,22 +123,24 @@ def presentation_issues(description: str) -> list[str]:
     # not 5000 Python characters (Cyrillic and emoji are multibyte).
     if len(description.encode("utf-8")) > 5000:
         issues.append("description_over_5000_utf8_bytes")
+    # All new Lord God Shorts and long-form descriptions need two plain raw
+    # lines for share previews; only bold/italic styling is length-dependent.
+    # The two raw nonempty Studio lines are consumed by repost/share
+    # previews. A plain first *paragraph* alone is not sufficient:
+    # a later bold heading on line two can leak literal markup.
+    preview_lines = [line.strip() for line in description.splitlines() if line.strip()]
+    if len(preview_lines) < 2 or any(
+        len(line) < 15
+        or re.search(r"https?://|[*_`]", line, re.I)
+        or any(needle in line.lower() for needle in ("www.", "t.me/", "vk.com/", "vk.ru/"))
+        or line[0] in "#>-•‣◦⁃"
+        or 0x1F000 <= ord(line[0]) <= 0x1FAFF
+        or 0x2600 <= ord(line[0]) <= 0x27BF
+        or line.startswith("<")
+        for line in preview_lines[:2]
+    ):
+        issues.append("share_preview_first_two_lines_not_plain")
     if len(description) >= 350:
-        # The two raw nonempty Studio lines are consumed by repost/share
-        # previews. A plain first *paragraph* alone is not sufficient:
-        # a later bold heading on line two can leak literal markup.
-        preview_lines = [line.strip() for line in description.splitlines() if line.strip()]
-        if len(preview_lines) < 2 or any(
-            len(line) < 15
-            or re.search(r"https?://|[*_`]", line, re.I)
-            or any(needle in line.lower() for needle in ("www.", "t.me/", "vk.com/", "vk.ru/"))
-            or line[0] in "#>-•‣◦⁃"
-            or 0x1F000 <= ord(line[0]) <= 0x1FAFF
-            or 0x2600 <= ord(line[0]) <= 0x27BF
-            or line.startswith("<")
-            for line in preview_lines[:2]
-        ):
-            issues.append("share_preview_first_two_lines_not_plain")
         # Normal-length sermons and lectures must have selective *bold* and
         # _italic_. Shorts/very short clips may intentionally remain plain.
         if BOLD_SPAN_RE.search(description) is None:
@@ -159,12 +161,19 @@ def presentation_issues(description: str) -> list[str]:
 _REDUNDANT_EDITORIAL_FIELD_RE = re.compile(r"^\s*[*_]*(?:выступающий|формат|тема|автор)\s*:\s*[*_]*", re.I)
 _NON_SUBJECT_PLAYLIST_HEADING_RE = re.compile(
     r"^\s*[*_]*(?:исторические плейлисты|архивные плейлисты|архивная навигация"
-    r"|плейлисты из исходного описания)\b",
+    r"|плейлисты из исходного описания|архивные серии(?: канала)?"
+    r"|другие архивные подборки|проверенные серии канала|серии, содержащие этот ролик)\b",
+    re.I,
+)
+_TEMPLATE_SUMMARY_HEADING_RE = re.compile(
+    r"^\s*\*(?:главная мысль|важная мысль|содержание|проект)\s*:?\*\s*$",
     re.I,
 )
 _ENGLISH_RECORDING_LABEL_RE = re.compile(r"^\s*[*_]*англоязычная запись\b", re.I)
 _PLAIN_ENGLISH_RECORDING_LABEL = "Англоязычная запись:"
 _BARE_SOURCE_URL_RE = re.compile(r"https?://\S+\Z")
+
+_NEW_ENCODING_CORRUPTION_RE = re.compile(r"\?{3,}|\ufffd")
 
 
 def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
@@ -201,6 +210,10 @@ def forward_longform_editorial_issues(before: str, after: str) -> list[str]:
             continue
         if _REDUNDANT_EDITORIAL_FIELD_RE.match(line):
             issues.add("new_redundant_speaker_format_topic_field")
+        if _TEMPLATE_SUMMARY_HEADING_RE.match(line):
+            issues.add("new_template_summary_or_project_heading")
+        if _NEW_ENCODING_CORRUPTION_RE.search(line):
+            issues.add("new_text_encoding_corruption")
         if _NON_SUBJECT_PLAYLIST_HEADING_RE.match(line):
             issues.add("new_playlist_heading_misstates_subject")
         if _ENGLISH_RECORDING_LABEL_RE.match(line):
@@ -225,8 +238,17 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
     operation = plan["operations"][0]
     if operation.get("channel_id") != LORD_GOD_OWNER_CHANNEL:
         raise ValueError("Lord God presentation gate: operation owner mismatch")
+    from video_channel_manager.platforms.youtube.panorama_format_release import (
+        FORMAT_RULESET,
+        require_format_correction_plan,
+    )
+
     problems = presentation_issues(str(operation.get("after_description", "")))
-    problems.extend(source_preservation_issues(operation["before_description"], operation["after_description"]))
+    if plan.get("ruleset") == FORMAT_RULESET:
+        require_format_correction_plan(plan)
+        # Re-derivation already proves every non-timestamp byte is preserved.
+    else:
+        problems.extend(source_preservation_issues(operation["before_description"], operation["after_description"]))
     problems.extend(forward_longform_editorial_issues(operation["before_description"], operation["after_description"]))
     if problems:
         raise ValueError(

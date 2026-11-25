@@ -16,6 +16,7 @@ QUOTE_V6_WORKFLOW = WORKFLOWS_DIR / "lordchrist-quote-v6-publisher.yml"
 SHORTS4_WORKFLOW = WORKFLOWS_DIR / "lordchrist-shorts4-publisher.yml"
 CHARNOCK_CORRECTION_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-corrections.yml"
 CHARNOCK_SCHEDULE_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-scheduled-reissue.yml"
+CHARNOCK_EDITORIAL_WORKFLOW = WORKFLOWS_DIR / "lordchrist-charnock-editorial-correction.yml"
 EXPECTED_LOCK_PARTICIPANTS = {
     WORKFLOW,
     RECOVERY_WORKFLOW,
@@ -26,6 +27,7 @@ EXPECTED_LOCK_PARTICIPANTS = {
     SHORTS4_WORKFLOW,
     CHARNOCK_CORRECTION_WORKFLOW,
     CHARNOCK_SCHEDULE_WORKFLOW,
+    CHARNOCK_EDITORIAL_WORKFLOW,
 }
 
 

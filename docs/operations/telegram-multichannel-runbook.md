@@ -29,6 +29,7 @@ the profiles and their pinned target bindings and compared with them by
 
 | Profile | Project | Target | State ref | `provider_writes_authorized` |
 | --- | --- | --- | --- | --- |
+| `content/telegram/channels/legendary-poet.json` | `legendary-poet` | `@thelegendarypoet` | `state/legendary-poet-telegram` | `false` |
 | `content/telegram/channels/lordchrist.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `false` |
 | `content/telegram/channels/lordchrist-rich.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
 | `content/telegram/channels/lordchrist-shorts-v1.json` | `lord-god-strength` | `@lordchrist` | `state/lordchrist-telegram` | `true` |
@@ -84,7 +85,7 @@ Before any mutation, preflight resolves all of the following independently:
 1. bot token via `getMe` → exact expected bot ID and username;
 2. numeric channel ID via `getChat`;
 3. public `@username` via a second `getChat` → same exact channel;
-4. bot administrator membership via `getChatAdministrators(return_bots=true)`;
+4. exact bot membership via `getChatMember(chat_id, bot_id)` with matching member bot identity and administrator/creator status;
 5. `can_post_messages` permission.
 
 The resulting proof is profile-bound and short-lived. A stale proof cannot prepare a dispatch.

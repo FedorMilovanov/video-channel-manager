@@ -35,6 +35,29 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 
 STATES = frozenset({"page_dispatch_claimed", "page_published", "telegram_dispatch_claimed", "published"})
 
+# Incident reconciliation (2026-11-23):
+# The old run #43098273140 remains reported QUEUED with 0 jobs/artifacts,
+# despite an inconsistent "completed" cancellation response. Its immutable
+# code at ba435ff17e726c803674c79273eb0ac07f2478bd explicitly checks
+# current_main == GITHUB_SHA *before* either irreversible provider claim.
+# That old SHA is not current main. The bound account scan on Nov 22 saw
+# zero matching Jude page titles, and state/lordchrist-telegram has no Jude
+# claim/receipt. These are bounded observations, not proof about other
+# accounts. This manual exact-ID release continues to require a fresh
+# current-main successful CI gate and a durable claim before ANY POST.
+# The old run is NOT marked canceled, and no rerun is permitted.
+# Never allow the identical editorial article through a renamed queue ID.
+JUDE_PUBLICATION_ID = "lordchrist-telegraph-jude-1-5-20261105"
+JUDE_ARTICLE_GIT_BLOB = "dd15da234a74eb474963d275c6a9bccfcadb9985"
+JUDE_HOLD_REASON = "queued_run_43098273140_target_unknown"
+
+
+def _require_jude_reconciled(publication_id: str, *, article_blob: str | None = None) -> None:
+    # The exact, separately approved original ID may now enter normal
+    # staged guards. Keep the immutable source blob pinned to that ID.
+    if article_blob == JUDE_ARTICLE_GIT_BLOB and publication_id != JUDE_PUBLICATION_ID:
+        raise RuntimeError("Jude article identity is immutable; renamed duplicate prohibited")
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -60,6 +83,10 @@ def _release(args: argparse.Namespace) -> tuple[Any, Any]:
     root = args.repo_root.resolve()
     items = load_telegraph_queue(root / args.queue, root)
     item = _find_item(items, args.publication_id)
+    # load_telegraph_queue verifies article bytes against article_blob. Binding
+    # both identity and reviewed bytes prevents a simple ID-only rename from
+    # bypassing the hold; it cannot identify every edited or external copy.
+    _require_jude_reconciled(item.publication_id, article_blob=item.article_blob)
     if not item.is_ready or item.is_canary:
         raise RuntimeError("Exact ready non-canary Telegraph article required")
     payload = build_telegraph_payload(root, item, media_base_url=args.media_base_url)
@@ -104,6 +131,11 @@ def _verified_payload(entry: dict[str, Any], payload: Any) -> None:
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     _require_execution_context(args)
+    # Check the exact held ID before reading or changing the durable ledger;
+    # _release performs the second, verified-article-blob check for aliases.
+    # Every stage is blocked, preserving any existing receipt or claim for
+    # separately reviewed reconciliation rather than resuming blindly.
+    _require_jude_reconciled(args.publication_id)
     path, ledger = _ledger(args)
     item, payload = _release(args)
 

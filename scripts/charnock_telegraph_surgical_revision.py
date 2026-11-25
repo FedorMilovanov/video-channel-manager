@@ -5,6 +5,10 @@ Default action is public GET + dry-run; execution requires an existing account
 token, an explicit confirmation and an outside-repository receipt directory.
 This cannot make Telegraph's editPage atomic: an edit may race between the
 last GET and POST; a failed/ambiguous POST must never be retried blindly.
+
+RETIRED 21.11.2026: рабочая полоса снята — контракты закрепляли состояние страниц
+до qc-переиздания, после него не совпадают; workflow удалён. Модуль оставлен как
+fail-closed историческое свидетельство и как библиотека для тестов.
 """
 
 from __future__ import annotations
@@ -276,6 +280,10 @@ def main() -> None:
     for key in keys:
         try:
             outcome = run_one(key, execute=args.execute, confirm=args.confirm, receipt_dir=args.receipt_dir)
+        except UnsafeRevision as exc:
+            # Local guard messages are written in this module and carry no secrets.
+            print(f"{key}: STOP / no automatic retry: {exc}")
+            raise SystemExit(2) from None
         except Exception as exc:
             # Never echo arbitrary provider errors (can contain credentials).
             print(f"{key}: STOP / no automatic retry ({type(exc).__name__})")

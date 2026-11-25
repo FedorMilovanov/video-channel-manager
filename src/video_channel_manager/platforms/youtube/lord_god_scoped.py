@@ -11,10 +11,23 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 import hashlib
+import json
 import re
 from urllib.parse import parse_qs, urlsplit
 
-from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text, validate_copy_plan
+from video_channel_manager.platforms.youtube.chapter_release import (
+    CHAPTER_RULESET,
+    chapter_stamp as _chapter_stamp,
+    require_review,
+    require_panorama_owner_evidence,
+)
+from video_channel_manager.platforms.youtube.copy_plan import (
+    canonical_sha256,
+    finalize_copy_plan,
+    sha256_text,
+    validate_copy_plan,
+)
+from video_channel_manager.platforms.youtube.lord_god_presentation import require_lord_god_youtube_presentation
 
 LORD_GOD_CHANNEL = "UCeSJsC6go2c9pdJCuUI1BYA"
 RULESET = "lord-god-scoped-legacy-shelf-removal-v1"
@@ -247,15 +260,157 @@ def _validate_project_copy(audit: dict[str, Any], *, video_id: str, after: str) 
                 raise ValueError("Unproven or unrelated YouTube playlist in cleaned description")
 
 
-CHAPTER_RULESET = "lord-god-one-video-semantic-chapters-v1"
+def _reviewed_archive_gap(
+    fragments: list[tuple[int, int, str]],
+    chunk_index: int,
+    boundary: dict[str, Any],
+    boundary_ms: int,
+    basis: str,
+) -> bool:
+    """A real caption cue can precede the next archive chunk by a few seconds.
+
+    Not an ASR-nearest fallback: both adjacent timestamps and the exact
+    caption phrase in the next chunk prefix must be independently reviewed.
+    """
+    gap = boundary.get("archive_gap")
+    if basis != "exact_ru_caption_boundaries" or chunk_index < 1 or not isinstance(gap, dict):
+        return False
+    previous_end = fragments[chunk_index - 1][1]
+    next_start, _, next_text = fragments[chunk_index]
+    cue = boundary.get("cue")
+    if (
+        gap.get("reviewed") is not True
+        or gap.get("previous_chunk_index") != chunk_index - 1
+        or gap.get("previous_end_ms") != previous_end
+        or gap.get("next_start_ms") != next_start
+        or not previous_end <= boundary_ms < next_start
+        or not 0 < next_start - previous_end <= 5_000
+        or not isinstance(cue, str)
+    ):
+        return False
+    normalized_cue = " ".join(cue.casefold().split())
+    return len(normalized_cue) >= 16 and " ".join(next_text.casefold().split()).startswith(normalized_cue)
 
 
-def _chapter_stamp(second: int) -> str:
-    if second < 0:
-        raise ValueError("Negative chapter start")
-    if second >= 3600:
-        return f"{second // 3600}:{second % 3600 // 60:02d}:{second % 60:02d}"
-    return f"{second // 60:02d}:{second % 60:02d}"
+def _validated_chapter_appendix(
+    review: dict[str, Any], review_file: Path, transcript_database: Path, *, video_id: str, before: str
+) -> tuple[str, dict[str, Any]]:
+    """Shared semantic and archive contract for both owner-evidence routes."""
+    if (
+        review.get("schema") != "lordgod-chapter-editorial-review-v2"
+        or review.get("owner_channel_id") != LORD_GOD_CHANNEL
+        or review.get("video_id") != video_id
+        or review.get("is_executable_plan") is not False
+        or review.get("requires_fresh_youtube_api_preflight") is not True
+        or review.get("recording_player_review_required") is not True
+        or review.get("provider_writes") != 0
+    ):
+        raise ValueError("Chapter review is not a non-executable exact-owner review")
+    if (
+        review.get("source_description_sha256") != sha256_text(before)
+        or "Таймкоды:" in before
+        or "shelf_id=" in before
+        or not before.strip()
+    ):
+        raise ValueError("Chapter review must append to exact previously published clean description")
+    chapters = review.get("chapters")
+    if not isinstance(chapters, list) or not 3 <= len(chapters) <= 40:
+        raise ValueError("Chapters must contain between three and forty source-anchored entries")
+    if not transcript_database.is_file():
+        raise ValueError("Transcript evidence database is missing")
+
+    import sqlite3 as _sqlite3
+
+    with closing(_sqlite3.connect(transcript_database.as_uri() + "?mode=ro", uri=True)) as connection:
+        fragments = connection.execute(
+            "SELECT start_ms, end_ms, text FROM transcript_chunks WHERE video_id=? ORDER BY start_ms", (video_id,)
+        ).fetchall()
+    recorded_count = review.get("source_transcript_chunks", review.get("archived_transcript_chunks"))
+    if not fragments or recorded_count != len(fragments) or fragments[0][0] > 60_000:
+        raise ValueError("Transcript source coverage or chunk count does not match review")
+    ends_at = int(fragments[-1][1] // 1000)
+    times: list[int] = []
+    rendered: list[str] = []
+    reviewed_gaps: list[int] = []
+    approval = review.get("semantic_review")
+    basis = str(approval.get("basis", "")) if isinstance(approval, dict) else ""
+    for index, chapter in enumerate(chapters):
+        if not isinstance(chapter, dict):
+            raise ValueError("Every reviewed chapter must be an object")
+        chunk_index = chapter.get("index")
+        second = chapter.get("second")
+        heading = chapter.get("heading")
+        cue = chapter.get("cue", chapter.get("source_cue"))
+        excerpt = chapter.get("source_excerpt")
+        if (
+            type(chunk_index) is not int
+            or not 0 <= chunk_index < len(fragments)
+            or type(second) is not int
+            or second < 0
+            or not isinstance(heading, str)
+            or not 5 <= len(heading.strip()) <= 90
+            or "\n" in heading
+            or not isinstance(cue, str)
+            or not cue.strip()
+            or not isinstance(excerpt, str)
+            or len(excerpt) < 8
+        ):
+            raise ValueError("Invalid source-anchored chapter metadata")
+        start_ms, end_ms, source_text = fragments[chunk_index]
+        source_text = str(source_text or "")
+        boundary = chapter.get("boundary_evidence", {})
+        boundary_ms = boundary.get("start_ms") if isinstance(boundary, dict) else None
+        inside_chunk = type(boundary_ms) is int and start_ms <= boundary_ms < end_ms
+        verified_gap = (
+            not inside_chunk
+            and type(boundary_ms) is int
+            and isinstance(boundary, dict)
+            and _reviewed_archive_gap(fragments, chunk_index, boundary, boundary_ms, basis)
+        )
+        if (
+            (index == 0 and (second != 0 or chunk_index != 0))
+            or (
+                index > 0
+                and (
+                    type(boundary_ms) is not int or not (inside_chunk or verified_gap) or boundary_ms // 1000 != second
+                )
+            )
+            or cue.casefold() not in source_text.casefold()
+            or not source_text.startswith(excerpt)
+        ):
+            raise ValueError("Chapter title/time does not match its archival transcript cue")
+        if times and second - times[-1] < 10:
+            raise ValueError("Chapter timestamps not increasing or too close")
+        if chapter.get("stamp") != _chapter_stamp(second):
+            raise ValueError("Chapter stamp does not match absolute seconds")
+        if index > 0 and verified_gap:
+            reviewed_gaps.append(index)
+        times.append(second)
+        rendered.append(f"{_chapter_stamp(second)} {heading.strip()}")
+    if ends_at - times[-1] < 10:
+        raise ValueError("Final chapter has less than ten seconds of evidence")
+    appendix = "\n\nТаймкоды:\n" + "\n".join(rendered)
+    after = before + appendix
+    if len(after.encode("utf-8")) > 5000 or sha256_text(after) != review.get("proposed_description_sha256"):
+        raise ValueError("Review final description hash or size is inconsistent")
+
+    require_review(review, review_file, video_id=video_id, before=before, after=after)
+
+    evidence = {
+        "transcript_database": str(transcript_database.resolve()),
+        "video_id": video_id,
+        "source_chunk_count": len(fragments),
+        "source_fragments_sha256": canonical_sha256(fragments),
+        "chapter_source_chunk_indices": [x["index"] for x in chapters],
+        "source_first_ms": fragments[0][0],
+        "source_last_ms": fragments[-1][1],
+        "all_cues_verified": True,
+        "reviewed_archive_gap_chapter_ordinals": reviewed_gaps,
+        "editorial_approval": "APPROVED",
+        "chapter_review_sha256": _digest(review_file),
+        "player_ui_visual_check_pending": True,
+    }
+    return after, evidence
 
 
 def build_one_video_chapter_plan(
@@ -308,104 +463,21 @@ def build_one_video_chapter_plan(
         for x in unresolved
     ):
         raise ValueError("Previous plan unresolved metadata exception ledger changed")
-    if (
-        review.get("schema") != "lordgod-chapter-editorial-review-v1"
-        or review.get("owner_channel_id") != LORD_GOD_CHANNEL
-        or review.get("video_id") != video_id
-        or review.get("is_executable_plan") is not False
-        or review.get("requires_fresh_youtube_api_preflight") is not True
-        or review.get("recording_player_review_required") is not True
-        or review.get("provider_writes") != 0
-    ):
-        raise ValueError("Chapter review is not a non-executable exact-owner review")
     before = old["after_description"]
-    if (
-        review.get("source_description_sha256") != sha256_text(before)
-        or "Таймкоды:" in before
-        or "shelf_id=" in before
-        or not before.strip()
-    ):
-        raise ValueError("Chapter review must append to exact previously published clean description")
-    chapters = review.get("chapters")
-    if not isinstance(chapters, list) or not 3 <= len(chapters) <= 40:
-        raise ValueError("Chapters must contain between three and forty source-anchored entries")
-    if not transcript_database.is_file():
-        raise ValueError("Transcript evidence database is missing")
-
-    import sqlite3 as _sqlite3
-
-    with closing(_sqlite3.connect(transcript_database.as_uri() + "?mode=ro", uri=True)) as connection:
-        fragments = connection.execute(
-            "SELECT start_ms, end_ms, text FROM transcript_chunks WHERE video_id=? ORDER BY start_ms", (video_id,)
-        ).fetchall()
-    recorded_count = review.get("source_transcript_chunks", review.get("archived_transcript_chunks"))
-    if not fragments or recorded_count != len(fragments) or fragments[0][0] > 60_000:
-        raise ValueError("Transcript source coverage or chunk count does not match review")
-    ends_at = int(fragments[-1][1] // 1000)
-    times: list[int] = []
-    rendered: list[str] = []
-    for index, chapter in enumerate(chapters):
-        if not isinstance(chapter, dict):
-            raise ValueError("Every reviewed chapter must be an object")
-        chunk_index = chapter.get("index")
-        second = chapter.get("second")
-        heading = chapter.get("heading")
-        cue = chapter.get("cue", chapter.get("source_cue"))
-        excerpt = chapter.get("source_excerpt")
-        if (
-            type(chunk_index) is not int
-            or not 0 <= chunk_index < len(fragments)
-            or type(second) is not int
-            or second < 0
-            or not isinstance(heading, str)
-            or not 5 <= len(heading.strip()) <= 90
-            or "\n" in heading
-            or not isinstance(cue, str)
-            or not cue.strip()
-            or not isinstance(excerpt, str)
-            or len(excerpt) < 8
-        ):
-            raise ValueError("Invalid source-anchored chapter metadata")
-        start_ms, _, source_text = fragments[chunk_index]
-        source_text = str(source_text or "")
-        anchored_seconds = int(start_ms // 1000)
-        if (
-            (index == 0 and (second != 0 or chunk_index != 0))
-            or (index > 0 and anchored_seconds != second)
-            or cue.casefold() not in source_text.casefold()
-            or not source_text.startswith(excerpt)
-        ):
-            raise ValueError("Chapter title/time does not match its archival transcript cue")
-        if times and second - times[-1] < 10:
-            raise ValueError("Chapter timestamps not increasing or too close")
-        if chapter.get("stamp") != _chapter_stamp(second):
-            raise ValueError("Chapter stamp does not match absolute seconds")
-        times.append(second)
-        rendered.append(f"{_chapter_stamp(second)} {heading.strip()}")
-    if ends_at - times[-1] < 10:
-        raise ValueError("Final chapter has less than ten seconds of evidence")
-    appendix = "\n\nТаймкоды:\n" + "\n".join(rendered)
-    after = before + appendix
-    if len(after.encode("utf-8")) > 5000 or sha256_text(after) != review.get("proposed_description_sha256"):
-        raise ValueError("Review final description hash or size is inconsistent")
-
+    after, evidence = _validated_chapter_appendix(
+        review, review_file, transcript_database, video_id=video_id, before=before
+    )
+    chapters = review["chapters"]
     plan = deepcopy(previous_plan)
     plan["ruleset"] = CHAPTER_RULESET
+    plan["source_scope"] = "legacy-audit-package-v1"
+    plan["source_audit_package"] = str(audit_file.resolve())
     plan["generated_at"] = datetime.now(UTC).isoformat()
     plan["source_chapter_review"] = str(review_file.resolve())
     plan["source_chapter_review_sha256"] = _digest(review_file)
     plan["source_previous_editorial_plan"] = str(previous_file.resolve())
     plan["source_previous_editorial_plan_sha256"] = _digest(previous_file)
-    plan["chapter_evidence"] = {
-        "transcript_database": str(transcript_database.resolve()),
-        "video_id": video_id,
-        "source_chunk_count": len(fragments),
-        "chapter_source_chunk_indices": [x["index"] for x in chapters],
-        "source_first_ms": fragments[0][0],
-        "source_last_ms": fragments[-1][1],
-        "all_cues_verified": True,
-        "player_ui_visual_check_pending": True,
-    }
+    plan["chapter_evidence"] = evidence
     plan["fix_code_counts"] = {"reviewed_transcript_semantic_chapters": len(chapters)}
     plan["operations"][0].update(
         ruleset=CHAPTER_RULESET,
@@ -431,3 +503,83 @@ def build_one_video_chapter_plan(
         "Player chapter UI confirmation remains separate.\n"
     )
     return plan, report
+
+
+def build_panorama_owner_chapter_plan(
+    owner_file: Path,
+    playlist_file: Path,
+    source_file: Path,
+    review_file: Path,
+    transcript_database: Path,
+    *,
+    video_id: str,
+) -> tuple[dict[str, Any], str]:
+    """Use a real exact-ID owner receipt, not a fabricated full-channel audit."""
+    from video_channel_manager.platforms.youtube.chapter_release import load_panorama_owner_evidence
+
+    review = json.loads(review_file.read_text(encoding="utf-8-sig"))
+    if not isinstance(review, dict):
+        raise ValueError("Expected reviewed chapter object")
+    proof = load_panorama_owner_evidence(owner_file, playlist_file, source_file, video_id=video_id)
+    before = proof["description"]
+    after, evidence = _validated_chapter_appendix(
+        review, review_file, transcript_database, video_id=video_id, before=before
+    )
+    if review.get("original") != proof["original"] or review.get("episode") != proof["episode"]:
+        raise ValueError("Review episode or original source differs from the frozen register")
+    if review["chapters"][-1]["second"] > proof["duration_seconds"] - 10:
+        raise ValueError("Final chapter is outside actual provider duration")
+    plan = {
+        "ruleset": CHAPTER_RULESET,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "target_channel_id": LORD_GOD_CHANNEL,
+        "project_key": "lord-god-strength",
+        "link_profile": "lord-god-strength",
+        "youtube_channel_id": LORD_GOD_CHANNEL,
+        "vk_community_id": 60805374,
+        "vk_owner_id": -60805374,
+        "read_only": True,
+        "scoped_review_only": True,
+        "source_scope": "exact-panorama-owner-v1",
+        "source_audit_sha256": _digest(owner_file),
+        "source_owner_receipt": str(owner_file.resolve()),
+        "source_playlist_receipt": str(playlist_file.resolve()),
+        "source_playlist_sha256": _digest(playlist_file),
+        "source_original_register": str(source_file.resolve()),
+        "source_original_register_sha256": _digest(source_file),
+        "source_chapter_review": str(review_file.resolve()),
+        "source_chapter_review_sha256": _digest(review_file),
+        "chapter_evidence": evidence,
+        "videos_checked": 1,
+        "operations_count": 1,
+        "blocked_operations_count": 0,
+        "unresolved_error_videos": 0,
+        "unresolved": [],
+        "fix_code_counts": {"reviewed_transcript_semantic_chapters": len(review["chapters"])},
+        "operations": [
+            {
+                "operation": "replace_video_description",
+                "platform": "youtube",
+                "ruleset": CHAPTER_RULESET,
+                "channel_id": LORD_GOD_CHANNEL,
+                "video_id": video_id,
+                "title": proof["title"],
+                "expected_revision": proof["revision"],
+                "before_description": before,
+                "after_description": after,
+                "before_sha256": sha256_text(before),
+                "after_sha256": sha256_text(after),
+                "fixes": [{"code": "reviewed_transcript_semantic_chapters", "count": len(review["chapters"])}],
+            }
+        ],
+    }
+    finalize_copy_plan(plan, checked_video_ids=[video_id])
+    require_lord_god_youtube_presentation(plan)
+    require_panorama_owner_evidence(plan, review)
+    return plan, (
+        "# Exact-owner Panorama chapter appendix (offline only)\n\n"
+        f"Target: {video_id}; episode {proof['episode']}.\n"
+        "Checked scope: exactly one owner video, not an uploads inventory.\n"
+        f"Plan SHA-256: {plan['plan_sha256']}\n"
+        "Requires fresh live preflight, editorial/operator confirmation, quota and owner/public verification.\n"
+    )

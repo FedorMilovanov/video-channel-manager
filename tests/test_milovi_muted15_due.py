@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from scripts import milovi_muted15_due as due
+from video_channel_manager.milovi_telegram_feed import PENDING_NULL_ATTEMPT_FIELDS
 
 
 def test_every_approved_muted_release_has_exact_date_source_and_owner_scope() -> None:
@@ -51,8 +52,7 @@ def test_provider_inert_schedule_requires_actual_publishable_protected_state(
             pid: {
                 "state": "pending",
                 "provider_effect": "impossible",
-                "intent_id": None,
-                "message_id": None,
+                **{field: None for field in PENDING_NULL_ATTEMPT_FIELDS},
             }
         }
     }
@@ -102,7 +102,15 @@ def test_terminal_receipt_is_never_dispatched_twice(tmp_path: Path, monkeypatch:
             "provider_effect": "verified",
         },
     )
+    checked: list[str] = []
+
+    def check_receipt(candidate: dict, *, checkout: Path, as_of: datetime) -> None:
+        assert checkout == tmp_path and as_of.tzinfo is not None
+        checked.append(candidate["publication_id"])
+
+    monkeypatch.setattr(due, "_require_exact_verified_receipt", check_receipt)
     assert due.exact_state_decision(row, checkout=tmp_path) is False
+    assert checked == [pid]
 
 
 def test_unknown_result_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -167,9 +175,25 @@ def test_expired_windows_report_only_elapsed_pending_items(tmp_path: Path, monke
         return {"state": "pending", "provider_effect": "impossible"}
 
     monkeypatch.setattr(due, "state_check", fake_check)
+    checked: list[str] = []
+
+    def check_receipt(candidate: dict, *, checkout: Path, as_of: datetime) -> None:
+        assert checkout == tmp_path and as_of.tzinfo is not None
+        checked.append(candidate["publication_id"])
+
+    monkeypatch.setattr(due, "_require_exact_verified_receipt", check_receipt)
+    pending_checked: list[str] = []
+
+    def check_pending(pid: str, *, checkout: Path) -> None:
+        assert checkout == tmp_path
+        pending_checked.append(pid)
+
+    monkeypatch.setattr(due, "_require_clean_pending", check_pending)
     moment = datetime(2026, 11, 10, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
     assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == ["milovi-feed-20261109-001"]
     assert calls == ["milovi-feed-20261108-001", "milovi-feed-20261109-001"]
+    assert checked == ["milovi-feed-20261108-001"]
+    assert pending_checked == ["milovi-feed-20261109-001"]
 
 
 def test_all_verified_elapsed_windows_have_no_false_missed_alert(
@@ -181,8 +205,16 @@ def test_all_verified_elapsed_windows_have_no_false_missed_alert(
         "state_check",
         lambda pid, *, state_checkout: {"state": "published", "provider_effect": "verified"},
     )
+    checked: list[str] = []
+
+    def check_receipt(candidate: dict, *, checkout: Path, as_of: datetime) -> None:
+        assert checkout == tmp_path and as_of.tzinfo is not None
+        checked.append(candidate["publication_id"])
+
+    monkeypatch.setattr(due, "_require_exact_verified_receipt", check_receipt)
     moment = datetime(2026, 11, 14, 0, 53, tzinfo=ZoneInfo("Europe/Moscow"))
     assert due.missed_delivery_windows(moment, rows, checkout=tmp_path) == []
+    assert checked == [f"milovi-feed-202611{day:02d}-001" for day in range(8, 14)]
 
 
 @pytest.mark.parametrize(

@@ -31,7 +31,7 @@ _RETIRED_OWNER_VK_FUNDRAISING_URL = "https://vk.com/the_lord_god_is_my_strength?
 _RETIRED_OWNER_OK_PROFILE_URL_SHA256 = "9e68cb068e9c95f0c8419f899537a3b4360860b53ed38b005c01b59937146894"
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.I)
-_CHAPTER_RE = re.compile(r"^\s*(?:\d{1,2}:)?\d{1,2}:\d{2}\s+\S", re.M)
+_CHAPTER_RE = re.compile(r"^\s*(?:(?:[-*•‣◦⁃>]|\d+[.)])\s+)?[*_]*(?:\d{1,2}:)?\d{1,2}:\d{2}[*_]*\s+\S", re.M)
 _CREDIT_RE = re.compile(
     r"(?:"
     # Preserve full source/translator labels, even if the URL appears elsewhere.
@@ -100,6 +100,24 @@ def _obsolete_owner_navigation_or_contact(url: str) -> bool:
     return False
 
 
+# YouTube-native emphasis is part of a line's presentation, not its
+# source-credit identity. A preserved URL does not compensate for silently
+# dropping the original credit label or changing its attribution.
+_SOURCE_LABEL_RE = re.compile(
+    r"^(?:(?:официальн(?:ый|ая|ое)\s+)?(?:первоисточник|источник|оригинал)"
+    r"|англоязычная\s+запись|русская\s+версия)\s*[*_]*\s*[:—-]",
+    re.I,
+)
+
+
+def _is_source_credit_line(line: str) -> bool:
+    # Accept both *Источник:* and historical *Источник*: syntax without
+    # stripping or altering the exact line that must survive the proposed edit.
+    list_unwrapped = re.sub(r"^(?:(?:[-*•‣◦⁃>]|\d+[.)])\s+)+", "", line)
+    prefix_unwrapped = list_unwrapped.lstrip("*_")
+    return bool(_CREDIT_RE.search(prefix_unwrapped) or _SOURCE_LABEL_RE.match(prefix_unwrapped))
+
+
 def source_preservation_issues(before: str, after: str) -> list[str]:
     """Identify lost source evidence before a *single-video* Lord God write.
 
@@ -117,7 +135,7 @@ def source_preservation_issues(before: str, after: str) -> list[str]:
     if any(_CHAPTER_RE.match(line) and line not in after_lines for line in before_lines):
         issues.append("original_chapters_not_preserved")
 
-    if any(_CREDIT_RE.search(line) and line not in after_lines for line in before_lines):
+    if any(_is_source_credit_line(line) and line not in after_lines for line in before_lines):
         issues.append("original_translation_or_source_credit_not_preserved")
 
     after_urls = _links(after)

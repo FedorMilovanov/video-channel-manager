@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import io
 import json
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
@@ -37,6 +39,13 @@ def configure(monkeypatch, module, mode="scheduled", hour=12, minute=46):
     monkeypatch.setattr(module, "verify_identity", lambda token: None)
     monkeypatch.setattr(module, "media_verified", lambda item: "https://example.invalid/safe-image.jpg")
     monkeypatch.setattr(module, "first_scheduled_run_for_day", lambda day: True)
+
+
+def test_frozen_plan_checkout_preserves_approved_bytes(publisher):
+    root = SCRIPT.parents[2]
+    attrs = (root / ".gitattributes").read_text(encoding="utf-8").splitlines()
+    assert "content/instagram/lord-god-strength-quote-cloud-20261111.json text eol=lf" in attrs
+    assert hashlib.sha256(publisher.PLAN.read_bytes()).hexdigest() == publisher.PLAN_SHA256
 
 
 def test_four_frozen_slots(publisher):
@@ -497,13 +506,13 @@ def test_local_photo_claim_is_durable_and_unique(publisher, monkeypatch, tmp_pat
     monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
     item = publisher.read_plan()[1]
     publisher.claim_local_photo_once(item, item["date"])
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         rows = conn.execute("SELECT state,item_id,caption_sha256 FROM instagram_lord_god_quote_attempts").fetchall()
     assert rows == [("CLAIMED", "02-owen", hashlib.sha256(item["caption"].encode()).hexdigest())]
     with pytest.raises(RuntimeError, match="already claimed"):
         publisher.claim_local_photo_once(item, item["date"])
     publisher.finalize_local_photo(item, item["date"], "123456789", "https://www.instagram.com/p/offline/")
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         assert conn.execute("SELECT state,media_id FROM instagram_lord_god_quote_attempts").fetchone() == (
             "VERIFIED",
             "123456789",
@@ -585,7 +594,7 @@ def test_ambiguous_local_post_never_retries(publisher, monkeypatch, tmp_path):
     monkeypatch.setattr(publisher, "request_json", fake_request)
     with pytest.raises(RuntimeError, match="Ambiguous Meta response"):
         publisher.main()
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         assert conn.execute("SELECT state FROM instagram_lord_god_quote_attempts").fetchone() == ("CLAIMED",)
     with pytest.raises(RuntimeError, match="already claimed"):
         publisher.main()

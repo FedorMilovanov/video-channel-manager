@@ -268,3 +268,43 @@ def test_resigned_intent_cannot_downgrade_audio_review_flag(tmp_path: Path) -> N
     intent["intent_sha256"] = intent_digest(intent)
     with pytest.raises(UploadPlanError, match="audio_review_required must be true"):
         validate_intent(intent)
+
+
+@pytest.mark.parametrize("missing_or_invalid", [None, "false", "true", 0, 1, [], {}])
+def test_upload_spec_requires_explicit_bool_synthetic_disclosure_before_media(
+    tmp_path: Path, missing_or_invalid: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Do not quietly set True for a real-sermon upload with missing disclosure."""
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha, title="Authentic recorded John MacArthur sermon")
+    if missing_or_invalid is None:
+        spec.pop("contains_synthetic_media")
+    else:
+        spec["contains_synthetic_media"] = missing_or_invalid
+
+    def media_must_not_be_read(_path: Path) -> str:
+        pytest.fail("Disclosure preflight must fail before accessing upload MP4 bytes")
+
+    monkeypatch.setattr("video_channel_manager.youtube_upload_plan.sha256_file", media_must_not_be_read)
+    with pytest.raises(UploadPlanError, match="contains_synthetic_media must be an explicit boolean"):
+        build_intent(spec, media)
+
+
+@pytest.mark.parametrize("is_generated", [False, True])
+def test_upload_intent_preserves_explicit_synthetic_disclosure_decision(tmp_path: Path, is_generated: bool) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["contains_synthetic_media"] = is_generated
+    intent = build_intent(spec, media)
+    assert intent["status"]["containsSyntheticMedia"] is is_generated
+    validate_intent(intent)
+
+
+@pytest.mark.parametrize("invalid", [None, "false", 1])
+def test_signed_intent_cannot_smuggle_missing_or_string_synthetic_disclosure(tmp_path: Path, invalid: object) -> None:
+    media, media_sha = _media(tmp_path)
+    intent = build_intent(_spec(media_sha), media)
+    intent["status"]["containsSyntheticMedia"] = invalid
+    intent["intent_sha256"] = intent_digest(intent)
+    with pytest.raises(UploadPlanError, match="status.containsSyntheticMedia must be an explicit boolean"):
+        validate_intent(intent)

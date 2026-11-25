@@ -18,6 +18,7 @@ EXPECTED_CONSTRUCTORS = Counter(
         "src/video_channel_manager/telegram_custom_emoji_harvest.py": 1,
         "src/video_channel_manager/telegram_historical_media.py": 1,
         "src/video_channel_manager/telegram_multichannel_transport.py": 4,
+        "src/video_channel_manager/telegram_multichannel_audio.py": 1,
         "src/video_channel_manager/telegram_multichannel_video.py": 1,
         "src/video_channel_manager/telegram_research_public_permalink_probe.py": 1,
         "src/video_channel_manager/telegram_research_update_probe.py": 1,

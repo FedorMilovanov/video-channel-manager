@@ -4,6 +4,8 @@ Project key: `lord-god-strength`
 
 This profile applies only to the theological project. The existing files `docs/youtube-description-rendering-standard.md` and `docs/vk-description-rendering-standard.md` were written for The Legendary Poet and must not supply their channel name, site, VK community, Telegram, Rutube, playlist, or footer to this project.
 
+**Перед подготовкой любых YouTube Shorts, полноформатных описаний или авторских комментариев:** обязательна [матрица выбора правил по поверхности](lord-god-youtube-agent-decision-contract.md). Она поясняет, почему для Lord God у Shorts две чистые сырые строки и первая URL-ссылка на полную русскую запись, тогда как для нового ручного пакета Legendary Poet v3.1 сверху стоят две ссылки на плейлисты с чистыми подписями без маркеров. Для Lord God long-form отдельно действует правило `Англоязычная запись:` на строке перед голым URL. **Не объединять эти три формата.**
+
 ## Exact identities
 
 - YouTube channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
@@ -75,6 +77,8 @@ RUTUBE: https://rutube.ru/channel/1876662/
 The VK Video channel URL is optional inside VK itself because it may be redundant. Use it on external surfaces where it provides a direct video-library route.
 
 ## Playlist links
+
+**Правило владельца — целостный SHARE-блок (2026-11-24):** весь первый связный блок плейлистов YouTube Description Господь Бог — Сила Моя, включая общий заголовок, если он есть, оформляется обычным текстом без маркеров жирного и курсива в подписях. Количество плейлистов определяется релевантностью, а не шаблоном: 1, 2, 3, 4 или больше. Не смешивать жирные и обычные подписи внутри блока. Если плейлистов нет, блок не создавать. Следующая отдельная группа ссылок может иметь жирные подписи и уместные эмодзи. Сохранять точные URL/ID, порядок и две чистые содержательные строки; приоритет полной русской записи для Shorts и правила англоязычного оригинала для long-form не меняются. Не переносить правило на комментарии и не редактировать старые видео автоматически. См. [матрицу выбора](lord-god-youtube-agent-decision-contract.md).
 
 - YouTube playlists must come from exact channel membership or an explicitly reviewed mapping.
 - VK albums/playlists must come from exact numeric album IDs and live membership.

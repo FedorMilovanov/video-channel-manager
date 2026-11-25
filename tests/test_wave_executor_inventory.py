@@ -152,3 +152,11 @@ def test_completed_lordchrist_1525_rich_script_is_not_a_live_writer() -> None:
     assert entry["callers"] == []
     text = (ROOT / entry["path"]).read_text(encoding="utf-8")
     assert "_WAVE6_RETIRED_EXECUTOR = True" in text
+
+
+def test_charnock_qc_editor_is_registered_as_a_read_only_reader() -> None:
+    by_path = {entry["path"]: entry for entry in _registry()["executors"]}
+    entry = by_path["scripts/charnock_telegraph_qc_reissue.py"]
+    assert entry["status"] == "independent_tool"
+    assert entry["provider_write_capable"] is False
+    assert entry["callers"] == [".github/workflows/lordchrist-charnock-qc-reissue.yml"]

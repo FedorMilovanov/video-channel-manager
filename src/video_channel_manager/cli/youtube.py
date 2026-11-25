@@ -14,12 +14,18 @@ from rich.console import Console
 from rich.table import Table
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.domain.models import ChannelRecord
+from video_channel_manager.editorial._project_profiles import (
+    CHANNEL_ID_TO_PROJECT_KEY,
+    require_youtube_project_identity,
+)
 from video_channel_manager.platforms.youtube import (
     AccountNotFoundError,
     ChannelIdentity,
     InstalledClientConfig,
     InstalledOAuthFlow,
     OAuthFlowError,
+    OAuthToken,
     TokenStore,
     YOUTUBE_FORCE_SSL_SCOPE,
     YOUTUBE_READONLY_SCOPE,
@@ -27,6 +33,8 @@ from video_channel_manager.platforms.youtube import (
     YouTubeApiClient,
     YouTubeApiError,
     YouTubeDescriptionWriter,
+    YouTubeCommentWriter,
+    comments_equivalent,
     YouTubeInventoryService,
     YouTubeWriteError,
 )
@@ -40,12 +48,22 @@ from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
     reconcile_copy_operations,
     verify_copy_operations,
+    verify_exact_description_postflight,
+)
+from video_channel_manager.platforms.youtube.chapter_release import require_chapter_release
+from video_channel_manager.platforms.youtube.panorama_format_release import (
+    FORMAT_RULESET,
+    format_intent_path,
+    persist_format_intent,
+    require_no_format_intent,
 )
 from video_channel_manager.platforms.youtube.copy_plan import validate_copy_plan
+from video_channel_manager.platforms.youtube.comment_plan import validate_comment_plan
 from video_channel_manager.platforms.youtube.copy_output_safety import (
     prepare_windows_youtube_console,
     reserve_youtube_copy_journals,
 )
+from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
 console = Console()
@@ -57,6 +75,8 @@ def _is_youtube_quota_exhaustion(exc: BaseException) -> bool:
 
     if not isinstance(exc, YouTubeWriteError):
         return False
+    if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+        return True
     message = str(exc).casefold()
     return "youtube api 403" in message and ("quota" in message or "dailylimitexceeded" in message)
 
@@ -168,6 +188,38 @@ def _show_oauth_storage(store: TokenStore) -> None:
         )
 
 
+class _CandidateOAuthTokenStore(TokenStore):
+    """In-memory candidate grant: do not replace a real alias until identity matches."""
+
+    def __init__(self, token: OAuthToken) -> None:
+        super().__init__(get_settings().data_dir)
+        self._token = token
+
+    def load_token(self, alias: str) -> OAuthToken:
+        self.validate_alias(alias)
+        return self._token
+
+    def save_token(self, alias: str, token: OAuthToken) -> Path:
+        self.validate_alias(alias)
+        self._token = token
+        return Path(":not-persisted:")
+
+
+def _read_candidate_oauth_channels(
+    *,
+    config: InstalledClientConfig,
+    account: str,
+    token: OAuthToken,
+) -> list[ChannelRecord]:
+    """Owner GET before touching the durable token or account registry."""
+    ephemeral = _CandidateOAuthTokenStore(token)
+    client = YouTubeApiClient(client_config=config, token_store=ephemeral, account_alias=account)
+    try:
+        return client.list_my_channels()
+    finally:
+        client.close()
+
+
 @youtube_app.command("login")
 def login(
     account: Annotated[str, typer.Option("--account", "-a", help="Local alias, e.g. legendary-poet")] = "default",
@@ -194,6 +246,18 @@ def login(
         raise typer.Exit(code=2) from exc
 
     _show_oauth_storage(store)
+    try:
+        registered = next((item for item in store.list_accounts() if item.alias == account), None)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]YouTube account registry unavailable:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    expected_channel_ids = {channel.channel_id for channel in registered.channels} if registered else set()
+    if (registered and not expected_channel_ids) or (store.token_exists(account) and not registered):
+        console.print(
+            "[red]Existing OAuth alias has no trusted channel identity; refusing replacement. "
+            "Repair the account registry before reauthorization.[/red]"
+        )
+        raise typer.Exit(code=2)
     if store.token_exists(account) and not force:
         console.print(
             f"[yellow]Account '{account}' is already authorized.[/yellow] "
@@ -231,9 +295,23 @@ def login(
                 "Review the requested permissions on the Google consent screen. "
                 "No account token was saved or replaced."
             )
-        store.save_token(account, token)
-        client = YouTubeApiClient(client_config=config, token_store=store, account_alias=account)
-        channels = client.list_my_channels()
+        if not token.refresh_token:
+            raise OAuthFlowError(
+                "Google did not issue an offline refresh token. The existing YouTube account token was not replaced."
+            )
+        channels = _read_candidate_oauth_channels(config=config, account=account, token=token)
+        actual_channel_ids = {item.ref.remote_id for item in channels}
+        if expected_channel_ids and actual_channel_ids != expected_channel_ids:
+            raise OAuthFlowError(
+                "Google authorized a different YouTube channel than the existing alias. "
+                f"Expected {sorted(expected_channel_ids)!r}; received {sorted(actual_channel_ids)!r}. "
+                "Neither the original token nor the account registry was changed."
+            )
+        if not channels:
+            raise OAuthFlowError(
+                "Google authorization returned no owned YouTube channels; "
+                "neither the original token nor the account registry was changed."
+            )
         account_record = YouTubeAccount(
             alias=account,
             token_file=str(store.token_path(account)),
@@ -242,8 +320,11 @@ def login(
                 for item in channels
             ],
         )
+        # Only an exact provider-confirmed channel and complete scope grant can replace
+        # a trusted alias. The previous token stays untouched on every failed preflight.
+        store.save_token(account, token)
         store.save_account(account_record)
-    except (OAuthFlowError, YouTubeApiError, ValueError) as exc:
+    except (OAuthFlowError, YouTubeApiError, ValueError, OSError) as exc:
         console.print(f"[red]YouTube authorization failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
@@ -335,6 +416,93 @@ def channels(
         console.print("[yellow]No channels returned. Verify which Google or Brand Account was selected.[/yellow]")
 
 
+def _local_quota_guard(client_secret: Path | None) -> ProjectQuotaGuard:
+    settings = get_settings()
+    config = InstalledClientConfig.from_file(client_secret or settings.youtube_client_secret_file)
+    guard = ProjectQuotaGuard.for_client(settings.data_dir, config.client_id, "quota-operator")
+    if guard is None:
+        raise ValueError("Cannot derive the Google Cloud project number from the installed OAuth client.")
+    return guard
+
+
+@youtube_app.command("quota-status")
+def quota_status(
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Report local quota accounting without contacting Google."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota status failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("quota-configure")
+def quota_configure(
+    project_number: Annotated[str, typer.Option("--confirm-project-number")],
+    day: Annotated[str, typer.Option("--pacific-day")],
+    shared: Annotated[int, typer.Option("--shared", min=0)],
+    search: Annotated[int, typer.Option("--search", min=0)],
+    uploads: Annotated[int, typer.Option("--uploads", min=0)],
+    evidence: Annotated[
+        str, typer.Option("--evidence", help="Non-secret reference to reviewed Cloud Console evidence")
+    ],
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Enable one immutable daily LOCAL allowance, not a Google quota grant."""
+    try:
+        guard = _local_quota_guard(client_secret)
+        if project_number != guard.path.stem:
+            raise ValueError("Google Cloud project number mismatch; no local allowance changed.")
+        guard.configure_day(
+            day=day, allowances={"shared": shared, "search": search, "uploads": uploads}, evidence=evidence
+        )
+        console.print_json(data={"project_number": guard.path.stem, **guard.budget_status()})
+    except (OSError, ValueError, YouTubeQuotaBlocked) as exc:
+        console.print(f"[red]Quota configuration failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("recent")
+def recent(
+    account: Annotated[str, typer.Option("--account", "-a")],
+    channel_id: Annotated[str, typer.Option("--channel", help="Exact YouTube owner channel ID")],
+    limit: Annotated[int, typer.Option("--limit", min=1, max=50)] = 10,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Read one bounded uploads page for exact-ID candidate discovery, without writes."""
+
+    prepare_windows_youtube_console()
+    try:
+        _, _, client = _components(account, client_secret)
+        with client:
+            if channel_id not in {item.ref.remote_id for item in client.list_my_channels()}:
+                raise ValueError("Requested --channel does not belong to the authenticated --account.")
+            records = client.list_recent_videos(channel_id, limit=limit)
+        console.print_json(
+            data={
+                "scope": "bounded_recent_upload_candidates_not_full_inventory",
+                "channel_id": channel_id,
+                "limit": limit,
+                "items": [
+                    {
+                        "video_id": item.ref.remote_id,
+                        "title": item.title,
+                        "duration_seconds": item.duration_seconds,
+                        "published_at": item.published_at.isoformat() if item.published_at else None,
+                        "privacy_status": item.privacy_status,
+                        "file_details": item.metadata.get("fileDetails"),
+                    }
+                    for item in records
+                ],
+            }
+        )
+    except (AccountNotFoundError, OAuthFlowError, OSError, ValueError, YouTubeApiError) as exc:
+        console.print(f"[red]YouTube recent lookup failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 @youtube_app.command("scan")
 def scan(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
@@ -344,6 +512,11 @@ def scan(
 ) -> None:
     """Export a complete read-only AuditPackage for videos, playlists, and memberships."""
 
+    # The AuditPackage is already durable when the completion receipt prints.
+    # A cp1252/cp866 Windows terminal must not turn that successful scan into
+    # a misleading nonzero result when the receipt contains a Unicode arrow
+    # or a Cyrillic operator-selected output path.
+    prepare_windows_youtube_console()
     settings = get_settings()
     try:
         _, _, client = _components(account, client_secret)
@@ -405,6 +578,9 @@ def apply_copy_fixes(
     backup_output: Annotated[Path | None, typer.Option("--backup-output")] = None,
     result_output: Annotated[Path | None, typer.Option("--result-output")] = None,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+    confirm_chapter_review_sha256: Annotated[
+        str, typer.Option("--confirm-chapter-review-sha256", help="Exact approved chapter review file SHA-256")
+    ] = "",
 ) -> None:
     """Preflight or apply description-guarded fixes with retries, postflight, and rollback."""
 
@@ -412,6 +588,7 @@ def apply_copy_fixes(
     settings = get_settings()
     try:
         payload = _load_copy_fix_plan(plan)
+        exact_format = payload.get("ruleset") == FORMAT_RULESET
         # Project-bound YouTube display/retired-contact rules run BEFORE any OAuth or API use.
         require_lord_god_youtube_presentation(payload)
         raw_operations = payload["operations"]
@@ -430,6 +607,13 @@ def apply_copy_fixes(
             confirm_target=confirm_target,
             confirm_after_sha256=confirm_after_sha256,
         )
+        require_chapter_release(payload, execute=execute, confirm_review_sha256=confirm_chapter_review_sha256)
+        intent_path = None
+        if exact_format and execute:
+            if account != "fedor-milovanov":
+                raise ValueError("Historical format execution requires the canonical Lord God OAuth alias")
+            intent_path = format_intent_path(settings.data_dir, operations[0]["video_id"])
+            require_no_format_intent(intent_path)
         store, _, writer = _writer_components(account, client_secret)
     except (AccountNotFoundError, OSError, ValueError) as exc:
         console.print(f"[red]Cannot load copy-fix plan:[/red] {exc}")
@@ -440,14 +624,18 @@ def apply_copy_fixes(
         local_youtube_write_lock(lock_path, account=account, channel_id=confirm_channel) if execute else nullcontext()
     )
 
+    quota_context = writer.reserve_exact_description_execution() if exact_format and execute else nullcontext()
     try:
-        with lock_context:
+        with lock_context, quota_context:
+            if intent_path is not None:
+                require_no_format_intent(intent_path)
             try:
                 with console.status(f"Preflighting {len(operations)} descriptions against live YouTube…"):
                     preflight = preflight_copy_operations(
                         operations,
                         confirm_channel=confirm_channel,
                         writer=writer,
+                        **({"require_exact_state": True} if payload.get("ruleset") == FORMAT_RULESET else {}),
                         require_plan_title=(
                             payload.get("target_channel_id") == LORD_GOD_OWNER_CHANNEL
                             and payload.get("project_key") == "lord-god-strength"
@@ -464,7 +652,12 @@ def apply_copy_fixes(
                 f"Channel: {confirm_channel}"
             )
             if not execute:
-                console.print("Dry-run only. Re-run with --execute after authorizing --write access.")
+                if exact_format:
+                    console.print(
+                        "Exact historical dry-run only; independent approval and reviewed shared quota required."
+                    )
+                else:
+                    console.print("Dry-run only. Re-run with --execute after authorizing --write access.")
                 return
 
             try:
@@ -488,6 +681,13 @@ def apply_copy_fixes(
                 backup_output = settings.data_dir / "reports" / f"youtube-copy-backup-{timestamp}.json"
             if result_output is None:
                 result_output = settings.data_dir / "reports" / f"youtube-copy-apply-{timestamp}.json"
+
+            # The exact approved chapter artifact may have changed during preflight.
+            try:
+                require_chapter_release(payload, execute=True, confirm_review_sha256=confirm_chapter_review_sha256)
+            except (OSError, ValueError) as exc:
+                console.print(f"[red]Chapter release blocked; no YouTube write:[/red] {exc}")
+                raise typer.Exit(code=2) from exc
 
             # Before dispatching a YouTube write, reserve both unique journal
             # paths and prove that their volume has sufficient free space.
@@ -561,7 +761,13 @@ def apply_copy_fixes(
                     result["summary"]["attempted"] = len(attempted)
                     _write_json(result_output, result)
 
+                    if intent_path is not None:
+                        persist_format_intent(
+                            intent_path, payload, result_path=result_output, backup_path=backup_output
+                        )
+                        # The immutable marker is retained even when the next GET fails.
                     verified = writer.replace_description(
+                        **({"require_exact_state": True} if exact_format else {}),
                         video_id=str(operation["video_id"]),
                         expected_channel_id=str(operation["channel_id"]),
                         expected_revision=str(operation["expected_revision"]),
@@ -581,11 +787,17 @@ def apply_copy_fixes(
                     _write_json(result_output, result)
                     console.print(f"[green]Updated and verified[/green] {verified.video_id} — {verified.title}")
 
-                postflight_failures = verify_copy_operations(
-                    preflight.prepared,
-                    confirm_channel=confirm_channel,
-                    writer=writer,
-                )
+                if exact_format:
+                    verify_exact_description_postflight(
+                        preflight.prepared[0], confirm_channel=confirm_channel, writer=writer, verified=verified
+                    )
+                    postflight_failures = []
+                else:
+                    postflight_failures = verify_copy_operations(
+                        preflight.prepared,
+                        confirm_channel=confirm_channel,
+                        writer=writer,
+                    )
                 result["postflight_failures"] = postflight_failures
                 if postflight_failures:
                     failed_ids = ", ".join(item["video_id"] for item in postflight_failures)
@@ -597,10 +809,10 @@ def apply_copy_fixes(
                 # Quota may disappear AFTER YouTube has accepted and verified the PUT.
                 # An immediate rollback would use another quota-costly PUT and could
                 # undo a successful change. Persist the unknown terminal state instead.
-                quota_reconciliation_pending = bool(attempted) and _is_youtube_quota_exhaustion(exc)
+                quota_reconciliation_pending = bool(attempted) and (exact_format or _is_youtube_quota_exhaustion(exc))
                 if quota_reconciliation_pending:
                     console.print(
-                        "[yellow]YouTube quota exhausted after a write attempt; "
+                        "[yellow]YouTube write result requires reconciliation; "
                         "no rollback or replay. Fresh owner reconciliation is required.[/yellow]"
                     )
                 else:
@@ -645,7 +857,7 @@ def apply_copy_fixes(
                     result["status"] = "failed_rolled_back" if rollback_failed == 0 else "failed_partial_rollback"
                     result["error"] = failure
             else:
-                result["status"] = "completed"
+                result["status"] = "owner_verified_public_qa_pending" if exact_format else "completed"
 
             result["finished_at"] = datetime.now(UTC).isoformat()
             _write_json(result_output, result)
@@ -655,11 +867,16 @@ def apply_copy_fixes(
                 if isinstance(interrupted, KeyboardInterrupt):
                     raise interrupted
                 raise typer.Exit(code=2)
-            console.print(
-                f"[bold green]Completed {len(applied)} verified description updates; "
-                f"final postflight verified the whole batch.[/bold green]"
-            )
-    except YouTubeWriteError as exc:
+            if exact_format:
+                console.print(
+                    "[green]Exact owner postflight verified; public chapter recognition remains pending.[/green]"
+                )
+            else:
+                console.print(
+                    f"[bold green]Completed {len(applied)} verified description updates; "
+                    f"final postflight verified the whole batch.[/bold green]"
+                )
+    except (YouTubeWriteError, ValueError, OSError) as exc:
         console.print(f"[red]YouTube write safety error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
@@ -676,6 +893,159 @@ def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         raise ValueError(f"YouTube recovery evidence at {path} is not a JSON object.")
     return value
+
+
+@youtube_app.command("apply-comment-add")
+def apply_comment_add(
+    plan: Annotated[Path, typer.Argument(help="Reviewed single additional-comment plan")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Add one distinct approved comment; never replace existing comments or replay an uncertain POST."""
+    prepare_windows_youtube_console()
+    try:
+        payload = json.loads(plan.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Expected a comment plan object.")
+        errors = validate_comment_plan(payload)
+        if errors:
+            raise ValueError("; ".join(errors))
+        if payload.get("mode") != "reviewed-additional-comment":
+            raise ValueError("Expected reviewed-additional-comment mode.")
+        if payload["channel_id"] != confirm_channel or payload["account_alias"] != account:
+            raise ValueError("Plan channel/account confirmation mismatch.")
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None:
+            raise ValueError("Unregistered YouTube channel.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        operation = payload["operations"][0]
+        video_id = operation["video_id"]
+        text = operation["comment_text"]
+        expected = operation["expected_owned_comments"]
+        if execute and payload["plan_sha256"] != confirm_plan_sha256:
+            raise ValueError("Execution requires the exact reviewed --confirm-plan-sha256.")
+        settings = get_settings()
+        root = settings.data_dir
+        if execute and not root.is_absolute():
+            raise ValueError("Use the verified absolute VCM_DATA_DIR for comment writes.")
+        inventory_pages = 10
+        effect_key = hashlib.sha256(
+            json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
+        ).hexdigest()
+        intent = root / "reports" / f"youtube-comment-add-{effect_key}-intent.json"
+        receipt = root / "reports" / f"youtube-comment-add-{effect_key}-result.json"
+        lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+        store, config, api = _components(account, client_secret)
+        writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
+
+        def owned() -> list[Any]:
+            return [
+                item
+                for item in writer.list_top_level_comments(
+                    video_id, strict_moderation=True, max_pages_per_status=inventory_pages
+                )
+                if item.author_channel_id == confirm_channel
+            ]
+
+        def persist(path: Path, data: dict[str, Any]) -> None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as handle:
+                json.dump(data, handle, ensure_ascii=False, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
+
+        try:
+            with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel):
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                    raise ValueError("OAuth owner does not match reviewed channel.")
+                reservation = (
+                    writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    if execute
+                    else nullcontext()
+                )
+                with reservation:
+                    identity = writer.read_video_identity(video_id)
+                    if (
+                        identity.video_id != video_id
+                        or identity.channel_id != confirm_channel
+                        or identity.privacy_status != "public"
+                        or identity.title != operation["video_title"]
+                    ):
+                        raise ValueError("Exact public video identity or reviewed title mismatch.")
+                    before = owned()
+                    matches = [item for item in before if comments_equivalent(item.text, text)]
+                    if len(matches) > 1:
+                        raise ValueError("Duplicate matching owner comments require review; no POST sent.")
+                    if matches:
+                        match = matches[0]
+                        if {item.comment_id: item.text_sha256 for item in before} != {
+                            **expected,
+                            match.comment_id: match.text_sha256,
+                        }:
+                            raise ValueError(
+                                "Existing match but reviewed owner comment state differs; reconcile without POST."
+                            )
+                        console.print(f"Already present: {match.comment_id}. No POST sent.")
+                        return
+                    if intent.exists() or receipt.exists():
+                        raise ValueError(
+                            "Existing intent/result requires reconciliation; never replay an uncertain POST."
+                        )
+                    if {item.comment_id: item.text_sha256 for item in before} != expected:
+                        raise ValueError("Reviewed owner comment state changed; no POST sent.")
+                    console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
+                    if not execute:
+                        console.print("Dry-run only. No POST sent.")
+                        return
+
+                    def reserve_intent() -> None:
+                        persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
+
+                    created = writer.create_top_level_comment(
+                        video_id=video_id,
+                        expected_channel_id=confirm_channel,
+                        text=text,
+                        expected_owned_comments=expected,
+                        strict_inventory_max_pages=inventory_pages,
+                        before_dispatch=reserve_intent,
+                        expected_video_title=operation["video_title"],
+                        expected_privacy_status="public",
+                    )
+                    verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
+                    if (
+                        verified.comment_id != created.comment_id
+                        or verified.author_channel_id != confirm_channel
+                        or verified.video_id != video_id
+                        or not comments_equivalent(verified.text, text)
+                    ):
+                        raise ValueError("Independent comment verification failed; reconcile without replay.")
+                    after = owned()
+                    after_map = {item.comment_id: item.text_sha256 for item in after}
+                    if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
+                        raise ValueError("Owner comment set changed; reconcile without replay.")
+                    persist(
+                        receipt,
+                        {
+                            "status": "verified",
+                            "video_id": video_id,
+                            "channel_id": confirm_channel,
+                            "comment_id": verified.comment_id,
+                            "comment_sha256": verified.text_sha256,
+                            "existing_preserved": sorted(expected),
+                            "plan_sha256": payload["plan_sha256"],
+                        },
+                    )
+                    console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
+        finally:
+            writer.close()
+            api.close()
+    except (OSError, ValueError, YouTubeWriteError, YouTubeApiError) as exc:
+        console.print(f"Additional comment blocked or pending reconciliation: {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("apply-localization-fix")
@@ -920,6 +1290,7 @@ def reconcile_copy_fixes(
     try:
         payload = _load_copy_fix_plan(plan)
         validate_copy_plan(payload)
+        exact_format = payload.get("ruleset") == FORMAT_RULESET
         # Historical signed plans may predate today's publication/source-preservation
         # gate. They must remain readable for no-replay incident reconciliation.
         # This command performs owner GET only; the apply command retains the
@@ -986,6 +1357,7 @@ def reconcile_copy_fixes(
                 "failed_rolled_back",
                 "failed_partial_rollback",
                 "pending_reconciliation",
+                "owner_verified_public_qa_pending",
             }:
                 raise ValueError("Unsupported or missing result terminal/intermediate status.")
             for field in ("attempted", "applied"):
@@ -1003,12 +1375,15 @@ def reconcile_copy_fixes(
             payload["operations"],
             confirm_channel=confirm_channel,
             writer=writer,
+            **({"require_exact_state": True} if exact_format else {}),
         )
         live_states = [str(row["state"]) for row in rows]
         if any(state == "live_third_state" for state in live_states):
             outcome = "manual_or_concurrent_description_conflict"
         elif all(state == "live_after" for state in live_states):
-            if receipt_state == "completed" and backup_state == "bound_backup" and receipt is not None:
+            if exact_format:
+                outcome = "historical_format_live_after_public_qa_pending"
+            elif receipt_state == "completed" and backup_state == "bound_backup" and receipt is not None:
                 summary = receipt.get("summary")
                 complete = (
                     isinstance(summary, dict)

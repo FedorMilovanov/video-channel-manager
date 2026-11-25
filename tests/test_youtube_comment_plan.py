@@ -80,3 +80,40 @@ def test_update_operation_requires_exact_before_state() -> None:
         mode="reviewed-create-and-update",
     )
     assert validate_comment_plan(plan) == []
+
+
+def test_additional_comment_plan_binds_existing_comment_ids_and_digests() -> None:
+    from video_channel_manager.platforms.youtube.comments import comment_text_sha256
+
+    before = {"comment-1": comment_text_sha256("First history")}
+    operation = make_comment_operation(
+        action="create",
+        channel_id="channel-1",
+        video_id="video-1",
+        video_title="Title",
+        comment_text="Independent second history",
+        source_ids=["source-2"],
+        reviewed_at="2026-11-24T19:00:00+00:00",
+        expected_owned_comments=before,
+    )
+    plan = build_comment_plan(
+        account_alias="legendary-poet",
+        channel_id="channel-1",
+        source_snapshot="snapshot-1",
+        source_snapshot_generated_at="2026-11-24T18:59:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-additional-comment",
+    )
+    assert not validate_comment_plan(plan)
+    changed = deepcopy(plan)
+    changed["operations"][0]["expected_owned_comments"]["comment-1"] = comment_text_sha256("Changed")
+    errors = validate_comment_plan(changed)
+    assert "operations[0].operation_id mismatch" in errors
+    assert "plan_sha256 mismatch" in errors
+    changed = deepcopy(plan)
+    changed["operations"][0]["expected_owned_comments"] = {}
+    assert any("expected_owned_comments" in error for error in validate_comment_plan(changed))
+    changed = deepcopy(plan)
+    changed["mode"] = "reviewed-missing-only"
+    assert any("additional create requires" in error for error in validate_comment_plan(changed))

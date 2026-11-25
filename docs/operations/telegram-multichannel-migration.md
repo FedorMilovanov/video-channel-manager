@@ -8,10 +8,7 @@ One Telegram transport/runtime must be able to serve multiple independently conf
 
 ## Current architecture
 
-The generic layer is config-driven through `TelegramChannelProfile` and currently has profiles for:
-
-- `content/telegram/channels/svodka.json` → `@deep_info_life`, state `state/svodka-telegram`;
-- `content/telegram/channels/lordchrist.json` → `@lordchrist`, state `state/lordchrist-telegram`.
+The generic layer is config-driven through `TelegramChannelProfile`. Its current registered profile inventory and per-profile write gates are machine-checked in [`channel-write-authority.json`](channel-write-authority.json), including the verified-but-write-disabled `@thelegendarypoet` target and the independently isolated `@lordchrist`, `@deep_info_life` and `@MiloviCake` targets.
 
 Generic provider code does not select either channel by a module constant. The selected profile supplies project key, channel username, publication prefix, timezone, daily verified limit, state branch, concurrency group and environment-variable names for bot/target identity.
 
@@ -59,6 +56,21 @@ This staged boundary is intentional:
 - ambiguous provider effect blocks blind retry;
 - scheduled mutation requires a verified manual canary;
 - a channel-specific renderer/editorial adapter may vary, but transport/state/release mechanics stay generic.
+
+## Operator-facing simplicity
+
+Treat the owner's explicit, exact operation instruction as one business
+authorization, not a succession of confirmations for the same unchanged
+payload. The operator/runtime owns digest derivation, target preflight, durable
+intent, verification and receipts. Keep independent content/rights review where
+required, the channel kill switch, state ownership, and no-replay protections;
+do not conflate technical completion with permission to publish.
+
+For existing authorized releases, `telegram_multichannel_cli prepare --binding`
+loads the pinned binding and performs fresh preflight internally. It is mutually
+exclusive with the existing `--target-proof` input; no duplicate proof file or
+preflight is needed. The remaining one-command operator path must orchestrate
+the same protected state lifecycle rather than introduce another sender.
 
 ## What still counts as legacy debt
 

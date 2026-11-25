@@ -4,11 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Initialize the exact new v6 ledger, or send the first manual canary
+        description: Historical manual canary only; initialize/rebind actions are RETIRED and rejected
         required: true
         type: choice
         options:
           - initialize
+          - migrate-restyle
+          - migrate-editorial-v2
           - publish
       publication_id:
         description: First canary publication ID (manual publish only)
@@ -29,6 +31,7 @@ on:
 permissions:
   contents: write
   actions: read
+  pull-requests: read
 
 concurrency:
   group: lordchrist-telegram-publisher
@@ -94,9 +97,30 @@ jobs:
             echo "initialize=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # Fail closed before legacy initialize/migrate commands can write protected state.
+          if [[ "$V6_ACTION" != "publish" ]]; then
+            echo "::error::Retired v6 state mutation cannot run on the advanced 12/18+ ledger" >&2
+            exit 2
+          fi
           if [[ "$V6_ACTION" == "initialize" ]]; then
             [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
             echo "initialize=true" >> "$GITHUB_OUTPUT"
+            echo "mode=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$V6_ACTION" == "migrate-restyle" ]]; then
+            [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
+            echo "initialize=false" >> "$GITHUB_OUTPUT"
+            echo "migrate=true" >> "$GITHUB_OUTPUT"
+            echo "migration_command=migrate" >> "$GITHUB_OUTPUT"
+            echo "mode=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$V6_ACTION" == "migrate-editorial-v2" ]]; then
+            [[ -z "$V6_PUBLICATION_ID" && -z "$V6_CONFIRM" ]] || exit 2
+            echo "initialize=false" >> "$GITHUB_OUTPUT"
+            echo "migrate=true" >> "$GITHUB_OUTPUT"
+            echo "migration_command=migrate-editorial" >> "$GITHUB_OUTPUT"
             echo "mode=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -131,12 +155,38 @@ jobs:
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || exit 3
 
+      - name: Guarded migration of exact 19 pending quote presentations (no send)
+        if: steps.invocation.outputs.migrate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.lordchrist_quote_v6_publisher "${{ steps.invocation.outputs.migration_command }}"
+
+      - name: Persist checked queue rebind in shared state before any future send
+        if: steps.invocation.outputs.migrate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$STATE_LEDGER"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "No state migration was prepared: refusing a no-op success" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Rebind pending @lordchrist editorial revision after 11 verified [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || exit 3
+
       - name: Preflight exact Telegram bot and prepare one quote (no provider write)
         id: prepare
-        if: steps.invocation.outputs.initialize != 'true'
+        if: steps.invocation.outputs.initialize != 'true' && steps.invocation.outputs.migrate != 'true'
         shell: bash
         env:
           EXPECTED_V6_PUBLICATION_ID: ${{ inputs.publication_id }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p .runtime
@@ -192,6 +242,8 @@ jobs:
         id: send
         if: steps.intent.outputs.persisted == 'true' && steps.final_quality.outcome == 'success'
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           set +e

@@ -1,0 +1,17 @@
+# Charnock recovery calendar V3 — technical binding, not activation
+
+The owner delegated the new dates in [#997](https://github.com/FedorMilovanov/video-channel-manager/issues/997#issuecomment-7128373455). All seven existing public articles and their existing covers were read back and compared to their full normalized reviewed trees. Exact announcement HTML digests and character counts are captured in `content/telegram/lordchrist/telegraph-v1/charnock/charnock-recovery-calendar-v3-20261124.json`. №09 (Telegram 1630) is excluded permanently from this plan. №13 remains the independent Telegram SEND HOLD, even if calendar approval is present.
+
+The calendar retains №11/12 on 27 Nov/1 Dec, reserves №13 on 4 Dec, and moves №06/07/08/10 to 8/11/15/18 Dec. Nominal 12:05 Moscow; no preparation or sending before 12:05 or after 13:59. No catch-up. The original manifest, queue and original receipts are not rewritten. V3 binds their old identities, the actual current article bytes, current public tree, existing covers and unchanged L1 announcement. The three reviewed correction candidates use exactly the existing editor's transient revision-only projection; their original evidence bytes are not changed. The provider-free preview is explicit:
+
+```sh
+PYTHONPATH=src python -m video_channel_manager.lordchrist_charnock_reschedule preview \
+  --calendar-v3 --publication-id lordchrist-telegraph-charnock-11 \
+  --ledger /path/to/read-only-protected-ledger-snapshot.json --now 2026-11-27T12:05:00+03:00
+```
+
+The existing sole scheduled writer and all its stages resolve the same V3 calendar; no second sender is created. Release is intentionally disabled. A protected review must add real per-item editorial and rights evidence to `release_approval`, then separately approve the exact whole-file SHA-256 via `LORDCHRIST_CHARNOCK_RECOVERY_V3_SHA256` and historical manifest SHA-256, with the existing recovery enable flag. This commit grants neither of those approvals and changes no repository variables or provider state. The per-slot identity stays stable when review/approval for another slot changes. Existing terminal/ambiguous claims remain no-replay. Reject unknown slot fields before merging any versioned values into the legacy identity. Recheck the current editorial queue and protected ledger for collisions on the chosen Moscow date before preview, preparation and sending (do not block readback of an already-sent article). Recheck the exact current main/CI, actual protected ledger, source/media, calendar and provider-visible page at execution; never treat a green preview as permission to send.
+
+## Operator fallback boundary (25 November)
+
+The existing authenticated same-day manual fallback remains limited to **№10–12**. The newly delegated future slots for №06–08 use only the four scheduled attempts (12:05, 12:11, 12:37 and 13:11 Moscow); no manual expansion is authorized. If all attempts miss the date, stop and review a new future date, never backfill. №09 is terminal and is not a dispatch option; №13 is independently held. The same exact main, calendar digest, per-item evidence, window, protected ledger and provider checks apply to every permitted attempt. Removing a stale menu option does not grant release authority.

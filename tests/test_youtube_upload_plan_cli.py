@@ -33,6 +33,7 @@ def _fixture(tmp_path: Path, *, title: str = "Black Man") -> tuple[Path, Path]:
                 "description": "Local-only planning fixture",
                 "tags": ["Есенин"],
                 "privacy_status": "private",
+                "contains_synthetic_media": True,
             }
         ),
         encoding="utf-8",
@@ -154,5 +155,18 @@ def test_cli_refuses_placeholder_spec_without_creating_intent_or_journal(tmp_pat
     with pytest.raises(UploadPlanError, match="Unresolved metadata placeholder in description"):
         cli.plan(_plan_args(spec=spec, media=media, data_dir=data_dir, output=output))
 
+    assert not output.exists()
+    assert not (data_dir / "youtube" / "upload-keys").exists()
+
+
+def test_cli_refuses_implicit_ai_true_if_disclosure_missing(tmp_path: Path) -> None:
+    media, spec = _fixture(tmp_path)
+    payload = json.loads(spec.read_text(encoding="utf-8"))
+    del payload["contains_synthetic_media"]
+    spec.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    output = tmp_path / "intent.json"
+    data_dir = tmp_path / "state"
+    with pytest.raises(UploadPlanError, match="contains_synthetic_media must be an explicit boolean"):
+        cli.plan(_plan_args(spec=spec, media=media, data_dir=data_dir, output=output))
     assert not output.exists()
     assert not (data_dir / "youtube" / "upload-keys").exists()
