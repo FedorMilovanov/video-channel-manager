@@ -51,10 +51,11 @@ def _writer(
     *,
     write: bool = True,
     verification_delays: tuple[float, ...] = (),
+    account: str = "account",
 ) -> YouTubeDescriptionWriter:
     store = TokenStore(tmp_path)
     store.save_token(
-        "account",
+        account,
         OAuthToken(
             access_token="fake",
             refresh_token="fake_refresh",
@@ -65,7 +66,7 @@ def _writer(
     return YouTubeDescriptionWriter(
         client_config=InstalledClientConfig(client_id="fake", client_secret="fake"),
         token_store=store,
-        account_alias="account",
+        account_alias=account,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://youtube.test",
         verification_delays=verification_delays,
@@ -633,3 +634,146 @@ def test_full_map_transport_sends_only_localizations(tmp_path: Path, keep_russia
     assert observed.raw["localizations"] == replacement
     assert observed.raw["snippet"] == original["snippet"]
     assert methods == ["PUT", "GET"]
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "success",
+        "stale",
+        "foreign_owner",
+        "membership_drift",
+        "caption_drift",
+        "ambiguous",
+        "delayed_drift",
+        "bad_review",
+    ],
+)
+def test_panorama_reduction_one_shot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scenario: str) -> None:
+    from contextlib import nullcontext
+
+    from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+    from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256, sha256_text
+    from video_channel_manager.platforms.youtube.lord_god_presentation import plan_panorama_russian_metadata
+    from video_channel_manager.platforms.youtube.lord_god_source_preservation import LORD_GOD_OWNER_CHANNEL
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    raw = _raw()
+    raw["id"] = "video000000"
+    raw["snippet"]["channelId"] = LORD_GOD_OWNER_CHANNEL
+    owner = {
+        "schema": "panorama-exact-owner-one-probe-v1",
+        "status": "OWNER_READ_SUCCESS",
+        "read_only": True,
+        "provider_writes": 0,
+        "api_read_operations": 1,
+        "video_id": raw["id"],
+        "owner_channel_id_expected": LORD_GOD_OWNER_CHANNEL,
+        "owner_channel_id": LORD_GOD_OWNER_CHANNEL,
+        "title": raw["snippet"]["title"],
+        "description_sha256": sha256_text(raw["snippet"]["description"]),
+        "revision": canonical_sha256(raw),
+        "locale_keys": sorted(raw["localizations"]),
+        "raw": copy.deepcopy(raw),
+    }
+    members = [
+        {
+            "position": i,
+            "video_id": f"video{i:06d}",
+            "video_owner": LORD_GOD_OWNER_CHANNEL,
+            "video_title": raw["snippet"]["title"],
+        }
+        for i in range(68)
+    ]
+    playlist = {
+        "schema": "panorama-current-owner-playlist-v1",
+        "playlist_id": PANORAMA_PLAYLIST,
+        "owner_channel_id": LORD_GOD_OWNER_CHANNEL,
+        "memberships": members,
+    }
+    candidate = plan_panorama_russian_metadata(owner, playlist, video_id=raw["id"])
+    review = {
+        "schema": "panorama-russian-metadata-approval-v1",
+        "candidate_sha256": canonical_sha256(candidate),
+        "approved": scenario != "bad_review",
+        "reviewer": "independent-test-reviewer",
+        "reviewed_at": "2026-11-25T12:00:00+00:00",
+    }
+    methods = []
+    put_count = 0
+    intent = tmp_path / "youtube" / "panorama-localization-intents" / LORD_GOD_OWNER_CHANNEL / "video000000.json"
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal put_count
+        resource = request.url.path.rsplit("/", 1)[-1]
+        methods.append((request.method, resource))
+        if request.method == "PUT":
+            put_count += 1
+            assert intent.is_file()
+            assert request.url.params["part"] == "localizations"
+            assert json.loads(request.content) == {"id": raw["id"], "localizations": candidate["after_localizations"]}
+            if scenario == "ambiguous":
+                return httpx.Response(503, json={"error": {"message": "unknown"}})
+            raw["localizations"] = copy.deepcopy(candidate["after_localizations"])
+            return httpx.Response(200, json={"id": raw["id"]})
+        if resource == "channels":
+            channel_id = "other" if scenario == "foreign_owner" else LORD_GOD_OWNER_CHANNEL
+            return httpx.Response(200, json={"items": [{"id": channel_id}]})
+        if resource == "playlists":
+            return httpx.Response(
+                200, json={"items": [{"id": PANORAMA_PLAYLIST, "snippet": {"channelId": LORD_GOD_OWNER_CHANNEL}}]}
+            )
+        if resource == "playlistItems":
+            second = request.url.params.get("pageToken") == "next"
+            selected = members[50:] if second else members[:50]
+            items = [
+                {
+                    "snippet": {
+                        "position": m["position"],
+                        "resourceId": {"videoId": m["video_id"]},
+                        "videoOwnerChannelId": m["video_owner"],
+                        "title": m["video_title"],
+                    }
+                }
+                for m in selected
+            ]
+            if scenario == "membership_drift" and second:
+                items.pop()
+            return httpx.Response(200, json={"items": items, **({} if second else {"nextPageToken": "next"})})
+        if resource == "captions":
+            caption = {"id": "caption-en", "snippet": {"videoId": raw["id"], "language": "en", "status": "serving"}}
+            if scenario == "caption_drift" and put_count:
+                return httpx.Response(200, json={"items": []})
+            return httpx.Response(200, json={"items": [caption]})
+        observed = copy.deepcopy(raw)
+        if scenario == "stale" or (scenario == "delayed_drift" and put_count):
+            observed["snippet"]["description"] = "changed"
+        return httpx.Response(200, json={"items": [observed]})
+
+    writer = _writer(tmp_path, handle, account="fedor-milovanov")
+    monkeypatch.setattr(writer, "_reserve_reviewed_shared_quota", lambda _: nullcontext())
+    monkeypatch.setattr(writer, "_request_sleep", lambda _: None)
+    args = {
+        "candidate": candidate,
+        "owner": owner,
+        "playlist": playlist,
+        "review": review,
+        "confirm_video_id": raw["id"],
+        "confirm_after_sha256": candidate["after_sha256"],
+    }
+    if scenario == "success":
+        receipt = writer.reduce_panorama_localizations(**args)
+        assert receipt["captions_inventory_verified"]
+        assert not receipt["public_display_verified"]
+        assert intent.with_suffix(".verified.json").exists()
+    else:
+        with pytest.raises((YouTubeWriteError, ValueError)):
+            writer.reduce_panorama_localizations(**args)
+    dispatched = scenario in {"success", "caption_drift", "ambiguous", "delayed_drift"}
+    assert put_count == int(dispatched)
+    assert intent.exists() is dispatched
+    if dispatched:
+        count = len(methods)
+        with pytest.raises(YouTubeWriteError, match="never replay"):
+            writer.reduce_panorama_localizations(**args)
+        assert len(methods) == count

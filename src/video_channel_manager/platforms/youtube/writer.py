@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import os
 import random
 import json
 import time
@@ -9,6 +10,8 @@ import unicodedata
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Any, TypeAlias
 
 import httpx
@@ -179,6 +182,14 @@ def localization_postflight_drift(
     if _dict_field(observed.raw, "contentDetails").get("duration") != duration:
         failures.append("contentDetails.duration")
     return failures
+
+
+def _persist_panorama_receipt(path: Path, payload: dict[str, Any]) -> None:
+    """Exclusive durable record; an incomplete record still blocks replay."""
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
 
 
 class YouTubeDescriptionWriter(HttpClientOwner):
@@ -535,13 +546,165 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 )
             return verified
 
+    def _panorama_live_membership(self, playlist: dict[str, Any]) -> None:
+        from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+
+        proof = self._request("GET", "playlists", params={"part": "snippet", "id": PANORAMA_PLAYLIST})
+        items = _dict_items(proof)
+        if (
+            len(items) != 1
+            or items[0].get("id") != PANORAMA_PLAYLIST
+            or _dict_field(items[0], "snippet").get("channelId") != LORD_GOD_OWNER_CHANNEL
+        ):
+            raise YouTubeRevisionConflictError("Panorama playlist owner proof failed; no PUT sent.")
+        expected = {
+            (m["position"], m["video_id"], m["video_owner"], m["video_title"]) for m in playlist["memberships"]
+        }
+        observed = []
+        params: QueryParams = {"part": "snippet", "playlistId": PANORAMA_PLAYLIST, "maxResults": 50}
+        token: Any = None
+        for _ in range(2):
+            page = self._request("GET", "playlistItems", params=params)
+            rows = page.get("items")
+            if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+                raise YouTubeRevisionConflictError("Incomplete Panorama membership; no PUT sent.")
+            for row in rows:
+                snippet = _dict_field(row, "snippet")
+                position = snippet.get("position")
+                video_id = _dict_field(snippet, "resourceId").get("videoId")
+                video_owner = snippet.get("videoOwnerChannelId")
+                title = snippet.get("title")
+                if type(position) is not int or not all(isinstance(v, str) for v in (video_id, video_owner, title)):
+                    raise YouTubeRevisionConflictError("Incomplete Panorama member; no PUT sent.")
+                observed.append((position, video_id, video_owner, title))
+            token = page.get("nextPageToken")
+            if not token:
+                break
+            if not isinstance(token, str) or token == params.get("pageToken"):
+                raise YouTubeRevisionConflictError("Invalid Panorama pagination; no PUT sent.")
+            params["pageToken"] = token
+        if token or len(observed) != 68 or set(observed) != expected:
+            raise YouTubeRevisionConflictError("Panorama membership drift; no PUT sent.")
+
+    def _panorama_caption_inventory(self, video_id: str) -> dict[str, Any]:
+        payload = self._request("GET", "captions", params={"part": "snippet", "videoId": video_id})
+        rows = payload.get("items")
+        if (
+            payload.get("nextPageToken")
+            or not isinstance(rows, list)
+            or not all(
+                isinstance(row, dict)
+                and isinstance(row.get("id"), str)
+                and bool(row["id"])
+                and isinstance(row.get("snippet"), dict)
+                and row["snippet"].get("videoId") == video_id
+                for row in rows
+            )
+            or len({row["id"] for row in rows}) != len(rows)
+        ):
+            raise YouTubeWriteError("Incomplete exact caption inventory; stop without replay.")
+        return {row["id"]: row["snippet"] for row in rows}
+
+    def reduce_panorama_localizations(
+        self,
+        *,
+        candidate: dict[str, Any],
+        owner: dict[str, Any],
+        playlist: dict[str, Any],
+        review: dict[str, Any],
+        confirm_video_id: str,
+        confirm_after_sha256: str,
+    ) -> dict[str, Any]:
+        """One reviewed reduction, canonical lock/intent, no automatic replay."""
+        from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256
+        from video_channel_manager.platforms.youtube.lord_god_presentation import (
+            plan_panorama_russian_metadata,
+            verify_panorama_russian_metadata_readback,
+        )
+        from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
+
+        video_id = confirm_video_id
+        expected = plan_panorama_russian_metadata(owner, playlist, video_id=video_id)
+        if (
+            candidate != expected
+            or expected["disposition"] != "REVIEW_REQUIRED"
+            or confirm_after_sha256 != expected["after_sha256"]
+            or review.get("schema") != "panorama-russian-metadata-approval-v1"
+            or review.get("candidate_sha256") != canonical_sha256(expected)
+            or review.get("approved") is not True
+            or not isinstance(review.get("reviewer"), str)
+            or not review["reviewer"].strip()
+            or not isinstance(review.get("reviewed_at"), str)
+            or datetime.fromisoformat(review["reviewed_at"]).utcoffset() is None
+        ):
+            raise ValueError("Exact independent reduction review and confirmation required.")
+        if os.environ.get("GITHUB_ACTIONS") == "true" or self.account_alias != "fedor-milovanov":
+            raise YouTubeWriteError("Panorama reduction requires the canonical local owner runtime.")
+        data_dir = self.token_store.data_dir
+        if not data_dir.is_absolute() or data_dir.resolve() != data_dir:
+            raise YouTubeWriteError("Absolute canonical YouTube data root required.")
+        lock = data_dir / "locks" / f"youtube-{self.account_alias}-{LORD_GOD_OWNER_CHANNEL}.lock"
+        intent = data_dir / "youtube" / "panorama-localization-intents" / LORD_GOD_OWNER_CHANNEL / f"{video_id}.json"
+        result = intent.with_suffix(".verified.json")
+        # channels + playlist + two pages + before/after/delayed video + two caption inventories.
+        units = 50 + 107 * self.retry_policy.max_attempts
+        with local_youtube_write_lock(lock, account=self.account_alias, channel_id=LORD_GOD_OWNER_CHANNEL):
+            if intent.exists() or intent.is_symlink() or result.exists() or result.is_symlink():
+                raise YouTubeWriteError("Panorama reduction intent exists; reconcile by GET, never replay.")
+            with self._reserve_reviewed_shared_quota(units):
+                self._token(require_write=True)
+                channels = _dict_items(
+                    self._request("GET", "channels", params={"part": "id", "mine": "true", "maxResults": 2})
+                )
+                if len(channels) != 1 or channels[0].get("id") != LORD_GOD_OWNER_CHANNEL:
+                    raise YouTubeRevisionConflictError("OAuth owner proof failed; no PUT sent.")
+                self._panorama_live_membership(playlist)
+                captions_before = self._panorama_caption_inventory(video_id)
+                current = self.read_description(video_id)
+                if current.revision != expected["owner_revision"]:
+                    raise YouTubeRevisionConflictError("Exact owner revision changed; no PUT sent.")
+                intent.parent.mkdir(parents=True, exist_ok=True)
+                _persist_panorama_receipt(
+                    intent,
+                    {
+                        "status": "dispatch_intent_no_replay",
+                        "candidate": expected,
+                        "review": review,
+                        "snapshot": current.raw,
+                        "captions": captions_before,
+                    },
+                )
+                observed = self._put_localization_map(video_id, expected["after_localizations"])
+                immediate = verify_panorama_russian_metadata_readback(expected, owner, playlist, observed.raw)
+                self._request_sleep(2.0)
+                delayed = self.read_description(video_id)
+                postflight = verify_panorama_russian_metadata_readback(expected, owner, playlist, delayed.raw)
+                captions_after = self._panorama_caption_inventory(video_id)
+                if not postflight["metadata_matches"] or captions_after != captions_before:
+                    raise YouTubeWriteError("Panorama postflight mismatch; reconcile by GET, never replay.")
+                receipt = {
+                    "status": "owner_verified_public_qa_pending",
+                    "video_id": video_id,
+                    "candidate_sha256": canonical_sha256(expected),
+                    "immediate": immediate,
+                    "delayed": postflight,
+                    "captions_inventory_verified": True,
+                    "public_display_verified": False,
+                }
+                _persist_panorama_receipt(result, receipt)
+                return receipt
+
     @contextmanager
     def reserve_exact_description_execution(self) -> Iterator[None]:
         """Reserve preflight, predispatch GET, PUT and both verification GETs."""
+        with self._reserve_reviewed_shared_quota(50 + 4 * self.retry_policy.max_attempts):
+            yield
+
+    @contextmanager
+    def _reserve_reviewed_shared_quota(self, units: int) -> Iterator[None]:
         guard = self._quota_guard
         if guard is None:
             raise YouTubeWriteError("Exact historical execution requires a shared project quota guard")
-        units = 50 + 4 * self.retry_policy.max_attempts
         try:
             status = guard.budget_status()
             buckets = status.get("buckets")
