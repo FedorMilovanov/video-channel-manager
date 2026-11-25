@@ -796,7 +796,10 @@ def test_real_panorama_writer_requires_reviewed_current_quota_before_get(
     assert not (tmp_path / "youtube" / "panorama-first-comment-reservations.sqlite3").exists()
 
 
-@pytest.mark.parametrize("case", ["ok", "insufficient", "outer_overflow", "inner_overflow", "race", "post_overflow"])
+@pytest.mark.parametrize(
+    "case",
+    ["ok", "insufficient", "outer_overflow", "inner_overflow", "race", "post_overflow", "title_drift", "privacy_drift"],
+)
 def test_guarded_comment_atomic_quota_and_exhaustive_inventory(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
 ) -> None:
@@ -836,6 +839,7 @@ def test_guarded_comment_atomic_quota_and_exhaustive_inventory(
             self.retry_policy = SimpleNamespace(max_attempts=1)
             self.requests = 0
             self.inventories = 0
+            self.identity_reads = 0
             self.posts = 0
 
         def _request(
@@ -848,14 +852,17 @@ def test_guarded_comment_atomic_quota_and_exhaustive_inventory(
                         other(lambda: pytest.fail("Competing request dispatched"), "GET", "videos")
                     return httpx.Response(200, json={"items": [{"id": YOUTUBE_COMMENT_OWNER}]})
                 if resource == "videos":
+                    self.identity_reads += 1
+                    title = "Changed title" if case == "title_drift" and self.identity_reads == 2 else TITLE
+                    privacy = "private" if case == "privacy_drift" and self.identity_reads == 2 else "public"
                     return httpx.Response(
                         200,
                         json={
                             "items": [
                                 {
                                     "id": VIDEO_ID,
-                                    "snippet": {"channelId": YOUTUBE_COMMENT_OWNER, "title": TITLE},
-                                    "status": {"privacyStatus": "public"},
+                                    "snippet": {"channelId": YOUTUBE_COMMENT_OWNER, "title": title},
+                                    "status": {"privacyStatus": privacy},
                                 }
                             ]
                         },
@@ -892,6 +899,11 @@ def test_guarded_comment_atomic_quota_and_exhaustive_inventory(
     elif case == "post_overflow":
         with pytest.raises(UnknownProviderOutcomeError, match="independent readback uncertain"):
             adapter.execute(operation)
+    elif case in {"title_drift", "privacy_drift"}:
+        with pytest.raises(OperationRejectedError, match="drifted during guarded preflight"):
+            adapter.execute(operation)
+        assert writer.identity_reads == 2
+        assert writer.inventories == 1
     else:
         with pytest.raises(OperationRejectedError):
             adapter.execute(operation)

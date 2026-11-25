@@ -593,6 +593,8 @@ class YouTubeCommentWriter(HttpClientOwner):
         text: str,
         strict_inventory_max_pages: int | None = None,
         before_dispatch: Callable[[], None] | None = None,
+        expected_video_title: str | None = None,
+        expected_privacy_status: str | None = None,
     ) -> TopLevelCommentSnapshot:
         normalized = validate_comment_text(text)
         identity = self.read_video_identity(video_id)
@@ -600,6 +602,11 @@ class YouTubeCommentWriter(HttpClientOwner):
             raise YouTubeCommentConflictError(
                 f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {identity.channel_id}."
             )
+
+        if expected_video_title is not None and identity.title != expected_video_title:
+            raise YouTubeCommentConflictError("Video title drifted during guarded preflight; no dispatch.")
+        if expected_privacy_status is not None and identity.privacy_status != expected_privacy_status:
+            raise YouTubeCommentConflictError("Video privacy drifted during guarded preflight; no dispatch.")
 
         existing = (
             self.list_top_level_comments(

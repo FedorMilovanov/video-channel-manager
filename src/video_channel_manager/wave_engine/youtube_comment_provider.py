@@ -288,6 +288,8 @@ class LordGodYouTubeCommentAdapter:
                             text=p["comment_text"],
                             strict_inventory_max_pages=_MAX_INVENTORY_PAGES_PER_STATUS,
                             before_dispatch=reserve_target,
+                            expected_video_title=p["video_title"],
+                            expected_privacy_status="public",
                         )
                     else:
                         reserve_target()
