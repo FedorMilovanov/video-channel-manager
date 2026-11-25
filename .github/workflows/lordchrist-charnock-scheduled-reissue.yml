@@ -6,18 +6,17 @@ on:
     - cron: "5 9 * * 2,5"
     # Independent off-minute attempts on the SAME reviewed Moscow date.
     # Durable terminal-readback guard below skips an already verified reissue.
-    # No next-day catch-up; existing 12:00–13:59 Moscow lease is unchanged.
+    # No next-day catch-up; V3 preparation/send lease is 12:05–13:59 Moscow.
     - cron: "11 9 * * 2,5"
     - cron: "37 9 * * 2,5"
     - cron: "11 10 * * 2,5"
   workflow_dispatch:
     inputs:
       publication_id:
-        description: Existing owner-approved future Charnock article (no missed backfill)
+        description: Existing owner-only fallback for V3 articles 10-12 (same day only)
         required: true
         type: choice
         options:
-          - lordchrist-telegraph-charnock-09
           - lordchrist-telegraph-charnock-10
           - lordchrist-telegraph-charnock-11
           - lordchrist-telegraph-charnock-12
@@ -43,8 +42,7 @@ jobs:
        github.actor == 'FedorMilovanov' &&
        github.ref == 'refs/heads/main' &&
        inputs.confirm == 'RUN_APPROVED_CHARNOCK_SLOT_ONCE' &&
-       (inputs.publication_id == 'lordchrist-telegraph-charnock-09' ||
-        inputs.publication_id == 'lordchrist-telegraph-charnock-10' ||
+       (inputs.publication_id == 'lordchrist-telegraph-charnock-10' ||
         inputs.publication_id == 'lordchrist-telegraph-charnock-11' ||
         inputs.publication_id == 'lordchrist-telegraph-charnock-12'))
     runs-on: ubuntu-24.04
