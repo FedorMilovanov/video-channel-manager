@@ -1,0 +1,72 @@
+{
+  "document_id": "lordchrist-telegraph-peasants-1525-20261115",
+  "project_key": "lord-god-strength",
+  "verified_on": "2026-11-15",
+  "metadata": {
+    "title": "Швабия, 1525: немецкие крестьяне потребовали права выбирать проповедника",
+    "language": "ru",
+    "summary": "Где находилась Швабия, что означали «Двенадцать статей» и почему крестьяне хотели выбирать пастора: подлинные документы 1525 года с кликабельным словарём эпохи.",
+    "author": "Господь Бог — Сила Моя",
+    "tags": [
+      "История Церкви",
+      "Реформация",
+      "Крестьянская война",
+      "Мемминген",
+      "Двенадцать статей",
+      "Лютер"
+    ],
+    "created_at": "2026-11-15",
+    "updated_at": "2026-11-15"
+  },
+  "media": [
+    {
+      "media_id": "facsimile-title",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/bsb-1525-01.jpg",
+      "alt_text": "Титул «Двенадцати статей», Аугсбург, 1525, BSB bsb00025768, кадр 1",
+      "source_url": "https://www.digitale-sammlungen.de/de/view/bsb00025768?page=,1",
+      "source_evidence": "Bayerische Staatsbibliothek, bsb00025768, original Ramminger Augsburg 1525 imprint, manifest license Public Domain Mark 1.0, exact canvas; inspected image."
+    },
+    {
+      "media_id": "facsimile-preface",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/bsb-1525-03.jpg",
+      "alt_text": "Обращение к христианскому читателю, BSB bsb00025768, кадр 3",
+      "source_url": "https://www.digitale-sammlungen.de/de/view/bsb00025768?page=,1",
+      "source_evidence": "Bayerische Staatsbibliothek, bsb00025768, original Ramminger Augsburg 1525 imprint, manifest license Public Domain Mark 1.0, exact canvas; inspected image."
+    },
+    {
+      "media_id": "facsimile-first-article",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/bsb-1525-05.jpg",
+      "alt_text": "Первая статья и начало второй, BSB bsb00025768, кадр 5",
+      "source_url": "https://www.digitale-sammlungen.de/de/view/bsb00025768?page=,1",
+      "source_evidence": "Bayerische Staatsbibliothek, bsb00025768, original Ramminger Augsburg 1525 imprint, manifest license Public Domain Mark 1.0, exact canvas; inspected image."
+    },
+    {
+      "media_id": "facsimile-third-article",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/bsb-1525-06.jpg",
+      "alt_text": "Третья статья, BSB bsb00025768, кадр 6",
+      "source_url": "https://www.digitale-sammlungen.de/de/view/bsb00025768?page=,1",
+      "source_evidence": "Bayerische Staatsbibliothek, bsb00025768, original Ramminger Augsburg 1525 imprint, manifest license Public Domain Mark 1.0, exact canvas; inspected image."
+    },
+    {
+      "media_id": "facsimile-last-article",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/bsb-1525-10.jpg",
+      "alt_text": "Двенадцатая статья, BSB bsb00025768, кадр 10",
+      "source_url": "https://www.digitale-sammlungen.de/de/view/bsb00025768?page=,1",
+      "source_evidence": "Bayerische Staatsbibliothek, bsb00025768, original Ramminger Augsburg 1525 imprint, manifest license Public Domain Mark 1.0, exact canvas; inspected image."
+    },
+    {
+      "media_id": "facsimile-luther-peace",
+      "kind": "photo",
+      "uri": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/main/content/telegram/lordchrist/telegraph-v1/media/peasants-1525/luther-peace-1525-zurich.jpg",
+      "alt_text": "Титул цюрихского переиздания «Увещания к миру», 1525, ZB Zürich",
+      "source_url": "https://www.e-rara.ch/zuz/content/titleinfo/215807",
+      "source_evidence": "Zentralbibliothek Zürich AW327, 1525 Froschauer reprint; e-rara IIIF canvas 3, actual screenshot inspected."
+    }
+  ],
+  "quote_anchors": []
+}

@@ -375,6 +375,7 @@ def test_successful_local_resumable_publish_sends_exact_protocol_and_is_idempote
             assert request.headers["offset"] == "0"
             assert request.headers["file_size"] == str(len(VIDEO_BYTES))
             assert request.headers["content-length"] == str(len(VIDEO_BYTES))
+            assert request.headers["content-type"] == "application/octet-stream"
             assert request.content == VIDEO_BYTES
             timeout = request.extensions.get("timeout")
             assert isinstance(timeout, dict)
@@ -462,6 +463,7 @@ def test_upload_transport_ambiguity_blocks_blind_binary_replay(tmp_path: Path) -
         assert child.last_error_message is not None
         assert "ReadTimeout" in child.last_error_message
         assert "upload response lost" in child.last_error_message
+        assert "; upload_dispatch_elapsed_ms=" in child.last_error_message
         assert TOKEN not in child.last_error_message
         assert container_calls == 1
         assert upload_calls == 1
@@ -641,22 +643,54 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
     assert "body=" in message
     assert "request-123" in message
     assert "trace-456" in message
+    assert "; upload_dispatch_elapsed_ms=" in message
     assert "[REDACTED_TOKEN]" in message
     assert TOKEN not in message
 
 
-def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(tmp_path: Path) -> None:
+@pytest.mark.parametrize("phase_readback", ["nested_error", "no_phase_error", "provider_unavailable"])
+def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(
+    tmp_path: Path, phase_readback: str
+) -> None:
     video = tmp_path / "reel.mp4"
     _write_video(video)
     manifest = build_local_publish_manifest(
         video,
-        publication_key="local.nonretriable-400",
+        publication_key=f"local.nonretriable-400-{phase_readback}",
         account_id=ACCOUNT_ID,
     )
     writes: list[str] = []
+    phase_reads: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if request.method == "GET" and path.endswith("/container-local-1"):
+            phase_reads.append("container-local-1")
+            if phase_readback == "provider_unavailable":
+                return _response(request, 503, {"error": {"message": "phase readback unavailable", "code": 2}})
+            if phase_readback == "no_phase_error":
+                return _response(request, 200, {"id": "container-local-1", "status_code": "IN_PROGRESS"})
+            return _response(
+                request,
+                200,
+                {
+                    "id": "container-local-1",
+                    "status_code": "IN_PROGRESS",
+                    "video_status": {
+                        "uploading_phase": {
+                            "status": "error",
+                            "bytes_transferred": 0,
+                            "source_file_size": 0,
+                            "errors": [
+                                {
+                                    "code": 1363008,
+                                    "message": f"OIL Error[FILE_NOT_FOUND: 6]; OAuth {TOKEN}; {UPLOAD_URI}",
+                                }
+                            ],
+                        }
+                    },
+                },
+            )
         if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
             return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
         if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
@@ -701,6 +735,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         assert error.value.error_code == "ProcessingFailedError"
         assert error.value.retryable is False
         assert writes == ["container", "upload"]
+        assert phase_reads == ["container-local-1"]
 
         parent = ledger.get(manifest.publication_key)
         child = upload_ledger.get(manifest.publication_key)
@@ -710,6 +745,16 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         assert parent.last_error_code == "ProcessingFailedError"
         assert parent.last_error_message is not None
         assert "retriable" in parent.last_error_message
+        assert "; upload_dispatch_elapsed_ms=" in parent.last_error_message
+        if phase_readback == "nested_error":
+            assert "provider_phase_readback=" in parent.last_error_message
+            assert "provider_error_code=1363008" in parent.last_error_message
+            assert "OIL Error[FILE_NOT_FOUND: 6]" in parent.last_error_message
+            assert "bytes_transferred=0" in parent.last_error_message
+            assert TOKEN not in parent.last_error_message
+            assert UPLOAD_URI not in parent.last_error_message
+        else:
+            assert "provider_phase_readback=" not in parent.last_error_message
         assert child is not None
         assert child.state == ResumableUploadState.PROVIDER_FAILED
         assert child.attempt_count == 1
@@ -719,6 +764,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
         with pytest.raises(InstagramProductionError, match="terminally failed"):
             service.publish_local(manifest, video, execute=True)
         assert writes == ["container", "upload"]
+        assert phase_reads == ["container-local-1"]
 
 
 def test_http_500_remains_ambiguous_even_when_debug_info_says_nonretriable(tmp_path: Path) -> None:
@@ -804,6 +850,39 @@ def test_resumable_status_phase_error_overrides_stale_in_progress() -> None:
     assert "FILE_NOT_FOUND" in message
 
 
+@pytest.mark.parametrize(
+    ("status_code", "human_status"),
+    [
+        ("EXPIRED", "Finished: Media has been uploaded and it is ready to be published."),
+        ("EXPIRED", "In Progress: Media is still being processed."),
+    ],
+)
+def test_resumable_expired_machine_status_overrides_stale_human_status(status_code: str, human_status: str) -> None:
+    """The machine status wins even when Meta's prose contradicts it."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.params["fields"] == "id,status,status_code,video_status"
+        return _response(
+            request,
+            200,
+            {
+                "id": "container-local-1",
+                "status_code": status_code,
+                "status": human_status,
+                "video_status": {
+                    "uploading_phase": {"status": "not_started"},
+                    "processing_phase": {"status": "not_started"},
+                },
+            },
+        )
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        provider_status, detail = client.get_container_status("container-local-1")
+    assert provider_status == "EXPIRED"
+    assert detail == human_status
+
+
 def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -> None:
     video = tmp_path / "reel.mp4"
     _write_video(video)
@@ -862,3 +941,29 @@ def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -
         assert child.state == ResumableUploadState.PROVIDER_FAILED
         assert child.last_error_message == result.last_error_message
         assert child.attempt_count == 1
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [{}, {"success": None}, {"success": "true"}, {"success": 1}, {"success": []}],
+)
+def test_http_200_without_explicit_boolean_success_cannot_complete_upload(payload: dict[str, object]) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _response(request, 200, payload)
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramProviderError, match="no explicit boolean success=true") as error:
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
+    assert error.value.error_code == "resumable_upload_ack_unverified"
+    assert error.value.retryable is None
+    assert TOKEN not in str(error.value)
+    assert UPLOAD_URI not in str(error.value)
+
+
+def test_http_200_with_non_json_body_is_not_upload_success() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, request=request, text="<html>accepted?</html>")
+
+    with _client(_config(), httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramProviderError, match="no explicit boolean success=true"):
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))

@@ -1,5 +1,7 @@
 # MILOVI CAKE VK — проверенные источники и план роста (6 ноября 2026)
 
+> **Historical research, not a live release plan.** The observations, source checks, permissions, and proposed cadence below belong to 6 November 2026; they were not reverified by the archival integration. Use current exact provider readback and the current #792 decisions for operations. Do not replay any historical post or infer publication authority from this note. The referenced editorial JSON is a historical path, not a currently available or accepted payload on main. The original note remains available at commit 0cc004d8c8b98ec8a5b00b67930dacf14f890002.
+
 **Владение:** issue [#792](https://github.com/FedorMilovanov/video-channel-manager/issues/792), `project_key=milovi-cake`, `community_id=68859909`, `owner_id=-68859909`.
 
 **Режим:** публичные источники и repo-only editorial. Никаких браузерных окон, переключения вкладок, API-модификаций, новых постов или платной рекламы. Владелец сам сохранил иллюстрацию у уже созданного отложенного поста [№496](https://vk.com/wall-68859909_496). Не трогать его и не заявлять независимый API-постфлайт.

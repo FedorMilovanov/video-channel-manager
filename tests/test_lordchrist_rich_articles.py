@@ -165,4 +165,5 @@ def test_manual_article_dispatch_is_routed_away_from_the_quote_job() -> None:
 
     assert "inputs.action == 'publish-article'" in publish_next  # excluded from the quote lane
     assert "inputs.action == 'publish-article'" in article
-    assert "github.event.schedule == '0 9 * * 2,5'" in article
+    assert "github.event.schedule == '0 9 * * 2,5'" not in article
+    assert "github.event_name == 'workflow_dispatch'" in article

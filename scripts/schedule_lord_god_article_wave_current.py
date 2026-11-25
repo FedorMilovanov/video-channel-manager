@@ -195,6 +195,7 @@ def convert_webp_to_jpeg(payload: bytes, *, ffmpeg: str) -> bytes:
 
 
 def install_explicit_photo_flow(module: Any) -> None:
+    raise RuntimeError("VK_RETIRED_ARTICLE_SCHEDULER_BLOCKED: historical photo-wall writer disabled.")
     original_verify_live_sources = module.verify_live_sources
 
     def verify_live_sources(policy: dict[str, Any]) -> list[dict[str, Any]]:
@@ -357,6 +358,7 @@ def install_explicit_photo_flow(module: Any) -> None:
 
 
 def main() -> int:
+    raise RuntimeError("VK_RETIRED_ARTICLE_SCHEDULER_BLOCKED: historical photo-wall writer disabled.")
     module = load_guarded_module()
     install_reviewed_policy_corrections(module)
     install_explicit_photo_flow(module)

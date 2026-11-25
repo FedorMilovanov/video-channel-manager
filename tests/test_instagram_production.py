@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, datetime
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -222,6 +223,33 @@ def test_publish_claim_has_one_winner_across_database_clients(tmp_path: Path) ->
         assert current.attempt_count == 2
 
 
+def test_media_publish_extended_read_wait_keeps_other_graph_timeouts_short() -> None:
+    observed: dict[str, dict[str, float | None]] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        timeout = request.extensions.get("timeout")
+        assert isinstance(timeout, dict)
+        observed[request.url.path] = timeout
+        if request.method == "GET" and request.url.path.endswith("/container-timeout"):
+            return _response(request, 200, {"status_code": "FINISHED"})
+        if request.method == "POST" and request.url.path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            return _response(request, 200, {"id": "media-timeout"})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _provider_client(config, transport) as client:
+        assert client.get_container_status("container-timeout")[0] == "FINISHED"
+        assert client.publish_container("container-timeout") == "media-timeout"
+
+    normal = observed["/v25.0/container-timeout"]
+    publish = observed[f"/v25.0/{ACCOUNT_ID}/media_publish"]
+    assert normal["read"] == 1.0
+    assert normal["connect"] == normal["write"] == 1.0
+    assert publish["read"] == 120.0
+    assert publish["connect"] == publish["write"] == 1.0
+
+
 def test_successful_reel_publish_is_durable_and_idempotent() -> None:
     writes: list[str] = []
 
@@ -436,6 +464,35 @@ def test_trusted_github_release_redirect_is_verified_by_exact_bytes() -> None:
     }
 
 
+def test_allowlisted_redirect_chain_above_three_hops_is_refused_before_provider_post() -> None:
+    graph_posts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "cdn.example.com":
+            hop = int(request.url.params.get("hop", "0"))
+            return httpx.Response(
+                302,
+                request=request,
+                headers={"Location": f"https://cdn.example.com/reel.mp4?hop={hop + 1}"},
+            )
+        if request.method == "POST":
+            graph_posts.append(request.url.path)
+        if request.method == "GET" and request.url.path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and request.url.path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
+        with pytest.raises(InstagramMediaVerificationError) as error:
+            service.publish(_manifest(key="redirect-over-limit"), execute=True)
+        assert error.value.error_code == "video_redirect_refused"
+        assert graph_posts == []
+
+
 def test_media_redirect_is_refused_before_provider_post() -> None:
     graph_posts: list[str] = []
 
@@ -525,6 +582,91 @@ def test_unknown_publish_result_never_reopens_ready_from_finished_status() -> No
         assert reconciled.status == PublicationStatus.PUBLISH_UNKNOWN
         assert reconciled.provider_status == "FINISHED"
         assert publish_calls == 1
+
+
+@pytest.mark.parametrize("variant", ["valid", "wrong-caption", "duplicate", "paged", "old-timestamp"])
+def test_discover_published_reel_exact_provider_evidence_fails_closed(variant: str) -> None:
+    requests: list[tuple[str, str]] = []
+    manifest = _manifest(key="discover-existing", caption="Frozen title\nFull original caption")
+    now = datetime.now(UTC).isoformat()
+    matching = {
+        "id": "18000000000000001",
+        "caption": manifest.caption,
+        "media_type": "VIDEO",
+        "media_product_type": "REELS",
+        "permalink": "https://www.instagram.com/reel/AbCdE_123/",
+        "timestamp": "2020-01-01T00:00:00+00:00" if variant == "old-timestamp" else now,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append((request.method, request.url.path))
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "GET" and path.endswith("/container-discover"):
+            return _response(request, 200, {"status_code": "PUBLISHED"})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            entries = [matching.copy()]
+            if variant == "wrong-caption":
+                entries[0]["caption"] = "different original caption"
+            if variant == "duplicate":
+                entries.append({**matching, "id": "18000000000000002"})
+            page: dict[str, object] = {"data": entries}
+            if variant == "paged":
+                page["paging"] = {"next": "https://graph.instagram.com/page/2"}
+            return _response(request, 200, page)
+        raise AssertionError(f"Unexpected provider call: {request.method} {request.url}")
+
+    config = _config(writes_enabled=False)
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        ledger.ensure_planned(manifest)
+        ledger.claim_container_request(manifest.publication_key)
+        ledger.transition(
+            manifest.publication_key,
+            PublicationStatus.READY,
+            expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
+            container_id="container-discover",
+            provider_status="FINISHED",
+        )
+        ledger.claim_publish_request(manifest.publication_key, "container-discover")
+        ledger.transition(
+            manifest.publication_key,
+            PublicationStatus.PUBLISH_UNKNOWN,
+            expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
+        )
+        service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
+        if variant == "valid":
+            proven = service.discover_published_media(manifest.publication_key)
+            assert proven.status == PublicationStatus.PUBLISHED
+            assert proven.provider_media_id == "18000000000000001"
+            assert proven.provider_container_id == "container-discover"
+            assert proven.last_error_code is None
+        else:
+            with pytest.raises(InstagramReconciliationRequired):
+                service.discover_published_media(manifest.publication_key)
+            current = ledger.get(manifest.publication_key)
+            assert current is not None
+            assert current.status == PublicationStatus.PUBLISHED_UNRESOLVED
+            assert current.provider_media_id is None
+        assert all(method == "GET" for method, _ in requests)
+
+
+def test_media_discovery_requires_known_ambiguous_final_publish() -> None:
+    config = _config(writes_enabled=False)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"No provider call allowed: {request.method} {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        manifest = _manifest(key="planned-discovery")
+        ledger.ensure_planned(manifest)
+        service = InstagramProductionService(config, ledger, client=client)
+        with pytest.raises(InstagramReconciliationRequired, match="ambiguous final publish"):
+            service.discover_published_media(manifest.publication_key)
 
 
 def test_manual_media_id_is_restricted_to_ambiguous_publish_with_known_container() -> None:
@@ -733,3 +875,46 @@ def test_repeated_container_error_is_terminal_without_media_publish() -> None:
         assert result.publish_requested_at is None
         assert writes == ["container"]
         assert sleeps == [0.0]
+
+
+def test_public_url_container_status_omits_unsupported_video_status() -> None:
+    """Meta returns HTTP 400 / 2207065 if a video_url container GET asks for video_status."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.path.endswith("/container-url-finished")
+        if "video_status" in request.url.params["fields"]:
+            return _response(
+                request,
+                400,
+                {
+                    "error": {
+                        "code": 100,
+                        "error_subcode": 2207065,
+                        "message": "video_status is invalid for this media type",
+                    }
+                },
+            )
+        assert request.url.params["fields"] == "status_code,status"
+        return _response(request, 200, {"status_code": "FINISHED", "status": "ready"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-url-finished") == ("FINISHED", "ready")
+
+
+def test_public_url_container_in_progress_preserves_pending_without_unsupported_fields() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["fields"] == "status_code,status"
+        return _response(request, 200, {"status_code": "IN_PROGRESS", "status": "still processing"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-url-pending") == ("IN_PROGRESS", "still processing")
+
+
+def test_public_url_container_error_uses_official_status_text() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["fields"] == "status_code,status"
+        return _response(request, 200, {"status_code": "ERROR", "status": "Video fetch failed"})
+
+    with _provider_client(_config(), httpx.MockTransport(handler)) as client:
+        assert client.get_container_status("container-url-error") == ("ERROR", "Video fetch failed")

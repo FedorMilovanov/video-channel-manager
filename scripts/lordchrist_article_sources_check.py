@@ -6,7 +6,8 @@
 `content/telegram/lordchrist/RICH_EDITOR_ARTICLE_STANDARD.md`):
 
   * каждый блок цитаты статьи (эпиграф = блок 1) имеет ровно один якорь
-    `src-NN-charnock`, и номер якоря равен номеру блока;
+    `src-NN-<труд>` с EN-текстом в поле `evidence`, и номер якоря равен
+    номеру блока (у статьи-разбора несколько трудов — по якорю на труд);
   * подпись якоря совпадает с его номером («цитата NN»);
   * `source_id` уникальны;
   * сводка стихов одна и стоит последней в списке;
@@ -34,9 +35,12 @@ import re
 import sys
 from pathlib import Path
 
-CHARNOCK_RE = re.compile(r"^src-(\d+)-charnock$")
+ANCHOR_RE = re.compile(r"^src-(\d+)-[a-z0-9-]+$")
 LABEL_RE = re.compile(r"цитата (\d+)")
 OFFSET_RE = re.compile(r"\[смещение (\d+) в блоке")
+# Имя блока в evidence: якорь обязан лежать в СВОЁМ блоке, иначе текст,
+# случайно совпавший в другом блоке по тому же смещению, даёт ложный зачёт.
+BLOCK_RE = re.compile(r"в блоке\s+([^\s(]+)")
 FOLD = {"‑": "-", "’": "'", "‘": "'", "“": '"', "”": '"'}
 
 
@@ -95,17 +99,20 @@ def check(markdown: Path, document: Path, source: Path | None, specs: list[str])
     for source_id in sorted({i for i in ids if ids.count(i) > 1}):
         errors.append(f"дубль source_id: {source_id}")
 
-    summary = [s for s in sources if not CHARNOCK_RE.match(s.get("source_id", ""))]
-    if len(summary) != 2:
-        errors.append(f"ожидались эпиграф и сводка стихов, получено записей: {len(summary)}")
+    # Записи вне схемы `src-NN-<труд>`: эпиграф (Писание) и сводка стихов.
+    summary = [s for s in sources if not ANCHOR_RE.match(s.get("source_id", ""))]
+    if not summary:
+        errors.append("в sources нет эпиграфа и сводки стихов: нужны записи вне схемы src-NN-<труд>")
     elif sources[-1].get("source_id") != "src-scripture-synodal":
         errors.append("сводка стихов должна быть последней в списке")
 
-    anchors: dict[int, tuple[str, int]] = {}
+    anchors: dict[int, tuple[str, int, str]] = {}
     for entry in sources:
         source_id = entry.get("source_id", "")
-        match = CHARNOCK_RE.match(source_id)
-        if not match:
+        match = ANCHOR_RE.match(source_id)
+        # Якорь цитаты — запись с EN-текстом; эпиграф и сводка стихов идут
+        # без него и потому в нумерацию блоков не входят.
+        if not match or not entry.get("evidence", "").startswith("EN:"):
             continue
         number = int(match.group(1))
         evidence = entry.get("evidence", "")
@@ -126,7 +133,8 @@ def check(markdown: Path, document: Path, source: Path | None, specs: list[str])
             errors.append(f"{source_id}: подпись «цитата {label_match.group(1)}» ≠ номер якоря {number}")
         if number in anchors:
             errors.append(f"{source_id}: номер якоря {number} уже использован")
-        anchors[number] = (en, int(offset_match.group(1)))
+        block_match = BLOCK_RE.search(evidence)
+        anchors[number] = (en, int(offset_match.group(1)), block_match.group(1) if block_match else "")
 
     for number in range(2, len(blocks) + 1):
         if number not in anchors:
@@ -138,10 +146,17 @@ def check(markdown: Path, document: Path, source: Path | None, specs: list[str])
     if source is not None:
         raw = normalize(source.read_text(encoding="utf-8"))
         ranges = parse_blocks(specs)
-        for number, (en, offset) in sorted(anchors.items()):
+        for number, (en, offset, block_name) in sorted(anchors.items()):
             # смещение якоря отсчитывается от начала блока источника
             found = False
-            for _name, (start, length) in ranges.items():
+            # Якорь обязан лежать в СВОЁМ блоке: по чужому блоку с тем же
+            # смещением текст может совпасть случайно. Поэтому блок, названный
+            # в evidence, должен быть передан в --block — иначе ошибка.
+            if block_name is not None and block_name not in ranges:
+                errors.append(f"якорь цитаты {number}: блок {block_name} не передан в --block")
+                continue
+            candidates = {block_name: ranges[block_name]} if block_name else ranges
+            for _name, (start, length) in candidates.items():
                 text = fold(raw[start : start + length])
                 if text[offset:].startswith(fold(en)[:40]):
                     found = True

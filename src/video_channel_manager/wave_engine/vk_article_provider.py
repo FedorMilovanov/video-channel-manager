@@ -11,6 +11,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
@@ -649,6 +650,7 @@ class VkPostponedArticlePhotoAdapter:
     ) -> None:
         if account_alias != VK_ARTICLE_ACCOUNT_ALIAS:
             raise ValueError("Legendary Poet article provider requires the exact local VK alias")
+        reject_quarantined_legacy_alias(account_alias)
         self.repository_root = repository_root.resolve()
         settings = get_settings()
         self.settings = settings

@@ -33,14 +33,14 @@ def test_raw_vk_token_does_not_claim_unverified_permissions() -> None:
 
 def test_vk_client_reads_and_validates_app_permission_mask(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret"))
+    store.save_token("synthetic-vk-metadata", VkAccessToken(access_token="secret"))
 
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"response": _FULL_MASK})
 
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
@@ -50,10 +50,10 @@ def test_vk_client_reads_and_validates_app_permission_mask(tmp_path: Path) -> No
 
 def test_vk_client_rejects_invalid_app_permission_mask(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret"))
+    store.save_token("synthetic-vk-metadata", VkAccessToken(access_token="secret"))
     client = VkApiClient(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(
             transport=httpx.MockTransport(lambda _request: httpx.Response(200, json={"response": True}))
         ),
@@ -67,7 +67,7 @@ def test_vk_client_rejects_invalid_app_permission_mask(tmp_path: Path) -> None:
 def test_wall_call_requires_verified_wall_scope_before_network(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-metadata",
         VkAccessToken(access_token="secret", scopes=["video"], permission_mask=16),
     )
     calls = 0
@@ -79,7 +79,7 @@ def test_wall_call_requires_verified_wall_scope_before_network(tmp_path: Path) -
 
     writer = VkVideoWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-metadata",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
@@ -106,19 +106,19 @@ def test_token_capabilities_syncs_equivalent_alias_metadata(
 ) -> None:
     store = VkTokenStore(tmp_path)
     stale = VkAccessToken(access_token="shared", scopes=["video"], permission_mask=16)
-    store.save_token("default", stale.model_copy(deep=True))
-    store.save_token("legendary-poet", stale.model_copy(deep=True))
+    store.save_token("safe-first", stale.model_copy(deep=True))
+    store.save_token("safe-second", stale.model_copy(deep=True))
     monkeypatch.setattr(vk_cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path, vk_api_version="5.199"))
     monkeypatch.setattr(vk_cli, "VkApiClient", _PermissionClient)
 
     result = runner.invoke(
         vk_app,
-        ["token-capabilities", "--account", "legendary-poet", "--sync-local"],
+        ["token-capabilities", "--account", "safe-second", "--sync-local"],
     )
 
     assert result.exit_code == 0, result.output
     assert "Provider writes: 0" in result.output
-    for alias in ("default", "legendary-poet"):
+    for alias in ("safe-first", "safe-second"):
         token = store.load_token(alias)
         assert token.permission_mask == _FULL_MASK
         assert token.scopes == ["video", "wall", "groups"]
@@ -151,10 +151,10 @@ def test_vk_login_persists_provider_verified_permission_metadata(
     monkeypatch.setattr(vk_cli, "_read_token_input", lambda _path: VkAccessToken.from_text("secret"))
     monkeypatch.setattr(vk_cli, "VkApiClient", _LoginClient)
 
-    result = runner.invoke(vk_app, ["login", "--account", "legendary-poet"])
+    result = runner.invoke(vk_app, ["login", "--account", "safe-new-user"])
 
     assert result.exit_code == 0, result.output
-    token = VkTokenStore(tmp_path).load_token("legendary-poet")
+    token = VkTokenStore(tmp_path).load_token("safe-new-user")
     assert token.user_id == 42
     assert token.permission_mask == _FULL_MASK
     assert token.scopes == ["video", "wall", "groups"]
@@ -226,7 +226,11 @@ def test_community_key_login_never_uses_quarantined_global_user_token(
     from pydantic import SecretStr
 
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken.from_text("quarantined-user-token"))
+    # Seed a synthetic retired credential as offline evidence, bypassing the
+    # production mutation API which now deliberately preserves this alias.
+    legacy_path = store.token_path("default")
+    legacy_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_path.write_text(VkAccessToken.from_text("quarantined-user-token").model_dump_json(), encoding="utf-8")
     monkeypatch.setattr(
         vk_cli,
         "get_settings",

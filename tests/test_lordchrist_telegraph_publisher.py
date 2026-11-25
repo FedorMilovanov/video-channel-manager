@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -86,23 +87,42 @@ class FakeTransport:
 def test_telegraph_queue_loads_charnock_cycle_and_separate_jude_manual_article() -> None:
     # Charnock's 15 releases retain their identities and chronology.
     # Jude 1:5 is a separately approved manual-only special, not a scheduled
-    # Charnock slot and not an automatic backfill.
+    # Charnock slot and not an automatic backfill. It now carries the operator's
+    # documented release date (Sunday 2026-11-15), which is deliberately off the
+    # lane's cron slots (`0 9 * * 2,5`): the schedule can never resolve it, so the
+    # date records intent while the release stays a manual dispatch.
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
-    assert len(items) == 16
-    assert [item.ordinal for item in items] == list(range(1, 17))
+    assert len(items) == 18
+    assert [item.ordinal for item in items] == list(range(1, 19))
     assert items[14].publication_id == "lordchrist-telegraph-charnock-history-02"
-    assert items[-1].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
+    assert items[-3].publication_id == "lordchrist-telegraph-jude-1-5-20261105"
+    assert items[-3].scheduled_on == date(2026, 11, 15)
+    assert items[-3].scheduled_on.weekday() not in {1, 4}
+    assert items[-3].is_canary is False
+    raw_items = json.loads((ROOT / DEFAULT_QUEUE_PATH).read_text(encoding="utf-8"))["items"]
+    jude_raw = next(item for item in raw_items if item["publication_id"] == "lordchrist-telegraph-jude-1-5-20261105")
+    assert jude_raw["slot_override_reason"].strip()
+    # The rich-v1 article «Рабство свободы» rides the same Telegraph lane as a
+    # separate series: its own reviewed bytes, its own cover, no VK wave.
+    assert items[-2].publication_id == "lordchrist-telegraph-rabstvo-svobody-20261111"
+    assert items[-1].publication_id == "lordchrist-telegraph-peasants-1525-20261115"
     assert items[-1].scheduled_on is None
+    assert items[-1].is_canary is False
+    assert items[-2].scheduled_on is not None
     assert items[-1].is_canary is False
     assert items[0].publication_id == "lordchrist-telegraph-charnock-01b"
     assert items[0].is_canary is True
     assert all(item.is_ready for item in items)
-    # Every edition is Telegraph-native: article and cover live in telegraph-v1,
-    # never borrowed from the rich-v1 lane.
+    # Every edition is Telegraph-native inside its own series directory, never
+    # borrowed from another series' folder.
     for item in items:
         assert item.article_path is not None
-        assert item.article_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
         assert item.cover_path is not None
+        if item.publication_id.endswith("-20261111"):
+            assert item.article_path.as_posix().startswith("content/telegram/lordchrist/rich-v1/rabstvo-svobody/")
+            assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/rich-v1/rabstvo-svobody/")
+            continue
+        assert item.article_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
         assert item.cover_path.as_posix().startswith("content/telegram/lordchrist/telegraph-v1/")
 
 
@@ -114,20 +134,65 @@ def test_charnock_replacement_map_never_invents_a_public_url_and_tracks_exact_re
     manifest = json.loads(path.read_text(encoding="utf-8"))
     queue = {entry.publication_id: entry for entry in load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)}
     assert len(manifest["targets"]) == 5
+    assert manifest["links_are_live"] is True
+    assert manifest["replacement_readback_on"] == "2026-11-17"
+    verified_new_pages = {
+        "lordchrist-telegraph-charnock-01b": (
+            "https://telegra.ph/Podsvechnik-sovesti-i-zhertva-Avelya-pochemu-odnogo-znaniya-o-"
+            "Boge-nedostatochno--ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-02": (
+            "https://telegra.ph/Vseobshchee-soglasie-kak-CHarnok-obosnovyval-znanie-o-Boge-u-"
+            "narodov--ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-03": (
+            "https://telegra.ph/Tri-vozrazheniya-ateista-predanie-zagovor-pravitelej-strah--ispravlennoe-izdanie-11-05"
+        ),
+        "lordchrist-telegraph-charnock-04": (
+            "https://telegra.ph/Mir-kak-zerkalo-kak-tvorenie-svidetelstvuet-o-Tvorce--ispravlennoe-izdanie-11-05"
+        ),
+    }
     for entry in manifest["targets"]:
         publication_id = entry["publication_id"]
         old_url = entry["previous_telegraph_url"]
         assert old_url.startswith("https://telegra.ph/")
         assert entry["previous_public_page_still_uncorrected"] is True
-        assert entry["replacement_telegraph_url"] is None
-        assert entry["replacement_telegram_message_url"] is None
         assert entry["provider_writes_authorized"] is False
+        if publication_id == "lordchrist-telegraph-charnock-history-01":
+            assert entry["provider_edit_status"] == "verified_in_place"
+            assert entry["replacement_telegraph_url"] == (
+                "https://telegra.ph/Um-kotoryj-ne-toropilsya-Stiven-CHarnok-i-glubina-mysli-"
+                "v-ehpohu-bystryh-otvetov--ispravlennoe-izdanie-11-05"
+            )
+            assert entry["replacement_telegram_message_url"] == entry["previous_telegram_message_url"]
+            assert entry["telegram_message_revision_required"] is False
+            assert entry["inplace_revision_run_id"] == "43729686598"
+            assert entry["editorial_revision_status"] == "verified_in_place"
+            assert entry["editorial_polish_run_id"] == "43739913629"
+            assert len(entry["editorial_polish_state_commit_sha"]) == 40
+            assert len(entry["inplace_revision_state_commit_sha"]) == 40
+        else:
+            assert entry["provider_edit_status"] == "verified_new_page_and_original_message_updated"
+            assert entry["replacement_telegraph_url"] == verified_new_pages[publication_id]
+            assert entry["replacement_telegram_message_url"] == entry["previous_telegram_message_url"]
+            assert entry["telegram_message_revision_required"] is False
+            assert entry["replacement_state"] == "2026-11-05_verified_correction_live"
+            assert entry["nov05_correction_run_id"].isdigit()
+            assert entry["published_correction_article_sha256"].startswith("sha256:")
         item = queue[publication_id]
         assert item.article_path is not None
         assert entry["corrected_canonical_document_path"] == item.article_path.as_posix()
         content = (ROOT / item.article_path).read_bytes()
         blob = hashlib.sha1(f"blob {len(content)}\0".encode("ascii") + content).hexdigest()
         assert entry["corrected_document_git_blob_sha"] == blob
+        if publication_id == "lordchrist-telegraph-charnock-03":
+            # The previous reviewed edition remains historical evidence, not a
+            # claim that the new article bytes are already live on Telegra.ph.
+            assert entry["prior_reviewed_document_git_blob_sha"] == "cac01a52dfce3a33062be0f1c1a47eb093cea21a"
+            assert entry["provider_edit_status"] == "verified_new_page_and_original_message_updated"
+            assert entry["pending_editorial_change"].startswith("2026-11-17:")
+            assert "НЕ опубликована" in entry["notes"]
+            assert entry["provider_writes_authorized"] is False
 
 
 def test_all_ready_items_build_valid_telegraph_and_channel_post_payloads() -> None:
@@ -354,14 +419,14 @@ def test_due_item_resolves_tue_fri_schedule_and_refuses_duplicates() -> None:
     assert out["due"] == "lordchrist-telegraph-charnock-03"
 
 
-def test_telegraph_workflow_has_midday_tue_fri_cron_without_timezone() -> None:
+def test_telegraph_workflow_is_manual_only_after_charnock_reissue_cutover() -> None:
     workflow = (ROOT / ".github/workflows/lordchrist-telegraph-poster.yml").read_text(encoding="utf-8")
-    assert '- cron: "0 9 * * 2,5"' in workflow  # 09:00 UTC = 12:00 Europe/Moscow
-    schedule_block = workflow.split("permissions:", 1)[0]
-    functional = [ln for ln in schedule_block.splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
-    assert not any("timezone:" in ln for ln in functional)
-    assert "lordchrist_telegraph_publisher due" in workflow
-    assert "steps.resolve.outputs.publication_id" in workflow
+    triggers = workflow.split("permissions:", 1)[0]
+    assert "workflow_dispatch:" in triggers
+    assert "\n  schedule:\n" not in triggers
+    assert '- cron: "0 9 * * 2,5"' not in triggers
+    assert "LORDCHRIST_TELEGRAPH_APPROVED_PUBLICATION_ID" in workflow
+    assert "Manual public publication requires exact" in workflow
 
 
 def test_layout_rules_merge_quotes_tag_chapter_and_space_headings() -> None:
@@ -444,6 +509,26 @@ def test_layout_rules_merge_back_to_back_quotes_with_trailing_ellipsis() -> None
     assert credit_texts == ["— Стивен Чарнок, «О бытии Бога» (беседа I)"], "one credit, chapter tag appended"
 
 
+def test_charnock_history_explicit_discourse_credit_is_not_mislabeled_as_discourse_one() -> None:
+    for discourse in ("II", "V", "VIII", "IX"):
+        credit = f"— Стивен Чарнок, «Беседы о бытии и свойствах Бога», беседа {discourse}"
+        nodes = [
+            {"tag": "blockquote", "children": ["Отрывок исторической справки."]},
+            {"tag": "p", "children": [{"tag": "em", "children": [credit]}]},
+        ]
+        normalized = _apply_telegraph_layout_rules(nodes)
+        assert normalized[1]["children"][0]["children"][0] == credit
+
+    # The ordinary first-discourse cycle still receives its established
+    # reader-facing label when the explicit discourse number is absent.
+    unnumbered = [
+        {"tag": "blockquote", "children": ["Бог есть."]},
+        {"tag": "p", "children": [{"tag": "em", "children": ["— Стивен Чарнок, «О бытии Бога»"]}]},
+    ]
+    normalized = _apply_telegraph_layout_rules(unnumbered)
+    assert normalized[1]["children"][0]["children"][0] == "— Стивен Чарнок, «О бытии Бога» (беседа I)"
+
+
 def test_content_too_big_splits_cleanly_at_heading_with_zero_text_loss() -> None:
     items = load_telegraph_queue(ROOT / DEFAULT_QUEUE_PATH, ROOT)
     payload = build_telegraph_payload(ROOT, items[1], media_base_url=MEDIA_BASE)
@@ -469,6 +554,38 @@ def test_preview_html_page_embeds_both_tabs() -> None:
     assert "⚡ ПОСМОТРЕТЬ" in page
     assert "tg-expandable collapsed" in page
     assert payload.title in page
+
+
+def test_jude_preview_is_available_during_hold_without_false_charnock_series(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from video_channel_manager.lordchrist_telegraph_staged import JUDE_PUBLICATION_ID
+
+    monkeypatch.setattr(publisher, "HttpxLiveTransport", lambda: pytest.fail("Preview must not contact providers"))
+    output = tmp_path / "jude-preview.html"
+    assert (
+        publisher.main(
+            [
+                "preview",
+                "--repo-root",
+                str(ROOT),
+                "--publication-id",
+                JUDE_PUBLICATION_ID,
+                "--media-base-url",
+                MEDIA_BASE,
+                "--html-out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["publication_id"] == JUDE_PUBLICATION_ID
+    assert report["channel_post_visible_chars"] == 1263
+    html = output.read_text(encoding="utf-8")
+    assert report["title"] in html
+    assert "Серия «Стивен Чарнок. О бытии Бога»" not in html
+    assert '<div class="tph-byline"><a href="https://t.me/lordchrist">Господь Бог</a></div>' in html
 
 
 def test_01b_has_zero_overlapping_english_spans_with_article_01() -> None:

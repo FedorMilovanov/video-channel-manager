@@ -21,17 +21,55 @@ The production boundary is deliberately narrow:
 
 The reviewed Instagram sample intentionally sends the complete local file body with `Authorization: OAuth ...`, `offset: 0`, and `file_size`. This implementation keeps that shape: the body is materialized as bytes, HTTPX derives `Content-Length`, and the application does **not** add a manual `Content-Length`.
 
-Do not add a `Content-Type` merely to imitate an incidental client default. The current Meta sample does not document a required resumable upload content type, while different public examples use different values. Until Meta documents a requirement or a separately authorized controlled test proves otherwise, this repository leaves request `Content-Type` absent. Changing it is a protocol change, not a harmless retry.
+The current reviewed implementation deliberately sends `Content-Type: application/octet-stream` on the binary POST to `rupload.facebook.com`, alongside `Authorization: OAuth ...`, `offset: 0`, and `file_size`. This is the actual request contract in `src/video_channel_manager/instagram/local_resumable.py::_dispatch_binary_upload`, asserted by `tests/test_instagram_local_resumable.py` together with the HTTPX-derived `Content-Length` and exact binary body. The header was introduced as an incident-specific transport correction; it is **not** a claim that Meta publicly documents this header as mandatory, nor proof that the real upload succeeds. The 11 November provider failure (`ProcessingFailedError`, nested `1363008 FILE_NOT_FOUND`, zero bytes accepted) remains terminal and must never be retried with the same publication key. Do not remove or change the current header as an incidental cleanup: any future protocol change requires separate review, an immutable test update and an explicitly authorized live canary.
+
+A successful HTTP 200 binary response is accepted only when Meta explicitly returns JSON `{"success": true}`. Missing, non-boolean, or malformed success acknowledgement is treated as **ambiguous** and requires read-only reconciliation; it must not advance the durable child upload ledger. The **public-HTTPS `video_url` route must instead poll only `GET /{container_id}?fields=status_code,status`**. A real 15 November 2026 Meta Graph v26.0 request returned **HTTP 400, code 100 / subcode 2207065** when the generic status request included `video_status`: that nested field is not valid for a `video_url` media container. The local **resumable `rupload`** client retains a separate container-status override with `video_status` to capture nested `1363008`. For public HTTPS, `FINISHED` means processing complete but **not published**; `IN_PROGRESS` remains a bounded pending state, and `ERROR`/`EXPIRED` must block publishing. Neither transport error should be silently retried.
 
 On upload failure, diagnostics record only a non-secret wire fingerprint: method, host, actual body length, HTTP `Content-Length`, `file_size`, `offset`, and request `Content-Type` presence/value. The one-time rupload path, authorization value, and access token are never recorded. Available Meta correlation headers include `x-fb-request-id`, `x-fb-trace-id`, and `Proxy-Status`.
+
+## Optional local Meta HTTP proxy (Windows / v2rayN)
+
+The published Python client normally inherits HTTPX's process network route.
+The Windows *browser/system* proxy is not necessarily inherited by the
+PowerShell-scheduled Python process. On the owner's connected desktop, the
+provider-inert 23 November 2026 network test made **all 6/6 direct root GETs**
+time out across `graph.facebook.com` and `rupload.facebook.com`;
+**all 6/6 routed GETs received actual HTTP replies** through the locally
+installed v2rayN proxy at `http://127.0.0.1:10808`. One routed GET returned
+HTTP 429; connectivity is not evidence that any future Meta upload will succeed.
+
+For an explicitly reviewed local environment, set
+`VCM_INSTAGRAM_META_PROXY_URL=http://127.0.0.1:10808` in the *sole* writer's
+process environment. The application accepts an **HTTP proxy on 127.0.0.1
+only**, with a numeric port, no credentials, URL path, query or fragment.
+The shared Graph/rupload HTTPX client and media verifier use that exact route,
+with ambient proxy overrides disabled; absent this setting, existing
+network behavior remains unchanged.
+
+A local proxy/Internet outage is a stop condition, not permission to switch
+accounts, silently retry a provider POST or change a publication key. Existing
+`instagram production preflight` remains GET-only and must confirm the exact
+account and publishing quota before an approved `-Execute`. Scheduled
+Windows jobs can run only when the machine, authenticated user session and
+v2rayN tunnel are available at the authorized due time; no cloud fallback is
+implied. Never persist access tokens in command lines, logs or proxy URLs.
+
+On 23 November the owner's already-installed single-writer PowerShell
+launcher was independently hardened with a fail-closed loopback-listener
+precheck and temporary `HTTPS_PROXY` / `HTTP_PROXY` environment settings
+for its existing installed runtime. Its updated exact-byte SHA and original
+backup are in the owner's local operator evidence; this *does not* constitute
+a GitHub merge or a live provider-upload acceptance.
 
 ## Public-HTTPS fallback
 
 If `rupload.facebook.com` continues to fail at the provider/OIL boundary, the preferred transport fallback is the already-reviewed public-URL publisher documented in `instagram-production-publishing.md`. This is a different transport and therefore requires a new reviewed publication key and fresh operation-specific authority.
 
-The fallback URL must be a stable direct HTTPS object URL on an explicitly allowed host. Before the Graph container POST, the production publisher fetches that object without redirects and proves exact content type, byte size, and SHA-256 against the frozen manifest. Use the same reviewed CLEAN media bytes; do not silently re-encode or substitute another file merely to change transport.
+The fallback must be a stable HTTPS object URL on an explicitly allowed host. Before Graph container creation, the production publisher follows at most three redirects, requiring HTTPS and an exactly allowlisted hostname at every hop, then proves the exact content type, byte size and SHA-256. GitHub Release MP4 delivery may use `github.com` -> `release-assets.githubusercontent.com` with `application/octet-stream` only at the latter host; never bypass byte integrity. Use the same reviewed CLEAN bytes; do not silently re-encode or substitute another file merely to change transport.
 
-Provisioning a public object URL is an external deployment step and is not implied by this runbook. A share page, redirector, expiring browser-only link, or URL whose bytes cannot be re-fetched and hashed exactly is not an acceptable `video_url`.
+Provisioning a public object URL is an external deployment step and is not implied by this runbook. An HTML share page, unallowlisted redirector, expiring browser-only link, or URL whose bytes cannot be re-fetched and hashed exactly is not an acceptable `video_url`.
+
+**Controlled 15 November transport A/B (owned, unpublished synthetic test):** The same 95.067-second MP4 (SHA-256 `b39dd1d9e29c7ee201720d3959c6f466ec726e00e9a50fe672d235e4575d9ad4`, 1,725,609 bytes, AAC 48 kHz) produced `ProcessingFailedError`, nested Meta `1363008`, zero bytes and approximately **33,759 ms** for one direct resumable `rupload` request; the same bytes passed to Meta through a temporary owned GitHub Release HTTPS source produced a private container with **`status_code=FINISHED`**. The corresponding 44.1-kHz 95-second variant also failed via `rupload` at approximately **33,903 ms**. These are **direct provider observations**, not the official specification of a 34-second timeout, and **no `media_publish` was sent**. The temporary QA host and pre-publication container are not authorization to publicly host or publish the twelve frozen third-party-derived videos. For real releases use a separately reviewed and authorized stable HTTPS object with the repository's complete SHA/size/MIME/allowlisted-redirect gate and a separately approved publication slot. Successful transport does not establish third-party source or translation rights.
 
 ## Provider-inert local validation
 
@@ -161,6 +199,7 @@ Do not commit the real token or the local `.env`.
 - Ambiguous container creation: no automatic second container is created. Resolve exact provider evidence first.
 - Container response received but process crashes before parent-state update: rerunning `publish-local` may recover the exact persisted container ID/upload URI without creating another container.
 - Explicit non-retriable HTTP 4xx upload rejection: if Meta returns `debug_info.retriable=false`, the child is terminalized as `provider_failed` immediately and the parent becomes `terminal_failure`; the same publication key is never replayed.
+- On that explicit terminal upload 4xx, the publisher makes **at most one read-only GET** of the same returned container. If the provider reports a nested phase `error`, a bounded, credential-redacted diagnostic (including code, bytes and useful text) is added to both durable SQLite error messages. If that GET is unavailable, or only reports outer `IN_PROGRESS` without phase failure, the original HTTP 4xx still terminates the attempt. The GET never triggers a second upload, a new container or `media_publish`.
 - Ambiguous binary upload (`upload_requested` / `upload_unknown`): transport failures, 5xx responses, or 4xx responses without an explicit non-retriable provider decision remain no-replay ambiguous. Run read-only reconciliation against the known container first.
 - **Top-level `IN_PROGRESS` is not proof of successful upload.** Read `video_status.uploading_phase` and `video_status.processing_phase`. A phase-level `error` is terminal and blocks publish/replay even when top-level status remains `IN_PROGRESS`.
 - Phase diagnostics are preserved in the durable error message, including available `bytes_transferred`, `source_file_size`, provider error code and provider message.
@@ -170,6 +209,24 @@ Do not commit the real token or the local `.env`.
 - A completed publication is idempotent under the same `publication_key` and immutable content hash.
 
 A known failure shape observed during the first canary investigation was Meta error `1363008` / `OIL Error[FILE_NOT_FOUND]` with `uploading_phase.status=error`, `bytes_transferred=0` and `source_file_size=0`. That state is a provider-visible terminal upload failure, not a reason to keep polling forever and not permission to replay the same container.
+
+**Lord God 11–14 November 2026 production evidence:** four consecutive `rupload` HTTP 400 responses led to one terminal key each. The *actual official container GETs* all exposed `uploading_phase.errors[].code=1363008`, `OIL Error[FILE_NOT_FOUND: 6]: File not found`, and zero transferred bytes; the three older containers became `EXPIRED`, while the 14 November container still showed outer `IN_PROGRESS` despite nested `error`. The message is a **Meta-side ingest/processing symptom**, not proof that an existing local MP4 is missing. File-size, faststart, edit-list and H.264/AAC checks were performed separately. All 12 frozen videos are longer than 90 seconds and have AAC 44.1 kHz, but **neither is by itself outside the documented Instagram Reels media limits**; do not bulk-transcode without a controlled result. The measured pre-instrumentation SQLite intervals 48.5, 51.9, 134.8, and 45.5 seconds are application-ledger windows, **not exact HTTP request durations**; PR #944 adds dedicated `upload_dispatch_elapsed_ms` on future provider failures. Publish success requires exact `media_product_type=REELS`, real media ID, permalink and a matching durable ledger entry.
+
+**Rights and fallback gate:** The public-HTTPS `video_url` route may process a lengthy MP4 asynchronously, but *support in Meta's API does not grant distribution rights*. Never upload YouTube-derived or translated material to a new publicly accessible CDN without source/translation reupload permission. The separately prepared original article pilot also requires actual human listening/editorial approval before a public release. An OIL failure or a new publication key is not authorization to bypass either gate.
+
+### MILOVI CAKE: 18 November 2026 independent provider readback
+
+The owner-controlled `milovi-cake` production account was checked with **GET-only** Graph API v26.0 reads against the exact reviewed Instagram ID; no publish, new container, upload, retry, token disclosure, scheduling change or database mutation occurred. The original SQLite ledger had nine attempted dates (6, 10–17 November). Provider results, not merely local status strings, showed:
+
+- **6 and 11 November:** `status_code=PUBLISHED`, completed binary-upload phases. Both exact media IDs and normalized captions were independently matched in the account's returned Reels feed, with real permalinks.
+- **10 and 14 November:** `status_code=EXPIRED`. The 14 November human-readable `status` text misleadingly said *Finished*; **always trust the machine `status_code`**, not free-form status prose. Neither is publishable nor confirmed posted. Importantly, 14 November's persisted `container_created` record belongs to a **distinct exceptional `public-https-v1` publication key**; the frozen daily `resumable_local` 14 November key remains `not_started`. Do not coalesce these different transport keys or infer that the frozen local upload ran.
+- **12, 13, 15 and 16 November:** `EXPIRED` with nested `uploading_phase=error`, provider error `1363008`, `bytes_transferred=0` and `source_file_size=0`.
+- **17 November:** outer `IN_PROGRESS` but nested uploading and processing phases were already `error` with `1363008` and zero transferred bytes. Do not treat the outer status as permission to poll indefinitely or replay.
+- The reviewed feed response included 100 account items and reached back to June 2023. The newest item was from **11 November 2026**. Within the 6–17 November window, only the two known successful captions/IDs matched the nine proposed owner records. This is a scoped Graph readback, not a claim about manually edited or independently uploaded media outside the known records.
+
+An additional **GET-only** identity and quota diagnostic on the same account confirmed the expected Meta app ID and `quota_usage=0` at observation time. An unauthenticated GET to the **root** of `https://rupload.facebook.com/` returned HTTP `429`; this **is not the authenticated container-upload endpoint** and must not be treated as proof that the `1363008` binary failures were caused by a rate limit or solved by switching IPs or credentials.
+
+The separately verified 15 November owned **synthetic** transport A/B above showed public-HTTPS `video_url` can finish Meta processing while `rupload` failed on the same benign source. It does **not** automatically authorize placing the actual third-party-derived MILOVI media on a public host. A recovery must use an individually approved source, new properly reviewed immutable key, registered HTTPS-host allowlist, identical SHA-256 and byte count, rights gate, and independent Meta permalink/live readback. Do not silently bulk-switch or automatically re-key the existing daily Windows publisher. Full operational evidence and outstanding actions are tracked in [Issue #790](https://github.com/FedorMilovanov/video-channel-manager/issues/790).
 
 ## Operator checks
 

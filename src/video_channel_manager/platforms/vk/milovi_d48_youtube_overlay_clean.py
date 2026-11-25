@@ -251,18 +251,7 @@ def _capture_one(
                 wait_ms=wait_ms,
             )
         except Exception as exc:
-            capture = sequence.CaptureResult(
-                status="capture_error",
-                canonical_url=url,
-                final_url=sequence._safe_url(str(page.url)),
-                duration_s=None,
-                video_width=None,
-                video_height=None,
-                frames=(),
-                page_title="",
-                block_hints=(),
-                error=f"{type(exc).__name__}: {exc}"[:1000],
-            )
+            capture = stable_sequence._capture_error(canonical_url=url, page=page, exc=exc)
     finally:
         setattr(sequence, "_find_video_handle", original_find)
         setattr(sequence, "_seek_video", original_seek)
@@ -316,10 +305,7 @@ def _capture_with_clean_transports(
                     selected = transport
                     return capture, attempts, selected, local_dom_style_mutations
             finally:
-                try:
-                    page.close()
-                except Exception:
-                    pass
+                stable_sequence._close_capture_page(page)
 
     if output_dir.exists():
         shutil.rmtree(output_dir)

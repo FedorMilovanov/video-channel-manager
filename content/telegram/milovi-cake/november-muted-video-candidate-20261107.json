@@ -1,0 +1,44 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-next-publication-candidate",
+  "schema_version": 2,
+  "project_key": "milovi-cake",
+  "owning_issue": 809,
+  "status": "provider_inert_exact_candidate",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "publication_id": "milovi-feed-20261107-002",
+  "scheduled_at": "2026-11-07T11:00:00+03:00",
+  "timezone": "Europe/Moscow",
+  "operation": "sendVideo",
+  "media_id": "v12-muted",
+  "variant_media_id": "v12-muted",
+  "audio_removed": true,
+  "caption": "\u041c\u0410\u041b\u0418\u041d\u041e\u0412\u042b\u0419 \u0410\u041a\u0426\u0415\u041d\u0422 \u0414\u041b\u042f \u0421\u0412\u0410\u0414\u0415\u0411\u041d\u041e\u0413\u041e \u0422\u041e\u0420\u0422\u0410\n\n\u0421\u0432\u0435\u0442\u043b\u044b\u0439 \u0442\u043e\u0440\u0442, \u0441\u0432\u0435\u0436\u0430\u044f \u043c\u0430\u043b\u0438\u043d\u0430 \u0438 \u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u043e\u0435 \u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u0435. \u041d\u0435\u0431\u043e\u043b\u044c\u0448\u0438\u0435 \u0434\u0435\u0442\u0430\u043b\u0438 \u0434\u0435\u043b\u0430\u044e\u0442 \u043a\u043e\u043c\u043f\u043e\u0437\u0438\u0446\u0438\u044e \u0432\u044b\u0440\u0430\u0437\u0438\u0442\u0435\u043b\u044c\u043d\u0435\u0435.\n\n\u0421\u0432\u0430\u0434\u0435\u0431\u043d\u044b\u0435 \u0442\u043e\u0440\u0442\u044b MILOVI CAKE: https://milovicake.ru/svadebnye-torty/\n\n#MiloviCake #\u0421\u0432\u0430\u0434\u0435\u0431\u043d\u044b\u0435\u0422\u043e\u0440\u0442\u044b #\u0422\u043e\u0440\u0442\u044b\u0421\u041f\u0431",
+  "caption_sha256": "sha256:e424cc4a6f1a8107cba338104fbddd13db1b76d11ef439abd2b56af91648ab9b",
+  "source": {
+    "repository": "FedorMilovanov/Milovi_Cake",
+    "gallery": "js/gallery/data.js",
+    "gallery_blob_sha1": "63abde1e044b767ef556d868401a57475a1b28dd",
+    "site_original": "img/gallery/videos/video-12-wedding-heart.webm",
+    "source_sha256": "sha256:ae0b07734b86433ede54494096de05f4794bc5801d2a3fffe7ea62e4ced19cb3",
+    "source_duration_seconds": 10.008
+  },
+  "accepted_video": {
+    "artifact_ref": "agent/milovi-video-muted-v12-3b680fe94b50",
+    "artifact_commit": "686223b41c01ce365853f2e2bf22c20240a1df01",
+    "artifact_path": "artifacts/milovi-telegram/video/milovi-v12-muted.mp4",
+    "artifact_git_blob_sha1": "832d7632cac63a2302f045b8bec0fc1b41344328",
+    "artifact_sha256": "sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7",
+    "artifact_byte_size": 2195289,
+    "provenance_sha256": "sha256:9657c47381b923394cee72d7dd832174f69de8293e648b0ae68876a58f8309be"
+  },
+  "editorial_guards": {
+    "factual_caption_review_required": true,
+    "source_visual_rights_verified": false,
+    "audio_removed_and_absent": true,
+    "existing_public_native_posts_differ_in_duration": true,
+    "human_release_approval_required": true
+  },
+  "dispatched_to_provider": false
+}

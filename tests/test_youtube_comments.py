@@ -14,6 +14,7 @@ from video_channel_manager.platforms.youtube.comments import (
     YouTubeCommentWriter,
     YouTubeCommentsDisabledError,
     comments_equivalent,
+    validate_comment_text,
 )
 from video_channel_manager.platforms.http import RetryPolicy
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
@@ -101,6 +102,94 @@ def _thread(
             ),
         },
     }
+
+
+@pytest.mark.parametrize(
+    "damaged",
+    [
+        "?????? ?????: https://www.youtube.com/watch?v=jys4x8T_sYg",
+        "broken\ufffdtext",
+    ],
+)
+def test_validate_comment_text_rejects_damaged_unicode(damaged: str) -> None:
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        validate_comment_text(damaged)
+
+
+def test_validate_comment_text_keeps_normal_question_marks_and_cyrillic() -> None:
+    label = "".join(chr(c) for c in (0x41F, 0x43E, 0x43B, 0x43D, 0x43E, 0x435))
+    assert validate_comment_text(label + "???") == label + "???"
+
+
+@pytest.mark.parametrize(
+    ("invalid", "valid"),
+    [
+        (
+            "МакАртур: _греческий текст сохранился_, но перевод отличается.",
+            "МакАртур: _греческий текст сохранился,_ но перевод отличается.",
+        ),
+        (
+            "Он старается _не оправдывать себя_, однако защищает сотрудников.",
+            "Он старается _не оправдывать себя,_ однако защищает сотрудников.",
+        ),
+        ("*Telegram*: https://t.me/lordchrist", "*Telegram:* https://t.me/lordchrist"),
+        ("_Источник_: https://www.gty.org/sermons/70-26", "_Источник:_ https://www.gty.org/sermons/70-26"),
+        ("*Фраза*.", "*Фраза.*"),
+    ],
+)
+def test_validate_comment_text_rejects_punctuation_after_emphasis(invalid: str, valid: str) -> None:
+    with pytest.raises(ValueError, match="native emphasis punctuation is invalid"):
+        validate_comment_text(invalid)
+    assert validate_comment_text(valid) == valid
+
+
+def test_validate_comment_text_preserves_external_dash_and_urls() -> None:
+    text = "📌 *Полная встреча:* https://www.youtube.com/watch?v=a_123\n_Суть фразы,_ а не абзаца.\n*Поэт* — название."
+    assert validate_comment_text(text) == text
+
+
+def test_comment_create_and_update_fail_before_http_on_encoding_damage(tmp_path: Path) -> None:
+    def no_http(request: httpx.Request) -> httpx.Response:
+        pytest.fail("Damaged Unicode must not reach the YouTube HTTP client.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(no_http))
+    damaged = "?????? ?????: https://www.youtube.com/watch?v=jys4x8T_sYg"
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text=damaged,
+        )
+    with pytest.raises(ValueError, match="Unicode encoding damage"):
+        writer.update_top_level_comment(
+            comment_id="comment-1",
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_text="previous text",
+            new_text=damaged,
+        )
+
+
+def test_comment_create_rejects_punctuation_scope_before_http(tmp_path: Path) -> None:
+    def no_http(request: httpx.Request) -> httpx.Response:
+        pytest.fail("Invalid comment formatting must be rejected before the HTTP call.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(no_http))
+    broken = "МакАртур различил: _греческий текст сохранился_, но перевод может отличаться."
+    with pytest.raises(ValueError, match="native emphasis punctuation"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text=broken,
+        )
+    with pytest.raises(ValueError, match="native emphasis punctuation"):
+        writer.update_top_level_comment(
+            comment_id="comment-1",
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_text="previous text",
+            new_text=broken,
+        )
 
 
 def test_list_comments_paginates_reads_moderation_views_and_deduplicates(tmp_path: Path) -> None:
@@ -266,6 +355,68 @@ def test_create_refuses_a_different_existing_channel_comment(tmp_path: Path) -> 
     assert methods == ["GET", "GET", "GET", "GET"]
 
 
+def test_add_independent_comment_preserves_prior_comments_and_is_idempotent(tmp_path: Path) -> None:
+    existing = [_thread("comment-1", "First historical subject")]
+    posts = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads" and request.method == "GET":
+            return httpx.Response(
+                200, json={"items": existing if request.url.params["moderationStatus"] == "published" else []}
+            )
+        if request.url.path == "/commentThreads" and request.method == "POST":
+            posts.append(request)
+            text = json.loads(request.content)["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
+            created = _thread("comment-2", text)
+            existing.append(created)
+            return httpx.Response(200, json=created)
+        if request.url.path == "/comments":
+            return httpx.Response(200, json={"items": [_comment("comment-2", "Second historical subject")]})
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    reviewed = {item.comment_id: item.text_sha256 for item in writer.list_top_level_comments("video-1")}
+    for _ in range(2):
+        result = writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Second historical subject",
+            expected_owned_comments=reviewed,
+        )
+        assert result.comment_id == "comment-2"
+    assert len(posts) == 1
+    assert len(existing) == 2
+
+
+@pytest.mark.parametrize("reviewed", [{}, {"comment-1": "sha256:" + "0" * 64}, {"other-id": "sha256:" + "1" * 64}])
+def test_add_rejects_stale_reviewed_owner_state_before_post(tmp_path: Path, reviewed: dict[str, str]) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads":
+            return httpx.Response(
+                200,
+                json={
+                    "items": [_thread("comment-1", "Older channel comment")]
+                    if request.url.params["moderationStatus"] == "published"
+                    else []
+                },
+            )
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentConflictError, match="Reviewed owner comment state changed"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="New approved comment",
+            expected_owned_comments=reviewed,
+        )
+
+
 def test_update_requires_exact_reviewed_before_text(tmp_path: Path) -> None:
     def handle(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/comments":
@@ -362,3 +513,45 @@ def test_comment_mutation_timeout_is_attempted_once(tmp_path: Path) -> None:
 
     assert "upload.example" not in str(captured.value)
     assert post_calls == 1
+
+
+def test_terminal_quota_after_accepted_comment_does_not_fallback_or_replay(tmp_path: Path) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        calls.append((request.method, request.url.path))
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads" and request.method == "GET":
+            return httpx.Response(200, json={"items": []})
+        if request.url.path == "/commentThreads" and request.method == "POST":
+            return httpx.Response(200, json=_thread("comment-1", "Approved"))
+        if request.url.path == "/comments":
+            return httpx.Response(403, json={"error": {"message": "Rejected", "errors": [{"reason": "quotaExceeded"}]}})
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle), verify_delays_seconds=(0.0, 0.0))
+    with pytest.raises(YouTubeCommentError, match="Comment comment-1 write response accepted"):
+        writer.create_top_level_comment(video_id="video-1", expected_channel_id="channel-1", text="Approved")
+    assert calls.count(("POST", "/commentThreads")) == 1
+    assert calls[-2:] == [("POST", "/commentThreads"), ("GET", "/comments")]
+
+
+def test_quota_in_moderation_preflight_is_not_treated_as_empty_inventory(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        calls.append(request.method)
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        assert request.method == "GET"
+        if request.url.params["moderationStatus"] == "published":
+            return httpx.Response(200, json={"items": []})
+        return httpx.Response(
+            403, json={"error": {"message": "Rejected", "errors": [{"reason": "dailyLimitExceeded"}]}}
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentError, match="dailyLimitExceeded"):
+        writer.create_top_level_comment(video_id="video-1", expected_channel_id="channel-1", text="Approved")
+    assert calls == ["GET", "GET", "GET"]

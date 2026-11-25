@@ -26,6 +26,20 @@ _UNRESOLVED_METADATA_TOKEN = re.compile(
 )
 
 
+# Internal approval/rights status belongs to review evidence, not a public
+# YouTube title, description, or tag. This is a copy-hygiene guard only:
+# successful validation never proves that copyright permission exists.
+_PUBLICATION_HOLD_RE = re.compile(
+    r"(?:REVIEW_ONLY_NO_UPLOAD|NOT_FOR_PUBLICATION|PUBLICATION_BLOCKED|RIGHTS_UNVERIFIED)",
+    flags=re.IGNORECASE,
+)
+_RU_PERMISSION_LABEL = "письменное разрешение"
+_RU_PERMISSION_UNCONFIRMED = (
+    "не подтверждено",
+    "пока не получено",
+)
+
+
 class UploadPlanError(RuntimeError):
     pass
 
@@ -38,6 +52,11 @@ def require_resolved_metadata(*, title: str, description: str, tags: list[str]) 
         match = _UNRESOLVED_METADATA_TOKEN.search(value)
         if match:
             raise UploadPlanError(f"Unresolved metadata placeholder in {field_name}: {match.group(0)}")
+        if _PUBLICATION_HOLD_RE.search(value):
+            raise UploadPlanError(f"Publication hold marker in public metadata {field_name}.")
+        normalized = " ".join(value.casefold().split())
+        if _RU_PERMISSION_LABEL in normalized and any(phrase in normalized for phrase in _RU_PERMISSION_UNCONFIRMED):
+            raise UploadPlanError(f"Publication hold marker in public metadata {field_name}.")
 
 
 def canonical_sha256(payload: object) -> str:
@@ -102,6 +121,13 @@ def validate_spec(spec: dict[str, Any]) -> None:
     if not isinstance(tags, list) or not all(isinstance(item, str) and item.strip() for item in tags):
         raise UploadPlanError("Spec tags must contain non-empty strings.")
     require_resolved_metadata(title=spec["title"], description=spec["description"], tags=tags)
+    if not isinstance(spec.get("audio_review_required", False), bool):
+        raise UploadPlanError("Spec audio_review_required must be boolean.")
+    # Absent disclosure is not evidence of AI content; a default True has
+    # falsely described authentic recordings in prepared uploader intents.
+    # Force an explicit, reviewed decision for both genuine and AI media.
+    if type(spec.get("contains_synthetic_media")) is not bool:
+        raise UploadPlanError("Spec contains_synthetic_media must be an explicit boolean (true or false).")
 
 
 def intent_digest(intent: dict[str, Any]) -> str:
@@ -161,12 +187,15 @@ def build_intent(
             "embeddable": bool(spec.get("embeddable", True)),
             "license": str(spec.get("license", "youtube")),
             "selfDeclaredMadeForKids": bool(spec.get("self_declared_made_for_kids", False)),
-            "containsSyntheticMedia": bool(spec.get("contains_synthetic_media", True)),
+            "containsSyntheticMedia": spec["contains_synthetic_media"],
         },
         "notify_subscribers": False,
         "provider_write_authorized": False,
         "provider_effect": "not_dispatched",
     }
+    # Set only on neural-dubbed/spoken-audio packages; old specs keep identical hashes.
+    if spec.get("audio_review_required") is True:
+        intent["audio_review_required"] = True
     intent["intent_sha256"] = intent_digest(intent)
     return intent
 
@@ -185,6 +214,11 @@ def validate_intent(intent: dict[str, Any]) -> None:
     if not isinstance(tags, list) or not all(isinstance(tag, str) and tag.strip() for tag in tags):
         raise UploadPlanError("Upload intent tags must contain non-empty strings.")
     require_resolved_metadata(title=title, description=description, tags=tags)
+    if "audio_review_required" in intent and intent["audio_review_required"] is not True:
+        raise UploadPlanError("Intent audio_review_required must be true when present.")
+    status = intent.get("status")
+    if not isinstance(status, dict) or type(status.get("containsSyntheticMedia")) is not bool:
+        raise UploadPlanError("Intent status.containsSyntheticMedia must be an explicit boolean.")
     project_key = str(intent.get("project_key") or "")
     account_alias = str(intent.get("account_alias") or "")
     target_channel_id = str(intent.get("target_channel_id") or "")

@@ -12,18 +12,19 @@ ID = "milovi-feed-20261107-001"
 BASE = Path("content/telegram/milovi-cake")
 
 
-def test_november_v12_bundle_is_valid_but_cannot_publish() -> None:
-    check = validate_bundle(ID)
-    assert check["valid"] is True
-    assert check["payload_kind"] == "video"
-    assert check["release_authorized"] is False
-    assert check["execution_authorized"] is False
-    assert check["provider_mutation_allowed"] is False
-    assert check["provider_access_performed"] is False
-    assert len(check["blockers"]) == 3
-    with pytest.raises(ValueError, match="not freshly authorized"):
-        validate_bundle(ID, require_release_authorized=True)
-    with pytest.raises(ValueError, match="not freshly authorized"):
+def test_november_v12_corrupt_cyrillic_bundle_is_permanently_retired() -> None:
+    # Before launch, a Windows code-page error replaced the Russian caption
+    # with literal '?' characters. Never revive this digest-bound identity.
+    from video_channel_manager.milovi_telegram_feed import validate_retired_bundle
+
+    proof = validate_retired_bundle(ID)
+    assert proof["status"] == "retired_proven_never_send"
+    assert proof["candidate_sha256"] == ("sha256:37bcd9abe9dfbd492a5d346894764aeb358577dacf0ed72ec388ab6b7b338e16")
+    assert proof["provider_access_performed"] is False
+    assert proof["provider_write_performed"] is False
+    with pytest.raises(ValueError, match="permanently retired"):
+        validate_bundle(ID)
+    with pytest.raises(ValueError, match="permanently retired"):
         validate_bundle(ID, require_execution_authorized=True)
 
 

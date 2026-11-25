@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.milovi-muted15-exact-owner-publication-authorization",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "recorded_at": "2026-11-06T07:25:38+03:00",
+  "source": "Current user conversation: explicitly instructed uploading all Milovi Cake videos and finishing deferred queues on 2026-11-06",
+  "scope": "Only the fifteen exact audio-free source-bound MILOVI CAKE videos (v01-v11, v13-v16), one per day, November 8-22 at 19:00 Moscow",
+  "owner_publication_approval_recorded": true,
+  "business_is_source_of_video_collection": true,
+  "user_released_video_without_audio": true,
+  "independent_external_licensing_document_not_asserted": true,
+  "historical_old_media_semantic_excerpts_may_overlap": true,
+  "hard_duplicate_controls": "four publicly observed native Telegram videos are 21, 28, 48, 59 seconds versus new ten-second items; no full-length duplicates",
+  "single_writer_only": true,
+  "unlimited_bulk_send_approved": false,
+  "provider_writes_already_performed": false
+}

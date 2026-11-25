@@ -11,7 +11,15 @@ REGISTRY_PATH = ROOT / "scripts" / "operator" / "powershell-wrappers.json"
 SUPPORTED_PATH = "scripts/operator/Invoke-VideoManager.ps1"
 DELEGATING_SUPPORTED_PATH = "scripts/Invoke-VkPostponedTextEdit.ps1"
 PROVIDER_INERT_PATH = "scripts/operator/Invoke-InstagramDailyQueue.ps1"
-STATUSES = {"supported", "delegating_supported", "provider_inert", "compatibility_only", "retired"}
+STATUSES = {
+    "supported",
+    "delegating_supported",
+    "provider_inert",
+    "compatibility_only",
+    "retired",
+    "scoped_release",
+    "owner_dispatch_only",
+}
 RETIRED_GUARD = "Stop-VcmRetiredWrapper"
 RISK_MARKERS = (
     "apply_vk_editorial_cleanup_plan.py",
@@ -168,3 +176,68 @@ def test_compatibility_wrappers_are_explicitly_non_provider_write() -> None:
         "scripts/setup.ps1",
     }
     assert all(item["provider_write_capable"] is False for item in compatibility)
+
+
+def test_scoped_milovi_https_release_is_exactly_one_owner_authorized_slot() -> None:
+    """No broad second operator can hide behind the scoped-release inventory."""
+
+    wrappers = _registry()["wrappers"]
+    scoped = {str(item["path"]): item for item in wrappers if item["status"] == "scoped_release"}
+    expected_paths = {
+        "scripts/instagram/milovi_cake_due_slot_single_writer.ps1",
+        "scripts/instagram/milovi_cake_https_single_slot_20261114.ps1",
+    }
+    assert set(scoped) == expected_paths
+    assert all(item["project_key"] == "milovi-cake" for item in scoped.values())
+    assert all(item["provider_write_capable"] is True for item in scoped.values())
+    assert all("14 Nov" in item["reason"] for item in scoped.values())
+
+    runner = _code_without_comments(ROOT / "scripts/instagram/milovi_cake_due_slot_single_writer.ps1")
+    canary = _code_without_comments(ROOT / "scripts/instagram/milovi_cake_https_single_slot_20261114.ps1")
+    assert "milovi-reels-single-writer.lock" in runner
+    assert "[System.IO.FileShare]::None" in runner
+    assert "milovi_cake_https_single_slot_20261114.ps1" in runner
+    assert "milovi_original_audio_owner_risk_release.ps1" in runner
+    assert "2026-11-14T19:00:00" in runner
+    assert "fbGZYKS7byM" in runner
+    assert "if ($Execute -and ($Msk -lt $Slot -or $Msk -ge $Slot.AddMinutes(18)))" in canary
+    assert "milovi-cake.2026-11-14.yt-fbGZYKS7byM.public-https-v1" in canary
+    assert "Any previous durable attempt blocks re-dispatch of this source" in canary
+    assert "FRESH_INSTAGRAM_DUPLICATE_PREFLIGHT_PASS" in canary
+    assert "& $Cli instagram production publish $ManifestPath --execute" in canary
+    assert "Invoke-RestMethod -Method POST" not in (runner + canary)
+    assert "Register-ScheduledTask" not in (runner + canary)
+    assert "Start-ScheduledTask" not in (runner + canary)
+
+
+def test_charnock_backup_is_exactly_two_owner_scoped_wrappers() -> None:
+    """Independent Windows clock is not an unregistered general provider writer."""
+    items = {item["path"]: item for item in _registry()["wrappers"] if item["status"] == "owner_dispatch_only"}
+    dispatcher = "scripts/lordchrist_charnock_external_dispatch.ps1"
+    installer = "scripts/install_lordchrist_charnock_windows_backup.ps1"
+    assert set(items) == {dispatcher, installer}
+    assert all(item["project_key"] == "lord-god-strength" for item in items.values())
+    assert all(item["provider_write_capable"] is True for item in items.values())
+
+    script = _code_without_comments(ROOT / dispatcher)
+    assert "FedorMilovanov" in script
+    assert "approvedManifestSha256" in script
+    assert "approvedWorkflowBlob" in script
+    assert "if ($Dispatch -and $ProbeAt)" in script
+    assert "if (-not $Dispatch)" in script
+    assert "ALREADY_CLAIMED" in script
+    assert "Invoke-CheckedGh -Arguments @('workflow','run'" in script
+    assert "sendMessage" not in script
+    assert "editPage" not in script
+    assert "GH_TOKEN" not in script
+
+    setup = _code_without_comments(ROOT / installer)
+    assert "Russian Standard Time" in setup
+    assert "if (-not $Install)" in setup
+    assert "New-ScheduledTaskTrigger -Once" in setup
+    assert "Register-ScheduledTask" in setup
+    assert "New-ScheduledTaskPrincipal" in setup
+    assert "-LogonType Interactive" in setup
+    assert "Copy-Item" in setup
+    assert "-ProbeAt $probe" in setup
+    assert "Start-ScheduledTask" not in setup

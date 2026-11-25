@@ -98,6 +98,11 @@ strict = true
 packages = ["video_channel_manager"]
 plugins = ["pydantic.mypy"]
 
+# Pillow is optional at runtime; check both minimal and image-enabled environments.
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
 [[tool.mypy.overrides]]
 module = ["alembic.*"]
 ignore_missing_imports = true

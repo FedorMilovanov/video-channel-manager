@@ -16,7 +16,7 @@ from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteErro
 def _store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path)
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-fault",
         VkAccessToken(access_token="secret", scopes=["video", "groups"]),
     )
     return store
@@ -33,7 +33,7 @@ def test_album_create_ambiguous_server_failure_is_attempted_once(tmp_path: Path)
 
     writer = VkVideoWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-fault",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
         max_attempts=9,
@@ -61,7 +61,7 @@ def test_album_membership_ambiguous_write_is_not_replayed(tmp_path: Path) -> Non
 
     writer = VkVideoWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-fault",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
         max_attempts=9,
@@ -96,7 +96,7 @@ def test_album_edit_ambiguous_server_failure_is_attempted_once(tmp_path: Path) -
 
     writer = VkEditorialWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-fault",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
         max_attempts=9,
@@ -139,7 +139,7 @@ def test_video_text_edit_ambiguous_server_failure_stops_after_one_write(tmp_path
 
     writer = VkVideoTextWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-fault",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
         max_attempts=9,
@@ -175,7 +175,7 @@ def test_thumbnail_upload_ambiguous_server_failure_is_attempted_once(tmp_path: P
 
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-fault",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
         max_attempts=9,

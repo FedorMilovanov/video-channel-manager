@@ -19,11 +19,13 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
+from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
-_API_BASE_URL = "https://api.vk.com/method"
-_RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
+_API_BASE_URL = "https://api.vk.ru/method"
+_RETRYABLE_API_CODES = frozenset({6, 10, 29})
 ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
 
@@ -42,6 +44,8 @@ def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
         return None
     raw_code = raw_error.get("error_code")
     code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+    if code == VK_FLOOD_CONTROL_CODE:
+        return HttpFailureKind.PROVIDER_FLOOD_CONTROL
     return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
 
 
@@ -62,6 +66,8 @@ class VkThumbnailWriter(HttpClientOwner):
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = random.random,
     ) -> None:
+        # Stop known retired aliases before token-store or HTTP initialization.
+        reject_quarantined_legacy_alias(account_alias)
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
@@ -71,13 +77,15 @@ class VkThumbnailWriter(HttpClientOwner):
             follow_redirects=True,
         )
         self.api_base_url = api_base_url.rstrip("/")
+        self.flood_control = VkCredentialFloodControl(token_store, self.account_alias)
         self.retry_policy = retry_policy or RetryPolicy(max_attempts=max(1, max_attempts))
         self.request_limiter = request_limiter or RequestRateLimiter(0.0)
         self._sleep = sleep
         self._jitter = jitter
 
     def _token_value(self) -> str:
-        token = self.token_store.load_token(self.account_alias)
+        reject_quarantined_legacy_alias(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.is_expired():
             raise VkWriteError(
                 "VK access token is expired. Import a fresh user token with video permission.",
@@ -103,6 +111,16 @@ class VkThumbnailWriter(HttpClientOwner):
         an additional photo object. An ambiguous provider response must not be
         replayed by this low-level client.
         """
+
+        if self.flood_control.get(method) is not None:
+            raise VkWriteError(
+                f"VK flood-control circuit is open for {method}; clear that exact local circuit before another provider request.",
+                method=method,
+                code=VK_FLOOD_CONTROL_CODE,
+                retryable=False,
+                kind=HttpFailureKind.PROVIDER_FLOOD_CONTROL,
+                attempts=0,
+            )
 
         access_token = self._token_value()
         request_data: dict[str, str] = {
@@ -178,6 +196,8 @@ class VkThumbnailWriter(HttpClientOwner):
                 secrets=(access_token,),
             )
             kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
+            if code == VK_FLOOD_CONTROL_CODE:
+                self.flood_control.record(method)
             raise VkWriteError(
                 f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,

@@ -1,0 +1,51 @@
+name: LordChrist 1525 existing-post reader UX (one shot)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/video_channel_manager/lordchrist_peasants1525_readability.py
+      - scripts/peasants1525-reader-ux-release.sh
+      - .github/workflows/lordchrist-peasants1525-reader-ux.yml
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  revise-existing-1619:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.repository == 'FedorMilovanov/video-channel-manager' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: src
+      GH_TOKEN: ${{ github.token }}
+      LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+      LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+    steps:
+      - name: Checkout exact main SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned publication runtime
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Edit original page and message with durable claims, no reposts
+        shell: bash
+        run: bash scripts/peasants1525-reader-ux-release.sh

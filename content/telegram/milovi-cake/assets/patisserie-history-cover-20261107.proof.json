@@ -1,0 +1,23 @@
+{
+  "schema": "milovi-cake-original-selected-vk-cover-reused-for-telegram-v1",
+  "original_png_sha256": "sha256:eea0a795c5b45b3503a9bb6475e82dd633b1002060c6c142405a43309de2599a",
+  "source_webp_path": "content/telegram/milovi-cake/assets/patisserie-history-cover-20261107.webp",
+  "source_webp_sha256": "sha256:2bf4ec0e537fcb3c8349267ade1992d779e12ef832c9497a62a10c014d003328",
+  "source_git_blob_sha1": "b8a0303742e20f3b231d3bcd019029793a495a3a",
+  "source_bytes": 544868,
+  "source_dimensions": [
+    1672,
+    941
+  ],
+  "transport_filename": "milovi-feed-20261107-003.jpg",
+  "transport_jpeg_sha256": "sha256:e41c5cf2c7ad87af1b6a949fde4c5a91776cc9af73f835e95d4b743543409b5d",
+  "transport_jpeg_bytes": 802491,
+  "transform": "Pillow 13.0.0 JPEG quality=95 subsampling=0 optimize=False progressive=False exif=empty",
+  "preview_role": "editorial/illustrative, not a photo of an actual Cake order",
+  "telegram_release_id": "milovi-feed-20261107-003",
+  "scheduled": "2026-11-08T14:00:00+03:00",
+  "telegram_caption_unchanged": true,
+  "new_release_digest": "sha256:259910363b7c18ffe48ce34dba2066d77cfab708bd932b9b45f4250973f76620",
+  "new_candidate_digest": "sha256:7f987eb51da14a24a5c54c825d0dd633bfb69feacfe30f1535025de2b8ffc817",
+  "new_provider_payload_digest": "sha256:a3e4e573e21ba270a949ebdc314ef21b65bb0205403ff7f0d743e5f54021058b"
+}

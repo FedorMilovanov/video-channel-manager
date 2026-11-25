@@ -144,6 +144,59 @@ Source authority is the current The Legendary Poet project charter and exact edi
 records. The canonical literary text and the musical/visual interpretation are separate
 objects.
 
+### 2026-11-08 owner correction — full-value historical literary captions
+
+For The Legendary Poet **literary Reels**, the general mobile-caption shape
+above does **not** mean a two-sentence generic caption. Use the already reviewed
+YouTube description and its claim/source ledger as the starting material:
+its 3,500–4,600 characters must be **editorially adapted**, not blindly
+pasted or truncated, to Instagram's **2,200-character** caption ceiling.
+A meaningful historical Reel caption is normally 1,000–1,900 characters
+when the approved source provides enough evidence; length is a target,
+**not** a license to pad. Very short excerpts need a documented
+editorial reason rather than filler.
+
+Every proposed caption must have:
+1. Exact poet, work/version and **source YouTube video ID**; confirm
+   attribution independently of noisy SEO tags and other authors' names.
+2. At least two **distinct, source-bound** literary/historical details,
+   such as composition dating, first publication, textual form,
+   manuscript/edition history, or documented contemporary context.
+   If the available source does not support them, mark **review-needed**
+   instead of inventing them.
+3. At least one **specific explanation** of an image, structural
+   contrast or development *actually in that work*, distinguishing
+   interpretive reading from fact and preserving disagreements/uncertainty.
+4. An accurate description of what the **actual Reel** contains:
+   if it plays only an extract, do not say the complete work is performed.
+5. A source note in the **non-public editorial ledger**, including the
+   exact YouTube description revision/hash and relevant canonical
+   edition/academic citations already checked during YouTube authoring.
+6. Focused work/poet hashtags; compare every person named in prose
+   **and hashtags** with the reviewed author. Generic brand/poetry tags
+   cannot substitute for genuine historical content.
+
+Reject repetitive boilerplate such as «классическая поэзия в музыкальном
+и визуальном прочтении» followed by «сохрани Reel» as the primary
+description. A call to action is **optional**, not required. Do not
+publish a caption whose only substantive information is a title,
+generic statement, and five hashtags. Never misattribute Blok's
+«Скифы» to Pushkin, including in **hashtags**.
+
+**Release boundary:** publication/edits of previously posted Reels,
+replacement of queued captions and amendment of signed schedules are
+separate provider mutations requiring a new exact-ID owner-approved
+plan and provider readback. This owner editorial decision supersedes
+boilerplate *quality* for future authoring; it is **not** permission
+to rewrite a frozen SHA-bound queue, re-upload media, replay an
+unknown Meta container, or interfere with another agent's active
+writer. To avoid collisions, record editorial `review_needed` and
+coordinate on the owning Instagram issue before changing that lane.
+
+A reviewed adaptation example and a claim map:
+[«Скифы» — source-grounded Instagram caption](examples/legendary-poet-skify-instagram-20261108.md).
+
+
 ### Required wording boundary
 
 - Quote only exact text from a bound canonical edition.

@@ -14,10 +14,10 @@ from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWri
 
 def _writer(tmp_path: Path, handler: httpx.MockTransport, *, max_attempts: int = 4) -> VkVideoWriter:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
+    store.save_token("synthetic-vk-writer", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return VkVideoWriter(
         token_store=store,
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-writer",
         http_client=httpx.Client(transport=handler),
         api_base_url="https://api.example/method",
         max_attempts=max_attempts,

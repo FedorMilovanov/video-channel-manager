@@ -30,9 +30,10 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
 from video_channel_manager.platforms.vk.models import VkCommunityIdentity, VkUserIdentity
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
-_API_BASE_URL = "https://api.vk.com/method"
+_API_BASE_URL = "https://api.vk.ru/method"
 _RETRYABLE_API_CODES = frozenset({6, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
@@ -141,6 +142,8 @@ class VkApiClient(HttpClientOwner):
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = random.random,
     ) -> None:
+        # Stop known retired aliases before token-store or HTTP initialization.
+        reject_quarantined_legacy_alias(account_alias)
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
@@ -162,6 +165,7 @@ class VkApiClient(HttpClientOwner):
         self._jitter = jitter
 
     def _call(self, method: str, *, params: ApiParams | None = None) -> object:
+        reject_quarantined_legacy_alias(self.account_alias)
         open_circuit = self.flood_control.get(method)
         if open_circuit is not None:
             raise VkApiError(
@@ -172,7 +176,7 @@ class VkApiClient(HttpClientOwner):
                 kind=HttpFailureKind.PROVIDER_FLOOD_CONTROL,
                 attempts=0,
             )
-        token = self.token_store.load_token(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.is_expired():
             raise VkApiError(
                 "VK access token is expired. Import a fresh user token with 'video' and 'groups' permissions.",

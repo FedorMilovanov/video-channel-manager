@@ -12,7 +12,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
-from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
+from video_channel_manager.telegram_editorial_hold import require_execution_not_held
+from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, load_release
+from video_channel_manager.telegram_multichannel_audio import GenericAudioPayload
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
 
 GenericStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
@@ -122,6 +125,73 @@ class GenericPublicationLedger(BaseModel):
         return self
 
 
+class OwnerScheduledCanaryApproval(BaseModel):
+    """Exact owner-reviewed exception for one explicitly scheduled first video.
+
+    All other Telegram releases still require the original verified manual canary.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-owner-scheduled-canary-approval"]
+    schema_version: Literal[1]
+    release_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    first_publication_id: str = Field(min_length=5, max_length=96)
+    project_key: str
+    channel_username: str
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    target_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    chat_id: int = Field(lt=0)
+    bot_id: int = Field(gt=0)
+    bot_username: str
+    source_manifest_path: str
+    source_manifest_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    approved_by: str = Field(min_length=10, max_length=200)
+    approval_reference: str = Field(min_length=20, max_length=600)
+    approved_at: datetime
+    scheduled_at: datetime
+    owner_authorized: Literal[True]
+    only_first_scheduled_video: Literal[True]
+    maximum_first_send_attempts: Literal[1]
+    require_verified_first_receipt_for_followons: Literal[True]
+
+    @model_validator(mode="after")
+    def validate_owner_approval(self) -> "OwnerScheduledCanaryApproval":
+        if self.approved_at.tzinfo is None or self.scheduled_at.tzinfo is None:
+            raise ValueError("owner-scheduled video approval timestamps must be timezone-aware")
+        if self.approved_at >= self.scheduled_at:
+            raise ValueError("owner-scheduled approval must predate the exact first slot")
+        return self
+
+    def require_exact_binding(
+        self,
+        profile: TelegramChannelProfile,
+        release: GenericReleaseQueue,
+        target: GenericTargetProof,
+    ) -> None:
+        if not release.release_authorized or not release.items:
+            raise ValueError("owner-scheduled video requires an authorized immutable release")
+        if (
+            self.release_digest != release.digest
+            or self.first_publication_id != release.items[0].publication_id
+            or self.project_key != profile.project_key
+            or self.project_key != release.project_key
+            or self.channel_username.casefold() != profile.channel_username.casefold()
+            or self.channel_username.casefold() != release.channel_username.casefold()
+            or self.profile_sha256 != profile.digest
+            or self.target_binding_sha256 != release.target_binding_sha256
+            or self.chat_id != release.chat_id
+            or self.bot_id != release.bot_id
+            or self.bot_username.casefold() != str(release.bot_username).casefold()
+            or self.chat_id != target.chat_id
+            or self.bot_id != target.bot_id
+            or self.bot_username.casefold() != target.bot_username.casefold()
+            or self.scheduled_at != release.items[0].scheduled_at
+            or not isinstance(release.items[0].payload, GenericVideoPayload)
+        ):
+            raise ValueError("owner-scheduled canary differs from exact video release or Telegram target")
+
+
 class GenericDispatchEnvelope(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -197,6 +267,7 @@ def skip_expired_pending(
     *,
     now: datetime | None = None,
 ) -> tuple[str, ...]:
+    require_execution_not_held(release)
     effective_now = now or utc_now()
     if effective_now.tzinfo is None:
         raise ValueError("stale-publication check timestamp must be timezone-aware")
@@ -221,6 +292,7 @@ def skip_expired_pending(
 
 
 def initialize_ledger(release: GenericReleaseQueue) -> GenericPublicationLedger:
+    require_execution_not_held(release)
     if not release.release_authorized:
         raise ValueError("publication ledger initialization requires an authorized immutable release")
     return GenericPublicationLedger(
@@ -280,6 +352,254 @@ def verify_ledger_against_release(ledger: GenericPublicationLedger, release: Gen
     for publication_id, item in release_by_id.items():
         if ledger.entries[publication_id].provider_payload_sha256 != item.payload.provider_payload_sha256:
             raise ValueError(f"provider payload changed after ledger initialization: {publication_id}")
+
+
+class GenericAudioHistoryMatch(BaseModel):
+    """Evidence from a supplied immutable release and its matching ledger."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    release_id: str
+    publication_id: str
+    media_sha256: str
+    state: GenericStateName
+    provider_effect: GenericProviderEffect
+    message_url: str | None = None
+
+
+def audit_audio_history(
+    candidate: GenericReleaseQueue,
+    publication_id: str,
+    history: tuple[tuple[GenericReleaseQueue, GenericPublicationLedger], ...],
+) -> tuple[GenericAudioHistoryMatch, ...]:
+    """Match exact audio bytes across known releases, never assert complete provider history."""
+    item = next((item for item in candidate.items if item.publication_id == publication_id), None)
+    if item is None or not isinstance(item.payload, GenericAudioPayload):
+        raise ValueError("audio history requires an exact audio publication in the candidate release")
+    if candidate.chat_id is None or candidate.target_binding_sha256 is None:
+        raise ValueError("audio history requires an exact bound Telegram channel")
+
+    matches: list[GenericAudioHistoryMatch] = []
+    seen: set[str] = set()
+    for release, ledger in history:
+        if not release.release_authorized:
+            raise ValueError("audio history must use authorized immutable releases")
+        if (
+            release.project_key != candidate.project_key
+            or release.channel_username.casefold() != candidate.channel_username.casefold()
+            or release.chat_id != candidate.chat_id
+        ):
+            raise ValueError("audio history differs from the exact candidate channel")
+        if release.release_id in seen:
+            raise ValueError("audio history contains repeated release identity")
+        seen.add(release.release_id)
+        verify_ledger_against_release(ledger, release)
+        for historical in release.items:
+            if not isinstance(historical.payload, GenericAudioPayload):
+                continue
+            if historical.payload.media_sha256 != item.payload.media_sha256:
+                continue
+            entry = ledger.entries[historical.publication_id]
+            if entry.provider_effect not in {"verified", "may_exist"}:
+                continue
+            if entry.actual_chat_id != candidate.chat_id:
+                raise ValueError("audio history ledger effect differs from the exact channel")
+            matches.append(
+                GenericAudioHistoryMatch(
+                    release_id=release.release_id,
+                    publication_id=historical.publication_id,
+                    media_sha256=historical.payload.media_sha256,
+                    state=entry.state,
+                    provider_effect=entry.provider_effect,
+                    message_url=entry.message_url,
+                )
+            )
+    return tuple(matches)
+
+
+class HistoricalAudioPost(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    message_id: int = Field(gt=0)
+    media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    published_at_utc: datetime
+
+
+class AudioHistoryBaseline(BaseModel):
+    """Reviewed pre-cutover inventory, not a provider history discovery tool."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-audio-history-baseline"]
+    schema_version: Literal[1]
+    project_key: str
+    channel_username: str
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    chat_id: int = Field(lt=0)
+    cutover_utc: datetime
+    reviewed_at_utc: datetime
+    reviewed_by: str = Field(min_length=1, max_length=200)
+    source_evidence_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    posts: tuple[HistoricalAudioPost, ...]
+    # Legacy v1 baselines claimed complete history. New incomplete inventories
+    # must state the gap and bind evidence to each exact assessed media digest.
+    coverage: Literal["complete", "candidate_specific"] = "complete"
+    coverage_note: str | None = Field(default=None, min_length=1, max_length=2000)
+    assessed_media_sha256: tuple[str, ...] = ()
+    complete_since_utc: datetime | None = None
+
+    @model_validator(mode="after")
+    def validate_inventory(self) -> "AudioHistoryBaseline":
+        if self.cutover_utc.utcoffset() is None or self.reviewed_at_utc.utcoffset() is None:
+            raise ValueError("audio history baseline requires timezone-aware timestamps")
+        if self.reviewed_at_utc < self.cutover_utc or not self.reviewed_by.strip():
+            raise ValueError("audio history baseline requires review after cutover")
+        ids = {post.message_id for post in self.posts}
+        if len(ids) != len(self.posts):
+            raise ValueError("audio history baseline contains repeated message identities")
+        if any(
+            post.published_at_utc.utcoffset() is None or post.published_at_utc > self.cutover_utc for post in self.posts
+        ):
+            raise ValueError("historical audio must be dated at or before cutover")
+        if self.coverage == "candidate_specific":
+            if not self.coverage_note or not self.coverage_note.strip():
+                raise ValueError("partial audio history requires a coverage explanation")
+        elif self.assessed_media_sha256 or self.complete_since_utc is not None:
+            raise ValueError("complete audio history must not include partial-coverage fields")
+        if len(set(self.assessed_media_sha256)) != len(self.assessed_media_sha256) or any(
+            re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None for digest in self.assessed_media_sha256
+        ):
+            raise ValueError("candidate history assessment requires unique exact media digests")
+        if self.complete_since_utc is not None and (
+            self.complete_since_utc.utcoffset() is None or self.complete_since_utc > self.cutover_utc
+        ):
+            raise ValueError("recent audio history coverage must begin at or before cutover")
+        return self
+
+
+def audio_history_baseline_path(ledger_path: Path) -> Path:
+    return ledger_path.resolve().parent.parent.parent / "audio-history-baseline.json"
+
+
+def load_audio_history_baseline(
+    release: GenericReleaseQueue, ledger_path: Path, *, now: datetime
+) -> AudioHistoryBaseline:
+    path = audio_history_baseline_path(ledger_path)
+    if path.is_symlink():
+        raise ValueError("audio history baseline must not be a symlink")
+    try:
+        baseline = AudioHistoryBaseline.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError("reviewed audio history baseline missing or invalid") from exc
+    if (
+        baseline.project_key != release.project_key
+        or baseline.channel_username.casefold() != release.channel_username.casefold()
+        or baseline.profile_sha256 != release.profile_sha256
+        or baseline.chat_id != release.chat_id
+        or baseline.reviewed_at_utc > now
+    ):
+        raise ValueError("audio history baseline differs from exact channel or review time")
+    return baseline
+
+
+def require_audio_channel_admission(
+    release: GenericReleaseQueue,
+    ledger_path: Path,
+    publication_id: str,
+    *,
+    current_intent_id: str | None = None,
+    now: datetime | None = None,
+) -> None:
+    """Check all canonical audio release ledgers in one serialized state checkout.
+
+    The caller must own the channel writer and persist the prepared intent to
+    the protected remote state before sending. A local checkout alone cannot
+    prove remote history completeness or cross-machine exclusivity.
+    """
+    item = next((item for item in release.items if item.publication_id == publication_id), None)
+    if item is None or not isinstance(item.payload, GenericAudioPayload):
+        raise ValueError("audio admission requires an exact audio publication")
+    ledger_path = ledger_path.resolve()
+    release_dir = ledger_path.parent
+    channel_dir = release_dir.parent
+    if (
+        ledger_path.name != "ledger.json"
+        or release_dir.name != release.release_id
+        or channel_dir.name != "audio-releases"
+        or channel_dir.parent.name != release.project_key
+    ):
+        raise ValueError("audio admission requires the canonical channel audio-releases state layout")
+
+    current = now or utc_now()
+    baseline = load_audio_history_baseline(release, ledger_path, now=current)
+    if any(post.media_sha256 == item.payload.media_sha256 for post in baseline.posts):
+        raise ValueError("audio already published in pre-cutover channel history")
+    if baseline.coverage == "candidate_specific":
+        if item.payload.media_sha256 not in baseline.assessed_media_sha256:
+            raise ValueError("exact audio candidate is not covered by the reviewed history assessment")
+        # Once the managed writer owns the channel, older inaccessible posts
+        # cannot affect today's publication cap. On the cutover day, however,
+        # the pre-cutover part of that day still needs reliable coverage.
+        day_start = current.astimezone(ZoneInfo(release.timezone)).replace(hour=0, minute=0, second=0, microsecond=0)
+        if baseline.cutover_utc >= day_start and (
+            baseline.complete_since_utc is None or baseline.complete_since_utc > day_start
+        ):
+            raise ValueError("pre-cutover history does not cover today's audio publication limit")
+
+    history: list[tuple[GenericReleaseQueue, GenericPublicationLedger]] = []
+    for directory in sorted(channel_dir.iterdir()):
+        if not directory.is_dir() or directory.is_symlink():
+            raise ValueError("unexpected entry in canonical audio-releases state")
+        historical = load_release(directory / "release.json")
+        if directory.name != historical.release_id:
+            raise ValueError("audio release directory differs from immutable release identity")
+        if not all(isinstance(entry.payload, GenericAudioPayload) for entry in historical.items):
+            raise ValueError("canonical audio history cannot contain a non-audio release")
+        ledger = load_ledger(directory / "ledger.json", historical)
+        history.append((historical, ledger))
+
+    if not any(historical.digest == release.digest for historical, _ in history):
+        raise ValueError("canonical audio state does not contain the exact current release")
+
+    def own_attempt(historical: GenericReleaseQueue, entry: GenericLedgerEntry) -> bool:
+        return (
+            current_intent_id is not None
+            and historical.digest == release.digest
+            and entry.publication_id == publication_id
+            and entry.intent_id == current_intent_id
+            and entry.state == "dispatching"
+        )
+
+    matches = audit_audio_history(release, publication_id, tuple(history))
+    for match in matches:
+        historical, ledger = next(pair for pair in history if pair[0].release_id == match.release_id)
+        if not own_attempt(historical, ledger.entries[match.publication_id]):
+            raise ValueError(f"audio already published or possibly dispatched: {match.publication_id}")
+
+    today = publication_local_date(current, release.timezone)
+    historical_ids = {post.message_id for post in baseline.posts}
+    verified_today = sum(
+        publication_local_date(post.published_at_utc, release.timezone) == today for post in baseline.posts
+    )
+    for historical, ledger in history:
+        for entry in ledger.entries.values():
+            if entry.provider_effect in {"verified", "may_exist"} and entry.actual_chat_id != release.chat_id:
+                raise ValueError("historical audio effect differs from canonical channel")
+            if own_attempt(historical, entry):
+                continue
+            if entry.provider_effect == "may_exist":
+                raise ValueError(f"unresolved channel audio dispatch: {entry.publication_id}")
+            if entry.provider_effect == "verified":
+                if entry.publication_id == publication_id:
+                    raise ValueError(f"publication ID already verified in audio history: {publication_id}")
+                if entry.message_id in historical_ids:
+                    raise ValueError("audio baseline and release ledgers overlap")
+                if entry.published_at_utc is not None:
+                    if entry.published_at_utc <= baseline.cutover_utc:
+                        raise ValueError("managed audio receipt predates history cutover")
+                    verified_today += publication_local_date(entry.published_at_utc, release.timezone) == today
+    if verified_today >= release.daily_verified_limit:
+        raise ValueError("channel-wide audio daily verified limit already used")
 
 
 def strict_next_item(
@@ -343,6 +663,26 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires exact GitHub SHA provenance")
 
 
+def _has_verified_manual_canary(ledger: GenericPublicationLedger, target: GenericTargetProof, now: datetime) -> bool:
+    """Require a durable, provider-verified manual receipt for the exact bot and channel."""
+    return any(
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.dispatch_mode == "manual"
+        and entry.actual_chat_id == target.chat_id
+        and entry.actual_chat_username is not None
+        and entry.actual_chat_username.casefold() == target.chat_username.casefold()
+        and entry.bot_id == target.bot_id
+        and entry.bot_username is not None
+        and entry.bot_username.casefold() == target.bot_username.casefold()
+        and entry.message_id is not None
+        and entry.message_url == f"https://t.me/{target.chat_username}/{entry.message_id}"
+        and entry.published_at_utc is not None
+        and entry.published_at_utc <= now
+        for entry in ledger.entries.values()
+    )
+
+
 def prepare_next(
     profile: TelegramChannelProfile,
     release: GenericReleaseQueue,
@@ -356,7 +696,10 @@ def prepare_next(
     target: GenericTargetProof,
     expected_publication_id: str | None = None,
     now: datetime | None = None,
+    scheduled_canary_approval: OwnerScheduledCanaryApproval | None = None,
+    verified_canary: tuple[GenericReleaseQueue, GenericPublicationLedger] | None = None,
 ) -> PreparedGenericDispatch:
+    require_execution_not_held(release)
     prepared_at = now or utc_now()
     if prepared_at.tzinfo is None:
         raise ValueError("prepare timestamp must be timezone-aware")
@@ -370,6 +713,10 @@ def prepare_next(
         github_sha=github_sha,
         github_workflow_sha=github_workflow_sha,
     )
+    if scheduled_canary_approval is not None:
+        if mode != "scheduled":
+            raise ValueError("owner-scheduled canary is invalid for manual dispatch")
+        scheduled_canary_approval.require_exact_binding(profile, release, target)
     if mode == "scheduled" and run_attempt != "1":
         return PreparedGenericDispatch(envelope=None, reason="scheduled workflow re-runs are forbidden")
 
@@ -388,18 +735,51 @@ def prepare_next(
         )
 
     if mode == "scheduled":
-        manual_canary = any(
-            entry.state == "published"
-            and entry.provider_effect == "verified"
-            and entry.dispatch_mode == "manual"
-            and entry.actual_chat_id == target.chat_id
-            and entry.bot_id == target.bot_id
-            for entry in ledger.entries.values()
-        )
+        manual_canary = _has_verified_manual_canary(ledger, target, prepared_at)
+        if not manual_canary and verified_canary is not None:
+            canary_release, canary_ledger = verified_canary
+            # The read-only source must be a separately reviewed, immutable release
+            # with its own durable state. Never accept a bare receipt or a foreign bot.
+            if not canary_release.release_authorized:
+                raise ValueError("external manual canary release is not authorized")
+            verify_ledger_against_release(canary_ledger, canary_release)
+            if (
+                canary_release.release_id == release.release_id
+                or canary_release.project_key != release.project_key
+                or canary_release.channel_username.casefold() != release.channel_username.casefold()
+                or canary_release.profile_sha256 != release.profile_sha256
+                or canary_release.target_binding_sha256 != release.target_binding_sha256
+                or canary_release.chat_id != target.chat_id
+                or canary_release.bot_id != target.bot_id
+                or (canary_release.bot_username or "").casefold() != target.bot_username.casefold()
+            ):
+                raise ValueError("external manual canary release differs from the exact channel/bot binding")
+            manual_canary = _has_verified_manual_canary(canary_ledger, target, prepared_at)
         if not manual_canary:
-            return PreparedGenericDispatch(
-                envelope=None, reason="scheduled execution requires a verified manual canary"
+            if scheduled_canary_approval is None:
+                return PreparedGenericDispatch(
+                    envelope=None, reason="scheduled execution requires a verified manual canary"
+                )
+            first = release.items[0]
+            first_state = ledger.entries[first.publication_id]
+            first_is_pending = first_state.state == "pending" and first_state.provider_effect in {
+                "impossible",
+                "not_dispatched",
+                "confirmed_absent",
+            }
+            first_is_verified = (
+                first_state.state == "published"
+                and first_state.provider_effect == "verified"
+                and first_state.dispatch_mode == "scheduled"
+                and first_state.actual_chat_id == target.chat_id
+                and first_state.bot_id == target.bot_id
+                and first_state.message_id is not None
+                and first_state.message_id > 0
             )
+            if not (first_is_pending or first_is_verified):
+                return PreparedGenericDispatch(
+                    envelope=None, reason="owner-scheduled first video canary has no verified receipt"
+                )
 
     item, reason = strict_next_item(release, ledger)
     if item is None:

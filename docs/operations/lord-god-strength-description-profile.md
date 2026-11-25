@@ -4,6 +4,8 @@ Project key: `lord-god-strength`
 
 This profile applies only to the theological project. The existing files `docs/youtube-description-rendering-standard.md` and `docs/vk-description-rendering-standard.md` were written for The Legendary Poet and must not supply their channel name, site, VK community, Telegram, Rutube, playlist, or footer to this project.
 
+**Перед подготовкой любых YouTube Shorts, полноформатных описаний или авторских комментариев:** обязательна [матрица выбора правил по поверхности](lord-god-youtube-agent-decision-contract.md). Она поясняет, почему для Lord God у Shorts две чистые сырые строки и первая URL-ссылка на полную русскую запись, тогда как для нового ручного пакета Legendary Poet v3.1 сверху стоят две ссылки на плейлисты с чистыми подписями без маркеров. Для Lord God long-form отдельно действует правило `Англоязычная запись:` на строке перед голым URL. **Не объединять эти три формата.**
+
 ## Exact identities
 
 - YouTube channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
@@ -36,7 +38,7 @@ Historical `gospod_bog` vanity paths are not canonical output.
 
 ## YouTube description rules
 
-1. The first paragraph explains the exact sermon, lecture, biblical passage, speaker, series, translation, or historical material.
+1. The first paragraph explains the exact sermon, lecture, biblical passage, speaker, series, translation, or historical material. The first **two non-empty raw YouTube Studio lines** must be substantive plain sentences without any `*`, `_`, backticks, Markdown headings/list markers or URLs; otherwise share/repost surfaces can expose markup. Bold/italic may begin only afterward. Never equate a plain *first paragraph* with proof of two plain visible lines.
 2. Distinguish source claims, translator/editor notes, and application.
 3. Do not invent dates, speaker claims, quotations, Bible references, source provenance, or translation details.
 4. Use YouTube emphasis only where it improves readability; URLs remain plain text.
@@ -44,6 +46,8 @@ Historical `gospod_bog` vanity paths are not canonical output.
 6. Remove obsolete `shelf_id` URLs, old translation solicitations, personal-contact routes, and legacy payment details when the reviewed plan requires removal.
 7. Do not insert a donation/support link until the user selects and approves a service.
 8. Never insert The Legendary Poet links.
+9. New Lord God descriptions must use the agreed spelling `МакАртур` (and the inflected forms `МакАртура`, `МакАртуром`), never `Макартур`. The video's existing title is outside description-only scope and is not silently changed.
+10. Do not repeat the same registered project-homepage destination in a new description. `t.me/lordchrist` in a source/navigation block and the footer is a duplicate. `vk.com/the_lord_god_is_my_strength` and `vk.ru/the_lord_god_is_my_strength` are the same logical community destination; new output should use the latter. Distinct Telegram post URLs, VK post/video URLs and query-specific links are preserved rather than normalized or removed automatically.
 
 Recommended compact footer:
 
@@ -73,6 +77,8 @@ RUTUBE: https://rutube.ru/channel/1876662/
 The VK Video channel URL is optional inside VK itself because it may be redundant. Use it on external surfaces where it provides a direct video-library route.
 
 ## Playlist links
+
+**Правило владельца — целостный SHARE-блок (2026-11-24):** весь первый связный блок плейлистов YouTube Description Господь Бог — Сила Моя, включая общий заголовок, если он есть, оформляется обычным текстом без маркеров жирного и курсива в подписях. Количество плейлистов определяется релевантностью, а не шаблоном: 1, 2, 3, 4 или больше. Не смешивать жирные и обычные подписи внутри блока. Если плейлистов нет, блок не создавать. Следующая отдельная группа ссылок может иметь жирные подписи и уместные эмодзи. Сохранять точные URL/ID, порядок и две чистые содержательные строки; приоритет полной русской записи для Shorts и правила англоязычного оригинала для long-form не меняются. Не переносить правило на комментарии и не редактировать старые видео автоматически. См. [матрицу выбора](lord-god-youtube-agent-decision-contract.md).
 
 - YouTube playlists must come from exact channel membership or an explicitly reviewed mapping.
 - VK albums/playlists must come from exact numeric album IDs and live membership.
@@ -243,3 +249,76 @@ items met the strict source-preserving minimum for this additional method.
 The others require genuine topic-based editorial revision or proof of source
 and playlist provenance. An offline plan does not prove rights clearance
 or publication status.
+
+
+## YouTube-native presentation and retired solicitations: mandatory pre-publish gate
+
+As of the November 2026 editorial review (#795), the exact Lord God channel ID is
+UCeSJsC6go2c9pdJCuUI1BYA. Any first-party YouTube apply-copy-fixes plan
+targeting this ID must pass the **project-bound presentation gate before
+OAuth/API preflight**, for both dry-run and execute. This applies even if
+a historical signed plan was previously generated; no retroactive edit.
+
+**YouTube presentation:**
+
+- Keep the first meaningful paragraph unmarked and useful in a share
+  preview. In long descriptions (at least 350 characters), use a small
+  number of YouTube-native single-asterisk bold spans (e.g. *heading:*)
+  and single-underscore italic spans (e.g. _meaning_). No double-star
+  Markdown, hidden Markdown hyperlinks, unbalanced markers, or wrong
+  punctuation outside the emphasized phrase.
+- Keep bare URL links. Distinguish original source and rights credit,
+  topical recommendations, channel destinations, and video membership.
+  Do not remove cited external sources merely because they are not
+  owner-playlist members. Chapters remain true timestamp starts.
+- The Legendary Poet shares the **YouTube markup syntax and factual
+  rigor**, NOT its poetry-specific channel identity, links, six social
+  rows, 3500–4600 length target, fixed playlist order, or biography format.
+
+**Historical cleanup and rights:**
+
+- Remove retired personal translator recruitment, outdated personal
+  contact links, bank/card solicitations, Yandex wallet numbers,
+  DonatePay references and obsolete VK donor applications before
+  treating a rewritten description as final.
+- Do not insert new bank details, fundraising apps, contact handles or
+  donation links without separate and explicit owner approval.
+- Retain sermon sources, source and translation attribution, speaker
+  identity, notices about rights, and genuine citations unless a separate
+  review proves a particular claim/link incorrect.
+- Reject unverified claims about all videos having been moved to VK,
+  invented chapters, fake translations and irrelevant cross-project
+  links. Avoid dense navigation-only and SEO keyword-stuffed boilerplate.
+
+**Staged source evidence is NOT publication approval:**
+
+- Six Prokopenko descriptions: the newer YouTube-formatted v2 offline
+  plans pass the renderer and supersede earlier plain v1 plans. They
+  still require exact live owner/API preflight, source/rights review and
+  independent postflight after an individual write.
+- Twelve earlier source-preserving shelf and translator-appeal cleanups:
+  the signed plain archival plans lack proper formatting. They are
+  NOT cleared as final YouTube publications. Re-edit and sign new
+  plans preserving source and attribution first.
+- Older proposed chapter appends are not exempt; their resulting
+  descriptions must pass this same gate. Previously published videos
+  are not automatically modified or rolled back by this policy.
+
+**Implementation:** src/video_channel_manager/cli/youtube.py uses
+platforms/youtube/lord_god_presentation.py and the shared
+editorial.youtube_copy.validate_youtube_description checker. Fix a
+rejected plan upstream and re-sign. Never bypass the validation,
+replay an ambiguous timeout, or work around a quotaExceeded response.
+
+## Lord God Shorts: title, source and existing-video edit gate
+
+This section applies to **future, individually reviewed** Lord God Shorts. It does not authorize edits to already published videos, substitute for the signed YouTube copy plan or relax the long-form source-preservation and owner-approval gates above.
+
+- **Titles:** Use the owner's Russian Title Case for substantive words; retain lowercase short prepositions/particles and spaced ASCII ` - ` separators. Do not introduce pipe separators or decorative em dashes. Preserve an existing published title until its exact owner-approved replacement is recorded.
+- **Content-specific descriptions:** Lead with the actual excerpt, speaker and verified biblical reference where applicable. Use only this project's relevant, registered links. Selective YouTube bold/italic improves readability; bureaucratic labels, speculative source claims and generic SEO padding do not.
+- **Source binding:** Before citing a full talk, independently match the excerpt to the exact **same source video** and its English original. Similar speakers, adjacent episodes or inherited template playlists are not evidence. Preserve a genuine, approved attribution or rights notice; never import unrelated John MacArthur playlists or legacy `shelf_id` routes into a Piper/Sproul excerpt.
+- **Existing Shorts:** Correct copy through the same YouTube video ID, not by uploading a replacement. Before a write, read and preserve its public/private/scheduled state and `publishAt`; confirm any change to `defaultAudioLanguage` is approved. After a write, independently read back the persisted snippet, including language and scheduling fields. Do not treat an API success response alone as verified visual presentation.
+- **Comments:** Inspect the owner's existing comments and pinned source links before proposing another full-video pointer. Avoid duplicate comments and unexpected new top-level comments. A description-only approval does not authorize a comment or a new upload.
+- **Shorts link UX:** Ordinary description/comment URLs may be non-clickable in Shorts interfaces. Where an actual tap-friendly source link is required and approved, prefer the YouTube Studio **Related Video** feature. YouTube currently requires advanced-feature access and a **public or unlisted video from the same channel**; check eligibility before promising a click-through. Do not claim that Data API description/comment editing configures that Studio association. See https://support.google.com/youtube/answer/14075157 and https://support.google.com/youtube/answer/13748639.
+
+All existing owner/channel checks, exact provenance evidence, copy validation, rights gates, rate/quota restrictions and postflight requirements still apply. No provider mutation is authorized by this document.

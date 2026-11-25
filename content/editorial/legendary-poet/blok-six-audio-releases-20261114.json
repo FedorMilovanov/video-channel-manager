@@ -1,0 +1,440 @@
+{
+  "schema_name": "legendary-poet.blok-owner-corrected-music-intake",
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "project": "The Legendary Poet",
+  "owner_feedback": "On Kulikovo Field files are two distinct poem-cycle parts, NOT alternative mixes. Night Loop 4:21 is today's intended master. Rossiya already on website and reportedly Telegram. The Scythians are two separate musical arrangements named Version 1 and Version 2 on owner's YouTube, not poem parts.",
+  "project_identity": {
+    "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+    "website": "https://thelegendarypoet.ru/poets/alexander-blok",
+    "telegram": "https://t.me/thelegendarypoet",
+    "vk_community_id": 235216998,
+    "instagram_professional_id": "17841435926122104"
+  },
+  "local_storage": {
+    "review_root_relative": "E:/VideoChannelManager/TheLegendaryPoet/_AUDIO_FOR_REVIEW/БЛОК_ПО_ПРОИЗВЕДЕНИЯМ_СЛУШАТЬ/",
+    "html": "ОТКРЫТЬ_БЛОК_СЛУШАТЬ.html",
+    "priority_playlist": "01_ПРИОРИТЕТНЫЕ_7.m3u8",
+    "alternate_playlist": "02_ДОП_ДЛЯ_СРАВНЕНИЯ_2.m3u8",
+    "master_selection_rule": "owner review + full audition, first and last 30s and any unexpected bridge, no changes to source bytes",
+    "review_total": 9,
+    "priority_total": 7,
+    "alternate_total": 2
+  },
+  "artwork": {
+    "site_face": "TheLegendaryPoet/public/images/blok.jpg",
+    "site_existing_rossiya_square": "TheLegendaryPoet/public/images/music/blok-rossiya-cover.webp",
+    "site_existing_rossiya_wide": "TheLegendaryPoet/public/images/music/blok-rossiya-wide.webp",
+    "youtube_staging_folder": "TheLegendaryPoet/_AUDIO_FOR_REVIEW/_BLOK_ART_REFERENCE",
+    "youtube_verified_thumbnails": 6
+  },
+  "cover_policy": "One coherent Blok identity reference from website; per distinct published musical release an original square 1400x1400 cover and wide 1920x1080, except Rossiya reuse existing verified assets. Existing YouTube thumbnails are unchanged REFERENCES, not automatically approved site artwork.",
+  "audio_technical_fact": "Actual selected MP3 files are 48 kHz stereo; website PR #577 corrects the old inaccurate manifest declaration of 44.1 kHz for Russia and Tucha. Do not transcode merely to match metadata; verify codec and file at publication.",
+  "site_release_gate": "No new published entry before full owner listening, approved images, waveform from selected master, SHA256, manifest, stable URL and public readback. WAV/FLAC preferred for archival originals. MP3 derived from YouTube is a provisional candidate only.",
+  "platform_gate": "Do not infer Telegram/VK/Instagram/Rutube post success from plan. Read existing provider IDs and posts; never POST duplicate. Native 9:16 source needed for Instagram Reels.",
+  "releases": [
+    {
+      "id": "blok-night-pharmacy-night-loop",
+      "work": "Ночь, улица, фонарь, аптека…",
+      "unit": "complete-poem",
+      "label": "Night Loop — выбранная запись 2026-11-14",
+      "file": "01_Ночь_улица_NightLoop.mp3",
+      "sha256": "2d51f896de3eec934485ea00fe8acc4814665cccce49bdf86238f2b8704235ab",
+      "bytes": 6308122,
+      "seconds": 261.6,
+      "youtube_id": "aX878S3PGn4",
+      "youtube_video_seconds": 301,
+      "identification": "owner_confirmed_new_release",
+      "website_status": "not_published",
+      "telegram_status": "unverified",
+      "local_review_file": "01_Ночь_улица_NightLoop.mp3",
+      "local_review_sha256": "2d51f896de3eec934485ea00fe8acc4814665cccce49bdf86238f2b8704235ab",
+      "youtube_url": "https://www.youtube.com/watch?v=aX878S3PGn4",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "aX878S3PGn4",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
+      "music_style_short": "Кинематографический дабстеп, мрачный эмбиент и даб",
+      "music_style_source": "Owner-provided Suno Style text, 2026-11-14: Cinematic dubstep crossed with ritual dark ambient and spacious dub; Russian male baritone; 140 BPM / 70 BPM halftime.",
+      "music_style_verified_for": "current Night Loop edition only; not older May recording",
+      "artwork_selection": {
+        "owner_explicit_approval": true,
+        "original_source_filename": "wp0l2FI4nPOcv0v6PHFmk1Y9Je8bO_4Am-NveF9nF54.png",
+        "original_source_sha256": "3cf1f680becbb57965eac044355263181ca281ce92cbf26245e5b242afbc5134",
+        "square_webp_filename": "blok-night-loop-cover.webp",
+        "square_webp_sha256": "f0eaae8f4426b8f3f091f46ca60cb65311e480cfc6b457e614351ff92186fbca",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец отдельно прислал и выбрал ночную сцену с аптекой и фонарём.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    },
+    {
+      "id": "blok-kulikovo-part-1",
+      "work": "На поле Куликовом",
+      "unit": "poem-cycle-part-1-of-5",
+      "label": "Часть I — «Река раскинулась…»",
+      "file": "02_На_поле_Куликовом_Часть_I.mp3",
+      "sha256": "0db6c6f99caf228a73770832fabc20a1f55441e4c1f2a2fe8a24365631a239e7",
+      "bytes": 6449301,
+      "seconds": 284,
+      "youtube_id": "U4D40EQg10U",
+      "youtube_video_seconds": 284,
+      "identification": "owner_confirmed_part_1",
+      "website_status": "not_published",
+      "telegram_status": "unverified",
+      "local_review_file": "02_На_поле_Куликовом_Часть_I.mp3",
+      "local_review_sha256": "0db6c6f99caf228a73770832fabc20a1f55441e4c1f2a2fe8a24365631a239e7",
+      "youtube_url": "https://www.youtube.com/watch?v=U4D40EQg10U",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "U4D40EQg10U",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
+      "artwork_selection": {
+        "owner_explicit_approval": true,
+        "original_source_filename": "a_cinematic_highly_detailed_realistic_portrait_s.png",
+        "original_source_sha256": "25c840f2d6dc6c3751bee07d966fcc74800aca275129f4d3bbca3940a0fda722",
+        "square_webp_filename": "blok-kulikovo-part-1-cover.webp",
+        "square_webp_sha256": "2d5ae5e7b8a5918434bd91bd1bd5bda064dda1f925289f9cf06dfb5d43b68fe1",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец прямо подтвердил Куликово I со скачущей кобылицей.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    },
+    {
+      "id": "blok-kulikovo-part-2",
+      "work": "На поле Куликовом",
+      "unit": "poem-cycle-part-2-of-5",
+      "label": "Часть II — «За Непрядвой лебеди кричали…»",
+      "file": "03_На_поле_Куликовом_Часть_II.mp3",
+      "sha256": "1bf031fafb8b1f4e0a651a28893706c72e759fc8c2caed2557e4222a94fcf25a",
+      "bytes": 6156969,
+      "seconds": 278.4,
+      "youtube_id": "RuTmtXUuxm8",
+      "youtube_video_seconds": 281,
+      "identification": "owner_confirmed_part_2",
+      "website_status": "not_published",
+      "telegram_status": "unverified",
+      "local_review_file": "03_На_поле_Куликовом_Часть_II.mp3",
+      "local_review_sha256": "1bf031fafb8b1f4e0a651a28893706c72e759fc8c2caed2557e4222a94fcf25a",
+      "youtube_url": "https://www.youtube.com/watch?v=RuTmtXUuxm8",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "RuTmtXUuxm8",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
+      "artwork_selection": {
+        "owner_explicit_approval": true,
+        "original_source_filename": "блок_у_непрядвы_под_лунным_светом.png",
+        "original_source_sha256": "c9dd9c9d3533eeb05821e109066f83d2ec9472e38e2870a13374d12ba0d98c8b",
+        "square_webp_filename": "blok-kulikovo-part-2-cover.webp",
+        "square_webp_sha256": "f2253d7b9b481792683bd92029f4c593ab804fc4310faf06e7376b3e4c872f3e",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец прямо выбрал вариант В (крупнее портрет поэта) в сравнении трёх обложек Непрядвы.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    },
+    {
+      "id": "blok-rossiya",
+      "work": "Россия",
+      "unit": "complete-poem",
+      "label": "Официальный релиз сайта, Telegram-аудио — та же звуковая дорожка",
+      "file": "04_Россия_ОПУБЛИКОВАНА.mp3",
+      "sha256": "feb6d1607278fce8621000a542e76e075cca5a6b44cf63c0a9db67603b943c9d",
+      "bytes": 7996391,
+      "seconds": 257.64,
+      "youtube_id": "GVMafWIYPpI",
+      "youtube_video_seconds": 270,
+      "identification": "site_immutable_mp3_hash_and_owner_telegram_report",
+      "website_status": "published_verified_in_main_music_catalog",
+      "telegram_status": "owner_reported_already_published_needs_readback",
+      "local_review_file": "04_Россия_ОПУБЛИКОВАНА.mp3",
+      "local_review_sha256": "feb6d1607278fce8621000a542e76e075cca5a6b44cf63c0a9db67603b943c9d",
+      "youtube_url": "https://www.youtube.com/watch?v=GVMafWIYPpI",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "GVMafWIYPpI",
+      "cover_final_status": "existing_site_square_and_wide"
+    },
+    {
+      "id": "blok-scythians-version-1",
+      "work": "Скифы",
+      "unit": "complete-poem-music-arrangement-v1",
+      "label": "Музыкальная версия 1 — 7:25",
+      "file": "05_Скифы_Версия_1.mp3",
+      "sha256": "f1d39c9b76c6e71b7365d94bd58990e348ca678f0660678f6e5a78880631dc97",
+      "bytes": 10754366,
+      "seconds": 445.5,
+      "youtube_id": "ib2ehg2__sg",
+      "youtube_video_seconds": 446,
+      "identification": "youtube_title_duration_match_pending_audio_fingerprint_or_owner_listen",
+      "website_status": "not_published",
+      "telegram_status": "unverified",
+      "local_review_file": "05_Скифы_Версия_1.mp3",
+      "local_review_sha256": "f1d39c9b76c6e71b7365d94bd58990e348ca678f0660678f6e5a78880631dc97",
+      "youtube_url": "https://www.youtube.com/watch?v=ib2ehg2__sg",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "ib2ehg2__sg",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
+      "artwork_selection": {
+        "owner_explicit_approval": true,
+        "original_source_filename": "c2896d4e-ce56-46db-997d-27fd953ad3da(1).png",
+        "original_source_sha256": "a09f5b366914d6511922a830c79e92ddc198a1c7286f5b7a8f078bbc72a15bc4",
+        "square_webp_filename": "blok-scythians-version-1-cover.webp",
+        "square_webp_sha256": "02c011fd1f91d210bdc5091704de29b3bc62c86cfac043f3ef90752d74acca0a",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец повторно прислал ИСХОДНОЕ изображение с четырьмя дальними всадниками; густую конную атаку отклонил.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    },
+    {
+      "id": "blok-scythians-version-2",
+      "work": "Скифы",
+      "unit": "complete-poem-music-arrangement-v2",
+      "label": "Музыкальная версия 2 — 5:47",
+      "file": "06_Скифы_Версия_2.mp3",
+      "sha256": "ff7d795173a49eb8f9e568c38db2ec89f9d4dd2f2d4f6f4ba4b88e4bb237ca7b",
+      "bytes": 7973605,
+      "seconds": 347.521,
+      "youtube_id": "8g_4EVWFb1g",
+      "youtube_video_seconds": 348,
+      "identification": "youtube_title_duration_match_pending_audio_fingerprint_or_owner_listen",
+      "website_status": "not_published",
+      "telegram_status": "unverified",
+      "local_review_file": "06_Скифы_Версия_2.mp3",
+      "local_review_sha256": "ff7d795173a49eb8f9e568c38db2ec89f9d4dd2f2d4f6f4ba4b88e4bb237ca7b",
+      "youtube_url": "https://www.youtube.com/watch?v=8g_4EVWFb1g",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "8g_4EVWFb1g",
+      "cover_final_status": "visual_mapping_pending_final_confirmation",
+      "artwork_selection": {
+        "owner_explicit_approval": false,
+        "selected_number_note": "Owner selected image 9; exact visual mapping was reconstructed and needs final cross-check.",
+        "original_source_filename": "блок_и_всадники_в_грозовой_степи.png",
+        "original_source_sha256": "5a71c0516ebd2c1156fa9c8a32d7ef2d02474ff262dee04460617d885d02fc2b",
+        "square_webp_filename": "blok-scythians-version-2-cover.webp",
+        "square_webp_sha256": "920732b2cfee056ca30ee07aeaa25edf8d73930f49d74b6b2e15cd0eb8cd406b",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Реконструированное сопоставление с выбранным номером 9. Нумерация имела неоднозначность; перед публикацией нужен финальный визуальный контроль.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    },
+    {
+      "id": "blok-oh-i-want-to-live-youtube-audio-candidate",
+      "work": "О, я хочу безумно жить…",
+      "unit": "complete-poem",
+      "label": "YouTube audio extraction — candidate only (original Suno master not found)",
+      "file": "09_О_я_хочу_безумно_жить_YouTube_КАНДИДАТ.mp3",
+      "sha256": "726180baf14d097fd8a8de82c1ba39794a4b7848f9b6eab2f5dc5ecda91ac6f7",
+      "bytes": 5780727,
+      "seconds": 204.568,
+      "youtube_id": "lXwlZt1v97U",
+      "youtube_video_seconds": 205,
+      "identification": "verified_owner_youtube_video_audio_extracted_by_other_agent_local_bytes_and_sha256_verified",
+      "source_type": "youtube_derived_mp3_not_original_suno_master",
+      "website_status": "not_published__needs_full_listening_and_cover",
+      "telegram_status": "unverified",
+      "local_review_file": "09_О_я_хочу_безумно_жить_YouTube_КАНДИДАТ.mp3",
+      "local_review_sha256": "726180baf14d097fd8a8de82c1ba39794a4b7848f9b6eab2f5dc5ecda91ac6f7",
+      "youtube_url": "https://www.youtube.com/watch?v=lXwlZt1v97U",
+      "youtube_status": "verified_live_2026-11-14_exact_owner_channel",
+      "cover_reference_youtube_id": "lXwlZt1v97U",
+      "cover_final_status": "owner_approved_square_artwork_pending_upload",
+      "audio_quality_note": "~226 kbps MP3, no provenance of an original Suno WAV/FLAC; do not upgrade merely by re-encoding",
+      "tail_review": {
+        "asr_last_spoken": "repeated 'воплотить' around 145–153 sec; ASR not proof of absence of other music",
+        "silence_intervals_seconds": [
+          [
+            173.64,
+            177.31
+          ],
+          [
+            187.11,
+            188.64
+          ]
+        ],
+        "human_listen_pending": true,
+        "local_last_35sec_review": "C:/Users/Fedor/Downloads/БЛОК — АУДИО С YOUTUBE/ПРОСЛУШАТЬ_ФИНАЛ_35_СЕК.mp3"
+      },
+      "artwork_selection": {
+        "owner_explicit_approval": true,
+        "original_source_filename": "a_cinematic_realistic_highly_detailed_portrait_s.png",
+        "original_source_sha256": "1267a49eb46193e8b295de9005efe5070e1b9543e45504f93cb14965f0ce451d",
+        "square_webp_filename": "blok-oh-i-want-to-live-cover.webp",
+        "square_webp_sha256": "47f30142af738e2ff0b6406446a2c216840f7db23c1395000f356b2fae4d1ea6",
+        "square_dimensions": [
+          1400,
+          1400
+        ],
+        "source_dimensions": [
+          1254,
+          1254
+        ],
+        "wide_artwork_approved": false,
+        "id3_embedded": false,
+        "site_binary_uploaded": false,
+        "master_audio_approved": false,
+        "selection_note_ru": "Владелец выбрал предпоследнюю кабинетную генерацию первой десятки.",
+        "package_name": "Blok_MP3_Covers_2026-11-15_v2.zip"
+      }
+    }
+  ],
+  "compared_not_release": [
+    {
+      "work": "Ночь, улица, фонарь, аптека…",
+      "purpose": "alternative_not_NightLoop",
+      "file": "07_Ночь_улица_ДРУГАЯ_ВЕРСИЯ.mp3",
+      "sha256": "a95096693cb8b02e1261920c1e99fe4ea1b3384d0d771afe80c68ca90382f6bb",
+      "seconds": 290.9,
+      "music_style_status": "old_reggae_hypothesis_unverified_do_not_publish"
+    },
+    {
+      "work": "Россия",
+      "purpose": "telegram_export_same_decoded_pcm_as_website_master",
+      "file": "08_Россия_ТЕЛЕГРАМ_НЕ_ПУБЛИКОВАТЬ_ДВАЖДЫ.mp3",
+      "sha256": "4566990c49364ece7ff0b822bc6e105fa9a99f3ce4a34b91fc709b2278be876e",
+      "seconds": 257.64
+    }
+  ],
+  "technical_qa": {
+    "tool": "FFmpeg 2026-11-14 read-only",
+    "decoded_pcm_equality_rossiya": true,
+    "night_end_silence_detected": false,
+    "kulikovo_part_1_end_silence_detected": false,
+    "kulikovo_part_2_end_silence_detected": false,
+    "scythians_v1_end_silence_detected_seconds": 1.02,
+    "scythians_v2_internal_quiet_segment_seconds": 1.13,
+    "manual_audition_required": true
+  },
+  "change_policy": "Provider inert: no cross-platform writes; human review and permission check before uploads. No duplicate Russia. A music arrangement v2 is not automatically the second poem in an original cycle.",
+  "youtube_playlist_audit": {
+    "source_feed": "https://www.youtube.com/feeds/videos.xml?playlist_id=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
+    "playlist_url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
+    "checked_date": "2026-11-14",
+    "playlist_video_count": 9,
+    "music_video_count": 8,
+    "excerpt_video_count": 1,
+    "entries_in_playlist_order": [
+      {
+        "youtube_id": "aX878S3PGn4",
+        "category": "music_principal",
+        "reference": "blok-night-pharmacy-night-loop"
+      },
+      {
+        "youtube_id": "nFNtFHYNBiM",
+        "category": "short_poetry_excerpt_not_music_master",
+        "reference": "first four lines of Мне страшно с Тобой встречаться"
+      },
+      {
+        "youtube_id": "RuTmtXUuxm8",
+        "category": "music_principal",
+        "reference": "blok-kulikovo-part-2"
+      },
+      {
+        "youtube_id": "U4D40EQg10U",
+        "category": "music_principal",
+        "reference": "blok-kulikovo-part-1"
+      },
+      {
+        "youtube_id": "GVMafWIYPpI",
+        "category": "music_principal",
+        "reference": "blok-rossiya"
+      },
+      {
+        "youtube_id": "xqRJU9DS2cc",
+        "category": "music_alternate_confirmed_audio_match",
+        "reference": "Former Night Pharmacy recording, local 07_Ночь_улица_ДРУГАЯ_ВЕРСИЯ.mp3, SHA-256 a95096693cb8b02e1261920c1e99fe4ea1b3384d0d771afe80c68ca90382f6bb",
+        "audio_comparison": {
+          "method": "FFmpeg 8-kHz decoded mono waveform; log-magnitude STFT cosine similarity across four 30-second segments of own YouTube bestaudio versus local MP3",
+          "spectral_cosine_by_segment_start_seconds": [
+            {
+              "start": 15,
+              "similarity": 0.99755
+            },
+            {
+              "start": 90,
+              "similarity": 0.99743
+            },
+            {
+              "start": 160,
+              "similarity": 0.99799
+            },
+            {
+              "start": 240,
+              "similarity": 0.99769
+            }
+          ],
+          "youtube_duration_seconds": 290.961,
+          "local_duration_seconds": 290.9,
+          "assessment": "same musical recording in different encodings; do not upload duplicate"
+        }
+      },
+      {
+        "youtube_id": "lXwlZt1v97U",
+        "category": "music_principal",
+        "reference": "blok-oh-i-want-to-live-youtube-audio-candidate"
+      },
+      {
+        "youtube_id": "8g_4EVWFb1g",
+        "category": "music_principal",
+        "reference": "blok-scythians-version-2"
+      },
+      {
+        "youtube_id": "ib2ehg2__sg",
+        "category": "music_principal",
+        "reference": "blok-scythians-version-1"
+      }
+    ],
+    "conclusion": "All nine playlist videos matched by content category: seven primary musical candidates, one older Night Pharmacy arrangement now independently verified by multi-segment spectral audio comparison, and one short four-line poetry excerpt. A nine-item playlist is not a nine-master site-audio backlog.",
+    "publication_effect": "none — metadata-only audit; no website or provider writes"
+  }
+}

@@ -1,0 +1,94 @@
+name: Milovi Telegram exact approved 15-video November schedule
+
+on:
+  schedule:
+    # 19:07, 19:27, 19:47, 20:07, 20:27, 20:47 Moscow.
+    # Independent due checks protect against GitHub scheduled-event delays;
+    # all six remain inside the strict 19:00-21:00 verified window.
+    - cron: "7,27,47 16,17 8-22 11 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  # Same group as canonical Milovi publisher; state writes never overlap.
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  exact-owner-video-control:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src:.
+      STATE_DIR: .state/milovi
+      STATE_BRANCH: state/milovi-cake-telegram
+    steps:
+      - name: Check out exact main and immutable releases
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Install existing minimal Telegram validator requirements
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Fail closed if newer main or missing CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || exit 3
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml --sha "$GITHUB_SHA"
+
+      - name: Validate all fifteen exact released videos without provider access
+        run: python -m scripts.milovi_muted15_due validate
+
+      - name: Check out shared protected state branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compute exact scheduled day and state gate without mutation
+        if: github.event_name == 'schedule'
+        id: due
+        run: |
+          set -euo pipefail
+          python -m scripts.milovi_muted15_due due \
+            --state-checkout "$STATE_DIR" --output "$GITHUB_OUTPUT"
+
+      - name: Dispatch only canonical single-writer publisher for due item
+        if: github.event_name == 'schedule' && steps.due.outputs.dispatch == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_ID: ${{ steps.due.outputs.publication_id }}
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || exit 3
+          gh workflow run milovi-telegram-feed-publisher.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f operation=publish -f publication_id="$PUBLICATION_ID" \
+            -f "confirm=PUBLISH:@MiloviCake:$PUBLICATION_ID"
+
+      - name: Detect expired approved slots and fail visibly without replay
+        if: ${{ always() && github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.milovi_muted15_due audit-expired \
+            --state-checkout "$STATE_DIR"

@@ -202,3 +202,109 @@ def test_resigned_upload_intent_rejects_invalid_metadata_structure(
 
     with pytest.raises(UploadPlanError, match=expected_message):
         validate_intent(intent)
+
+
+@pytest.mark.parametrize(
+    "blocked_copy",
+    [
+        "This is REVIEW_ONLY_NO_UPLOAD; not a YouTube description.",
+        "SOURCE_DATE_CORRECTED_REVIEW_ONLY_NO_UPLOAD",
+        "NOT_FOR_PUBLICATION: awaiting owner approval.",
+        "PUBLICATION_BLOCKED: legal review.",
+        "Письменное разрешение пока не подтверждено.",
+    ],
+)
+def test_internal_publication_hold_never_becomes_public_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, blocked_copy: str
+) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["description"] = blocked_copy
+
+    def forbidden_digest(_path: Path) -> str:
+        pytest.fail("An internal release hold must be rejected before reading media bytes.")
+
+    monkeypatch.setattr("video_channel_manager.youtube_upload_plan.sha256_file", forbidden_digest)
+    with pytest.raises(UploadPlanError, match="Publication hold marker in public metadata description"):
+        build_intent(spec, media)
+
+
+def test_public_source_attribution_not_confused_with_internal_hold(tmp_path: Path) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["description"] = "Paul Washer preaching; original source and credit appear below."
+    validate_intent(build_intent(spec, media))
+
+
+def test_neural_dub_review_required_propagates_into_exact_intent(tmp_path: Path) -> None:
+    media, sha = _media(tmp_path)
+    ordinary = build_intent(_spec(sha), media)
+    assert "audio_review_required" not in ordinary
+
+    spec = _spec(sha)
+    spec["audio_review_required"] = True
+    dubbed = build_intent(spec, media)
+    assert dubbed["audio_review_required"] is True
+    assert dubbed["upload_key_sha256"] == ordinary["upload_key_sha256"]
+    assert dubbed["intent_sha256"] != ordinary["intent_sha256"]
+    validate_intent(dubbed)
+
+
+@pytest.mark.parametrize("invalid", ["true", 1, None])
+def test_audio_review_flag_never_coerces_truthy_values(tmp_path: Path, invalid: object) -> None:
+    media, sha = _media(tmp_path)
+    spec = _spec(sha)
+    spec["audio_review_required"] = invalid
+    with pytest.raises(UploadPlanError, match="audio_review_required must be boolean"):
+        build_intent(spec, media)
+
+
+def test_resigned_intent_cannot_downgrade_audio_review_flag(tmp_path: Path) -> None:
+    media, sha = _media(tmp_path)
+    spec = _spec(sha)
+    spec["audio_review_required"] = True
+    intent = build_intent(spec, media)
+    intent["audio_review_required"] = False
+    intent["intent_sha256"] = intent_digest(intent)
+    with pytest.raises(UploadPlanError, match="audio_review_required must be true"):
+        validate_intent(intent)
+
+
+@pytest.mark.parametrize("missing_or_invalid", [None, "false", "true", 0, 1, [], {}])
+def test_upload_spec_requires_explicit_bool_synthetic_disclosure_before_media(
+    tmp_path: Path, missing_or_invalid: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Do not quietly set True for a real-sermon upload with missing disclosure."""
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha, title="Authentic recorded John MacArthur sermon")
+    if missing_or_invalid is None:
+        spec.pop("contains_synthetic_media")
+    else:
+        spec["contains_synthetic_media"] = missing_or_invalid
+
+    def media_must_not_be_read(_path: Path) -> str:
+        pytest.fail("Disclosure preflight must fail before accessing upload MP4 bytes")
+
+    monkeypatch.setattr("video_channel_manager.youtube_upload_plan.sha256_file", media_must_not_be_read)
+    with pytest.raises(UploadPlanError, match="contains_synthetic_media must be an explicit boolean"):
+        build_intent(spec, media)
+
+
+@pytest.mark.parametrize("is_generated", [False, True])
+def test_upload_intent_preserves_explicit_synthetic_disclosure_decision(tmp_path: Path, is_generated: bool) -> None:
+    media, media_sha = _media(tmp_path)
+    spec = _spec(media_sha)
+    spec["contains_synthetic_media"] = is_generated
+    intent = build_intent(spec, media)
+    assert intent["status"]["containsSyntheticMedia"] is is_generated
+    validate_intent(intent)
+
+
+@pytest.mark.parametrize("invalid", [None, "false", 1])
+def test_signed_intent_cannot_smuggle_missing_or_string_synthetic_disclosure(tmp_path: Path, invalid: object) -> None:
+    media, media_sha = _media(tmp_path)
+    intent = build_intent(_spec(media_sha), media)
+    intent["status"]["containsSyntheticMedia"] = invalid
+    intent["intent_sha256"] = intent_digest(intent)
+    with pytest.raises(UploadPlanError, match="status.containsSyntheticMedia must be an explicit boolean"):
+        validate_intent(intent)

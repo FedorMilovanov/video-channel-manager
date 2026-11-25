@@ -14,7 +14,7 @@ from video_channel_manager.platforms.vk.writer import VkWriteError
 
 def _store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path)
-    store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
+    store.save_token("synthetic-vk-thumb-transport", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return store
 
 
@@ -32,7 +32,7 @@ def test_thumbnail_safe_reservation_retries_provider_transient_error(tmp_path: P
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         api_base_url="https://api.example/method",
         retry_policy=RetryPolicy(max_attempts=3, base_delay_seconds=0.25, jitter_seconds=0.0),
@@ -43,6 +43,52 @@ def test_thumbnail_safe_reservation_retries_provider_transient_error(tmp_path: P
     assert writer.get_upload_url(owner_id=-235216998) == "https://upload.example/thumb"
     assert calls == 2
     assert sleeps == [0.25]
+
+
+@pytest.mark.parametrize("error_code", [9, "9"])
+def test_thumbnail_flood_9_opens_method_circuit_and_never_retries(tmp_path: Path, error_code: int | str) -> None:
+    """VK flood code 9 is a durable circuit, not a transient retryable response."""
+    calls = 0
+    sleeps: list[float] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        assert request.url.host == "api.vk.ru"
+        assert request.url.path == "/method/video.getThumbUploadUrl"
+        return httpx.Response(
+            200,
+            json={"error": {"error_code": error_code, "error_msg": "Flood control"}},
+        )
+
+    store = _store(tmp_path)
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        writer = VkThumbnailWriter(
+            token_store=store,
+            account_alias="synthetic-vk-thumb-transport",
+            http_client=client,
+            retry_policy=RetryPolicy(max_attempts=8, base_delay_seconds=0.25, jitter_seconds=0.0),
+            sleep=sleeps.append,
+            jitter=lambda: 0.0,
+        )
+        with pytest.raises(VkWriteError) as first:
+            writer.get_upload_url(owner_id=-235216998)
+        assert first.value.code == 9
+        assert first.value.kind is HttpFailureKind.PROVIDER_FLOOD_CONTROL
+        assert first.value.retryable is False
+        assert first.value.attempts == 1
+        assert calls == 1
+        assert sleeps == []
+        assert writer.flood_control.get("video.getThumbUploadUrl") is not None
+
+        with pytest.raises(VkWriteError) as blocked:
+            writer.get_upload_url(owner_id=-235216998)
+        assert blocked.value.code == 9
+        assert blocked.value.kind is HttpFailureKind.PROVIDER_FLOOD_CONTROL
+        assert blocked.value.retryable is False
+        assert blocked.value.attempts == 0
+        assert calls == 1
+        assert sleeps == []
 
 
 def test_thumbnail_upload_transport_is_single_attempt_and_redacted(tmp_path: Path) -> None:
@@ -58,7 +104,7 @@ def test_thumbnail_upload_transport_is_single_attempt_and_redacted(tmp_path: Pat
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         retry_policy=RetryPolicy(max_attempts=9),
     )
@@ -85,7 +131,7 @@ def test_thumbnail_save_provider_transient_error_is_not_replayed(tmp_path: Path)
     client = httpx.Client(transport=httpx.MockTransport(respond))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
         retry_policy=RetryPolicy(max_attempts=8),
     )
@@ -107,7 +153,7 @@ def test_thumbnail_borrowed_client_remains_open(tmp_path: Path) -> None:
     client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={})))
     writer = VkThumbnailWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-thumb-transport",
         http_client=client,
     )
 

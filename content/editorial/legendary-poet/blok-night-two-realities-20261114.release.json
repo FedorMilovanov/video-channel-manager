@@ -1,0 +1,149 @@
+{
+  "schema_name": "legendary-poet.cross-platform-release-intake",
+  "schema_version": 1,
+  "release_id": "tlp-blok-night-two-realities-20261114",
+  "project_key": "legendary-poet",
+  "purpose": "Source-locked Blok dual-realities publication across established platforms without duplicate uploads",
+  "state": "youtube_video_verified__audio_master_owner_identified__site_music_held_for_review",
+  "source": {
+    "site_poet": "https://thelegendarypoet.ru/poets/alexander-blok",
+    "original_1912": "https://rvb.ru/20vek/blok/pss20/vol3/text/0548.html",
+    "original_1914": "https://rvb.ru/20vek/blok/pss20/vol3/text/0593.html",
+    "museum": "https://spbmuseum.ru/exhibits_and_exhibitions/temporary_exhibitions/53904/",
+    "researched_site_change": "https://github.com/FedorMilovanov/TheLegendaryPoet/pull/575",
+    "youtube_copy": "content/youtube/legendary-poet/blok-night-two-realities-copy-review-20261114.md",
+    "website_music_workflow": "FedorMilovanov/TheLegendaryPoet/docs/MUSIC_RELEASE_WORKFLOW.md",
+    "website_audio_intake": "FedorMilovanov/TheLegendaryPoet/docs/AUDIO_CATALOG_INTAKE_2026-11-14.md",
+    "related_audio_matrix": "content/editorial/legendary-poet/blok-six-audio-releases-20261114.json",
+    "researched_site_change_status": "merged_and_public_render_verified_2026-11-14"
+  },
+  "editorial_scope": "The 1912/1914 juxtaposition and happy DJ Blok are explicitly modern artistic fiction, not historical footage or autobiography.",
+  "project_proof": {
+    "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+    "vk_community_id": 235216998,
+    "vk_owner_id": -235216998,
+    "instagram_professional_id": "17841435926122104",
+    "instagram_username": "the.legendary.poet",
+    "telegram_public_channel": "https://t.me/thelegendarypoet",
+    "telegram_numeric_chat_id": null,
+    "rutube_public_channel": "https://rutube.ru/channel/74579453/"
+  },
+  "assets": {
+    "final_audio_master": {
+      "path": null,
+      "sha256": null,
+      "duration_seconds": null,
+      "source": "final direct export, never 128 kbps downloader conversion",
+      "status": "owner_identified_original_mp3__not_approved_for_site_until_full_listen",
+      "origin_kind": "owner_local_mp3_export",
+      "original_lossless_path": null,
+      "original_lossless_sha256": null,
+      "site_mp3_path": null,
+      "site_mp3_sha256": null,
+      "human_full_listen_review": null,
+      "intro_outro_review": null,
+      "audio_candidate_audit_json": null,
+      "notes": "User explicitly identifies Night Loop 4:21 as today's recording; YouTube full video aX878S3PGn4 is 5:01, so do not extract its end-card soundtrack. Local silence detector found no 0.7+s silence; it cannot detect extra music/outros. Other night variant (4:50) is NOT this release.",
+      "candidate_file": "01_Ночь_улица_NightLoop.mp3",
+      "candidate_sha256": "2d51f896de3eec934485ea00fe8acc4814665cccce49bdf86238f2b8704235ab",
+      "candidate_duration_seconds": 261.6,
+      "candidate_sample_rate_hz": 48000
+    },
+    "final_full_video_master": {
+      "path": null,
+      "sha256": null,
+      "geometry": null,
+      "status": "not_bound"
+    },
+    "instagram_native_vertical": {
+      "path": null,
+      "sha256": null,
+      "geometry": "9:16",
+      "status": "not_bound"
+    },
+    "square_audio_cover": {
+      "path": null,
+      "sha256": null,
+      "status": "verified_youtube_thumbnail_reference_and_site_blok_portrait_collected__square_cover_not_approved"
+    }
+  },
+  "destinations": {
+    "website": {
+      "content_status": "merged_pr_575",
+      "publishing_status": "public_poetry_text_verified_in_browser_2026-11-14",
+      "idempotency_key": "tlp-blok-night-two-realities-website-20261114"
+    },
+    "youtube": {
+      "target_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+      "existing_video_id": "aX878S3PGn4",
+      "publication_status": "verified_live_in_exact_owner_channel_2026-11-14",
+      "idempotency_key": "tlp-blok-night-two-realities-youtube-20261114",
+      "public_video_url": "https://www.youtube.com/watch?v=aX878S3PGn4",
+      "public_video_seconds": 301
+    },
+    "telegram_audio": {
+      "target_public": "https://t.me/thelegendarypoet",
+      "target_chat_id": null,
+      "publication_status": "hold_missing_mp3_and_bot_target",
+      "idempotency_key": "tlp-blok-night-two-realities-tg-audio-20261114"
+    },
+    "vk_video": {
+      "target_owner_id": -235216998,
+      "publication_status": "hold_missing_master_and_provider_duplicate_check",
+      "historic_candidate": "content/policies/vk-wall-wave-202608.json / vk-wall-202608-05-blok-night",
+      "idempotency_key": "tlp-blok-night-two-realities-vk-video-20261114"
+    },
+    "vk_wall": {
+      "target_owner_id": -235216998,
+      "publication_status": "hold_previous_202608_05_wall_post_unverified",
+      "idempotency_key": "tlp-blok-night-two-realities-vk-wall-20261114"
+    },
+    "instagram_reel": {
+      "target_id": "17841435926122104",
+      "publication_status": "hold_missing_vertical_master_and_fresh_graph_readback",
+      "idempotency_key": "tlp-blok-night-two-realities-ig-reel-20261114"
+    },
+    "instagram_carousel": {
+      "target_id": "17841435926122104",
+      "publication_status": "hold_missing_reviewed_artwork_and_graph_readback",
+      "idempotency_key": "tlp-blok-night-two-realities-ig-carousel-20261114"
+    },
+    "rutube": {
+      "target_public": "https://rutube.ru/channel/74579453/",
+      "publication_status": "hold_provider_identity_and_master_not_verified",
+      "idempotency_key": "tlp-blok-night-two-realities-rutube-20261114"
+    },
+    "website_music": {
+      "track_id": "blok-night-pharmacy-night-loop",
+      "availability": "hold_full_audio_listen_and_artwork_and_site_codec_contract",
+      "is_existing_published_track": false,
+      "original_wav_or_flac_master_sha256": null,
+      "site_mp3_sha256": null,
+      "source_review": "owner_identified_version_pending_full_audio_listen",
+      "planned_player": "existing_music_catalog_and_audio_player",
+      "no_placeholder_in_published_catalog": true,
+      "idempotency_key": "tlp-blok-night-two-realities-website-music-20261114",
+      "candidate_mp3_sha256": "2d51f896de3eec934485ea00fe8acc4814665cccce49bdf86238f2b8704235ab",
+      "candidate_duration_seconds": 261.6
+    }
+  },
+  "release_policy": {
+    "avoid_duplicate_uploads": true,
+    "do_not_infer_published_from_queue": true,
+    "do_not_infer_unpublished_from_old_queue": true,
+    "require_media_hash_and_original_master": true,
+    "require_exact_provider_target_and_live_preflight": true,
+    "do_not_replay_ambiguous_provider_effect": true,
+    "require_provider_receipt_and_public_readback": true,
+    "ai_audio_video_disclosure": true,
+    "preserve_original_poetry": true,
+    "do_not_modify_other_project_channels": true,
+    "require_clean_audio_without_video_outro": true,
+    "require_intro_outro_and_full_listen": true,
+    "preserve_original_wav_flac": true,
+    "website_audio_published_only_after_verifiable_mp3_manifest": true,
+    "do_not_reencode_low_bitrate_audio_as_fake_premium_master": true
+  },
+  "audit_timestamp_utc": null,
+  "note": "Source of truth for actual six releases is related_audio_matrix. User corrected Kulikovo I/II and Scythians two musical Versions. This release is not to be posted twice. No new provider uploads performed; only YouTube public readback completed."
+}

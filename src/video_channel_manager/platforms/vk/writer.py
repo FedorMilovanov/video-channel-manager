@@ -22,6 +22,7 @@ from video_channel_manager.platforms.http import (
 )
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
 from video_channel_manager.platforms.vk.models import VkAccessToken
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     UploadTicketProtocol,
@@ -34,7 +35,7 @@ from video_channel_manager.platforms.vk.wall_safety import (
     VkUploadWallPolicy,
 )
 
-_API_BASE_URL = "https://api.vk.com/method"
+_API_BASE_URL = "https://api.vk.ru/method"
 _RETRYABLE_API_CODES = frozenset({6, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
@@ -109,6 +110,8 @@ class VkVideoWriter(HttpClientOwner):
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = random.random,
     ) -> None:
+        # Stop known retired aliases before token-store or HTTP initialization.
+        reject_quarantined_legacy_alias(account_alias)
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
@@ -130,7 +133,8 @@ class VkVideoWriter(HttpClientOwner):
         self._jitter = jitter
 
     def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
-        token = self.token_store.load_token(self.account_alias)
+        reject_quarantined_legacy_alias(self.account_alias)
+        token = self.token_store.load_token_for_provider(self.account_alias)
         if token.is_expired():
             raise VkWriteError(
                 "VK access token is expired. Import a fresh user token with verified permissions.",

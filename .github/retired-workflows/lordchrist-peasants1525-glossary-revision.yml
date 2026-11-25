@@ -1,0 +1,65 @@
+name: Lordchrist Peasants 1525 glossary in-place correction
+
+on:
+  workflow_dispatch:
+    inputs:
+      publication_id:
+        description: Exact already-published article ID; no new publication
+        required: true
+        type: string
+      confirm:
+        description: Exact one-time consent for original edit or readback reconciliation
+        required: true
+        type: string
+      revision_mode:
+        description: Original one-shot or reconcile exact prior edit without re-editing page
+        required: true
+        type: choice
+        default: original
+        options:
+          - original
+          - reconcile-only
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  revise-existing-page-and-post:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.publication_id == 'lordchrist-telegraph-peasants-1525-20261115' &&
+      (
+        (inputs.revision_mode == 'original' && inputs.confirm == 'REVISE_PEASANTS1525_GLOSSARY') ||
+        (inputs.revision_mode == 'reconcile-only' && inputs.confirm == 'RECONCILE_PEASANTS1525_GLOSSARY')
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      REVISION_MODE: ${{ inputs.revision_mode }}
+      PYTHONPATH: src
+      LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+      LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install canonical Telegram publication dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+      - name: In-place page and original Telegram message, each with durable intent
+        shell: bash
+        run: bash scripts/peasants1525-glossary-inplace-release.sh

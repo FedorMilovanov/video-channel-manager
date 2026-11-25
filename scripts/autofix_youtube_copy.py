@@ -19,7 +19,10 @@ from video_channel_manager.platforms.youtube.lord_god_retired_appeal import buil
 from video_channel_manager.platforms.youtube.lord_god_scoped import (
     build_one_video_chapter_plan,
     build_one_video_scoped_plan,
+    build_panorama_owner_chapter_plan,
 )
+
+from video_channel_manager.platforms.youtube.panorama_format_release import build_format_correction_plan
 
 RULESET = "youtube-copy-safe-v2"
 
@@ -255,7 +258,9 @@ def _atomic_write_text(path: Path, text: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path, help="video-manager AuditPackage JSON")
+    parser.add_argument(
+        "input", type=Path, help="AuditPackage JSON or exact Panorama owner receipt in exact-owner chapter mode"
+    )
     parser.add_argument("--plan-output", type=Path, help="Output JSON plan path")
     parser.add_argument("--lord-god-preview", type=Path, help="Exact reviewed Lord God shelf cleanup preview")
     parser.add_argument(
@@ -269,6 +274,10 @@ def main() -> int:
     parser.add_argument(
         "--previous-editorial-plan", type=Path, help="Prior signed owner-video description release plan"
     )
+    parser.add_argument("--panorama-format-candidate", type=Path, help="Exact-owner historical format candidate")
+    parser.add_argument("--panorama-format-review", type=Path, help="Independent format-only review")
+    parser.add_argument("--panorama-playlist-receipt", type=Path, help="Frozen exact-owner Panorama playlist")
+    parser.add_argument("--panorama-source-register", type=Path, help="Frozen exact 68-episode source register")
     parser.add_argument("--archive-transcript-db", type=Path, help="Archived timestamped SQLite transcript source")
     parser.add_argument("--target-video-id", help="Exactly one public Lord God video for either reviewed scoped mode")
     parser.add_argument("--report-output", type=Path, help="Output Markdown diff path")
@@ -281,12 +290,44 @@ def main() -> int:
 
     try:
         payload = json.loads(args.input.read_text(encoding="utf-8-sig"))
-        if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.audit-package":
+        format_mode = bool(args.panorama_format_candidate or args.panorama_format_review)
+        exact_owner_mode = bool(args.panorama_playlist_receipt or args.panorama_source_register or format_mode)
+        if format_mode and not (
+            args.panorama_playlist_receipt
+            and args.panorama_source_register
+            and args.panorama_format_candidate
+            and args.panorama_format_review
+            and args.target_video_id
+            and not args.archive_transcript_db
+            and not args.previous_editorial_plan
+        ):
+            raise ValueError(
+                "Format correction requires exact owner, both registers, candidate, independent review and target"
+            )
+        if (
+            exact_owner_mode
+            and not format_mode
+            and not (
+                args.panorama_playlist_receipt
+                and args.panorama_source_register
+                and args.lord_god_chapters_review
+                and args.target_video_id
+                and args.archive_transcript_db
+                and not args.previous_editorial_plan
+            )
+        ):
+            raise ValueError(
+                "Exact Panorama owner mode requires both registers, chapter review, target and transcript DB; no prior plan"
+            )
+        if not isinstance(payload, dict) or (
+            not exact_owner_mode and payload.get("schema_name") != "video-manager.audit-package"
+        ):
             raise ValueError("Input must be a video-manager AuditPackage JSON object.")
         selected_modes = [
             bool(args.lord_god_preview),
             bool(args.lord_god_chapters_review),
             bool(args.lord_god_retired_appeal_review),
+            format_mode,
         ]
         if sum(selected_modes) > 1:
             raise ValueError("Lord God reviewed cleanup modes are mutually exclusive")
@@ -298,6 +339,26 @@ def main() -> int:
                 payload, args.input, review, args.lord_god_retired_appeal_review, video_id=args.target_video_id
             )
             unresolved_count = len(plan["unresolved"])
+        elif format_mode:
+            plan, report = build_format_correction_plan(
+                args.input,
+                args.panorama_playlist_receipt,
+                args.panorama_source_register,
+                args.panorama_format_candidate,
+                args.panorama_format_review,
+                video_id=args.target_video_id,
+            )
+            unresolved_count = 0
+        elif exact_owner_mode:
+            plan, report = build_panorama_owner_chapter_plan(
+                args.input,
+                args.panorama_playlist_receipt,
+                args.panorama_source_register,
+                args.lord_god_chapters_review,
+                args.archive_transcript_db,
+                video_id=args.target_video_id,
+            )
+            unresolved_count = 0
         elif args.lord_god_chapters_review:
             if not (args.target_video_id and args.previous_editorial_plan and args.archive_transcript_db):
                 raise ValueError("Chapter mode requires target ID, previous editorial plan and transcript DB")
@@ -332,8 +393,21 @@ def main() -> int:
     plan_output = args.plan_output or _default_output(args.input, "-copy-fix-plan.json")
     report_output = args.report_output or _default_output(args.input, "-copy-fix-report.md")
 
-    _atomic_write_text(plan_output, json.dumps(plan, ensure_ascii=False, indent=2) + "\n")
-    _atomic_write_text(report_output, report)
+    if exact_owner_mode:
+        if plan_output.resolve() == report_output.resolve() or plan_output.exists() or report_output.exists():
+            parser.error("Exact owner mode requires two distinct unused output paths")
+        # Exclusive creation preserves immutable evidence and prior plans even if
+        # a concurrent process creates an output after the initial path check.
+        for output, content in (
+            (plan_output, json.dumps(plan, ensure_ascii=False, indent=2) + "\n"),
+            (report_output, report),
+        ):
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with output.open("x", encoding="utf-8") as handle:
+                handle.write(content)
+    else:
+        _atomic_write_text(plan_output, json.dumps(plan, ensure_ascii=False, indent=2) + "\n")
+        _atomic_write_text(report_output, report)
 
     print(f"Wrote {plan_output}")
     print(f"Wrote {report_output}")

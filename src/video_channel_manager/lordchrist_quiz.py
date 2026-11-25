@@ -22,6 +22,13 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
+from video_channel_manager.telegram_editorial_hold import (
+    EDITORIAL_HOLD_SERIES_IDS,
+    RETIRED_ONE_OFF_IDS,
+    RETIRED_SERIES_IDS,
+    require_execution_not_held,
+    require_not_historical_quiz,
+)
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
 from video_channel_manager.telegram_multichannel_state import (
     GenericPublicationLedger,
@@ -37,6 +44,9 @@ QUIZ_DIR = ROOT / "content/telegram/lordchrist/quiz"
 PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist-rich.json"
 BINDING_PATH = ROOT / "content/telegram/channels/lordchrist-target-binding.json"
 STATE_LEDGER_PREFIX = "content/telegram/lordchrist/quiz"
+# Frozen evidence is still loadable for historical tests and the verified
+# 2026-10-29 manual canary. It is NOT an executable/current release source.
+ARCHIVED_QUIZ_DIR = QUIZ_DIR / "archived-old-queues"
 
 
 class LordchristQuizSpec(BaseModel):
@@ -78,11 +88,13 @@ class LordchristQuizSpec(BaseModel):
 
 
 def series_spec_path(series_id: str) -> Path:
-    return QUIZ_DIR / f"{series_id}.json"
+    directory = ARCHIVED_QUIZ_DIR if series_id in RETIRED_SERIES_IDS else QUIZ_DIR
+    return directory / f"{series_id}.json"
 
 
 def series_runtime_path(series_id: str) -> Path:
-    return QUIZ_DIR / f"{series_id}-runtime.json"
+    directory = ARCHIVED_QUIZ_DIR if series_id in RETIRED_SERIES_IDS else QUIZ_DIR
+    return directory / f"{series_id}-runtime.json"
 
 
 def series_ledger_relative_path(series_id: str) -> str:
@@ -96,7 +108,9 @@ class LordchristQuizSeriesSpec(BaseModel):
     schema_version: Literal[1]
     series_id: str = Field(pattern=r"^lordchrist-quiz-series-\d{2}$")
     title: str = Field(min_length=3, max_length=120)
-    items: tuple[LordchristQuizSpec, ...] = Field(min_length=10, max_length=10)
+    # Series can contain a complete, independently reviewed eight-to-ten item batch.
+    # Never pad a batch with weak questions merely to satisfy a fixed count.
+    items: tuple[LordchristQuizSpec, ...] = Field(min_length=8, max_length=10)
 
     @model_validator(mode="after")
     def validate_series(self) -> "LordchristQuizSeriesSpec":
@@ -166,6 +180,72 @@ def build_series_candidate(
     )
 
 
+def require_future_series_editorial_signoff(series: LordchristQuizSeriesSpec) -> None:
+    """Fail closed for new quiz releases until each exact item has a separate review.
+
+    Historical Series 01/02 are retired; Series 03 has an unconditional
+    execution HOLD. Their old sealed receipts must not be retroactively altered.
+    A signoff file is a necessary record, not cryptographic proof that a
+    person actually read the text; GitHub review provenance must be verified.
+    """
+    if series.series_id in {
+        "lordchrist-quiz-series-01",
+        "lordchrist-quiz-series-02",
+        "lordchrist-quiz-series-03",
+    }:
+        return
+    path = QUIZ_DIR / f"{series.series_id}-editorial-signoff.json"
+    try:
+        signoff = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("future quiz release requires per-item independent editorial signoff") from exc
+    if not isinstance(signoff, dict):
+        raise ValueError("future quiz editorial signoff must be a JSON object")
+    reviews = signoff.get("items")
+    if (
+        signoff.get("series_id") != series.series_id
+        or signoff.get("approval_state") != "independent_human_approved"
+        or not isinstance(reviews, list)
+        or len(reviews) != len(series.items)
+    ):
+        raise ValueError("future quiz editorial signoff has wrong series, state or item count")
+    requirements = (
+        "scripture_context_checked",
+        "russian_reader_checked",
+        "single_correct_answer_checked",
+        "three_distractors_checked",
+        "post_vote_explanation_checked",
+    )
+    for spec, review in zip(series.items, reviews, strict=True):
+        if not isinstance(review, dict):
+            raise ValueError("future quiz editorial item review must be an object")
+        reviewer = review.get("reviewed_by")
+        preparer = review.get("prepared_by")
+        review_url = review.get("review_url")
+        if (
+            review.get("publication_id") != spec.publication_id
+            or review.get("source_sha256") != spec_source_sha256(spec)
+            or review.get("status") != "approved"
+            or review.get("reviewer_type") != "human"
+            or not isinstance(reviewer, str)
+            or not reviewer.strip()
+            or not isinstance(preparer, str)
+            or not preparer.strip()
+            or reviewer.strip().casefold() == preparer.strip().casefold()
+            or not isinstance(review_url, str)
+            or not review_url.startswith("https://github.com/FedorMilovanov/video-channel-manager/pull/")
+            or "#pullrequestreview-" not in review_url
+            or any(review.get(field) is not True for field in requirements)
+        ):
+            raise ValueError(
+                f"future quiz editorial approval missing exact independent evidence for {spec.publication_id}"
+            )
+    # The checks above validate only claims in local JSON. They do not verify
+    # the actual GitHub review, its exact head/blobs or human independence.
+    # Never sign a successor on the basis of fabricated names/URLs alone.
+    raise ValueError("future quiz review provenance is not independently verified; release remains on HOLD")
+
+
 def build_series_runtime(
     profile: TelegramChannelProfile,
     series: LordchristQuizSeriesSpec,
@@ -175,6 +255,8 @@ def build_series_runtime(
     reviewed_at: datetime,
 ) -> GenericReleaseQueue:
     candidate = build_series_candidate(profile, series, binding)
+    require_not_historical_quiz(candidate)
+    require_future_series_editorial_signoff(series)
     return authorize_release_candidate(
         candidate,
         profile=profile,
@@ -218,8 +300,15 @@ def validate_series(
     ):
         raise ValueError("quiz series runtime release target fields differ from the target binding")
     if require_release_authorized or require_execution_authorized:
+        require_future_series_editorial_signoff(series)
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz series runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and series_id in EDITORIAL_HOLD_SERIES_IDS:
+        raise ValueError("quiz series is on editorial hold after owner rejection; execution forbidden")
+    if require_execution_authorized and series_id in RETIRED_SERIES_IDS:
+        raise ValueError("retired quiz series is historical evidence only; execution forbidden")
+    if require_execution_authorized:
+        require_execution_not_held(release)
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     return {
@@ -235,6 +324,7 @@ def validate_series(
 
 def series_state_init(series_id: str, state_checkout: Path) -> Path:
     _, release = _load_series_bundle(series_id)
+    require_execution_not_held(release)
     ledger_path = state_checkout / series_ledger_relative_path(series_id)
     if ledger_path.exists():
         load_ledger(ledger_path, release)
@@ -258,11 +348,13 @@ def series_state_check(series_id: str, state_checkout: Path) -> dict[str, int]:
 
 
 def spec_path(publication_id: str) -> Path:
-    return QUIZ_DIR / f"{publication_id}.json"
+    directory = ARCHIVED_QUIZ_DIR if publication_id in RETIRED_ONE_OFF_IDS else QUIZ_DIR
+    return directory / f"{publication_id}.json"
 
 
 def runtime_path(publication_id: str) -> Path:
-    return QUIZ_DIR / f"{publication_id}-runtime.json"
+    directory = ARCHIVED_QUIZ_DIR if publication_id in RETIRED_ONE_OFF_IDS else QUIZ_DIR
+    return directory / f"{publication_id}-runtime.json"
 
 
 def ledger_relative_path(publication_id: str) -> str:
@@ -362,6 +454,8 @@ def build_quiz_runtime(
     reviewed_at: datetime,
 ) -> GenericReleaseQueue:
     candidate = build_quiz_candidate(profile, spec, binding)
+    # One-offs have no verified independent-review provenance contract yet.
+    require_execution_not_held(candidate)
     return authorize_release_candidate(
         candidate,
         profile=profile,
@@ -414,10 +508,14 @@ def validate_quiz(
     binding = load_target_binding(BINDING_PATH, profile)
     spec, release = _load_bundle(publication_id)
     _require_bundle_consistency(spec, release, profile, binding)
+    if (require_release_authorized or require_execution_authorized) and publication_id not in RETIRED_ONE_OFF_IDS:
+        require_execution_not_held(release)
     if require_release_authorized or require_execution_authorized:
         candidate = build_quiz_candidate(profile, spec, binding)
         if not release.release_authorized or release.reviewed_candidate_sha256 != candidate.candidate_digest():
             raise ValueError("quiz runtime release is not authorized for the exact reviewed candidate")
+    if require_execution_authorized and publication_id in RETIRED_ONE_OFF_IDS:
+        raise ValueError("retired one-off quiz is historical evidence only; execution forbidden")
     if require_execution_authorized and not profile.provider_writes_authorized:
         raise ValueError("quiz channel profile is write-disabled")
     payload = release.items[0].payload
@@ -445,6 +543,7 @@ def _ledger_is_untouched(ledger: GenericPublicationLedger) -> bool:
 
 def state_init(publication_id: str, state_checkout: Path) -> Path:
     _, release = _load_bundle(publication_id)
+    require_execution_not_held(release)
     ledger_path = state_checkout / ledger_relative_path(publication_id)
     if ledger_path.exists():
         try:
@@ -474,6 +573,7 @@ def state_check(publication_id: str, state_checkout: Path, *, require_publishabl
         raise ValueError("quiz publication ledger is not initialized")
     ledger = load_ledger(ledger_path, release)
     if require_publishable:
+        require_execution_not_held(release)
         entry = ledger.entries.get(publication_id)
         if entry is not None and entry.state == "published":
             raise ValueError("quiz publication is already published; replay is forbidden")
@@ -543,7 +643,7 @@ def main(argv: list[str] | None = None) -> int:
         print(state_init(args.publication_id, args.state_checkout))
     elif args.command == "state-check":
         state_check(args.publication_id, args.state_checkout, require_publishable=args.require_publishable)
-        print("quiz state is initialized and publishable")
+        print("quiz state is initialized; publication authority has not been established")
     elif args.command == "build-series-runtime":
         profile = load_channel_profile(PROFILE_PATH)
         binding = load_target_binding(BINDING_PATH, profile)

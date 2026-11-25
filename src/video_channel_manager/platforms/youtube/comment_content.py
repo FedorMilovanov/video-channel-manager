@@ -100,7 +100,9 @@ def _validate_v2_youtube_rules(payload: dict[str, Any]) -> list[str]:
         errors.append("colored circle markers are not allowed")
 
     question = payload.get("question")
-    if not isinstance(question, dict):
+    if question is None:
+        pass  # An evidence-backed comment need not end with an engagement question.
+    elif not isinstance(question, dict):
         errors.append("schema v2 question must be an object")
     else:
         lead = str(question.get("lead") or "").strip()

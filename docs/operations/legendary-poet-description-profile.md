@@ -40,15 +40,23 @@ Project key: `legendary-poet`
 
 ## Канонические YouTube-плейлисты
 
-Эти URL предоставлены владельцем проекта. В конкретное описание добавляются только плейлисты, которые относятся к ролику; нельзя автоматически вставлять весь список.
+Эти зарегистрированные URL приведены в соответствии с `docs/youtube-editorial-standard.md` и общим allowlist; перед **реальным YouTube write** требуется свежая проверка ID и доступности у провайдера. В конкретное описание добавляются только плейлисты, которые относятся к ролику; нельзя автоматически вставлять весь список.
 
 - Эксперименты AI: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb
 - Поющие Поэты: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8
+- Ожившие Цитаты Поэтов: https://www.youtube.com/playlist?list=PLKcHOT3kiGT4
 - Владимир Маяковский: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM
 - Сергей Есенин: https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q
 - Михаил Лермонтов: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5
 - Александр Пушкин: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE
 - Александр Блок: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU
+- Фёдор Тютчев: https://www.youtube.com/playlist?list=PLKzLtO0ERdzg
+- Афанасий Фет: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M
+- Николай Некрасов: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1Z_YrY59Rel3Rj4oSqu7W
+- Валерий Брюсов: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYmjpRWQuAWggJYJFyE3mcw
+- Анна Ахматова: https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-
+- Константин Симонов: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaWdwMlVOMIwx1ew5T6aQX8
+- Борис Пастернак: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaHu93i8dgtoWSZ2lyYxhSR
 
 Правило релевантности:
 
@@ -97,6 +105,8 @@ VK Клипы: https://vkvideo.ru/@thelegendarypoet/clips
 Перед созданием, аудитом или изменением YouTube-описания агент обязан сначала прочитать этот стандарт и текущую явную инструкцию владельца. Нельзя заменять установленный проектом формат общим предположением о платформе или внешней веб-справкой. Если внешний источник кажется противоречащим проектному контракту, нужно остановиться и явно согласовать расхождение, а не молча переписывать стандарт, рендерер, autofix или тесты.
 
 В частности, существующие правила `*...*`, `_..._`, пунктуации внутри/снаружи выделения, оформления цитат, подписей ссылок и fenced `text`-блока для ChatGPT/operator handoff сохраняются. Агент не должен превращать этот контракт в plain-text-only модель без отдельного явного изменения владельцем.
+
+**SHARE (уточнение владельца 2026-11-24):** только верхние два плейлиста нового Description — с обычными подписями без `*`/`_`; четыре соцссылки после пустой строки сохраняют `*Подпись:* URL`, первый смысловой абзац также чистый. Порядок и точные URL сохраняются, остальное оформление и комментарии не упрощаются. Сырой текст проверять отдельно от публичного рендера и внешней карточки. Символы внутри URL не удалять.
 
 1. Первый абзац должен точно описывать произведение, автора, исторический материал, музыкальную адаптацию или визуальный эксперимент.
 2. Нельзя выдумывать даты, обстоятельства создания, цитаты, архивные факты, посвящения или авторские намерения.

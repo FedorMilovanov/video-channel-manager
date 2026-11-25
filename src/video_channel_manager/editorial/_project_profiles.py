@@ -30,6 +30,25 @@ PROJECT_VK_COMMUNITY_IDS: Mapping[str, frozenset[int]] = MappingProxyType(
     }
 )
 
+# Author-specific playlists registered in docs/youtube-editorial-standard.md.
+# Any newly supplied ID must be reviewed in that registry before it enters a public copy package.
+LEGENDARY_POET_AUTHOR_PLAYLISTS: Mapping[str, str] = MappingProxyType(
+    {
+        "Владимир Маяковский": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM",
+        "Сергей Есенин": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q",
+        "Михаил Лермонтов": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
+        "Александр Пушкин": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE",
+        "Александр Блок": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
+        "Фёдор Тютчев": "https://www.youtube.com/playlist?list=PLKzLtO0ERdzg",
+        "Афанасий Фет": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M",
+        "Николай Некрасов": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1Z_YrY59Rel3Rj4oSqu7W",
+        "Валерий Брюсов": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYmjpRWQuAWggJYJFyE3mcw",
+        "Анна Ахматова": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-",
+        "Константин Симонов": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaWdwMlVOMIwx1ew5T6aQX8",
+        "Борис Пастернак": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaHu93i8dgtoWSZ2lyYxhSR",
+    }
+)
+
 PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
     {
         LORD_GOD_STRENGTH: frozenset(
@@ -55,15 +74,8 @@ PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
                 "https://www.youtube.com/@TheLegendaryPoet/playlists",
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb",
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
-                "https://www.youtube.com/playlist?list=PLKzLtO0ERdzg",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M",
+                *LEGENDARY_POET_AUTHOR_PLAYLISTS.values(),
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1QeVsZutwScsM0l-asll4",
-                "https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-",
             }
         ),
         MILOVI_CAKE: frozenset(

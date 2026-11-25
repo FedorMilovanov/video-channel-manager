@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -454,6 +455,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             target,
             headers={
                 "Authorization": f"OAuth {self.config.access_token}",
+                "Content-Type": "application/octet-stream",
                 "offset": "0",
                 "file_size": str(file_size),
             },
@@ -461,13 +463,39 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             timeout=_RESUMABLE_UPLOAD_TIMEOUT,
         )
 
-    def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
+    def upload_local_video(
+        self,
+        upload_uri: str,
+        stream: BinaryIO,
+        *,
+        file_size: int,
+        expected_sha256: str | None = None,
+    ) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
         body: bytes | None = None
+        dispatch_elapsed_ms: int | None = None
         try:
             body = stream.read()
-            response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
+            # Validate the exact bytes sent, not only the earlier filesystem probe.
+            # An asset may be truncated or changed between preflight and dispatch.
+            if len(body) != file_size:
+                raise InstagramMediaVerificationError(
+                    "Instagram local video byte count changed after preflight; upload not dispatched",
+                    error_code="local_video_upload_size_mismatch",
+                    retryable=False,
+                )
+            if expected_sha256 is not None and f"sha256:{hashlib.sha256(body).hexdigest()}" != expected_sha256:
+                raise InstagramMediaVerificationError(
+                    "Instagram local video SHA-256 changed after preflight; upload not dispatched",
+                    error_code="local_video_upload_sha256_mismatch",
+                    retryable=False,
+                )
+            dispatch_started_ns = time.perf_counter_ns()
+            try:
+                response = self._dispatch_binary_upload(target, body=body, file_size=file_size)
+            finally:
+                dispatch_elapsed_ms = max(0, (time.perf_counter_ns() - dispatch_started_ns) // 1_000_000)
         except (httpx.RequestError, OSError) as exc:
             detail = secret_safe_exception_detail(
                 exc,
@@ -480,8 +508,10 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 body_length=len(body) if body is not None else 0,
                 expected_file_size=file_size,
             )
+            timing = f"; upload_dispatch_elapsed_ms={dispatch_elapsed_ms}" if dispatch_elapsed_ms is not None else ""
             raise InstagramTransportError(
-                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}; {fingerprint}"
+                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}; "
+                f"{fingerprint}{timing}"
             ) from exc
 
         fingerprint = describe_resumable_upload_request(
@@ -490,6 +520,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             expected_file_size=file_size,
         )
         if response.is_error:
+            timing = f"; upload_dispatch_elapsed_ms={dispatch_elapsed_ms}" if dispatch_elapsed_ms is not None else ""
             message, error_code = describe_provider_http_error(
                 response,
                 secret=self.config.access_token,
@@ -497,7 +528,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 prefix="Instagram resumable upload",
             )
             raise InstagramProviderError(
-                f"{message}; {fingerprint}",
+                f"{message}; {fingerprint}{timing}",
                 status_code=response.status_code,
                 error_code=error_code,
                 retryable=provider_http_retryable(response),
@@ -520,6 +551,19 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 status_code=response.status_code,
                 error_code=error_code,
                 retryable=provider_http_retryable(response),
+            )
+
+        # A 2xx response is not itself proof that Meta accepted the bytes.
+        # Anything other than the literal JSON boolean true is ambiguous and
+        # must not transition the durable upload ledger to UPLOADED.
+        if not isinstance(payload, dict) or payload.get("success") is not True:
+            raise InstagramProviderError(
+                "Instagram resumable upload returned no explicit boolean success=true "
+                "acknowledgement; manual provider reconciliation required; "
+                f"{fingerprint}",
+                status_code=response.status_code,
+                error_code="resumable_upload_ack_unverified",
+                retryable=None,
             )
 
 
@@ -918,13 +962,49 @@ class InstagramLocalResumableService(InstagramProductionService):
                             child.upload_uri,
                             stream,
                             file_size=manifest.media_size_bytes,
+                            expected_sha256=manifest.media_sha256,
                         )
+                    except InstagramMediaVerificationError as exc:
+                        # No provider POST was made; preserve a deterministic
+                        # terminal receipt instead of an ambiguous upload state.
+                        self.upload_ledger.mark_provider_failed(
+                            manifest.publication_key,
+                            error_code=exc.error_code,
+                            error_message=str(exc),
+                        )
+                        self.ledger.transition(
+                            manifest.publication_key,
+                            PublicationStatus.TERMINAL_FAILURE,
+                            expected_statuses={PublicationStatus.CONTAINER_CREATED},
+                            provider_status="ERROR",
+                            error_code=exc.error_code,
+                            error_message=str(exc),
+                        )
+                        raise
                     except InstagramProviderError as exc:
                         if exc.status_code is not None and 400 <= exc.status_code < 500 and exc.retryable is False:
+                            diagnostic = str(exc)
+                            # A rupload HTTP 400 can conceal a phase-level 1363008
+                            # behind Meta's top-level IN_PROGRESS. One GET may add
+                            # useful evidence, but can never retry or publish.
+                            try:
+                                phase_status, phase_detail = self.resumable_client.get_container_status(container_id)
+                            except (InstagramProductionError, httpx.RequestError, OSError, TypeError, ValueError):
+                                # Preserve the original terminal 4xx even when
+                                # the optional readback is unavailable.
+                                pass
+                            else:
+                                if phase_status == "ERROR" and phase_detail:
+                                    safe_detail = secret_safe_exception_detail(
+                                        RuntimeError(phase_detail),
+                                        secret=self.config.access_token,
+                                        upload_uri=child.upload_uri,
+                                    )
+                                    diagnostic += f"; provider_phase_readback={safe_detail[:400]}"
                             self.upload_ledger.mark_provider_failed(
                                 manifest.publication_key,
                                 error_code=exc.error_code or type(exc).__name__,
-                                error_message=str(exc),
+                                error_message=diagnostic,
                             )
                             self.ledger.transition(
                                 manifest.publication_key,
@@ -932,7 +1012,7 @@ class InstagramLocalResumableService(InstagramProductionService):
                                 expected_statuses={PublicationStatus.CONTAINER_CREATED},
                                 provider_status="ERROR",
                                 error_code=exc.error_code or type(exc).__name__,
-                                error_message=str(exc),
+                                error_message=diagnostic,
                             )
                             raise
                         self.upload_ledger.mark_unknown(manifest.publication_key, exc)

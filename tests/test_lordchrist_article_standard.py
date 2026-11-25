@@ -1,11 +1,28 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BIBLE_DIR = Path("/tmp/bible")  # корпус Синодального перевода (bibleonline/rst)
+
+
+def _bible_dir() -> Path:
+    """Каталог с `.dat`-книгами Синодального перевода: переменная окружения, затем обычные места."""
+    candidates = []
+    if os.environ.get("LORDCHRIST_BIBLE_DIR"):
+        candidates.append(Path(os.environ["LORDCHRIST_BIBLE_DIR"]))
+    # bibleonline/rst (RSTE) — корпус, названный стандартом серии; swmail/RST —
+    # другой извод того же перевода, где единичные стихи читаются иначе.
+    candidates += [Path("/tmp/bible"), Path("/tmp/rste"), Path("/tmp/synodal")]
+    for candidate in candidates:
+        if (candidate / "john.dat").exists():
+            return candidate
+    return Path("/tmp/bible")
+
+
+BIBLE_DIR = _bible_dir()  # корпус Синодального перевода (bibleonline/rst)
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lordchrist_article_preflight import check  # noqa: E402
@@ -361,8 +378,240 @@ def test_reviewed_articles_have_synodal_scripture() -> None:
     corpus = load_corpus(BIBLE_DIR)
     if not corpus:
         return
+    # Изводы РСТ расходятся в единичных стихах (Быт. 2:19 «образовал/создал»,
+    # 2:7 «в лицо/в лице»): опубликованные статьи серии держатся bibleonline/rst.
+    if "образовал" not in (corpus.get("Быт", {}).get((2, 19)) or ""):
+        return  # рядом лежит другой извод — сверять статьи по нему нельзя
     charnock = ROOT / "content/telegram/lordchrist/rich-v1/charnock"
     for number in ("01", "02", "03", "04", "05"):
         article = charnock / f"lordchrist-rich-charnock-{number}.md"
         errors, _notes = scripture_check(article, corpus)
         assert not errors, f"{article.name}: {errors}"
+
+
+def test_preflight_accepts_multi_author_bibliographic_note(tmp_path: Path) -> None:
+    """Статья-разбор нескольких свидетелей: пометка перечисляет авторов, форма та же."""
+    note = (
+        "Цитаты Эдвардса — из книги **«Свобода воли»** (*Freedom of the Will*), 1754; "
+        "Лютера — из книги **«О рабстве воли»** (*De servo arbitrio*), 1525. "
+        "Оцифровки — Project Gutenberg: https://www.gutenberg.org"
+    )
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    assert not check(doc).errors
+
+
+def test_preflight_rejects_bibliographic_note_without_source_url(tmp_path: Path) -> None:
+    note = "Цитаты Эдвардса — из книги **«Свобода воли»** (*Freedom of the Will*), 1754."
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТОВАЯ СТАТЬЯ ДЛЯ ПРОВЕРКИ ПРАВИЛ**\n\n{LEAD}\n\n## Именованный раздел\n\n{BODY}\n\n{note}\n",
+        encoding="utf-8",
+    )
+    assert any("gutenberg.org" in err for err in check(doc).errors)
+
+
+def test_sources_check_accepts_anchors_of_several_works(tmp_path: Path) -> None:
+    """Якорь цитаты — `src-NN-<труд>`: у статьи-разбора трудов несколько."""
+    from lordchrist_article_sources_check import check as sources_check
+
+    first = "Liberty is the power to do as one pleases without considering how the pleasure came to be."
+    second = "Thus the human will is a beast between the two riders and it cannot choose its rider."
+    corpus = tmp_path / "corpus.txt"
+    corpus.write_text(f"{first}\n{second}", encoding="utf-8")
+
+    markdown = tmp_path / "article.md"
+    markdown.write_text(
+        "# **ТЕСТ**\n\n"
+        "> «Всякий, делающий грех, есть раб греха.»\n> — Ин. 8:34\n\n"
+        "Лид статьи, который вводит тему и обещает предметное рассуждение.\n\n"
+        "> «Свобода есть сила делать, что угодно.»\n> — Джонатан Эдвардс, «Свобода воли»\n\n"
+        "Абзац статьи, который объясняет цитату и держит аргумент на нескольких предложениях.\n\n"
+        "Цитаты Эдвардса — из книги **«Свобода воли»** (*Freedom of the Will*), Project Gutenberg: "
+        "https://www.gutenberg.org\n",
+        encoding="utf-8",
+    )
+    document = tmp_path / "article.json"
+    document.write_text(
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.rich-article-document",
+                "document_id": "test",
+                "blocks": [],
+                "sources": [
+                    {"source_id": "src-01-scripture", "label": "Ин. 8:34", "evidence": "Синодальный."},
+                    {
+                        "source_id": "src-02-edwards-will",
+                        "label": "Джонатан Эдвардс, «Свобода воли», цитата 2",
+                        "url": "https://ccel.org/ccel/edwards/will",
+                        "evidence": f"EN: {first}  [смещение 0 в блоке W1 (позиция 0; {len(first)} зн.), CCEL; перевод канала]",
+                    },
+                    {
+                        "source_id": "src-scripture-synodal",
+                        "label": "Синодальный перевод: стихи статьи",
+                        "url": "https://github.com/bibleonline/rst",
+                        "evidence": "Ин. 8:34.",
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    errors = sources_check(markdown, document, corpus, [f"W1:0:{len(first)}", f"W2:{len(first) + 1}:{len(second)}"])
+    assert not errors, errors
+
+
+def test_scripture_check_verifies_epigraph_of_l2_transport(tmp_path: Path) -> None:
+    """Эпиграф в форме L2: атрибуция последней строкой внутри блока — стих сверяется."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    ok = tmp_path / "ok.md"
+    ok.write_text(
+        "# **ТЕСТ**\n\n"
+        "> «Если Сын освободит вас, то истинно свободны будете»\n> — Ин. 8:36\n\n"
+        "Абзац статьи, который продолжает мысль эпиграфа и держит аргумент.\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(ok, corpus)
+    assert not errors, errors
+
+    bad = tmp_path / "bad.md"
+    bad.write_text(
+        "# **ТЕСТ**\n\n"
+        "> «Если Сын освободит вас, то истинно свободными будете»\n> — Ин. 8:36\n\n"
+        "Абзац статьи, который продолжает мысль эпиграфа и держит аргумент.\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(bad, corpus)
+    assert any("Ин. 8:36" in err for err in errors)
+
+
+def test_scripture_check_knows_the_books_of_kings(tmp_path: Path) -> None:
+    """1 Цар. и 3 Цар. проверяются: раньше эти книги молча выпадали из сверки."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    ok = tmp_path / "ok.md"
+    ok.write_text(
+        "# **ТЕСТ**\n\n"
+        "Писание говорит: **Но они не слушали голоса отца своего, ибо Господь решил уже предать их смерти** (1 Цар. 2:25).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(ok, corpus)
+    assert not errors, errors
+
+    bad = tmp_path / "bad.md"
+    bad.write_text(
+        "# **ТЕСТ**\n\n"
+        "Писание говорит: **Но они не слушали голоса отца своего, ибо Господь решил уже предать их казни** (1 Цар. 2:25).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(bad, corpus)
+    assert any("1 Цар. 2:25" in err for err in errors)
+
+
+def test_scripture_check_checks_plain_quotes_only_on_demand(tmp_path: Path) -> None:
+    """«…» рядом со ссылкой: по умолчанию только отмечается, с --quotes — сверяется."""
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        "# **ТЕСТ**\n\nОн сказал: «Если Сын освободит вас, то истинно свободными будете» (Ин. 8:36).\n",
+        encoding="utf-8",
+    )
+    errors, notes = scripture_check(doc, corpus)
+    assert not errors  # вариантные чтения не ломают прогон
+    assert any("Ин. 8:36" in note and "не сверена" in note for note in notes)
+
+    errors, _notes = scripture_check(doc, corpus, check_quotes=True)
+    assert any("Ин. 8:36" in err for err in errors)
+
+
+def test_sources_check_requires_the_named_block_to_be_passed(tmp_path: Path) -> None:
+    """Якорь называет блок — этот блок обязан быть в --block, иначе зачёт по чужому совпадению."""
+    from lordchrist_article_sources_check import check as sources_check
+
+    first = "Liberty is the power to do as one pleases without considering how the pleasure came to be."
+    corpus = tmp_path / "corpus.txt"
+    corpus.write_text(first, encoding="utf-8")
+
+    markdown = tmp_path / "article.md"
+    markdown.write_text(
+        "# **ТЕСТ**\n\n"
+        "> «Свобода есть сила делать, что угодно.»\n> — Джонатан Эдвардс, «Свобода воли»\n\n"
+        "Цитаты Эдвардса — из книги **«Свобода воли»** (*Freedom of the Will*), Project Gutenberg: "
+        "https://www.gutenberg.org\n",
+        encoding="utf-8",
+    )
+    document = tmp_path / "article.json"
+    document.write_text(
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.rich-article-document",
+                "document_id": "test",
+                "blocks": [],
+                "sources": [
+                    {
+                        "source_id": "src-01-edwards-will",
+                        "label": "Джонатан Эдвардс, «Свобода воли», цитата 1",
+                        "url": "https://ccel.org/ccel/edwards/will",
+                        "evidence": (
+                            f"EN: {first}  [смещение 0 в блоке EDW-REM (позиция 0; "
+                            f"{len(first)} зн.), CCEL; перевод канала]"
+                        ),
+                    },
+                    {"source_id": "src-02-scripture", "label": "Синодальный.", "evidence": "Ин. 8:34."},
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    errors = sources_check(markdown, document, corpus, [f"OTHER:0:{len(first)}"])
+    assert any("EDW-REM" in err and "не передан" in err for err in errors), errors
+
+
+def test_scripture_check_ignores_stress_marks_of_digital_editions(tmp_path: Path) -> None:
+    """Знаки ударения внутри слова (`Входи&#769;те`) не делают стих «несовпадающим»."""
+    import re
+
+    from lordchrist_scripture_check import check as scripture_check, load_corpus
+
+    corpus = load_corpus(BIBLE_DIR)
+    if not corpus:
+        return
+    # ударение должно стоять ВНУТРИ слова, перед буквой: иначе сущность
+    # распадается на два слова и сверка ломается
+    inside = re.compile(r"&#769;(?=[А-Яа-яЁё])|\u0301(?=[А-Яа-яЁё])")
+    found = [
+        (book, place, index)
+        for book in corpus
+        for place, text in corpus[book].items()
+        for index, token in enumerate(text.split())
+        if inside.search(token)
+    ]
+    if not found:
+        return  # корпус без ударений — проверять нечего
+    book, (chapter, verse), index = found[0]
+    tokens = corpus[book][(chapter, verse)].split()
+    fragment = " ".join(tokens[max(0, index - 1) : index + 4])
+    fragment = fragment.replace("&#769;", "").replace("\u0301", "")
+    doc = tmp_path / "article.md"
+    doc.write_text(
+        f"# **ТЕСТ**\n\nПисание говорит: **{fragment}** ({book}. {chapter}:{verse}).\n",
+        encoding="utf-8",
+    )
+    errors, _notes = scripture_check(doc, corpus)
+    assert not errors, errors

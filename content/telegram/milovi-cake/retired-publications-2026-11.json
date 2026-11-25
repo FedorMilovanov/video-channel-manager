@@ -1,0 +1,14 @@
+{
+  "schema_name": "video-channel-manager.milovi-feed-retired-publications",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "retired_publication_ids": {
+    "milovi-feed-20261107-001": {
+      "candidate_path": "content/telegram/milovi-cake/november-first-video-candidate-20261107.json",
+      "candidate_file_sha256": "sha256:37bcd9abe9dfbd492a5d346894764aeb358577dacf0ed72ec388ab6b7b338e16",
+      "reason": "historical provider-inert draft contains corrupted Russian text replaced by literal question marks",
+      "provider_write_performed": false,
+      "restore_or_retry_allowed": false
+    }
+  }
+}

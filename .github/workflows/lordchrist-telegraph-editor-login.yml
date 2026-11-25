@@ -1,0 +1,50 @@
+name: Lordchrist Telegraph editor login (private on demand)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type AUTHORIZE_EDITOR_DEVICE to send one short-lived link to your private Telegram chat
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  editor-login:
+    if: >-
+      github.actor == 'FedorMilovanov' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'AUTHORIZE_EDITOR_DEVICE'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    concurrency:
+      group: lordchrist-telegraph-private-editor-login
+      cancel-in-progress: false
+    steps:
+      - name: Verify one-shot operator context
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || exit 3
+          [[ "$GITHUB_REPOSITORY" == "FedorMilovanov/video-channel-manager" ]] || exit 3
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 3
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" == "$GITHUB_SHA" ]] || exit 3
+      - name: Check out reviewed helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Send browser login to verified private owner chat (never print URL)
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAPH_ACCESS_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAPH_ACCESS_TOKEN }}
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+          LORDCHRIST_TELEGRAPH_EDITOR_CHAT_ID: ${{ secrets.LORDCHRIST_TELEGRAPH_EDITOR_CHAT_ID }}
+        run: python scripts/lordchrist_telegraph_editor_login.py

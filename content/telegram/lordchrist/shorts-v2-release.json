@@ -1,0 +1,109 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "lordchrist-shorts-v2-20261106",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 1,
+  "target_binding_sha256": "sha256:c6282b005a6437ea8e27eec6de3ead2c725ad099c5213df4824d9646bcc17b4b",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:9c18293cddae02ecf557da4511bbb1e59a82a38ca7534506ff818810cde08d03",
+  "reviewed_publication_id": "lordchrist-short-2sapXv78y9Q",
+  "reviewed_by": "Owner explicitly requested the remaining four of eight Shorts in Telegram deferred queue on 2026-11-06",
+  "reviewed_at": "2026-11-06T19:32:33.265271+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-short-2sapXv78y9Q",
+      "scheduled_at": "2026-11-12T16:00:00+03:00",
+      "source_sha256": "sha256:bdd3155e714f84da7c9acb01a6d09ca7182ebbea1f15e200c1da89baefffb4fe",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-2sapXv78y9Q",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:6b2dbe62660315dca1e83dffc12612356fe18dba4e41239fa5fd202642463922",
+        "caption": "Можно ли Обмануть Всех Вокруг, Оставаясь Внутри Духовным Банкротом? Пол Вошер\n\nИсходное видео: https://www.youtube.com/watch?v=2sapXv78y9Q\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v2/lordchrist-short-2sapXv78y9Q.mp4",
+        "media_sha256": "sha256:bdd3155e714f84da7c9acb01a6d09ca7182ebbea1f15e200c1da89baefffb4fe",
+        "media_byte_size": 26284322,
+        "media_filename": "lordchrist-short-2sapXv78y9Q.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-short-PUlNpw83DFI",
+      "scheduled_at": "2026-11-13T16:00:00+03:00",
+      "source_sha256": "sha256:219f1f3d94e2447a28554886e7442fe97fa5eddac8d01f865b095c75e92754e1",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-PUlNpw83DFI",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:87054cde3498422d6b51f225c0250fe87d8736711b8ab610d595d26e649d9c95",
+        "caption": "Богоцентричные и Человекоцентричные Церкви - Р. Ч. Спроул\n\nИсходное видео: https://www.youtube.com/watch?v=PUlNpw83DFI\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v2/lordchrist-short-PUlNpw83DFI.mp4",
+        "media_sha256": "sha256:219f1f3d94e2447a28554886e7442fe97fa5eddac8d01f865b095c75e92754e1",
+        "media_byte_size": 8884076,
+        "media_filename": "lordchrist-short-PUlNpw83DFI.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-short-y9a7_3DutWk",
+      "scheduled_at": "2026-11-14T16:00:00+03:00",
+      "source_sha256": "sha256:88569eeec694082fac254888ff281add75758309d78973f61c4ffe2ff76e8e29",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-y9a7_3DutWk",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:b17e8592f6507139f2291bee117238b5e0d80c7531e044b77a0bbcb5e15b80a7",
+        "caption": "Покаяние — Это Больше, Чем Просто «Прости Меня» - Джоэл Бики\n\nИсходное видео: https://www.youtube.com/watch?v=y9a7_3DutWk\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v2/lordchrist-short-y9a7_3DutWk.mp4",
+        "media_sha256": "sha256:88569eeec694082fac254888ff281add75758309d78973f61c4ffe2ff76e8e29",
+        "media_byte_size": 5992419,
+        "media_filename": "lordchrist-short-y9a7_3DutWk.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-short-EozlBy39F1c",
+      "scheduled_at": "2026-11-15T16:00:00+03:00",
+      "source_sha256": "sha256:af5cd3b5d20418127ef283781fca19eae4f35a12c4557e64a3ab82d0d609ee30",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-EozlBy39F1c",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:d24c0b9e4c30dbd52f9c285e32d5a530739084fa33b6d8eb817f5193d79eb63e",
+        "caption": "Путь Голгофы - Готов ли Ты Следовать за Христом? - Алексей Коломийцев\n\nИсходное видео: https://www.youtube.com/watch?v=EozlBy39F1c\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v2/lordchrist-short-EozlBy39F1c.mp4",
+        "media_sha256": "sha256:af5cd3b5d20418127ef283781fca19eae4f35a12c4557e64a3ab82d0d609ee30",
+        "media_byte_size": 8767713,
+        "media_filename": "lordchrist-short-EozlBy39F1c.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    }
+  ]
+}

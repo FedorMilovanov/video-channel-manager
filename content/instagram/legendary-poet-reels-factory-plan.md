@@ -21,7 +21,7 @@ Valid Reel jobs include:
 5. image/motif or semantic contrast;
 6. edition/variant evidence;
 7. modern musical-interpretation provenance;
-8. one focused interpretive question.
+8. one focused, source-backed interpretive insight; no automatic closing question or engagement bait.
 
 Invalid volume:
 
@@ -86,7 +86,7 @@ Job: exact-text Reel only after canonical span binding; focus on how the address
 
 ### KUL-R04 — where is the semantic center?
 
-Job: interpretive question built from the five-part structure; no engagement bait.
+Job: explain the five-part structure through a grounded interpretive insight; no engagement bait.
 
 ### KUL-R05 — from historical field to lyrical cycle
 
@@ -128,7 +128,7 @@ Job: composition / first-print chronology from reviewed sources.
 
 ### OLEG-R03 — three turning points
 
-Job: kudesnik → memory of the horse → skull/finale. Ask which turn changes the story most; do not flatten the whole poem into one “prophecy” cliché.
+Job: kudesnik → memory of the horse → skull/finale. Explain the decisive narrative turn; do not flatten the whole poem into one “prophecy” cliché.
 
 ### OLEG-R04 — one exact dramatic excerpt
 

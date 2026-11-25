@@ -2,7 +2,7 @@
 
 ## Shared rules
 
-All renderers receive the same validated canonical record. They preserve the factual paragraph, source mapping, variation key, question, and semantic link kinds. Renderers may change markup, spacing, link selection, and compactness; they may not invent facts or silently replace the editorial angle.
+All renderers receive the same validated canonical record. They preserve the factual paragraph, source mapping, variation key, any expressly provided question, and semantic link kinds; they never invent a question to fill a missing block. Renderers may change markup, spacing, link selection, and compactness; they may not invent facts or silently replace the editorial angle.
 
 Every canonical record belongs to exactly one project profile:
 
@@ -19,13 +19,15 @@ The canonical identity and link profiles are documented in [`../operations/proje
 
 ## YouTube
 
+**Project-specific ordering matters:** Lord God `lord-god-strength` Shorts descriptions require two unmarked raw preview lines and, where the same full video is verified, the full Russian recording as the **first URL before social routes**. Lord God long-form original/source labels follow their different project runbook. The Legendary Poet new manual v3.1 package has playlist-first/social-first layout instead. See [Lord God decision matrix](../operations/lord-god-youtube-agent-decision-contract.md) and [Poet package master](../youtube-metadata-package-master-v3.1.md). Shared renderers must never erase those project/surface distinctions.
+
 ### Comment
 
 `YouTubeCommentRenderer` produces:
 
 1. a contextual heading with restrained `*bold*` or `_italic_` emphasis;
 2. one substantial factual paragraph;
-3. one concrete question;
+3. one concrete question **only if present and editorially justified**; otherwise omit this block entirely;
 4. two to four `label + URL` lines.
 
 Long-form poetry, covers, and adaptations require a relevant playlist. Short-form records require a full-version route. Site and VK project routes remain required where the selected content profile requires them. More than four decorative markers is rejected.

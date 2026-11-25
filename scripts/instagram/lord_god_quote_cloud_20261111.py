@@ -1,0 +1,452 @@
+"""Cloud-only, date-scoped Instagram photo publishing; never depends on a local PC.
+
+This script may only publish the four source-bound Lord God quote cards.
+Github workflow_dispatch is preflight only. Scheduled event allows one post for exact Moscow date.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import os
+import sqlite3
+import sys
+import time
+from datetime import datetime
+from datetime import time as clock
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urlparse
+from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
+
+GRAPH = "https://graph.facebook.com/v26.0"
+FACEBOOK_PAGE = "1457892317403899"
+INSTAGRAM_ACCOUNT = "17841433845016161"
+INSTAGRAM_USERNAME = "thelordgodismystrength"
+APP_ID = "1528850542618219"
+RELEASE = "https://github.com/FedorMilovanov/video-channel-manager/releases/download/lord-god-ig-quote-media-20261111/"
+PLAN = Path(__file__).resolve().parents[2] / "content/instagram/lord-god-strength-quote-cloud-20261111.json"
+PLAN_SHA256 = "529afa8711bc3fd5c071fb322bea90d13d85b2c3e49fc188cd34a62761e352b3"
+MOSCOW = ZoneInfo("Europe/Moscow")
+
+
+def request_json(endpoint: str, token: str, *, data: dict | None = None) -> dict:
+    url = GRAPH + "/" + endpoint.lstrip("/")
+    body = None if data is None else urlencode(data).encode("utf-8")
+    req = Request(
+        url,
+        data=body,
+        headers={"Authorization": "Bearer " + token, "Accept": "application/json"},
+    )
+    try:
+        with urlopen(req, timeout=35) as resp:
+            obj = json.load(resp)
+    except HTTPError as error:
+        try:
+            payload = json.loads(error.read().decode("utf-8"))
+            code = payload.get("error", {}).get("code", "unknown")
+        except (ValueError, KeyError, TypeError):
+            code = "unknown"
+        raise RuntimeError(f"Meta HTTP {error.code}, code {code}") from None
+    except URLError as error:
+        raise RuntimeError("Meta connection failed (" + type(error).__name__ + ")") from None
+    if not isinstance(obj, dict):
+        raise TypeError("Invalid Meta response shape")
+    return obj
+
+
+def media_verified(item: dict) -> str:
+    filename = item["image"]
+    if filename not in {
+        "01-charnock-4x5.jpg",
+        "02-owen-4x5.jpg",
+        "03-bunyan-4x5.jpg",
+        "04-watson-4x5.jpg",
+    }:
+        raise RuntimeError("Image not in approved release")
+    url = RELEASE + filename
+    try:
+        with urlopen(Request(url, headers={"Accept": "image/jpeg"}), timeout=40) as resp:
+            final = urlparse(resp.url)
+            if final.scheme != "https" or final.hostname not in {
+                "github.com",
+                "release-assets.githubusercontent.com",
+            }:
+                raise RuntimeError("Media downloaded from unexpected host")
+            payload = resp.read(10_000_000)
+    except (URLError, HTTPError) as error:
+        raise RuntimeError("Media download failed (" + type(error).__name__ + ")") from None
+    if len(payload) != item["size_bytes"] or hashlib.sha256(payload).hexdigest() != item["sha256"]:
+        raise RuntimeError("Media SHA-256/size mismatch")
+    if not payload.startswith(bytes((255, 216, 255))):
+        raise RuntimeError("Media not JPEG")
+    return url
+
+
+def read_plan() -> list[dict]:
+    raw = PLAN.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != PLAN_SHA256:
+        raise RuntimeError("Frozen approved quote plan SHA-256 mismatch; do not publish")
+    plan = json.loads(raw)
+    if (plan["project"], plan["account_id"], plan["page_id"], plan["tz"]) != (
+        "lord-god-strength",
+        INSTAGRAM_ACCOUNT,
+        FACEBOOK_PAGE,
+        "Europe/Moscow",
+    ):
+        raise RuntimeError("Wrong project/account")
+    rows = plan["items"]
+    expected = [
+        ("01-charnock", "2026-11-12"),
+        ("02-owen", "2026-11-13"),
+        ("03-bunyan", "2026-11-14"),
+        ("04-watson", "2026-11-15"),
+    ]
+    if len(rows) != 4 or [(x["id"], x["date"]) for x in rows] != expected:
+        raise RuntimeError("Unexpected four-day schedule")
+    if any(x["time"] != "12:45" or len(x["caption"]) > 2200 for x in rows):
+        raise RuntimeError("Unexpected scheduled time or caption length")
+    return rows
+
+
+def verify_identity(token: str) -> None:
+    owner = request_json("me?fields=id", token)
+    if str(owner.get("id")) != FACEBOOK_PAGE:
+        raise RuntimeError("Wrong Facebook PAGE token")
+    page = request_json(FACEBOOK_PAGE + "?fields=id,instagram_business_account{id,username}", token)
+    instagram = page.get("instagram_business_account") or {}
+    if (
+        str(page.get("id")) != FACEBOOK_PAGE
+        or str(instagram.get("id")) != INSTAGRAM_ACCOUNT
+        or instagram.get("username") != INSTAGRAM_USERNAME
+    ):
+        raise RuntimeError("Wrong Instagram account linkage")
+    quota = request_json(INSTAGRAM_ACCOUNT + "/content_publishing_limit?fields=quota_usage,config", token)
+    if not quota.get("data"):
+        raise RuntimeError("Instagram publishing quota unavailable")
+
+
+def find_published(token: str, caption: str) -> dict | None:
+    """Fail closed if the provider feed is incomplete or contains duplicate captions.
+
+    Only follow provider cursors on our own fixed Graph API endpoint: never
+    dereference untrusted paging.next URLs or put the Page token in a URL.
+    """
+    matches: list[dict] = []
+    after: str | None = None
+    seen_cursors: set[str] = set()
+    for page in range(5):
+        params = {"fields": "id,caption,media_type,permalink,timestamp", "limit": "100"}
+        if after:
+            params["after"] = after
+        listing = request_json(INSTAGRAM_ACCOUNT + "/media?" + urlencode(params), token)
+        media = listing.get("data")
+        if not isinstance(media, list):
+            raise RuntimeError("Meta media list incomplete; do not publish")
+        for item in media:
+            if not isinstance(item, dict):
+                raise RuntimeError("Unexpected Meta media record; do not publish")
+            if str(item.get("caption", "")).strip() == caption.strip():
+                matches.append(item)
+        if "paging" not in listing:
+            break
+        paging = listing["paging"]
+        if not isinstance(paging, dict):
+            raise RuntimeError("Meta pagination malformed; do not publish")
+        if "next" not in paging:
+            break
+        if not isinstance(paging["next"], str) or not paging["next"]:
+            raise RuntimeError("Meta pagination next invalid; do not publish")
+        cursors = paging.get("cursors")
+        if not isinstance(cursors, dict):
+            raise RuntimeError("Meta pagination cursors malformed; do not publish")
+        cursor = cursors.get("after")
+        if not isinstance(cursor, str) or not cursor or cursor in seen_cursors or not media:
+            raise RuntimeError("Meta pagination cursor invalid; do not publish")
+        if page == 4:
+            raise RuntimeError("Meta media listing exceeds safe verification limit; do not publish")
+        seen_cursors.add(cursor)
+        after = cursor
+    if len(matches) > 1:
+        raise RuntimeError("Duplicate approved photo caption in Meta feed; do not publish")
+    if not matches:
+        return None
+    existing = matches[0]
+    parsed = urlparse(str(existing.get("permalink", "")))
+    if (
+        not str(existing.get("id", "")).isdecimal()
+        or existing.get("media_type") != "IMAGE"
+        or parsed.scheme != "https"
+        or (parsed.hostname or "").lower() not in {"instagram.com", "www.instagram.com"}
+        or not isinstance(existing.get("timestamp"), str)
+        or not existing["timestamp"]
+    ):
+        raise RuntimeError("Matching photo has incomplete Meta proof; do not publish")
+    return existing
+
+
+def first_scheduled_run_for_day(day: str) -> bool:
+    """Select exactly one publisher run via GitHub's server-side run registry.
+
+    A failed or ambiguous first run still owns this day's write attempt.
+    A later backup may publish ONLY when no earlier scheduled run exists.
+    """
+    if (
+        os.environ.get("GITHUB_REPOSITORY") != "FedorMilovanov/video-channel-manager"
+        or os.environ.get("GITHUB_REF") != "refs/heads/main"
+        or os.environ.get("GITHUB_EVENT_NAME") != "schedule"
+        or os.environ.get("GITHUB_RUN_ATTEMPT") != "1"
+        or os.environ.get("GITHUB_EVENT_SCHEDULE") not in {"45 9 12-15 11 *", "10 10 12-15 11 *"}
+    ):
+        raise RuntimeError("Unapproved cloud workflow invocation; do not publish")
+    current_run = os.environ.get("GITHUB_RUN_ID", "")
+    if not current_run.isdecimal():
+        raise RuntimeError("Current GitHub run ID missing; do not publish")
+    token = os.environ.get("LORD_GOD_CLOUD_GITHUB_TOKEN", "")
+    if len(token) < 20:
+        raise RuntimeError("GitHub read-only Actions token unavailable; do not publish")
+
+    params = urlencode({"event": "schedule", "created": day, "per_page": 100})
+    api = (
+        "https://api.github.com/repos/FedorMilovanov/video-channel-manager"
+        "/actions/workflows/lord-god-instagram-quote-cloud-20261111.yml/runs?" + params
+    )
+    request = Request(
+        api,
+        method="GET",
+        headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    try:
+        with urlopen(request, timeout=30) as response:
+            listing = json.load(response)
+    except (HTTPError, URLError, ValueError) as exc:
+        raise RuntimeError("GitHub run registry unavailable; do not publish") from exc
+    if not isinstance(listing, dict):
+        raise RuntimeError("Invalid GitHub run registry; do not publish")
+    total = listing.get("total_count")
+    runs = listing.get("workflow_runs")
+    if type(total) is not int or total < 1 or total > 100 or not isinstance(runs, list) or len(runs) != total:
+        raise RuntimeError("Incomplete GitHub run registry; do not publish")
+
+    candidates = []
+    for run in runs:
+        if (
+            not isinstance(run, dict)
+            or run.get("event") != "schedule"
+            or run.get("head_branch") != "main"
+            or not str(run.get("id", "")).isdecimal()
+            or not isinstance(run.get("created_at"), str)
+        ):
+            raise RuntimeError("Unexpected GitHub scheduled run; do not publish")
+        created = run["created_at"]
+        try:
+            when = dt.datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if when.tzinfo is None or when.astimezone(MOSCOW).strftime("%Y-%m-%d") != day:
+                raise ValueError("Unexpected run date")
+        except ValueError:
+            raise RuntimeError("GitHub scheduled run date invalid; do not publish") from None
+        candidates.append((when, int(run["id"])))
+
+    if len(candidates) != total or int(current_run) not in {ident for _, ident in candidates}:
+        raise RuntimeError("Current GitHub run not proven in registry; do not publish")
+    winner = min(candidates)[1]
+    if int(current_run) != winner:
+        print("LATER_SCHEDULED_RUN_READ_ONLY_SKIP", day, current_run, "first", winner, flush=True)
+        return False
+    print("FIRST_SCHEDULED_RUN_WRITE_ELIGIBLE", day, current_run, flush=True)
+    return True
+
+
+def claim_local_photo_once(item: dict, day: str) -> None:
+    if os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("GITHUB_EVENT_NAME"):
+        raise RuntimeError("Local photo publisher cannot run in GitHub Actions")
+    database = Path(os.environ.get("LORD_GOD_LOCAL_LEDGER_DB", ""))
+    if not database.is_absolute() or not database.is_file():
+        raise RuntimeError("Local publisher ledger must be the existing durable SQLite database")
+    digest = hashlib.sha256(item["caption"].encode("utf8")).hexdigest()
+    connection = sqlite3.connect(database, timeout=30, isolation_level=None)
+    try:
+        connection.execute("PRAGMA busy_timeout=30000")
+        connection.execute("PRAGMA synchronous=FULL")
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS instagram_lord_god_quote_attempts ("
+            "account_id TEXT NOT NULL, publication_day TEXT NOT NULL, item_id TEXT NOT NULL, "
+            "caption_sha256 TEXT NOT NULL, state TEXT NOT NULL CHECK(state IN ('CLAIMED','VERIFIED')), "
+            "claimed_utc TEXT NOT NULL, media_id TEXT, permalink TEXT, verified_utc TEXT, "
+            "PRIMARY KEY (account_id, publication_day))"
+        )
+        existing = connection.execute(
+            "SELECT item_id, caption_sha256 FROM instagram_lord_god_quote_attempts "
+            "WHERE account_id=? AND publication_day=?",
+            (INSTAGRAM_ACCOUNT, day),
+        ).fetchone()
+        if existing is not None:
+            connection.commit()
+            if existing != (item["id"], digest):
+                raise RuntimeError("Photo claim conflicts with approved caption")
+            raise RuntimeError("Local photo attempt already claimed; no blind retry")
+        connection.execute(
+            "INSERT INTO instagram_lord_god_quote_attempts "
+            "(account_id, publication_day, item_id, caption_sha256, state, claimed_utc) "
+            "VALUES (?,?,?,?,?,?)",
+            (INSTAGRAM_ACCOUNT, day, item["id"], digest, "CLAIMED", dt.datetime.now(dt.timezone.utc).isoformat()),
+        )
+        connection.commit()
+    except Exception:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    finally:
+        connection.close()
+    print("LOCAL_DURABLE_PHOTO_ATTEMPT_CLAIMED", day, item["id"], flush=True)
+
+
+def finalize_local_photo(item: dict, day: str, media_id: str, permalink: str) -> None:
+    database = Path(os.environ["LORD_GOD_LOCAL_LEDGER_DB"])
+    connection = sqlite3.connect(database, timeout=30, isolation_level=None)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        updated = connection.execute(
+            "UPDATE instagram_lord_god_quote_attempts "
+            "SET state='VERIFIED',media_id=?,permalink=?,verified_utc=? "
+            "WHERE account_id=? AND publication_day=? AND item_id=? "
+            "AND caption_sha256=? AND state='CLAIMED'",
+            (
+                media_id,
+                permalink,
+                dt.datetime.now(dt.timezone.utc).isoformat(),
+                INSTAGRAM_ACCOUNT,
+                day,
+                item["id"],
+                hashlib.sha256(item["caption"].encode("utf8")).hexdigest(),
+            ),
+        )
+        if updated.rowcount != 1:
+            raise RuntimeError("Existing photo claim not found for verified receipt")
+        connection.commit()
+    except Exception:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def main() -> None:
+    rows = read_plan()
+    mode = os.environ.get("LORD_GOD_CLOUD_MODE", "")
+    if mode not in {"preflight", "scheduled", "local_scheduled"}:
+        raise RuntimeError("Requires approved preflight/scheduled mode")
+    if mode == "scheduled" and os.environ.get("GITHUB_ACTIONS") == "true":
+        raise RuntimeError("GitHub scheduled photo publisher retired; do not publish")
+    if mode == "local_scheduled" and (
+        os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("GITHUB_EVENT_NAME")
+    ):
+        raise RuntimeError("Local photo publishing forbidden in GitHub Actions")
+    token = os.environ.get("LORD_GOD_PAGE_TOKEN", "")
+    if len(token) < 35:
+        raise RuntimeError("Cloud secret missing")
+    verify_identity(token)
+    today = datetime.now(MOSCOW)
+    if mode == "preflight":
+        for item in rows:
+            media_verified(item)
+            found = find_published(token, item["caption"])
+            print(
+                "PREFLIGHT",
+                item["id"],
+                item["date"],
+                "ALREADY_PUBLISHED" if found else "READY",
+                flush=True,
+            )
+        print("PREFLIGHT_OK_NO_POST", flush=True)
+        return
+    current = today.strftime("%Y-%m-%d")
+    matches = [x for x in rows if x["date"] == current]
+    if len(matches) != 1:
+        print("NO_SCHEDULED_POST_FOR_DATE", current, flush=True)
+        return
+    if not (clock(12, 45) <= today.time() < clock(14, 0)):
+        raise RuntimeError("Outside 12:45-14:00 Moscow publication window")
+    item = matches[0]
+    image_url = media_verified(item)
+    already = find_published(token, item["caption"])
+    if already:
+        print("ALREADY_PUBLISHED_SKIP", item["id"], already.get("id"), flush=True)
+        return
+    if mode == "local_scheduled":
+        claim_local_photo_once(item, current)
+    elif not first_scheduled_run_for_day(current):
+        return
+    print("POST_START", item["id"], current, flush=True)
+    created = request_json(
+        INSTAGRAM_ACCOUNT + "/media",
+        token,
+        data={"image_url": image_url, "caption": item["caption"]},
+    )
+    container = str(created.get("id", ""))
+    if not container.isdecimal():
+        raise RuntimeError("Media container ID unavailable, no publish call")
+    print("CONTAINER_CREATED", container, flush=True)
+    for _ in range(20):
+        stage = request_json(container + "?fields=status_code", token)
+        status = stage.get("status_code")
+        if status == "FINISHED":
+            break
+        if status in {"ERROR", "EXPIRED", "FAILED"}:
+            raise RuntimeError("Media container " + str(status))
+        time.sleep(3)
+    else:
+        raise RuntimeError("Media processing incomplete; do not blind retry")
+    # No automatic action retry; an uncertain media_publish outcome requires reconciliation.
+    print("PUBLISH_REQUESTING", item["id"], flush=True)
+    result = request_json(INSTAGRAM_ACCOUNT + "/media_publish", token, data={"creation_id": container})
+    media_id = str(result.get("id", ""))
+    if not media_id.isdecimal():
+        raise RuntimeError("Uncertain publish response; do not blindly retry")
+    # This is only a container-publish response, not yet verified content.
+    # Preserve the returned ID for reconciliation if the provider readback is incomplete.
+    print("MEDIA_PUBLISH_ID_UNCONFIRMED", item["id"], media_id, flush=True)
+    detail = request_json(media_id + "?fields=id,caption,media_type,permalink,timestamp", token)
+    permalink = str(detail.get("permalink", ""))
+    parsed_url = urlparse(permalink)
+    timestamp = str(detail.get("timestamp", ""))
+    try:
+        published_at = dt.datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        if published_at.tzinfo is None:
+            raise ValueError("Missing timezone")
+        published_day = published_at.astimezone(MOSCOW).strftime("%Y-%m-%d")
+    except ValueError:
+        raise RuntimeError("Provider publication timestamp missing or invalid; do not retry") from None
+    if (
+        str(detail.get("id", "")) != media_id
+        or str(detail.get("caption", "")).strip() != item["caption"].strip()
+        or detail.get("media_type") != "IMAGE"
+        or parsed_url.scheme != "https"
+        or (parsed_url.hostname or "").lower() not in {"instagram.com", "www.instagram.com"}
+        or published_day != current
+    ):
+        raise RuntimeError("Provider photo media, date, caption or permalink not proven; do not retry")
+    if mode == "local_scheduled":
+        finalize_local_photo(item, current, media_id, permalink)
+    print("PUBLISHED_CONFIRMED", item["id"], media_id, permalink, flush=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (RuntimeError, ValueError, TypeError, KeyError, OSError) as exc:
+        print(
+            "SAFE_FAILURE_NO_BLIND_RETRY",
+            type(exc).__name__,
+            str(exc)[:200],
+            file=sys.stderr,
+        )
+        sys.exit(1)

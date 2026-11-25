@@ -3,10 +3,11 @@
   "schema_version": 1,
   "provider_writes_in_quality_ci": false,
   "provider_write_workflows": [
-    ".github/workflows/lordchrist-quiz-poster.yml",
-    ".github/workflows/lordchrist-quiz-series-poster.yml",
-    ".github/workflows/lordchrist-telegraph-poster.yml",
+    ".github/workflows/lordchrist-quiz-series-03-poster.yml",
+    ".github/workflows/lordchrist-quote-v6-publisher.yml",
+    ".github/workflows/lordchrist-shorts4-publisher.yml",
     ".github/workflows/lordchrist-telegram-poster.yml",
+    ".github/workflows/lordchrist-telegraph-poster.yml",
     ".github/workflows/milovi-telegram-feed-publisher.yml",
     ".github/workflows/svodka-canary.yml",
     ".github/workflows/svodka-scheduled-publisher.yml"
@@ -513,6 +514,33 @@
       ]
     },
     {
+      "boundary_id": "youtube.localization.update",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/platforms/youtube/writer.py",
+      "module": "video_channel_manager.platforms.youtube.writer",
+      "callable": "YouTubeDescriptionWriter.replace_localized_description",
+      "scanner_marker": "youtube:PUT:videos",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact owner and video identity, current main/locale frozen source texts and hashes, full before-language map, confirmed non-default locale, explicit write authority and durable pre-dispatch backup/receipt",
+      "dispatch_evidence": "one videos.update(part=localizations) preserving all existing locales without snippet or status updates",
+      "response_evidence": "official YouTube response, no mutation retry or automatic rollback",
+      "postflight_evidence": "exact full localization map, primary Russian description and protected metadata after two independent owner reads, plus delayed readback",
+      "reconciliation_identity": "video_id, channel_id, target language, full before-localization map and exact target locale SHA-256",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "during_postflight"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_localization_fix.py"
+      ]
+    },
+    {
       "boundary_id": "telegram.rich_message.send",
       "risk": "P0",
       "provider": "Telegram",
@@ -907,6 +935,34 @@
       ]
     },
     {
+      "boundary_id": "telegram.multichannel.audio.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "src/video_channel_manager/telegram_multichannel_audio.py",
+      "module": "video_channel_manager.telegram_multichannel_audio",
+      "callable": "send_audio_once",
+      "scanner_marker": "telegram_api:sendAudio",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "explicit channel profile write authority, fresh exact bot/channel proof, frozen digest of MP3/JPEG, HTML caption and UTF-16 entities; exact local media bytes re-verified before dispatch",
+      "dispatch_evidence": "one multipart sendAudio POST via telegram_transport._api_call with literal mutation=True and MUTATION_TRANSPORT_RETRIES == 0; no independent sender",
+      "response_evidence": "returned exact chat identity, caption text and entities, audio file_id and mime/title/performer, and positive message ID",
+      "postflight_evidence": "verified receipt includes exact channel, message ID and payload digest, applied by generic durable ledger; unknown outcome remains may_exist and cannot replay",
+      "reconciliation_identity": "publication_id, provider payload digest, MP3 hash, optional JPEG hash, chat_id and returned message_id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_telegram_multichannel_audio.py",
+        "tests/test_telegram_multichannel_cli.py"
+      ]
+    },
+    {
       "boundary_id": "telegram.channel.dispatch.prepared",
       "risk": "P0",
       "provider": "Telegram",
@@ -1239,6 +1295,33 @@
       ],
       "owning_tests": [
         "tests/test_milovi_school_wall_publisher.py"
+      ]
+    },
+    {
+      "boundary_id": "lordchrist.quote.v6.telegram.send",
+      "risk": "P0",
+      "provider": "Telegram",
+      "language": "python",
+      "source_file": "scripts/lordchrist_quote_v6_publisher.py",
+      "module": "scripts.lordchrist_quote_v6_publisher",
+      "callable": "send",
+      "scanner_marker": "telegram_api:sendMessage",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "30-item frozen digest, exact target proof, one dispatch.json and state/lordchrist-telegram quote-v6 ledger intent committed and remotely verified before API send",
+      "dispatch_evidence": "one zero-retry sendMessage HTML request bound to exact v6 source payload, channel -1001295216957 and bot 8716602202",
+      "response_evidence": "exact provider channel id/username/type, echoed UTF-16 text and blockquote/italic entities, positive message id",
+      "postflight_evidence": "archived exact run/attempt outcome artifact and independent v6 ledger with verified URL or conservative may_exist unknown",
+      "reconciliation_identity": "queue digest, publication ID, intent ID, workflow SHA/run ID/attempt, bot id, channel id and message id",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "after_response_before_commit"
+      ],
+      "owning_tests": [
+        "tests/test_lordchrist_quote_v6_live_publisher.py"
       ]
     }
   ]

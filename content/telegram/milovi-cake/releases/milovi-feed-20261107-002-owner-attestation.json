@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.milovi-feed-exact-owner-attestation",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20261107-002",
+  "recorded_at": "2026-11-06T04:38:29+03:00",
+  "recorded_from": "owner's current ChatGPT instruction 2026-11-06: yes, it is our own MILOVI CAKE filming, rights belong to us, upload all",
+  "video_visual_rights_confirmed_by_owner": true,
+  "audio_rights_claimed": false,
+  "provider_media_audio_streams": 0,
+  "exact_video_sha256": "sha256:3b680fe94b5007daea9860eeaf16159abf17712887fa3b1714511b48b84143d7",
+  "exact_caption_sha256": "sha256:e424cc4a6f1a8107cba338104fbddd13db1b76d11ef439abd2b56af91648ab9b",
+  "exact_release_slot": "2026-11-07T11:00:00+03:00",
+  "source_visual_review": "Reviewed contact sheet of pinned v12-muted: onsite footage shows worker in black gloves decorating a white cake with red raspberries; caption matches",
+  "owner_authorization_recorded": true,
+  "publication_requires_durable_single_writer": true
+}

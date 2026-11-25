@@ -4,6 +4,8 @@
 
 YouTube and VK use one editorial record and one evidence boundary. Platform differences belong in renderers and guarded executors, not in duplicated authoring schemas.
 
+For the **Lord God long-form YouTube description repair** workflow, apply the channel-specific human-facing style and source-link labels in `docs/operations/lord-god-youtube-description-wave.md` before drafting or signing. In particular, do not add redundant `Выступающий:`, `Формат:` or `Тема:` cards; label a verified English original simply `Англоязычная запись:` with a bare URL on the next line (no duration); and use the playlist's actual subject (e.g. `Вопросы и ответы:`), never the misleading `Исторические плейлисты` merely because a URL was copied from an old description. This is prospective guidance only; it does not authorize mass retroactive edits.
+
 The canonical schema is `video-manager.editorial-content` version 1. Existing `video-manager.youtube-comment-content` version 2 records remain supported and are parsed as canonical records without reauthoring.
 
 ## Canonical record
@@ -14,7 +16,7 @@ A record contains:
 - `profile`: `long_form_poetry`, `short_form`, `essay`, `historical`, `music_cover`, or a supported legacy equivalent;
 - `variation_key`: a stable, work-specific editorial angle;
 - `fact.heading`, `fact.text`, `fact.fact_type`, and evidence `fact.source_ids`;
-- a concrete `question` about the presented text, performance, structure, or documented context;
+- an optional `question` only when genuinely called for by the material or expressly requested by the owner (never needed to manufacture engagement);
 - compact semantic `links` (`site`, `playlist`, `vk`, `vk_album`, `primary_text`, `full_version`, and related kinds);
 - a complete `sources` ledger;
 - `rendering_metadata`, `platform_suitability`, and optional `platform_targets`.
@@ -39,7 +41,7 @@ Interpretation may appear only when clearly framed as an editorial reading and w
 
 ## Editorial quality
 
-A record must provide a substantial, work-specific fact rather than a replaceable compliment. The question must be answerable from the material and must not be a generic engagement prompt. Links must be relevant to the work and must not become a fixed spam footer.
+A record must provide a substantial, work-specific fact rather than a replaceable compliment. A question is optional, must be answerable from the material when present, and must never be appended as a generic engagement prompt. Links must be relevant to the work and must not become a fixed spam footer.
 
 Variation is controlled by `variation_key`. A batch is invalid when it repeats a variation key, content ID, or final rendered text.
 

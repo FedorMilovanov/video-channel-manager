@@ -2,7 +2,7 @@
 
 `AGENTS.md` is the repository operating contract. This file adds only Windows/operator-handoff details and never authorizes provider writes.
 
-Also follow `docs/operations/operator-output-handoff-rule.md`.
+Also follow `docs/operations/operator-output-handoff-rule.md` and the mandatory [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](../docs/operations/nonintrusive-desktop-and-browser-rule.md). Do not open/focus/click/type in the owner's interactive desktop or browser, spawn browser profiles, or access owner browser cookies without fresh, explicit, scoped consent; use API/CLI or isolated noninteractive CI instead.
 
 ## Canonical local paths
 
@@ -75,7 +75,7 @@ if (-not (Test-Path -LiteralPath $Result -PathType Leaf)) {
     throw "Expected output was not created: $Result"
 }
 Write-Host "OPEN/SEND THIS FILE: $Result"
-Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
+# No Explorer/browser/window launch: the exact printed path completes the handoff.
 ```
 
 ## Handoff declaration

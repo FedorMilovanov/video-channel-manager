@@ -7,6 +7,7 @@ import pytest
 
 from video_channel_manager.platforms.youtube.copy_execution import (
     preflight_copy_operations,
+    reconcile_copy_operations,
     verify_copy_operations,
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
@@ -38,6 +39,51 @@ def _operation(*, before: str = "Before", after: str = "After", revision: str = 
         "before_description": before,
         "after_description": after,
     }
+
+
+def test_preflight_accepts_exact_empty_before_description() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-1")})
+    result = preflight_copy_operations(
+        [_operation(before="", after="Verified new description")],
+        confirm_channel="channel-1",
+        writer=writer,
+    )
+    assert len(result.prepared) == 1
+    assert result.prepared[0]["before_description"] == ""
+    assert result.already_applied == 0
+
+
+def test_preflight_empty_before_rejects_nonempty_live_description() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Manual description", "rev-2")})
+    with pytest.raises(YouTubeRevisionConflictError, match="neither"):
+        preflight_copy_operations(
+            [_operation(before="", after="Verified new description")],
+            confirm_channel="channel-1",
+            writer=writer,
+        )
+
+
+def test_preflight_rejects_missing_before_and_empty_after_even_for_empty_live_video() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-1")})
+    missing = _operation(before="", after="New description")
+    del missing["before_description"]
+    with pytest.raises(ValueError, match="before_description"):
+        preflight_copy_operations([missing], confirm_channel="channel-1", writer=writer)
+    with pytest.raises(ValueError, match="after_description"):
+        preflight_copy_operations([_operation(before="", after="")], confirm_channel="channel-1", writer=writer)
+
+
+def test_reconcile_handles_exact_empty_before_without_retry_authority() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "", "rev-2")})
+    rows = reconcile_copy_operations(
+        [_operation(before="", after="Proposed description")],
+        confirm_channel="channel-1",
+        writer=writer,
+    )
+    assert len(rows) == 1
+    assert rows[0]["state"] == "live_before"
+    assert rows[0]["safe_to_replay"] is False
+    assert rows[0]["provider_mutations"] == 0
 
 
 def test_preflight_is_idempotent_after_youtube_normalization() -> None:
@@ -75,6 +121,42 @@ def test_preflight_tolerates_revision_drift_only_when_before_text_matches() -> N
     assert result.prepared[0]["title"] == "Current title"
     assert result.prepared[0]["revision_drift"] is True
     assert result.revision_drift_tolerated == 1
+
+
+def test_owner_title_drift_is_blocked_when_frozen_plan_title_is_required() -> None:
+    operation = _operation()
+    operation["title"] = "Archived owner title"
+    writer = FakeWriter(
+        {
+            "video-1": Snapshot(
+                video_id="video-1",
+                channel_id="channel-1",
+                title="Different current title",
+                description="Before",
+                revision="rev-1",
+            )
+        }
+    )
+    with pytest.raises(YouTubeRevisionConflictError, match="title differs"):
+        preflight_copy_operations(
+            [operation],
+            confirm_channel="channel-1",
+            writer=writer,
+            require_plan_title=True,
+        )
+    # Preserve documented backward compatibility for generic copy plans.
+    assert len(preflight_copy_operations([operation], confirm_channel="channel-1", writer=writer).prepared) == 1
+
+
+def test_owner_title_lock_requires_nonempty_plan_title() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Before", "rev-1")})
+    with pytest.raises(ValueError, match="title"):
+        preflight_copy_operations(
+            [_operation()],
+            confirm_channel="channel-1",
+            writer=writer,
+            require_plan_title=True,
+        )
 
 
 def test_preflight_refuses_third_description_state() -> None:
@@ -121,3 +203,49 @@ def test_local_write_lock_rejects_second_process_context(tmp_path: Path) -> None
             with local_youtube_write_lock(lock, account="account", channel_id="channel"):
                 pass
     assert not lock.exists()
+
+
+def test_reconcile_reads_after_state_without_mutating_owner_video() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "After\n", "rev-2")})
+    row = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)[0]
+    assert row["state"] == "live_after"
+    assert row["video_id"] == "video-1"
+    assert row["provider_mutations"] == 0
+    assert row["safe_to_replay"] is False
+    assert row["planned_after_sha256"].startswith("sha256:")
+
+
+def test_reconcile_before_state_is_not_retry_authority() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Before", "rev-3")})
+    rows = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
+    assert rows[0]["state"] == "live_before"
+    assert rows[0]["safe_to_replay"] is False
+
+
+def test_reconcile_unknown_third_state_is_explicit_conflict() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "Concurrent edit", "rev-3")})
+    rows = reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
+    assert rows[0]["state"] == "live_third_state"
+    assert rows[0]["safe_to_replay"] is False
+
+
+def test_reconcile_refuses_live_wrong_channel() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "wrong-channel", "Title", "After", "rev-2")})
+    with pytest.raises(YouTubeRevisionConflictError, match="Owner mismatch"):
+        reconcile_copy_operations([_operation()], confirm_channel="channel-1", writer=writer)
+
+
+def test_reconcile_refuses_unsigned_target_change_or_duplicate_id() -> None:
+    writer = FakeWriter({"video-1": Snapshot("video-1", "channel-1", "Title", "After", "rev-2")})
+    with pytest.raises(ValueError, match="--confirm-channel"):
+        reconcile_copy_operations([_operation()], confirm_channel="", writer=writer)
+    with pytest.raises(ValueError, match="No YouTube copy"):
+        reconcile_copy_operations([], confirm_channel="channel-1", writer=writer)
+    with pytest.raises(ValueError, match="does not belong"):
+        reconcile_copy_operations(
+            [{**_operation(), "channel_id": "wrong-channel"}],
+            confirm_channel="channel-1",
+            writer=writer,
+        )
+    with pytest.raises(ValueError, match="Duplicate YouTube copy video ID"):
+        reconcile_copy_operations([_operation(), _operation()], confirm_channel="channel-1", writer=writer)

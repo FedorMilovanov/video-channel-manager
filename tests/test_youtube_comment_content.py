@@ -179,3 +179,20 @@ def test_unsafe_repository_source_path_is_rejected() -> None:
     second["path"] = "../outside.md"
     errors = validate_comment_content(record)
     assert "source editorial-links has an unsafe repository path" in errors
+
+
+def test_v2_sourced_comment_does_not_require_an_engagement_question() -> None:
+    record = deepcopy(_v2_record())
+    record.pop("question")
+    assert validate_comment_content(record, expected_channel_id="channel-1") == []
+    rendered = render_comment_content(record)
+    assert "История публикации" in rendered
+    assert "youtube.com/playlist?list=" in rendered
+    assert "Вопрос к слушателю" not in rendered
+    assert not rendered.endswith("?")
+
+
+def test_v2_explicit_question_is_still_validated_not_generated() -> None:
+    record = deepcopy(_v2_record())
+    record["question"] = {"lead": "_Вопрос:_", "text": "Интерпретация без знака вопроса"}
+    assert any("question.text must be" in err for err in validate_comment_content(record))

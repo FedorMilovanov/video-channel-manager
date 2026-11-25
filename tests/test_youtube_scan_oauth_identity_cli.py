@@ -108,3 +108,51 @@ def test_exact_channel_on_multi_channel_alias_still_exports_readonly_package(tmp
     assert result.exit_code == 0, (result.stdout, result.exception)
     assert inspected == [POET]
     assert json.loads(path.read_text(encoding="utf-8"))["channel_id"] == POET
+
+
+def test_scan_receipt_survives_legacy_cp1252_terminal_after_durable_export(tmp_path: Path, monkeypatch) -> None:
+    """Actual Unicode receipt + Cyrillic output path cannot fail after file write."""
+    import io
+    from rich.console import Console
+    from video_channel_manager.platforms.youtube.copy_output_safety import make_console_text_safe
+
+    _install(monkeypatch, tmp_path, _client([LORD_GOD]))
+
+    class Package:
+        videos: list = []
+        collections: list = []
+        memberships: list = []
+
+        def model_dump_json(self, *, indent: int) -> str:
+            return json.dumps({"channel_id": LORD_GOD}, indent=indent)
+
+    class Inventory:
+        def __init__(self, client) -> None:
+            assert client is not None
+
+        def build_audit_package(self, channel_id: str) -> Package:
+            assert channel_id == LORD_GOD
+            return Package()
+
+    raw = io.BytesIO()
+    legacy_stream = io.TextIOWrapper(raw, encoding="cp1252", errors="strict")
+    monkeypatch.setattr(youtube_cli, "YouTubeInventoryService", Inventory)
+    monkeypatch.setattr(youtube_cli, "console", Console(file=legacy_stream, force_terminal=False))
+    # Simulate Windows os.name without changing global pathlib platform state.
+    monkeypatch.setattr(
+        youtube_cli,
+        "prepare_windows_youtube_console",
+        lambda: make_console_text_safe(legacy_stream),
+    )
+
+    output = tmp_path / "Аудит-описаний.json"
+    youtube_cli.scan(account="fedor-milovanov", channel_id=LORD_GOD, output=output)
+    legacy_stream.flush()
+
+    assert json.loads(output.read_text(encoding="utf-8"))["channel_id"] == LORD_GOD
+    assert legacy_stream.errors == "backslashreplace"
+    receipt = raw.getvalue().decode("cp1252")
+    assert "Exported AuditPackage" in receipt
+    assert "Videos: 0 | Playlists: 0 | Memberships: 0" in receipt
+    assert r"\u2192" in receipt
+    assert r"\u0410" in receipt

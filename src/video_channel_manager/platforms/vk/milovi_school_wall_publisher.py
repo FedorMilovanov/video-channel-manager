@@ -91,7 +91,7 @@ class MiloviCommunitySchoolWriter(VkWallWriter):
     def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
         if self.account_alias != COMMUNITY_ACCOUNT:
             raise MiloviCanaryBlocked("Milovi School publisher requires its exact account alias")
-        token = self.token_store.load_token(COMMUNITY_ACCOUNT)
+        token = self.token_store.load_token_for_provider(COMMUNITY_ACCOUNT)
         if token.token_type != "community" or token.is_expired():
             raise MiloviCanaryBlocked("Milovi School requires a nonexpired community key")
         if any(scope not in token.scopes for scope in required_scopes):

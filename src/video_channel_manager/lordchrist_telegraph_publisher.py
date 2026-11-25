@@ -552,7 +552,7 @@ def _apply_telegraph_layout_rules(nodes: list[dict[str, Any] | str]) -> list[dic
     def with_chapter_tag(credit: dict[str, Any]) -> dict[str, Any]:
         em = credit["children"][0]
         text = str(em["children"][0])
-        if "Чарнок" in text and "(беседа" not in text:
+        if "Чарнок" in text and "беседа" not in text.lower():
             em["children"][0] = f"{text} (беседа I)"
         return credit
 
@@ -745,7 +745,7 @@ def render_preview_html_page(payload: TelegraphPayload, post: RenderedChannelPos
   </div>
   <div id="view-iv" class="tph-paper hidden">
     <h1>{html.escape(payload.title)}</h1>
-    <div class="tph-byline"><a href="{html.escape(payload.author_url, quote=True)}">{html.escape(payload.author_name)}</a> · Серия «Стивен Чарнок. О бытии Бога»</div>
+    <div class="tph-byline"><a href="{html.escape(payload.author_url, quote=True)}">{html.escape(payload.author_name)}</a></div>
     {article_body_html}
   </div>
 </div>

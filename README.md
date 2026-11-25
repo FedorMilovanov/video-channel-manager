@@ -2,6 +2,8 @@
 
 [English README](README_EN.md) · [Кейс проекта](CASE_STUDY.md) · [Авторство и права](OWNER.md) · Русская документация — ниже.
 
+**YouTube API Services — Video Channel Manager.** Приложение использует [YouTube](https://www.youtube.com/) и YouTube Data API только для авторизованного управления видеоканалами. [Политика конфиденциальности приложения](PRIVACY.md) · [Условия использования](TERMS.md) · [Отзыв разрешений Google](https://security.google.com/settings/security/permissions).
+
 **Video Channel Manager** — safety-first инструмент для аудита, редакционной проверки, организации и синхронизации видеоканалов YouTube, VK и локального медиархива.
 
 Это не одноразовый YouTube → VK скрипт. Проект строится как платформенно-нейтральный модульный монолит:
@@ -104,6 +106,10 @@ complete snapshot + SHA-256
 - [`docs/vk-readonly.md`](docs/vk-readonly.md) — VK token/inventory и безопасные read-only команды;
 - [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — VK API source ledger;
 - [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — cross-platform hardening ledger.
+
+### SHORTOREZ — нарезка готового видео непосредственно в чате
+
+Для задания вида `SHORTOREZ: <ссылка на видео>` используй [инструкцию AI-агенту для нарезки готовой русской записи](docs/operations/shortorez-chat-workflow.md). Это не режим Telegram MP3Bot и не автоматическая публикация. Планы адаптации готовых клипов для Telegram/VK/Instagram описаны отдельно в [маршрутизации SHORTOREZ](docs/operations/shortorez-publication-routing.md).
 
 ### Local media / Resi DASH
 
@@ -330,13 +336,13 @@ python .\scripts\recover_youtube_copy_apply.py `
 
 ## Token и read-only inventory
 
-Текущий video contour использует **user access token** с ожидаемыми `video` и `groups` permissions.
+**Исторический контур:** VK Video использовал user access token с правами `video` и `groups`, но его aliases `legendary-poet` и `default` сейчас **в карантине (issue #662)**. Нельзя выполнять `login`, `communities`, `scan`, `token-capabilities` или другие VK API-запросы с этим секретом; смена alias не является восстановлением. Действующий изолированный VK-браузер (при наличии авторизации) — отдельный маршрут: его не нужно заново логинить или создавать для каждого проекта. Подробнее: [карантин VK](docs/operations/vk-credential-quarantine.md) и [точные идентификаторы проектов](docs/operations/project-identity-registry.md).
 
 ```powershell
-video-manager vk login --account legendary-poet
+# Только локальный перечень известных записей — без VK API:
 video-manager vk accounts
-video-manager vk communities --account legendary-poet
-video-manager vk scan --account legendary-poet --community 235216998
+# Любая будущая VK API инвентаризация требует отдельно проверенного
+# НЕкарантинного ключа/профиля и точной привязки project/community/owner.
 ```
 
 Снимок включает полный `owner_id_video_id`, `type`, размеры, albums, system markers и memberships.
@@ -464,10 +470,9 @@ video-manager youtube login --account legendary-poet
 video-manager youtube accounts
 video-manager youtube channels --account legendary-poet
 video-manager youtube scan --account legendary-poet
-video-manager vk login --account legendary-poet
+# VK: только локальный инвентарь. Исторические aliases запрещены для API:
 video-manager vk accounts
-video-manager vk communities --account legendary-poet
-video-manager vk scan --account legendary-poet --community 235216998
+# API read/write: см. policy карантина VK и проверку нового разрешённого credential.
 video-manager compare audits youtube.json vk.json
 ```
 

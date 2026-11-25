@@ -2,6 +2,9 @@
 
 This file contains **durable rules**, not a history of old waves or commit SHAs. Historical audits remain evidence; they do not control new work.
 
+## SHORTOREZ / Manrope 01 / local media intake
+For SHORTOREZ/Q&A Russian vertical Shorts **when the operator selected Manrope 01**, read [docs/operations/shorts-manrope01-largev3-cpu-review.md](docs/operations/shorts-manrope01-largev3-cpu-review.md) before producing, reviewing or delivering media. Other projects retain their independently approved styles. This operator-selected style requires **Manrope 800, yellow per-word highlighting, source-aware opening, Large-v3 CPU INT8** on the affected Windows machine, and independent ASS/FFprobe/listening gates. Existing 16:9 long-form masters do **not** receive burned subtitles in this workflow. No silent Small/CUDA fallback; TECH_QA never implies editorial, rights or provider write approval.
+
 ## Read order
 
 Before changing provider-facing, workflow, state, release, or artifact code, read only the sources relevant to the task, in this order:
@@ -18,6 +21,10 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 5. Historical audits only when provenance or a past defect must be understood.
 6. `.github/copilot-instructions.md` for Windows/operator handoff details.
 
+### SHORTOREZ — direct chat cutting of already-voiced videos
+
+When the owner says `SHORTOREZ`, provides a video URL for finished-language editorial cutting, or asks to repeat the MacArthur «Божья воля» cutting workflow, **first read [docs/operations/shortorez-chat-workflow.md](docs/operations/shortorez-chat-workflow.md)**. This is a **direct chat-agent workflow through the authorized computer**, NOT the Telegram `/mode` `SHORTS FACTORY MAX`, a new translation job, or automatic platform publication. Reuse existing source-bound renderers, keep the selected source's audible language, and cover all worthwhile semantic units without a fixed five-Short limit. The separate [SHORTOREZ platform routing](docs/operations/shortorez-publication-routing.md) is a provider-inert follow-on, not the media editor.
+
 ### @lordchrist content routing
 
 For any task that researches, drafts, edits, formats, or hands off Telegram content for `@lordchrist` / «Господь Бог — Сила Моя», read `content/telegram/lordchrist/AGENTS.md` before using any old draft or example. That local contract routes to the current rich-editorial, quotation, and Android copy/paste standards and defines their precedence. Research drafts are evidence inputs, not presentation authority.
@@ -25,6 +32,13 @@ For any task that researches, drafts, edits, formats, or hands off Telegram cont
 ### @legendary-poet YouTube metadata routing
 
 For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
+
+### Lord God YouTube description source-preservation routing
+
+For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read
+[docs/operations/lord-god-youtube-description-wave.md](docs/operations/lord-god-youtube-description-wave.md).
+In addition to signed copy-plan and project presentation validation, its non-deletion guard preserves original chapters, translation/source credits, primary links and relevant playlist IDs. A passing format check is not permission to discard source evidence or retry an uncertain provider write.
+For new or changed Lord God YouTube chapters, the same runbook's **Chapter publication** section controls semantic boundaries, evidence-backed editorial review, retired-effect rejection and execution confirmation. Fixed-minute grids and self-digests are not editorial approval. Use the existing repository planner and guarded CLI, not an ad-hoc provider script; an API-only owner instruction prohibits Studio/third-party fallback.
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
@@ -54,6 +68,12 @@ Identity must be stable under irrelevant changes.
 - A final artifact must consume the exact accepted upstream artifacts it claims. If the provenance policy changes, an older final MP4/ZIP/result is historical evidence until regenerated and re-verified under the new policy.
 - Content presented as a quotation must map to a contiguous source passage; synthesis/paraphrase must not be formatted as a quote.
 - Never select an artifact by newest file, broad wildcard, title-only match, or remembered path when exact identity is available.
+
+### YouTube OAuth credential-store identity
+
+The default `VCM_DATA_DIR=./data` is **relative to the process working directory**. A manual `youtube login` launched from the user's home and an agent's `youtube scan` in a repository checkout can silently read **different valid token files under the same alias**, with different scopes. For any YouTube provider write, use the **same verified absolute `VCM_DATA_DIR`** as the owner's successfully authorized session and confirm the `video-manager youtube accounts` storage path, actual granted scopes and exact owner channel ID independently. Set an absolute `VCM_YOUTUBE_CLIENT_SECRET_FILE` where needed. Never copy tokens between directories, silently switch to an older read-only token, print secrets, or infer permissions from an alias alone. Command output and audit records must identify the resolved storage directory (no token bytes).
+
+Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](docs/operations/youtube-shared-project-quota.md): use the canonical official client, verified Cloud-project identity and shared quota stop record, exact-ID bounded reads, and mandatory verification reserve. Never switch accounts/projects to circumvent quota or confuse Remote credits with provider quota.
 
 ## Provider mutation boundary
 
@@ -90,7 +110,7 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 
 Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
 
-1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources.
+1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources. The `state/legendary-poet-telegram` ref is separately reserved for later initialized audio publication state, not an executable code source.
 2. **Content-addressed evidence refs** — the artifact store of a released media set. The ref name is the prefix of the accepted evidence digest, and runtime bindings reference it by name (for example `milovi_telegram_feed.VIDEO_ARTIFACT_REF` gates every Milovi `sendVideo`). These look like ordinary `agent/...` work branches and are not ephemeral.
 3. **Ephemeral work branches** — every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch.
 
@@ -102,7 +122,11 @@ For class 3: after its PR/scope closes, delete the ref where supported; if ref d
 
 ## Browser and wrapper rules
 
+**Non-disruptive desktop is the default.** Shared HEAVY-job admission and local WebKit/CUDA restrictions are mandatory; choose the most effective authorized transport, including RDC when it improves total cost, speed or quality. LIGHT/bounded MEDIUM need no per-call approval. Read and enforce [`docs/operations/nonintrusive-desktop-and-browser-rule.md`](docs/operations/nonintrusive-desktop-and-browser-rule.md) before any browser/remote desktop work. Without fresh, narrowly scoped owner permission, agents must not open or control visible browser windows/tabs, steal window focus, attach to the owner's interactive browser session, inject mouse/keyboard actions, harvest browser cookies, or create new login/profile workflows. Prefer official APIs/CLI and isolated noninteractive test runners; a provider lacking a safe API is a blocked dependency, not justification to interrupt the owner.
+
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.
+
+Native VK `short_video` metadata and scheduling must follow `docs/operations/vk-native-clip-golden-path.md`. The ordinary Video editor/`video.publish` is not interchangeable with Creator Clips; separately prove the exact native caption, hashtags and postponed slot after saving. Do not treat a timestamp from another surface or a disappearing modal as publication evidence.
 
 PowerShell and shell wrappers orchestrate one repository-owned implementation. They must not become a second provider client or duplicate retry, pagination, upload, publication, or postflight logic. Do not create generated `executor.py` files or v2/v3/v4 ZIP families as a shortcut; fix repository code and regress the defect.
 
@@ -132,7 +156,7 @@ Merge only when all are true:
 - review threads are clean;
 - provider side effects performed during implementation/tests are exactly those explicitly authorized (normally zero).
 
-An infrastructure incident or old green run never substitutes for exact-current-head green CI.
+An infrastructure incident or old green run never substitutes for exact-current-head green CI. Register new package modules in the coverage ratchet with measured floors and new scripts in scripts/wave-executors.json with exact digests and provider capability; preserve existing thresholds.
 
 Operational-memory/state synchronization is a separate, small change after a runtime/code baseline moves. Do not duplicate historical audit material into `AGENTS.md`.
 

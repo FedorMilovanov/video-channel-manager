@@ -317,6 +317,32 @@
       ]
     },
     {
+      "boundary_id": "youtube.localization.update",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_guard_refuses_stale_or_unsafe_before_put",
+          "claim": "changed owner, primary text, locale map, privacy or metadata rejects a localization-only PUT"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_api_503_never_retries_put",
+          "claim": "an ambiguous videos.update 503 is attempted once with no replay"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_localization_fix.py::test_localization_postflight_drift_blocks_without_replay",
+          "claim": "unexpected primary/audio/secondary-locale drift blocks completion without repeated PUT"
+        }
+      ]
+    },
+    {
       "boundary_id": "wave.operation.dispatch",
       "proofs": [
         {
@@ -803,6 +829,32 @@
       ]
     },
     {
+      "boundary_id": "telegram.multichannel.audio.send",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_changed_media_digest_fails_before_dispatch",
+          "claim": "reviewed MP3 that changed before sending is blocked on size/hash before any provider request"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_send_audio_once_read_timeout_is_one_ambiguous_attempt",
+          "claim": "a response lost after the sole sendAudio dispatch produces may_exist, retryable=False, and exactly one provider request"
+        },
+        {
+          "stages": [
+            "after_response_before_commit"
+          ],
+          "test_id": "tests/test_telegram_multichannel_audio.py::test_ambiguous_provider_echo_is_may_exist_no_second_send",
+          "claim": "wrong returned caption/chat/entities/audio is never committed as verified and remains a single ambiguous request"
+        }
+      ]
+    },
+    {
       "boundary_id": "telegram.channel.dispatch.prepared",
       "proofs": [
         {
@@ -1223,6 +1275,32 @@
           ],
           "test_id": "tests/test_milovi_school_wall_publisher.py::test_final_journal_commit_failure_still_blocks_replay",
           "claim": "Interrupted result journal commit after a provider acknowledgement leaves dispatch intent and disallows a second wall.post"
+        }
+      ]
+    },
+    {
+      "boundary_id": "lordchrist.quote.v6.telegram.send",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_before_dispatch_rejects_unverified_intent",
+          "claim": "tampered exact intent is rejected before sendMessage and durable dispatching record remains blocking"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_after_dispatch_before_response_is_unknown_without_replay",
+          "claim": "one lost-response mutation writes an unknown may_exist state and never permits a next dispatch"
+        },
+        {
+          "stages": [
+            "after_response_before_commit"
+          ],
+          "test_id": "tests/test_lordchrist_quote_v6_live_publisher.py::test_quote_v6_fault_after_response_before_commit_cannot_replay",
+          "claim": "crash of durable result persistence after provider success leaves original dispatching may_exist intent blocking the second send"
         }
       ]
     }

@@ -129,7 +129,7 @@ def test_vk_managed_community_preflight_uses_moder_extended_and_bounded_page(
     tmp_path: Path,
 ) -> None:
     token_store = VkTokenStore(tmp_path)
-    token_store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    token_store.save_token("synthetic-vk-wave11", VkAccessToken(access_token="access", user_id=42))
 
     def handler(request: httpx.Request) -> httpx.Response:
         method = request.url.path.rsplit("/", 1)[-1]
@@ -157,7 +157,7 @@ def test_vk_managed_community_preflight_uses_moder_extended_and_bounded_page(
 
     client = VkApiClient(
         token_store=token_store,
-        account_alias="default",
+        account_alias="synthetic-vk-wave11",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
         max_attempts=1,

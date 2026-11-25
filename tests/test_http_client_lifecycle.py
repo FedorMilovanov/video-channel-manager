@@ -42,7 +42,7 @@ class RecordingHttpClient:
 
 def _token_store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path)
-    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    store.save_token("synthetic-vk-lifecycle", VkAccessToken(access_token="access", user_id=42))
     return store
 
 
@@ -62,7 +62,7 @@ def test_vk_reader_creates_one_client_and_reuses_it_for_multiple_calls(
     monkeypatch.setattr(http_lifecycle_module.httpx, "Client", client_factory)
     client = VkApiClient(
         token_store=_token_store(tmp_path),
-        account_alias="default",
+        account_alias="synthetic-vk-lifecycle",
         api_base_url="https://example.test/method",
     )
 
@@ -81,7 +81,7 @@ def test_provider_never_closes_an_injected_client(tmp_path: Path) -> None:
     external = RecordingHttpClient()
     client = VkApiClient(
         token_store=_token_store(tmp_path),
-        account_alias="default",
+        account_alias="synthetic-vk-lifecycle",
         http_client=external,  # type: ignore[arg-type]
         api_base_url="https://example.test/method",
     )
@@ -101,7 +101,7 @@ def test_owned_client_closes_on_context_exit(
 
     with VkApiClient(
         token_store=_token_store(tmp_path),
-        account_alias="default",
+        account_alias="synthetic-vk-lifecycle",
         api_base_url="https://example.test/method",
     ) as client:
         assert client.get_current_user().user_id == 42

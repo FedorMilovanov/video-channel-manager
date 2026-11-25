@@ -40,7 +40,8 @@ Canonical rule: `editorial-brand-boundary-2026-08.md`.
 - `launch-pack-2026-08.md` — historical/provider-inert editorial corpus. It contains superseded examples and is **not an executable publication source**;
 - `editorial-asset-contract-2026-08.md` — current source-availability constraint; production/kitchen/BTS footage remains 0% until separately reviewed source footage exists;
 - `media-source-map-2026-08.json` — verified 46-item finished-work source map (30 photos + 16 videos);
-- `school-source-shortlist-2026-08.json` — source evidence for optional future educational reading only; it does not prove a Cake production relationship;
+- `school-source-shortlist-2026-08.json` — historical source evidence for optional educational reading, not a Cake production relationship;
+- `school-reading-wave-20261106.json` and [`docs/operations/milovi-school-telegram-reading-wave-20261106.md`](../../../docs/operations/milovi-school-telegram-reading-wave-20261106.md) — owner-requested exact three-post educational School promotion, with its own photo and source hashes, November 17/21/25 schedule, first-ten verified Cake video barrier and a single canonical publisher; no School post has been sent merely by preparing or initializing this wave;
 - `editorial-sequence-30-posts-2026-08.json` — long-horizon provider-inert editorial planning, not an execution queue;
 - `editorial-operating-plan-2026-08.md` — current channel-quality, reuse, cadence and acquisition rules;
 - `video-source-readiness-2026-08.json`, `video-conversion-contract-2026-08.json`, `video-output-records-2026-08.json`, `video-conversion-readiness-2026-08.md` — native-video lane; accepted MP4 outputs remain 0/16 until exact conversion evidence exists.

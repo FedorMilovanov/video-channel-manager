@@ -5,6 +5,12 @@
   "deletion_rule": "A ref listed here is not a work branch, so neither age, nor a zero-ahead comparison against main, nor byte-identical duplication makes it deletable. Deleting one breaks a live binding: on 2026-10-21 the ref agent/milovi-video-accepted-73c578eff825 was deleted as a byte-identical duplicate and had to be restored, because the Milovi sendVideo binding, the workflow contract and current-state all name it. Any cleanup must read this file first, and tests/test_milovi_evidence_binding.py fails if a listed ref appears in a deletion ledger.",
   "refs": [
     {
+      "ref": "state/legendary-poet-telegram",
+      "role": "durable_state",
+      "tip_is_stable": false,
+      "why": "Reserved for dedicated Legendary Poet Telegram audio dispatch ledger and no-replay results. No remote state branch or publication authority exists merely by registering this ref."
+    },
+    {
       "ref": "state/lordchrist-telegram",
       "role": "durable_state",
       "tip_is_stable": false,
@@ -37,6 +43,38 @@
       "tip_commit": "b77bbf5f65f3f976694d1e4310650799205a5a78",
       "why": "Later re-materialization of the same 16 videos: every artifact blob is byte-identical to the accepted ref, and only the evidence generation differs (identity sha256:f0e25d9c905fc95... versus the accepted sha256:73c578eff8256...). No code references it, so it proves reproducibility rather than binding a release.",
       "restore": "git push origin b77bbf5f65f3f976694d1e4310650799205a5a78:refs/heads/agent/milovi-video-accepted-f0e25d9c905f"
+    },
+    {
+      "ref": "agent/milovi-video-muted-v12-3b680fe94b50",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "686223b41c01ce365853f2e2bf22c20240a1df01",
+      "why": "Distinct reviewed-evidence transport v12-muted, original H.264 video stream byte-identical to accepted v12, and audio entirely absent. Referenced by November 2026 Milovi Telegram muted-video variant registry; never rewrite, delete or replace it with the audio-bearing legacy v12.",
+      "restore": "git push origin 686223b41c01ce365853f2e2bf22c20240a1df01:refs/heads/agent/milovi-video-muted-v12-3b680fe94b50"
+    },
+    {
+      "ref": "agent/milovi-video-muted15-80ee7f9fea",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "9331af0c6015404bfda0cd2c6392066b78dc68b3",
+      "why": "Immutable, verified 15 video-only MP4 transports for Milovi Cake Telegram #809, exact source frames with audio removed. Content rights, duplicates and release authority are still held. Do not delete or rewrite evidence while November 8-22 editorial previews reference it.",
+      "restore": "git push origin 9331af0c6015404bfda0cd2c6392066b78dc68b3:refs/heads/agent/milovi-video-muted15-80ee7f9fea"
+    },
+    {
+      "ref": "agent/lordchrist-shorts4-media-20261106",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "85990401e732a22a8a12b390683196264a50ba8c",
+      "why": "Pinned four exact owner-channel MP4 bytes for LordChrist Telegram Shorts #810, Nov 8-11. Exact SHA and Git blob are bound to four-item source manifest. Keep immutable media evidence separate from runnable publisher state.",
+      "restore": "git push origin 85990401e732a22a8a12b390683196264a50ba8c:refs/heads/agent/lordchrist-shorts4-media-20261106"
+    },
+    {
+      "ref": "agent/lordchrist-shorts8-media-20261106",
+      "role": "content_addressed_evidence",
+      "tip_is_stable": true,
+      "tip_commit": "d45230ae5ab07b0f2301d01628c04e4fa7a3fb84",
+      "why": "Immutable exact owner-channel media bytes for remaining LordChrist Telegram Shorts #810 Nov 12-15, approved source/hash-bound release. Never rewrite or prune.",
+      "restore": "git push origin d45230ae5ab07b0f2301d01628c04e4fa7a3fb84:refs/heads/agent/lordchrist-shorts8-media-20261106"
     }
   ]
 }

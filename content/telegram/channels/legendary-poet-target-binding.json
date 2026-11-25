@@ -1,0 +1,15 @@
+{
+  "schema_name": "video-channel-manager.telegram-target-binding",
+  "schema_version": 1,
+  "project_key": "legendary-poet",
+  "channel_username": "@thelegendarypoet",
+  "profile_sha256": "sha256:9c98dcd3a008d66a7fd5731acf4b5151b01d39f1fce2e20d21c4b2f31c0e0ef4",
+  "chat_id": -1003345085810,
+  "chat_username": "thelegendarypoet",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "can_post_messages": true,
+  "discovered_at_utc": "2026-11-18T20:06:30.425708Z",
+  "discovery_method": "getMe + getChat(public/numeric exact pair) + getChatMember(bot id)",
+  "provider_write_performed": false
+}

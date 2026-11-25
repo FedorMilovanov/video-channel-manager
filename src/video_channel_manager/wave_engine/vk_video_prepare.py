@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from collections.abc import Iterable, Sequence
@@ -25,6 +26,7 @@ from video_channel_manager.local_media.artifact import (
 )
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
+from video_channel_manager.wave_engine.engine import OperationRejectedError
 from video_channel_manager.wave_engine.models import (
     EvidenceArtifact,
     MutationClass,
@@ -38,6 +40,7 @@ from video_channel_manager.wave_engine.vk_video_provider import (
     VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
     VK_VIDEO_OPERATION_KIND,
     VK_VIDEO_POLICY_VERSION,
+    _validate_owner_absence_evidence,
 )
 
 
@@ -347,6 +350,8 @@ def prepare_vk_video_wave(
     yt_dlp: str = "yt-dlp",
     reuse_media_manifests: Sequence[Path] = (),
     processing_timeout_seconds: int = 3600,
+    reviewed_short_horizontal_video: bool = False,
+    owner_absence_evidence_path: Path | None = None,
 ) -> dict[str, Any]:
     root = repository_root.resolve()
     output = output_root.resolve()
@@ -401,8 +406,33 @@ def prepare_vk_video_wave(
             raise VkVideoPreparationError(f"Candidate participates in an ambiguous/conflicting match: {source_id}")
     if video.privacy_status != "public":
         raise VkVideoPreparationError(f"Candidate is not public: {source_id}")
-    if video.duration_seconds is None or video.duration_seconds <= 180:
-        raise VkVideoPreparationError(f"Candidate is not long-form (>180s): {source_id}")
+    if video.duration_seconds is None or video.duration_seconds <= 0:
+        raise VkVideoPreparationError(f"Candidate has no positive duration: {source_id}")
+    if video.duration_seconds <= 180 and not reviewed_short_horizontal_video:
+        raise VkVideoPreparationError(
+            "Candidate is not long-form (>180s); a short horizontal ordinary Video requires "
+            f"the explicit reviewed override: {source_id}"
+        )
+    if video.duration_seconds > 180 and reviewed_short_horizontal_video:
+        raise VkVideoPreparationError("Reviewed short-horizontal override is only for sources of 180s or less")
+
+    # Owner Creator evidence is optional for provider-inert preparation, but a
+    # new upload reservation is ALWAYS blocked until a fresh complete proof is
+    # attached and revalidated under the community mutex at provider dispatch.
+    reviewed_absence_path: Path | None = None
+    if owner_absence_evidence_path is not None:
+        reviewed_absence_path = owner_absence_evidence_path.resolve()
+        try:
+            proof = json.loads(reviewed_absence_path.read_text(encoding="utf-8"))
+            _validate_owner_absence_evidence(
+                proof,
+                project_key=project_key,
+                community_id=expected_community,
+                source_channel_id=expected_channel,
+                source_video_id=source_id,
+            )
+        except (OSError, ValueError, OperationRejectedError) as exc:
+            raise VkVideoPreparationError(f"Invalid fresh owner Creator absence evidence: {exc}") from exc
 
     output.mkdir(parents=True, exist_ok=False)
     evidence_directory = output / "evidence"
@@ -413,6 +443,11 @@ def prepare_vk_video_wave(
         directory.mkdir(parents=True, exist_ok=True)
 
     source_copy = _copy_exact(source_audit_path.resolve(), evidence_directory / "youtube-source.json")
+    owner_absence_copy = (
+        _copy_exact(reviewed_absence_path, evidence_directory / "owner-absence.json")
+        if reviewed_absence_path is not None
+        else None
+    )
     target_copy: Path | None = None
     comparison_path: Path | None = None
     if target_audit_path is not None and target is not None and comparison is not None:
@@ -439,6 +474,8 @@ def prepare_vk_video_wave(
     tool_version = _yt_dlp_version(executable) if need_download and executable is not None else ""
 
     shared_artifacts: list[Path] = [source_copy]
+    if owner_absence_copy is not None:
+        shared_artifacts.append(owner_absence_copy)
     if target_copy is not None:
         shared_artifacts.append(target_copy)
     if comparison_path is not None:
@@ -475,6 +512,19 @@ def prepare_vk_video_wave(
             )
 
         artifact = load_media_artifact_manifest(media_manifest_path)
+        if reviewed_short_horizontal_video:
+            probe = artifact.probe
+            if (
+                probe.width is None
+                or probe.height is None
+                or probe.width <= probe.height
+                or probe.video_stream_count != 1
+                or probe.audio_stream_count != 1
+            ):
+                raise VkVideoPreparationError(
+                    f"Reviewed short ordinary Video requires one video and audio stream "
+                    f"with independently probed horizontal media: {source_id}"
+                )
         rendered = render_vk_video_description(video.description, source_video_id=source_id)
         if rendered.has_errors:
             raise VkVideoPreparationError(
@@ -499,6 +549,15 @@ def prepare_vk_video_wave(
             "media_manifest_sha256": file_sha256(media_manifest_path),
             "media_artifact_manifest_sha256": artifact.manifest_sha256,
             "processing_timeout_seconds": processing_timeout_seconds,
+            **(
+                {
+                    "owner_absence_evidence_path": _repo_relative(root, owner_absence_copy),
+                    "owner_absence_evidence_sha256": file_sha256(owner_absence_copy),
+                }
+                if owner_absence_copy is not None
+                else {}
+            ),
+            **({"reviewed_short_horizontal_video": True} if reviewed_short_horizontal_video else {}),
             "wallpost": False,
             "auto_publish": False,
             "repeat": False,
@@ -539,6 +598,7 @@ def prepare_vk_video_wave(
             "comparison_conflict_count": comparison.conflict_count if comparison is not None else None,
             "selected_candidate_ids": list(normalized_candidates),
             "canary_id": canary_id,
+            "owner_creator_absence_evidence_attached": owner_absence_copy is not None,
             "media": media_summary,
             "provider_writes_during_preparation": 0,
         },
@@ -571,6 +631,7 @@ def prepare_vk_video_wave(
         "candidate_ids": list(normalized_candidates),
         "canary_id": canary_id,
         "batch_ids": list(batch_ids),
+        "owner_creator_absence_evidence_attached": owner_absence_copy is not None,
         "provider_writes": 0,
         "canary": canary,
         "batch": batch,

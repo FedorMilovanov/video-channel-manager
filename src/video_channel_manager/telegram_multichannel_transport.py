@@ -11,6 +11,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
+from video_channel_manager.telegram_editorial_hold import require_quiz_target_not_held
 from video_channel_manager.telegram_html_entities import (
     GenericMessageEntity,
     message_entities_match,
@@ -109,7 +110,7 @@ class GenericPhotoPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-photo-payload"]
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2]
     project_key: str
     channel_username: str
     publication_id: str
@@ -124,9 +125,34 @@ class GenericPhotoPayload(BaseModel):
 
     @model_validator(mode="after")
     def validate_media_path(self) -> "GenericPhotoPayload":
+        # The legacy v1 class never accepts a v2 payload without typed HTML proof.
+        # The rich-photo subclass supplies the exact v2 schema and entity checks.
+        if type(self) is GenericPhotoPayload and self.schema_version != 1:
+            raise ValueError("legacy photo cannot masquerade as rich-photo schema v2")
         path = Path(self.media_path)
         if path.is_absolute() or ".." in path.parts:
             raise ValueError("photo media_path must be repository-relative without parent traversal")
+        return self
+
+
+class GenericRichPhotoPayload(GenericPhotoPayload):
+    """V2 photo caption with exact Telegram HTML and UTF-16 entity receipt proof.
+
+    Legacy v1 photo serialization, payload digest and provider behaviour are unchanged.
+    """
+
+    schema_version: Literal[2] = 2
+    expected_plain_caption: str = Field(min_length=1, max_length=1024)
+    expected_caption_entities: tuple[GenericMessageEntity, ...] = ()
+    parse_mode: Literal["HTML"] = "HTML"
+
+    @model_validator(mode="after")
+    def validate_rich_caption(self) -> "GenericRichPhotoPayload":
+        plain, entities = parse_telegram_html(self.caption)
+        if plain != self.expected_plain_caption or entities != self.expected_caption_entities:
+            raise ValueError("rich photo caption HTML differs from its exact plain text/entities")
+        if not entities or not any(e.type == "text_link" for e in entities):
+            raise ValueError("rich photo must bind at least one clickable source link")
         return self
 
 
@@ -287,6 +313,55 @@ def render_photo_payload(
         profile_sha256=profile.digest,
         provider_payload_sha256=_sha256_payload(digest_input),
         caption=caption,
+        media_path=media_path,
+        media_sha256=media_sha256,
+        media_byte_size=media_byte_size,
+        media_filename=media_filename,
+    )
+
+
+def render_rich_photo_payload(
+    profile: TelegramChannelProfile,
+    *,
+    publication_id: str,
+    html_caption: str,
+    media_path: str,
+    media_sha256: str,
+    media_byte_size: int,
+    media_filename: str,
+) -> GenericRichPhotoPayload:
+    _validate_publication_id(profile, publication_id)
+    plain, entities = parse_telegram_html(html_caption)
+    if len(plain) > 1024:
+        raise ValueError("Telegram photo caption exceeds 1024 visible characters")
+    canonical_entities = [entity.model_dump(mode="json") for entity in entities]
+    digest_input: dict[str, Any] = {
+        "kind": "photo-rich-html",
+        "project_key": profile.project_key,
+        "channel_username": profile.channel_username,
+        "publication_id": publication_id,
+        "profile_sha256": profile.digest,
+        "caption": html_caption,
+        "expected_plain_caption": plain,
+        "expected_caption_entities": canonical_entities,
+        "parse_mode": "HTML",
+        "media_path": media_path,
+        "media_sha256": media_sha256,
+        "media_byte_size": media_byte_size,
+        "media_filename": media_filename,
+        "media_mime_type": "image/jpeg",
+    }
+    return GenericRichPhotoPayload(
+        schema_name="video-channel-manager.telegram-generic-photo-payload",
+        schema_version=2,
+        project_key=profile.project_key,
+        channel_username=profile.channel_username,
+        publication_id=publication_id,
+        profile_sha256=profile.digest,
+        provider_payload_sha256=_sha256_payload(digest_input),
+        caption=html_caption,
+        expected_plain_caption=plain,
+        expected_caption_entities=entities,
         media_path=media_path,
         media_sha256=media_sha256,
         media_byte_size=media_byte_size,
@@ -536,9 +611,17 @@ class _PhotoMultipartClient:
     def post(self, url: str, *, json: dict[str, Any]) -> httpx.Response:
         if int(json.get("chat_id", 0)) == 0 or str(json.get("caption") or "") != self._payload.caption:
             raise ValueError("photo adapter received a provider payload that differs from the exact photo payload")
+        is_rich = isinstance(self._payload, GenericRichPhotoPayload)
+        if is_rich and json.get("parse_mode") != "HTML":
+            raise ValueError("rich photo adapter requires exact HTML parse mode")
+        if not is_rich and "parse_mode" in json:
+            raise ValueError("legacy photo adapter cannot silently introduce HTML formatting")
+        provider_data = {"chat_id": str(json["chat_id"]), "caption": self._payload.caption}
+        if is_rich:
+            provider_data["parse_mode"] = "HTML"
         return self._client.post(
             url,
-            data={"chat_id": str(json["chat_id"]), "caption": self._payload.caption},
+            data=provider_data,
             files={"photo": (self._payload.media_filename, self._media, self._payload.media_mime_type)},
         )
 
@@ -634,6 +717,10 @@ def send_poll_once(
     client: httpx.Client | None = None,
     now: datetime | None = None,
 ) -> GenericSendReceipt:
+    # This transport can be called directly, without the release CLI.
+    require_quiz_target_not_held(
+        channel_username=target.channel_username, chat_id=target.chat_id, poll_type=payload.poll_type
+    )
     _require_provider_write_authorized(profile)
     target_check_now = now or datetime.now(tz=UTC)
     _verified_target(profile, target, target_check_now)
@@ -779,16 +866,43 @@ def send_photo_once(
                 api_base=api_base,
                 token=token,
                 method="sendPhoto",
-                payload={"chat_id": target.chat_id, "caption": payload.caption},
+                payload={
+                    "chat_id": target.chat_id,
+                    "caption": payload.caption,
+                    **({"parse_mode": "HTML"} if isinstance(payload, GenericRichPhotoPayload) else {}),
+                },
                 mutation=True,
             ),
             method="sendPhoto",
             provider_effect="may_exist",
         )
         _verify_returned_chat(message, target)
-        if str(message.get("caption") or "") != payload.caption:
+        expected_caption = (
+            payload.expected_plain_caption if isinstance(payload, GenericRichPhotoPayload) else payload.caption
+        )
+        actual_caption = message.get("caption")
+        # Telegram may omit a single terminal LF after parsing a rich HTML caption.
+        # Accept only that one-byte echo difference, not changed body text, links,
+        # embedded whitespace, or legacy plaintext photo captions.
+        caption_matches = isinstance(actual_caption, str) and (
+            actual_caption == expected_caption
+            or (
+                isinstance(payload, GenericRichPhotoPayload)
+                and expected_caption.endswith("\n")
+                and not expected_caption.endswith("\n\n")
+                and actual_caption == expected_caption[:-1]
+            )
+        )
+        if not caption_matches:
             raise TelegramApiError(
                 "Telegram returned a caption that differs from the exact photo payload",
+                provider_effect="may_exist",
+            )
+        if isinstance(payload, GenericRichPhotoPayload) and not message_entities_match(
+            payload.expected_caption_entities, message.get("caption_entities")
+        ):
+            raise TelegramApiError(
+                "Telegram returned photo caption formatting/source link entities that differ from the exact payload",
                 provider_effect="may_exist",
             )
         photos = message.get("photo")
@@ -811,6 +925,7 @@ def send_photo_once(
 __all__ = [
     "GenericMessagePayload",
     "GenericPhotoPayload",
+    "GenericRichPhotoPayload",
     "GenericPollPayload",
     "GenericSendReceipt",
     "GenericTargetProof",

@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import logging
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, quote, urlsplit
 
 from video_channel_manager.platforms.vk import milovi_video_sequence_evidence as base
+
+_LOGGER = logging.getLogger(__name__)
 
 _ORIGINAL_CAPTURE = base._capture_page_sequence
 _ORIGINAL_IDENTITY = base._identity_url_matches
@@ -91,6 +94,15 @@ def _stable_identity_url_matches(*, platform: str, expected_id: str, raw_url: st
             query = parse_qs(parsed.query)
             return (query.get("oid") or [""])[0] == owner_id and (query.get("id") or [""])[0] == video_id
     return _ORIGINAL_IDENTITY(platform=platform, expected_id=expected_id, raw_url=raw_url)
+
+
+def _close_capture_page(page: Any) -> None:
+    """Keep the capture outcome if cleanup fails, but do not silently lose diagnostics."""
+    try:
+        page.close()
+    except Exception as exc:
+        # Browser errors can contain URLs or page content; log only the exception type.
+        _LOGGER.warning("Could not close capture page (%s)", type(exc).__name__)
 
 
 def _capture_error(*, canonical_url: str, page: Any, exc: Exception) -> base.CaptureResult:
@@ -197,10 +209,7 @@ def _isolated_capture_page_sequence(
             if result.status == "captured":
                 return result
         finally:
-            try:
-                isolated_page.close()
-            except Exception:
-                pass
+            _close_capture_page(isolated_page)
 
     if last_result is not None:
         return last_result

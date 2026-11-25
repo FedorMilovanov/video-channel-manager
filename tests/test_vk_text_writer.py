@@ -18,7 +18,7 @@ from video_channel_manager.platforms.vk.writer import VkWriteError
 def _store(tmp_path: Path) -> VkTokenStore:
     store = VkTokenStore(tmp_path)
     store.save_token(
-        "legendary-poet",
+        "synthetic-vk-text-writer",
         VkAccessToken(access_token="secret", scopes=["video", "groups"]),
     )
     return store
@@ -56,7 +56,7 @@ def test_replace_text_accepts_structured_success_and_verifies_live_state(tmp_pat
 
     writer = VkVideoTextWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-text-writer",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
     )
@@ -100,7 +100,7 @@ def test_title_only_edit_omits_equivalent_description_from_request(tmp_path: Pat
 
     writer = VkVideoTextWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-text-writer",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
     )
@@ -147,7 +147,7 @@ def test_replace_text_rejects_structured_response_without_success(tmp_path: Path
 
     writer = VkVideoTextWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-text-writer",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
     )
@@ -171,7 +171,7 @@ def test_rename_album_accepts_structured_success(tmp_path: Path) -> None:
 
     writer = VkEditorialWriter(
         token_store=_store(tmp_path),
-        account_alias="legendary-poet",
+        account_alias="synthetic-vk-text-writer",
         http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         api_base_url="https://api.example/method",
     )

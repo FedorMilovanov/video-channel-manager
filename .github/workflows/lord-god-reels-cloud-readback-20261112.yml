@@ -1,0 +1,33 @@
+name: Lord God Instagram — read-only Reels provider readback (Nov 12–21)
+on:
+  schedule:
+    - cron: '40 16 12-21 11 *' # primary: 19:40 Moscow, AFTER local 19:25 readback
+    - cron: '10 17 12-21 11 *' # backup: 20:10 Moscow, GET-only
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lord-god-reels-cloud-readback-nov2026
+  cancel-in-progress: false
+
+jobs:
+  verified-provider-readback:
+    name: Read exact Instagram account — never publish
+    if: github.repository == 'FedorMilovanov/video-channel-manager'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      LORD_GOD_PAGE_TOKEN: ${{ secrets.LORD_GOD_INSTAGRAM_PAGE_TOKEN }}
+      LORD_GOD_REELS_PROOF_MODE: ${{ github.event_name == 'schedule' && 'scheduled' || 'preflight' }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: GET Meta provider receipts with frozen source/caption hashes — never POST
+        run: python scripts/instagram/lord_god_reels_readback_cloud_20261112.py

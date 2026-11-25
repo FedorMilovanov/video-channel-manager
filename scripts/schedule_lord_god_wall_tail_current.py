@@ -30,7 +30,7 @@ def _portable_zoneinfo(key: str, *args: Any, **kwargs: Any) -> timezone | zonein
     return _ORIGINAL_ZONEINFO(key, *args, **kwargs)
 
 
-zoneinfo.ZoneInfo = _portable_zoneinfo  # type: ignore[assignment,misc]
+# Retired compatibility module: never patch process-global zoneinfo on import.
 
 if __name__ == "__main__":
     runpy.run_path(

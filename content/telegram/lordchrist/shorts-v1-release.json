@@ -1,0 +1,109 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "lordchrist-shorts-v1-20261106",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 1,
+  "target_binding_sha256": "sha256:c6282b005a6437ea8e27eec6de3ead2c725ad099c5213df4824d9646bcc17b4b",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:3a9ab4c1446a326341edcb6cb35114fe88f25a21c630a71c03b7604ca3119f68",
+  "reviewed_publication_id": "lordchrist-short-ba4ZahiY-U0",
+  "reviewed_by": "Owner exact 2026-11-06 request to schedule four already-public YouTube excerpts",
+  "reviewed_at": "2026-11-06T07:35:27.606850+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-short-ba4ZahiY-U0",
+      "scheduled_at": "2026-11-08T16:00:00+03:00",
+      "source_sha256": "sha256:7e8101677e8dc9514d01c864beddea3b6c96e8dd0c083f1274175d3bf789c64c",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-ba4ZahiY-U0",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:5c40bbd25968e3ec9b213a4117fc8a8334431c8ab92129f5ee7b63737559bffe",
+        "caption": "\"Как Уверуют в Того, о Ком не Слышали?\" - Суверенитет Божий и Благовестие - Джон МакАртур\n\nИсходное видео: https://www.youtube.com/watch?v=ba4ZahiY-U0\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v1/lordchrist-short-ba4ZahiY-U0.mp4",
+        "media_sha256": "sha256:7e8101677e8dc9514d01c864beddea3b6c96e8dd0c083f1274175d3bf789c64c",
+        "media_byte_size": 19849330,
+        "media_filename": "lordchrist-short-ba4ZahiY-U0.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-short-_aDIR0D7rSk",
+      "scheduled_at": "2026-11-09T16:00:00+03:00",
+      "source_sha256": "sha256:e57d3cfe26f9c88b21b60f45919294e432383987ed9c58e92cced3eb792c93b7",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-_aDIR0D7rSk",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:d38a31ec586aedcc6b4b246f21e5ec6164183e1e40e751bd3ff9c6af6787120b",
+        "caption": "Битва за Разум - Битва за Умы - Пастор Джон Макартур\n\nИсходное видео: https://www.youtube.com/watch?v=_aDIR0D7rSk\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v1/lordchrist-short-_aDIR0D7rSk.mp4",
+        "media_sha256": "sha256:e57d3cfe26f9c88b21b60f45919294e432383987ed9c58e92cced3eb792c93b7",
+        "media_byte_size": 4966959,
+        "media_filename": "lordchrist-short-_aDIR0D7rSk.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-short-tELrnM71TQA",
+      "scheduled_at": "2026-11-10T16:00:00+03:00",
+      "source_sha256": "sha256:052e9d6a4f6c4d92ed8a750ad65f5ca4ab68f5efdc1641f512ea2e0887d42e8f",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-tELrnM71TQA",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:6059bf5d5016abf1ef1ba9d72a3cb2dc1defc0aeee9f989d2231cca7a5ba1a0c",
+        "caption": "За Все Эти Дары и Обещания Мы Благодарим Тебя - Джон МакАртур\n\nИсходное видео: https://www.youtube.com/watch?v=tELrnM71TQA\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v1/lordchrist-short-tELrnM71TQA.mp4",
+        "media_sha256": "sha256:052e9d6a4f6c4d92ed8a750ad65f5ca4ab68f5efdc1641f512ea2e0887d42e8f",
+        "media_byte_size": 16558893,
+        "media_filename": "lordchrist-short-tELrnM71TQA.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-short-VeY1tpoLUJU",
+      "scheduled_at": "2026-11-11T16:00:00+03:00",
+      "source_sha256": "sha256:b021cbec8e6495e7fec49107492a39781323060618cbdc31d05a63b297aa93e3",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-video-payload",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "channel_username": "@lordchrist",
+        "publication_id": "lordchrist-short-VeY1tpoLUJU",
+        "profile_sha256": "sha256:dad413570d897d36b1db5aaf9c87a861b8ed02233f2d111f2d2965517dc03d51",
+        "provider_payload_sha256": "sha256:ba30d26cae60401bc94c15a70722ccdef72d5b823b935f7e3e0a21dad251228e",
+        "caption": "Мученичество или рак? В чем схожесть этих страданий? - Джон Пайпер\n\nИсходное видео: https://www.youtube.com/watch?v=VeY1tpoLUJU\n\n#ГосподьБог #Проповедь",
+        "media_path": ".runtime/lordchrist-shorts-v1/lordchrist-short-VeY1tpoLUJU.mp4",
+        "media_sha256": "sha256:b021cbec8e6495e7fec49107492a39781323060618cbdc31d05a63b297aa93e3",
+        "media_byte_size": 45099071,
+        "media_filename": "lordchrist-short-VeY1tpoLUJU.mp4",
+        "media_mime_type": "video/mp4",
+        "supports_streaming": true
+      }
+    }
+  ]
+}

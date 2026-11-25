@@ -79,3 +79,35 @@ e398e4b439bebcc1a5207af478d2b795d7f5c455:content/instagram/legendary-poet-daily-
 e398e4b439bebcc1a5207af478d2b795d7f5c455:content/instagram/legendary-poet-daily-reels-queue-20260913.json:generic-api-key:980
 e67c1dced895600e6fca456313d6820ea45f0324:content/telegram/svodka/custom-emoji-exemplars.json:generic-api-key:1
 f081442d046b48db22937a6e13487806d406319f:docs/operations/instagram-production-publishing.md:generic-api-key:95
+
+# Historical false positives from PR #885 verified 2026-11-11 (exact commit only).
+# All 12 public publication_key values were deterministic date+YouTube-ID ledger labels,
+# never Meta tokens or credentials; removed from current manifest by merged PR #886.
+# Retain full-history gitleaks; ignore ONLY these exact immutable findings.
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:18
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:26
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:34
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:42
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:50
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:58
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:66
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:74
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:82
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:90
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:98
+9659214c2bacab7fff3f7423ff8b4ee6f5bef0da:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:106
+
+# Same 12 deterministic labels also entered main via the distinct squash merge
+# 2d81968e7be52259f70a0eddeaba8a2abfffb650; exact path and lines verified.
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:18
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:26
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:34
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:42
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:50
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:58
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:66
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:74
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:82
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:90
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:98
+2d81968e7be52259f70a0eddeaba8a2abfffb650:content/instagram/lord-god-strength-reels-cloud-readback-20261112.json:generic-api-key:106

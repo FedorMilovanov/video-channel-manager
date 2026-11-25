@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from video_channel_manager.platforms.youtube.copy_plan import sha256_text
 from video_channel_manager.platforms.youtube.writer import (
     YouTubeRevisionConflictError,
     descriptions_equivalent,
@@ -16,9 +17,9 @@ class CopyPreflight:
     revision_drift_tolerated: int
 
 
-def required_text(operation: dict[str, Any], field: str) -> str:
+def required_text(operation: dict[str, Any], field: str, *, allow_empty: bool = False) -> str:
     value = operation.get(field)
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or (not value and not allow_empty):
         raise ValueError(f"Copy-fix operation is missing required string field: {field}")
     return value
 
@@ -28,6 +29,8 @@ def preflight_copy_operations(
     *,
     confirm_channel: str,
     writer: Any,
+    require_plan_title: bool = False,
+    require_exact_state: bool = False,
 ) -> CopyPreflight:
     """Classify every operation by live description state.
 
@@ -35,7 +38,8 @@ def preflight_copy_operations(
     other server-managed fields while the description remains unchanged. A
     mutation is allowed only when the live description canonically matches the
     plan's before-state; a live after-state is idempotently counted as already
-    applied. Any third state is a hard conflict.
+    applied. Any third state is a hard conflict. Lord God description edits can
+    additionally require the exact title frozen in their signed source plan.
     """
 
     prepared: list[dict[str, Any]] = []
@@ -46,7 +50,7 @@ def preflight_copy_operations(
         video_id = required_text(operation, "video_id")
         channel_id = required_text(operation, "channel_id")
         expected_revision = required_text(operation, "expected_revision")
-        before = required_text(operation, "before_description")
+        before = required_text(operation, "before_description", allow_empty=True)
         after = required_text(operation, "after_description")
 
         if channel_id != confirm_channel:
@@ -59,6 +63,25 @@ def preflight_copy_operations(
             raise YouTubeRevisionConflictError(
                 f"Live video {video_id} belongs to {current.channel_id}, not {confirm_channel}."
             )
+
+        if require_plan_title:
+            planned_title = required_text(operation, "title")
+            if current.title != planned_title:
+                raise YouTubeRevisionConflictError(
+                    f"Live video {video_id} title differs from its signed plan; stop and re-review the original source."
+                )
+
+        if require_exact_state:
+            if current.description == after:
+                # Exact after-state needs separate read-only reconciliation of
+                # protected metadata; never infer completion or send a second PUT.
+                raise YouTubeRevisionConflictError(
+                    f"Exact after-state already present for {video_id}; reconcile by read-only QA."
+                )
+            if current.description != before or current.revision != expected_revision:
+                raise YouTubeRevisionConflictError(
+                    f"Exact owner state changed for {video_id}; re-audit before proceeding."
+                )
 
         if descriptions_equivalent(current.description, after):
             already_applied += 1
@@ -121,3 +144,96 @@ def verify_copy_operations(
                 }
             )
     return failures
+
+
+def verify_exact_description_postflight(
+    operation: dict[str, Any], *, confirm_channel: str, writer: Any, verified: Any
+) -> None:
+    """Independent owner GET must agree with the exact verified PUT snapshot."""
+    current = writer.read_description(operation["video_id"])
+    if (
+        current.video_id != operation["video_id"]
+        or current.channel_id != confirm_channel
+        or current.title != operation["title"]
+        or current.description != operation["after_description"]
+        or current.raw.get("localizations") != verified.raw.get("localizations")
+        or current.raw.get("status") != verified.raw.get("status")
+        or current.raw.get("contentDetails", {}).get("duration")
+        != verified.raw.get("contentDetails", {}).get("duration")
+        or any(
+            current.raw.get("snippet", {}).get(key) != verified.raw.get("snippet", {}).get(key)
+            for key in (
+                "channelId",
+                "title",
+                "description",
+                "categoryId",
+                "tags",
+                "defaultLanguage",
+                "defaultAudioLanguage",
+            )
+        )
+    ):
+        raise YouTubeRevisionConflictError("Independent exact postflight mismatch; reconcile by GET, never replay")
+
+
+def reconcile_copy_operations(
+    operations: list[dict[str, Any]],
+    *,
+    confirm_channel: str,
+    writer: Any,
+    require_exact_state: bool = False,
+) -> list[dict[str, Any]]:
+    """Read owner snapshots only; classify exact before/after/third description states.
+
+    This is intentionally not a release gate. A live before-state cannot prove
+    that an earlier request never happened, or that a rollback was not in
+    progress. Even a live after-state without a completed matching receipt is
+    evidence of current provider bytes, not evidence of which writer sent them.
+    No caller may use this classification as automatic retry authority.
+    """
+
+    if not confirm_channel:
+        raise ValueError("Exact --confirm-channel is required for reconciliation.")
+    if not operations:
+        raise ValueError("No YouTube copy operations to reconcile.")
+
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for operation in operations:
+        video_id = required_text(operation, "video_id")
+        channel_id = required_text(operation, "channel_id")
+        before = required_text(operation, "before_description", allow_empty=True)
+        after = required_text(operation, "after_description")
+        if video_id in seen:
+            raise ValueError(f"Duplicate YouTube copy video ID in reconciliation: {video_id}")
+        seen.add(video_id)
+        if channel_id != confirm_channel:
+            raise ValueError(f"Plan video {video_id} does not belong to confirmed channel {confirm_channel}.")
+
+        live = writer.read_description(video_id)
+        if live.channel_id != confirm_channel:
+            raise YouTubeRevisionConflictError(
+                f"Owner mismatch for live video {video_id}: {live.channel_id} != {confirm_channel}"
+            )
+        compare = (lambda left, right: left == right) if require_exact_state else descriptions_equivalent
+        if compare(live.description, after):
+            state = "live_after"
+        elif compare(live.description, before):
+            state = "live_before"
+        else:
+            state = "live_third_state"
+
+        result.append(
+            {
+                "video_id": video_id,
+                "channel_id": live.channel_id,
+                "live_title": live.title,
+                "live_description_sha256": sha256_text(live.description),
+                "planned_before_sha256": sha256_text(before),
+                "planned_after_sha256": sha256_text(after),
+                "state": state,
+                "provider_mutations": 0,
+                "safe_to_replay": False,
+            }
+        )
+    return result

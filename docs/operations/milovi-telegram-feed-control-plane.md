@@ -1,10 +1,75 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-21  
+Updated: 2026-11-14 (November schedule and historical-status clarification)  
 Owning workstream: Issue #353  
 Provider target: `@MiloviCake`
 
 This runbook defines the permanent Milovi Telegram feed path. It is an implementation and safety contract; it is **not** provider execution authority.
+
+## November 2026 operational checkpoint (evidence, not authority)
+
+The canonical November 8–22 muted15 owner-approved video schedule lives in
+`.github/workflows/milovi-telegram-muted15-due-20261108.yml` and
+`scripts/milovi_muted15_due.py`. The schedule delegates to the **one** permanent
+publisher and never sends to Telegram itself. The gate is exactly 19:00–21:00
+Moscow; neither a delayed GitHub cron nor a green `due/dispatch=false` run
+proves delivery. The hardened controller adds six checks during that window and
+an independent `audit-expired` alarm for older pending/impossible items, **not**
+backfill or a second provider writer.
+
+Read-only 14 November checkpoint: 15/15 state ledgers were `pending/impossible`;
+the 8–13 November approved windows had expired without verified Telegram
+receipts. Past release IDs cannot be re-sent or extended automatically. Only
+`state/milovi-cake-telegram` and fresh exact Telegram receipts determine
+current results; this dated text is never a replacement for protected state.
+
+### Expired video receipt audit: 22 November checkpoint
+
+At approximately 21:32 Moscow on 22 November, read-only GitHub inspection of
+`state/milovi-cake-telegram@3ae7e91b7806131dfc99afa9edcfac37e41f9e67`
+retrieved the exact index and 15 video-ledger Git objects and rechecked their
+blob IDs and bytes. Provider-free `audit-expired` returned **15 elapsed slots
+without verified ledger receipts**, all `pending/impossible`, and exit 2. The
+snapshot remained byte-identical; it is not a fresh complete Telegram history
+and does not prove an external writer had no effect. Do not backfill.
+
+In this revision, an elapsed `published/verified` video is not silently
+accepted from the state labels alone: its immutable release and reviewed
+slot/digests, numeric chat/bot/message identities, channel/bot names, canonical
+message URL and protected index/ledger agreement must match. Its recorded
+intent/preparation time must fall inside the approved 19:00–21:00 lease, and
+its verification time cannot be in the future at the audit clock. A
+`pending/impossible` row must explicitly retain nulls for every intent,
+attempt, target, receipt and error field; missing or stale provenance fails
+closed instead of enabling dispatch or clearing the audit. An invalid or
+ambiguous receipt fails the check for reconciliation without replay. A
+verification may arrive after the lease; the intent timestamp is **not** an
+independent proof of when Telegram received the request. These are recorded
+ledger checks, not a live provider readback. This hardening takes effect only
+on a merged, CI-verified runtime and neither creates authority nor guarantees
+that GitHub cron runs on time.
+
+### School receipt and migration checks: 22 November checkpoint
+
+The separate School reading dispatcher and its expired audit use the same raw
+never-attempted pending check. First-ten Cake prerequisites, earlier School
+posts and the early Paris-Brest duplicate suppression require exact
+index/ledger agreement, uncoerced integer identities, canonical URL, correct
+target and a recorded verification no later than the decision clock. The
+legacy two-item editorial migration refuses to erase stale provenance even
+when its state labels say `pending/impossible`. An uncertain record requires
+reconciliation, not replay. These checks do not establish a complete channel
+history or independently prove Telegram request time.
+
+A read-only snapshot at the same protected commit contained the early
+Paris-Brest verified ledger (message 27), the original November 17 pending
+ledger, and the November 21 Croissant and November 25 Stohrer pending ledgers.
+The provider-free audit suppressed the original as an early duplicate and
+reported **one elapsed School slot without a verified ledger receipt**
+(Croissant), exit 2. Snapshot bytes were unchanged. The November 25 post still
+requires the ten verified first-screen videos and all existing exact release,
+predecessor, window, authority and single-writer gates; this note does not
+approve a catch-up or guarantee the scheduled run.
 
 ## One writer
 
@@ -31,13 +96,44 @@ The three content bindings are mutually exclusive. The validator fails closed if
 
 The frozen editorial/source candidate remains a separate provenance object. It never becomes provider authority by itself.
 
+## November 2026 separate muted video transport
+
+Issue #809 recovered the existing v12 finished-cake footage and made a
+standalone transport with the soundtrack **entirely removed**, retaining the
+exact H.264 stream. This is NOT a rewrite or replacement of the accepted
+August 16/16 MP4 reservoir.
+
+- Accepted additional manifest:
+  content/telegram/milovi-cake/accepted-video-variants-2026-11.json
+- Protected evidence ref:
+  agent/milovi-video-muted-v12-3b680fe94b50
+- Immutable artifact commit:
+  686223b41c01ce365853f2e2bf22c20240a1df01
+- Exact media identity: v12-muted, schema version 2, original accepted v12
+  parent and SHA-bound provenance, zero audio streams.
+- Only new ID milovi-feed-20261107-002 may bind this new transport. The
+  old audio-bearing milovi-feed-20261107-001 was permanently retired due to
+  a corrupted Cyrillic caption; it must not be remediated in-place or replayed.
+- The media registry remains content_approved=false and
+  rights_verified=false until the owner validates the actual footage.
+- Sending still requires the established **single** stateful Milovi
+  permanent-feed writer, exact current-main and target proof, verified rights,
+  signed release, independent execution permission, durable intent and
+  one no-retry send.
+- For both version-1 and version-2 video bindings the canonical writer now
+  fetches the media from an **immutable full Git commit**, not a branch name,
+  and checks the exact accepted SHA256 and Git blob before materialization.
+
+This extension is additive. The August transport manifest and original 16
+accepted media identities are unchanged.
+
 ## Supported permanent-feed payloads
 
 The sole writer supports three exact payload kinds through the same generic one-attempt runtime:
 
 - `sendPhoto` — exact candidate caption plus reviewed source/transport bytes; deterministic JPEG materialization happens before `send-once`;
 - `sendMessage` — exact candidate text plus SHA-256 binding; no fake media is required;
-- `sendVideo` — exact candidate caption plus an MP4 identity from the accepted 16/16 reservoir only.
+- `sendVideo` — exact candidate caption plus an MP4 from the accepted 16/16 reservoir **or** a separately approved November muted-video variant pinned to immutable media SHA-256, reviewed release, and exact authorized date; no broad media substitution.
 
 All three pass the same current-main gate, release/content authorization, separate execution authorization, explicit state initialization, duplicate guard, freshness check, exact target preflight, durable intent-before-send, exactly one mutation attempt and exact outcome reconciliation.
 
@@ -115,9 +211,9 @@ These identities remain immutable history. The timestamp is part of each publica
 - `milovi-feed-20260820-001` — scheduled `2026-08-20T10:30:00+03:00`; `release_authorized=false` / `execution_authorized=false`; frozen `p16` bytes only; no durable intent.
 - `milovi-feed-20260820-002` — scheduled `2026-08-20T20:00:00+03:00`; PR #500 set `release_authorized=true` and `execution_authorized=true` for marathon position 1 (`sendPhoto` / `p06`); the permanent publisher had no initialize-state or publish run; durable feed state was not initialized; the 120-minute lag gate has expired. Do not publish this identity now.
 
-## Current exact photo publication
+## Historical August 21 exact photo publication (expired)
 
-`milovi-feed-20260821-001` is the current exact photo publication: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. Publish is due only in the 10:30–12:30 Europe/Moscow window via `.github/workflows/milovi-telegram-feed-publisher.yml`. No successor identity is authorized here.
+`milovi-feed-20260821-001` was an August 2026 exact photo publication, not a current executable release: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. That historical 10:30–12:30 Europe/Moscow window has expired. Do not use this old record as present execution authority or silently catch it up; later November schedules have their own separately reviewed identities.
 
 ## Marathon editorial source
 

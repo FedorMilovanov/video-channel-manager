@@ -118,7 +118,7 @@ def parse_content_record(
         ),
         question=QuestionBlock(
             lead=str(question_payload.get("lead") or "").strip(),
-            text=str(question_payload["text"]).strip(),
+            text=str(question_payload.get("text") or "").strip(),
         ),
         links=links,
         sources=sources,

@@ -415,7 +415,7 @@ def build_release_candidate(
                 profile,
                 publication_id=publication_id,
                 caption=caption,
-                media_path=str(RUNTIME_MEDIA_DIR / f"{media_id}.jpg"),
+                media_path=(RUNTIME_MEDIA_DIR / f"{media_id}.jpg").as_posix(),
                 media_sha256=media["transport_sha256"],
                 media_byte_size=int(media["transport_byte_size"]),
                 media_filename=f"{media_id}.jpg",
@@ -495,7 +495,7 @@ def materialize_exact_photo(
     _exact_identity(blob_sha1, item["source_git_blob_sha1"], f"source Git blob for {media_id}")
 
     try:
-        from PIL import Image  # type: ignore[import-not-found]
+        from PIL import Image
     except ImportError as exc:
         raise ValueError("Pillow is required to materialize exact Milovi follow-on JPEG bytes") from exc
     with Image.open(io.BytesIO(source)) as image:

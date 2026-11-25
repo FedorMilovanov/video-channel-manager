@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Provider-free validate, explicit durable state initialization, or publish the next due series quiz
+        description: Validation and state inspection; publishing on editorial hold (Nov 14 quality rejection)
         required: true
         default: validate
         type: choice
@@ -13,13 +13,9 @@ on:
           - initialize-state
           - publish
       confirm:
-        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-01 or PUBLISH:@lordchrist:lordchrist-quiz-series-01; unused for validate
+        description: INITIALIZE:@lordchrist:lordchrist-quiz-series-02; publish is blocked pending new owner editorial approval
         required: false
         type: string
-  schedule:
-    # 13:00 Moscow daily; the immutable release spaces quizzes two days apart
-    # and the freshness gate publishes only when the next quiz is due.
-    - cron: "0 10 * * *"
 
 permissions:
   actions: read
@@ -91,6 +87,15 @@ jobs:
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             OPERATION="publish"
             DISPATCH_MODE="scheduled"
+          fi
+          # EDITORIAL HOLD (2026-11-14): after the owner rejected the
+          # Jephthah poll and deleted it, earlier Series 02 release approval
+          # does not grant authority to send any remaining unreviewed poll.
+          # Restore publishing only through a NEW independently reviewed
+          # candidate/release and explicit owner approval. Never replay 1613.
+          if [[ "$OPERATION" == "publish" ]]; then
+            echo "::error::Series 02 publication on editorial hold after owner rejection; no Telegram send." >&2
+            exit 3
           fi
           case "$OPERATION" in
             validate)
@@ -254,13 +259,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # The generic runtime requires an exact publication_id for manual dispatch,
+          # but explicitly rejects it for scheduled dispatch. Scheduled runs select
+          # the strict-next due item from the already-validated immutable release.
+          publication_args=()
+          case "${{ steps.gate.outputs.dispatch_mode }}" in
+            manual)
+              publication_args=(--publication-id "${{ steps.due.outputs.publication_id }}")
+              ;;
+            scheduled)
+              ;;
+            *)
+              echo "Unsupported QUIZ dispatch mode" >&2
+              exit 3
+              ;;
+          esac
           python -m video_channel_manager.telegram_multichannel_cli prepare \
             --profile "$PROFILE_PATH" \
             --release "${{ steps.gate.outputs.release_path }}" \
             --ledger "${{ steps.gate.outputs.ledger_path }}" \
             --target-proof "$TARGET_PROOF_PATH" \
+            --verified-manual-canary-release "content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-runtime.json" \
+            --verified-manual-canary-ledger "$STATE_DIR/content/telegram/lordchrist/quiz/lordchrist-quiz-city-of-palms-ledger.json" \
             --mode "${{ steps.gate.outputs.dispatch_mode }}" \
-            --publication-id "${{ steps.due.outputs.publication_id }}" \
+            "${publication_args[@]}" \
             --run-id "$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" \
             --github-sha "$GITHUB_SHA" \

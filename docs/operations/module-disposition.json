@@ -22,13 +22,11 @@
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
-      "module": "video_channel_manager.instagram.daily_queue",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_instagram_daily_queue.py"
-      ],
-      "statements": 211,
-      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+      "module": "video_channel_manager.lordchrist_peasants1525_term_pages",
+      "status": "archived_canary",
+      "evidence": "tests/test_lordchrist_peasants1525_term_pages.py",
+      "note": "This completed one-shot 1525 publishing module is retained as historical release evidence and importable acceptance fixtures. All four mutating workflows were retired after the verified glossary release; no active workflow or production entrypoint invokes it. Re-publication requires separate reviewed authorization, never an automatic replay.",
+      "statements": 261
     },
     {
       "module": "video_channel_manager.lordchrist_research_rollout",
@@ -60,6 +58,13 @@
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
+      "module": "video_channel_manager.milovi_telegram_due_dispatch",
+      "status": "archived_canary",
+      "evidence": "tests/test_milovi_telegram_due_dispatch.py",
+      "statements": 73,
+      "note": "The exact owner-approved Nov 7 v12 window expired without provider dispatch; its one-time GitHub Actions workflow was retired. Preserve this read-only module and historical fail-closed/terminal-state tests as evidence only. It is not a current release entrypoint or authorization to backfill the pending v12 release."
+    },
+    {
       "module": "video_channel_manager.milovi_telegram_follow_on_readiness",
       "status": "pending_owner_decision",
       "owning_tests": [
@@ -74,7 +79,7 @@
       "owning_tests": [
         "tests/test_vk_clips_evidence_pipeline.py"
       ],
-      "statements": 77,
+      "statements": 79,
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
@@ -92,7 +97,7 @@
       "owning_tests": [
         "tests/test_milovi_d48_youtube_fallback.py"
       ],
-      "statements": 169,
+      "statements": 167,
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
@@ -101,7 +106,7 @@
       "owning_tests": [
         "tests/test_milovi_d48_youtube_overlay_clean.py"
       ],
-      "statements": 207,
+      "statements": 205,
       "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
     },
     {
@@ -179,21 +184,17 @@
     },
     {
       "module": "video_channel_manager.telegram_quote_v4_render_proof",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_lordchrist_quote_v4_render_proof.py"
-      ],
+      "status": "archived_canary",
       "statements": 102,
-      "note": "No caller: nothing under src/ or scripts/ imports it, it is not a console script, and no workflow, script or document invokes it. Only these tests import it. Decide: delete it with those tests, or document and wire it as a supported entrypoint."
+      "note": "Historical read-only quote-v4 render-proof canary. The November 2026 active writer is the separately guarded quote-v6 workflow; quote-v4 was superseded. This module has no production caller and the linked test preserves its historical rendering and ledger-invariant evidence. Keep importable for audit, never treat it as an alternate sender or authorization to replay.",
+      "evidence": "tests/test_lordchrist_quote_v4_render_proof.py"
     },
     {
       "module": "video_channel_manager.telegram_quote_v5_render_proof",
-      "status": "pending_owner_decision",
-      "owning_tests": [
-        "tests/test_lordchrist_quote_v5_render_proof.py"
-      ],
+      "status": "archived_canary",
       "statements": 99,
-      "note": "No production import, console script, documented invocation or workflow reaches this research module in the current exact-main scan. It is retained only for source-review tests; explicit owner review is required before deletion or activation."
+      "note": "Historical read-only quote-v5 render-proof canary. Quote-v5/depth-v3 was superseded by the verified quote-v6 writer, with historical release evidence retained. No production entrypoint invokes this module; the linked test still protects the old source-line and stand-alone review contracts. Preserve for forensic acceptance only, without activating, deleting, or republishing.",
+      "evidence": "tests/test_lordchrist_quote_v5_render_proof.py"
     },
     {
       "module": "video_channel_manager.telegram_release_binding_cli",

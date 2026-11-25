@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from collections.abc import Mapping
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,7 @@ from video_channel_manager.config import get_settings
 from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
 from video_channel_manager.local_media.artifact import load_media_artifact_manifest
 from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
+from video_channel_manager.platforms.vk.quarantine import reject_quarantined_legacy_alias
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -38,6 +40,79 @@ from video_channel_manager.wave_engine.models import MutationClass, WaveOperatio
 VK_VIDEO_OPERATION_KIND = "vk.video.upload"
 VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v2"
 VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
+
+# video.get covers public ordinary Videos, not the Creator's private, draft,
+# scheduled or in-flight media. A public-only absence is not upload authority.
+OWNER_ABSENCE_SCHEMA = "video-manager.vk-owner-creator-absence-v1"
+OWNER_ABSENCE_STATES = frozenset({"published", "postponed", "draft", "private", "processing", "accepted"})
+OWNER_ABSENCE_MAX_AGE_SECONDS = 3600
+
+
+def _validate_owner_absence_evidence(
+    evidence: object,
+    *,
+    project_key: str,
+    community_id: int,
+    source_channel_id: str,
+    source_video_id: str,
+) -> None:
+    """Fail closed unless an exact, fresh owner-reviewed all-surface proof exists.
+
+    The structured assertion records human/owner Creator review; it is not a
+    cryptographic provider signature. The live public video.get guard still
+    runs independently immediately before a new reservation.
+    """
+    if not isinstance(evidence, dict):
+        raise OperationRejectedError("VK owner absence evidence must be a JSON object")
+    expected = {
+        "schema_name": OWNER_ABSENCE_SCHEMA,
+        "project_key": project_key,
+        "community_id": community_id,
+        "owner_id": -community_id,
+        "source_channel_id": source_channel_id,
+        "source_video_id": source_video_id,
+        "capture_method": "owner_authenticated_creator_read_only",
+        "read_only": True,
+        "provider_effect": "safe_read_only",
+        "verdict": "confirmed_absent",
+    }
+    for key, expected_value in expected.items():
+        if type(evidence.get(key)) is not type(expected_value) or evidence.get(key) != expected_value:
+            raise OperationRejectedError(f"VK owner absence evidence has wrong or unproved {key}")
+
+    observed = evidence.get("observed_at")
+    if not isinstance(observed, str):
+        raise OperationRejectedError("VK owner absence evidence needs timezone-aware observed_at")
+    try:
+        observed_at = datetime.fromisoformat(observed.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise OperationRejectedError("VK owner absence evidence has invalid observed_at") from exc
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise OperationRejectedError("VK owner absence evidence needs timezone-aware observed_at")
+    age = (datetime.now(timezone.utc) - observed_at.astimezone(timezone.utc)).total_seconds()
+    if age < -300 or age > OWNER_ABSENCE_MAX_AGE_SECONDS:
+        raise OperationRejectedError("VK owner absence evidence is stale or from the future")
+
+    surfaces = evidence.get("surfaces")
+    if not isinstance(surfaces, dict) or set(surfaces) != {"ordinary_video", "native_clip"}:
+        raise OperationRejectedError("VK owner absence must cover ordinary Videos and native Clips")
+    for surface_name, surface in surfaces.items():
+        if not isinstance(surface, dict) or surface.get("pagination_complete") is not True:
+            raise OperationRejectedError(f"VK owner {surface_name} inventory has incomplete pagination")
+        covered = surface.get("covered_states")
+        if (
+            not isinstance(covered, list)
+            or len(covered) != len(OWNER_ABSENCE_STATES)
+            or not all(isinstance(state, str) for state in covered)
+            or set(covered) != OWNER_ABSENCE_STATES
+        ):
+            raise OperationRejectedError(f"VK owner {surface_name} inventory does not cover every state")
+        for field in ("exact_source_matches", "unresolved_candidates"):
+            items = surface.get(field)
+            if not isinstance(items, list) or items:
+                raise OperationRejectedError(
+                    f"VK owner {surface_name} inventory contains matches, uncertainty or missing evidence: {field}"
+                )
 
 
 def _minimum_duration_seconds(source_duration_seconds: int) -> int:
@@ -72,6 +147,9 @@ class VkNativeVideoUploadAdapter:
         self.account_alias = account_alias.strip()
         if not self.account_alias:
             raise ValueError("VK video account alias cannot be blank")
+        # Issue #662: reject the quarantined shared credential before reading
+        # any account/token store or constructing a VK provider client.
+        reject_quarantined_legacy_alias(self.account_alias)
 
         settings = get_settings()
         self.store = VkTokenStore(settings.data_dir)
@@ -132,8 +210,17 @@ class VkNativeVideoUploadAdapter:
             if not isinstance(value, str) or not value.strip():
                 raise OperationRejectedError(f"VK video payload field {field} is required")
         duration = payload.get("source_duration_seconds")
-        if type(duration) is not int or duration <= 180:
-            raise OperationRejectedError("VK video upload requires long-form duration > 180 seconds")
+        if type(duration) is not int or duration <= 0:
+            raise OperationRejectedError("VK video upload requires positive integer duration")
+        reviewed_short = payload.get("reviewed_short_horizontal_video", False)
+        if type(reviewed_short) is not bool:
+            raise OperationRejectedError("Reviewed short-horizontal override must be a boolean")
+        if duration <= 180 and not reviewed_short:
+            raise OperationRejectedError(
+                "VK video upload requires >180s or explicit reviewed short-horizontal approval"
+            )
+        if duration > 180 and reviewed_short:
+            raise OperationRejectedError("Reviewed short-horizontal approval is only valid for <=180s sources")
         if payload.get("privacy_status") != "public":
             raise OperationRejectedError("VK video upload source must be public")
         for field in ("wallpost", "auto_publish", "repeat"):
@@ -180,6 +267,33 @@ class VkNativeVideoUploadAdapter:
                 "VK target already contains the source video or an exact title/duration collision: "
                 + ", ".join(sorted(set(matches)))
             )
+
+    def _assert_owner_absence_live(
+        self,
+        *,
+        operation: WaveOperation,
+        payload: Mapping[str, Any],
+    ) -> None:
+        path_value = payload.get("owner_absence_evidence_path")
+        digest = payload.get("owner_absence_evidence_sha256")
+        if not isinstance(path_value, str) or not path_value or not isinstance(digest, str) or not digest:
+            raise OperationRejectedError(
+                "New VK video upload blocked: fresh complete owner Creator absence evidence is required"
+            )
+        try:
+            path = resolve_repository_relative_path(self.repository_root, path_value, require_file=True)
+            if file_sha256(path) != digest:
+                raise OperationRejectedError("VK owner absence evidence SHA-256 differs from approved payload")
+            evidence = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            raise OperationRejectedError("VK owner absence evidence is unreadable or missing") from exc
+        _validate_owner_absence_evidence(
+            evidence,
+            project_key=operation.project.project_key,
+            community_id=operation.project.community_id,
+            source_channel_id=str(payload["source_channel_id"]),
+            source_video_id=str(payload["source_video_id"]),
+        )
 
     @staticmethod
     def _provider_dispatch_started(record: Mapping[str, Any]) -> bool:
@@ -245,6 +359,18 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("Media artifact source ID does not match Wave operation")
         if artifact.manifest_sha256 != str(payload["media_artifact_manifest_sha256"]):
             raise OperationRejectedError("Media artifact internal digest does not match Wave operation")
+        if payload.get("reviewed_short_horizontal_video") is True:
+            probe = artifact.probe
+            if (
+                probe.width is None
+                or probe.height is None
+                or probe.width <= probe.height
+                or probe.video_stream_count != 1
+                or probe.audio_stream_count != 1
+            ):
+                raise OperationRejectedError(
+                    "Reviewed short ordinary Video must have verified horizontal video and audio streams"
+                )
 
         rendered = render_vk_video_description(
             str(payload["published_description"]),
@@ -278,6 +404,7 @@ class VkNativeVideoUploadAdapter:
                 operation=f"vk-video-upload:{payload['source_video_id']}",
             ):
                 if self._requires_new_reservation(record):
+                    self._assert_owner_absence_live(operation=operation, payload=payload)
                     self._assert_source_absent_live(payload=payload, community_id=community_id)
                 execute_upload_operation(
                     record,
