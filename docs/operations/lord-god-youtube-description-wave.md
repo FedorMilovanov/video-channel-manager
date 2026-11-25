@@ -72,6 +72,8 @@ Already-clean Panorama episodes use the same canonical offline planner with the 
 
 ## Recurring agent bugs and their fixes
 
+**SHARE — цельный первый блок плейлистов (уточнение владельца 2026-11-24):** первый непрерывный смысловой блок плейлистов Lord God оформляется целиком обычным текстом: общий заголовок и все подписи без маркеров `*`/`_`, независимо от числа ссылок (1, 2, 3, 4 или больше). Не обрывать чистый стиль на второй ссылке; после пустой строки следующий самостоятельный блок может быть жирным. Сохранять все подтверждённые URL и порядок; не удалять символы внутри URL. Две чистые содержательные preview-строки и действующие правила порядка ссылок, источников и глав сохраняются; не переносить сюда поэтический playlist-first шаблон. При отсутствии плейлистов не создавать пустой блок. Это редакционное правило, не разрешение на массовый autofix или provider write. Проверять цельность блока перед подписанием плана.
+
 **Two plain share-preview lines (8 Nov 2026 audit):** MP3Bot `docs/agent_direct_dubbing/CLIPS_SHORTS_AND_HANDOFF.md` and actual Lord God long-form videos establish that the first TWO nonempty raw Studio lines—not merely the first paragraph—must be unformatted substantive text, with no links or list headings. Some historical videos do not meet this standard; this is a future-publication gate, not permission to edit historical videos en masse. Use `presentation_issues()` on each exact proposed description before OAuth/API. Do not mark a copy ready if line two begins with a bold heading or has inline markers, even when the old generic `youtube_copy` first-paragraph check returned no errors.
 
 

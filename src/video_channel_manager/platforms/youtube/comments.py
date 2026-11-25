@@ -595,7 +595,9 @@ class YouTubeCommentWriter(HttpClientOwner):
         before_dispatch: Callable[[], None] | None = None,
         expected_video_title: str | None = None,
         expected_privacy_status: str | None = None,
+        expected_owned_comments: dict[str, str] | None = None,
     ) -> TopLevelCommentSnapshot:
+        """Create once; an additional comment binds the complete reviewed owner set."""
         normalized = validate_comment_text(text)
         identity = self.read_video_identity(video_id)
         if identity.channel_id != expected_channel_id:
@@ -612,16 +614,29 @@ class YouTubeCommentWriter(HttpClientOwner):
             self.list_top_level_comments(
                 video_id, strict_moderation=True, max_pages_per_status=strict_inventory_max_pages
             )
-            if strict_inventory_max_pages is not None
+            if strict_inventory_max_pages is not None or expected_owned_comments is not None
             else self.list_top_level_comments(video_id)
         )
         owned = [item for item in existing if item.author_channel_id == expected_channel_id]
-        if strict_inventory_max_pages is not None and owned:
-            raise YouTubeCommentConflictError("Owner comment appeared during guarded preflight; no dispatch.")
-        for item in owned:
-            if comments_equivalent(item.text, normalized):
-                return item
-        if owned:
+        if expected_owned_comments is not None:
+            actual = {item.comment_id: item.text_sha256 for item in owned}
+            matches = [item for item in owned if comments_equivalent(item.text, normalized)]
+            if not expected_owned_comments or len(matches) > 1:
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+            if matches:
+                match = matches[0]
+                if actual == {**expected_owned_comments, match.comment_id: match.text_sha256}:
+                    return match
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+            if actual != expected_owned_comments:
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no POST sent.")
+        else:
+            if strict_inventory_max_pages is not None and owned:
+                raise YouTubeCommentConflictError("Owner comment appeared during guarded preflight; no dispatch.")
+            for item in owned:
+                if comments_equivalent(item.text, normalized):
+                    return item
+        if expected_owned_comments is None and owned:
             ids = ", ".join(item.comment_id for item in owned)
             raise YouTubeCommentConflictError(
                 f"Video {video_id} already has {len(owned)} different top-level channel comment(s): {ids}."
