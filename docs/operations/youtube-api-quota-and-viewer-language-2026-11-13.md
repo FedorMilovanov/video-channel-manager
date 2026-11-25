@@ -11,7 +11,7 @@
 > historical November 13 evidence, not an active quota hold. See the
 > [current shared quota runbook](youtube-shared-project-quota.md#current-verified-grant--25-november-2026-moscow-date)
 > and [Console evidence](https://github.com/FedorMilovanov/video-channel-manager/issues/795#issuecomment-7148907683).
-> Actual remaining and local daily allocation still require current evidence.
+> Actual Google remaining requires current evidence; the approved project uses automatic shared local estimated ceilings, not a daily manual allocation.
 
 ## 1. API compliance and quota — verified versus pending
 
