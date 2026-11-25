@@ -20,14 +20,14 @@ from video_channel_manager.telegram_multichannel_outcome import (
     GenericSendProviderEffect,
     apply_provider_outcome,
 )
-from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release
+from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release, save_release
 from video_channel_manager.telegram_multichannel_state import (
     GenericDispatchEnvelope,
     GenericPublicationLedger,
     OwnerScheduledCanaryApproval,
     audit_audio_history,
-    audio_history_baseline_path,
     initialize_ledger,
+    load_audio_history_baseline,
     load_ledger,
     prepare_next,
     require_audio_channel_admission,
@@ -68,6 +68,12 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument("--release", type=Path, required=True)
     initialize.add_argument("--output", type=Path, required=True)
     initialize.add_argument("--confirm", required=True)
+
+    register = sub.add_parser("register-audio", help="Register an already reviewed release in protected audio state.")
+    register.add_argument("--profile", type=Path, required=True)
+    register.add_argument("--release", type=Path, required=True)
+    register.add_argument("--binding", type=Path, required=True)
+    register.add_argument("--state-checkout", type=Path, required=True)
 
     skip_expired = sub.add_parser("skip-expired")
     skip_expired.add_argument("--release", type=Path, required=True)
@@ -479,27 +485,84 @@ def _audio_state_root(profile: TelegramChannelProfile, ledger_path: Path) -> Pat
     return root
 
 
-def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
-    root = _audio_state_root(profile, ledger_path)
+def _require_audio_state_checkout(profile: TelegramChannelProfile, root: Path, *, allow_empty: bool = False) -> None:
     expected = Path("content/telegram") / profile.project_key / "audio-releases"
+    if (root / expected).resolve() != root / expected:
+        raise ValueError("audio state directory must not be redirected")
+    _require_state_origin(root)
     if _state_git(root, "status", "--porcelain=v1", "--untracked-files=all"):
         raise ValueError("audio state checkout must be clean before dispatch")
     if _state_git(root, "rev-parse", "HEAD") != _remote_state_head(root, profile.state_branch):
         raise ValueError("audio state checkout is not the exact current remote state")
-    baseline = audio_history_baseline_path(ledger_path)
+    baseline = root / expected.parent / "audio-history-baseline.json"
     relative_baseline = baseline.relative_to(root).as_posix()
+    if baseline.is_symlink():
+        raise ValueError("audio history baseline must not be a symlink")
     if _state_git(root, "ls-files", "-v", "--", relative_baseline) != f"H {relative_baseline}":
         raise ValueError("audio state requires a tracked reviewed history baseline")
     tracked = _state_git(root, "ls-files", "-v", "--", expected.as_posix()).splitlines()
-    if not tracked or any(not line.startswith("H ") for line in tracked):
+    if any(not line.startswith("H ") for line in tracked) or (not tracked and not allow_empty):
         raise ValueError("audio state must contain the complete tracked channel history")
     paths = {line[2:] for line in tracked}
-    for directory in (root / expected).iterdir():
+    directories = list((root / expected).iterdir()) if (root / expected).exists() else []
+    for directory in directories:
+        if not directory.is_dir() or directory.is_symlink():
+            raise ValueError("audio state requires canonical release directories")
         for name in ("release.json", "ledger.json"):
             path = directory / name
-            if path.is_symlink() or path.relative_to(root).as_posix() not in paths:
+            if path.is_symlink() or not path.is_file() or path.relative_to(root).as_posix() not in paths:
                 raise ValueError("audio history must contain only tracked release and ledger pairs")
+    for path in paths:
+        if not (root / path).is_file() or (root / path).is_symlink():
+            raise ValueError("audio state must contain the complete tracked channel history")
+
+
+def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
+    root = _audio_state_root(profile, ledger_path)
+    _require_audio_state_checkout(profile, root)
     return root
+
+
+def _register_audio_release(
+    profile: TelegramChannelProfile, release: GenericReleaseQueue, binding_path: Path, checkout: Path
+) -> tuple[Path, bool]:
+    """Register a reviewed release without provider access or gate activation."""
+    require_execution_not_held(release)
+    if (
+        not release.release_authorized
+        or release.profile_sha256 != profile.digest
+        or release.project_key != profile.project_key
+        or release.channel_username.casefold() != profile.channel_username.casefold()
+        or release.timezone != profile.timezone
+        or release.daily_verified_limit != profile.daily_verified_limit
+        or not all(isinstance(item.payload, GenericAudioPayload) for item in release.items)
+    ):
+        raise ValueError("audio registration requires an exact authorized audio release")
+    binding = load_target_binding(binding_path, profile)
+    if (
+        release.target_binding_sha256 != binding.digest
+        or release.chat_id != binding.chat_id
+        or release.bot_id != binding.bot_id
+        or (release.bot_username or "").casefold() != binding.bot_username.casefold()
+    ):
+        raise ValueError("audio registration differs from exact pinned binding")
+    root = checkout.resolve()
+    if Path(_state_git(root, "rev-parse", "--show-toplevel")).resolve() != root:
+        raise ValueError("audio registration requires the root of the state checkout")
+    _require_audio_state_checkout(profile, root, allow_empty=True)
+    directory = root / "content/telegram" / profile.project_key / "audio-releases" / release.release_id
+    path = directory / "ledger.json"
+    load_audio_history_baseline(release, path, now=datetime.now(tz=UTC))
+    release_path = directory / "release.json"
+    if directory.exists() or directory.is_symlink():
+        if directory.is_symlink() or load_release(release_path) != release:
+            raise ValueError("audio release ID already registered with different immutable content")
+        load_ledger(path, release)
+        return path, False
+    save_release(release_path, release)
+    save_ledger(path, initialize_ledger(release))
+    _persist_remote_audio_state(root, profile, "registration", release_path, path)
+    return path, True
 
 
 def _persist_remote_audio_state(root: Path, profile: TelegramChannelProfile, phase: str, *paths: Path) -> None:
@@ -708,6 +771,19 @@ def main() -> int:
                     "entries": len(ledger.entries),
                     "output": str(args.output),
                 },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "register-audio":
+        release = load_release(args.release)
+        path, created = _register_audio_release(
+            load_channel_profile(args.profile), release, args.binding, args.state_checkout
+        )
+        print(
+            json.dumps(
+                {"registered": True, "created": created, "release_digest": release.digest, "ledger": str(path)},
                 ensure_ascii=False,
             )
         )

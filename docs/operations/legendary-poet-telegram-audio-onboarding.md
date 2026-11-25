@@ -150,6 +150,15 @@ or recognizes an already accepted commit. No Telegram call or write-gate
 activation is required for recovery. A diverged remote, missing local
 result or unrelated checkout changes must be reconciled independently,
 never replayed. Generic apply-outcome is not an alternate audio writer.
+After the protected branch has been initialized with reviewed history, the
+provider-free `register-audio` command takes the exact authorized release,
+profile, pinned binding and clean state checkout. It commits the immutable
+release and initial ledger together with non-forced push/readback; repeat
+registration of identical content is a no-op. An unreviewed release,
+missing baseline, foreign binding or changed content under an existing
+release ID is rejected. Registration does not enable provider writes and
+does not create an absent state branch.
+
 The single manual `publish-audio` command reuses the existing prepare and
 send-once paths, performs pinned preflight, and records remote intent,
 claim and result in order. It accepts the exact reviewed publication ID

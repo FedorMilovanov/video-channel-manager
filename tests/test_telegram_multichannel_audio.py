@@ -22,6 +22,7 @@ from video_channel_manager.telegram_multichannel_cli import (
     _audio_intent_path,
     _persist_remote_audio_state,
     _recover_remote_audio_outcome,
+    _register_audio_release,
     _require_current_audio_state,
     _state_git,
     _send_persisted_once,
@@ -41,6 +42,8 @@ from video_channel_manager.telegram_multichannel_state import (
     require_audio_channel_admission,
     save_ledger,
 )
+
+from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
@@ -769,3 +772,87 @@ def test_reviewed_pre_cutover_audio_history_admission(tmp_path, monkeypatch, sce
     else:
         with pytest.raises(ValueError, match=expected):
             require_audio_channel_admission(release, path, payload.publication_id, now=NOW)
+
+
+@pytest.mark.parametrize("scenario", ["registered", "missing_baseline", "unreviewed", "wrong_binding"])
+def test_register_audio_release_without_provider_access(tmp_path, monkeypatch, scenario):
+    profile = _profile(False)
+    binding_path = ROOT / "content/telegram/channels/milovi-cake-target-binding.json"
+    binding = load_target_binding(binding_path, profile)
+    payload = _payload(profile, b"ID3 fixture")
+    release = _history_release(profile, payload, "milovi-registration")
+    candidate = release.model_copy(
+        update={
+            "release_authorized": False,
+            "reviewed_candidate_sha256": None,
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "target_binding_sha256": binding.digest if scenario != "wrong_binding" else "sha256:" + "f" * 64,
+            "bot_username": binding.bot_username,
+        }
+    )
+    release = (
+        candidate
+        if scenario == "unreviewed"
+        else GenericReleaseQueue.model_validate(
+            {
+                **candidate.model_dump(),
+                "release_authorized": True,
+                "reviewed_candidate_sha256": candidate.candidate_digest(),
+                "reviewed_by": "offline fixture",
+                "reviewed_at": NOW,
+            }
+        )
+    )
+    remote = tmp_path / "remote.git"
+    remote.mkdir()
+    _git(remote, "init", "--bare")
+    state = tmp_path / "state"
+    state.mkdir()
+    _git(state, "init", "-b", profile.state_branch)
+    _git(state, "config", "user.name", "test")
+    _git(state, "config", "user.email", "test@example.invalid")
+    directory = state / "content/telegram" / profile.project_key
+    directory.mkdir(parents=True)
+    (state / "README.md").write_text("offline state", encoding="utf-8")
+    baseline = AudioHistoryBaseline(
+        schema_name="video-channel-manager.telegram-audio-history-baseline",
+        schema_version=1,
+        project_key=release.project_key,
+        channel_username=release.channel_username,
+        profile_sha256=release.profile_sha256,
+        chat_id=CHAT_ID,
+        cutover_utc=NOW - timedelta(days=1),
+        reviewed_at_utc=NOW - timedelta(days=1),
+        reviewed_by="offline fixture",
+        source_evidence_sha256="sha256:" + "a" * 64,
+        posts=(),
+    )
+    if scenario != "missing_baseline":
+        (directory / "audio-history-baseline.json").write_text(baseline.model_dump_json(), encoding="utf-8")
+    _git(state, "add", ".")
+    _git(state, "commit", "-m", "reviewed baseline fixture")
+    _git(state, "remote", "add", "origin", str(remote))
+    _git(state, "push", "origin", f"HEAD:refs/heads/{profile.state_branch}")
+    base = _git(state, "rev-parse", "HEAD")
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._require_state_origin", lambda root: None)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("registration must not contact Telegram")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.preflight_channel", forbidden)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._send_exact_payload", forbidden)
+    if scenario != "registered":
+        with pytest.raises(ValueError, match="tracked reviewed|exact authorized|exact pinned"):
+            _register_audio_release(profile, release, binding_path, state)
+        assert _git(state, "rev-parse", "HEAD") == base
+        assert not (directory / "audio-releases").exists()
+        return
+    path, created = _register_audio_release(profile, release, binding_path, state)
+    assert created
+    assert load_ledger(path, release).entries[payload.publication_id].state == "pending"
+    assert _git(state, "rev-list", "--count", f"{base}..HEAD") == "1"
+    assert _git(state, "rev-parse", "HEAD") == _git(remote, "rev-parse", profile.state_branch)
+    head = _git(state, "rev-parse", "HEAD")
+    assert _register_audio_release(profile, release, binding_path, state) == (path, False)
+    assert _git(state, "rev-parse", "HEAD") == head
