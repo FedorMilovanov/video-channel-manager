@@ -215,9 +215,7 @@ def test_outcome_cannot_be_applied_to_a_different_payload() -> None:
 
 def test_outcome_from_previous_attempt_cannot_resolve_new_intent() -> None:
     profile, _, release, ledger, first = _runtime()
-    prior = _failure(first, effect="confirmed_absent", retryable=True).model_copy(
-        update={"intent_id": first.intent_id}
-    )
+    prior = _failure(first, effect="confirmed_absent", retryable=True).model_copy(update={"intent_id": first.intent_id})
     apply_provider_outcome(ledger, first, prior)
     prepared = prepare_next(
         profile,
