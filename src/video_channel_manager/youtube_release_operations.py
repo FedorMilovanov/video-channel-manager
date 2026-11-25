@@ -17,6 +17,7 @@ from video_channel_manager.youtube_release_state import (
     child_by_id,
     mark_existing_target_absent,
     mark_existing_target_adopted,
+    next_release_child,
     prepare_child,
     transition_child,
     validate_release_state,
@@ -332,6 +333,45 @@ def record_manual_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def release_status_summary(release: dict[str, Any]) -> dict[str, Any]:
+    """Project validated ledger state into a read-only, secret-free operator report."""
+    validate_release_state(release)
+    children = release["children"]
+    blockers = [child["child_id"] for child in children if child["provider_effect"] == "may_exist"]
+    next_child = None if blockers else next_release_child(release)
+    if blockers:
+        disposition = "reconcile_read_only"
+    elif next_child is None:
+        disposition = "complete"
+    else:
+        disposition = "review_pending_child"
+    # Runtime is private machine state: even future runtime fields must not
+    # automatically become part of operator output (e.g. resumable session URLs).
+    return {
+        "schema_name": "video-manager.youtube-release-status-summary",
+        "schema_version": 1,
+        "release_plan_sha256": release["release_plan_sha256"],
+        "upload_key_sha256": release["upload_key_sha256"],
+        "disposition": disposition,
+        "blocking_child_ids": blockers,
+        "next_child_id": next_child["child_id"] if next_child else None,
+        "verified_child_count": sum(child["provider_effect"] == "verified" for child in children),
+        "child_count": len(children),
+        "provider_writes_performed": 0,
+        "grants_execution_authority": False,
+        "children": [
+            {
+                "child_id": child["child_id"],
+                "kind": child["kind"],
+                "provider_effect": child["provider_effect"],
+                "evidence_sha256": child["evidence_sha256"],
+                "updated_at": child["updated_at"],
+            }
+            for child in children
+        ],
+    }
+
+
 def status(args: argparse.Namespace) -> int:
     plan = load_json_object(Path(args.plan).resolve())
     validate_release_plan(plan, verify_files=False)
@@ -341,5 +381,5 @@ def status(args: argparse.Namespace) -> int:
     )
     journal = read_json(stable_journal)
     release = release_from_journal(journal, plan=plan)
-    print(json.dumps(release, ensure_ascii=False, indent=2))
+    print(json.dumps(release_status_summary(release), ensure_ascii=False, indent=2))
     return 0
