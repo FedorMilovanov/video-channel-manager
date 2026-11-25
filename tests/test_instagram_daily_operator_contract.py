@@ -29,7 +29,7 @@ def test_daily_operator_never_skips_nonfinal_provider_state() -> None:
     assert "Push-Location $RuntimeRoot" in text
     assert "select_daily_queue_item(queue, AppSettings().database_url" in text
     assert text.index("select_daily_queue_item") < text.index("if (-not $Prepare)")
-    assert '$DatabasePath = Join-Path $RuntimeRoot' not in text
+    assert "$DatabasePath = Join-Path $RuntimeRoot" not in text
 
 
 def test_daily_operator_closed_gop_fallback_is_narrow_and_deterministic() -> None:

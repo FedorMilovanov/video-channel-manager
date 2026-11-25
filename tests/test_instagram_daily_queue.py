@@ -98,7 +98,6 @@ def test_frozen_snapshot_rebuild_identifies_real_title_authors() -> None:
     assert by_id["Sdv8puPeJYw"].author == "Сергей Есенин"
 
 
-
 def _ledger(tmp_path, rows=()):
     database = tmp_path / "configured-ledger.db"
     with closing(sqlite3.connect(database)) as connection, connection:
@@ -161,3 +160,29 @@ def test_daily_selection_requires_existing_ledger_and_exact_account(tmp_path):
     url = _ledger(tmp_path, [(first.publication_key, "other-account", "planned")])
     with pytest.raises(ValueError, match="account differs"):
         select_daily_queue_item(queue, url, first.source_id)
+
+
+def test_daily_selection_empty_and_complete_queue(tmp_path):
+    queue = _queue()
+    ready = sorted(
+        (item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at
+    )
+    url = _ledger(tmp_path, [(item.publication_key, queue.account_id, "published") for item in ready])
+    assert select_daily_queue_item(queue, url) is None
+    with pytest.raises(ValueError, match="not a ready queue item"):
+        select_daily_queue_item(queue, url, "missing-source")
+    non_ready = tuple(item for item in queue.items if item.status != "ready")
+    no_ready = queue.model_copy(update={"items": non_ready, "item_count": len(non_ready), "ready_count": 0})
+    with pytest.raises(ValueError, match="no ready Instagram Reels"):
+        select_daily_queue_item(no_ready, url)
+
+
+def test_daily_selection_missing_key_uses_existing_ledger_read_only(tmp_path):
+    queue = _queue()
+    first = min((item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at)
+    url = _ledger(tmp_path)
+    database = tmp_path / "configured-ledger.db"
+    before = database.read_bytes()
+    assert select_daily_queue_item(queue, url) == first
+    assert select_daily_queue_item(queue, url, first.source_id) == first
+    assert database.read_bytes() == before
