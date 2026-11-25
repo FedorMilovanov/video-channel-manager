@@ -77,6 +77,8 @@ Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](
 
 ## Provider mutation boundary
 
+Read [routine release operations and failure ownership](docs/operations/routine-release-and-failure-ownership.md) for ordinary owner-authorized publication and operational incidents. Do not make the owner repeat unchanged scope approval or enter internal digests; retain independent review, exact-state and client authorization gates. Distinguish a client-side rejection from transport uncertainty, repository guards, OAuth and provider quota. Preserve the error and respect supported review/appeal; do not replay or reroute a client-rejected action to defeat the decision.
+
 Release/content approval and provider execution authority are separate gates.
 
 Before any provider mutation:
