@@ -256,9 +256,8 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
             "Lord God YouTube description is NOT cleanly formatted or retains obsolete content: " + ", ".join(problems)
         )
 
-def plan_panorama_russian_metadata(
-    owner: dict[str, Any], playlist: dict[str, Any], *, video_id: str
-) -> dict[str, Any]:
+
+def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, Any], *, video_id: str) -> dict[str, Any]:
     """Plan an exact locale-map reduction offline; never grant write authority.
 
     Scope is proven by the frozen 68-member owner playlist, not a title or URL
@@ -289,17 +288,25 @@ def plan_panorama_russian_metadata(
     raw = owner.get("raw")
     if member is None or not isinstance(raw, dict):
         raise ValueError("Missing exact Panorama target evidence")
-    snippet, status, details, locales = (
-        raw.get(key) for key in ("snippet", "status", "contentDetails", "localizations")
-    )
-    if not all(isinstance(value, dict) for value in (snippet, status, details, locales)):
+    snippet = raw.get("snippet")
+    status = raw.get("status")
+    details = raw.get("contentDetails")
+    locales = raw.get("localizations")
+    if (
+        not isinstance(snippet, dict)
+        or not isinstance(status, dict)
+        or not isinstance(details, dict)
+        or not isinstance(locales, dict)
+    ):
         raise ValueError("Incomplete owner response; do not infer absent locales")
     title, description = snippet.get("title"), snippet.get("description")
     if (
         owner.get("schema") != "panorama-exact-owner-one-probe-v1"
         or owner.get("status") != "OWNER_READ_SUCCESS"
         or owner.get("read_only") is not True
+        or type(owner.get("provider_writes")) is not int
         or owner.get("provider_writes") != 0
+        or type(owner.get("api_read_operations")) is not int
         or owner.get("api_read_operations") != 1
         or owner.get("video_id") != video_id
         or owner.get("owner_channel_id_expected") != LORD_GOD_OWNER_CHANNEL

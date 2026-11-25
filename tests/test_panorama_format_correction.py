@@ -117,6 +117,7 @@ def test_archived_preview_rederivation(tmp_path: Path, defect: str) -> None:
         assert report["stamps_verified"] == 2
         assert report["is_executable_plan"] is False
 
+
 def _russian_metadata_evidence() -> tuple[dict, dict]:
     from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
 
@@ -182,9 +183,7 @@ def test_panorama_russian_metadata_reduction_is_exact_and_inert() -> None:
     baseline = copy.deepcopy(owner)
     result = plan_panorama_russian_metadata(owner, playlist, video_id=owner["video_id"])
     assert result["removed_locale_keys"] == ["de", "en-US"]
-    assert result["after_localizations"] == {
-        key: owner["raw"]["localizations"][key] for key in ("ru", "ru-RU")
-    }
+    assert result["after_localizations"] == {key: owner["raw"]["localizations"][key] for key in ("ru", "ru-RU")}
     assert result["before_localizations"] == baseline["raw"]["localizations"]
     assert result["before_sha256"] == canonical_sha256(baseline["raw"]["localizations"])
     assert result["after_sha256"] == canonical_sha256(result["after_localizations"])
@@ -215,10 +214,27 @@ def test_panorama_russian_metadata_explicit_empty_or_reduced_map(keys: list[str]
 @pytest.mark.parametrize(
     "defect",
     [
-        "missing_map", "foreign_owner", "bad_revision", "unknown_id", "partial_playlist",
-        "duplicate_member", "foreign_member", "wrong_title", "non_russian_default",
-        "non_russian_audio", "missing_tags", "malformed_locale", "russian_drift",
-        "duplicate_locale_case", "wrong_locale_keys", "write_receipt",
+        "missing_map",
+        "foreign_owner",
+        "bad_revision",
+        "unknown_id",
+        "partial_playlist",
+        "duplicate_member",
+        "foreign_member",
+        "wrong_title",
+        "non_russian_default",
+        "non_russian_audio",
+        "missing_tags",
+        "malformed_locale",
+        "russian_drift",
+        "duplicate_locale_case",
+        "wrong_locale_keys",
+        "write_receipt",
+        "boolean_reads",
+        "boolean_writes",
+        "missing_snippet",
+        "missing_status",
+        "missing_details",
     ],
 )
 def test_panorama_russian_metadata_fails_closed(defect: str) -> None:
@@ -255,6 +271,16 @@ def test_panorama_russian_metadata_fails_closed(defect: str) -> None:
         raw["localizations"]["RU"] = raw["localizations"]["ru"]
     elif defect == "write_receipt":
         owner["read_only"] = False
+    elif defect == "boolean_reads":
+        owner["api_read_operations"] = True
+    elif defect == "boolean_writes":
+        owner["provider_writes"] = False
+    elif defect == "missing_snippet":
+        raw.pop("snippet")
+    elif defect == "missing_status":
+        raw.pop("status")
+    elif defect == "missing_details":
+        raw.pop("contentDetails")
     owner["locale_keys"] = sorted(raw.get("localizations", {}))
     if defect == "wrong_locale_keys":
         owner["locale_keys"] = []
