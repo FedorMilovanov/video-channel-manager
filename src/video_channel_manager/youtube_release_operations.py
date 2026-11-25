@@ -29,6 +29,8 @@ from video_channel_manager.youtube_stable_state import (
     write_new_json,
 )
 from video_channel_manager.youtube_upload_plan import (
+    JOURNAL_SCHEMA,
+    JOURNAL_VERSION,
     UploadPlanError,
     adopted_journal,
     canonical_sha256,
@@ -364,8 +366,8 @@ def release_status_summary(release: dict[str, Any]) -> dict[str, Any]:
                 "child_id": child["child_id"],
                 "kind": child["kind"],
                 "provider_effect": child["provider_effect"],
-                "evidence_sha256": child["evidence_sha256"],
-                "updated_at": child["updated_at"],
+                "evidence_sha256": child.get("evidence_sha256"),
+                "updated_at": child.get("updated_at"),
             }
             for child in children
         ],
@@ -390,7 +392,35 @@ def read_release_status(plan_path: Path, data_dir: Path) -> dict[str, Any]:
     for field, value in expected.items():
         if journal.get(field) != value:
             raise UploadPlanError(f"Release status journal identity mismatch: {field}.")
+    if journal.get("schema_name") != JOURNAL_SCHEMA or journal.get("schema_version") != JOURNAL_VERSION:
+        raise UploadPlanError("Unsupported release status journal schema.")
+    if "release" not in journal:
+        if (
+            journal.get("state") != "planned"
+            or journal.get("provider_effect") != "not_dispatched"
+            or journal.get("active_intent_sha256") != plan["source_intent_sha256"]
+            or "release_plan_sha256" in journal
+            or "release_absence_evidence_sha256" in journal
+        ):
+            raise UploadPlanError("Release status cannot establish an uninitialized planned journal.")
+        return {
+            "schema_name": "video-manager.youtube-release-status-summary",
+            "schema_version": 1,
+            "release_plan_sha256": plan["release_plan_sha256"],
+            **expected,
+            "disposition": "initialization_required",
+            "blocking_child_ids": [],
+            "next_child_id": None,
+            "verified_child_count": 0,
+            "child_count": 0,
+            "provider_writes_performed": 0,
+            "grants_execution_authority": False,
+            "children": [],
+        }
     release = release_from_journal(journal, plan=plan)
+    playlist_ids = [child["target_id"] for child in release["children"] if child["kind"] == "playlist_membership"]
+    if playlist_ids != plan["playlist_ids"]:
+        raise UploadPlanError("Release status playlist children differ from the exact release plan.")
     return {
         **release_status_summary(release),
         **expected,
