@@ -82,9 +82,9 @@ LIVE_WINDOW_HOUR = (12, 13)
 # q-11, q-12, q-19).  The hold is now a Telegram send/reissue gate only:
 # the correction itself authorizes no new channel post.
 CHARNOCK_EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
-# The only manual recovery fallback: future slots in the already-approved immutable manifest.
-# Missed 06-08 and editorial-HOLD 13 may NOT be dispatched.
-OWNER_DISPATCH_IDS = frozenset(f"lordchrist-telegraph-charnock-{i:02d}" for i in range(9, 13))
+# Existing owner-only same-day fallback for 10-12; no expansion of manual authority.
+# V3 slots 06-08 are schedule-only; 09 is terminal and 13 has a SEND HOLD.
+OWNER_DISPATCH_IDS = frozenset(f"lordchrist-telegraph-charnock-{i:02d}" for i in range(10, 13))
 OWNER_DISPATCH_CONFIRM = "RUN_APPROVED_CHARNOCK_SLOT_ONCE"
 # Read-only backoff after the single allowed sendMessage; never retry the provider mutation.
 NEW_POST_PUBLIC_READBACK_DELAYS = (0, 2, 4, 8, 16, 30, 45)
@@ -363,7 +363,7 @@ def _require_approved_recovery_trigger(args: argparse.Namespace) -> None:
     if event != "workflow_dispatch" or os.environ.get("GITHUB_ACTOR") != "FedorMilovanov":
         raise RuntimeError("Only scheduled or authenticated owner-only dispatch may recover Charnock")
     if args.publication_id not in OWNER_DISPATCH_IDS:
-        raise RuntimeError("Dispatch cannot restore missed 06-08 or editorial HOLD 13")
+        raise RuntimeError("Dispatch cannot restore schedule-only 06-08, terminal 09 or editorial HOLD 13")
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if not event_path:
         raise RuntimeError("Missing authenticated GitHub event payload")
