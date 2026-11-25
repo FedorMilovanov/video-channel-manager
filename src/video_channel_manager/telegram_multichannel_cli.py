@@ -27,8 +27,10 @@ from video_channel_manager.telegram_multichannel_state import (
     initialize_ledger,
     load_ledger,
     prepare_next,
+    require_audio_channel_admission,
     save_ledger,
     skip_expired_pending,
+    strict_next_item,
     verify_dispatch_against_release,
     verify_persisted_intent,
 )
@@ -414,6 +416,11 @@ def _send_persisted_once(
     ledger_path = ledger_path.resolve()
     ledger = load_ledger(ledger_path, release)
     verify_persisted_intent(release, ledger, envelope)
+    item = verify_dispatch_against_release(release, envelope)
+    if isinstance(item.payload, GenericAudioPayload):
+        require_audio_channel_admission(
+            release, ledger_path, envelope.publication_id, current_intent_id=envelope.intent_id
+        )
     if outcome_path.exists():
         raise ValueError("Telegram outcome already exists; apply or reconcile it, never resend")
     claim, result_path = _local_dispatch_paths(ledger_path, envelope)
@@ -541,6 +548,9 @@ def main() -> int:
             expected_publication_id=args.publication_id,
             recover_stale_predecessors=args.recover_stale_predecessors,
         )
+        next_item, _ = strict_next_item(release, ledger)
+        if next_item is not None and isinstance(next_item.payload, GenericAudioPayload):
+            require_audio_channel_admission(release, args.ledger, next_item.publication_id)
         target = (
             _preflight_release_target(profile, release, args.binding)
             if args.binding is not None

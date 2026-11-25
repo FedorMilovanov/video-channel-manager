@@ -17,8 +17,14 @@ from video_channel_manager.telegram_multichannel_audio import (
     send_audio_once,
 )
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
-from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
-from video_channel_manager.telegram_multichannel_state import audit_audio_history, initialize_ledger, prepare_next
+from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release
+from video_channel_manager.telegram_multichannel_state import (
+    audit_audio_history,
+    initialize_ledger,
+    prepare_next,
+    require_audio_channel_admission,
+    save_ledger,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
@@ -397,3 +403,67 @@ def test_audio_history_rejects_wrong_ledger_channel_and_repeated_release(tmp_pat
         audit_audio_history(foreign, payload.publication_id, ((historical, ledger),))
     with pytest.raises(ValueError, match="repeated release identity"):
         audit_audio_history(candidate, payload.publication_id, ((historical, ledger), (historical, ledger)))
+
+
+def _save_audio_state(root, release, ledger):
+    directory = root / release.release_id
+    directory.mkdir(parents=True)
+    save_release(directory / "release.json", release)
+    ledger_path = directory / "ledger.json"
+    save_ledger(ledger_path, ledger)
+    return ledger_path
+
+
+@pytest.mark.parametrize("same_audio", [True, False])
+def test_canonical_audio_history_blocks_other_unresolved_release(tmp_path, monkeypatch, same_audio):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    original = _payload(profile, audio)
+    revised = _payload(profile, audio if same_audio else audio + b"x")
+    historical = _history_release(profile, original, "milovi-old-audio")
+    candidate = _history_release(profile, revised, "milovi-new-audio")
+    root = tmp_path / profile.project_key / "audio-releases"
+    old_ledger = initialize_ledger(historical)
+    new_ledger = initialize_ledger(candidate)
+    old_path = _save_audio_state(root, historical, old_ledger)
+    new_path = _save_audio_state(root, candidate, new_ledger)
+    require_audio_channel_admission(candidate, new_path, revised.publication_id, now=NOW)
+
+    prepared = prepare_next(
+        profile,
+        historical,
+        old_ledger,
+        run_id="123",
+        run_attempt="1",
+        github_sha="1" * 40,
+        github_workflow_sha="2" * 40,
+        mode="manual",
+        target=_target(profile),
+        expected_publication_id=original.publication_id,
+        now=NOW,
+    )
+    assert prepared.envelope is not None
+    save_ledger(old_path, old_ledger)
+    require_audio_channel_admission(
+        historical,
+        old_path,
+        original.publication_id,
+        current_intent_id=prepared.envelope.intent_id,
+        now=NOW,
+    )
+    with pytest.raises(ValueError, match="already published|unresolved channel"):
+        require_audio_channel_admission(candidate, new_path, revised.publication_id, now=NOW)
+
+
+def test_audio_admission_rejects_incomplete_state_checkout(tmp_path, monkeypatch):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    release = _history_release(profile, payload, "milovi-new-audio")
+    root = tmp_path / profile.project_key / "audio-releases"
+    ledger_path = _save_audio_state(root, release, initialize_ledger(release))
+    (root / "missing-release").mkdir()
+    with pytest.raises(ValueError, match="invalid Telegram release"):
+        require_audio_channel_admission(release, ledger_path, payload.publication_id, now=NOW)
+    with pytest.raises(ValueError, match="canonical channel"):
+        require_audio_channel_admission(release, tmp_path / "ledger.json", payload.publication_id, now=NOW)

@@ -99,6 +99,29 @@ unobserved provider history, retagged/reencoded audio or concurrent writers.
 It is an internal building block for protected channel-state orchestration,
 not another owner approval or standalone publication authorization.
 
+### Canonical audio channel state
+
+The generic audio prepare and send-once CLI paths now derive their channel-wide
+history from the canonical checkout layout, not from a caller-selected list:
+
+```text
+content/telegram/<project_key>/audio-releases/<release_id>/release.json
+content/telegram/<project_key>/audio-releases/<release_id>/ledger.json
+```
+
+All existing audio releases must be retained in the same protected state
+branch. The gate rejects known duplicate bytes or publication IDs, other
+unresolved audio dispatches (even different bytes), and the channel-wide
+daily verified limit. The current exact persisted intent is allowed at the
+send stage, not any other attempt. Missing/mismatched state fails closed.
+No new owner flags are needed. This is a check of the checked-out state;
+it does not prove that the branch is current or that historical Telegram
+posts outside these ledgers are covered. The orchestration must still
+initialize the protected state explicitly, reconcile prior provider history,
+serialize the channel writer, push intent with a non-forced remote update
+and verify the exact persisted remote state before mutation. Do not copy
+this checkout to create a second independent writer.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.

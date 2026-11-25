@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_editorial_hold import require_execution_not_held
-from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
+from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, load_release
 from video_channel_manager.telegram_multichannel_audio import GenericAudioPayload
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
@@ -415,6 +415,83 @@ def audit_audio_history(
                 )
             )
     return tuple(matches)
+
+
+def require_audio_channel_admission(
+    release: GenericReleaseQueue,
+    ledger_path: Path,
+    publication_id: str,
+    *,
+    current_intent_id: str | None = None,
+    now: datetime | None = None,
+) -> None:
+    """Check all canonical audio release ledgers in one serialized state checkout.
+
+    The caller must own the channel writer and persist the prepared intent to
+    the protected remote state before sending. A local checkout alone cannot
+    prove remote history completeness or cross-machine exclusivity.
+    """
+    item = next((item for item in release.items if item.publication_id == publication_id), None)
+    if item is None or not isinstance(item.payload, GenericAudioPayload):
+        raise ValueError("audio admission requires an exact audio publication")
+    ledger_path = ledger_path.resolve()
+    release_dir = ledger_path.parent
+    channel_dir = release_dir.parent
+    if (
+        ledger_path.name != "ledger.json"
+        or release_dir.name != release.release_id
+        or channel_dir.name != "audio-releases"
+        or channel_dir.parent.name != release.project_key
+    ):
+        raise ValueError("audio admission requires the canonical channel audio-releases state layout")
+
+    history: list[tuple[GenericReleaseQueue, GenericPublicationLedger]] = []
+    for directory in sorted(channel_dir.iterdir()):
+        if not directory.is_dir() or directory.is_symlink():
+            raise ValueError("unexpected entry in canonical audio-releases state")
+        historical = load_release(directory / "release.json")
+        if directory.name != historical.release_id:
+            raise ValueError("audio release directory differs from immutable release identity")
+        if not all(isinstance(entry.payload, GenericAudioPayload) for entry in historical.items):
+            raise ValueError("canonical audio history cannot contain a non-audio release")
+        ledger = load_ledger(directory / "ledger.json", historical)
+        history.append((historical, ledger))
+
+    if not any(historical.digest == release.digest for historical, _ in history):
+        raise ValueError("canonical audio state does not contain the exact current release")
+
+    def own_attempt(historical: GenericReleaseQueue, entry: GenericLedgerEntry) -> bool:
+        return (
+            current_intent_id is not None
+            and historical.digest == release.digest
+            and entry.publication_id == publication_id
+            and entry.intent_id == current_intent_id
+            and entry.state == "dispatching"
+        )
+
+    matches = audit_audio_history(release, publication_id, tuple(history))
+    for match in matches:
+        historical, ledger = next(pair for pair in history if pair[0].release_id == match.release_id)
+        if not own_attempt(historical, ledger.entries[match.publication_id]):
+            raise ValueError(f"audio already published or possibly dispatched: {match.publication_id}")
+
+    today = publication_local_date(now or utc_now(), release.timezone)
+    verified_today = 0
+    for historical, ledger in history:
+        for entry in ledger.entries.values():
+            if entry.provider_effect in {"verified", "may_exist"} and entry.actual_chat_id != release.chat_id:
+                raise ValueError("historical audio effect differs from canonical channel")
+            if own_attempt(historical, entry):
+                continue
+            if entry.provider_effect == "may_exist":
+                raise ValueError(f"unresolved channel audio dispatch: {entry.publication_id}")
+            if entry.provider_effect == "verified":
+                if entry.publication_id == publication_id:
+                    raise ValueError(f"publication ID already verified in audio history: {publication_id}")
+                if entry.published_at_utc is not None:
+                    verified_today += publication_local_date(entry.published_at_utc, release.timezone) == today
+    if verified_today >= release.daily_verified_limit:
+        raise ValueError("channel-wide audio daily verified limit already used")
 
 
 def strict_next_item(
