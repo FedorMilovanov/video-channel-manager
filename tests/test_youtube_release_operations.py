@@ -533,6 +533,53 @@ def test_status_prints_safe_release_summary(capsys, tmp_path: Path) -> None:
     assert "identity mismatch: target_channel_id" in rejected.output
 
 
+def test_release_status_distinguishes_uninitialized_plan(tmp_path: Path) -> None:
+    intent = _intent(tmp_path)
+    plan = build_release_plan(intent)
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    data_dir = tmp_path / "state"
+    stable = journal_path(data_dir, plan["upload_key_sha256"])
+    journal = planned_journal(intent)
+    write_json_atomic(stable, journal)
+    before = stable.read_bytes()
+    summary = read_release_status(plan_path, data_dir)
+    assert summary["disposition"] == "initialization_required"
+    assert summary["next_child_id"] is None
+    assert summary["children"] == []
+    assert summary["grants_execution_authority"] is False
+    assert stable.read_bytes() == before
+
+    journal["active_intent_sha256"] = "sha256:" + "e" * 64
+    write_json_atomic(stable, journal)
+    with pytest.raises(UploadPlanError, match="uninitialized planned journal"):
+        read_release_status(plan_path, data_dir)
+
+    journal["active_intent_sha256"] = intent["intent_sha256"]
+    journal["schema_version"] = "1.0"
+    write_json_atomic(stable, journal)
+    with pytest.raises(UploadPlanError, match="Unsupported release status journal schema"):
+        read_release_status(plan_path, data_dir)
+
+
+def test_release_status_rejects_different_playlist_children(tmp_path: Path) -> None:
+    intent = _intent(tmp_path)
+    plan = build_release_plan(intent, playlist_ids=["PL-one"])
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    data_dir = tmp_path / "state"
+    stable = journal_path(data_dir, plan["upload_key_sha256"])
+    journal = planned_journal(intent)
+    journal["release"] = build_release_state(
+        upload_key_sha256=plan["upload_key_sha256"],
+        release_plan_sha256=plan["release_plan_sha256"],
+        playlist_ids=["PL-other"],
+    )
+    write_json_atomic(stable, journal)
+    with pytest.raises(UploadPlanError, match="playlist children differ"):
+        read_release_status(plan_path, data_dir)
+
+
 def test_release_status_summary_never_exposes_runtime(tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     state = mark_existing_target_absent(
