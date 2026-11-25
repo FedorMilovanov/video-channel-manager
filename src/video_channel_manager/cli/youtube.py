@@ -1350,5 +1350,7 @@ def apply_panorama_russian_metadata(
             writer.close()
         console.print(json.dumps(receipt, ensure_ascii=True, indent=2))
     except (AccountNotFoundError, OSError, ValueError, YouTubeWriteError) as exc:
-        console.print(f"[red]Panorama reduction blocked or requires read-only reconciliation; never replay:[/red] {exc}")
+        console.print(
+            f"[red]Panorama reduction blocked or requires read-only reconciliation; never replay:[/red] {exc}"
+        )
         raise typer.Exit(code=2) from exc
