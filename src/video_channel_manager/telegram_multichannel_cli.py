@@ -466,11 +466,13 @@ def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: P
     return root
 
 
-def _persist_remote_audio_claim(root: Path, profile: TelegramChannelProfile, claim: Path) -> None:
-    relative = claim.relative_to(root).as_posix()
-    _state_git(root, "add", "--", relative)
-    # A unique commit is essential: two identical trees from the same parent
-    # must never let a losing push be mistaken for an already-up-to-date win.
+def _persist_remote_audio_state(
+    root: Path, profile: TelegramChannelProfile, phase: str, *paths: Path
+) -> None:
+    relative = [path.relative_to(root).as_posix() for path in paths]
+    _state_git(root, "add", "--", *relative)
+    # Unique commits prevent two identical trees from the same parent
+    # from turning a losing push into an already-up-to-date success.
     nonce = secrets.token_hex(16)
     _state_git(
         root,
@@ -481,14 +483,19 @@ def _persist_remote_audio_claim(root: Path, profile: TelegramChannelProfile, cla
         "commit",
         "--only",
         "-m",
-        f"Claim Telegram audio dispatch {nonce}",
+        f"Record Telegram audio {phase} {nonce}",
         "--",
-        relative,
+        *relative,
     )
-    claimed_head = _state_git(root, "rev-parse", "HEAD")
+    committed_head = _state_git(root, "rev-parse", "HEAD")
     _state_git(root, "push", "--no-force", "--no-follow-tags", "origin", f"HEAD:refs/heads/{profile.state_branch}")
-    if _remote_state_head(root, profile.state_branch) != claimed_head:
-        raise ValueError("remote audio claim was not verified; reconcile before retrying")
+    if _remote_state_head(root, profile.state_branch) != committed_head:
+        raise ValueError(f"remote audio {phase} was not verified; reconcile before retrying")
+
+
+def _audio_intent_path(ledger_path: Path, envelope: GenericDispatchEnvelope) -> Path:
+    key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
+    return ledger_path.resolve().parent / ".ledger.json.dispatch-intents" / f"{key}.json"
 
 
 def _send_persisted_once(
@@ -520,6 +527,13 @@ def _send_persisted_once(
     state_root = (
         _require_current_audio_state(profile, ledger_path) if isinstance(item.payload, GenericAudioPayload) else None
     )
+    if state_root is not None:
+        intent_path = _audio_intent_path(ledger_path, envelope)
+        relative_intent = intent_path.relative_to(state_root).as_posix()
+        if _state_git(state_root, "ls-files", "-v", "--", relative_intent) != f"H {relative_intent}":
+            raise ValueError("audio dispatch requires the exact committed intent envelope")
+        if intent_path.is_symlink() or _load_model(intent_path, GenericDispatchEnvelope) != envelope:
+            raise ValueError("audio dispatch differs from the committed intent envelope")
     claim.parent.mkdir(parents=True, exist_ok=True)
     try:
         with claim.open("x", encoding="utf-8", newline="\n") as handle:
@@ -532,12 +546,18 @@ def _send_persisted_once(
     # Audio claims must win the remote non-forced update before dispatch.
     # An interrupted or losing process retains its claim and cannot send again.
     if state_root is not None:
-        _persist_remote_audio_claim(state_root, profile, claim)
+        _persist_remote_audio_state(state_root, profile, "claim", claim)
     outcome = _send_exact_payload(profile, release, ledger, envelope)
     if outcome.intent_id != envelope.intent_id:
         raise ValueError("new Telegram outcome is not bound to the consumed intent")
     # Persist the canonical result before exporting it to the workflow handoff.
     _write_atomic_outcome(result_path, outcome)
+    if state_root is not None:
+        # The immutable result and its ledger transition become visible together.
+        # If commit/push fails, retain the local result and the remote claim.
+        apply_provider_outcome(ledger, envelope, outcome)
+        save_ledger(ledger_path, ledger)
+        _persist_remote_audio_state(state_root, profile, "outcome", result_path, ledger_path)
     _write_atomic_outcome(outcome_path, outcome)
     return outcome
 
@@ -645,7 +665,9 @@ def main() -> int:
             recover_stale_predecessors=args.recover_stale_predecessors,
         )
         next_item, _ = strict_next_item(release, ledger)
+        audio_state_root = None
         if next_item is not None and isinstance(next_item.payload, GenericAudioPayload):
+            audio_state_root = _require_current_audio_state(profile, args.ledger.resolve())
             require_audio_channel_admission(release, args.ledger, next_item.publication_id)
         target = (
             _preflight_release_target(profile, release, args.binding)
@@ -682,6 +704,12 @@ def main() -> int:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))
             return 3
         save_ledger(args.ledger, ledger)
+        if audio_state_root is not None:
+            intent_path = _audio_intent_path(args.ledger, prepared.envelope)
+            _write_model(intent_path, prepared.envelope)
+            _persist_remote_audio_state(
+                audio_state_root, profile, "intent", args.ledger.resolve(), intent_path
+            )
         _write_model(args.envelope_output, prepared.envelope)
         print(
             json.dumps(
@@ -741,6 +769,9 @@ def main() -> int:
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
+        item = verify_dispatch_against_release(release, envelope)
+        if isinstance(item.payload, GenericAudioPayload):
+            raise ValueError("audio outcomes are persisted by send-once; reconcile the exact remote claim and result")
         verify_persisted_intent(release, ledger, envelope)
         claim, _ = _local_dispatch_paths(args.ledger, envelope)
         if args.command == "recover-outcome":

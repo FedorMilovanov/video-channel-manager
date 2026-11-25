@@ -123,8 +123,14 @@ committed intent using a unique non-forced Git commit and verifies remote
 readback before the existing sender can run. A stale clone, losing push,
 existing claim or uncertain Git result stops before dispatch. This does not
 prove that historical Telegram posts outside the ledgers are covered.
-Protected state initialization, history reconciliation, automatic remote
-intent/result persistence and the single operator entrypoint remain required.
+Audio prepare now commits the exact intent envelope and ledger together
+before exporting the envelope. Audio send-once requires that tracked
+envelope and commits the result and resulting ledger together before
+exporting a receipt. A failed post-dispatch Git update retains the local
+result and remote claim; reconcile that exact commit/receipt without another
+send. Generic apply-outcome and recover-outcome remain for non-audio
+workflows, not a second audio state writer. Protected state initialization,
+history reconciliation and the single operator entrypoint remain required.
 Do not use another writer or delete a claim to force a replay.
 
 ### Required checks before the first audio post
@@ -132,7 +138,7 @@ Do not use another writer or delete a claim to force a replay.
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.
 2. Freeze one exact `GenericAudioPayload` with unmodified MP3 SHA-256/bytes, proven thumbnail, title/performer/duration, verified HTML caption and UTF-16 entities; do not claim the site URL works until HTTP 200 is confirmed.
 3. Separately review/authorize the immutable `GenericReleaseQueue`, initialize the dedicated state ledger and obtain an operation-specific execution gate. This discovery itself is **not** authority to post.
-4. Use only the current-main `telegram_multichannel_cli` workflow `initialize-ledger → prepare → verify-intent → send-once → apply-outcome`, recording durable intent before `sendAudio`. A possible remote effect `may_exist` blocks any blind repeat.
+4. Use only the current-main `telegram_multichannel_cli` workflow `initialize-ledger → prepare → verify-intent → send-once` for audio. Prepare and send-once persist remote intent and result respectively; never apply the audio outcome a second time. A possible remote effect `may_exist` blocks any blind repeat.
 5. Verify the exact returned numeric chat ID, actual MP3, caption/entities, positive message ID and permalink `https://t.me/thelegendarypoet/<message_id>`; store the immutable receipt before reporting success.
 
 Until that exact verified receipt exists, the state is **target binding verified, audio publication not dispatched**.

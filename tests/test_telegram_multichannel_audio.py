@@ -17,13 +17,18 @@ from video_channel_manager.telegram_multichannel_audio import (
     render_audio_payload,
     send_audio_once,
 )
-from video_channel_manager.telegram_multichannel_cli import _require_current_audio_state, _send_persisted_once
+from video_channel_manager.telegram_multichannel_cli import (
+    _audio_intent_path,
+    _require_current_audio_state,
+    _send_persisted_once,
+)
 from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release
 from video_channel_manager.telegram_multichannel_state import (
     audit_audio_history,
     initialize_ledger,
+    load_ledger,
     prepare_next,
     require_audio_channel_admission,
     save_ledger,
@@ -511,6 +516,9 @@ def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_a
     _git(first, "config", "user.email", "test@example.invalid")
     path = _save_audio_state(first / "content/telegram" / profile.project_key / "audio-releases", release, ledger)
     relative = path.relative_to(first)
+    intent = _audio_intent_path(path, envelope)
+    intent.parent.mkdir()
+    intent.write_text(envelope.model_dump_json(), encoding="utf-8")
     _git(first, "add", ".")
     _git(first, "commit", "-m", "persist exact intent")
     _git(first, "remote", "add", "origin", str(remote))
@@ -557,6 +565,13 @@ def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_a
 
     fresh = tmp_path / "fresh"
     _git(tmp_path, "clone", "-b", profile.state_branch, str(remote), str(fresh))
-    with pytest.raises(ValueError, match="intent already claimed"):
+    final = load_ledger(fresh / relative, release)
+    assert final.entries[envelope.publication_id].state == "unknown"
+    archived = _audio_intent_path(fresh / relative, envelope)
+    assert archived.is_file()
+    result = archived.parent.parent / ".ledger.json.dispatch-claims" / (archived.stem + ".outcome.json")
+    outcome = GenericProviderOutcome.model_validate_json(result.read_text(encoding="utf-8"))
+    assert outcome.provider_effect == "may_exist"
+    with pytest.raises(ValueError, match="conservative dispatching state"):
         _send_persisted_once(profile, release, fresh / relative, envelope, tmp_path / "fresh-outcome.json")
     assert len(calls) == 1
