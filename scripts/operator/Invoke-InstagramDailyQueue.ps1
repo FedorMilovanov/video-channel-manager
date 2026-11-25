@@ -44,53 +44,22 @@ if (-not (Test-Path -LiteralPath $VideoManager) -or -not (Test-Path -LiteralPath
 }
 $env:PYTHONPATH = Join-Path $RepositoryRoot "src"
 
-$DatabasePath = Join-Path $RuntimeRoot "data\video_manager.db"
-$LedgerStatuses = @{}
-if (Test-Path -LiteralPath $DatabasePath) {
-    $StatusJson = & $PythonExe -c 'import json,sqlite3,sys; c=sqlite3.connect(sys.argv[1]); print(json.dumps(dict(c.execute("select publication_key,status from instagram_publications").fetchall())))' $DatabasePath
-    if ($LASTEXITCODE -ne 0) { throw "Failed to read Instagram durable ledger." }
-    if ($StatusJson) {
-        $StatusObject = $StatusJson | ConvertFrom-Json
-        foreach ($Property in $StatusObject.PSObject.Properties) {
-            $LedgerStatuses[$Property.Name] = [string]$Property.Value
-        }
-    }
+# Resolve configuration in the same runtime directory used by the later
+# installed CLI. The Python selector opens only the existing ledger, read-only.
+Push-Location $RuntimeRoot
+try {
+    $SelectionJson = & $PythonExe -c 'import json, sys; from pathlib import Path; from video_channel_manager.config.settings import AppSettings; from video_channel_manager.instagram.daily_queue import InstagramDailyQueue, select_daily_queue_item; queue = InstagramDailyQueue.model_validate_json(Path(sys.argv[1]).read_text(encoding="utf-8-sig")); item = select_daily_queue_item(queue, AppSettings().database_url, sys.argv[2] if len(sys.argv) > 2 else None); print(json.dumps({"queue": queue.model_dump(mode="json", exclude={"items"}), "selected": item.model_dump(mode="json") if item is not None else None}, ensure_ascii=True))' $QueuePath $SourceId
+    if ($LASTEXITCODE -ne 0) { throw "Instagram daily queue selection refused; reconcile before advancing." }
 }
-
-$Queue = Get-Content -Raw -LiteralPath $QueuePath | ConvertFrom-Json
-$Ready = @(
-    $Queue.items |
-        Where-Object { $_.status -eq "ready" } |
-        Sort-Object { [DateTimeOffset]$_.scheduled_at }
-)
-if ($Ready.Count -eq 0) {
-    throw "Queue has no ready Instagram Reels."
+finally {
+    Pop-Location
 }
-
-if ($SourceId) {
-    $Selected = $Ready | Where-Object { $_.source_id -eq $SourceId } | Select-Object -First 1
-    if (-not $Selected) { throw "SourceId '$SourceId' is not a ready queue item." }
-    $ExplicitStatus = $LedgerStatuses[[string]$Selected.publication_key]
-    if ($ExplicitStatus -eq "published") {
-        throw "SourceId '$SourceId' is already published according to the durable ledger."
-    }
-}
-else {
-    $Selected = $null
-    foreach ($Candidate in $Ready) {
-        $LedgerStatus = $LedgerStatuses[[string]$Candidate.publication_key]
-        if ($LedgerStatus -eq "published") { continue }
-        if ($LedgerStatus -and $LedgerStatus -ne "planned") {
-            throw ("Instagram daily queue is fail-closed on {0}: durable ledger status is {1}; reconcile before advancing." -f
-                $Candidate.publication_key, $LedgerStatus)
-        }
-        $Selected = $Candidate
-        break
-    }
-    if (-not $Selected) {
-        Write-Host "All ready Instagram Reel publication keys are already published."
-        exit 0
-    }
+$Selection = $SelectionJson | ConvertFrom-Json
+$Queue = $Selection.queue
+$Selected = $Selection.selected
+if (-not $Selected) {
+    Write-Host "All ready Instagram Reel publication keys are already published."
+    exit 0
 }
 
 Write-Host ("Instagram daily queue: {0} total / {1} ready / {2} published / {3} rights-review" -f
