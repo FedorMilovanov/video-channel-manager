@@ -1,5 +1,9 @@
+import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import pytest
 
 from video_channel_manager.instagram.daily_queue import (
     PUBLISHED_SOURCE_IDS,
@@ -7,6 +11,7 @@ from video_channel_manager.instagram.daily_queue import (
     build_legendary_poet_daily_queue,
     detect_author,
     queue_sha256,
+    select_daily_queue_item,
 )
 
 SNAPSHOT = (
@@ -91,3 +96,68 @@ def test_frozen_snapshot_rebuild_identifies_real_title_authors() -> None:
     assert by_id["d50lIlqZed4"].author == "Анна Ахматова"
     assert by_id["FKtflEKl-NY"].author == "Александр Пушкин"
     assert by_id["Sdv8puPeJYw"].author == "Сергей Есенин"
+
+
+
+def _ledger(tmp_path, rows=()):
+    database = tmp_path / "configured-ledger.db"
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            "create table instagram_publications (publication_key text primary key, account_id text, status text)"
+        )
+        connection.executemany("insert into instagram_publications values (?, ?, ?)", rows)
+    return f"sqlite:///{database.as_posix()}"
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        "container_requested",
+        "container_unknown",
+        "container_created",
+        "processing",
+        "ready",
+        "publish_requested",
+        "publish_unknown",
+        "published_unresolved",
+        "retryable_failure",
+        "terminal_failure",
+        "unexpected_status",
+    ],
+)
+def test_daily_selection_refuses_nonfinal_state_for_both_modes(tmp_path, status):
+    queue = _queue()
+    first = min((item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at)
+    url = _ledger(tmp_path, [(first.publication_key, queue.account_id, status)])
+    for source_id in (None, first.source_id):
+        with pytest.raises(ValueError, match="durable ledger status is"):
+            select_daily_queue_item(queue, url, source_id)
+
+
+def test_daily_selection_skips_published_but_allows_planned(tmp_path):
+    queue = _queue()
+    first, second = sorted(
+        (item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at
+    )[:2]
+    url = _ledger(
+        tmp_path,
+        [(first.publication_key, queue.account_id, "published"), (second.publication_key, queue.account_id, "planned")],
+    )
+    assert select_daily_queue_item(queue, url) == second
+    assert select_daily_queue_item(queue, url, second.source_id) == second
+    with pytest.raises(ValueError, match="already published"):
+        select_daily_queue_item(queue, url, first.source_id)
+
+
+def test_daily_selection_requires_existing_ledger_and_exact_account(tmp_path):
+    queue = _queue()
+    first = min((item for item in queue.items if item.status == "ready"), key=lambda item: item.scheduled_at)
+    absent = tmp_path / "absent.db"
+    with pytest.raises(ValueError, match="ledger is missing"):
+        select_daily_queue_item(queue, f"sqlite:///{absent.as_posix()}")
+    assert not absent.exists()
+    with pytest.raises(ValueError, match="file-backed SQLite"):
+        select_daily_queue_item(queue, "sqlite:///:memory:")
+    url = _ledger(tmp_path, [(first.publication_key, "other-account", "planned")])
+    with pytest.raises(ValueError, match="account differs"):
+        select_daily_queue_item(queue, url, first.source_id)
