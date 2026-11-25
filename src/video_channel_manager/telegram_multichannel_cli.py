@@ -117,6 +117,7 @@ def parser() -> argparse.ArgumentParser:
     recover.add_argument("--release", type=Path, required=True)
     recover.add_argument("--ledger", type=Path, required=True)
     recover.add_argument("--envelope", type=Path, required=True)
+    recover.add_argument("--profile", type=Path, help="Required for recovery of remote audio state.")
 
     audio_history = sub.add_parser("audit-audio-history")
     audio_history.add_argument("--release", type=Path, required=True)
@@ -443,13 +444,19 @@ def _remote_state_head(root: Path, branch: str) -> str:
     return expected[0]
 
 
-def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
+def _audio_state_root(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
     root = Path(_state_git(ledger_path.parent, "rev-parse", "--show-toplevel")).resolve()
     relative = ledger_path.relative_to(root)
     expected = Path("content/telegram") / profile.project_key / "audio-releases"
     if relative.parent.parent != expected:
         raise ValueError("audio ledger must be in the exact protected channel state checkout")
     _require_state_origin(root)
+    return root
+
+
+def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: Path) -> Path:
+    root = _audio_state_root(profile, ledger_path)
+    expected = Path("content/telegram") / profile.project_key / "audio-releases"
     if _state_git(root, "status", "--porcelain=v1", "--untracked-files=all"):
         raise ValueError("audio state checkout must be clean before dispatch")
     if _state_git(root, "rev-parse", "HEAD") != _remote_state_head(root, profile.state_branch):
@@ -485,6 +492,10 @@ def _persist_remote_audio_state(root: Path, profile: TelegramChannelProfile, pha
         "--",
         *relative,
     )
+    _push_audio_state(root, profile, phase)
+
+
+def _push_audio_state(root: Path, profile: TelegramChannelProfile, phase: str) -> None:
     committed_head = _state_git(root, "rev-parse", "HEAD")
     _state_git(root, "push", "--no-force", "--no-follow-tags", "origin", f"HEAD:refs/heads/{profile.state_branch}")
     if _remote_state_head(root, profile.state_branch) != committed_head:
@@ -494,6 +505,90 @@ def _persist_remote_audio_state(root: Path, profile: TelegramChannelProfile, pha
 def _audio_intent_path(ledger_path: Path, envelope: GenericDispatchEnvelope) -> Path:
     key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
     return ledger_path.resolve().parent / ".intents" / f"{key}.json"
+
+
+def _recover_remote_audio_outcome(
+    profile: TelegramChannelProfile,
+    release: GenericReleaseQueue,
+    ledger_path: Path,
+    envelope: GenericDispatchEnvelope,
+) -> GenericProviderOutcome:
+    """Finish only the exact recorded outcome; never invoke a provider sender."""
+    if release.profile_sha256 != profile.digest or release.project_key != profile.project_key:
+        raise ValueError("audio recovery profile differs from immutable release")
+    _require_release_target(release, envelope.target)
+    if not isinstance(verify_dispatch_against_release(release, envelope).payload, GenericAudioPayload):
+        raise ValueError("audio recovery requires an audio dispatch")
+    ledger_path = ledger_path.resolve()
+    root = _audio_state_root(profile, ledger_path)
+    if ledger_path.parent.name != release.release_id or ledger_path.name != "ledger.json":
+        raise ValueError("audio recovery requires the canonical release ledger")
+    claim, result = _local_dispatch_paths(ledger_path, envelope)
+    intent = _audio_intent_path(ledger_path, envelope)
+    release_path = ledger_path.parent / "release.json"
+    for path in (claim, result, intent, release_path):
+        if path.is_symlink() or path.parent.is_symlink():
+            raise ValueError("audio recovery artifacts must not be symlinks")
+    outcome = _load_local_outcome(ledger_path, envelope)
+    ledger_rel, result_rel = (path.relative_to(root).as_posix() for path in (ledger_path, result))
+    head = _state_git(root, "rev-parse", "HEAD")
+    remote = _remote_state_head(root, profile.state_branch)
+    committed = bool(_state_git(root, "ls-tree", "--name-only", head, "--", result_rel))
+    base = head
+    if committed:
+        # Only an exact outcome transaction (two paths, one parent) can be
+        # recovered. Never rebase, reset or replay a diverged state checkout.
+        parents = _state_git(root, "rev-list", "--parents", "-n", "1", head).split()
+        changed = _state_git(root, "diff-tree", "--no-commit-id", "--name-only", "-r", head).splitlines()
+        if len(parents) != 2 or set(changed) != {ledger_rel, result_rel}:
+            raise ValueError("audio recovery requires the exact local outcome commit")
+        base = parents[1]
+        if remote not in {base, head}:
+            raise ValueError("remote audio state diverged; reconcile without sending")
+    elif remote != head:
+        raise ValueError("remote audio state diverged; reconcile without sending")
+
+    def committed_model(path: Path, model: type[ModelT], revision: str = base) -> ModelT:
+        relative = path.relative_to(root).as_posix()
+        return model.model_validate_json(_state_git(root, "show", f"{revision}:{relative}"))
+
+    if committed_model(release_path, GenericReleaseQueue) != release:
+        raise ValueError("audio recovery release differs from committed release")
+    if any(committed_model(path, GenericDispatchEnvelope) != envelope for path in (claim, intent)):
+        raise ValueError("audio recovery differs from committed intent or claim")
+    before = committed_model(ledger_path, GenericPublicationLedger)
+    verify_persisted_intent(release, before, envelope)
+    expected = before.model_copy(deep=True)
+    apply_provider_outcome(expected, envelope, outcome)
+    local = load_ledger(ledger_path, release)
+    if local not in (before, expected):
+        raise ValueError("audio recovery ledger differs from exact outcome transition")
+
+    if committed:
+        if (
+            committed_model(result, GenericProviderOutcome, head) != outcome
+            or committed_model(ledger_path, GenericPublicationLedger, head) != expected
+            or local != expected
+            or _state_git(root, "status", "--porcelain=v1", "--untracked-files=all")
+        ):
+            raise ValueError("audio recovery outcome commit or checkout differs from exact result")
+        if remote != head:
+            _push_audio_state(root, profile, "outcome recovery")
+    else:
+        if _state_git(
+            root,
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+            "--",
+            ".",
+            f":(exclude){ledger_rel}",
+            f":(exclude){result_rel}",
+        ):
+            raise ValueError("audio recovery checkout contains unrelated changes")
+        save_ledger(ledger_path, expected)
+        _persist_remote_audio_state(root, profile, "outcome recovery", result, ledger_path)
+    return outcome
 
 
 def _send_persisted_once(
@@ -767,7 +862,23 @@ def main() -> int:
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
         item = verify_dispatch_against_release(release, envelope)
         if isinstance(item.payload, GenericAudioPayload):
-            raise ValueError("audio outcomes are persisted by send-once; reconcile the exact remote claim and result")
+            if args.command != "recover-outcome" or args.profile is None:
+                raise ValueError("audio recovery requires recover-outcome with the exact channel profile")
+            outcome = _recover_remote_audio_outcome(load_channel_profile(args.profile), release, args.ledger, envelope)
+            entry = load_ledger(args.ledger, release).entries[envelope.publication_id]
+            print(
+                json.dumps(
+                    {
+                        "recovered": True,
+                        "publication_id": entry.publication_id,
+                        "state": entry.state,
+                        "provider_effect": outcome.provider_effect,
+                        "message_url": entry.message_url,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 0 if outcome.provider_effect == "verified" else 4
         verify_persisted_intent(release, ledger, envelope)
         claim, _ = _local_dispatch_paths(args.ledger, envelope)
         if args.command == "recover-outcome":

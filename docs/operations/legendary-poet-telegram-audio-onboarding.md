@@ -127,10 +127,16 @@ Audio prepare now commits the exact intent envelope and ledger together
 before exporting the envelope. Audio send-once requires that tracked
 envelope and commits the result and resulting ledger together before
 exporting a receipt. A failed post-dispatch Git update retains the local
-result and remote claim; reconcile that exact commit/receipt without another
-send. Generic apply-outcome and recover-outcome remain for non-audio
-workflows, not a second audio state writer. Protected state initialization,
-history reconciliation and the single operator entrypoint remain required.
+result and remote claim. Use the existing `recover-outcome` with the same
+profile, release, ledger and envelope on that checkout. It validates the
+committed claim and immutable intent, reconstructs the exact ledger
+transition, and finishes only the corresponding two-path outcome commit
+or recognizes an already accepted commit. No Telegram call or write-gate
+activation is required for recovery. A diverged remote, missing local
+result or unrelated checkout changes must be reconciled independently,
+never replayed. Generic apply-outcome is not an alternate audio writer.
+Protected state initialization, history reconciliation and the single
+operator entrypoint remain required.
 Do not use another writer or delete a claim to force a replay.
 
 ### Required checks before the first audio post

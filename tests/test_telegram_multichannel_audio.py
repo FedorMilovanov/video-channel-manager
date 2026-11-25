@@ -19,7 +19,10 @@ from video_channel_manager.telegram_multichannel_audio import (
 )
 from video_channel_manager.telegram_multichannel_cli import (
     _audio_intent_path,
+    _persist_remote_audio_state,
+    _recover_remote_audio_outcome,
     _require_current_audio_state,
+    _state_git,
     _send_persisted_once,
 )
 from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
@@ -483,8 +486,11 @@ def _git(directory: Path, *args: str) -> str:
     ).stdout.strip()
 
 
-@pytest.mark.parametrize("race_after_check", [False, True])
-def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_after_check):
+@pytest.mark.parametrize(
+    ("race_after_check", "failure_mode"),
+    [(False, None), (True, None), (False, "before_commit"), (False, "before_push"), (False, "after_push")],
+)
+def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_after_check, failure_mode):
     audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
     profile = _profile()
     payload = _payload(profile, audio)
@@ -555,6 +561,38 @@ def test_remote_audio_claim_allows_only_one_sender(tmp_path, monkeypatch, race_a
             return root
 
         monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli._require_current_audio_state", race)
+    elif failure_mode is not None:
+
+        def interrupted_commit(root, profile_arg, phase, *paths):
+            if phase == "outcome" and failure_mode == "before_commit":
+                raise ValueError("simulated Git interruption")
+            return _persist_remote_audio_state(root, profile_arg, phase, *paths)
+
+        def interrupted_git(root, *args):
+            if args[0] == "push" and "Record Telegram audio outcome " in _state_git(root, "log", "-1", "--format=%s"):
+                if failure_mode == "before_push":
+                    raise ValueError("simulated Git interruption")
+                if failure_mode == "after_push":
+                    _state_git(root, *args)
+                    raise ValueError("simulated Git interruption")
+            return _state_git(root, *args)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                "video_channel_manager.telegram_multichannel_cli._persist_remote_audio_state", interrupted_commit
+            )
+            patch.setattr("video_channel_manager.telegram_multichannel_cli._state_git", interrupted_git)
+            with pytest.raises(ValueError, match="simulated Git interruption"):
+                winner()
+        assert not (tmp_path / "first-outcome.json").exists()
+        assert len(calls) == 1
+        # Recovery remains possible with provider writes disabled and no sender.
+        disabled = profile.model_copy(update={"provider_writes_authorized": False})
+        assert _recover_remote_audio_outcome(disabled, release, path, envelope).provider_effect == "may_exist"
+        recovered_head = _git(first, "rev-parse", "HEAD")
+        assert _recover_remote_audio_outcome(disabled, release, path, envelope).provider_effect == "may_exist"
+        assert _git(first, "rev-parse", "HEAD") == recovered_head
+        assert len(calls) == 1
     else:
         assert winner().provider_effect == "may_exist"
 
