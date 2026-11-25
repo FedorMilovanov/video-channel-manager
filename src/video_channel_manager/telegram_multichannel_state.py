@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_editorial_hold import require_execution_not_held
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
+from video_channel_manager.telegram_multichannel_audio import GenericAudioPayload
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
 
@@ -351,6 +352,69 @@ def verify_ledger_against_release(ledger: GenericPublicationLedger, release: Gen
     for publication_id, item in release_by_id.items():
         if ledger.entries[publication_id].provider_payload_sha256 != item.payload.provider_payload_sha256:
             raise ValueError(f"provider payload changed after ledger initialization: {publication_id}")
+
+
+class GenericAudioHistoryMatch(BaseModel):
+    """Evidence from a supplied immutable release and its matching ledger."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    release_id: str
+    publication_id: str
+    media_sha256: str
+    state: GenericStateName
+    provider_effect: GenericProviderEffect
+    message_url: str | None = None
+
+
+def audit_audio_history(
+    candidate: GenericReleaseQueue,
+    publication_id: str,
+    history: tuple[tuple[GenericReleaseQueue, GenericPublicationLedger], ...],
+) -> tuple[GenericAudioHistoryMatch, ...]:
+    """Match exact audio bytes across known releases, never assert complete provider history."""
+    item = next((item for item in candidate.items if item.publication_id == publication_id), None)
+    if item is None or not isinstance(item.payload, GenericAudioPayload):
+        raise ValueError("audio history requires an exact audio publication in the candidate release")
+    if candidate.chat_id is None or candidate.target_binding_sha256 is None:
+        raise ValueError("audio history requires an exact bound Telegram channel")
+
+    matches: list[GenericAudioHistoryMatch] = []
+    seen: set[str] = set()
+    for release, ledger in history:
+        if not release.release_authorized:
+            raise ValueError("audio history must use authorized immutable releases")
+        if (
+            release.project_key != candidate.project_key
+            or release.channel_username.casefold() != candidate.channel_username.casefold()
+            or release.chat_id != candidate.chat_id
+        ):
+            raise ValueError("audio history differs from the exact candidate channel")
+        if release.release_id in seen:
+            raise ValueError("audio history contains repeated release identity")
+        seen.add(release.release_id)
+        verify_ledger_against_release(ledger, release)
+        for historical in release.items:
+            if not isinstance(historical.payload, GenericAudioPayload):
+                continue
+            if historical.payload.media_sha256 != item.payload.media_sha256:
+                continue
+            entry = ledger.entries[historical.publication_id]
+            if entry.provider_effect not in {"verified", "may_exist"}:
+                continue
+            if entry.actual_chat_id != candidate.chat_id:
+                raise ValueError("audio history ledger effect differs from the exact channel")
+            matches.append(
+                GenericAudioHistoryMatch(
+                    release_id=release.release_id,
+                    publication_id=historical.publication_id,
+                    media_sha256=historical.payload.media_sha256,
+                    state=entry.state,
+                    provider_effect=entry.provider_effect,
+                    message_url=entry.message_url,
+                )
+            )
+    return tuple(matches)
 
 
 def strict_next_item(

@@ -23,6 +23,7 @@ from video_channel_manager.telegram_multichannel_state import (
     GenericDispatchEnvelope,
     GenericPublicationLedger,
     OwnerScheduledCanaryApproval,
+    audit_audio_history,
     initialize_ledger,
     load_ledger,
     prepare_next,
@@ -112,6 +113,11 @@ def parser() -> argparse.ArgumentParser:
     recover.add_argument("--release", type=Path, required=True)
     recover.add_argument("--ledger", type=Path, required=True)
     recover.add_argument("--envelope", type=Path, required=True)
+
+    audio_history = sub.add_parser("audit-audio-history")
+    audio_history.add_argument("--release", type=Path, required=True)
+    audio_history.add_argument("--publication-id", required=True)
+    audio_history.add_argument("--history", type=Path, nargs=2, action="append", required=True)
 
     validate = sub.add_parser("validate-ledger")
     validate.add_argument("--release", type=Path, required=True)
@@ -491,6 +497,28 @@ def main() -> int:
             )
         )
         return 0
+
+    if args.command == "audit-audio-history":
+        candidate = load_release(args.release)
+        history = []
+        for release_path, ledger_path in args.history:
+            historical_release = load_release(release_path)
+            history.append((historical_release, load_ledger(ledger_path, historical_release)))
+        matches = audit_audio_history(candidate, args.publication_id, tuple(history))
+        print(
+            json.dumps(
+                {
+                    "scope": "supplied_immutable_release_ledgers_only",
+                    "publication_id": args.publication_id,
+                    "release_count": len(history),
+                    "known_matches": [match.model_dump(mode="json") for match in matches],
+                    "complete_provider_history_verified": False,
+                    "provider_write_authorized": False,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 3 if matches else 0
 
     if args.command == "validate-ledger":
         release = load_release(args.release)

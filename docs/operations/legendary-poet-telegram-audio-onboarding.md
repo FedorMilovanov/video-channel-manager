@@ -90,6 +90,15 @@ Older archived outcomes can still be read by the existing schema, but a local
 claimed attempt requires the exact canonical result. This does not make
 legacy unbound outcomes safe to replay across attempts or machines.
 
+The read-only `audit-audio-history` primitive compares the exact MP3 SHA-256
+across supplied authorized releases and their matching ledgers. A verified or
+possibly dispatched historical match is surfaced even when the release ID or
+caption changes. It rejects foreign channels and mismatched or repeated
+ledgers. An empty result covers only the supplied release ledgers, not
+unobserved provider history, retagged/reencoded audio or concurrent writers.
+It is an internal building block for protected channel-state orchestration,
+not another owner approval or standalone publication authorization.
+
 ### Required checks before the first audio post
 
 1. Revalidate the registered profile and the pinned target binding on exact current `main`, including any concurrent edits and write-authority registry.

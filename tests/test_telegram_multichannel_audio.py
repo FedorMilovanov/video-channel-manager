@@ -17,7 +17,8 @@ from video_channel_manager.telegram_multichannel_audio import (
     send_audio_once,
 )
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, TelegramApiError
-from video_channel_manager.telegram_multichannel_release import GenericReleaseItem
+from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
+from video_channel_manager.telegram_multichannel_state import audit_audio_history, initialize_ledger, prepare_next
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
@@ -312,3 +313,87 @@ def test_send_audio_once_read_timeout_is_one_ambiguous_attempt(tmp_path, monkeyp
     assert error.value.provider_effect == "may_exist"
     assert error.value.retryable is False
     assert len(dispatched) == 1
+
+
+def _history_release(profile, payload, release_id):
+    candidate = GenericReleaseQueue(
+        schema_name="video-channel-manager.telegram-release-queue",
+        schema_version=1,
+        release_id=release_id,
+        project_key=profile.project_key,
+        channel_username=profile.channel_username,
+        profile_sha256=profile.digest,
+        timezone=profile.timezone,
+        daily_verified_limit=profile.daily_verified_limit,
+        target_binding_sha256="sha256:" + "2" * 64,
+        chat_id=CHAT_ID,
+        bot_id=8716602202,
+        bot_username="fixture_test_bot",
+        items=(
+            GenericReleaseItem(
+                sequence=1,
+                publication_id=payload.publication_id,
+                scheduled_at=NOW,
+                source_sha256="sha256:" + "1" * 64,
+                payload=payload,
+            ),
+        ),
+    )
+    return GenericReleaseQueue.model_validate(
+        {
+            **candidate.model_dump(),
+            "release_authorized": True,
+            "reviewed_candidate_sha256": candidate.candidate_digest(),
+            "reviewed_by": "offline fixture",
+            "reviewed_at": NOW,
+        }
+    )
+
+
+def test_audio_history_matches_bytes_despite_different_release_and_caption(tmp_path, monkeypatch):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    original = _payload(profile, audio)
+    revised = _payload(profile, audio, caption="<b>Другая подпись</b>")
+    historical = _history_release(profile, original, "milovi-old-audio")
+    candidate = _history_release(profile, revised, "milovi-new-audio")
+    ledger = initialize_ledger(historical)
+    assert original.provider_payload_sha256 != revised.provider_payload_sha256
+    assert audit_audio_history(candidate, revised.publication_id, ((historical, ledger),)) == ()
+    prepared = prepare_next(
+        profile,
+        historical,
+        ledger,
+        run_id="123",
+        run_attempt="1",
+        github_sha="1" * 40,
+        github_workflow_sha="2" * 40,
+        mode="manual",
+        target=_target(profile),
+        expected_publication_id=original.publication_id,
+        now=NOW,
+    )
+    assert prepared.envelope is not None
+    matches = audit_audio_history(candidate, revised.publication_id, ((historical, ledger),))
+    assert len(matches) == 1
+    assert matches[0].release_id == historical.release_id
+    assert matches[0].provider_effect == "may_exist"
+    assert matches[0].media_sha256 == revised.media_sha256
+    different = _history_release(profile, _payload(profile, audio + b"x"), "milovi-different-audio")
+    assert audit_audio_history(different, revised.publication_id, ((historical, ledger),)) == ()
+
+
+def test_audio_history_rejects_wrong_ledger_channel_and_repeated_release(tmp_path, monkeypatch):
+    audio, _ = _files(tmp_path, monkeypatch, thumbnail=False)
+    profile = _profile()
+    payload = _payload(profile, audio)
+    historical = _history_release(profile, payload, "milovi-old-audio")
+    candidate = _history_release(profile, payload, "milovi-new-audio")
+    ledger = initialize_ledger(historical)
+    with pytest.raises(ValueError, match="ledger identity differs"):
+        audit_audio_history(candidate, payload.publication_id, ((historical, initialize_ledger(candidate)),))
+    foreign = candidate.model_copy(update={"chat_id": -1001234567890})
+    with pytest.raises(ValueError, match="exact candidate channel"):
+        audit_audio_history(foreign, payload.publication_id, ((historical, ledger),))
+    with pytest.raises(ValueError, match="repeated release identity"):
+        audit_audio_history(candidate, payload.publication_id, ((historical, ledger), (historical, ledger)))
