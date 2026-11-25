@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "docs/audits/2026-11-20-lordchrist-quote-v6-18-bilingual-lexical-and-format-previews-inert.json"
 SOURCE = ROOT / "docs/audits/2026-11-06-lordchrist-quote-v6-provider-payload-candidate-inert.json"
 EXPECTED = {9, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
-NEW_TRANSLATIONS = {9, 12, 15, 16, 20, 21, 22, 23, 30}
+NEW_TRANSLATIONS = {9, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 30}
 DERIVATIVE_LEGACY_EDITS: set[int] = set()
 ARTICLE_L1 = {16, 22, 27}
 
@@ -104,6 +104,17 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
     for number in (12, 15, 16):
         entry = by_num[number]
         assert "7143481654" in entry["underlying_draft_ref"]
+        assert all(
+            check["proposed_russian"] in entry["proposed_quote_text_ru"]
+            for check in entry["selected_lexical_checkpoints"]
+        )
+
+    assert "новым творением во Христе" in by_num[17]["proposed_quote_text_ru"]
+    assert "каждого христианина и каждой христианки" in by_num[18]["proposed_quote_text_ru"]
+    assert "Во-первых, он смотрит вниз, на могилу" in by_num[19]["proposed_quote_text_ru"]
+    for number in (17, 18, 19):
+        entry = by_num[number]
+        assert "7148054364" in entry["underlying_draft_ref"]
         assert all(
             check["proposed_russian"] in entry["proposed_quote_text_ru"]
             for check in entry["selected_lexical_checkpoints"]

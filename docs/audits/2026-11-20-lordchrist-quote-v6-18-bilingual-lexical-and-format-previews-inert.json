@@ -13,7 +13,7 @@
   "pr1049_source_head": "e60a06916258f0d45f12dc98e17356cd0d166b33",
   "issue_reference": "#1044",
   "completion_level": "EDITORIAL_DRAFT_ONLY_NOT_CLEARED",
-  "source_statement": "All 18 original English pages were opened for context; selected checkpoints are insufficient to assert full paragraph-by-paragraph equivalence; English originals require independent human signed alignment on exact reviewed bytes. On 2026-11-24, three Russian proposals (9, 21, 30) were further revised against the same CCEL passages and Whitefield's own Matthew 6:22 explanation in the same sermon. PR #1049 fixed head remains historical draft provenance, not identical final wording. No human signoff, rights clearance, or activation is claimed. W31 incorporates the three W21/W29 source-collated draft revisions (#12, #15, #16) into both inert preview formats; all signed independent review, provenance and rights flags remain false.",
+  "source_statement": "All 18 original English pages were opened for context; selected checkpoints are insufficient to assert full paragraph-by-paragraph equivalence; English originals require independent human signed alignment on exact reviewed bytes. On 2026-11-24, three Russian proposals (9, 21, 30) were further revised against the same CCEL passages and Whitefield's own Matthew 6:22 explanation in the same sermon. PR #1049 fixed head remains historical draft provenance, not identical final wording. No human signoff, rights clearance, or activation is claimed. W31 incorporates the three W21/W29 source-collated draft revisions (#12, #15, #16) into both inert preview formats; all signed independent review, provenance and rights flags remain false. W33 integrates the next three W21/W32 source-collated candidates (#17, #18, #19). Independent review and rights remain pending.",
   "rights_statement": "English historical reference texts and newly authored Russian renderings need separate edition-specific and jurisdictional rights checks. Legacy Russian editions are not adopted as licensed translations; no rights PASS is inferred from text age or CCEL hosting.",
   "formatted_previews_only": true,
   "immutable_candidate_changed": false,
@@ -276,7 +276,7 @@
       "historical_english_span_sha256": "sha256:54a680e0e6b4f8b97c9ee6708a4ad86a524e17f77bb494c8190d1808fb51ba25",
       "legacy_russian_sha256": "sha256:612707a8e7e3cf0082f19b5391c61fcd27baf92eede38e4832bb500ca2dbd1e6",
       "legacy_payload_sha256": "sha256:89d9b9c5daccb2c66c747af645401008e48991572e02b8d885db998509fe04b0",
-      "underlying_draft_ref": "PR #1050 merged",
+      "underlying_draft_ref": "PR #1050 merged; W21 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7137233320; W32 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7148054364",
       "selected_lexical_checkpoints": [
         {
           "english": "right knowledge of sin",
@@ -292,15 +292,15 @@
         }
       ],
       "translation_semantic_risk_ru": "Знание греха у Райла — начало понимания нужды во Христе, а не оправдание одним чувством вины.",
-      "quote_provenance": "contiguous_legacy_russian_excerpt_draft_needs_rights",
-      "proposed_quote_text_ru": "Простая истина состоит в том, что правильное познание греха лежит в основании всего спасительного христианства. Без такого познания учения об оправдании, обращении и освящении остаются для ума лишь словами и названиями, ничего не объясняющими. Поэтому, когда Бог делает человека новым творением во Христе, Он прежде всего посылает свет в его сердце и показывает ему, что он — виновный грешник.",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
+      "proposed_quote_text_ru": "Суть проста: правильное познание греха лежит в основании всего спасительного христианства. Без него такие учения, как оправдание, обращение и освящение, остаются для ума лишь словами и названиями, не несущими смысла. Поэтому первое, что Бог делает, когда Он делает человека новым творением во Христе, — посылает свет в его сердце и показывает ему, что он виновный грешник.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Дж. К. Райл, «Святость»",
       "highlight_bold_ru": "правильное познание греха",
       "highlight_italic_ru": "виновный грешник",
       "hashtags_ru": "#ДжонРайл #Грех #Покаяние",
-      "reader_preview_markdown_ru": "Простая истина состоит в том, что **правильное познание греха** лежит в основании всего спасительного христианства. Без такого познания учения об оправдании, обращении и освящении остаются для ума лишь словами и названиями, ничего не объясняющими. Поэтому, когда Бог делает человека новым творением во Христе, Он прежде всего посылает свет в его сердце и показывает ему, что он — *виновный грешник*.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Грех #Покаяние",
+      "reader_preview_markdown_ru": "Суть проста: **правильное познание греха** лежит в основании всего спасительного христианства. Без него такие учения, как оправдание, обращение и освящение, остаются для ума лишь словами и названиями, не несущими смысла. Поэтому первое, что Бог делает, когда Он делает человека новым творением во Христе, — посылает свет в его сердце и показывает ему, что он *виновный грешник*.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #Грех #Покаяние",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
@@ -316,12 +316,13 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true,
-      "telegram_html_preview_inert": "Простая истина состоит в том, что <b>правильное познание греха</b> лежит в основании всего спасительного христианства. Без такого познания учения об оправдании, обращении и освящении остаются для ума лишь словами и названиями, ничего не объясняющими. Поэтому, когда Бог делает человека новым творением во Христе, Он прежде всего посылает свет в его сердце и показывает ему, что он — <i>виновный грешник</i>.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #Грех #Покаяние",
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "Суть проста: <b>правильное познание греха</b> лежит в основании всего спасительного христианства. Без него такие учения, как оправдание, обращение и освящение, остаются для ума лишь словами и названиями, не несущими смысла. Поэтому первое, что Бог делает, когда Он делает человека новым творением во Христе, — посылает свет в его сердце и показывает ему, что он <i>виновный грешник</i>.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #Грех #Покаяние",
       "telegram_html_preview_parse_mode": "HTML",
       "telegram_html_preview_publisher_authorized": false,
       "telegram_html_preview_is_signed_payload": false,
-      "telegram_html_preview_binds_existing_source_sha_only": true
+      "telegram_html_preview_binds_existing_source_sha_only": true,
+      "first_pass_translation_source_note": "W21 newly worded editorial candidate, revised against W32 source-collation findings and integrated W33. Not independent human translation or rights approval."
     },
     {
       "sequence": 18,
@@ -333,15 +334,15 @@
       "historical_english_span_sha256": "sha256:473a88185e513a0f65559784d8b453629ce1f99691a4fa3bd20d272b47426f54",
       "legacy_russian_sha256": "sha256:cdaabe2f935dac29e7755aba1cb7e16c1edb751e881d8a93bf8e7e565b230316",
       "legacy_payload_sha256": "sha256:4fb6003a30606f1681fa544469c2661ef685b97b0bb69b996c17c9a88f240e62",
-      "underlying_draft_ref": "PR #1048 merged",
+      "underlying_draft_ref": "PR #1048 merged; W21 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7137266602; W32 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7148054364",
       "selected_lexical_checkpoints": [
+        {
+          "english": "Christian man and woman",
+          "proposed_russian": "каждого христианина и каждой христианки"
+        },
         {
           "english": "spiritual warfare",
           "proposed_russian": "духовной брани"
-        },
-        {
-          "english": "fight about his soul",
-          "proposed_russian": "борьбе за свою душу"
         },
         {
           "english": "If we would be holy",
@@ -349,15 +350,15 @@
         }
       ],
       "translation_semantic_risk_ru": "Речь о сопротивлении греху, а не о вражде между христианами.",
-      "quote_provenance": "contiguous_legacy_russian_excerpt_draft_needs_rights",
-      "proposed_quote_text_ru": "Но существует и другая брань, несравненно более важная, чем любая война, которую когда-либо вёл человек. Она касается не только двух или трёх народов, но каждого христианина и каждой христианки, живущих на земле. Я говорю о духовной брани — о той борьбе за свою душу, которую должен вести всякий, кто желает спастись.\n\nЯ знаю, что многие вовсе не ведают об этой брани. Заговорите с ними о ней, и они готовы счесть вас безумцем, восторженным мечтателем или глупцом. Между тем она столь же реальна, как и любая земная война. У неё есть схватки и раны, бдения и утомление, осады и приступы, победы и поражения. Но главное — её последствия страшны, велики и совершенно особенные. В земных войнах последствия для народов нередко временны, и причинённый ущерб можно исправить. С духовной бранью всё иначе: когда борьба окончена, её последствия неизменны и вечны.\n\nИменно об этой брани апостол Павел писал Тимофею, обращаясь к нему с пламенными словами: „Подвизайся добрым подвигом веры, держись вечной жизни“. Об этой брани я и хочу говорить. Считаю её тесно связанной с освящением и святостью. Кто хочет понять природу подлинной святости, должен знать, что христианин — воин. Если мы хотим быть святыми, нам надлежит сражаться.",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
+      "proposed_quote_text_ru": "Но есть иная брань, куда более важная, чем любая война, которую когда-либо вёл человек. Она касается не двух или трёх народов, а каждого христианина и каждой христианки, родившихся в этом мире. Я говорю о духовной брани — о борьбе за свою душу, которую должен вести всякий, желающий спастись.\n\nОб этой брани многие ничего не знают. Заговорите с ними о ней, и они готовы счесть вас безумцем, фанатиком или глупцом. И всё же она так же реальна и несомненна, как любая война в истории мира. В ней есть схватки лицом к лицу и раны, бдения и утомление, осады и нападения, победы и поражения. Но главное — её последствия серьёзны, огромны и совершенно особого рода. В земной войне последствия для народов часто временны и поправимы; в духовной брани всё иначе: когда она окончится, её последствия будут неизменны и вечны.\n\nИменно об этой брани Павел писал Тимофею, обращаясь к нему с пламенными словами: «Подвизайся добрым подвигом веры; держись вечной жизни». Об этой брани я и намерен говорить в этой статье. Я считаю, что она тесно связана с освящением и святостью. Кто хочет понять природу истинной святости, должен знать, что христианин — «воин». Если мы хотим быть святыми, мы должны бороться.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Дж. К. Райл, «Святость»",
       "highlight_bold_ru": "Я говорю о духовной брани",
-      "highlight_italic_ru": "Если мы хотим быть святыми, нам надлежит сражаться.",
+      "highlight_italic_ru": "Если мы хотим быть святыми, мы должны бороться.",
       "hashtags_ru": "#ДжонРайл #ДуховнаяБрань #Святость",
-      "reader_preview_markdown_ru": "Но существует и другая брань, несравненно более важная, чем любая война, которую когда-либо вёл человек. Она касается не только двух или трёх народов, но каждого христианина и каждой христианки, живущих на земле. **Я говорю о духовной брани** — о той борьбе за свою душу, которую должен вести всякий, кто желает спастись.\n\nЯ знаю, что многие вовсе не ведают об этой брани. Заговорите с ними о ней, и они готовы счесть вас безумцем, восторженным мечтателем или глупцом. Между тем она столь же реальна, как и любая земная война. У неё есть схватки и раны, бдения и утомление, осады и приступы, победы и поражения. Но главное — её последствия страшны, велики и совершенно особенные. В земных войнах последствия для народов нередко временны, и причинённый ущерб можно исправить. С духовной бранью всё иначе: когда борьба окончена, её последствия неизменны и вечны.\n\nИменно об этой брани апостол Павел писал Тимофею, обращаясь к нему с пламенными словами: „Подвизайся добрым подвигом веры, держись вечной жизни“. Об этой брани я и хочу говорить. Считаю её тесно связанной с освящением и святостью. Кто хочет понять природу подлинной святости, должен знать, что христианин — воин. *Если мы хотим быть святыми, нам надлежит сражаться.*\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #ДуховнаяБрань #Святость",
+      "reader_preview_markdown_ru": "Но есть иная брань, куда более важная, чем любая война, которую когда-либо вёл человек. Она касается не двух или трёх народов, а каждого христианина и каждой христианки, родившихся в этом мире. **Я говорю о духовной брани** — о борьбе за свою душу, которую должен вести всякий, желающий спастись.\n\nОб этой брани многие ничего не знают. Заговорите с ними о ней, и они готовы счесть вас безумцем, фанатиком или глупцом. И всё же она так же реальна и несомненна, как любая война в истории мира. В ней есть схватки лицом к лицу и раны, бдения и утомление, осады и нападения, победы и поражения. Но главное — её последствия серьёзны, огромны и совершенно особого рода. В земной войне последствия для народов часто временны и поправимы; в духовной брани всё иначе: когда она окончится, её последствия будут неизменны и вечны.\n\nИменно об этой брани Павел писал Тимофею, обращаясь к нему с пламенными словами: «Подвизайся добрым подвигом веры; держись вечной жизни». Об этой брани я и намерен говорить в этой статье. Я считаю, что она тесно связана с освящением и святостью. Кто хочет понять природу истинной святости, должен знать, что христианин — «воин». *Если мы хотим быть святыми, мы должны бороться.*\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #ДуховнаяБрань #Святость",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
@@ -373,12 +374,13 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true,
-      "telegram_html_preview_inert": "Но существует и другая брань, несравненно более важная, чем любая война, которую когда-либо вёл человек. Она касается не только двух или трёх народов, но каждого христианина и каждой христианки, живущих на земле. <b>Я говорю о духовной брани</b> — о той борьбе за свою душу, которую должен вести всякий, кто желает спастись.\n\nЯ знаю, что многие вовсе не ведают об этой брани. Заговорите с ними о ней, и они готовы счесть вас безумцем, восторженным мечтателем или глупцом. Между тем она столь же реальна, как и любая земная война. У неё есть схватки и раны, бдения и утомление, осады и приступы, победы и поражения. Но главное — её последствия страшны, велики и совершенно особенные. В земных войнах последствия для народов нередко временны, и причинённый ущерб можно исправить. С духовной бранью всё иначе: когда борьба окончена, её последствия неизменны и вечны.\n\nИменно об этой брани апостол Павел писал Тимофею, обращаясь к нему с пламенными словами: „Подвизайся добрым подвигом веры, держись вечной жизни“. Об этой брани я и хочу говорить. Считаю её тесно связанной с освящением и святостью. Кто хочет понять природу подлинной святости, должен знать, что христианин — воин. <i>Если мы хотим быть святыми, нам надлежит сражаться.</i>\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #ДуховнаяБрань #Святость",
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "Но есть иная брань, куда более важная, чем любая война, которую когда-либо вёл человек. Она касается не двух или трёх народов, а каждого христианина и каждой христианки, родившихся в этом мире. <b>Я говорю о духовной брани</b> — о борьбе за свою душу, которую должен вести всякий, желающий спастись.\n\nОб этой брани многие ничего не знают. Заговорите с ними о ней, и они готовы счесть вас безумцем, фанатиком или глупцом. И всё же она так же реальна и несомненна, как любая война в истории мира. В ней есть схватки лицом к лицу и раны, бдения и утомление, осады и нападения, победы и поражения. Но главное — её последствия серьёзны, огромны и совершенно особого рода. В земной войне последствия для народов часто временны и поправимы; в духовной брани всё иначе: когда она окончится, её последствия будут неизменны и вечны.\n\nИменно об этой брани Павел писал Тимофею, обращаясь к нему с пламенными словами: «Подвизайся добрым подвигом веры; держись вечной жизни». Об этой брани я и намерен говорить в этой статье. Я считаю, что она тесно связана с освящением и святостью. Кто хочет понять природу истинной святости, должен знать, что христианин — «воин». <i>Если мы хотим быть святыми, мы должны бороться.</i>\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #ДуховнаяБрань #Святость",
       "telegram_html_preview_parse_mode": "HTML",
       "telegram_html_preview_publisher_authorized": false,
       "telegram_html_preview_is_signed_payload": false,
-      "telegram_html_preview_binds_existing_source_sha_only": true
+      "telegram_html_preview_binds_existing_source_sha_only": true,
+      "first_pass_translation_source_note": "W21 newly worded editorial candidate, revised against W32 source-collation findings and integrated W33. Not independent human translation or rights approval."
     },
     {
       "sequence": 19,
@@ -390,31 +392,31 @@
       "historical_english_span_sha256": "sha256:d46f18bf3d48d979d95851425cc0ea4acef481c0f917063059e59d3cb7eda1d2",
       "legacy_russian_sha256": "sha256:58e5231066eaca3ebcfab0399357d6551eb015bb0b93c832a018e9d1b73d1e18",
       "legacy_payload_sha256": "sha256:433beb81e7f641ccb11631e5afeb3e7f4f5391455ce7a96ad718e7a950c76bed",
-      "underlying_draft_ref": "PR #1050 merged",
+      "underlying_draft_ref": "PR #1050 merged; W21 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7137266602; W32 https://github.com/FedorMilovanov/video-channel-manager/pull/1051#issuecomment-7148054364",
       "selected_lexical_checkpoints": [
         {
           "english": "downward, backward, forward",
-          "proposed_russian": "вниз, назад, вперёд"
+          "proposed_russian": "вниз, назад и вперёд"
         },
         {
           "english": "ready to be offered",
-          "proposed_russian": "становлюсь жертвою"
+          "proposed_russian": "готов быть принесённым в жертву"
         },
         {
           "english": "time of my departure",
-          "proposed_russian": "время моего отшествия"
+          "proposed_russian": "Время моего отшествия"
         }
       ],
       "translation_semantic_risk_ru": "Жертвенник и корабль — интерпретации образов Павла в 2 Тим. 4:6, не буквальные биографические факты.",
-      "quote_provenance": "contiguous_legacy_russian_excerpt_draft_needs_rights",
-      "proposed_quote_text_ru": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\nПрежде всего Павел смотрит вниз, на могилу, и не испытывает страха. Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„Время моего отшествия настало“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.",
+      "quote_provenance": "new_editorial_translation_from_english_reference_requires_new_digest",
+      "proposed_quote_text_ru": "В словах Писания, помещённых в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз, назад и вперёд; вниз — на могилу, назад — на своё служение, вперёд — к тому великому дню, дню суда. Нам будет полезно несколько минут постоять рядом с апостолом и внимательно вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он!\n\nВо-первых, он смотрит вниз, на могилу, и делает это без страха. Послушаем, что он говорит: «Я уже готов быть принесённым в жертву». Я подобен животному, приведённому к месту жертвоприношения и привязанному верёвками к самым рогам жертвенника. Возлияние, обычно сопровождающее приношение, уже совершается. Последние обряды завершены. Всё приготовлено. Остаётся лишь принять смертельный удар — и всё будет окончено.\n\n«Время моего отшествия близко». Я подобен кораблю, готовому сняться с якоря и выйти в море. На борту всё готово. Мне остаётся лишь дождаться, когда отвяжут канаты, удерживающие меня у берега, и тогда я отправлюсь в плавание.",
       "format_lane": "quote_v6_short_draft",
       "editor_intro_outside_quote_ru": null,
       "attribution_ru": "— Дж. К. Райл, «Святость»",
-      "highlight_bold_ru": "Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.",
-      "highlight_italic_ru": "Время моего отшествия настало",
+      "highlight_bold_ru": "Во-первых, он смотрит вниз, на могилу, и делает это без страха.",
+      "highlight_italic_ru": "Время моего отшествия близко",
       "hashtags_ru": "#ДжонРайл #АпостолПавел #Уверенность",
-      "reader_preview_markdown_ru": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\n**Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.** Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„*Время моего отшествия настало*“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #АпостолПавел #Уверенность",
+      "reader_preview_markdown_ru": "В словах Писания, помещённых в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз, назад и вперёд; вниз — на могилу, назад — на своё служение, вперёд — к тому великому дню, дню суда. Нам будет полезно несколько минут постоять рядом с апостолом и внимательно вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он!\n\n**Во-первых, он смотрит вниз, на могилу, и делает это без страха.** Послушаем, что он говорит: «Я уже готов быть принесённым в жертву». Я подобен животному, приведённому к месту жертвоприношения и привязанному верёвками к самым рогам жертвенника. Возлияние, обычно сопровождающее приношение, уже совершается. Последние обряды завершены. Всё приготовлено. Остаётся лишь принять смертельный удар — и всё будет окончено.\n\n«*Время моего отшествия близко*». Я подобен кораблю, готовому сняться с якоря и выйти в море. На борту всё готово. Мне остаётся лишь дождаться, когда отвяжут канаты, удерживающие меня у берега, и тогда я отправлюсь в плавание.\n*— Дж. К. Райл, «Святость»*\n\n#ДжонРайл #АпостолПавел #Уверенность",
       "english_original_page_opened_in_audit": true,
       "complete_word_by_word_signed_human_translation_review": false,
       "independent_approved": false,
@@ -430,12 +432,13 @@
         "distinct_from_legacy_full_source_span": true
       },
       "english_reference_text_role": "Verified English reference edition; do not assume it is the language of original composition or that its edition/translation rights cover the Russian rendering.",
-      "legacy_russian_dependency_remains": true,
-      "telegram_html_preview_inert": "В словах Писания, поставленных в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз — на могилу, назад — на своё служение, вперёд — на великий день Суда. Полезно на несколько минут встать рядом с апостолом и вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он.\n\n<b>Прежде всего Павел смотрит вниз, на могилу, и не испытывает страха.</b> Послушайте его слова: „Я уже становлюсь жертвою“. Он подобен животному, приведённому к месту жертвоприношения и привязанному к рогам жертвенника. Возлияние, обычно сопровождающее приношение жертвы, уже совершается; последние приготовления закончены. Остаётся лишь принять смертельный удар, и всё будет кончено.\n\n„<i>Время моего отшествия настало</i>“. Он подобен кораблю, готовому отдать швартовы и выйти в море: всё на борту приготовлено. Остаётся только отвязать канаты, удерживающие его у берега, — и он отправится в плавание.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #АпостолПавел #Уверенность",
+      "legacy_russian_dependency_remains": false,
+      "telegram_html_preview_inert": "В словах Писания, помещённых в начале этой главы, мы видим, как апостол Павел смотрит в трёх направлениях: вниз, назад и вперёд; вниз — на могилу, назад — на своё служение, вперёд — к тому великому дню, дню суда. Нам будет полезно несколько минут постоять рядом с апостолом и внимательно вслушаться в его слова. Блаженна душа, которая может смотреть туда же, куда смотрел Павел, и говорить так же, как он!\n\n<b>Во-первых, он смотрит вниз, на могилу, и делает это без страха.</b> Послушаем, что он говорит: «Я уже готов быть принесённым в жертву». Я подобен животному, приведённому к месту жертвоприношения и привязанному верёвками к самым рогам жертвенника. Возлияние, обычно сопровождающее приношение, уже совершается. Последние обряды завершены. Всё приготовлено. Остаётся лишь принять смертельный удар — и всё будет окончено.\n\n«<i>Время моего отшествия близко</i>». Я подобен кораблю, готовому сняться с якоря и выйти в море. На борту всё готово. Мне остаётся лишь дождаться, когда отвяжут канаты, удерживающие меня у берега, и тогда я отправлюсь в плавание.\n<i>— Дж. К. Райл, «Святость»</i>\n\n#ДжонРайл #АпостолПавел #Уверенность",
       "telegram_html_preview_parse_mode": "HTML",
       "telegram_html_preview_publisher_authorized": false,
       "telegram_html_preview_is_signed_payload": false,
-      "telegram_html_preview_binds_existing_source_sha_only": true
+      "telegram_html_preview_binds_existing_source_sha_only": true,
+      "first_pass_translation_source_note": "W21 newly worded editorial candidate, revised against W32 source-collation findings and integrated W33. Not independent human translation or rights approval."
     },
     {
       "sequence": 20,
@@ -1077,6 +1080,9 @@
       12,
       15,
       16,
+      17,
+      18,
+      19,
       20,
       21,
       22,
@@ -1085,9 +1091,6 @@
     ],
     "partial_legacy_russian_text_edits": [],
     "untouched_contiguous_legacy_russian_span": [
-      17,
-      18,
-      19,
       24,
       25,
       26,
@@ -1096,7 +1099,7 @@
       29
     ]
   },
-  "translation_provenance_notice": "Earlier drafts #22/#23 modified old Russian excerpts, which would retain their edition rights dependencies. This revision REPLACES those derivative previews with a fresh Russian editorial wording drafted against historical English sources. This lowers but does not independently resolve source-edition rights and attribution; human legal and translation signoff remain mandatory. W31 integrates three additional fresh candidates (#12, #15, #16), for nine of eighteen in this register; nine remaining research drafts are not integrated.",
+  "translation_provenance_notice": "Earlier drafts #22/#23 modified old Russian excerpts, which would retain their edition rights dependencies. This revision REPLACES those derivative previews with a fresh Russian editorial wording drafted against historical English sources. This lowers but does not independently resolve source-edition rights and attribution; human legal and translation signoff remain mandatory. W31 integrates three additional fresh candidates (#12, #15, #16), for nine of eighteen in this register; nine remaining research drafts are not integrated. W33 integrates three additional Ryle candidates, bringing the total to twelve of eighteen; six research drafts remain unintegrated.",
   "selected_english_bounds_are_transcribed_from_open_pages": true,
   "human_translation_review_verified": false,
   "html_preview_counts": {
