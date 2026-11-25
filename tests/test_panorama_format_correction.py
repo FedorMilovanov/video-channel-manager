@@ -369,3 +369,44 @@ def test_panorama_empty_map_readback_must_be_explicit_and_candidate_rederived() 
     after.pop("snippet")
     with pytest.raises(ValueError, match="Incomplete readback snippet"):
         verify_panorama_russian_metadata_readback(candidate, owner, playlist, after)
+
+
+def test_panorama_inventory_counts_all_members_without_false_clean() -> None:
+    from video_channel_manager.platforms.youtube.lord_god_presentation import inventory_panorama_russian_metadata
+
+    owner, playlist = _russian_metadata_evidence()
+    clean = copy.deepcopy(owner)
+    clean["video_id"] = clean["raw"]["id"] = "video000001"
+    clean["raw"]["localizations"] = {"ru": clean["raw"]["localizations"]["ru"]}
+    clean["locale_keys"] = ["ru"]
+    clean["revision"] = canonical_sha256(clean["raw"])
+    malformed = copy.deepcopy(owner)
+    malformed["video_id"] = malformed["raw"]["id"] = "video000002"
+    malformed["raw"].pop("localizations")
+    duplicate = copy.deepcopy(owner)
+    duplicate["video_id"] = duplicate["raw"]["id"] = "video000003"
+    duplicate["revision"] = canonical_sha256(duplicate["raw"])
+    report = inventory_panorama_russian_metadata(playlist, [duplicate, clean, owner, malformed, duplicate])
+    assert report["counts"] == {"REVIEW_REQUIRED": 1, "NO_CHANGE": 1, "MISSING": 64, "HOLD": 2}
+    assert [row["episode"] for row in report["episodes"]] == list(range(1, 69))
+    assert report["episodes"][3]["reason"] == "duplicate_owner_receipts"
+    assert not report["all_receipts_reviewable"]
+    assert not report["live_verified"] and not report["execution_authorized"]
+    assert report["provider_reads"] == report["provider_writes"] == 0
+
+
+def test_panorama_inventory_complete_and_foreign_receipt_rejected() -> None:
+    from video_channel_manager.platforms.youtube.lord_god_presentation import inventory_panorama_russian_metadata
+
+    owner, playlist = _russian_metadata_evidence()
+    owners = []
+    for member in playlist["memberships"]:
+        receipt = copy.deepcopy(owner)
+        receipt["video_id"] = receipt["raw"]["id"] = member["video_id"]
+        receipt["revision"] = canonical_sha256(receipt["raw"])
+        owners.append(receipt)
+    report = inventory_panorama_russian_metadata(playlist, owners)
+    assert report["counts"]["REVIEW_REQUIRED"] == 68
+    assert report["all_receipts_reviewable"] and not report["live_verified"]
+    with pytest.raises(ValueError, match="outside exact Panorama"):
+        inventory_panorama_russian_metadata(playlist, [{**owner, "video_id": "other000000"}])

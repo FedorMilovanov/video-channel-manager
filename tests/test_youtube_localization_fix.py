@@ -612,3 +612,24 @@ def test_localization_postflight_missing_tags_never_verifies(tmp_path: Path, del
     with pytest.raises(YouTubeWriteError, match="snippet.protected_fields"):
         writer.replace_localized_description(**_args(original))
     assert methods == ["GET", "PUT", *(["GET"] * (1 + len(delays)))]
+
+
+@pytest.mark.parametrize("keep_russian", [True, False])
+def test_full_map_transport_sends_only_localizations(tmp_path: Path, keep_russian: bool) -> None:
+    original = _raw()
+    replacement = {"ru": original["localizations"]["ru"]} if keep_russian else {}
+    methods: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "PUT":
+            assert request.url.params["part"] == "localizations"
+            assert json.loads(request.content) == {"id": original["id"], "localizations": replacement}
+            return httpx.Response(200, json={"id": original["id"]})
+        return httpx.Response(200, json={"items": [{**original, "localizations": replacement}]})
+
+    writer = _writer(tmp_path, handle)
+    observed = writer._put_localization_map(original["id"], replacement)
+    assert observed.raw["localizations"] == replacement
+    assert observed.raw["snippet"] == original["snippet"]
+    assert methods == ["PUT", "GET"]

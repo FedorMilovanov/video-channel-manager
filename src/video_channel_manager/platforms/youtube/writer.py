@@ -438,6 +438,17 @@ class YouTubeDescriptionWriter(HttpClientOwner):
                 )
             return verified
 
+    def _put_localization_map(self, video_id: str, replacement: dict[str, dict[str, str]]) -> VideoDescriptionSnapshot:
+        """One localization-only dispatch; caller owns exact preflight, intent and quota."""
+        self._request(
+            "PUT",
+            "videos",
+            params={"part": "localizations"},
+            json_body={"id": video_id, "localizations": replacement},
+            require_write=True,
+        )
+        return self.read_description(video_id)
+
     def replace_localized_description(
         self,
         *,
@@ -505,14 +516,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             return current
 
         with reserve_shared_quota(self._quota_guard, 50 + self.retry_policy.max_attempts, YouTubeWriteError):
-            self._request(
-                "PUT",
-                "videos",
-                params={"part": "localizations"},
-                json_body={"id": video_id, "localizations": replacement},
-                require_write=True,
-            )
-            verified = self.read_description(video_id)
+            verified = self._put_localization_map(video_id, replacement)
             drift = localization_postflight_drift(
                 verified,
                 video_id=video_id,

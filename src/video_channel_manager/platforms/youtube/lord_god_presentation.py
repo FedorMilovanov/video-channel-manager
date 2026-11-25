@@ -257,12 +257,8 @@ def require_lord_god_youtube_presentation(plan: dict[str, Any]) -> None:
         )
 
 
-def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, Any], *, video_id: str) -> dict[str, Any]:
-    """Plan an exact locale-map reduction offline; never grant write authority.
-
-    Scope is proven by the frozen 68-member owner playlist, not a title or URL
-    substring. Missing localization data is unknown, not an empty map.
-    """
+def _panorama_members(playlist: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate the complete canonical membership once for individual and bulk review."""
     from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
 
     members = playlist.get("memberships")
@@ -284,6 +280,18 @@ def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, An
         or len({m["video_id"] for m in members}) != 68
     ):
         raise ValueError("Invalid frozen Panorama owner membership")
+    return members
+
+
+def plan_panorama_russian_metadata(owner: dict[str, Any], playlist: dict[str, Any], *, video_id: str) -> dict[str, Any]:
+    """Plan an exact locale-map reduction offline; never grant write authority.
+
+    Scope is proven by the frozen 68-member owner playlist, not a title or URL
+    substring. Missing localization data is unknown, not an empty map.
+    """
+    from video_channel_manager.platforms.youtube.chapter_release import PANORAMA_PLAYLIST
+
+    members = _panorama_members(playlist)
     member = next((m for m in members if m["video_id"] == video_id), None)
     raw = owner.get("raw")
     if member is None or not isinstance(raw, dict):
@@ -433,6 +441,51 @@ def verify_panorama_russian_metadata_readback(
         "drift": sorted(set(drift)),
         "captions_verified": False,
         "public_display_verified": False,
+        "execution_authorized": False,
+        "provider_reads": 0,
+        "provider_writes": 0,
+    }
+
+
+def inventory_panorama_russian_metadata(
+    playlist: dict[str, Any], owners: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Account for every lecture once; archived clean metadata is not live verification."""
+    members = _panorama_members(playlist)
+    member_ids = {member["video_id"] for member in members}
+    receipts: dict[str, list[dict[str, Any]]] = {}
+    for owner in owners:
+        video_id = owner.get("video_id")
+        if not isinstance(video_id, str) or video_id not in member_ids:
+            raise ValueError("Owner receipt outside exact Panorama membership")
+        receipts.setdefault(video_id, []).append(owner)
+
+    counts = {"REVIEW_REQUIRED": 0, "NO_CHANGE": 0, "MISSING": 0, "HOLD": 0}
+    rows = []
+    for member in sorted(members, key=lambda item: item["position"]):
+        video_id = member["video_id"]
+        matches = receipts.get(video_id, [])
+        row: dict[str, Any] = {"video_id": video_id, "episode": member["position"] + 1}
+        if not matches:
+            row["disposition"] = "MISSING"
+        elif len(matches) != 1:
+            row.update(disposition="HOLD", reason="duplicate_owner_receipts")
+        else:
+            try:
+                candidate = plan_panorama_russian_metadata(matches[0], playlist, video_id=video_id)
+            except ValueError as exc:
+                row.update(disposition="HOLD", reason=str(exc))
+            else:
+                row.update(disposition=candidate["disposition"], candidate=candidate)
+        counts[row["disposition"]] += 1
+        rows.append(row)
+    return {
+        "schema": "panorama-russian-metadata-inventory-v1",
+        "playlist_sha256": canonical_sha256(playlist),
+        "counts": counts,
+        "episodes": rows,
+        "all_receipts_reviewable": counts["MISSING"] == counts["HOLD"] == 0,
+        "live_verified": False,
         "execution_authorized": False,
         "provider_reads": 0,
         "provider_writes": 0,
