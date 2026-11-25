@@ -12,6 +12,7 @@ from video_channel_manager.youtube_release_operations import (
     adopt_existing,
     initialize_release,
     prepare_plan,
+    read_release_status,
     record_manual_evidence,
     release_from_journal,
     release_status_summary,
@@ -506,6 +507,30 @@ def test_status_prints_safe_release_summary(capsys, tmp_path: Path) -> None:
     assert printed["next_child_id"] == "processing-private"
     assert printed["grants_execution_authority"] is False
     assert stable.read_bytes() == before
+    assert printed["project_key"] == "legendary-poet"
+    assert printed["target_channel_id"] == CHANNEL_ID
+
+    from typer.testing import CliRunner
+
+    from video_channel_manager.cli.app import app
+
+    runner = CliRunner()
+    command = ["youtube", "release-status", "--plan", str(plan_path), "--data-dir"]
+    result = runner.invoke(app, [*command, str(tmp_path / "state")])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == printed
+    assert stable.read_bytes() == before
+    relative = runner.invoke(app, [*command, "state"])
+    assert relative.exit_code == 2
+    assert "absolute data directory" in relative.output
+
+    journal["target_channel_id"] = "UC-other"
+    write_json_atomic(stable, journal)
+    with pytest.raises(UploadPlanError, match="identity mismatch: target_channel_id"):
+        read_release_status(plan_path, tmp_path / "state")
+    rejected = runner.invoke(app, [*command, str(tmp_path / "state")])
+    assert rejected.exit_code == 2
+    assert "identity mismatch: target_channel_id" in rejected.output
 
 
 def test_release_status_summary_never_exposes_runtime(tmp_path: Path) -> None:
