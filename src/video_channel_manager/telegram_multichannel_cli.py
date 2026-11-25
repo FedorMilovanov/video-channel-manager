@@ -408,7 +408,7 @@ def _state_git(directory: Path, *args: str) -> str:
     """Run bounded Git state operations without exposing remote credentials."""
     try:
         result = subprocess.run(
-            ["git", "-C", str(directory), *args],
+            ["git", "-c", "core.longpaths=true", "-C", str(directory), *args],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -466,9 +466,7 @@ def _require_current_audio_state(profile: TelegramChannelProfile, ledger_path: P
     return root
 
 
-def _persist_remote_audio_state(
-    root: Path, profile: TelegramChannelProfile, phase: str, *paths: Path
-) -> None:
+def _persist_remote_audio_state(root: Path, profile: TelegramChannelProfile, phase: str, *paths: Path) -> None:
     relative = [path.relative_to(root).as_posix() for path in paths]
     _state_git(root, "add", "--", *relative)
     # Unique commits prevent two identical trees from the same parent
@@ -495,7 +493,7 @@ def _persist_remote_audio_state(
 
 def _audio_intent_path(ledger_path: Path, envelope: GenericDispatchEnvelope) -> Path:
     key = hashlib.sha256(envelope.intent_id.encode("utf-8")).hexdigest()
-    return ledger_path.resolve().parent / ".ledger.json.dispatch-intents" / f"{key}.json"
+    return ledger_path.resolve().parent / ".intents" / f"{key}.json"
 
 
 def _send_persisted_once(
@@ -707,9 +705,7 @@ def main() -> int:
         if audio_state_root is not None:
             intent_path = _audio_intent_path(args.ledger, prepared.envelope)
             _write_model(intent_path, prepared.envelope)
-            _persist_remote_audio_state(
-                audio_state_root, profile, "intent", args.ledger.resolve(), intent_path
-            )
+            _persist_remote_audio_state(audio_state_root, profile, "intent", args.ledger.resolve(), intent_path)
         _write_model(args.envelope_output, prepared.envelope)
         print(
             json.dumps(

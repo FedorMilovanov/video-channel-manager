@@ -479,7 +479,7 @@ def test_audio_admission_rejects_incomplete_state_checkout(tmp_path, monkeypatch
 
 def _git(directory: Path, *args: str) -> str:
     return subprocess.run(
-        ["git", "-C", str(directory), *args], check=True, capture_output=True, text=True
+        ["git", "-c", "core.longpaths=true", "-C", str(directory), *args], check=True, capture_output=True, text=True
     ).stdout.strip()
 
 
