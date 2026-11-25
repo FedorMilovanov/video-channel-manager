@@ -105,7 +105,8 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
         entry = by_num[number]
         assert "7143481654" in entry["underlying_draft_ref"]
         assert all(
-            check["proposed_russian"] in entry["proposed_quote_text_ru"] for check in entry["selected_lexical_checkpoints"]
+            check["proposed_russian"] in entry["proposed_quote_text_ru"]
+            for check in entry["selected_lexical_checkpoints"]
         )
 
     assert by_num[22]["proposed_quote_text_ru"].startswith("Христианское довольство —")
