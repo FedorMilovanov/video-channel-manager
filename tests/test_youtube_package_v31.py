@@ -90,6 +90,17 @@ def test_shorts_reject_missing_or_extra_blank_lines() -> None:
         )
 
 
+def test_shorts_reject_non_hashtag_tokens_in_final_block() -> None:
+    original = make_package()
+    hashtag_line = next(line for line in original.splitlines() if line.startswith("#") and len(line.split()) == 4)
+    for suffix in (" extra", " #", " !", ","):
+        candidate = original.replace(hashtag_line, hashtag_line + suffix, 1)
+        assert any(
+            issue.block == "shorts" and issue.code == "short_hashtags"
+            for issue in validate_five_block_package(candidate)
+        )
+
+
 def test_detect_wrong_playlist_id_and_placeholder() -> None:
     pkg = make_package().replace("PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q", "PASTE-YESENIN-PLAYLIST-ID")
     issues = validate_five_block_package(pkg)

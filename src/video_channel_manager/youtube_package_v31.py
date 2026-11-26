@@ -194,8 +194,8 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
                 "Плейлисты SHORTS должны совпадать с авторским и общим плейлистами Description.",
             )
         )
-    short_hashes = _HASHTAG_RE.findall(short_lines[-1] if short_lines else "")
-    if not 3 <= len(short_hashes) <= 5:
+    short_hashes = short_lines[-1].split() if short_lines else []
+    if not 3 <= len(short_hashes) <= 5 or not all(_HASHTAG_RE.fullmatch(tag) for tag in short_hashes):
         errors.append(CopyIssue("shorts", "short_hashtags", "SHORTS: 3–5 хештегов в конце."))
 
     if not 500 <= len(pin) <= 1400:
