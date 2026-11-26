@@ -169,7 +169,12 @@ def _archived_srt_cues(path: Path) -> list[tuple[int, str]]:
 
 
 def require_review(
-    review: dict[str, Any], review_path: Path, *, video_id: str, before: str, after: str,
+    review: dict[str, Any],
+    review_path: Path,
+    *,
+    video_id: str,
+    before: str,
+    after: str,
     allow_archived_srt: bool = False,
 ) -> None:
     """Require an explicit, byte-bound editorial attestation, not self-hash alone."""
@@ -199,9 +204,8 @@ def require_review(
         not isinstance(reviewer, str)
         or not reviewer.strip()
         or not isinstance(reviewed_at, str)
-        or approval.get("basis") not in {
-            "exact_ru_caption_boundaries", "exact_ru_audio_boundaries", _ARCHIVED_SRT_BASIS
-        }
+        or approval.get("basis")
+        not in {"exact_ru_caption_boundaries", "exact_ru_audio_boundaries", _ARCHIVED_SRT_BASIS}
         or (approval.get("basis") == _ARCHIVED_SRT_BASIS and not allow_archived_srt)
         or approval.get("recording_video_id") != video_id
         or approval.get("chapters_sha256") != canonical_sha256(review["chapters"])
@@ -474,7 +478,11 @@ def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_revi
         if not isinstance(review, dict):
             raise ValueError("Invalid chapter review object")
         require_review(
-            review, review_path, video_id=video_id, before=before, after=after,
+            review,
+            review_path,
+            video_id=video_id,
+            before=before,
+            after=after,
             allow_archived_srt=plan.get("source_scope") == "exact-panorama-owner-v1",
         )
         _require_rederived_chapter_plan(plan, review_path, video_id=video_id)
