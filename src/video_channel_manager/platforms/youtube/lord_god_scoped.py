@@ -293,7 +293,12 @@ def _reviewed_archive_gap(
 
 
 def _validated_chapter_appendix(
-    review: dict[str, Any], review_file: Path, transcript_database: Path, *, video_id: str, before: str,
+    review: dict[str, Any],
+    review_file: Path,
+    transcript_database: Path,
+    *,
+    video_id: str,
+    before: str,
     allow_archived_srt: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     """Shared semantic and archive contract for both owner-evidence routes."""
@@ -403,7 +408,11 @@ def _validated_chapter_appendix(
         raise ValueError("Review final description hash or size is inconsistent")
 
     require_review(
-        review, review_file, video_id=video_id, before=before, after=after,
+        review,
+        review_file,
+        video_id=video_id,
+        before=before,
+        after=after,
         allow_archived_srt=allow_archived_srt,
     )
 
@@ -534,7 +543,11 @@ def build_panorama_owner_chapter_plan(
     proof = load_panorama_owner_evidence(owner_file, playlist_file, source_file, video_id=video_id)
     before = proof["description"]
     after, evidence = _validated_chapter_appendix(
-        review, review_file, transcript_database, video_id=video_id, before=before,
+        review,
+        review_file,
+        transcript_database,
+        video_id=video_id,
+        before=before,
         allow_archived_srt=True,
     )
     if review.get("original") != proof["original"] or review.get("episode") != proof["episode"]:
