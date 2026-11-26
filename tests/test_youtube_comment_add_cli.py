@@ -306,3 +306,128 @@ def test_wrong_direct_readback_does_not_resolve_intent(tmp_path: Path, monkeypat
         _run(path, plan, execute=True)
     assert not list((tmp_path / "reports").glob("*-result.json"))
     writer.create_top_level_comment.assert_called_once()
+
+
+def _update_plan(path: Path, *, text: str, inventory: list[Any]) -> dict[str, Any]:
+    operation = make_comment_operation(
+        action="update",
+        channel_id=CHANNEL,
+        video_id="video-1",
+        video_title="Title",
+        comment_text=text,
+        source_ids=["source-1"],
+        reviewed_at="2026-11-26T01:00:00+00:00",
+        expected_comment_id=inventory[0].comment_id,
+        expected_comment_text=inventory[0].text,
+        expected_owned_comments={item.comment_id: item.text_sha256 for item in inventory},
+    )
+    plan = build_comment_plan(
+        account_alias=ACCOUNT,
+        channel_id=CHANNEL,
+        source_snapshot="snapshot-2",
+        source_snapshot_generated_at="2026-11-26T00:59:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-comment-update",
+    )
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    return plan
+
+
+def _run_update(path: Path, plan: dict[str, Any], *, execute: bool = False) -> None:
+    youtube_cli.apply_comment_update(
+        path,
+        account=ACCOUNT,
+        confirm_channel=CHANNEL,
+        confirm_plan_sha256=plan["plan_sha256"] if execute else "",
+        execute=execute,
+        client_secret=None,
+    )
+
+
+def test_reviewed_update_dry_run_and_verified_execute_preserve_other_comments(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, writer, inventory = _setup(tmp_path, monkeypatch)
+    other = _snapshot("Unchanged comment")
+    other.comment_id = "comment-2"
+    inventory.extend([_snapshot("Reviewed before"), other])
+    plan = _update_plan(path, text="Reviewed correction", inventory=inventory)
+    _run_update(path, plan)
+    assert not list((tmp_path / "reports").glob("*.json"))
+    writer.update_top_level_comment.assert_not_called()
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+
+    def update(**kwargs: Any) -> SimpleNamespace:
+        assert kwargs["comment_id"] == "comment-1"
+        assert kwargs["expected_text"] == "Reviewed before"
+        assert kwargs["expected_owned_comments"] == {item.comment_id: item.text_sha256 for item in inventory}
+        assert kwargs["strict_inventory_max_pages"] == 10
+        assert kwargs["expected_video_title"] == "Title"
+        assert kwargs["expected_privacy_status"] == "public"
+        kwargs["before_dispatch"]()
+        assert len(list((tmp_path / "reports").glob("*-intent.json"))) == 1
+        inventory[0] = _snapshot(kwargs["new_text"])
+        return inventory[0]
+
+    writer.update_top_level_comment.side_effect = update
+    writer.read_comment.side_effect = lambda *_args, **_kwargs: inventory[0]
+    _run_update(path, plan, execute=True)
+    _run_update(path, plan, execute=True)
+    writer.update_top_level_comment.assert_called_once()
+    writer.create_top_level_comment.assert_not_called()
+    assert inventory[1] is other
+    receipt = next((tmp_path / "reports").glob("*-result.json"))
+    assert json.loads(receipt.read_text(encoding="utf-8"))["existing_preserved"] == ["comment-2"]
+
+
+def test_unresolved_update_blocks_edited_update_and_create_then_reconciles_exact_plan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, writer, inventory = _setup(tmp_path, monkeypatch)
+    inventory.append(_snapshot("Reviewed before"))
+    plan = _update_plan(path, text="Reviewed correction", inventory=inventory)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Unknown PUT outcome")
+
+    writer.update_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run_update(path, plan, execute=True)
+    edited = _update_plan(path, text="Edited correction", inventory=inventory)
+    with pytest.raises(typer.Exit):
+        _run_update(path, edited, execute=True)
+    extra = _replan(path, text="Additional comment", expected={inventory[0].comment_id: inventory[0].text_sha256})
+    with pytest.raises(typer.Exit):
+        _run(path, extra, execute=True)
+    inventory[0] = _snapshot("Reviewed correction")
+    writer.read_comment.return_value = inventory[0]
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    _run_update(path, plan)
+    assert not list((tmp_path / "reports").glob("*-result.json"))
+    _run_update(path, plan, execute=True)
+    assert len(list((tmp_path / "reports").glob("*-result.json"))) == 1
+    writer.update_top_level_comment.assert_called_once()
+    writer.create_top_level_comment.assert_not_called()
+
+
+@pytest.mark.parametrize("drift", ["text", "extra", "title", "other-match"])
+def test_reviewed_update_rejects_live_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str) -> None:
+    path, _, writer, inventory = _setup(tmp_path, monkeypatch)
+    inventory.append(_snapshot("Reviewed before"))
+    plan = _update_plan(path, text="Reviewed correction", inventory=inventory)
+    if drift == "text":
+        inventory[0] = _snapshot("Unreviewed change")
+    elif drift == "title":
+        writer.read_video_identity.return_value.title = "Changed title"
+    else:
+        other = _snapshot("Reviewed correction" if drift == "other-match" else "Other comment")
+        other.comment_id = "comment-2"
+        inventory.append(other)
+    with pytest.raises(typer.Exit):
+        _run_update(path, plan, execute=True)
+    writer.update_top_level_comment.assert_not_called()
+    writer.create_top_level_comment.assert_not_called()
+    assert not list((tmp_path / "reports").glob("*.json"))

@@ -612,3 +612,62 @@ def test_strict_first_create_refuses_incomplete_inventory(tmp_path: Path) -> Non
             expected_video_title="Title",
             expected_privacy_status="public",
         )
+
+
+@pytest.mark.parametrize("drift", ["none", "text", "extra", "title", "privacy"])
+def test_guarded_update_rechecks_full_state_before_intent_and_put(tmp_path: Path, drift: str) -> None:
+    from video_channel_manager.platforms.youtube.comments import comment_text_sha256
+
+    before_text = "Reviewed before"
+    current_text = "Changed" if drift == "text" else before_text
+    calls: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal current_text
+        if request.url.path == "/videos":
+            video = _video()
+            if drift == "title":
+                video["snippet"]["title"] = "Changed"
+            if drift == "privacy":
+                video["status"]["privacyStatus"] = "private"
+            return httpx.Response(200, json={"items": [video]})
+        if request.url.path == "/commentThreads":
+            rows = [_thread("comment-1", current_text)]
+            if drift == "extra":
+                rows.append(_thread("comment-2", "Unexpected comment"))
+            return httpx.Response(
+                200, json={"items": rows if request.url.params["moderationStatus"] == "published" else []}
+            )
+        if request.url.path == "/comments" and request.method == "GET":
+            return httpx.Response(200, json={"items": [_comment("comment-1", current_text)]})
+        assert request.url.path == "/comments" and request.method == "PUT"
+        assert calls == ["intent"]
+        calls.append("PUT")
+        body = json.loads(request.content)
+        assert body["id"] == "comment-1"
+        current_text = body["snippet"]["textOriginal"]
+        return httpx.Response(200, json=_comment("comment-1", current_text))
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+
+    def apply() -> None:
+        writer.update_top_level_comment(
+            comment_id="comment-1",
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_text=before_text,
+            new_text="Reviewed correction",
+            expected_owned_comments={"comment-1": comment_text_sha256(before_text)},
+            expected_video_title="Title",
+            expected_privacy_status="public",
+            strict_inventory_max_pages=10,
+            before_dispatch=lambda: calls.append("intent"),
+        )
+
+    if drift == "none":
+        apply()
+        assert calls == ["intent", "PUT"]
+    else:
+        with pytest.raises(YouTubeCommentConflictError):
+            apply()
+        assert not calls
