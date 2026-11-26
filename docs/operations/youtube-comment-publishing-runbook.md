@@ -1,207 +1,57 @@
 # YouTube comment publishing runbook
 
-This workflow adds or updates top-level comments across the channel without copying text manually video by video.
-It is deliberately split into **audit → editorial review → plan → locked preflight → execute → verify**.
+This is the current operator route for reviewed YouTube comments. Follow [AGENTS](../../AGENTS.md), the [editorial standard](../youtube-comment-editorial-standard.md), [project identity registry](project-identity-registry.md), [shared quota contract](youtube-shared-project-quota.md), and [release/failure ownership](routine-release-and-failure-ownership.md).
 
-## Safety boundary
+## 1. Prove the execution route
 
-- The software does not invent literary or historical claims.
-- Only files with `schema_name=video-manager.youtube-comment-content` and `status=approved` can enter a write plan.
-- Every approved record must contain at least one `source_id` or editorial-rule ID.
-- The default plan mode creates comments only where the channel has no existing top-level comment.
-- A different existing channel comment is a review-only conflict, not permission to create a duplicate.
-- Updating an existing comment requires its exact comment ID and exact reviewed before-text.
-- Live writes require a token containing `https://www.googleapis.com/auth/youtube.force-ssl`.
-- Dry-run is the default. `--execute` still requires exact channel, source snapshot, live ready count, and plan SHA-256 confirmations.
-- One per-channel Windows-safe lock prevents concurrent YouTube writers.
-- The journal is saved before each write and after every result. A rerun resumes instead of duplicating completed comments.
+Resolve the exact current `main` commit and its successful required CI, then use a clean verified runtime at that commit. Do not switch to a historical feature branch or disturb another operator's worktree. Check the canonical absolute VCM data root, exact registered account/channel and official OAuth permissions. Do not copy tokens, force a login, or select another alias to evade a refusal. A dry-run or green CI is not execution authority.
 
-## 1. Refresh the unified code
+The historical standalone comment apply script is retired. Do not run its historical entrypoint or import it as an alternate executor.
 
-Use a separate worktree or wait until other Git activity has finished. Do not run two YouTube write processes for the same channel.
+## 2. Read and review the exact target
 
-```powershell
-git fetch origin
-git switch feature/youtube-comment-publishing-v1
-git pull --ff-only
-python -m pip install -e ".[dev]"
-```
+Use the canonical official client; where the video ID is known, use bounded exact-target reads rather than a full channel scan. Confirm public video ID, owner channel, current exact title and a complete strict moderation inventory (including held comments). An incomplete inventory does not prove absence.
 
-Point the worktree to the existing shared data directory when necessary:
+Review the current description and all owner comments for distinct value and duplicate text. Preserve links and existing comments. Normally one useful comment is enough; zero is valid, a second requires a genuinely distinct evidence-backed subject. At most one may be pinned; this command does not pin. Keep source citations and exact reviewed text; do not manufacture facts or approval.
 
-```powershell
-$mainRepo = "C:\Users\Fedor\Projects\video-channel-manager"
-$env:VCM_DATA_DIR = "$mainRepo\data"
-```
+## 3. Freeze one reviewed create plan
 
-## 2. Create a fresh YouTube snapshot
+Use the existing `video_channel_manager.platforms.youtube.comment_plan` builder and validator (`make_comment_operation`, `build_comment_plan`, `validate_comment_plan`). Bind the exact registered account, channel, video ID, title, source snapshot and its timestamp, reviewed text, source IDs, and review timestamp. The plan must contain exactly one create operation.
 
-```powershell
-video-manager youtube scan `
-  --account legendary-poet `
-  --channel UC-78ys2S3cQ3lpqgXfo-SvQ
-```
+| Mode | Required reviewed owner map |
+| --- | --- |
+| `reviewed-first-comment` | Explicit empty `expected_owned_comments: {}`, proven by complete strict moderation inventory |
+| `reviewed-additional-comment` | Nonempty exact owner comment ID to canonical text SHA-256 map |
 
-Save the returned path:
+Use canonical comment text digests, not a hash of an arbitrary raw HTTP response. Freeze and validate the resulting plan; manual changes require a newly reviewed plan and digest. Never use a new plan to bypass a previous uncertain effect.
 
-```powershell
-$yt = Get-Item "$mainRepo\data\exports\youtube-legendary-poet-UC-78ys2S3cQ3lpqgXfo-SvQ-<TIMESTAMP>.json"
-```
+For bulk Panorama comment work, use the existing reviewed Wave operator contract only for its admitted scope; do not repurpose that route for other projects. For updates to existing comments, this single-create command is not an update executor. Require a supported exact-target route and exact reviewed before-state; if no current route is available, report the blocker instead of reviving the retired script or creating a replacement comment.
 
-## 3. Read every video's live comments
-
-This step is read-only. It classifies public videos as:
-
-- `missing` — no top-level comments;
-- `foreign_only` — viewer comments exist, but the channel has no top-level comment;
-- `owned_present` — at least one top-level comment from the channel exists;
-- `comments_disabled` — YouTube reports comments disabled;
-- `error` — a live API read failed.
-
-```powershell
-python .\scripts\audit_youtube_comments.py `
-  "$($yt.FullName)" `
-  --account legendary-poet `
-  --channel UC-78ys2S3cQ3lpqgXfo-SvQ
-```
-
-The script creates JSON plus a Markdown report in `data/reports`.
-
-## 4. Add reviewed content records
-
-Approved records live under:
+## 4. Canonical preflight (read-only)
 
 ```text
-content/youtube-comments/<VIDEO_ID>.json
+video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID
 ```
 
-Required fields:
+The command validates the plan, project binding, public title/identity, current complete owner-comment set and earlier intent evidence under the channel lock. An existing exact match is skipped; changed state or incomplete evidence blocks dispatch. Inspect the actual result and exit status. Dry-run creates no receipt and performs no POST.
 
-```json
-{
-  "schema_name": "video-manager.youtube-comment-content",
-  "schema_version": 1,
-  "status": "approved",
-  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
-  "video_id": "VIDEO_ID",
-  "video_title": "Reviewed title",
-  "reviewed_at": "2026-07-25T15:40:00+00:00",
-  "source_ids": ["primary-source-id", "youtube-editorial-link-map"],
-  "comment_text": "Final text shown to viewers",
-  "sources": []
-}
-```
+## 5. Separately authorized exact create
 
-`draft`, `needs-research`, and other statuses are never published.
-
-## 5. Build the self-validating plan
-
-```powershell
-$audit = Get-Item "$mainRepo\data\reports\youtube-comment-audit-UC-78ys2S3cQ3lpqgXfo-SvQ-<TIMESTAMP>.json"
-
-python .\scripts\build_youtube_comment_plan.py `
-  "$($yt.FullName)" `
-  "$($audit.FullName)" `
-  --account legendary-poet `
-  --content-dir .\content\youtube-comments
-```
-
-Default behavior is `reviewed-missing-only`:
-
-- approved content + no channel comment → `create`;
-- identical channel comment → already applied;
-- different channel comment → review-only;
-- disabled comments or audit errors → review-only;
-- unapproved content → excluded.
-
-Use `--include-updates` only after reviewing every existing before-text shown by the audit.
-
-The output includes:
-
-- exact channel and source snapshot;
-- hash of the complete public-video inventory;
-- hash of every comment text;
-- deterministic operation IDs;
-- hash of the exact operation set;
-- final `plan_sha256`.
-
-Any manual edit after review invalidates the plan.
-
-## 6. Dry-run the live plan
-
-```powershell
-$plan = Get-Item "$mainRepo\data\reports\youtube-comment-plan-UC-78ys2S3cQ3lpqgXfo-SvQ-<TIMESTAMP>.json"
-
-python .\scripts\apply_youtube_comment_plan.py `
-  "$($plan.FullName)" `
-  --account legendary-poet
-```
-
-Expected summary:
+Only after the exact plan and write scope are authorized, current-main quality is verified, preflight succeeds, and the shared quota guard has sufficient admission/verification capacity:
 
 ```text
-planned operations: N
-ready now: N
-already applied / journaled: M
-blockers: 0
-estimated write quota: N * 50 units
+video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID --execute --confirm-plan-sha256 SHA
 ```
 
-Do not execute while `blockers` is nonzero.
+Use the exact digest emitted by the frozen plan, not a placeholder. The existing executor reserves quota, checks owner identity/state, persists intent before a single POST, and independently verifies exact comment ID, text hash and full owner inventory. First-create effect identity binds the channel and video independently of editable text. Additional creates preserve all prior owner comments. No second writer, blind retries or automatic pinning.
 
-## 7. Authorize guarded write access once
+## 6. Reconcile uncertain outcomes
 
-```powershell
-video-manager youtube login `
-  --account legendary-poet `
-  --write `
-  --force
-```
+A missing receipt, transport failure or ambiguous POST is not evidence that the comment is absent. Preserve all existing intents and receipts, including the historical text-keyed journal namespace. Reconcile the exact video and comment through read-only checks. If the exact matching comment becomes visible, the original frozen plan and digest with the required execution confirmation can record the missing local receipt after independent direct and full-inventory readback; this recovery does not send another POST. Dry-run never records a receipt. If the effect remains uncertain or the reviewed owner set differs, stop. Do not delete journals, change text, switch accounts or create another plan to evade the stop.
 
-## 8. Execute the exact reviewed set
+Report verified provider result and comment ID separately from repository implementation and local preflight. Public rendering and pin state are separate checks.
 
-Copy the live ready count and exact plan SHA from the dry-run:
-
-```powershell
-python .\scripts\apply_youtube_comment_plan.py `
-  "$($plan.FullName)" `
-  --account legendary-poet `
-  --execute `
-  --confirm-channel UC-78ys2S3cQ3lpqgXfo-SvQ `
-  --confirm-count N `
-  --confirm-source-snapshot <SNAPSHOT_UUID> `
-  --confirm-plan-sha256 sha256:<EXACT_PLAN_SHA> `
-  --write-delay 2
-```
-
-The executor then:
-
-1. revalidates the whole plan;
-2. checks all live videos and comments;
-3. acquires the channel lock;
-4. repeats the full preflight under the lock;
-5. journals `pending` before each API call;
-6. creates or updates exactly one reviewed comment;
-7. rereads and verifies the stored comment;
-8. records IDs and hashes;
-9. runs a full postflight over the complete plan.
-
-## 9. Resume after an interruption
-
-Run the same command with the same plan and journal. Completed operation IDs are reused; pending or failed operations are rechecked against live YouTube before any new write.
-
-Do not delete the journal to force a rerun. A live identical comment is also detected as already applied.
-
-## API facts used by this implementation
-
-- `commentThreads.list` reads top-level comment threads and costs 1 quota unit.
-- `commentThreads.insert` creates a top-level comment, requires OAuth, and costs 50 quota units.
-- `comments.list` verifies an exact comment ID and costs 1 quota unit.
-- `comments.update` updates a comment and costs 50 quota units.
-- `commentsDisabled` is handled separately from general API failures.
-- Top-level comment creation uses `snippet.channelId`, `snippet.videoId`, and `snippet.topLevelComment.snippet.textOriginal`.
-
-Official references:
+## API references
 
 - https://developers.google.com/youtube/v3/docs/commentThreads/list
 - https://developers.google.com/youtube/v3/docs/commentThreads/insert
@@ -209,4 +59,3 @@ Official references:
 - https://developers.google.com/youtube/v3/docs/comments/update
 - https://developers.google.com/youtube/v3/guides/implementation/comments
 - https://developers.google.com/youtube/v3/docs/errors
-- https://developers.google.com/youtube/v3/getting-started
