@@ -683,13 +683,64 @@ class YouTubeCommentWriter(HttpClientOwner):
         expected_channel_id: str,
         expected_text: str,
         new_text: str,
+        strict_inventory_max_pages: int | None = None,
+        before_dispatch: Callable[[], None] | None = None,
+        expected_video_title: str | None = None,
+        expected_privacy_status: str | None = None,
+        expected_owned_comments: dict[str, str] | None = None,
     ) -> TopLevelCommentSnapshot:
         normalized_new = validate_comment_text(new_text)
-        current = self._find_top_level_comment(
-            comment_id=comment_id,
-            video_id=video_id,
-            channel_id=expected_channel_id,
+        guarded = any(
+            value is not None
+            for value in (
+                strict_inventory_max_pages,
+                before_dispatch,
+                expected_video_title,
+                expected_privacy_status,
+                expected_owned_comments,
+            )
         )
+        if guarded:
+            if (
+                strict_inventory_max_pages is None
+                or strict_inventory_max_pages <= 0
+                or before_dispatch is None
+                or not expected_video_title
+                or expected_privacy_status != "public"
+                or not expected_owned_comments
+                or expected_owned_comments.get(comment_id) != comment_text_sha256(expected_text)
+                or comments_equivalent(expected_text, normalized_new)
+                or any(
+                    digest == comment_text_sha256(normalized_new)
+                    for cid, digest in expected_owned_comments.items()
+                    if cid != comment_id
+                )
+            ):
+                raise ValueError("Exact reviewed update requires full owner state and durable intent callback.")
+            identity = self.read_video_identity(video_id)
+            if (
+                identity.video_id != video_id
+                or identity.channel_id != expected_channel_id
+                or identity.title != expected_video_title
+                or identity.privacy_status != expected_privacy_status
+            ):
+                raise YouTubeCommentConflictError("Video identity drifted during guarded update; no dispatch.")
+            owned = [
+                item
+                for item in self.list_top_level_comments(
+                    video_id, strict_moderation=True, max_pages_per_status=strict_inventory_max_pages
+                )
+                if item.author_channel_id == expected_channel_id
+            ]
+            if {item.comment_id: item.text_sha256 for item in owned} != expected_owned_comments:
+                raise YouTubeCommentConflictError("Reviewed owner comment state changed; no PUT sent.")
+            current = next((item for item in owned if item.comment_id == comment_id), None)
+        else:
+            current = self._find_top_level_comment(
+                comment_id=comment_id,
+                video_id=video_id,
+                channel_id=expected_channel_id,
+            )
         if current is None:
             raise YouTubeCommentConflictError(f"Top-level comment {comment_id} was not found on video {video_id}.")
         if current.video_id != video_id or current.channel_id != expected_channel_id:
@@ -707,6 +758,8 @@ class YouTubeCommentWriter(HttpClientOwner):
             50 + len(self.verify_delays_seconds) * (1 + len(_MODERATION_STATES)) * self.retry_policy.max_attempts,
             YouTubeCommentError,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             payload = self._request(
                 "PUT",
                 "comments",

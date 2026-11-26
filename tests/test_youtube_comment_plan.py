@@ -152,3 +152,43 @@ def test_first_comment_requires_explicit_empty_owner_inventory() -> None:
     empty = deepcopy(plan)
     empty["operations"] = []
     assert validate_comment_plan(seal_comment_plan(empty))
+
+
+
+def test_exact_update_mode_binds_target_before_digest_and_complete_owner_map() -> None:
+    from video_channel_manager.platforms.youtube.comments import comment_text_sha256
+
+    # A legacy formatting mistake is valid evidence, not valid new copy.
+    old_text = "*Source*: https://example.com/"
+    before = {"comment-1": comment_text_sha256(old_text), "other": comment_text_sha256("Other comment")}
+    operation = make_comment_operation(
+        action="update",
+        channel_id="channel-1",
+        video_id="video-1",
+        video_title="Title",
+        comment_text="*Source:* https://example.com/",
+        source_ids=["source-1"],
+        reviewed_at="2026-11-26T00:00:00+00:00",
+        expected_comment_id="comment-1",
+        expected_comment_text=old_text,
+        expected_owned_comments=before,
+    )
+    plan = build_comment_plan(
+        account_alias="legendary-poet",
+        channel_id="channel-1",
+        source_snapshot="snapshot",
+        source_snapshot_generated_at="2026-11-25T23:59:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-comment-update",
+    )
+    assert validate_comment_plan(plan) == []
+    for mode in ("reviewed-first-comment", "reviewed-additional-comment", "reviewed-create-and-update"):
+        assert validate_comment_plan(seal_comment_plan({**plan, "mode": mode}))
+    for wrong_map in ({}, {"other": before["other"]}, {"comment-1": "sha256:" + "0" * 64}):
+        changed = deepcopy(plan)
+        changed["operations"][0]["expected_owned_comments"] = wrong_map
+        assert validate_comment_plan(seal_comment_plan(changed))
+    changed = deepcopy(plan)
+    changed["operations"] = []
+    assert validate_comment_plan(seal_comment_plan(changed))

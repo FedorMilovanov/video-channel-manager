@@ -947,6 +947,10 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
             or result.get("video_id") != video_id
             or not result.get("comment_id")
             or result.get("comment_sha256") != operation.get("comment_sha256")
+            or (
+                operation.get("action") == "update"
+                and result.get("comment_id") != operation.get("expected_comment_id")
+            )
             or result.get("plan_sha256") != prior_plan.get("plan_sha256")
         ):
             raise ValueError("Earlier unresolved comment intent for this video requires reconciliation; no POST sent.")
@@ -962,6 +966,48 @@ def apply_comment_add(
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
 ) -> None:
     """Create one reviewed first or additional comment; never replace comments or replay an uncertain POST."""
+    _apply_reviewed_comment(
+        plan,
+        account=account,
+        confirm_channel=confirm_channel,
+        confirm_plan_sha256=confirm_plan_sha256,
+        execute=execute,
+        client_secret=client_secret,
+        update_only=False,
+    )
+
+
+@youtube_app.command("apply-comment-update")
+def apply_comment_update(
+    plan: Annotated[Path, typer.Argument(help="Reviewed single existing-comment update plan")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Update one exact reviewed existing comment through the same guarded journal and lock."""
+    _apply_reviewed_comment(
+        plan,
+        account=account,
+        confirm_channel=confirm_channel,
+        confirm_plan_sha256=confirm_plan_sha256,
+        execute=execute,
+        client_secret=client_secret,
+        update_only=True,
+    )
+
+
+def _apply_reviewed_comment(
+    plan: Path,
+    *,
+    account: str,
+    confirm_channel: str,
+    confirm_plan_sha256: str,
+    execute: bool,
+    client_secret: Path | None,
+    update_only: bool,
+) -> None:
     prepare_windows_youtube_console()
     try:
         payload = json.loads(plan.read_text(encoding="utf-8"))
@@ -971,8 +1017,13 @@ def apply_comment_add(
         if errors:
             raise ValueError("; ".join(errors))
         mode = payload.get("mode")
-        if mode not in ("reviewed-first-comment", "reviewed-additional-comment"):
-            raise ValueError("Expected reviewed-first-comment or reviewed-additional-comment mode.")
+        allowed_modes = (
+            ("reviewed-comment-update",)
+            if update_only
+            else ("reviewed-first-comment", "reviewed-additional-comment")
+        )
+        if mode not in allowed_modes:
+            raise ValueError(f"Expected plan mode: {', '.join(allowed_modes)}.")
         if payload["channel_id"] != confirm_channel or payload["account_alias"] != account:
             raise ValueError("Plan channel/account confirmation mismatch.")
         project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
@@ -991,14 +1042,22 @@ def apply_comment_add(
             raise ValueError("Use the verified absolute VCM_DATA_DIR for comment writes.")
         inventory_pages = 10
         first = mode == "reviewed-first-comment"
+        update = mode == "reviewed-comment-update"
         # First creation is a single channel/video effect, regardless of edited text.
-        # Additional creates retain the historical text-keyed journal namespace.
-        effect_subject = "first-comment" if first else operation["comment_sha256"]
+        # All mutations share the same journal namespace and unresolved-video guard.
+        effect_subject: str | list[str] = "first-comment" if first else operation["comment_sha256"]
+        if update:
+            effect_subject = [
+                "update",
+                operation["expected_comment_id"],
+                operation["expected_comment_sha256"],
+                operation["comment_sha256"],
+            ]
         effect_key = hashlib.sha256(json.dumps([confirm_channel, video_id, effect_subject]).encode("utf-8")).hexdigest()
         reports = root / "reports"
         intent = reports / f"youtube-comment-add-{effect_key}-intent.json"
         receipt = reports / f"youtube-comment-add-{effect_key}-result.json"
-        legacy_key = hashlib.sha256(
+        legacy_key = effect_key if update else hashlib.sha256(
             json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
         ).hexdigest()
         legacy_intent = reports / f"youtube-comment-add-{legacy_key}-intent.json"
@@ -1044,7 +1103,7 @@ def apply_comment_add(
                     "channel_id": confirm_channel,
                     "comment_id": verified.comment_id,
                     "comment_sha256": verified.text_sha256,
-                    "existing_preserved": sorted(expected),
+                    "existing_preserved": sorted(cid for cid in expected if not update or cid != comment_id),
                     "plan_sha256": payload["plan_sha256"],
                 },
             )
@@ -1074,6 +1133,8 @@ def apply_comment_add(
                         raise ValueError("Duplicate matching owner comments require review; no POST sent.")
                     if matches:
                         match = matches[0]
+                        if update and match.comment_id != operation["expected_comment_id"]:
+                            raise ValueError("Matching text belongs to a different comment; no PUT sent.")
                         if {item.comment_id: item.text_sha256 for item in before} != {
                             **expected,
                             match.comment_id: match.text_sha256,
@@ -1121,19 +1182,35 @@ def apply_comment_add(
                     def reserve_intent() -> None:
                         persist(intent, {"status": "may_exist", "plan": payload, "effect_key": effect_key})
 
-                    created = writer.create_top_level_comment(
-                        video_id=video_id,
-                        expected_channel_id=confirm_channel,
-                        text=text,
-                        # First creates use the existing strict missing-only writer branch.
-                        expected_owned_comments=None if first else expected,
-                        strict_inventory_max_pages=inventory_pages,
-                        before_dispatch=reserve_intent,
-                        expected_video_title=operation["video_title"],
-                        expected_privacy_status="public",
-                    )
-                    verify_and_record(created.comment_id, receipt)
-                    console.print(f"Verified: {created.comment_id}. Result: {receipt}")
+                    if update:
+                        result = writer.update_top_level_comment(
+                            comment_id=operation["expected_comment_id"],
+                            video_id=video_id,
+                            expected_channel_id=confirm_channel,
+                            expected_text=operation["expected_comment_text"],
+                            new_text=text,
+                            expected_owned_comments=expected,
+                            strict_inventory_max_pages=inventory_pages,
+                            before_dispatch=reserve_intent,
+                            expected_video_title=operation["video_title"],
+                            expected_privacy_status="public",
+                        )
+                        if result.comment_id != operation["expected_comment_id"]:
+                            raise ValueError("Unexpected update comment ID; reconcile without replay.")
+                    else:
+                        result = writer.create_top_level_comment(
+                            video_id=video_id,
+                            expected_channel_id=confirm_channel,
+                            text=text,
+                            # First creates use the existing strict missing-only writer branch.
+                            expected_owned_comments=None if first else expected,
+                            strict_inventory_max_pages=inventory_pages,
+                            before_dispatch=reserve_intent,
+                            expected_video_title=operation["video_title"],
+                            expected_privacy_status="public",
+                        )
+                    verify_and_record(result.comment_id, receipt)
+                    console.print(f"Verified: {result.comment_id}. Result: {receipt}")
         finally:
             writer.close()
             api.close()
