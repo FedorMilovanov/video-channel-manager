@@ -106,15 +106,9 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 - A timeout or failed final state push after a provider response is an incident to reconcile, not permission to send again.
 - Machine state belongs in durable journals/results/ledgers, not only logs or chat.
 
-## Canonical owner-local checkout
-
-Owner directive (26 Nov 2026): on the owner's Windows machine use `C:\Users\Fedor\Projects\video-channel-manager` as the single normal local code checkout. Do not create additional clones, long-lived worktrees, or per-wave runtime copies on other drives, in Projects, or in Temp just to read, edit, or test code. Prefer GitHub/API and hosted CI where practical; an exceptional temporary isolated worktree requires a concrete need, one bounded scope, and cleanup when its work is complete. Do not promote it to a second normal checkout.
-
-Before updating the canonical checkout, preserve unique tracked edits and any untracked/ignored operational evidence; never reset or clean an unrelated dirty worktree. Retire completed local worktrees only after checking exact commit reachability, clean tracked/untracked state, ignored data, task/process dependencies and any pinned runtime contract; use non-forced `git worktree remove`. Generated test caches are disposable; credentials, source media, receipts, journals and operator outputs are not. Existing separately pinned production runtimes are migration exceptions, not authority to create more copies: retire them only after the actual launcher, exact runtime and provider-free acceptance are reconciled. Preserve the canonical absolute data/credential store and single-writer rules; no new publication authority is created by a checkout change.
-
 ## Branch lifecycle
 
-Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
+On the owner's Windows machine use `C:\Users\Fedor\Projects\video-channel-manager` as the single normal local code checkout. No extra clones, per-wave runtime copies or persistent worktrees; prefer GitHub/API and hosted CI. A genuinely needed temporary isolated worktree must be scoped and removed when done. Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
 
 1. **Durable state refs.** `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs; never use them as code/runtime sources. The `state/legendary-poet-telegram` ref is separately reserved for later initialized audio publication state, not an executable code source.
 2. **Content-addressed evidence refs** — the artifact store of a released media set. The ref name is the prefix of the accepted evidence digest, and runtime bindings reference it by name (for example `milovi_telegram_feed.VIDEO_ARTIFACT_REF` gates every Milovi `sendVideo`). These look like ordinary `agent/...` work branches and are not ephemeral.
@@ -124,7 +118,7 @@ Refs fall into three classes, and the class decides whether deletion is allowed,
 
 Before deleting **any** ref, read [`docs/operations/protected-evidence-refs.json`](docs/operations/protected-evidence-refs.json); classes 1 and 2 are listed there with a role, an exact tip where the ref is immutable, and a restore command. Byte-identical duplication is **not** a sufficient reason to delete a class-2 ref: when a name is part of a binding, the name is the contract. `tests/test_ref_binding_inventory.py` and `tests/test_milovi_evidence_binding.py` fail if a binding or a deletion ledger contradicts that file.
 
-For class 3: after its PR/scope closes, delete the ref where supported; if ref deletion is unavailable, align it to exact current `main`. Never execute, deploy, recover, or start new work from a closed, unmerged, superseded, or retired branch. Preserve genuinely unique useful work through a focused current-main PR before retiring its ref.
+For class 3: after its PR/scope closes, delete the ref where supported; if ref deletion is unavailable, align it to exact current `main`. Never execute, deploy, recover, or start new work from a closed, unmerged, superseded, or retired branch. Preserve genuinely unique useful work through a focused current-main PR before retiring its ref. Before local cleanup verify retained commits, dirty/untracked/ignored evidence, launcher/process dependencies and runtime pins; use non-forced `git worktree remove`. Preserve unique edits, media, credentials, receipts, journals and operator outputs; only disposable caches are trash. Existing pinned production runtimes are migration exceptions until exact launcher/runtime validation, not permission for new copies. Keep the same absolute data store and one writer.
 
 ## Browser and wrapper rules
 
