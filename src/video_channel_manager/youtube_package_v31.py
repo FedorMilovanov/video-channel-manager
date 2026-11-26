@@ -175,6 +175,18 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         errors.append(
             CopyIssue("shorts", "share_prefix_markup", "Первые две содержательные строки SHORTS — без маркеров и URL.")
         )
+    # Exactly two semantic paragraphs and two contiguous playlist lines, with
+    # one blank line at each block boundary; never collapse prose into one line.
+    if (
+        len(short_lines) != 8
+        or not all(short_lines[index].strip() for index in (0, 2, 4, 5, 7))
+        or any(short_lines[index] != "" for index in (1, 3, 6))
+        or not all(short_lines[index].startswith("*Плейлист «") for index in (4, 5))
+        or not short_lines[7].startswith("#")
+    ):
+        errors.append(
+            CopyIssue("shorts", "short_paragraph_spacing", "SHORTS: пустая строка между смысловыми блоками.")
+        )
     short_playlists = [line for line in short_lines if line.startswith("*Плейлист «")]
     if short_playlists != expected_formatted_playlists:
         errors.append(
