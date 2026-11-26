@@ -293,7 +293,8 @@ def _reviewed_archive_gap(
 
 
 def _validated_chapter_appendix(
-    review: dict[str, Any], review_file: Path, transcript_database: Path, *, video_id: str, before: str
+    review: dict[str, Any], review_file: Path, transcript_database: Path, *, video_id: str, before: str,
+    allow_archived_srt: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     """Shared semantic and archive contract for both owner-evidence routes."""
     if (
@@ -379,6 +380,13 @@ def _validated_chapter_appendix(
             or not source_text.startswith(excerpt)
         ):
             raise ValueError("Chapter title/time does not match its archival transcript cue")
+        if basis == "exact_ru_archived_srt_boundaries" and (
+            not inside_chunk
+            or not isinstance(boundary.get("cue"), str)
+            or not " ".join(boundary["cue"].casefold().split())
+            or " ".join(boundary["cue"].casefold().split()) not in " ".join(source_text.casefold().split())
+        ):
+            raise ValueError("Archived SRT cue must match its exact archival fragment")
         if times and second - times[-1] < 10:
             raise ValueError("Chapter timestamps not increasing or too close")
         if chapter.get("stamp") != _chapter_stamp(second):
@@ -394,7 +402,10 @@ def _validated_chapter_appendix(
     if len(after.encode("utf-8")) > 5000 or sha256_text(after) != review.get("proposed_description_sha256"):
         raise ValueError("Review final description hash or size is inconsistent")
 
-    require_review(review, review_file, video_id=video_id, before=before, after=after)
+    require_review(
+        review, review_file, video_id=video_id, before=before, after=after,
+        allow_archived_srt=allow_archived_srt,
+    )
 
     evidence = {
         "transcript_database": str(transcript_database.resolve()),
@@ -523,7 +534,8 @@ def build_panorama_owner_chapter_plan(
     proof = load_panorama_owner_evidence(owner_file, playlist_file, source_file, video_id=video_id)
     before = proof["description"]
     after, evidence = _validated_chapter_appendix(
-        review, review_file, transcript_database, video_id=video_id, before=before
+        review, review_file, transcript_database, video_id=video_id, before=before,
+        allow_archived_srt=True,
     )
     if review.get("original") != proof["original"] or review.get("episode") != proof["episode"]:
         raise ValueError("Review episode or original source differs from the frozen register")
