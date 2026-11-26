@@ -308,7 +308,6 @@ def test_wrong_direct_readback_does_not_resolve_intent(tmp_path: Path, monkeypat
     writer.create_top_level_comment.assert_called_once()
 
 
-
 def _update_plan(path: Path, *, text: str, inventory: list[Any]) -> dict[str, Any]:
     operation = make_comment_operation(
         action="update",
@@ -415,9 +414,7 @@ def test_unresolved_update_blocks_edited_update_and_create_then_reconciles_exact
 
 
 @pytest.mark.parametrize("drift", ["text", "extra", "title", "other-match"])
-def test_reviewed_update_rejects_live_drift(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str
-) -> None:
+def test_reviewed_update_rejects_live_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str) -> None:
     path, _, writer, inventory = _setup(tmp_path, monkeypatch)
     inventory.append(_snapshot("Reviewed before"))
     plan = _update_plan(path, text="Reviewed correction", inventory=inventory)

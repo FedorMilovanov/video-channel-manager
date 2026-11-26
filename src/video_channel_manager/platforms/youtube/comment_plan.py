@@ -101,7 +101,9 @@ def make_comment_operation(
 ) -> CommentOperation:
     normalized = validate_comment_text(comment_text)
     # The before-state can contain the very formatting error being repaired.
-    expected_normalized = canonicalize_comment_text(expected_comment_text) if expected_comment_text is not None else None
+    expected_normalized = (
+        canonicalize_comment_text(expected_comment_text) if expected_comment_text is not None else None
+    )
     if action == "create" and (expected_comment_id is not None or expected_normalized is not None):
         raise ValueError("Create operations cannot declare an expected existing comment.")
     if action == "update" and (not expected_comment_id or not expected_normalized):
@@ -115,8 +117,10 @@ def make_comment_operation(
         raise ValueError("Approved comment operations require at least one source_id or editorial-rule ID.")
     comment_sha = comment_text_sha256(normalized)
     expected_sha = comment_text_sha256(expected_normalized) if expected_normalized is not None else None
-    if action == "update" and expected_owned_comments is not None and (
-        expected_comment_id is None or expected_owned_comments.get(expected_comment_id) != expected_sha
+    if (
+        action == "update"
+        and expected_owned_comments is not None
+        and (expected_comment_id is None or expected_owned_comments.get(expected_comment_id) != expected_sha)
     ):
         raise ValueError("Reviewed update must bind the target comment's exact before digest.")
     operation_id = operation_id_for(
@@ -277,7 +281,9 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             or comment_sha == expected_sha
             or any(digest == comment_sha for cid, digest in owned_map.items() if cid != expected_id)
         ):
-            errors.append(f"{prefix}: update requires one exact target, distinct new text and complete reviewed owner map")
+            errors.append(
+                f"{prefix}: update requires one exact target, distinct new text and complete reviewed owner map"
+            )
         source_ids = raw.get("source_ids")
         if not isinstance(source_ids, list) or not source_ids or not all(str(item).strip() for item in source_ids):
             errors.append(f"{prefix}.source_ids must contain at least one nonblank ID")

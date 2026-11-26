@@ -948,8 +948,7 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
             or not result.get("comment_id")
             or result.get("comment_sha256") != operation.get("comment_sha256")
             or (
-                operation.get("action") == "update"
-                and result.get("comment_id") != operation.get("expected_comment_id")
+                operation.get("action") == "update" and result.get("comment_id") != operation.get("expected_comment_id")
             )
             or result.get("plan_sha256") != prior_plan.get("plan_sha256")
         ):
@@ -1018,9 +1017,7 @@ def _apply_reviewed_comment(
             raise ValueError("; ".join(errors))
         mode = payload.get("mode")
         allowed_modes = (
-            ("reviewed-comment-update",)
-            if update_only
-            else ("reviewed-first-comment", "reviewed-additional-comment")
+            ("reviewed-comment-update",) if update_only else ("reviewed-first-comment", "reviewed-additional-comment")
         )
         if mode not in allowed_modes:
             raise ValueError(f"Expected plan mode: {', '.join(allowed_modes)}.")
@@ -1057,9 +1054,13 @@ def _apply_reviewed_comment(
         reports = root / "reports"
         intent = reports / f"youtube-comment-add-{effect_key}-intent.json"
         receipt = reports / f"youtube-comment-add-{effect_key}-result.json"
-        legacy_key = effect_key if update else hashlib.sha256(
-            json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
-        ).hexdigest()
+        legacy_key = (
+            effect_key
+            if update
+            else hashlib.sha256(
+                json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
+            ).hexdigest()
+        )
         legacy_intent = reports / f"youtube-comment-add-{legacy_key}-intent.json"
         legacy_receipt = reports / f"youtube-comment-add-{legacy_key}-result.json"
         lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"

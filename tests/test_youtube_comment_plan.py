@@ -154,7 +154,6 @@ def test_first_comment_requires_explicit_empty_owner_inventory() -> None:
     assert validate_comment_plan(seal_comment_plan(empty))
 
 
-
 def test_exact_update_mode_binds_target_before_digest_and_complete_owner_map() -> None:
     from video_channel_manager.platforms.youtube.comments import comment_text_sha256
 

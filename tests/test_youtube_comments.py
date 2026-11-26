@@ -614,7 +614,6 @@ def test_strict_first_create_refuses_incomplete_inventory(tmp_path: Path) -> Non
         )
 
 
-
 @pytest.mark.parametrize("drift", ["none", "text", "extra", "title", "privacy"])
 def test_guarded_update_rechecks_full_state_before_intent_and_put(tmp_path: Path, drift: str) -> None:
     from video_channel_manager.platforms.youtube.comments import comment_text_sha256
