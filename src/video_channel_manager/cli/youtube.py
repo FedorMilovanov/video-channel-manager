@@ -897,14 +897,14 @@ def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
 
 @youtube_app.command("apply-comment-add")
 def apply_comment_add(
-    plan: Annotated[Path, typer.Argument(help="Reviewed single additional-comment plan")],
+    plan: Annotated[Path, typer.Argument(help="Reviewed single first or additional comment plan")],
     account: Annotated[str, typer.Option("--account", "-a")],
     confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
     confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
     execute: Annotated[bool, typer.Option("--execute")] = False,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
 ) -> None:
-    """Add one distinct approved comment; never replace existing comments or replay an uncertain POST."""
+    """Create one reviewed first or additional comment; never replace comments or replay an uncertain POST."""
     prepare_windows_youtube_console()
     try:
         payload = json.loads(plan.read_text(encoding="utf-8"))
@@ -913,8 +913,9 @@ def apply_comment_add(
         errors = validate_comment_plan(payload)
         if errors:
             raise ValueError("; ".join(errors))
-        if payload.get("mode") != "reviewed-additional-comment":
-            raise ValueError("Expected reviewed-additional-comment mode.")
+        mode = payload.get("mode")
+        if mode not in ("reviewed-first-comment", "reviewed-additional-comment"):
+            raise ValueError("Expected reviewed-first-comment or reviewed-additional-comment mode.")
         if payload["channel_id"] != confirm_channel or payload["account_alias"] != account:
             raise ValueError("Plan channel/account confirmation mismatch.")
         project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
@@ -997,7 +998,7 @@ def apply_comment_add(
                         )
                     if {item.comment_id: item.text_sha256 for item in before} != expected:
                         raise ValueError("Reviewed owner comment state changed; no POST sent.")
-                    console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
+                    console.print(f"Exact reviewed comment: {video_id}; existing comments preserved: {len(before)}.")
                     if not execute:
                         console.print("Dry-run only. No POST sent.")
                         return
@@ -1009,7 +1010,8 @@ def apply_comment_add(
                         video_id=video_id,
                         expected_channel_id=confirm_channel,
                         text=text,
-                        expected_owned_comments=expected,
+                        # First creates use the existing strict missing-only writer branch.
+                        expected_owned_comments=None if mode == "reviewed-first-comment" else expected,
                         strict_inventory_max_pages=inventory_pages,
                         before_dispatch=reserve_intent,
                         expected_video_title=operation["video_title"],
@@ -1044,7 +1046,7 @@ def apply_comment_add(
             writer.close()
             api.close()
     except (OSError, ValueError, YouTubeWriteError, YouTubeApiError) as exc:
-        console.print(f"Additional comment blocked or pending reconciliation: {exc}")
+        console.print(f"Reviewed comment blocked or pending reconciliation: {exc}")
         raise typer.Exit(code=2) from exc
 
 

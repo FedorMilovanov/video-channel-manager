@@ -45,10 +45,10 @@ def video_id_set_sha256(video_ids: list[str]) -> str:
     return _sha256(normalized)
 
 
-def _valid_owner_comment_map(value: object) -> bool:
+def _valid_owner_comment_map(value: object, *, allow_empty: bool = False) -> bool:
     return (
         isinstance(value, dict)
-        and bool(value)
+        and (allow_empty or bool(value))
         and all(
             isinstance(key, str)
             and bool(key.strip())
@@ -102,9 +102,9 @@ def make_comment_operation(
     if action == "update" and (not expected_comment_id or expected_normalized is None):
         raise ValueError("Update operations require expected_comment_id and expected_comment_text.")
     if expected_owned_comments is not None and (
-        action != "create" or not _valid_owner_comment_map(expected_owned_comments)
+        action != "create" or not _valid_owner_comment_map(expected_owned_comments, allow_empty=True)
     ):
-        raise ValueError("Additional create requires a nonempty exact owner comment ID/hash map.")
+        raise ValueError("Reviewed create requires an exact owner comment ID/hash map.")
     cleaned_sources = sorted({item.strip() for item in source_ids if item.strip()})
     if not cleaned_sources:
         raise ValueError("Approved comment operations require at least one source_id or editorial-rule ID.")
@@ -204,8 +204,9 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
         return errors
     if len(operations) > 500:
         errors.append("operations exceed the hard safety cap of 500")
-    if payload.get("mode") == "reviewed-additional-comment" and len(operations) != 1:
-        errors.append("additional comment plan must contain one reviewed addition")
+    mode = payload.get("mode")
+    if mode in ("reviewed-first-comment", "reviewed-additional-comment") and len(operations) != 1:
+        errors.append("reviewed comment plan must contain exactly one create")
 
     operation_ids: list[str] = []
     video_ids: list[str] = []
@@ -244,12 +245,16 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
         if action == "update" and (expected_id is None or expected_text is None):
             errors.append(f"{prefix}: update requires exact existing comment ID and text")
         owned_map = raw.get("expected_owned_comments")
-        if "expected_owned_comments" in raw and (action != "create" or not _valid_owner_comment_map(owned_map)):
-            errors.append(f"{prefix}.expected_owned_comments requires a nonempty exact create ID/hash map")
-        if owned_map is not None and payload.get("mode") != "reviewed-additional-comment":
+        if "expected_owned_comments" in raw and (
+            action != "create" or not _valid_owner_comment_map(owned_map, allow_empty=mode == "reviewed-first-comment")
+        ):
+            errors.append(f"{prefix}.expected_owned_comments requires an exact create ID/hash map")
+        if "expected_owned_comments" in raw and mode not in ("reviewed-first-comment", "reviewed-additional-comment"):
             errors.append(f"{prefix}: additional create requires reviewed-additional-comment mode")
-        if payload.get("mode") == "reviewed-additional-comment" and (
-            not _valid_owner_comment_map(owned_map) or len(operations) != 1
+        if mode == "reviewed-first-comment" and (action != "create" or owned_map != {} or len(operations) != 1):
+            errors.append(f"{prefix}: first comment plan requires one create and an explicit empty owner map")
+        if mode == "reviewed-additional-comment" and (
+            action != "create" or not _valid_owner_comment_map(owned_map) or len(operations) != 1
         ):
             errors.append(f"{prefix}: additional comment plan must bind one exact reviewed addition")
         source_ids = raw.get("source_ids")
