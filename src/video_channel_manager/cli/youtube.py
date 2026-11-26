@@ -1069,9 +1069,7 @@ def apply_comment_add(
                         if execute:
                             pending = [
                                 (path, result)
-                                for path, result in dict.fromkeys(
-                                    ((intent, receipt), (legacy_intent, legacy_receipt))
-                                )
+                                for path, result in dict.fromkeys(((intent, receipt), (legacy_intent, legacy_receipt)))
                                 if path.exists() and not result.exists()
                             ]
                             if len(pending) > 1:
