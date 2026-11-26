@@ -527,6 +527,54 @@ def test_exact_panorama_owner_append_and_execution_gate(tmp_path: Path):
         require_chapter_release(plan, execute=True, confirm_review_sha256=plan["source_chapter_review_sha256"])
 
 
+def test_exact_panorama_archived_srt_plan_rederives_bound_evidence(tmp_path: Path):
+    _, _, _, review, paths, db = panorama_owner_fixture(tmp_path)
+    captions = tmp_path / "synthetic-ru.srt"
+    captions.write_text(
+        "\n\n".join(
+            f"{i + 1}\n{start} --> {end}\n{CHUNKS[i][2]}"
+            for i, (start, end) in enumerate(
+                [
+                    ("00:00:00,000", "00:00:04,000"),
+                    ("00:02:00,000", "00:02:04,000"),
+                    ("01:01:00,000", "01:01:04,000"),
+                ]
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    for i, chapter in enumerate(review["chapters"]):
+        boundary = chapter["boundary_evidence"]
+        boundary["cue_index"] = boundary.pop("event_index")
+        boundary["cue"] = CHUNKS[i][2]
+    review["semantic_review"].update(
+        basis="exact_ru_archived_srt_boundaries",
+        evidence_file=captions.name,
+        evidence_sha256=_sha_bytes(captions),
+        chapters_sha256=canonical_sha256(review["chapters"]),
+    )
+    paths[3].write_text(json.dumps(review), encoding="utf-8")
+    plan, _ = build_panorama_owner_chapter_plan(*paths, db, video_id=VID)
+    validate_copy_plan(plan)
+    assert plan["source_scope"] == "exact-panorama-owner-v1"
+    review_hash = plan["source_chapter_review_sha256"]
+    with pytest.raises(ValueError, match="independent --confirm-chapter-review-sha256"):
+        require_chapter_release(plan, execute=True)
+    require_chapter_release(plan, execute=True, confirm_review_sha256=review_hash)
+    with closing(sqlite3.connect(db)) as connection:
+        connection.execute("UPDATE transcript_chunks SET end_ms=end_ms+1 WHERE start_ms=120000")
+        connection.commit()
+    with pytest.raises(ValueError, match="re-derived owner and transcript evidence"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=review_hash)
+    with closing(sqlite3.connect(db)) as connection:
+        connection.execute("UPDATE transcript_chunks SET end_ms=end_ms-1 WHERE start_ms=120000")
+        connection.commit()
+    captions.write_bytes(captions.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="Semantic evidence is missing or changed"):
+        require_chapter_release(plan, execute=True, confirm_review_sha256=review_hash)
+
+
 @pytest.mark.parametrize(
     "case",
     [
