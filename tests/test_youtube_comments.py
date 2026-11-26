@@ -555,3 +555,60 @@ def test_quota_in_moderation_preflight_is_not_treated_as_empty_inventory(tmp_pat
     with pytest.raises(YouTubeCommentError, match="dailyLimitExceeded"):
         writer.create_top_level_comment(video_id="video-1", expected_channel_id="channel-1", text="Approved")
     assert calls == ["GET", "GET", "GET"]
+
+
+@pytest.mark.parametrize("late_text", ["Reviewed first comment", "Unreviewed owner comment"])
+def test_strict_first_create_refuses_owner_comment_in_held_inventory(tmp_path: Path, late_text: str) -> None:
+    statuses: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads":
+            status = request.url.params["moderationStatus"]
+            statuses.append(status)
+            items = [_thread("late-comment", late_text)] if status == "heldForReview" else []
+            return httpx.Response(200, json={"items": items})
+        raise AssertionError(request.url)
+
+    def unexpected_dispatch() -> None:
+        pytest.fail("A new owner comment must block dispatch before intent.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentConflictError, match="Owner comment appeared"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Reviewed first comment",
+            strict_inventory_max_pages=10,
+            before_dispatch=unexpected_dispatch,
+            expected_video_title="Title",
+            expected_privacy_status="public",
+        )
+    assert statuses == ["published", "heldForReview", "likelySpam"]
+
+
+def test_strict_first_create_refuses_incomplete_inventory(tmp_path: Path) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.url.path == "/commentThreads":
+            return httpx.Response(200, json={"items": [], "nextPageToken": "more"})
+        raise AssertionError(request.url)
+
+    def unexpected_dispatch() -> None:
+        pytest.fail("An incomplete inventory must block dispatch before intent.")
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    with pytest.raises(YouTubeCommentError, match="exceeds its reserved page limit"):
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Reviewed first comment",
+            strict_inventory_max_pages=1,
+            before_dispatch=unexpected_dispatch,
+            expected_video_title="Title",
+            expected_privacy_status="public",
+        )
