@@ -209,7 +209,7 @@ def test_formatted_project_description_is_accepted() -> None:
             "missing_youtube_italic",
         ),
         (lambda x: x.replace("*Все шесть занятий:*", "**Все шесть занятий:**"), "markdown_double_asterisks"),
-        (lambda x: x.replace("*Все шесть занятий:*", "*Все шесть занятий*."), "youtube_punctuation_outside_emphasis"),
+        (lambda x: x.replace("*Все шесть занятий:*", "*Все шесть занятий*:"), "youtube_metadata_label_colon"),
         (lambda x: x.replace(_FIRST, "*" + _FIRST + "*"), "youtube_share_preview_emphasis"),
         (lambda x: x + "\n[Наш сайт](https://gospod-bog.ru/)", "youtube_hidden_markdown_link"),
         (
@@ -237,6 +237,23 @@ def test_bad_markers_and_old_administrative_info_fail_closed(modification, expec
     assert expected in issues, issues
     with pytest.raises(ValueError, match=expected):
         require_lord_god_youtube_presentation(_plan(content))
+
+
+def test_external_punctuation_remains_an_editorial_warning() -> None:
+    from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
+
+    proposed = (
+        _DESCRIPTION
+        + "\n\n*Джон Пайпер*, а также *Р. Ч. Спроул* выступают вместе."
+        + "\nРечь идёт о *Римлянам 12:1–2*; дубляж называет другой отрывок."
+    )
+    assert any(
+        finding.code == "punctuation_scope_review" and finding.severity == "warning"
+        for finding in validate_youtube_description(proposed)
+    )
+    assert autofix_youtube_description(proposed) == (proposed, [])
+    assert presentation_issues(proposed) == []
+    require_lord_god_youtube_presentation(_plan(proposed))
 
 
 def test_short_description_may_be_plain_but_not_a_donation_request() -> None:
