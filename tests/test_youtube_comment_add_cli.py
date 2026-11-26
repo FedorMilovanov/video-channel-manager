@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from contextlib import nullcontext
 from pathlib import Path
@@ -127,3 +128,123 @@ def test_first_comment_refuses_replay_after_ambiguous_dispatch(tmp_path: Path, m
     writer.create_top_level_comment.assert_called_once()
     assert len(list((tmp_path / "reports").glob("*-intent.json"))) == 1
     assert not list((tmp_path / "reports").glob("*-result.json"))
+
+
+def _replan(
+    path: Path, *, text: str, video_id: str = "video-1", expected: dict[str, str] | None = None
+) -> dict[str, Any]:
+    operation = make_comment_operation(
+        action="create",
+        channel_id=CHANNEL,
+        video_id=video_id,
+        video_title="Title",
+        comment_text=text,
+        source_ids=["source-2"],
+        reviewed_at="2026-11-26T01:00:00+00:00",
+        expected_owned_comments=expected if expected is not None else {},
+    )
+    plan = build_comment_plan(
+        account_alias=ACCOUNT,
+        channel_id=CHANNEL,
+        source_snapshot="snapshot-2",
+        source_snapshot_generated_at="2026-11-26T00:59:00+00:00",
+        inventory_video_ids=[video_id],
+        operations=[operation],
+        mode="reviewed-additional-comment" if expected else "reviewed-first-comment",
+    )
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    return plan
+
+
+def test_edited_first_plan_cannot_escape_unresolved_intent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path, plan, writer, _ = _setup(tmp_path, monkeypatch)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Ambiguous provider result")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    intent = next((tmp_path / "reports").glob("*-intent.json"))
+    before = intent.read_bytes()
+    changed = _replan(path, text="Edited first comment")
+    with pytest.raises(typer.Exit):
+        _run(path, changed, execute=True)
+    writer.create_top_level_comment.assert_called_once()
+    assert intent.read_bytes() == before
+    assert list((tmp_path / "reports").glob("*-intent.json")) == [intent]
+
+
+def test_legacy_text_keyed_intent_blocks_changed_first_plan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path, plan, writer, _ = _setup(tmp_path, monkeypatch)
+    key = hashlib.sha256(
+        json.dumps([CHANNEL, "video-1", plan["operations"][0]["comment_sha256"]]).encode("utf-8")
+    ).hexdigest()
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    old = reports / f"youtube-comment-add-{key}-intent.json"
+    old.write_text(json.dumps({"status": "may_exist", "plan": plan, "effect_key": key}), encoding="utf-8")
+    before = old.read_bytes()
+    changed = _replan(path, text="Edited first comment")
+    with pytest.raises(typer.Exit):
+        _run(path, changed, execute=True)
+    writer.create_top_level_comment.assert_not_called()
+    assert old.read_bytes() == before
+
+
+def test_unresolved_first_intent_blocks_additional_even_when_first_is_visible(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, plan, writer, inventory = _setup(tmp_path, monkeypatch)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Ambiguous provider result")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    first = _snapshot(plan["operations"][0]["comment_text"])
+    inventory.append(first)
+    additional = _replan(path, text="Independent second comment", expected={first.comment_id: first.text_sha256})
+    with pytest.raises(typer.Exit):
+        _run(path, additional, execute=True)
+    writer.create_top_level_comment.assert_called_once()
+
+
+def test_verified_first_intent_allows_additional_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path, plan, writer, inventory = _setup(tmp_path, monkeypatch)
+
+    def create(**kwargs: Any) -> SimpleNamespace:
+        kwargs["before_dispatch"]()
+        item = _snapshot(kwargs["text"])
+        inventory.append(item)
+        return item
+
+    writer.create_top_level_comment.side_effect = create
+    writer.read_comment.side_effect = lambda *_args, **_kwargs: inventory[0]
+    _run(path, plan, execute=True)
+    reports = tmp_path / "reports"
+    saved = {p: p.read_bytes() for p in reports.glob("*.json")}
+    first = inventory[0]
+    additional = _replan(path, text="Independent second comment", expected={first.comment_id: first.text_sha256})
+    _run(path, additional)
+    writer.create_top_level_comment.assert_called_once()
+    assert {p: p.read_bytes() for p in reports.glob("*.json")} == saved
+
+
+def test_other_video_intent_does_not_block_first_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path, plan, writer, _ = _setup(tmp_path, monkeypatch)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Ambiguous provider result")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    writer.read_video_identity.return_value.video_id = "video-2"
+    other = _replan(path, text="First comment for another video", video_id="video-2")
+    _run(path, other)
+    writer.create_top_level_comment.assert_called_once()
