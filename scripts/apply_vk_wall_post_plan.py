@@ -84,6 +84,7 @@ def _live_preflight(plan: dict[str, Any], writer: VkWallWriter, max_wall_scan: i
 
 
 def main() -> int:
+    raise RuntimeError("VK_WAVE6_RETIRED_IMPORT_BLOCKED: use the reviewed wave operator.")
     args = _parser().parse_args()
     if args.max_wall_scan <= 0:
         raise SystemExit("--max-wall-scan must be positive")
