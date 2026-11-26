@@ -40,6 +40,14 @@ def test_eligible_video_rejects_broken_and_personal_items() -> None:
     assert not module.eligible_video(video("Соня 8 лет. День рождения"), max_views=100)
     assert not module.eligible_video(video("Короткий ролик", duration=30), max_views=100)
     assert not module.eligible_video(video("Хорошая проповедь", views=101), max_views=100)
+    for title in (
+        "Стивен Лоусон. Проповедь",
+        "Стивен Лоусен. Благовестие",
+        "Стивен Лоусэн. Библия",
+        "Steven J. Lawson — Sermon",
+        "Вопросы и ответы: МакАртур и Лоусон",
+    ):
+        assert not module.eligible_video(video(title), max_views=100)
 
 
 def test_select_videos_round_robins_major_speakers() -> None:
@@ -53,7 +61,7 @@ def test_select_videos_round_robins_major_speakers() -> None:
         ]
     }
     selected = module.select_videos(audit, count=4, max_views=100)
-    assert [module.speaker_bucket(item) for item in selected] == ["macarthur", "sproul", "lawson", "washer"]
+    assert [module.speaker_bucket(item) for item in selected] == ["macarthur", "sproul", "washer", "macarthur"]
 
 
 def test_build_slots_uses_distinct_moscow_times() -> None:
