@@ -984,6 +984,7 @@ def apply_comment_add(
         legacy_key = hashlib.sha256(
             json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
         ).hexdigest()
+        legacy_intent = reports / f"youtube-comment-add-{legacy_key}-intent.json"
         legacy_receipt = reports / f"youtube-comment-add-{legacy_key}-result.json"
         lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
         store, config, api = _components(account, client_secret)
@@ -1004,6 +1005,32 @@ def apply_comment_add(
                 json.dump(data, handle, ensure_ascii=False, indent=2)
                 handle.flush()
                 os.fsync(handle.fileno())
+
+        def verify_and_record(comment_id: str, output: Path) -> None:
+            verified = writer.read_comment(comment_id, video_id=video_id, channel_id=confirm_channel)
+            if (
+                verified.comment_id != comment_id
+                or verified.author_channel_id != confirm_channel
+                or verified.video_id != video_id
+                or not comments_equivalent(verified.text, text)
+                or verified.text_sha256 != operation["comment_sha256"]
+            ):
+                raise ValueError("Independent comment verification failed; reconcile without replay.")
+            after_map = {item.comment_id: item.text_sha256 for item in owned()}
+            if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
+                raise ValueError("Owner comment set changed; reconcile without replay.")
+            persist(
+                output,
+                {
+                    "status": "verified",
+                    "video_id": video_id,
+                    "channel_id": confirm_channel,
+                    "comment_id": verified.comment_id,
+                    "comment_sha256": verified.text_sha256,
+                    "existing_preserved": sorted(expected),
+                    "plan_sha256": payload["plan_sha256"],
+                },
+            )
 
         try:
             with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel):
@@ -1037,6 +1064,31 @@ def apply_comment_add(
                             raise ValueError(
                                 "Existing match but reviewed owner comment state differs; reconcile without POST."
                             )
+                        # Recover only a positive exact match against the original frozen intent.
+                        # Dry-run never changes evidence; neither path can dispatch a second POST.
+                        if execute:
+                            pending = [
+                                (path, result)
+                                for path, result in dict.fromkeys(
+                                    ((intent, receipt), (legacy_intent, legacy_receipt))
+                                )
+                                if path.exists() and not result.exists()
+                            ]
+                            if len(pending) > 1:
+                                raise ValueError("Multiple unresolved comment intents require reconciliation.")
+                            if pending:
+                                prior_path, result_path = pending[0]
+                                prior = _read_optional_youtube_recovery_json(prior_path)
+                                if (
+                                    prior is None
+                                    or prior.get("status") != "may_exist"
+                                    or prior.get("plan") != payload
+                                    or prior.get("effect_key")
+                                    != prior_path.name.removeprefix("youtube-comment-add-").removesuffix("-intent.json")
+                                ):
+                                    raise ValueError("Use the original frozen comment intent for reconciliation.")
+                                verify_and_record(match.comment_id, result_path)
+                                console.print(f"Reconciled: {match.comment_id}. Result: {result_path}")
                         console.print(f"Already present: {match.comment_id}. No POST sent.")
                         return
                     if intent.exists() or receipt.exists() or (first and legacy_receipt.exists()):
@@ -1065,31 +1117,8 @@ def apply_comment_add(
                         expected_video_title=operation["video_title"],
                         expected_privacy_status="public",
                     )
-                    verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
-                    if (
-                        verified.comment_id != created.comment_id
-                        or verified.author_channel_id != confirm_channel
-                        or verified.video_id != video_id
-                        or not comments_equivalent(verified.text, text)
-                    ):
-                        raise ValueError("Independent comment verification failed; reconcile without replay.")
-                    after = owned()
-                    after_map = {item.comment_id: item.text_sha256 for item in after}
-                    if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
-                        raise ValueError("Owner comment set changed; reconcile without replay.")
-                    persist(
-                        receipt,
-                        {
-                            "status": "verified",
-                            "video_id": video_id,
-                            "channel_id": confirm_channel,
-                            "comment_id": verified.comment_id,
-                            "comment_sha256": verified.text_sha256,
-                            "existing_preserved": sorted(expected),
-                            "plan_sha256": payload["plan_sha256"],
-                        },
-                    )
-                    console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
+                    verify_and_record(created.comment_id, receipt)
+                    console.print(f"Verified: {created.comment_id}. Result: {receipt}")
         finally:
             writer.close()
             api.close()

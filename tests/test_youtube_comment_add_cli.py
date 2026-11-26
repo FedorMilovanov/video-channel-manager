@@ -248,3 +248,61 @@ def test_other_video_intent_does_not_block_first_dry_run(tmp_path: Path, monkeyp
     other = _replan(path, text="First comment for another video", video_id="video-2")
     _run(path, other)
     writer.create_top_level_comment.assert_called_once()
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_positive_readback_reconciles_original_intent_without_post(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, legacy: bool
+) -> None:
+    path, plan, writer, inventory = _setup(tmp_path, monkeypatch)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Ambiguous provider result")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    reports = tmp_path / "reports"
+    intent = next(reports.glob("*-intent.json"))
+    if legacy:
+        prior = json.loads(intent.read_text(encoding="utf-8"))
+        key = hashlib.sha256(
+            json.dumps([CHANNEL, "video-1", plan["operations"][0]["comment_sha256"]]).encode("utf-8")
+        ).hexdigest()
+        prior["effect_key"] = key
+        intent.unlink()
+        intent = reports / f"youtube-comment-add-{key}-intent.json"
+        intent.write_text(json.dumps(prior), encoding="utf-8")
+    original = intent.read_bytes()
+    first = _snapshot(plan["operations"][0]["comment_text"])
+    inventory.append(first)
+    writer.read_comment.return_value = first
+
+    _run(path, plan)
+    assert not list(reports.glob("*-result.json"))
+    _run(path, plan, execute=True)
+    writer.create_top_level_comment.assert_called_once()
+    assert intent.read_bytes() == original
+    result = intent.with_name(intent.name.removesuffix("-intent.json") + "-result.json")
+    assert json.loads(result.read_text(encoding="utf-8"))["status"] == "verified"
+    additional = _replan(path, text="Independent second comment", expected={first.comment_id: first.text_sha256})
+    _run(path, additional)
+
+
+def test_wrong_direct_readback_does_not_resolve_intent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path, plan, writer, inventory = _setup(tmp_path, monkeypatch)
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Ambiguous provider result")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    inventory.append(_snapshot(plan["operations"][0]["comment_text"]))
+    writer.read_comment.return_value = _snapshot("Different text")
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    assert not list((tmp_path / "reports").glob("*-result.json"))
+    writer.create_top_level_comment.assert_called_once()
