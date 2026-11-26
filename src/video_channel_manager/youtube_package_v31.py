@@ -184,9 +184,7 @@ def validate_five_block_package(source: str) -> list[CopyIssue]:
         or not all(short_lines[index].startswith("*Плейлист «") for index in (4, 5))
         or not short_lines[7].startswith("#")
     ):
-        errors.append(
-            CopyIssue("shorts", "short_paragraph_spacing", "SHORTS: пустая строка между смысловыми блоками.")
-        )
+        errors.append(CopyIssue("shorts", "short_paragraph_spacing", "SHORTS: пустая строка между смысловыми блоками."))
     short_playlists = [line for line in short_lines if line.startswith("*Плейлист «")]
     if short_playlists != expected_formatted_playlists:
         errors.append(
