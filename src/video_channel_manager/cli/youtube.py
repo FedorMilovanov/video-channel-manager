@@ -912,16 +912,56 @@ def _read_optional_youtube_recovery_json(path: Path) -> dict[str, Any] | None:
     return value
 
 
+def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: str, first: bool) -> None:
+    """Under the channel write lock, preserve earlier intent across edited plans."""
+    for path in sorted(reports.glob("youtube-comment-add-*-intent.json")):
+        prior = _read_optional_youtube_recovery_json(path)
+        if prior is None:
+            raise ValueError("Comment intent disappeared during reconciliation; no POST sent.")
+        prior_plan = prior.get("plan")
+        if not isinstance(prior_plan, dict) or not prior_plan.get("channel_id"):
+            raise ValueError(f"Unidentifiable comment intent requires reconciliation: {path.name}")
+        if prior_plan["channel_id"] != channel_id:
+            continue
+        operations = prior_plan.get("operations")
+        if (
+            not isinstance(operations, list)
+            or len(operations) != 1
+            or not isinstance(operations[0], dict)
+            or not operations[0].get("video_id")
+        ):
+            raise ValueError(f"Unidentifiable comment intent requires reconciliation: {path.name}")
+        operation = operations[0]
+        if operation["video_id"] != video_id:
+            continue
+        if first:
+            # A prior attempt (even verified) cannot be superseded by another first create.
+            raise ValueError("Earlier comment intent for this video requires reconciliation; no first POST sent.")
+        result_path = path.with_name(path.name.removesuffix("-intent.json") + "-result.json")
+        result = _read_optional_youtube_recovery_json(result_path)
+        if (
+            result is None
+            or validate_comment_plan(prior_plan)
+            or result.get("status") != "verified"
+            or result.get("channel_id") != channel_id
+            or result.get("video_id") != video_id
+            or not result.get("comment_id")
+            or result.get("comment_sha256") != operation.get("comment_sha256")
+            or result.get("plan_sha256") != prior_plan.get("plan_sha256")
+        ):
+            raise ValueError("Earlier unresolved comment intent for this video requires reconciliation; no POST sent.")
+
+
 @youtube_app.command("apply-comment-add")
 def apply_comment_add(
-    plan: Annotated[Path, typer.Argument(help="Reviewed single additional-comment plan")],
+    plan: Annotated[Path, typer.Argument(help="Reviewed single first or additional comment plan")],
     account: Annotated[str, typer.Option("--account", "-a")],
     confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
     confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
     execute: Annotated[bool, typer.Option("--execute")] = False,
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
 ) -> None:
-    """Add one distinct approved comment; never replace existing comments or replay an uncertain POST."""
+    """Create one reviewed first or additional comment; never replace comments or replay an uncertain POST."""
     prepare_windows_youtube_console()
     try:
         payload = json.loads(plan.read_text(encoding="utf-8"))
@@ -930,8 +970,9 @@ def apply_comment_add(
         errors = validate_comment_plan(payload)
         if errors:
             raise ValueError("; ".join(errors))
-        if payload.get("mode") != "reviewed-additional-comment":
-            raise ValueError("Expected reviewed-additional-comment mode.")
+        mode = payload.get("mode")
+        if mode not in ("reviewed-first-comment", "reviewed-additional-comment"):
+            raise ValueError("Expected reviewed-first-comment or reviewed-additional-comment mode.")
         if payload["channel_id"] != confirm_channel or payload["account_alias"] != account:
             raise ValueError("Plan channel/account confirmation mismatch.")
         project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
@@ -949,11 +990,19 @@ def apply_comment_add(
         if execute and not root.is_absolute():
             raise ValueError("Use the verified absolute VCM_DATA_DIR for comment writes.")
         inventory_pages = 10
-        effect_key = hashlib.sha256(
+        first = mode == "reviewed-first-comment"
+        # First creation is a single channel/video effect, regardless of edited text.
+        # Additional creates retain the historical text-keyed journal namespace.
+        effect_subject = "first-comment" if first else operation["comment_sha256"]
+        effect_key = hashlib.sha256(json.dumps([confirm_channel, video_id, effect_subject]).encode("utf-8")).hexdigest()
+        reports = root / "reports"
+        intent = reports / f"youtube-comment-add-{effect_key}-intent.json"
+        receipt = reports / f"youtube-comment-add-{effect_key}-result.json"
+        legacy_key = hashlib.sha256(
             json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
         ).hexdigest()
-        intent = root / "reports" / f"youtube-comment-add-{effect_key}-intent.json"
-        receipt = root / "reports" / f"youtube-comment-add-{effect_key}-result.json"
+        legacy_intent = reports / f"youtube-comment-add-{legacy_key}-intent.json"
+        legacy_receipt = reports / f"youtube-comment-add-{legacy_key}-result.json"
         lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
         store, config, api = _components(account, client_secret)
         writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
@@ -973,6 +1022,32 @@ def apply_comment_add(
                 json.dump(data, handle, ensure_ascii=False, indent=2)
                 handle.flush()
                 os.fsync(handle.fileno())
+
+        def verify_and_record(comment_id: str, output: Path) -> None:
+            verified = writer.read_comment(comment_id, video_id=video_id, channel_id=confirm_channel)
+            if (
+                verified.comment_id != comment_id
+                or verified.author_channel_id != confirm_channel
+                or verified.video_id != video_id
+                or not comments_equivalent(verified.text, text)
+                or verified.text_sha256 != operation["comment_sha256"]
+            ):
+                raise ValueError("Independent comment verification failed; reconcile without replay.")
+            after_map = {item.comment_id: item.text_sha256 for item in owned()}
+            if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
+                raise ValueError("Owner comment set changed; reconcile without replay.")
+            persist(
+                output,
+                {
+                    "status": "verified",
+                    "video_id": video_id,
+                    "channel_id": confirm_channel,
+                    "comment_id": verified.comment_id,
+                    "comment_sha256": verified.text_sha256,
+                    "existing_preserved": sorted(expected),
+                    "plan_sha256": payload["plan_sha256"],
+                },
+            )
 
         try:
             with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel):
@@ -1006,15 +1081,39 @@ def apply_comment_add(
                             raise ValueError(
                                 "Existing match but reviewed owner comment state differs; reconcile without POST."
                             )
+                        # Recover only a positive exact match against the original frozen intent.
+                        # Dry-run never changes evidence; neither path can dispatch a second POST.
+                        if execute:
+                            pending = [
+                                (path, result)
+                                for path, result in dict.fromkeys(((intent, receipt), (legacy_intent, legacy_receipt)))
+                                if path.exists() and not result.exists()
+                            ]
+                            if len(pending) > 1:
+                                raise ValueError("Multiple unresolved comment intents require reconciliation.")
+                            if pending:
+                                prior_path, result_path = pending[0]
+                                prior = _read_optional_youtube_recovery_json(prior_path)
+                                if (
+                                    prior is None
+                                    or prior.get("status") != "may_exist"
+                                    or prior.get("plan") != payload
+                                    or prior.get("effect_key")
+                                    != prior_path.name.removeprefix("youtube-comment-add-").removesuffix("-intent.json")
+                                ):
+                                    raise ValueError("Use the original frozen comment intent for reconciliation.")
+                                verify_and_record(match.comment_id, result_path)
+                                console.print(f"Reconciled: {match.comment_id}. Result: {result_path}")
                         console.print(f"Already present: {match.comment_id}. No POST sent.")
                         return
-                    if intent.exists() or receipt.exists():
+                    if intent.exists() or receipt.exists() or (first and legacy_receipt.exists()):
                         raise ValueError(
                             "Existing intent/result requires reconciliation; never replay an uncertain POST."
                         )
+                    _require_safe_comment_history(reports, channel_id=confirm_channel, video_id=video_id, first=first)
                     if {item.comment_id: item.text_sha256 for item in before} != expected:
                         raise ValueError("Reviewed owner comment state changed; no POST sent.")
-                    console.print(f"Exact additional comment: {video_id}; existing comments preserved: {len(before)}.")
+                    console.print(f"Exact reviewed comment: {video_id}; existing comments preserved: {len(before)}.")
                     if not execute:
                         console.print("Dry-run only. No POST sent.")
                         return
@@ -1026,42 +1125,20 @@ def apply_comment_add(
                         video_id=video_id,
                         expected_channel_id=confirm_channel,
                         text=text,
-                        expected_owned_comments=expected,
+                        # First creates use the existing strict missing-only writer branch.
+                        expected_owned_comments=None if first else expected,
                         strict_inventory_max_pages=inventory_pages,
                         before_dispatch=reserve_intent,
                         expected_video_title=operation["video_title"],
                         expected_privacy_status="public",
                     )
-                    verified = writer.read_comment(created.comment_id, video_id=video_id, channel_id=confirm_channel)
-                    if (
-                        verified.comment_id != created.comment_id
-                        or verified.author_channel_id != confirm_channel
-                        or verified.video_id != video_id
-                        or not comments_equivalent(verified.text, text)
-                    ):
-                        raise ValueError("Independent comment verification failed; reconcile without replay.")
-                    after = owned()
-                    after_map = {item.comment_id: item.text_sha256 for item in after}
-                    if after_map != {**expected, verified.comment_id: operation["comment_sha256"]}:
-                        raise ValueError("Owner comment set changed; reconcile without replay.")
-                    persist(
-                        receipt,
-                        {
-                            "status": "verified",
-                            "video_id": video_id,
-                            "channel_id": confirm_channel,
-                            "comment_id": verified.comment_id,
-                            "comment_sha256": verified.text_sha256,
-                            "existing_preserved": sorted(expected),
-                            "plan_sha256": payload["plan_sha256"],
-                        },
-                    )
-                    console.print(f"Verified: {verified.comment_id}. Result: {receipt}")
+                    verify_and_record(created.comment_id, receipt)
+                    console.print(f"Verified: {created.comment_id}. Result: {receipt}")
         finally:
             writer.close()
             api.close()
     except (OSError, ValueError, YouTubeWriteError, YouTubeApiError) as exc:
-        console.print(f"Additional comment blocked or pending reconciliation: {exc}")
+        console.print(f"Reviewed comment blocked or pending reconciliation: {exc}")
         raise typer.Exit(code=2) from exc
 
 
