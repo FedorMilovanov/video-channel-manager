@@ -425,6 +425,23 @@ def _local_quota_guard(client_secret: Path | None) -> ProjectQuotaGuard:
     return guard
 
 
+@youtube_app.command("release-status")
+def release_status(
+    plan: Annotated[Path, typer.Option("--plan", help="Exact immutable release plan JSON")],
+    data_dir: Annotated[Path, typer.Option("--data-dir", help="Explicit absolute canonical data directory")],
+) -> None:
+    """Read the release journal without provider access or write authority."""
+    from video_channel_manager.youtube_release_operations import read_release_status
+    from video_channel_manager.youtube_upload_plan import UploadPlanError
+
+    try:
+        report = read_release_status(plan, data_dir)
+    except (OSError, ValueError, UploadPlanError) as exc:
+        typer.echo(f"Release status failed: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    typer.echo(json.dumps(report, ensure_ascii=True, indent=2))
+
+
 @youtube_app.command("quota-status")
 def quota_status(
     client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,

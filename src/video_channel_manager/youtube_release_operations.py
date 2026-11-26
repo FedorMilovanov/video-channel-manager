@@ -17,6 +17,7 @@ from video_channel_manager.youtube_release_state import (
     child_by_id,
     mark_existing_target_absent,
     mark_existing_target_adopted,
+    next_release_child,
     prepare_child,
     transition_child,
     validate_release_state,
@@ -28,6 +29,8 @@ from video_channel_manager.youtube_stable_state import (
     write_new_json,
 )
 from video_channel_manager.youtube_upload_plan import (
+    JOURNAL_SCHEMA,
+    JOURNAL_VERSION,
     UploadPlanError,
     adopted_journal,
     canonical_sha256,
@@ -332,14 +335,99 @@ def record_manual_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
-def status(args: argparse.Namespace) -> int:
-    plan = load_json_object(Path(args.plan).resolve())
+def release_status_summary(release: dict[str, Any]) -> dict[str, Any]:
+    """Project validated ledger state into a read-only, secret-free operator report."""
+    validate_release_state(release)
+    children = release["children"]
+    blockers = [child["child_id"] for child in children if child["provider_effect"] == "may_exist"]
+    next_child = None if blockers else next_release_child(release)
+    if blockers:
+        disposition = "reconcile_read_only"
+    elif next_child is None:
+        disposition = "complete"
+    else:
+        disposition = "review_pending_child"
+    # Runtime is private machine state: even future runtime fields must not
+    # automatically become part of operator output (e.g. resumable session URLs).
+    return {
+        "schema_name": "video-manager.youtube-release-status-summary",
+        "schema_version": 1,
+        "release_plan_sha256": release["release_plan_sha256"],
+        "upload_key_sha256": release["upload_key_sha256"],
+        "disposition": disposition,
+        "blocking_child_ids": blockers,
+        "next_child_id": next_child["child_id"] if next_child else None,
+        "verified_child_count": sum(child["provider_effect"] == "verified" for child in children),
+        "child_count": len(children),
+        "provider_writes_performed": 0,
+        "grants_execution_authority": False,
+        "children": [
+            {
+                "child_id": child["child_id"],
+                "kind": child["kind"],
+                "provider_effect": child["provider_effect"],
+                "evidence_sha256": child.get("evidence_sha256"),
+                "updated_at": child.get("updated_at"),
+            }
+            for child in children
+        ],
+    }
+
+
+def read_release_status(plan_path: Path, data_dir: Path) -> dict[str, Any]:
+    """Inspect an exact local release, without contacting a provider or changing state."""
+    if not data_dir.is_absolute():
+        raise UploadPlanError("Release status requires an explicit absolute data directory.")
+    plan = load_json_object(plan_path.resolve())
     validate_release_plan(plan, verify_files=False)
-    stable_journal = journal_path(
-        Path(args.data_dir).resolve(),
-        str(plan["upload_key_sha256"]),
-    )
+    stable_journal = journal_path(data_dir.resolve(), str(plan["upload_key_sha256"]))
     journal = read_json(stable_journal)
+    expected = {
+        "project_key": plan["project_key"],
+        "account_alias": plan["account_alias"],
+        "target_channel_id": plan["target_channel_id"],
+        "upload_key_sha256": plan["upload_key_sha256"],
+        "media_sha256": plan["media"]["sha256"],
+    }
+    for field, value in expected.items():
+        if journal.get(field) != value:
+            raise UploadPlanError(f"Release status journal identity mismatch: {field}.")
+    if journal.get("schema_name") != JOURNAL_SCHEMA or journal.get("schema_version") != JOURNAL_VERSION:
+        raise UploadPlanError("Unsupported release status journal schema.")
+    if "release" not in journal:
+        if (
+            journal.get("state") != "planned"
+            or journal.get("provider_effect") != "not_dispatched"
+            or journal.get("active_intent_sha256") != plan["source_intent_sha256"]
+            or "release_plan_sha256" in journal
+            or "release_absence_evidence_sha256" in journal
+        ):
+            raise UploadPlanError("Release status cannot establish an uninitialized planned journal.")
+        return {
+            "schema_name": "video-manager.youtube-release-status-summary",
+            "schema_version": 1,
+            "release_plan_sha256": plan["release_plan_sha256"],
+            **expected,
+            "disposition": "initialization_required",
+            "blocking_child_ids": [],
+            "next_child_id": None,
+            "verified_child_count": 0,
+            "child_count": 0,
+            "provider_writes_performed": 0,
+            "grants_execution_authority": False,
+            "children": [],
+        }
     release = release_from_journal(journal, plan=plan)
-    print(json.dumps(release, ensure_ascii=False, indent=2))
+    playlist_ids = [child["target_id"] for child in release["children"] if child["kind"] == "playlist_membership"]
+    if playlist_ids != plan["playlist_ids"]:
+        raise UploadPlanError("Release status playlist children differ from the exact release plan.")
+    return {
+        **release_status_summary(release),
+        **expected,
+    }
+
+
+def status(args: argparse.Namespace) -> int:
+    report = read_release_status(Path(args.plan), Path(args.data_dir))
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
