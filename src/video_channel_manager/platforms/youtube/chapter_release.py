@@ -131,7 +131,47 @@ def render_chapter_appendix(chapters: Any) -> str:
     return "\n\nТаймкоды:\n" + "\n".join(lines)
 
 
-def require_review(review: dict[str, Any], review_path: Path, *, video_id: str, before: str, after: str) -> None:
+_SRT_CLOCK = re.compile(r"(\d{2,}):([0-5]\d):([0-5]\d),(\d{3})")
+_ARCHIVED_SRT_BASIS = "exact_ru_archived_srt_boundaries"
+
+
+def _archived_srt_cues(path: Path) -> list[tuple[int, str]]:
+    """Read the actual archived SRT, never a manufactured JSON3 representation."""
+    if path.suffix.casefold() != ".srt":
+        raise ValueError("Archived SRT evidence requires an original .srt file")
+    raw = path.read_text(encoding="utf-8-sig").strip()
+    if not raw:
+        raise ValueError("Empty archived SRT evidence")
+
+    def clock(value: str) -> int:
+        match = _SRT_CLOCK.fullmatch(value)
+        if match is None:
+            raise ValueError("Invalid archived SRT clock")
+        h, m, s, ms = map(int, match.groups())
+        return ((h * 60 + m) * 60 + s) * 1000 + ms
+
+    cues: list[tuple[int, str]] = []
+    previous = -1
+    for index, block in enumerate(re.split(r"\n[ \t]*\n+", raw), 1):
+        lines = block.splitlines()
+        if len(lines) < 3 or lines[0].strip() != str(index):
+            raise ValueError("Invalid archived SRT cue sequence")
+        times = lines[1].split(" --> ")
+        if len(times) != 2:
+            raise ValueError("Invalid archived SRT timing line")
+        start, end = map(clock, times)
+        text = " ".join(" ".join(lines[2:]).split())
+        if start < previous or end <= start or not text:
+            raise ValueError("Invalid archived SRT cue timing or text")
+        cues.append((start, text))
+        previous = start
+    return cues
+
+
+def require_review(
+    review: dict[str, Any], review_path: Path, *, video_id: str, before: str, after: str,
+    allow_archived_srt: bool = False,
+) -> None:
     """Require an explicit, byte-bound editorial attestation, not self-hash alone."""
     if json.loads(review_path.read_text(encoding="utf-8-sig")) != review:
         raise ValueError("Chapter review differs from exact reviewed file")
@@ -159,7 +199,10 @@ def require_review(review: dict[str, Any], review_path: Path, *, video_id: str, 
         not isinstance(reviewer, str)
         or not reviewer.strip()
         or not isinstance(reviewed_at, str)
-        or approval.get("basis") not in {"exact_ru_caption_boundaries", "exact_ru_audio_boundaries"}
+        or approval.get("basis") not in {
+            "exact_ru_caption_boundaries", "exact_ru_audio_boundaries", _ARCHIVED_SRT_BASIS
+        }
+        or (approval.get("basis") == _ARCHIVED_SRT_BASIS and not allow_archived_srt)
         or approval.get("recording_video_id") != video_id
         or approval.get("chapters_sha256") != canonical_sha256(review["chapters"])
         or approval.get("description_sha256") != sha256_text(after)
@@ -189,7 +232,10 @@ def require_review(review: dict[str, Any], review_path: Path, *, video_id: str, 
     if not path.is_file() or digest_file(path) != evidence_hash:
         raise ValueError("Semantic evidence is missing or changed")
     events = None
-    if approval["basis"] == "exact_ru_caption_boundaries":
+    archived_cues = None
+    if approval["basis"] == _ARCHIVED_SRT_BASIS:
+        archived_cues = _archived_srt_cues(path)
+    elif approval["basis"] == "exact_ru_caption_boundaries":
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
         if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
             raise ValueError("Expected original Russian JSON3 caption events")
@@ -212,6 +258,15 @@ def require_review(review: dict[str, Any], review_path: Path, *, video_id: str, 
             or not cue.strip()
         ):
             raise ValueError("Chapter boundary locator does not match reviewed seconds")
+        if archived_cues is not None:
+            index = boundary.get("cue_index")
+            if type(index) is not int or not 0 <= index < len(archived_cues):
+                raise ValueError("Archived SRT boundary cue is missing")
+            if "event_index" in boundary:
+                raise ValueError("Archived SRT locator must not claim a JSON3 event")
+            actual_ms, actual_text = archived_cues[index]
+            if actual_ms != start_ms or actual_text != " ".join(cue.split()):
+                raise ValueError("Archived SRT boundary does not match exact cue bytes")
         if events is not None:
             index = boundary.get("event_index")
             if type(index) is not int or not 0 <= index < len(events):
@@ -418,7 +473,10 @@ def require_chapter_release(plan: dict[str, Any], *, execute: bool, confirm_revi
         review = json.loads(review_path.read_text(encoding="utf-8-sig"))
         if not isinstance(review, dict):
             raise ValueError("Invalid chapter review object")
-        require_review(review, review_path, video_id=video_id, before=before, after=after)
+        require_review(
+            review, review_path, video_id=video_id, before=before, after=after,
+            allow_archived_srt=plan.get("source_scope") == "exact-panorama-owner-v1",
+        )
         _require_rederived_chapter_plan(plan, review_path, video_id=video_id)
 
 
