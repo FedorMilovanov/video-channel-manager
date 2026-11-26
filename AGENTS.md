@@ -106,6 +106,12 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 - A timeout or failed final state push after a provider response is an incident to reconcile, not permission to send again.
 - Machine state belongs in durable journals/results/ledgers, not only logs or chat.
 
+## Canonical owner-local checkout
+
+Owner directive (26 Nov 2026): on the owner's Windows machine use `C:\Users\Fedor\Projects\video-channel-manager` as the single normal local code checkout. Do not create additional clones, long-lived worktrees, or per-wave runtime copies on other drives, in Projects, or in Temp just to read, edit, or test code. Prefer GitHub/API and hosted CI where practical; an exceptional temporary isolated worktree requires a concrete need, one bounded scope, and cleanup when its work is complete. Do not promote it to a second normal checkout.
+
+Before updating the canonical checkout, preserve unique tracked edits and any untracked/ignored operational evidence; never reset or clean an unrelated dirty worktree. Retire completed local worktrees only after checking exact commit reachability, clean tracked/untracked state, ignored data, task/process dependencies and any pinned runtime contract; use non-forced `git worktree remove`. Generated test caches are disposable; credentials, source media, receipts, journals and operator outputs are not. Existing separately pinned production runtimes are migration exceptions, not authority to create more copies: retire them only after the actual launcher, exact runtime and provider-free acceptance are reconciled. Preserve the canonical absolute data/credential store and single-writer rules; no new publication authority is created by a checkout change.
+
 ## Branch lifecycle
 
 Refs fall into three classes, and the class decides whether deletion is allowed, not the prefix or the age:
