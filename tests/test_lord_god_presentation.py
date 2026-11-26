@@ -462,13 +462,13 @@ def test_two_plain_intro_lines_allow_emphasis_and_urls_in_later_paragraphs() -> 
     assert presentation_issues(_DESCRIPTION) == []
 
 
-def test_lord_god_presentation_imports_strict_youtube_copy_validator() -> None:
-    # A stale editable install once routed this gate through youtube_copy_safe.
-    # That validator records some markup defects as warnings, not blocking errors.
-    from video_channel_manager.editorial import youtube_copy
+def test_lord_god_presentation_imports_canonical_youtube_copy_validator() -> None:
+    # The canonical validator preserves blocking markup errors while reporting
+    # ambiguous punctuation scope as a warning (youtube-copy-automation-safety.md).
+    from video_channel_manager.editorial import validate_youtube_description
     from video_channel_manager.platforms.youtube import lord_god_presentation
 
-    assert lord_god_presentation.validate_youtube_description is youtube_copy.validate_youtube_description
+    assert lord_god_presentation.validate_youtube_description is validate_youtube_description
 
 
 def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:
