@@ -47,9 +47,10 @@ def make_package() -> str:
         + "\n\n#Есенин #Поэзия #РусскаяКлассика #Литература #История #Культура #СтихиЕсенина #Автор #Чтение"
     )
     shorts = (
-        "Поэтические образы Сергея Есенина и речь русского стиха в формате.\n"
-        + "Год и редакция стихотворения устанавливаются по первичным источникам, а не по названию ролика. " * 3
-        + f"\n*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}\n"
+        "Поэтические образы Сергея Есенина и речь русского стиха в формате.\n\n"
+        + "Год и редакция стихотворения устанавливаются по первичным источникам, а не по названию ролика."
+        + " Проверяется дата первой публикации. Сведения о композиции отделяются от биографических фактов."
+        + f"\n\n*Плейлист «Сергей Есенин»:* {YESENIN}\n*Плейлист «Поющие Поэты»:* {SINGING}\n\n"
         + "#СергейЕсенин #РусскаяПоэзия #Классика #Чтение"
     )
     pin = (
@@ -70,6 +71,34 @@ def test_valid_package_avoids_format_false_positive() -> None:
     pkg = make_package()
     errors = validate_five_block_package(pkg)
     assert not errors, [(error.block, error.code, error.message) for error in errors]
+
+
+def test_shorts_reject_missing_or_extra_blank_lines() -> None:
+    original = make_package()
+    for before, after in (
+        ("формате.\n\n", "формате.\n"),
+        ("формате.\n\n", "формате.\n\n\n"),
+        ("фактов.\n\n*Плейлист", "фактов.\n*Плейлист"),
+        (f"{YESENIN}\n*Плейлист", f"{YESENIN}\n\n*Плейлист"),
+        (f"{SINGING}\n\n#СергейЕсенин", f"{SINGING}\n#СергейЕсенин"),
+    ):
+        assert before in original
+        candidate = original.replace(before, after, 1)
+        assert any(
+            issue.block == "shorts" and issue.code == "short_paragraph_spacing"
+            for issue in validate_five_block_package(candidate)
+        )
+
+
+def test_shorts_reject_non_hashtag_tokens_in_final_block() -> None:
+    original = make_package()
+    hashtag_line = next(line for line in original.splitlines() if line.startswith("#") and len(line.split()) == 4)
+    for suffix in (" extra", " #", " !", ","):
+        candidate = original.replace(hashtag_line, hashtag_line + suffix, 1)
+        assert any(
+            issue.block == "shorts" and issue.code == "short_hashtags"
+            for issue in validate_five_block_package(candidate)
+        )
 
 
 def test_detect_wrong_playlist_id_and_placeholder() -> None:
