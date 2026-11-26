@@ -29,10 +29,13 @@ BAD_TITLE_MARKERS = (
     "день рождения",
     "свадебный час",
 )
+
+# Owner editorial policy: Lawson-related videos require individual contextual review,
+# not automatic devotional promotion. Existing posts and historical text are unaffected.
+MANUAL_REVIEW_TITLE_MARKERS = ("лоусон", "лоусен", "лоусэн", "lawson")
 PRIORITY_MARKERS = (
     "макартур",
     "спраул",
-    "лоусон",
     "вошер",
     "коломийцев",
     "бики",
@@ -136,7 +139,7 @@ def eligible_video(item: dict[str, Any], *, max_views: int) -> bool:
     low = title.lower()
     if item.get("state") != "unposted":
         return False
-    if not title or any(marker in low for marker in BAD_TITLE_MARKERS):
+    if not title or any(marker in low for marker in BAD_TITLE_MARKERS + MANUAL_REVIEW_TITLE_MARKERS):
         return False
     if int(item.get("duration_seconds") or 0) < 120:
         return False
@@ -149,7 +152,6 @@ def speaker_bucket(item: dict[str, Any]) -> str:
     buckets = (
         ("макартур", "macarthur"),
         ("спраул", "sproul"),
-        ("лоусон", "lawson"),
         ("вошер", "washer"),
         ("коломийцев", "kolomiytsev"),
         ("бики", "beeke"),
@@ -168,7 +170,7 @@ def select_videos(audit: dict[str, Any], *, count: int, max_views: int) -> list[
         pools.setdefault(speaker_bucket(item), []).append(item)
     for pool in pools.values():
         pool.sort(key=video_score)
-    order = ("macarthur", "sproul", "lawson", "washer", "beeke", "spurgeon", "kolomiytsev", "general")
+    order = ("macarthur", "sproul", "washer", "beeke", "spurgeon", "kolomiytsev", "general")
     result: list[dict[str, Any]] = []
     while len(result) < count and any(pools.values()):
         for bucket in order:
