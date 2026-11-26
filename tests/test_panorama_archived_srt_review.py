@@ -1,8 +1,8 @@
 """Provider-inert regression coverage for explicitly reviewed original SRT evidence."""
 
-import copy
 import json
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -28,10 +28,11 @@ CUES = [
 def _fixture(tmp_path):
     srt = tmp_path / "source.srt"
     srt.write_bytes(
-        ("\ufeff" + "\r\n\r\n".join(
-            f"{i}\r\n{start} --> {end}\r\n{text}"
-            for i, (start, end, _, text) in enumerate(CUES, 1)
-        ) + "\r\n").encode("utf-8")
+        (
+            "\ufeff"
+            + "\r\n\r\n".join(f"{i}\r\n{start} --> {end}\r\n{text}" for i, (start, end, _, text) in enumerate(CUES, 1))
+            + "\r\n"
+        ).encode("utf-8")
     )
     chapters = [
         {
@@ -79,7 +80,7 @@ def _fixture(tmp_path):
         },
     }
     db = tmp_path / "source.db"
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("CREATE TABLE transcript_chunks(video_id TEXT, start_ms INTEGER, end_ms INTEGER, text TEXT)")
         connection.executemany(
             "INSERT INTO transcript_chunks VALUES (?, ?, ?, ?)",
@@ -107,7 +108,9 @@ def test_archived_srt_exact_review_and_archive_agree(tmp_path):
         require_review(review, path, video_id=VIDEO, before=BEFORE, after=after)
 
 
-@pytest.mark.parametrize("defect", ["index", "timestamp", "text", "partial_text", "json3_locator", "approval", "digest"])
+@pytest.mark.parametrize(
+    "defect", ["index", "timestamp", "text", "partial_text", "json3_locator", "approval", "digest"]
+)
 def test_srt_rejects_mismatched_review_even_with_resealed_chapter_digest(tmp_path, defect):
     review, after, srt, _ = _fixture(tmp_path)
     boundary = review["chapters"][1]["boundary_evidence"]
@@ -147,23 +150,23 @@ def test_srt_rejects_malformed_source_even_with_matching_file_digest(tmp_path, d
     review["semantic_review"]["evidence_sha256"] = digest_file(srt)
     with pytest.raises(ValueError):
         require_review(
-            review, _save(tmp_path, review), video_id=VIDEO, before=BEFORE,
-            after=after, allow_archived_srt=True
+            review, _save(tmp_path, review), video_id=VIDEO, before=BEFORE, after=after, allow_archived_srt=True
         )
 
 
 def test_srt_does_not_authorize_archive_gap_or_different_fragment(tmp_path):
     review, _, _, db = _fixture(tmp_path)
     path = _save(tmp_path, review)
-    with sqlite3.connect(db) as connection:
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("UPDATE transcript_chunks SET start_ms=10011 WHERE start_ms=10000")
     with pytest.raises(ValueError, match="archival transcript cue"):
-        _validated_chapter_appendix(
-            review, path, db, video_id=VIDEO, before=BEFORE, allow_archived_srt=True
-        )
-    with sqlite3.connect(db) as connection:
+        _validated_chapter_appendix(review, path, db, video_id=VIDEO, before=BEFORE, allow_archived_srt=True)
+    with closing(sqlite3.connect(db)) as connection, connection:
         connection.execute("UPDATE transcript_chunks SET start_ms=10000, text='Другой текст' WHERE start_ms=10011")
-    with pytest.raises(ValueError, match="archival transcript cue"):
+    review["chapters"][1]["source_cue"] = "Другой текст"
+    review["chapters"][1]["source_excerpt"] = "Другой текст"
+    review["semantic_review"]["chapters_sha256"] = canonical_sha256(review["chapters"])
+    with pytest.raises(ValueError, match="Archived SRT cue must match its exact archival fragment"):
         _validated_chapter_appendix(
-            copy.deepcopy(review), path, db, video_id=VIDEO, before=BEFORE, allow_archived_srt=True
+            review, _save(tmp_path, review), db, video_id=VIDEO, before=BEFORE, allow_archived_srt=True
         )
