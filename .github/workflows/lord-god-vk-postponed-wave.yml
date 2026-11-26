@@ -25,6 +25,11 @@ on:
         required: false
         default: ""
         type: string
+      text_source_ids:
+        description: "Prepare text-only/full: exact reconciled new text source IDs (comma-separated); none for video-only"
+        required: false
+        default: ""
+        type: string
       skip_posts:
         description: "Prepare charnock resume only: drop this many already-scheduled leading posts (0 = fresh series)"
         required: false
@@ -314,6 +319,8 @@ jobs:
       - name: Build the provider-inert 60-day text-only backlog
         if: inputs.lane == 'text-only'
         shell: bash
+        env:
+          TEXT_SOURCE_IDS: ${{ inputs.text_source_ids }}
         run: |
           set -euo pipefail
           python scripts/build_lord_god_content_backlog_v2.py --text-only \
@@ -327,12 +334,15 @@ jobs:
             --video-count 0 \
             --telegram-count 1 \
             --quote-count 24 \
+            --text-source-ids "$TEXT_SOURCE_IDS" \
             --historical-text-mode full \
             --output "$BACKLOG_PATH"
 
       - name: Build the provider-inert 60-day backlog
         if: inputs.lane == 'full'
         shell: bash
+        env:
+          TEXT_SOURCE_IDS: ${{ inputs.text_source_ids }}
         run: |
           set -euo pipefail
           python scripts/build_lord_god_content_backlog_v2.py "$AUDIT_JSON" \
@@ -346,6 +356,7 @@ jobs:
             --video-count 60 \
             --telegram-count 1 \
             --quote-count 24 \
+            --text-source-ids "$TEXT_SOURCE_IDS" \
             --historical-text-mode full \
             --max-views 1500 \
             --output "$BACKLOG_PATH"
