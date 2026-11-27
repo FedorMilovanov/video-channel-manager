@@ -23,7 +23,13 @@ def test_read_only_and_scheduled() -> None:
 
 def test_reports_from_the_real_queue_and_durable_ledger() -> None:
     text = _source()
-    assert "python scripts/lordchrist_telegraph_backlog.py" in text
+    assert 'python -m venv "$runtime"' in text
+    assert "-r requirements/telegram-publisher.txt" in text
+    assert '"$runtime/bin/python" -m pip check' in text
+    assert (
+        'PYTHONPATH=src "$RUNNER_TEMP/lordchrist-backlog-runtime/bin/python" scripts/lordchrist_telegraph_backlog.py'
+        in text
+    )
     assert "--ledger-ref refs/remotes/origin/state/lordchrist-telegram" in text
     assert "git fetch --depth=1 origin" in text
     assert "$GITHUB_STEP_SUMMARY" in text
