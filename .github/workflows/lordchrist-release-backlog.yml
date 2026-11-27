@@ -26,6 +26,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
+      - name: Install existing hash-locked Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/lordchrist-backlog-runtime"
+          python -m venv "$runtime"
+          "$runtime/bin/python" -m pip install \
+            --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+          "$runtime/bin/python" -m pip check
       - name: Fetch the durable ledger ref read-only
         shell: bash
         run: |
@@ -37,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          python scripts/lordchrist_telegraph_backlog.py \
+          PYTHONPATH=src "$RUNNER_TEMP/lordchrist-backlog-runtime/bin/python" scripts/lordchrist_telegraph_backlog.py \
             --ledger-ref refs/remotes/origin/state/lordchrist-telegram \
             --out artifacts/lordchrist-release-backlog.json > artifacts/report.txt
           cat artifacts/report.txt
