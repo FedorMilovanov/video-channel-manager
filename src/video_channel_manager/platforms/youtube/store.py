@@ -176,6 +176,8 @@ _QUOTA_COSTS = {
     ("POST", "commentThreads"): ("shared", 50),
     ("PUT", "comments"): ("shared", 50),
     ("PUT", "videos"): ("shared", 50),
+    ("PUT", "playlists"): ("shared", 50),
+    ("PUT", "playlists.update"): ("shared", 50),
     ("PUT", "videos.update.metadata-status"): ("shared", 50),
     ("PUT", "videos.update.visibility"): ("shared", 50),
     ("POST", "playlistItems.insert"): ("shared", 50),

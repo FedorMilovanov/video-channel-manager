@@ -209,7 +209,7 @@ def test_formatted_project_description_is_accepted() -> None:
             "missing_youtube_italic",
         ),
         (lambda x: x.replace("*Все шесть занятий:*", "**Все шесть занятий:**"), "markdown_double_asterisks"),
-        (lambda x: x.replace("*Все шесть занятий:*", "*Все шесть занятий*."), "youtube_punctuation_outside_emphasis"),
+        (lambda x: x.replace("*Все шесть занятий:*", "*Все шесть занятий*:"), "youtube_metadata_label_colon"),
         (lambda x: x.replace(_FIRST, "*" + _FIRST + "*"), "youtube_share_preview_emphasis"),
         (lambda x: x + "\n[Наш сайт](https://gospod-bog.ru/)", "youtube_hidden_markdown_link"),
         (
@@ -237,6 +237,23 @@ def test_bad_markers_and_old_administrative_info_fail_closed(modification, expec
     assert expected in issues, issues
     with pytest.raises(ValueError, match=expected):
         require_lord_god_youtube_presentation(_plan(content))
+
+
+def test_external_punctuation_remains_an_editorial_warning() -> None:
+    from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
+
+    proposed = (
+        _DESCRIPTION
+        + "\n\n*Джон Пайпер*, а также *Р. Ч. Спроул* выступают вместе."
+        + "\nРечь идёт о *Римлянам 12:1–2*; дубляж называет другой отрывок."
+    )
+    assert any(
+        finding.code == "punctuation_scope_review" and finding.severity == "warning"
+        for finding in validate_youtube_description(proposed)
+    )
+    assert autofix_youtube_description(proposed) == (proposed, [])
+    assert presentation_issues(proposed) == []
+    require_lord_god_youtube_presentation(_plan(proposed))
 
 
 def test_short_description_may_be_plain_but_not_a_donation_request() -> None:
@@ -445,13 +462,13 @@ def test_two_plain_intro_lines_allow_emphasis_and_urls_in_later_paragraphs() -> 
     assert presentation_issues(_DESCRIPTION) == []
 
 
-def test_lord_god_presentation_imports_strict_youtube_copy_validator() -> None:
-    # A stale editable install once routed this gate through youtube_copy_safe.
-    # That validator records some markup defects as warnings, not blocking errors.
-    from video_channel_manager.editorial import youtube_copy
+def test_lord_god_presentation_imports_canonical_youtube_copy_validator() -> None:
+    # The canonical validator preserves blocking markup errors while reporting
+    # ambiguous punctuation scope as a warning (youtube-copy-automation-safety.md).
+    from video_channel_manager.editorial import validate_youtube_description
     from video_channel_manager.platforms.youtube import lord_god_presentation
 
-    assert lord_god_presentation.validate_youtube_description is youtube_copy.validate_youtube_description
+    assert lord_god_presentation.validate_youtube_description is validate_youtube_description
 
 
 def test_lord_god_description_limit_counts_utf8_bytes_before_write() -> None:

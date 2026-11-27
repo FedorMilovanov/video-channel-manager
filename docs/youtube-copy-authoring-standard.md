@@ -129,11 +129,11 @@ A guarded description plan must freeze at least:
 
 Old plan schemas are not silently upgraded at execution time. Rebuild them from current code.
 
-Current operational state keeps YouTube provider mutations unauthorized. A review-only plan therefore records `provider_write_authorized=false` and execution refuses it. Changing that field by hand invalidates the plan digest; a future provider mutation requires a separately reviewed authorization path after explicit user authorization.
+A review-only plan records `provider_write_authorized=false` and execution refuses it. Changing that field by hand invalidates the plan digest. For an explicit owner instruction to perform a bounded editorial change, use the existing supported authorization and plan path; the instruction supplies scope authority, not a bypass of the executor. Generate required technical confirmations internally, without asking the owner to approve the same scope again. A draft-only request remains review-only; preserve genuine review/rights and provider gates.
 
 ## 8. No-blind-replay execution contract
 
-If provider execution is separately authorised in the future:
+For an owner-authorized operation admitted by the supported executor:
 
 1. revalidate canonical project identity before credentials;
 2. require the exact digest-bound confirmation;

@@ -213,6 +213,9 @@ def test_prepare_supports_the_community_key_text_only_lane() -> None:
     # The text-only handoff must not reference audit artifacts at all.
     text_only_step = prepare.split("Build the provider-inert 60-day text-only backlog", 1)[1].split("- name:", 1)[0]
     assert "AUDIT_JSON" not in text_only_step
+    assert "text_source_ids:" in text
+    assert prepare.count("TEXT_SOURCE_IDS: ${{ inputs.text_source_ids }}") == 2
+    assert prepare.count('--text-source-ids "$TEXT_SOURCE_IDS"') == 2
     handoff_step = prepare.split("Prepare the immutable provider-inert text-only handoff", 1)[1].split("- name:", 1)[0]
     assert "--videos" not in handoff_step
 
