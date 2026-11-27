@@ -373,3 +373,60 @@ def test_caption_cli_exact_owner_inventory_and_download(
         provider.download_caption_srt.assert_not_called()
         if outcome == "existing_file":
             assert output.read_bytes() == b"keep"
+
+
+def test_caption_cli_reconciles_pending_insert_without_second_post(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import Mock
+
+    from video_channel_manager.youtube_release_provider import ReleaseProviderResult
+
+    channel = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+    srt = tmp_path / "lyrics.srt"
+    srt.write_bytes(b"1\n00:00:00,000 --> 00:00:01,000\nTest\n")
+    api = Mock()
+    api.list_my_channels.return_value = [SimpleNamespace(ref=SimpleNamespace(channel_id=channel))]
+    api.get_video.return_value = SimpleNamespace(
+        ref=SimpleNamespace(channel_id=channel, remote_id="video-1"), duration_seconds=2
+    )
+    provider = Mock()
+    provider.read_caption_inventory.return_value = {}
+    provider.verified_caption_id.return_value = None
+
+    def ambiguous(**kwargs: Any) -> ReleaseProviderResult:
+        kwargs["before_dispatch"]()
+        return ReleaseProviderResult(provider_effect="may_exist", remote_id="manual")
+
+    provider.insert_caption_srt.side_effect = ambiguous
+    monkeypatch.setattr(youtube_cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path))
+    monkeypatch.setattr(youtube_cli, "_components", lambda *_args: (None, None, api))
+    monkeypatch.setattr(youtube_cli, "YouTubeReleaseProvider", lambda **_kwargs: provider)
+
+    def run(execute: bool) -> None:
+        youtube_cli.add_caption(
+            "video-1",
+            srt=srt,
+            account="legendary-poet",
+            confirm_channel=channel,
+            language="ru",
+            name="Lyrics",
+            execute=execute,
+            client_secret=None,
+        )
+
+    run(False)
+    assert not list((tmp_path / "reports").glob("*.json"))
+    for _ in range(2):
+        with pytest.raises(typer.Exit):
+            run(True)
+    provider.insert_caption_srt.assert_called_once()
+    journal = next((tmp_path / "reports").glob("*.json"))
+    assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "pending_reconciliation"
+    provider.read_caption_inventory.return_value = {
+        "manual": {"videoId": "video-1", "language": "ru", "name": "Lyrics", "trackKind": "standard"}
+    }
+    provider.verified_caption_id.return_value = "manual"
+    run(True)
+    provider.insert_caption_srt.assert_called_once()
+    assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "verified"
