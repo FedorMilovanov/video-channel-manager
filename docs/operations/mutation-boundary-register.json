@@ -1187,6 +1187,34 @@
       ]
     },
     {
+      "boundary_id": "youtube.release.caption.insert",
+      "risk": "P1",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.insert_caption_srt",
+      "scanner_marker": "youtube_release_api:POST:captions.insert",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact owner video and language/name, validated timed SRT digest and durable CLI intent under channel lock",
+      "dispatch_evidence": "one official multipart captions.insert POST, shared quota reservation, no mutation retry",
+      "response_evidence": "remote ID retained if returned; HTTP acceptance is not serving content proof",
+      "postflight_evidence": "complete exact inventory plus source-language SRT download and canonical cue digest; pending retained otherwise",
+      "reconciliation_identity": "channel, video, language, name and normalized timed cue SHA-256; block pending language across changed input",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "during_postflight"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_youtube_copy_reconciliation_cli.py"
+      ]
+    },
+    {
       "boundary_id": "youtube.release.playlist.rename",
       "risk": "P1",
       "provider": "YouTube",
