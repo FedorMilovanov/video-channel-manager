@@ -168,7 +168,9 @@ def test_jude_date_is_not_suggested_while_old_run_target_is_unknown(tmp_path: Pa
     assert "queued_run_43098273140_target_unknown" in backlog.render(plan)
 
 
-@pytest.mark.parametrize("case", ["legacy", "verified", "missing", "wrong_blob", "wrong_message", "wrong_url", "conflict"])
+@pytest.mark.parametrize(
+    "case", ["legacy", "verified", "missing", "wrong_blob", "wrong_message", "wrong_url", "conflict"]
+)
 def test_reformation_alias_never_becomes_a_new_release(tmp_path: Path, case: str) -> None:
     queue_path, ledger_path, _ = _fixture(tmp_path)
     queue = json.loads(queue_path.read_text(encoding="utf-8"))
