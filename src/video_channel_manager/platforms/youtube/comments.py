@@ -244,6 +244,20 @@ class YouTubeCommentWriter(HttpClientOwner):
         except YouTubeQuotaBlocked as exc:
             raise YouTubeCommentError(str(exc)) from exc
 
+    @contextmanager
+    def reserve_guarded_reply_wave(self, *, max_pages: int) -> Iterator[None]:
+        """Reserve exact parent and full reply inventories, one POST and readback."""
+        if type(max_pages) is not int or max_pages <= 0 or self._quota_guard is None:
+            raise YouTubeCommentError("Reviewed shared quota and positive reply page bound required.")
+        # Each context reads all three moderation views, direct parent and reply pages.
+        # Owner/video reads, two preflights, eventual verification and independent receipt.
+        units = 50 + (3 + (3 + len(self.verify_delays_seconds)) * (4 * max_pages + 2)) * self.retry_policy.max_attempts
+        try:
+            with self._quota_guard.reserve(units, require_reviewed=True):
+                yield
+        except YouTubeQuotaBlocked as exc:
+            raise YouTubeCommentError(str(exc)) from exc
+
     def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
         if token.needs_refresh():
@@ -584,6 +598,197 @@ class YouTubeCommentWriter(HttpClientOwner):
         if last_error is not None:
             raise last_error
         raise YouTubeCommentError(f"Comment {comment_id} was not available for verification after retries.")
+
+    def _parse_reply(
+        self, item: dict[str, Any], *, parent_id: str, video_id: str, channel_id: str
+    ) -> TopLevelCommentSnapshot:
+        snippet = _dict_field(item, "snippet")
+        if (
+            snippet.get("parentId") != parent_id
+            or item.get("id") == parent_id
+            or not _author_channel_id(snippet)
+            # YouTube exposes raw original text only to its author. Other
+            # viewers' replies still belong in the complete inventory.
+            or (
+                not isinstance(snippet.get("textOriginal"), str)
+                and (_author_channel_id(snippet) == channel_id or not isinstance(snippet.get("textDisplay"), str))
+            )
+        ):
+            raise YouTubeCommentError("Unverified reply parent, author or original text.")
+        return self._parse_direct_comment(item, video_id=video_id, channel_id=channel_id)
+
+    def list_replies(
+        self, *, parent_id: str, video_id: str, channel_id: str, max_pages: int
+    ) -> list[TopLevelCommentSnapshot]:
+        """Complete bounded comments.list(parentId=...) inventory; no partial result."""
+        if not parent_id or type(max_pages) is not int or max_pages <= 0:
+            raise ValueError("Exact parent and positive reply page limit required.")
+        records: list[TopLevelCommentSnapshot] = []
+        ids: set[str] = set()
+        tokens: set[str] = set()
+        params: QueryParams = {"part": "snippet", "parentId": parent_id, "maxResults": 100, "textFormat": "plainText"}
+        for _ in range(max_pages):
+            payload = self._request("GET", "comments", params=params)
+            items = payload.get("items")
+            if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+                raise YouTubeCommentError("Malformed reply inventory.")
+            for item in items:
+                reply = self._parse_reply(item, parent_id=parent_id, video_id=video_id, channel_id=channel_id)
+                if reply.comment_id in ids:
+                    raise YouTubeCommentError("Duplicate reply ID in inventory.")
+                ids.add(reply.comment_id)
+                records.append(reply)
+            token = payload.get("nextPageToken")
+            if token is None:
+                return records
+            if not isinstance(token, str) or not token.strip() or token in tokens:
+                raise YouTubeCommentError("Invalid or repeated reply page token.")
+            tokens.add(token)
+            params["pageToken"] = token
+        raise YouTubeCommentError("Complete reply inventory exceeds its reserved page limit.")
+
+    def read_reply_context(
+        self,
+        *,
+        parent_id: str,
+        video_id: str,
+        channel_id: str,
+        expected_parent_author: str,
+        expected_parent_text: str,
+        max_pages: int,
+    ) -> list[TopLevelCommentSnapshot]:
+        """Bind the parent to this video before trusting a reply that omits videoId."""
+        parents = self.list_top_level_comments(video_id, strict_moderation=True, max_pages_per_status=max_pages)
+        parent = next((item for item in parents if item.comment_id == parent_id), None)
+        if (
+            parent is None
+            or parent.channel_id != channel_id
+            or parent.author_channel_id != expected_parent_author
+            or not comments_equivalent(parent.text, expected_parent_text)
+            or parent.moderation_status in {"heldForReview", "likelySpam", "rejected"}
+            or _dict_field(parent.raw, "snippet").get("canReply") is not True
+        ):
+            raise YouTubeCommentConflictError("Reviewed top-level parent changed or cannot receive replies.")
+        direct = self.read_comment(parent_id, video_id=video_id, channel_id=channel_id)
+        if (
+            _dict_field(direct.raw, "snippet").get("parentId") is not None
+            or direct.author_channel_id != expected_parent_author
+            or not comments_equivalent(direct.text, expected_parent_text)
+        ):
+            raise YouTubeCommentConflictError("Direct parent differs from reviewed top-level comment.")
+        count = _dict_field(parent.raw, "snippet").get("totalReplyCount")
+        replies = self.list_replies(parent_id=parent_id, video_id=video_id, channel_id=channel_id, max_pages=max_pages)
+        if type(count) is not int or count < 0 or count != len(replies):
+            raise YouTubeCommentError("Reply count and complete API inventory disagree; reconcile without dispatch.")
+        return replies
+
+    def create_reply(
+        self,
+        *,
+        parent_id: str,
+        video_id: str,
+        expected_channel_id: str,
+        expected_video_title: str,
+        expected_parent_author: str,
+        expected_parent_text: str,
+        expected_owned_replies: dict[str, str],
+        text: str,
+        max_pages: int,
+        before_dispatch: Callable[[], None],
+    ) -> TopLevelCommentSnapshot:
+        """One reviewed reply, never a replacement top-level comment or blind retry."""
+        normalized = validate_comment_text(text)
+        if not all(
+            (
+                parent_id,
+                video_id,
+                expected_channel_id,
+                expected_video_title,
+                expected_parent_author,
+                expected_parent_text,
+            )
+        ):
+            raise ValueError("Exact reviewed reply identity required.")
+        if not callable(before_dispatch) or type(max_pages) is not int or max_pages <= 0:
+            raise ValueError("Durable reply intent and positive inventory bound required.")
+        if not isinstance(expected_owned_replies, dict) or any(
+            not isinstance(cid, str)
+            or not cid
+            or cid == parent_id
+            or not isinstance(digest, str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None
+            for cid, digest in expected_owned_replies.items()
+        ):
+            raise ValueError("Exact reviewed owner reply map required.")
+        identity = self.read_video_identity(video_id)
+        if (
+            identity.channel_id != expected_channel_id
+            or identity.title != expected_video_title
+            or identity.privacy_status != "public"
+        ):
+            raise YouTubeCommentConflictError("Video identity drifted during reply preflight; no POST sent.")
+
+        def context() -> list[TopLevelCommentSnapshot]:
+            return self.read_reply_context(
+                parent_id=parent_id,
+                video_id=video_id,
+                channel_id=expected_channel_id,
+                expected_parent_author=expected_parent_author,
+                expected_parent_text=expected_parent_text,
+                max_pages=max_pages,
+            )
+
+        existing = {
+            item.comment_id: item.text_sha256 for item in context() if item.author_channel_id == expected_channel_id
+        }
+        digest = comment_text_sha256(normalized)
+        if existing != expected_owned_replies or digest in existing.values():
+            raise YouTubeCommentConflictError("Reviewed owner reply state changed or already contains this text.")
+        units = 50 + len(self.verify_delays_seconds) * (4 * max_pages + 2) * self.retry_policy.max_attempts
+        with reserve_shared_quota(self._quota_guard, units, YouTubeCommentError):
+            before_dispatch()
+            payload = self._request(
+                "POST",
+                "comments",
+                params={"part": "snippet"},
+                json_body={"snippet": {"parentId": parent_id, "textOriginal": normalized}},
+                require_write=True,
+            )
+            created = self._parse_reply(payload, parent_id=parent_id, video_id=video_id, channel_id=expected_channel_id)
+            if (
+                created.author_channel_id != expected_channel_id
+                or created.text_sha256 != digest
+                or created.comment_id in expected_owned_replies
+            ):
+                raise YouTubeCommentError("Unexpected reply write response; reconcile without replay.")
+            expected_after = {**expected_owned_replies, created.comment_id: digest}
+            for delay in self.verify_delays_seconds:
+                if delay:
+                    self._sleep(delay)
+                try:
+                    direct = self.read_comment(created.comment_id, video_id=video_id, channel_id=expected_channel_id)
+                    verified = self._parse_reply(
+                        direct.raw, parent_id=parent_id, video_id=video_id, channel_id=expected_channel_id
+                    )
+                    if verified.author_channel_id != expected_channel_id or verified.text_sha256 != digest:
+                        raise YouTubeCommentConflictError("Exact reply readback differs; reconcile without replay.")
+                    after = {
+                        item.comment_id: item.text_sha256
+                        for item in context()
+                        if item.author_channel_id == expected_channel_id
+                    }
+                    if after == expected_after:
+                        return verified
+                    if after != expected_owned_replies:
+                        raise YouTubeCommentConflictError("Owner reply set changed; reconcile without replay.")
+                except YouTubeCommentConflictError:
+                    raise
+                except YouTubeCommentError as exc:
+                    if isinstance(exc.__cause__, YouTubeQuotaBlocked):
+                        raise
+            raise YouTubeCommentError(
+                f"Reply {created.comment_id} not independently verified; reconcile without replay."
+            )
 
     def create_top_level_comment(
         self,
