@@ -672,3 +672,86 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
             assert raw["localizations"]["en"] == before["localizations"]["en"]
     finally:
         provider.close()
+
+
+@pytest.mark.parametrize(
+    "problem",
+    ["missing", "bad_language", "missing_language", "bad_locale", "preflight_drift", "blank", "unchanged"],
+)
+def test_playlist_rename_validates_before_dispatch(tmp_path: Path, problem: str) -> None:
+    raw = {
+        "id": "playlist-1",
+        "snippet": {"channelId": "owner", "title": "Old", "description": "Keep", "defaultLanguage": "ru"},
+        "status": {"privacyStatus": "public"},
+        "localizations": {"ru": {"title": "Old", "description": "Keep"}},
+    }
+    before = copy.deepcopy(raw)
+    if problem == "bad_language":
+        raw["snippet"]["defaultLanguage"] = ""
+    elif problem == "missing_language":
+        raw["snippet"].pop("defaultLanguage")
+    elif problem == "bad_locale":
+        raw["localizations"]["ru"].pop("description")
+    elif problem == "preflight_drift":
+        raw["snippet"]["description"] = "Concurrent change"
+    methods: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        assert request.method == "GET"
+        return httpx.Response(200, json={"items": [] if problem == "missing" else [raw]})
+
+    provider = _provider(tmp_path, handler)
+    kwargs = {
+        "playlist_id": "playlist-1",
+        "channel_id": "owner",
+        "expected_before": before,
+        "new_title": "Old" if problem == "unchanged" else " " if problem == "blank" else "New",
+        "before_dispatch": lambda: pytest.fail("No intent for a rejected or unchanged operation"),
+    }
+    try:
+        if problem == "unchanged":
+            assert provider.rename_playlist(**kwargs).provider_effect == "verified"
+        else:
+            with pytest.raises((YouTubeReleaseProviderError, ValueError)):
+                provider.rename_playlist(**kwargs)
+        assert methods == ["GET"]
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize("outcome", ["rejected", "wrong_id", "readback_error"])
+def test_playlist_rename_handles_response_without_replaying(tmp_path: Path, outcome: str) -> None:
+    raw = {
+        "id": "playlist-1",
+        "snippet": {"channelId": "owner", "title": "Old", "description": "Keep"},
+        "status": {"privacyStatus": "private"},
+        "localizations": {},
+    }
+    methods: list[str] = []
+    intents: list[bool] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "GET":
+            if len(methods) > 1:
+                return httpx.Response(404, json={"error": {"message": "Unavailable"}})
+            return httpx.Response(200, json={"items": [raw]})
+        assert intents == [True]
+        if outcome == "rejected":
+            return httpx.Response(400, json={"error": {"message": "Invalid title"}})
+        return httpx.Response(200, json={"id": "other" if outcome == "wrong_id" else "playlist-1"})
+
+    provider = _provider(tmp_path, handler)
+    try:
+        result = provider.rename_playlist(
+            playlist_id="playlist-1",
+            channel_id="owner",
+            expected_before=raw,
+            new_title="New",
+            before_dispatch=lambda: intents.append(True),
+        )
+        assert result.provider_effect == ("confirmed_absent" if outcome == "rejected" else "may_exist")
+        assert methods == (["GET", "PUT", "GET"] if outcome == "readback_error" else ["GET", "PUT"])
+    finally:
+        provider.close()
