@@ -156,6 +156,23 @@ def load_calendar_manifest(path: Path) -> dict[str, dict[str, Any]]:
     return result
 
 
+def load_report_calendar(path: Path, root: Path) -> dict[str, dict[str, Any]]:
+    """Use the production V3 resolver for the canonical report, retaining terminal legacy #09."""
+    calendar = load_calendar_manifest(path)
+    if path.resolve() != (root / MANIFEST_PATH).resolve():
+        # Explicit noncanonical manifest: historical/offline analysis only.
+        return calendar
+    from video_channel_manager.lordchrist_charnock_reschedule import V3_CALENDAR, load_recovery_calendar_v3
+
+    try:
+        resolved = load_recovery_calendar_v3(root, require_approved=False)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise SystemExit(f"{root / V3_CALENDAR}: invalid V3 calendar; no safe proposal: {exc}") from exc
+    for binding in resolved:
+        calendar[binding["publication_id"]] = {**binding, "report_calendar_version": 3}
+    return calendar
+
+
 def _published_date(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
@@ -210,7 +227,15 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
         or entry.get("telegram_chat_id") != LORDCHRIST_CHAT_ID
         or entry.get("telegram_message_id") != calendar["deleted_telegram_message_id"]
         or entry.get("telegraph_url") != calendar["verified_telegraph_url"]
-        or entry.get("article_sha256") != calendar["source_article_sha256"]
+        or entry.get("article_sha256")
+        != calendar.get("historical_source_article_sha256", calendar["source_article_sha256"])
+        or (
+            calendar.get("report_calendar_version") == 3
+            and (
+                entry.get("github_sha") != calendar["original_github_sha"]
+                or entry.get("cover_sha256") != calendar["original_cover_sha256"]
+            )
+        )
     ):
         return "ambiguous", None
     if "scheduled_reissue" not in entry:
@@ -222,6 +247,8 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
         "source_article_sha256": calendar["source_article_sha256"],
         "telegraph_url": calendar["verified_telegraph_url"],
     }
+    if calendar.get("binding_git_blob_sha"):
+        expected["binding_git_blob_sha"] = calendar["binding_git_blob_sha"]
     if (
         isinstance(receipt, dict)
         and receipt.get("state") == "verified"
@@ -239,13 +266,13 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
 def _calendar_source_blockers(item: dict[str, Any], calendar: dict[str, Any], root: Path) -> list[str]:
     """Check queue/manifest/file bindings, not live page or rendered payload."""
     blockers: list[str] = []
-    if item.get("scheduled_on_moscow") != calendar["scheduled_on_moscow"]:
+    if item.get("scheduled_on_moscow") != calendar.get("previous_scheduled_on_moscow", calendar["scheduled_on_moscow"]):
         blockers.append("queue_calendar_date_mismatch")
     article = item.get("article")
     if not isinstance(article, dict):
         return [*blockers, "queue_article_missing"]
     queue_blob = article.get("git_blob_sha")
-    if queue_blob != calendar["article_git_blob_sha"]:
+    if queue_blob != calendar.get("queue_article_git_blob_sha", calendar["article_git_blob_sha"]):
         blockers.append("queue_calendar_blob_mismatch")
     raw_path = article.get("path")
     if not isinstance(raw_path, str) or not raw_path:
@@ -330,6 +357,11 @@ def classify(
             binding = calendar[pid]
             record["calendar_date"] = binding["scheduled_on_moscow"]
             record["deleted_telegram_message_id"] = binding["deleted_telegram_message_id"]
+            if binding.get("report_calendar_version") == 3:
+                record["calendar_version"] = 3
+                record["proposal_blockers"].append("v3_calendar_owned_no_automatic_reschedule")
+                if not binding.get("release_approval"):
+                    record["proposal_blockers"].append("v3_release_approval_missing")
             record["proposal_blockers"].extend(_calendar_source_blockers(item, binding, root))
             if ledger is None:
                 status, published_on = "unavailable", None
@@ -465,7 +497,7 @@ def build_plan(
         ledger = None
     elif ledger is None:
         ledger_source = "absent"
-    calendar = load_calendar_manifest(manifest_path)
+    calendar = load_report_calendar(manifest_path, repo_root)
     if set(calendar) - {item["publication_id"] for item in items}:
         raise SystemExit("calendar contains publication identities missing from the queue")
     groups = classify(items, ledger, calendar, today=today, root=repo_root, holds=holds)
@@ -476,6 +508,9 @@ def build_plan(
     for records in groups.values():
         for record in records:
             for key in ("scheduled_on_moscow", "calendar_date", "published_on_moscow", "original_published_on_moscow"):
+                if key == "scheduled_on_moscow" and record.get("calendar_version") == 3:
+                    # Historical queue date is an immutable identity, not a second active V3 reservation.
+                    continue
                 if record.get(key):
                     occupied.add(date.fromisoformat(record[key]))
     waiting = [{**r, "source": "queue"} for key in ("overdue", "undated") for r in groups[key]]
