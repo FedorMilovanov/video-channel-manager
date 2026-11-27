@@ -315,8 +315,14 @@ class YouTubeReleaseProvider(HttpClientOwner):
             resource="captions.download",
             params={"tfmt": "srt"},
         )
-        if not response.content.strip():
-            raise YouTubeReleaseProviderError("Empty caption download; no subtitle evidence.")
+        try:
+            text = response.content.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise YouTubeReleaseProviderError("Caption download is not UTF-8 SRT.") from exc
+        # Reject empty or non-SRT success bodies (for example JSON/HTML errors).
+        # Preserve provider bytes; this is format admission, not editorial QA.
+        if not re.match(r"^\s*1[ \t]*\r?\n\d{2,}:\d{2}:\d{2},\d{3}[ \t]+-->[ \t]+", text):
+            raise YouTubeReleaseProviderError("Caption download has no initial SRT cue.")
         return response.content
 
     def read_playlist_metadata(self, playlist_id: str, *, channel_id: str) -> dict[str, Any]:
