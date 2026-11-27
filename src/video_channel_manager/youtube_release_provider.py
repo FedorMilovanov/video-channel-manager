@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import random
 import re
@@ -25,7 +26,12 @@ from video_channel_manager.platforms.http import (
 from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
-from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, TokenStore, YouTubeQuotaBlocked
+from video_channel_manager.platforms.youtube.store import (
+    ProjectQuotaGuard,
+    TokenStore,
+    YouTubeQuotaBlocked,
+    reserve_shared_quota,
+)
 from video_channel_manager.youtube_provider_semantics import playlist_item_video_id
 from video_channel_manager.youtube_release_state import ProviderEffect
 from video_channel_manager.youtube_upload_plan import canonical_sha256
@@ -57,6 +63,20 @@ def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, A
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def playlist_rename_target(before: dict[str, Any], new_title: str) -> dict[str, Any]:
+    """Change the primary name and its exact default-language mirror, nothing else."""
+    if not new_title.strip():
+        raise ValueError("Playlist title cannot be blank.")
+    after = copy.deepcopy(before)
+    snippet = after["snippet"]
+    old_title = snippet["title"]
+    snippet["title"] = new_title
+    primary = after["localizations"].get(snippet.get("defaultLanguage"))
+    if primary is not None and primary["title"] == old_title:
+        primary["title"] = new_title
+    return after
 
 
 def _session_url_sha256(url: str) -> str:
@@ -272,6 +292,108 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if len(items) != 1 or str(items[0].get("id") or "") != video_id:
             raise YouTubeReleaseProviderError(f"Video not found or inaccessible: {video_id}")
         return items[0]
+
+    def read_playlist_metadata(self, playlist_id: str, *, channel_id: str) -> dict[str, Any]:
+        response = self._safe_request(
+            "GET",
+            f"{self.api_base_url}/playlists",
+            resource="playlists",
+            params={"part": "snippet,status,localizations", "id": playlist_id, "maxResults": 1},
+        )
+        items = _dict_items(self._json_object(response) or {})
+        if len(items) != 1 or items[0].get("id") != playlist_id:
+            raise YouTubeReleaseProviderError("Playlist not found or inaccessible.")
+        raw = items[0]
+        snippet = raw.get("snippet")
+        status = raw.get("status")
+        locales = raw.get("localizations", {})
+        if (
+            not isinstance(snippet, dict)
+            or snippet.get("channelId") != channel_id
+            or not isinstance(snippet.get("title"), str)
+            or not snippet["title"]
+            or not isinstance(snippet.get("description"), str)
+            or not isinstance(status, dict)
+            or status.get("privacyStatus") not in {"public", "private", "unlisted"}
+            or not isinstance(locales, dict)
+        ):
+            raise YouTubeReleaseProviderError("Playlist owner or metadata is incomplete.")
+        fields = {key: snippet[key] for key in ("channelId", "title", "description")}
+        if "defaultLanguage" in snippet:
+            language = snippet["defaultLanguage"]
+            if not isinstance(language, str) or not language:
+                raise YouTubeReleaseProviderError("Invalid playlist default language.")
+            fields["defaultLanguage"] = language
+        # Playlist snippet.tags is deprecated, not an updateable property.
+        # Compare only supported metadata; never echo legacy tags into a PUT.
+        if locales and not fields.get("defaultLanguage"):
+            raise YouTubeReleaseProviderError("Cannot preserve playlist localizations without default language.")
+        for language, locale in locales.items():
+            if (
+                not isinstance(language, str)
+                or not language
+                or not isinstance(locale, dict)
+                or not isinstance(locale.get("title"), str)
+                or not isinstance(locale.get("description"), str)
+            ):
+                raise YouTubeReleaseProviderError("Incomplete playlist localization.")
+        return {"id": playlist_id, "snippet": fields, "status": status, "localizations": locales}
+
+    def rename_playlist(
+        self,
+        *,
+        playlist_id: str,
+        channel_id: str,
+        expected_before: dict[str, Any],
+        new_title: str,
+        before_dispatch: Callable[[], None],
+    ) -> ReleaseProviderResult:
+        """One official playlist metadata PUT, with preservation and independent readback."""
+        with reserve_shared_quota(
+            self._quota_guard, 50 + 2 * self.retry_policy.max_attempts, YouTubeReleaseProviderError
+        ):
+            current = self.read_playlist_metadata(playlist_id, channel_id=channel_id)
+            if current != expected_before:
+                raise YouTubeReleaseProviderError("Playlist metadata drifted; no PUT sent.")
+            after = playlist_rename_target(current, new_title)
+            if current == after:
+                return ReleaseProviderResult(provider_effect="verified", remote_id=playlist_id)
+            self._token(require_write=True)
+            snippet = {key: value for key, value in after["snippet"].items() if key != "channelId"}
+            body = {"id": playlist_id, "snippet": snippet}
+            # The primary-language mirror is maintained by YouTube when snippet
+            # changes. Do not rewrite the localization map for a title-only edit.
+            before_dispatch()
+            response, failure = self._mutation_request(
+                "PUT",
+                f"{self.api_base_url}/playlists",
+                resource="playlists.update",
+                params={"part": "snippet"},
+                json_body=body,
+            )
+            if failure is not None and failure.provider_effect != "may_exist":
+                return failure
+            if failure is None:
+                if response is None:
+                    raise AssertionError("mutation request returned neither response nor failure")
+                payload = self._json_object(response)
+                if (payload or {}).get("id") != playlist_id:
+                    return ReleaseProviderResult(
+                        provider_effect="may_exist", evidence={"reason": "Unexpected playlists.update response ID"}
+                    )
+            # A timeout may follow a committed update. Use the already reserved
+            # independent GET; never send a second PUT or infer absence.
+            evidence = dict(failure.evidence) if failure is not None else {}
+            try:
+                verified = self.read_playlist_metadata(playlist_id, channel_id=channel_id)
+            except YouTubeReleaseProviderError as exc:
+                evidence["readback_error"] = str(exc)
+                return ReleaseProviderResult(provider_effect="may_exist", evidence=evidence)
+            if verified != after:
+                evidence["reason"] = "Playlist readback differs from requested state"
+                return ReleaseProviderResult(provider_effect="may_exist", evidence=evidence)
+            evidence["readback_sha256"] = _json_digest(verified)
+            return ReleaseProviderResult(provider_effect="verified", remote_id=playlist_id, evidence=evidence)
 
     def list_playlist_items(self, playlist_id: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
