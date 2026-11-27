@@ -1206,6 +1206,53 @@
       ]
     },
     {
+      "boundary_id": "youtube.release.caption.insert",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[existing]",
+          "claim": "existing manual track prevents another POST"
+        },
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[wrong_owner]",
+          "claim": "foreign owner refuses before intent and POST"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[timeout]",
+          "claim": "lost response and no readback remain ambiguous with one POST"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[timeout_applied]",
+          "claim": "lost response after commit verified by exact content readback"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[wrong_text]",
+          "claim": "different downloaded content never counts as verified"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[processing]",
+          "claim": "processing track is not complete"
+        }
+      ]
+    },
+    {
       "boundary_id": "youtube.release.playlist.rename",
       "proofs": [
         {
