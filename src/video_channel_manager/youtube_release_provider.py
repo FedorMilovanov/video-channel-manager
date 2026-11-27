@@ -410,7 +410,13 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 headers={"Content-Type": f"multipart/related; boundary={boundary}"},
                 content=body,
             )
-            if failure is not None and failure.provider_effect != "may_exist":
+            # A conflict establishes an existing identity, not absence of a track.
+            # Reconcile it by GET; do not make a new insert eligible automatically.
+            if (
+                failure is not None
+                and failure.provider_effect != "may_exist"
+                and failure.evidence.get("http_status") != 409
+            ):
                 return failure
             evidence = dict(failure.evidence) if failure is not None else {}
             remote_id = (self._json_object(response) or {}).get("id") if response is not None else None
