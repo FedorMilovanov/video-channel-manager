@@ -324,11 +324,8 @@ class YouTubeReleaseProvider(HttpClientOwner):
             if not isinstance(language, str) or not language:
                 raise YouTubeReleaseProviderError("Invalid playlist default language.")
             fields["defaultLanguage"] = language
-        if "tags" in snippet:
-            tags = snippet["tags"]
-            if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
-                raise YouTubeReleaseProviderError("Invalid playlist tags.")
-            fields["tags"] = tags
+        # Playlist snippet.tags is deprecated, not an updateable property.
+        # Compare only supported metadata; never echo legacy tags into a PUT.
         if locales and not fields.get("defaultLanguage"):
             raise YouTubeReleaseProviderError("Cannot preserve playlist localizations without default language.")
         for language, locale in locales.items():
@@ -376,26 +373,29 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 params={"part": parts},
                 json_body=body,
             )
-            if failure is not None:
+            if failure is not None and failure.provider_effect != "may_exist":
                 return failure
-            if response is None:
-                raise AssertionError("mutation request returned neither response nor failure")
-            payload = self._json_object(response)
-            if (payload or {}).get("id") != playlist_id:
-                return ReleaseProviderResult(
-                    provider_effect="may_exist", evidence={"reason": "Unexpected playlists.update response ID"}
-                )
+            if failure is None:
+                if response is None:
+                    raise AssertionError("mutation request returned neither response nor failure")
+                payload = self._json_object(response)
+                if (payload or {}).get("id") != playlist_id:
+                    return ReleaseProviderResult(
+                        provider_effect="may_exist", evidence={"reason": "Unexpected playlists.update response ID"}
+                    )
+            # A timeout may follow a committed update. Use the already reserved
+            # independent GET; never send a second PUT or infer absence.
+            evidence = dict(failure.evidence) if failure is not None else {}
             try:
                 verified = self.read_playlist_metadata(playlist_id, channel_id=channel_id)
             except YouTubeReleaseProviderError as exc:
-                return ReleaseProviderResult(provider_effect="may_exist", evidence={"reason": str(exc)})
+                evidence["readback_error"] = str(exc)
+                return ReleaseProviderResult(provider_effect="may_exist", evidence=evidence)
             if verified != after:
-                return ReleaseProviderResult(
-                    provider_effect="may_exist", evidence={"reason": "Playlist readback differs from requested state"}
-                )
-            return ReleaseProviderResult(
-                provider_effect="verified", remote_id=playlist_id, evidence={"readback_sha256": _json_digest(verified)}
-            )
+                evidence["reason"] = "Playlist readback differs from requested state"
+                return ReleaseProviderResult(provider_effect="may_exist", evidence=evidence)
+            evidence["readback_sha256"] = _json_digest(verified)
+            return ReleaseProviderResult(provider_effect="verified", remote_id=playlist_id, evidence=evidence)
 
     def list_playlist_items(self, playlist_id: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
