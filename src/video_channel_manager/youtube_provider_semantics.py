@@ -133,6 +133,11 @@ def canonical_srt_sha256(data: bytes, *, duration_seconds: int | None = None) ->
     return hashlib.sha256(json.dumps(cues, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+def validate_caption_identity(language: str, name: str) -> None:
+    if not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", language) or len(name) > 150:
+        raise ValueError("Invalid caption language or name.")
+
+
 def manual_caption_ids(tracks: Mapping[str, Any], language: str, name: str) -> list[str]:
     """Find the exact manual language/name identity; ASR is not a manual track."""
     ids = []
