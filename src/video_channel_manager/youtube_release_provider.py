@@ -40,6 +40,7 @@ from video_channel_manager.youtube_provider_semantics import (
     exact_caption_inventory,
     manual_caption_ids,
     playlist_item_video_id,
+    validate_caption_identity,
 )
 from video_channel_manager.youtube_release_state import ProviderEffect
 from video_channel_manager.youtube_upload_plan import canonical_sha256
@@ -365,8 +366,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
         before_dispatch: Callable[[], None],
     ) -> ReleaseProviderResult:
         """Insert one reviewed manual SRT; only exact serving-content readback proves completion."""
-        if not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", language) or len(name) > 150:
-            raise ValueError("Invalid caption language or name.")
+        validate_caption_identity(language, name)
         if len(srt) > 100_000_000:
             raise ValueError("Caption exceeds the provider's 100 MB size limit.")
         with reserve_shared_quota(
