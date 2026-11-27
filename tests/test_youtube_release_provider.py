@@ -755,3 +755,71 @@ def test_playlist_rename_handles_response_without_replaying(tmp_path: Path, outc
         assert methods == (["GET", "PUT", "GET"] if outcome == "readback_error" else ["GET", "PUT"])
     finally:
         provider.close()
+
+
+@pytest.mark.parametrize("problem", ["valid", "empty", "missing", "foreign", "duplicate", "partial", "invalid_json"])
+def test_exact_caption_inventory(tmp_path: Path, problem: str) -> None:
+    row = {
+        "id": "track-1",
+        "snippet": {"videoId": "video-1", "language": "ru", "trackKind": "ASR", "status": "serving"},
+    }
+    payload = {"items": [row]}
+    if problem == "empty":
+        payload = {"items": []}
+    elif problem == "missing":
+        payload = {}
+    elif problem == "foreign":
+        row["snippet"]["videoId"] = "other"
+    elif problem == "duplicate":
+        payload["items"].append(copy.deepcopy(row))
+    elif problem == "partial":
+        payload["nextPageToken"] = "next"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.path.endswith("/captions")
+        assert dict(request.url.params) == {"part": "snippet", "videoId": "video-1"}
+        if problem == "invalid_json":
+            return httpx.Response(200, content=b"not json")
+        return httpx.Response(200, json=payload)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        if problem in {"valid", "empty"}:
+            expected = {} if problem == "empty" else {"track-1": row["snippet"]}
+            assert provider.read_caption_inventory("video-1") == expected
+        else:
+            with pytest.raises(YouTubeReleaseProviderError, match="Incomplete exact caption inventory"):
+                provider.read_caption_inventory("video-1")
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize("outcome", ["srt", "empty", "refused", "blank", "html", "invalid_utf8"])
+def test_caption_download_original_language_only(tmp_path: Path, outcome: str) -> None:
+    calls: list[str] = []
+    data = b"1\n00:00:01,000 --> 00:00:02,000\nTest\n"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.method)
+        assert request.method == "GET"
+        assert request.url.path.endswith("/captions/track-1")
+        assert dict(request.url.params) == {"tfmt": "srt"}
+        if outcome == "refused":
+            return httpx.Response(403, json={"error": {"message": "Forbidden"}})
+        body = {"empty": b"", "html": b"<html>error</html>", "invalid_utf8": b"\xff"}
+        return httpx.Response(200, content=body.get(outcome, data))
+
+    provider = _provider(tmp_path, handler)
+    try:
+        if outcome == "srt":
+            assert provider.download_caption_srt("track-1") == data
+        elif outcome == "blank":
+            with pytest.raises(ValueError, match="nonblank"):
+                provider.download_caption_srt(" ")
+        else:
+            with pytest.raises(YouTubeReleaseProviderError):
+                provider.download_caption_srt("track-1")
+        assert calls == ([] if outcome == "blank" else ["GET"])
+    finally:
+        provider.close()

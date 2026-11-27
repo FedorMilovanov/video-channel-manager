@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import httpx
 
@@ -32,7 +32,7 @@ from video_channel_manager.platforms.youtube.store import (
     YouTubeQuotaBlocked,
     reserve_shared_quota,
 )
-from video_channel_manager.youtube_provider_semantics import playlist_item_video_id
+from video_channel_manager.youtube_provider_semantics import exact_caption_inventory, playlist_item_video_id
 from video_channel_manager.youtube_release_state import ProviderEffect
 from video_channel_manager.youtube_upload_plan import canonical_sha256
 
@@ -292,6 +292,38 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if len(items) != 1 or str(items[0].get("id") or "") != video_id:
             raise YouTubeReleaseProviderError(f"Video not found or inaccessible: {video_id}")
         return items[0]
+
+    def read_caption_inventory(self, video_id: str) -> dict[str, Any]:
+        response = self._safe_request(
+            "GET",
+            f"{self.api_base_url}/captions",
+            resource="captions.list",
+            params={"part": "snippet", "videoId": video_id},
+        )
+        try:
+            return exact_caption_inventory(self._json_object(response) or {}, video_id)
+        except ValueError as exc:
+            raise YouTubeReleaseProviderError(str(exc)) from exc
+
+    def download_caption_srt(self, caption_id: str) -> bytes:
+        """Download the selected track in its own language; do not request translation."""
+        if not caption_id.strip() or caption_id != caption_id.strip():
+            raise ValueError("Exact nonblank caption ID is required.")
+        response = self._safe_request(
+            "GET",
+            f"{self.api_base_url}/captions/{quote(caption_id, safe='')}",
+            resource="captions.download",
+            params={"tfmt": "srt"},
+        )
+        try:
+            text = response.content.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise YouTubeReleaseProviderError("Caption download is not UTF-8 SRT.") from exc
+        # Reject empty or non-SRT success bodies (for example JSON/HTML errors).
+        # Preserve provider bytes; this is format admission, not editorial QA.
+        if not re.match(r"^\s*1[ \t]*\r?\n\d{2,}:\d{2}:\d{2},\d{3}[ \t]+-->[ \t]+", text):
+            raise YouTubeReleaseProviderError("Caption download has no initial SRT cue.")
+        return response.content
 
     def read_playlist_metadata(self, playlist_id: str, *, channel_id: str) -> dict[str, Any]:
         response = self._safe_request(

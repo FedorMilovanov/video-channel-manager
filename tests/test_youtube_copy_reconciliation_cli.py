@@ -326,3 +326,50 @@ def test_playlist_rename_reconciles_exact_pending_effect_without_second_put(
     run(execute=True)
     provider.rename_playlist.assert_called_once()
     assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "verified"
+
+
+@pytest.mark.parametrize("outcome", ["list", "download", "foreign_video", "foreign_track", "existing_file"])
+def test_caption_cli_exact_owner_inventory_and_download(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, outcome: str
+) -> None:
+    from unittest.mock import Mock
+
+    channel = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+    api = Mock()
+    api.list_my_channels.return_value = [SimpleNamespace(ref=SimpleNamespace(channel_id=channel))]
+    api.get_video.return_value = SimpleNamespace(
+        ref=SimpleNamespace(channel_id="foreign" if outcome == "foreign_video" else channel, remote_id="video-1")
+    )
+    provider = Mock()
+    provider.read_caption_inventory.return_value = {"track-1": {"videoId": "video-1", "language": "ru"}}
+    provider.download_caption_srt.return_value = b"1\n00:00:01,000 --> 00:00:02,000\nTest\n"
+    monkeypatch.setattr(youtube_cli, "_components", lambda *_args: (None, None, api))
+    monkeypatch.setattr(youtube_cli, "YouTubeReleaseProvider", lambda **_kwargs: provider)
+    output = None if outcome == "list" else tmp_path / "source.srt"
+    track = None if outcome == "list" else "other" if outcome == "foreign_track" else "track-1"
+    if outcome == "existing_file":
+        output.write_bytes(b"keep")
+
+    def run() -> None:
+        youtube_cli.captions(
+            "video-1",
+            account="legendary-poet",
+            confirm_channel=channel,
+            download_track=track,
+            output=output,
+            client_secret=None,
+        )
+
+    if outcome in {"list", "download"}:
+        run()
+        provider.read_caption_inventory.assert_called_once_with("video-1")
+    else:
+        with pytest.raises(typer.Exit):
+            run()
+    if outcome == "download":
+        provider.download_caption_srt.assert_called_once_with("track-1")
+        assert output.read_bytes() == provider.download_caption_srt.return_value
+    else:
+        provider.download_caption_srt.assert_not_called()
+        if outcome == "existing_file":
+            assert output.read_bytes() == b"keep"
