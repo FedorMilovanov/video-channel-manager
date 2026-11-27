@@ -757,14 +757,16 @@ def test_playlist_rename_handles_response_without_replaying(tmp_path: Path, outc
         provider.close()
 
 
-@pytest.mark.parametrize("problem", ["valid", "missing", "foreign", "duplicate", "partial", "invalid_json"])
+@pytest.mark.parametrize("problem", ["valid", "empty", "missing", "foreign", "duplicate", "partial", "invalid_json"])
 def test_exact_caption_inventory(tmp_path: Path, problem: str) -> None:
     row = {
         "id": "track-1",
         "snippet": {"videoId": "video-1", "language": "ru", "trackKind": "ASR", "status": "serving"},
     }
     payload = {"items": [row]}
-    if problem == "missing":
+    if problem == "empty":
+        payload = {"items": []}
+    elif problem == "missing":
         payload = {}
     elif problem == "foreign":
         row["snippet"]["videoId"] = "other"
@@ -783,8 +785,9 @@ def test_exact_caption_inventory(tmp_path: Path, problem: str) -> None:
 
     provider = _provider(tmp_path, handler)
     try:
-        if problem == "valid":
-            assert provider.read_caption_inventory("video-1") == {"track-1": row["snippet"]}
+        if problem in {"valid", "empty"}:
+            expected = {} if problem == "empty" else {"track-1": row["snippet"]}
+            assert provider.read_caption_inventory("video-1") == expected
         else:
             with pytest.raises(YouTubeReleaseProviderError, match="Incomplete exact caption inventory"):
                 provider.read_caption_inventory("video-1")
@@ -792,7 +795,7 @@ def test_exact_caption_inventory(tmp_path: Path, problem: str) -> None:
         provider.close()
 
 
-@pytest.mark.parametrize("outcome", ["srt", "empty", "refused", "blank"])
+@pytest.mark.parametrize("outcome", ["srt", "empty", "refused", "blank", "html", "invalid_utf8"])
 def test_caption_download_original_language_only(tmp_path: Path, outcome: str) -> None:
     calls: list[str] = []
     data = b"1\n00:00:01,000 --> 00:00:02,000\nTest\n"
@@ -804,7 +807,8 @@ def test_caption_download_original_language_only(tmp_path: Path, outcome: str) -
         assert dict(request.url.params) == {"tfmt": "srt"}
         if outcome == "refused":
             return httpx.Response(403, json={"error": {"message": "Forbidden"}})
-        return httpx.Response(200, content=b"" if outcome == "empty" else data)
+        body = {"empty": b"", "html": b"<html>error</html>", "invalid_utf8": b"\xff"}
+        return httpx.Response(200, content=body.get(outcome, data))
 
     provider = _provider(tmp_path, handler)
     try:
