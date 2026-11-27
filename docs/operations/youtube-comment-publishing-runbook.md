@@ -39,9 +39,9 @@ Choose the command matching the reviewed plan mode; the two commands invoke the 
 
 The command validates the plan, project binding, public title/identity, current complete owner-comment set and earlier intent evidence under the channel lock. An existing exact match is skipped; changed state or incomplete evidence blocks dispatch. Inspect the actual result and exit status. Dry-run creates no receipt and performs no POST.
 
-## 5. Separately authorized exact mutation
+## 5. Execute the authorized exact mutation
 
-Only after the exact plan and write scope are authorized, current-main quality is verified, preflight succeeds, and the shared quota guard has sufficient admission/verification capacity:
+An explicit owner instruction to post or correct the requested comment supplies the bounded write scope; do not request the same permission again. Use the existing reviewed plan, verified runtime, successful preflight and shared quota admission/verification reserve. Derive the exact technical confirmation arguments internally. No new PR or CI run merely for a comment operation; actual code changes follow the normal engineering process. Draft-only requests and unresolved effects remain blocked:
 
 ```text
 video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID --execute --confirm-plan-sha256 SHA

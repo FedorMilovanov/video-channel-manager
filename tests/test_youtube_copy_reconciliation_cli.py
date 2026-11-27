@@ -273,3 +273,103 @@ def test_completed_receipt_with_empty_backup_does_not_fake_success(
     assert report["outcome"] == "live_after_receipt_not_terminally_verified"
     assert report["terminally_verified"] is False
     assert report["safe_to_replay"] is False
+
+
+def test_playlist_rename_reconciles_exact_pending_effect_without_second_put(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import Mock
+
+    from video_channel_manager.youtube_release_provider import ReleaseProviderResult
+
+    channel = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+    account = "legendary-poet"
+    current: dict[str, Any] = {
+        "id": "playlist-1",
+        "snippet": {"channelId": channel, "title": "Old", "description": "Keep"},
+        "status": {"privacyStatus": "public"},
+        "localizations": {},
+    }
+    api = Mock()
+    api.list_my_channels.return_value = [SimpleNamespace(ref=SimpleNamespace(channel_id=channel))]
+    provider = Mock()
+    provider.read_playlist_metadata.side_effect = lambda *_args, **_kwargs: current
+
+    def ambiguous(**kwargs: Any) -> ReleaseProviderResult:
+        kwargs["before_dispatch"]()
+        return ReleaseProviderResult(provider_effect="may_exist")
+
+    provider.rename_playlist.side_effect = ambiguous
+    monkeypatch.setattr(youtube_cli, "get_settings", lambda: SimpleNamespace(data_dir=tmp_path))
+    monkeypatch.setattr(youtube_cli, "_components", lambda *_args: (None, None, api))
+    monkeypatch.setattr(youtube_cli, "YouTubeReleaseProvider", lambda **_kwargs: provider)
+
+    def run(*, execute: bool) -> None:
+        youtube_cli.rename_playlist(
+            "playlist-1",
+            account=account,
+            confirm_channel=channel,
+            title="New",
+            execute=execute,
+            client_secret=None,
+        )
+
+    run(execute=False)
+    assert not list((tmp_path / "reports").glob("*.json"))
+    for _ in range(2):
+        with pytest.raises(typer.Exit):
+            run(execute=True)
+    provider.rename_playlist.assert_called_once()
+    journal = next((tmp_path / "reports").glob("*.json"))
+    assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "pending_reconciliation"
+    current["snippet"]["title"] = "New"
+    run(execute=True)
+    provider.rename_playlist.assert_called_once()
+    assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "verified"
+
+
+@pytest.mark.parametrize("outcome", ["list", "download", "foreign_video", "foreign_track", "existing_file"])
+def test_caption_cli_exact_owner_inventory_and_download(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, outcome: str
+) -> None:
+    from unittest.mock import Mock
+
+    channel = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+    api = Mock()
+    api.list_my_channels.return_value = [SimpleNamespace(ref=SimpleNamespace(channel_id=channel))]
+    api.get_video.return_value = SimpleNamespace(
+        ref=SimpleNamespace(channel_id="foreign" if outcome == "foreign_video" else channel, remote_id="video-1")
+    )
+    provider = Mock()
+    provider.read_caption_inventory.return_value = {"track-1": {"videoId": "video-1", "language": "ru"}}
+    provider.download_caption_srt.return_value = b"1\n00:00:01,000 --> 00:00:02,000\nTest\n"
+    monkeypatch.setattr(youtube_cli, "_components", lambda *_args: (None, None, api))
+    monkeypatch.setattr(youtube_cli, "YouTubeReleaseProvider", lambda **_kwargs: provider)
+    output = None if outcome == "list" else tmp_path / "source.srt"
+    track = None if outcome == "list" else "other" if outcome == "foreign_track" else "track-1"
+    if outcome == "existing_file":
+        output.write_bytes(b"keep")
+
+    def run() -> None:
+        youtube_cli.captions(
+            "video-1",
+            account="legendary-poet",
+            confirm_channel=channel,
+            download_track=track,
+            output=output,
+            client_secret=None,
+        )
+
+    if outcome in {"list", "download"}:
+        run()
+        provider.read_caption_inventory.assert_called_once_with("video-1")
+    else:
+        with pytest.raises(typer.Exit):
+            run()
+    if outcome == "download":
+        provider.download_caption_srt.assert_called_once_with("track-1")
+        assert output.read_bytes() == provider.download_caption_srt.return_value
+    else:
+        provider.download_caption_srt.assert_not_called()
+        if outcome == "existing_file":
+            assert output.read_bytes() == b"keep"

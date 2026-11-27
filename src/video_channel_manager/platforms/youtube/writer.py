@@ -36,6 +36,8 @@ from video_channel_manager.platforms.youtube.store import (
     reserve_shared_quota,
 )
 
+from video_channel_manager.youtube_provider_semantics import exact_caption_inventory
+
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 # Observed official YouTube videos.update PUT ReadTimeouts clustered near the
 # previous 45-second response limit. Keep GET and other phases at their
@@ -596,22 +598,10 @@ class YouTubeDescriptionWriter(HttpClientOwner):
 
     def _panorama_caption_inventory(self, video_id: str) -> dict[str, Any]:
         payload = self._request("GET", "captions", params={"part": "snippet", "videoId": video_id})
-        rows = payload.get("items")
-        if (
-            payload.get("nextPageToken")
-            or not isinstance(rows, list)
-            or not all(
-                isinstance(row, dict)
-                and isinstance(row.get("id"), str)
-                and bool(row["id"])
-                and isinstance(row.get("snippet"), dict)
-                and row["snippet"].get("videoId") == video_id
-                for row in rows
-            )
-            or len({row["id"] for row in rows}) != len(rows)
-        ):
-            raise YouTubeWriteError("Incomplete exact caption inventory; stop without replay.")
-        return {row["id"]: row["snippet"] for row in rows}
+        try:
+            return exact_caption_inventory(payload, video_id)
+        except ValueError as exc:
+            raise YouTubeWriteError(str(exc)) from exc
 
     def reduce_panorama_localizations(
         self,

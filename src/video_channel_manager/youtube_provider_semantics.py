@@ -76,3 +76,23 @@ def playlist_contains_video(items: Sequence[Mapping[str, Any]], *, video_id: str
     """Check an already fully enumerated playlist page-set for one exact video ID."""
 
     return any(playlist_item_video_id(item) == video_id for item in items)
+
+
+def exact_caption_inventory(payload: Mapping[str, Any], video_id: str) -> dict[str, Any]:
+    """Accept only a complete inventory bound to one exact video, never a partial list."""
+    rows = payload.get("items")
+    if (
+        payload.get("nextPageToken")
+        or not isinstance(rows, list)
+        or not all(
+            isinstance(row, dict)
+            and isinstance(row.get("id"), str)
+            and bool(row["id"])
+            and isinstance(row.get("snippet"), dict)
+            and row["snippet"].get("videoId") == video_id
+            for row in rows
+        )
+        or len({row["id"] for row in rows}) != len(rows)
+    ):
+        raise ValueError("Incomplete exact caption inventory; stop without replay.")
+    return {row["id"]: row["snippet"] for row in rows}

@@ -1187,6 +1187,34 @@
       ]
     },
     {
+      "boundary_id": "youtube.release.playlist.rename",
+      "risk": "P1",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/youtube_release_provider.py",
+      "module": "video_channel_manager.youtube_release_provider",
+      "callable": "YouTubeReleaseProvider.rename_playlist",
+      "scanner_marker": "youtube_release_api:PUT:playlists.update",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact owned playlist, expected current metadata and requested title, with durable CLI intent under the existing channel lock before PUT",
+      "dispatch_evidence": "one PUT {api}/playlists?part=snippet with existing shared quota reservation; zero mutation retries",
+      "response_evidence": "known rejection remains confirmed_absent; ambiguous transport outcome requires independent GET, never another PUT",
+      "postflight_evidence": "exact comparison of supported snippet, status and localizations; unresolved outcome retains pending journal",
+      "reconciliation_identity": "channel ID and playlist ID, original and requested metadata in the durable CLI journal",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "during_postflight"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_release_provider.py",
+        "tests/test_youtube_copy_reconciliation_cli.py"
+      ]
+    },
+    {
       "boundary_id": "youtube.release.thumbnail",
       "risk": "P0",
       "provider": "YouTube",

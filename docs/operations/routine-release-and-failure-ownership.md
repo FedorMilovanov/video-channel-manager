@@ -2,6 +2,14 @@
 
 Use the existing `AGENTS.md` owner-scope and provider mutation contract. Report the exact target, each requested deliverable's verified or pending state, and the first real blocker; a draft or PR is not a provider result. Check executor availability before preparing the payload.
 
+## Routine editorial operations
+
+For an explicit owner request on existing YouTube objects, follow `GET → validate exact owner/object and changed fields → existing guarded mutation → independent GET`. The agent produces any required plan, intent, digest and confirmation arguments within the requested scope. Do not ask for another approval of the same request, open a PR for provider data, or launch CI for a title, description, tags, playlist rename, aligned subtitle or comment edit. A supported verified runtime and actual required checks remain prerequisites; if a real code defect prevents execution, fix it once via the usual PR/CI process, then resume the original operation. Do not build a parallel writer. Only report genuine blockers; unknown outcomes, missing rights/evidence, scope expansion, protected release changes and client/provider refusals retain their existing handling below.
+
+## Exact caption readback
+
+Use `video-manager youtube captions VIDEO_ID --account ALIAS --confirm-channel CHANNEL_ID` for one complete owner-bound caption inventory. To archive one of its exact track IDs in SRT, append `--download-track CAPTION_ID --output NEW_FILE.srt`. No provider mutations, no automatic translation, no existing-file overwrite. The response distinguishes actual track IDs and snippets (including ASR, draft and processing status); a refused or incomplete list is not proof of missing captions. The shared inventory validator also serves the existing Panorama localization-preservation check. Caption uploads/updates remain a separate capability; source-aligned timing and editorial review must precede any upload. Do not equate an ASR track or a downloaded file with an accepted human subtitle.
+
 ## Diagnose the actual failing boundary
 
 | Evidence | Classification | Required response |

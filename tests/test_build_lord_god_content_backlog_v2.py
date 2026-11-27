@@ -40,6 +40,14 @@ def test_eligible_video_rejects_broken_and_personal_items() -> None:
     assert not module.eligible_video(video("Соня 8 лет. День рождения"), max_views=100)
     assert not module.eligible_video(video("Короткий ролик", duration=30), max_views=100)
     assert not module.eligible_video(video("Хорошая проповедь", views=101), max_views=100)
+    for title in (
+        "Стивен Лоусон. Проповедь",
+        "Стивен Лоусен. Благовестие",
+        "Стивен Лоусэн. Библия",
+        "Steven J. Lawson — Sermon",
+        "Вопросы и ответы: МакАртур и Лоусон",
+    ):
+        assert not module.eligible_video(video(title), max_views=100)
 
 
 def test_select_videos_round_robins_major_speakers() -> None:
@@ -53,7 +61,7 @@ def test_select_videos_round_robins_major_speakers() -> None:
         ]
     }
     selected = module.select_videos(audit, count=4, max_views=100)
-    assert [module.speaker_bucket(item) for item in selected] == ["macarthur", "sproul", "lawson", "washer"]
+    assert [module.speaker_bucket(item) for item in selected] == ["macarthur", "sproul", "washer", "macarthur"]
 
 
 def test_build_slots_uses_distinct_moscow_times() -> None:
@@ -230,6 +238,7 @@ def test_select_quotes_requires_published_verified_telegram_evidence(tmp_path: P
     assert selected[0]["telegram_message_id"] == 1470
     assert selected[0]["telegram_message_url"] == "https://t.me/lordchrist/1470"
     assert selected[0]["telegram_source_state"] == "published_verified"
+    assert module.select_quotes(queue_path, ledger_path, count=0) == []
 
 
 def test_telegram_text_full_mode_renders_every_section() -> None:
@@ -523,6 +532,7 @@ def _backlog_args(**overrides: object) -> SimpleNamespace:
         "days": 60,
         "telegram_count": 1,
         "quote_count": 24,
+        "text_source_ids": "none",
         "historical_text_mode": "full",
         "output": Path("backlog.json"),
     }
@@ -540,3 +550,37 @@ def test_text_only_backlog_rejects_audit_and_video_count() -> None:
 def test_full_backlog_requires_audit_file() -> None:
     with pytest.raises(ValueError, match="audit file is required"):
         module.build_backlog(_backlog_args())
+
+
+def test_backlog_requires_exact_reconciled_text_ids(tmp_path: Path) -> None:
+    queue_path, quote_ledger = _telegram_quote_evidence(tmp_path)
+    queue = module.TelegramQueue.model_validate(module.read_json(queue_path))
+    first = queue.posts[0].publication_id
+    repo, historical_release, historical_ledger, historical_id = _historical_evidence(tmp_path)
+    args = _backlog_args(
+        text_only=True,
+        video_count=0,
+        repository_root=repo,
+        historical_release=historical_release,
+        historical_ledger=historical_ledger,
+        quote_queue=queue_path,
+        quote_ledger=quote_ledger,
+        text_source_ids=first,
+    )
+    backlog = module.build_backlog(args)
+    assert [slot["publication_id"] for slot in backlog["slots"]] == [first]
+    args.text_source_ids = f"{first},{historical_id}"
+    backlog = module.build_backlog(args)
+    assert {slot["publication_id"] for slot in backlog["slots"]} == {first, historical_id}
+    args.text_source_ids = f"{first},{queue.posts[1].publication_id}"
+    with pytest.raises(ValueError, match="not exactly scheduled"):
+        module.build_backlog(args)
+    args.text_source_ids = f"{first},{first}"
+    with pytest.raises(ValueError, match="distinct nonempty"):
+        module.build_backlog(args)
+    args.text_source_ids = ""
+    with pytest.raises(ValueError, match="distinct nonempty"):
+        module.build_backlog(args)
+    args.text_source_ids = "none"
+    with pytest.raises(ValueError, match="explicitly reconciled"):
+        module.build_backlog(args)

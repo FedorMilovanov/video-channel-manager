@@ -1173,6 +1173,53 @@
       ]
     },
     {
+      "boundary_id": "youtube.release.playlist.rename",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_validates_before_dispatch[preflight_drift]",
+          "claim": "metadata changed after the initial read: no PUT and no intent callback"
+        },
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_preserves_metadata_and_never_retries[wrong_owner]",
+          "claim": "foreign owner is rejected before mutation"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_preserves_metadata_and_never_retries[timeout]",
+          "claim": "lost response with unchanged readback remains ambiguous after exactly one PUT"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_preserves_metadata_and_never_retries[timeout_applied]",
+          "claim": "lost response after committed rename is verified by independent GET with no additional PUT"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_handles_response_without_replaying[readback_error]",
+          "claim": "failed postflight is ambiguous, not success, and no mutation is replayed"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_playlist_rename_preserves_metadata_and_never_retries[drift]",
+          "claim": "unexpected metadata change prevents verified classification"
+        }
+      ]
+    },
+    {
       "boundary_id": "youtube.release.playlist",
       "proofs": [
         {

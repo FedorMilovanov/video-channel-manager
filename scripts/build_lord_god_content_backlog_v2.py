@@ -29,10 +29,13 @@ BAD_TITLE_MARKERS = (
     "день рождения",
     "свадебный час",
 )
+
+# Owner editorial policy: Lawson-related videos require individual contextual review,
+# not automatic devotional promotion. Existing posts and historical text are unaffected.
+MANUAL_REVIEW_TITLE_MARKERS = ("лоусон", "лоусен", "лоусэн", "lawson")
 PRIORITY_MARKERS = (
     "макартур",
     "спраул",
-    "лоусон",
     "вошер",
     "коломийцев",
     "бики",
@@ -70,6 +73,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--video-count", type=int, default=60)
     parser.add_argument("--telegram-count", type=int, default=9)
     parser.add_argument("--quote-count", type=int, default=24)
+    parser.add_argument(
+        "--text-source-ids",
+        required=True,
+        help="comma-separated exact reconciled text publication IDs; none for video-only",
+    )
     parser.add_argument(
         "--historical-text-mode",
         choices=("excerpt", "full"),
@@ -136,7 +144,7 @@ def eligible_video(item: dict[str, Any], *, max_views: int) -> bool:
     low = title.lower()
     if item.get("state") != "unposted":
         return False
-    if not title or any(marker in low for marker in BAD_TITLE_MARKERS):
+    if not title or any(marker in low for marker in BAD_TITLE_MARKERS + MANUAL_REVIEW_TITLE_MARKERS):
         return False
     if int(item.get("duration_seconds") or 0) < 120:
         return False
@@ -149,7 +157,6 @@ def speaker_bucket(item: dict[str, Any]) -> str:
     buckets = (
         ("макартур", "macarthur"),
         ("спраул", "sproul"),
-        ("лоусон", "lawson"),
         ("вошер", "washer"),
         ("коломийцев", "kolomiytsev"),
         ("бики", "beeke"),
@@ -168,7 +175,7 @@ def select_videos(audit: dict[str, Any], *, count: int, max_views: int) -> list[
         pools.setdefault(speaker_bucket(item), []).append(item)
     for pool in pools.values():
         pool.sort(key=video_score)
-    order = ("macarthur", "sproul", "lawson", "washer", "beeke", "spurgeon", "kolomiytsev", "general")
+    order = ("macarthur", "sproul", "washer", "beeke", "spurgeon", "kolomiytsev", "general")
     result: list[dict[str, Any]] = []
     while len(result) < count and any(pools.values()):
         for bucket in order:
@@ -360,6 +367,8 @@ def select_published_quotes(
     *,
     count: int,
 ) -> list[dict[str, Any]]:
+    if count <= 0:
+        return []
     selected: list[dict[str, Any]] = []
     for post in posts:
         entry = ledger.entries[post["publication_id"]]
@@ -465,6 +474,15 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         if audit.get("community_id") != COMMUNITY_ID:
             raise ValueError("audit community does not match lord-god-strength")
         videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
+    raw_ids = [value.strip() for value in args.text_source_ids.split(",")]
+    if raw_ids == ["none"]:
+        requested_ids: set[str] = set()
+    else:
+        requested_ids = set(raw_ids)
+        if "" in requested_ids or "none" in requested_ids or len(requested_ids) != len(raw_ids):
+            raise ValueError("text-source-ids must contain distinct nonempty publication IDs")
+    if args.text_only and not requested_ids:
+        raise ValueError("text-only requires explicitly reconciled text-source-ids")
     historical, historical_release_sha256, historical_ledger_sha256, historical_release_digest = (
         select_published_historical(
             args.repository_root.resolve(),
@@ -478,8 +496,13 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         args.quote_queue,
         args.quote_ledger,
     )
+    historical = [item for item in historical if item["publication_id"] in requested_ids]
+    quote_posts = [post for post in quote_posts if post["publication_id"] in requested_ids]
     quotes = select_published_quotes(quote_posts, quote_ledger, count=args.quote_count)
     slots = build_slots(args.start_date, args.days, videos, historical, quotes)
+    selected_ids = {slot["publication_id"] for slot in slots if slot["kind"] != "vk_video"}
+    if selected_ids != requested_ids:
+        raise ValueError(f"requested text-source-ids not exactly scheduled: {sorted(requested_ids - selected_ids)}")
     return {
         "schema_name": "video-manager.lord-god-content-backlog",
         "schema_version": 1,

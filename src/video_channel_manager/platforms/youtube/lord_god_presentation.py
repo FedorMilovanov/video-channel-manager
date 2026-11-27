@@ -14,11 +14,8 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 
-from video_channel_manager.editorial.youtube_copy import (
-    BOLD_SPAN_RE,
-    ITALIC_SPAN_RE,
-    validate_youtube_description,
-)
+from video_channel_manager.editorial import validate_youtube_description
+from video_channel_manager.editorial.youtube_copy import BOLD_SPAN_RE, ITALIC_SPAN_RE
 from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256, sha256_text, validate_copy_plan
 from video_channel_manager.platforms.youtube.lord_god_source_preservation import (
     LORD_GOD_OWNER_CHANNEL,
