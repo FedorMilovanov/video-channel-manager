@@ -648,15 +648,21 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
         if outcome == "wrong_owner":
             with pytest.raises(YouTubeReleaseProviderError, match="owner"):
                 provider.rename_playlist(
-                    playlist_id="playlist-1", channel_id="owner", expected_before=before,
-                    new_title="New", before_dispatch=lambda: intents.append(True),
+                    playlist_id="playlist-1",
+                    channel_id="owner",
+                    expected_before=before,
+                    new_title="New",
+                    before_dispatch=lambda: intents.append(True),
                 )
             assert methods == ["GET"]
             assert not intents
         else:
             result = provider.rename_playlist(
-                playlist_id="playlist-1", channel_id="owner", expected_before=before,
-                new_title="New", before_dispatch=lambda: intents.append(True),
+                playlist_id="playlist-1",
+                channel_id="owner",
+                expected_before=before,
+                new_title="New",
+                before_dispatch=lambda: intents.append(True),
             )
             assert result.provider_effect == ("verified" if outcome == "verified" else "may_exist")
             assert methods == (["GET", "PUT"] if outcome == "timeout" else ["GET", "PUT", "GET"])
