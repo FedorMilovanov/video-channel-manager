@@ -694,7 +694,9 @@ def add_caption(
                         raise ValueError("Invalid caption journal; reconcile without replay.")
                     if prior["status"] == "verified":
                         if prior["name"] == name and not manual_caption_ids(tracks, language, name):
-                            raise ValueError("Previously verified caption is missing; no replay. Reconcile its removal.")
+                            raise ValueError(
+                                "Previously verified caption is missing; no replay. Reconcile its removal."
+                            )
                         continue
                     if prior["status"] != "pending_reconciliation":
                         continue
