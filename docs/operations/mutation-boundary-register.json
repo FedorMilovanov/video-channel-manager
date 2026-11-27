@@ -487,6 +487,35 @@
       ]
     },
     {
+      "boundary_id": "youtube.comment.reply",
+      "risk": "P0",
+      "provider": "YouTube",
+      "language": "python",
+      "source_file": "src/video_channel_manager/platforms/youtube/comments.py",
+      "module": "video_channel_manager.platforms.youtube.comments",
+      "callable": "YouTubeCommentWriter.create_reply",
+      "scanner_marker": "youtube:POST:comments",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "reviewed exact public video/channel and top-level parent ID, author and text; complete owner reply map; shared quota reservation and durable intent callback",
+      "dispatch_evidence": "one comments.insert request with exact snippet.parentId and reviewed textOriginal",
+      "response_evidence": "new reply ID, exact parent ID, owner channel and original text digest",
+      "postflight_evidence": "bounded independent exact reply GET and complete parent reply inventory; preserved prior owner reply map; verified receipt binds parent ID",
+      "reconciliation_identity": "channel_id, video_id, parent_comment_id, reply comment_id and canonical text digest; original frozen plan and shared intent",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": [
+        "before_dispatch",
+        "after_dispatch_before_response",
+        "during_postflight"
+      ],
+      "owning_tests": [
+        "tests/test_youtube_comments.py",
+        "tests/test_youtube_comment_plan.py",
+        "tests/test_youtube_comment_add_cli.py"
+      ]
+    },
+    {
       "boundary_id": "youtube.description.update",
       "risk": "P0",
       "provider": "YouTube",

@@ -265,6 +265,39 @@
       ]
     },
     {
+      "boundary_id": "youtube.comment.reply",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[changed-parent]",
+          "claim": "Changed reviewed parent prevents reply dispatch or intent."
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[unknown]",
+          "claim": "Lost reply response causes exactly one dispatch and one intent."
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[delay]",
+          "claim": "Lagging full parent reply inventory is retried within bounded verification; original reply retained and only one POST."
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_comment_add_cli.py::test_reply_cli_uses_same_lock_intent_and_recovery_without_replay[wrong-parent]",
+          "claim": "Wrong-parent direct readback refuses receipt; exact reconciliation verifies without replay."
+        }
+      ]
+    },
+    {
       "boundary_id": "youtube.comment.update",
       "proofs": [
         {
