@@ -224,6 +224,8 @@ def test_recent_candidates_are_bounded_and_channel_bound(tmp_path: Path, mode: s
     [
         ("GET", "videos", ("shared", 1)),
         ("PUT", "videos", ("shared", 50)),
+        ("PUT", "playlists", ("shared", 50)),
+        ("PUT", "playlists.update", ("shared", 50)),
         ("POST", "commentThreads", ("shared", 50)),
         ("GET", "captions", ("shared", 50)),
         ("POST", "captions.insert", ("shared", 400)),
