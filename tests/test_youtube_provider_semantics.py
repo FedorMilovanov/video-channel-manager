@@ -10,6 +10,7 @@ from video_channel_manager.youtube_provider_semantics import (
     playlist_contains_video,
     playlist_item_video_id,
     tags_equivalent,
+    validate_caption_identity,
 )
 
 
@@ -110,3 +111,14 @@ def test_manual_caption_identity_does_not_count_asr() -> None:
     assert manual_caption_ids(tracks, "ru", "") == ["manual"]
     with pytest.raises(ValueError, match="Incomplete"):
         manual_caption_ids({"unknown": {}}, "ru", "")
+
+
+@pytest.mark.parametrize("language,name", [("ru", ""), ("en-US", "Lyrics"), ("zh-Hans", "字幕")])
+def test_valid_caption_identity(language: str, name: str) -> None:
+    validate_caption_identity(language, name)
+
+
+@pytest.mark.parametrize("language,name", [("?", ""), (" ru", ""), ("ru", "x" * 151)])
+def test_invalid_caption_identity(language: str, name: str) -> None:
+    with pytest.raises(ValueError, match="Invalid caption"):
+        validate_caption_identity(language, name)
