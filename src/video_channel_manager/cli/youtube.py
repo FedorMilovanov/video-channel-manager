@@ -71,7 +71,11 @@ from video_channel_manager.youtube_release_provider import (
     playlist_rename_target,
 )
 
-from video_channel_manager.youtube_provider_semantics import canonical_srt_sha256, manual_caption_ids, validate_caption_identity
+from video_channel_manager.youtube_provider_semantics import (
+    canonical_srt_sha256,
+    manual_caption_ids,
+    validate_caption_identity,
+)
 
 console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
