@@ -123,9 +123,7 @@ def canonical_srt_sha256(data: bytes, *, duration_seconds: int | None = None) ->
         times = tuple(int(value) for value in match.groups())
         start = ((times[0] * 60 + times[1]) * 60 + times[2]) * 1000 + times[3]
         end = ((times[4] * 60 + times[5]) * 60 + times[6]) * 1000 + times[7]
-        if start < previous_start or end <= start or (
-            duration_seconds is not None and end > duration_seconds * 1000
-        ):
+        if start < previous_start or end <= start or (duration_seconds is not None and end > duration_seconds * 1000):
             raise ValueError(f"SRT cue {index} is out of order or outside the video duration.")
         body = "\n".join(line.rstrip() for line in lines[2:])
         if not body.strip():
