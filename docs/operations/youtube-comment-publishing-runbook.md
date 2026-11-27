@@ -56,6 +56,41 @@ A missing receipt, transport failure or ambiguous POST or PUT is not evidence th
 
 Report verified provider result and comment ID separately from repository implementation and local preflight. Public rendering and pin state are separate checks.
 
+## 7. Exact reply to an existing comment
+
+A reply is not a second top-level comment. Use the same reviewed plan builder with
+\`action="reply"\`, \`mode="reviewed-comment-reply"\`, \`expected_comment_id\` and
+\`expected_comment_text\` for the **parent**, \`expected_parent_author_channel_id\`
+for its author, and explicit \`expected_owned_comments\` for the owner's replies
+under that parent (empty only after complete reply inventory). Do not use this map
+for the video's top-level comments. Preserve the observed parent text, which may
+be provider-rendered plain text for another author's comment; only its author can
+receive the original raw text.
+
+Read \`YouTubeCommentWriter.read_reply_context\` for exact video/parent membership,
+author, unchanged text, reply eligibility and complete bounded
+\`comments.list(parentId=...)\` pagination. Require the thread's reported reply
+count to agree; disagreement, missing author, malformed response or page cap
+blocks the operation. This is the provider-visible inventory, not a promise that
+YouTube exposes every hidden moderation state. Require raw text for the owner's
+own replies; other viewers' plain display text is acceptable for inventory.
+
+\`\`\`text
+video-manager youtube apply-comment-reply PLAN --account ALIAS --confirm-channel CHANNEL_ID
+video-manager youtube apply-comment-reply PLAN --account ALIAS --confirm-channel CHANNEL_ID --execute --confirm-plan-sha256 SHA
+\`\`\`
+
+The same channel lock, shared quota journal, reviewed plan, intent namespace and
+reconciliation rules apply. Reply effect identity binds channel/video/parent and
+text hash; changed text cannot escape an unresolved prior attempt on the video.
+Reserve the 50-unit reply POST and complete bounded verification reads. Verify
+the exact returned reply ID, original owner text/hash and parent ID plus full
+reply inventory; the receipt records the parent ID. If the inventory temporarily
+lags the direct read, poll within the existing bounded verification schedule.
+No blind POST retries, no alternate top-level comment, no implicit pinning.
+If the response remains uncertain, use the original frozen plan to reconcile
+an exact positive match without sending another POST.
+
 ## API references
 
 - https://developers.google.com/youtube/v3/docs/commentThreads/list

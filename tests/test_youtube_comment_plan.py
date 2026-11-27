@@ -191,3 +191,56 @@ def test_exact_update_mode_binds_target_before_digest_and_complete_owner_map() -
     changed = deepcopy(plan)
     changed["operations"] = []
     assert validate_comment_plan(seal_comment_plan(changed))
+
+
+def test_reply_plan_binds_exact_parent_author_text_and_reply_inventory() -> None:
+    from video_channel_manager.platforms.youtube.comments import comment_text_sha256
+
+    operation = make_comment_operation(
+        action="reply",
+        channel_id="channel-1",
+        video_id="video-1",
+        video_title="Title",
+        comment_text="Спасибо! ❤️",
+        source_ids=["owner-request"],
+        reviewed_at="2026-11-27T00:00:00+00:00",
+        expected_comment_id="parent-1",
+        expected_comment_text="Viewer text",
+        expected_parent_author_channel_id="viewer",
+        expected_owned_comments={},
+    )
+    plan = build_comment_plan(
+        account_alias="legendary-poet",
+        channel_id="channel-1",
+        source_snapshot="strict-reply-inventory",
+        source_snapshot_generated_at="2026-11-27T00:00:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-comment-reply",
+    )
+    assert validate_comment_plan(plan) == []
+    for field, value in (
+        ("expected_comment_id", "other-parent"),
+        ("expected_comment_text", "Changed"),
+        ("expected_parent_author_channel_id", "other-viewer"),
+        ("expected_owned_comments", {"reply-2": comment_text_sha256("Other")}),
+    ):
+        changed = deepcopy(plan)
+        changed["operations"][0][field] = value
+        assert any("operation_id mismatch" in e for e in validate_comment_plan(seal_comment_plan(changed)))
+    for field in (
+        "expected_comment_id",
+        "expected_comment_text",
+        "expected_parent_author_channel_id",
+        "expected_owned_comments",
+    ):
+        changed = deepcopy(plan)
+        del changed["operations"][0][field]
+        assert validate_comment_plan(seal_comment_plan(changed))
+    for mode in (
+        "reviewed-first-comment",
+        "reviewed-additional-comment",
+        "reviewed-comment-update",
+        "reviewed-missing-only",
+    ):
+        assert validate_comment_plan(seal_comment_plan({**plan, "mode": mode}))

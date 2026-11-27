@@ -431,3 +431,115 @@ def test_reviewed_update_rejects_live_drift(tmp_path: Path, monkeypatch: pytest.
     writer.update_top_level_comment.assert_not_called()
     writer.create_top_level_comment.assert_not_called()
     assert not list((tmp_path / "reports").glob("*.json"))
+
+
+def _reply_plan(path: Path, *, text: str = "Спасибо! ❤️", parent: str = "parent-1") -> dict[str, Any]:
+    operation = make_comment_operation(
+        action="reply",
+        channel_id=CHANNEL,
+        video_id="video-1",
+        video_title="Title",
+        comment_text=text,
+        source_ids=["owner-request"],
+        reviewed_at="2026-11-27T00:00:00+00:00",
+        expected_comment_id=parent,
+        expected_comment_text="Viewer text",
+        expected_parent_author_channel_id="viewer",
+        expected_owned_comments={},
+    )
+    plan = build_comment_plan(
+        account_alias=ACCOUNT,
+        channel_id=CHANNEL,
+        source_snapshot="strict-reply-inventory",
+        source_snapshot_generated_at="2026-11-27T00:00:00+00:00",
+        inventory_video_ids=["video-1"],
+        operations=[operation],
+        mode="reviewed-comment-reply",
+    )
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    return plan
+
+
+def _run_reply(path: Path, plan: dict[str, Any], *, execute: bool = False) -> None:
+    youtube_cli.apply_comment_reply(
+        path,
+        account=ACCOUNT,
+        confirm_channel=CHANNEL,
+        execute=execute,
+        confirm_plan_sha256=plan["plan_sha256"] if execute else "",
+        client_secret=None,
+    )
+
+
+@pytest.mark.parametrize("case", ["ok", "unknown", "wrong-parent"])
+def test_reply_cli_uses_same_lock_intent_and_recovery_without_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    path, _, writer, top_level = _setup(tmp_path, monkeypatch)
+    top_level.append(_snapshot("Preserved author comment"))
+    inventory: list[Any] = []
+    writer.reserve_guarded_reply_wave.side_effect = lambda **_: nullcontext()
+    writer.read_reply_context.side_effect = lambda **_: list(inventory)
+    plan = _reply_plan(path)
+    _run_reply(path, plan)
+    assert not list((tmp_path / "reports").glob("*.json"))
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    item = _snapshot("Спасибо! ❤️")
+    item.comment_id = "reply-1"
+    item.raw = {"snippet": {"parentId": "parent-1", "textOriginal": item.text}}
+
+    def create(**kwargs: Any) -> Any:
+        assert kwargs["parent_id"] == "parent-1"
+        assert kwargs["expected_parent_author"] == "viewer"
+        assert kwargs["expected_parent_text"] == "Viewer text"
+        assert kwargs["expected_owned_replies"] == {}
+        kwargs["before_dispatch"]()
+        assert len(list((tmp_path / "reports").glob("*-intent.json"))) == 1
+        if case == "unknown":
+            raise ValueError("Unknown POST outcome")
+        inventory.append(item)
+        return item
+
+    writer.create_reply.side_effect = create
+    writer.read_comment.return_value = item
+    if case == "wrong-parent":
+        wrong = _snapshot("Спасибо! ❤️")
+        wrong.comment_id = "reply-1"
+        wrong.raw = {"snippet": {"parentId": "other-parent", "textOriginal": wrong.text}}
+        writer.read_comment.return_value = wrong
+    if case == "ok":
+        _run_reply(path, plan, execute=True)
+    else:
+        with pytest.raises(typer.Exit):
+            _run_reply(path, plan, execute=True)
+        assert not list((tmp_path / "reports").glob("*-result.json"))
+        if case == "unknown":
+            changed = _reply_plan(path, text="Different reply")
+            with pytest.raises(typer.Exit):
+                _run_reply(path, changed, execute=True)
+            inventory.append(item)
+            path.write_text(json.dumps(plan), encoding="utf-8")
+        writer.read_comment.return_value = item
+    _run_reply(path, plan, execute=True)
+    writer.create_reply.assert_called_once()
+    writer.create_top_level_comment.assert_not_called()
+    writer.update_top_level_comment.assert_not_called()
+    assert len(top_level) == 1
+    receipt = next((tmp_path / "reports").glob("*-result.json"))
+    result = json.loads(receipt.read_text(encoding="utf-8"))
+    assert result["comment_id"] == "reply-1"
+    assert result["parent_comment_id"] == "parent-1"
+    assert result["status"] == "verified"
+
+
+def test_reply_quota_refusal_blocks_before_intent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from video_channel_manager.platforms.youtube.comments import YouTubeCommentError
+
+    path, _, writer, _ = _setup(tmp_path, monkeypatch)
+    plan = _reply_plan(path)
+    writer.reserve_guarded_reply_wave.side_effect = YouTubeCommentError("Quota unavailable")
+    with pytest.raises(typer.Exit):
+        _run_reply(path, plan, execute=True)
+    writer.create_reply.assert_not_called()
+    assert not list((tmp_path / "reports").glob("*.json"))

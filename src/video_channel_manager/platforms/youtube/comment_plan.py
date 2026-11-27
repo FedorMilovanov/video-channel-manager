@@ -16,7 +16,7 @@ from video_channel_manager.platforms.youtube.comments import (
 
 SCHEMA_NAME = "video-manager.youtube-comment-plan"
 SCHEMA_VERSION = 1
-CommentAction = Literal["create", "update"]
+CommentAction = Literal["create", "update", "reply"]
 
 
 class CommentOperation(TypedDict):
@@ -31,6 +31,7 @@ class CommentOperation(TypedDict):
     expected_comment_text: str | None
     expected_comment_sha256: str | None
     expected_owned_comments: NotRequired[dict[str, str]]
+    expected_parent_author_channel_id: NotRequired[str]
     source_ids: list[str]
     review_status: Literal["approved"]
     reviewed_at: str
@@ -72,6 +73,7 @@ def operation_id_for(
     expected_comment_id: str | None,
     expected_comment_sha256: str | None,
     expected_owned_comments: dict[str, str] | None = None,
+    expected_parent_author_channel_id: str | None = None,
 ) -> str:
     identity: dict[str, Any] = {
         "action": action,
@@ -83,6 +85,8 @@ def operation_id_for(
     }
     if expected_owned_comments is not None:
         identity["expected_owned_comments"] = expected_owned_comments
+    if expected_parent_author_channel_id is not None:
+        identity["expected_parent_author_channel_id"] = expected_parent_author_channel_id
     return _sha256(identity).removeprefix("sha256:")[:24]
 
 
@@ -98,6 +102,7 @@ def make_comment_operation(
     expected_comment_id: str | None = None,
     expected_comment_text: str | None = None,
     expected_owned_comments: dict[str, str] | None = None,
+    expected_parent_author_channel_id: str | None = None,
 ) -> CommentOperation:
     normalized = validate_comment_text(comment_text)
     # The before-state can contain the very formatting error being repaired.
@@ -106,10 +111,19 @@ def make_comment_operation(
     )
     if action == "create" and (expected_comment_id is not None or expected_normalized is not None):
         raise ValueError("Create operations cannot declare an expected existing comment.")
-    if action == "update" and (not expected_comment_id or not expected_normalized):
-        raise ValueError("Update operations require expected_comment_id and expected_comment_text.")
+    if action in {"update", "reply"} and (not expected_comment_id or not expected_normalized):
+        raise ValueError("Update/reply operations require expected_comment_id and expected_comment_text.")
+    if action == "reply":
+        if (
+            not expected_parent_author_channel_id
+            or not expected_parent_author_channel_id.strip()
+            or expected_owned_comments is None
+        ):
+            raise ValueError("Reply requires reviewed parent author and explicit owner reply map.")
+    elif expected_parent_author_channel_id is not None:
+        raise ValueError("Parent author belongs only to a reply operation.")
     if expected_owned_comments is not None and not _valid_owner_comment_map(
-        expected_owned_comments, allow_empty=action == "create"
+        expected_owned_comments, allow_empty=action in {"create", "reply"}
     ):
         raise ValueError("Reviewed comment requires an exact owner comment ID/hash map.")
     cleaned_sources = sorted({item.strip() for item in source_ids if item.strip()})
@@ -123,6 +137,12 @@ def make_comment_operation(
         and (expected_comment_id is None or expected_owned_comments.get(expected_comment_id) != expected_sha)
     ):
         raise ValueError("Reviewed update must bind the target comment's exact before digest.")
+    if action == "reply" and (
+        expected_owned_comments is None
+        or expected_comment_id in expected_owned_comments
+        or comment_sha in expected_owned_comments.values()
+    ):
+        raise ValueError("Reply requires a distinct text and a map of replies, not the parent itself.")
     operation_id = operation_id_for(
         action=action,
         channel_id=channel_id,
@@ -131,6 +151,7 @@ def make_comment_operation(
         expected_comment_id=expected_comment_id,
         expected_comment_sha256=expected_sha,
         expected_owned_comments=expected_owned_comments,
+        expected_parent_author_channel_id=expected_parent_author_channel_id,
     )
     operation: CommentOperation = {
         "operation_id": operation_id,
@@ -149,6 +170,8 @@ def make_comment_operation(
     }
     if expected_owned_comments is not None:
         operation["expected_owned_comments"] = dict(expected_owned_comments)
+    if expected_parent_author_channel_id is not None:
+        operation["expected_parent_author_channel_id"] = expected_parent_author_channel_id
     return operation
 
 
@@ -218,7 +241,12 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
     if len(operations) > 500:
         errors.append("operations exceed the hard safety cap of 500")
     mode = payload.get("mode")
-    exact_modes = ("reviewed-first-comment", "reviewed-additional-comment", "reviewed-comment-update")
+    exact_modes = (
+        "reviewed-first-comment",
+        "reviewed-additional-comment",
+        "reviewed-comment-update",
+        "reviewed-comment-reply",
+    )
     if mode in exact_modes and len(operations) != 1:
         errors.append("reviewed comment plan must contain exactly one operation")
 
@@ -230,8 +258,8 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix} must be an object")
             continue
         action = str(raw.get("action") or "")
-        if action not in {"create", "update"}:
-            errors.append(f"{prefix}.action must be create or update")
+        if action not in {"create", "update", "reply"}:
+            errors.append(f"{prefix}.action must be create, update or reply")
             continue
         raw_channel = str(raw.get("channel_id") or "").strip()
         video_id = str(raw.get("video_id") or "").strip()
@@ -256,11 +284,11 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}.expected_comment_sha256 mismatch")
         if action == "create" and (expected_id is not None or expected_text is not None):
             errors.append(f"{prefix}: create cannot include expected existing comment data")
-        if action == "update" and (expected_id is None or expected_text is None):
-            errors.append(f"{prefix}: update requires exact existing comment ID and text")
+        if action in {"update", "reply"} and (expected_id is None or expected_text is None):
+            errors.append(f"{prefix}: update/reply requires exact existing comment ID and text")
         owned_map = raw.get("expected_owned_comments")
         if "expected_owned_comments" in raw and not _valid_owner_comment_map(
-            owned_map, allow_empty=mode == "reviewed-first-comment"
+            owned_map, allow_empty=mode in {"reviewed-first-comment", "reviewed-comment-reply"}
         ):
             errors.append(f"{prefix}.expected_owned_comments requires an exact owner ID/hash map")
         if "expected_owned_comments" in raw and mode not in exact_modes:
@@ -284,6 +312,26 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             errors.append(
                 f"{prefix}: update requires one exact target, distinct new text and complete reviewed owner map"
             )
+        parent_author = raw.get("expected_parent_author_channel_id")
+        if action == "reply" or mode == "reviewed-comment-reply":
+            if (
+                action != "reply"
+                or mode != "reviewed-comment-reply"
+                or not isinstance(parent_author, str)
+                or not parent_author.strip()
+                or not expected_id
+                or not expected_text
+                or not _valid_owner_comment_map(owned_map, allow_empty=True)
+                or not isinstance(owned_map, dict)
+                or expected_id in owned_map
+                or comment_sha in owned_map.values()
+                or len(operations) != 1
+            ):
+                errors.append(
+                    f"{prefix}: reviewed reply requires an exact parent, distinct text and explicit owner reply map"
+                )
+        elif "expected_parent_author_channel_id" in raw:
+            errors.append(f"{prefix}: parent author is only valid for a reply")
         source_ids = raw.get("source_ids")
         if not isinstance(source_ids, list) or not source_ids or not all(str(item).strip() for item in source_ids):
             errors.append(f"{prefix}.source_ids must contain at least one nonblank ID")
@@ -297,6 +345,7 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
             expected_comment_id=expected_id,
             expected_comment_sha256=expected_sha,
             expected_owned_comments=owned_map if isinstance(owned_map, dict) else None,
+            expected_parent_author_channel_id=parent_author if isinstance(parent_author, str) else None,
         )
         operation_id = str(raw.get("operation_id") or "")
         if operation_id != expected_operation_id:
