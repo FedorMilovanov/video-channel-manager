@@ -26,14 +26,17 @@ MANIFEST_PATH = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock
 MOSCOW = ZoneInfo("Europe/Moscow")
 LORDCHRIST_CHAT_ID = -1001295216957
 EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
-# These are report-only holds, not publisher gates. The old run's inputs are
-# unknown; a missing Jude ledger entry does not resolve its target. History-02
-# also needs an owner date decision. Remove only after the respective evidence
-# and decision are independently established and reviewed.
+# Report-only hold for the old Jude run's unknown inputs. A missing ledger
+# entry does not resolve its target.
 PROPOSAL_ONLY_HOLDS = {
     "lordchrist-telegraph-jude-1-5-20261105": "queued_run_43098273140_target_unknown",
-    "lordchrist-telegraph-charnock-history-02": "owner_date_not_selected",
 }
+# Exact historical Reformation queue alias, not a second release identity.
+REFORMATION_QUEUE_ID = "lordchrist-telegraph-charnock-history-02"
+REFORMATION_RECEIPT_ID = "lordchrist-telegraph-history-reformation-1517-01"
+REFORMATION_QUEUE_BLOB = "b3f4f310157488f716bf38990f7b7da77589f5c8"
+REFORMATION_MESSAGE_ID = 1593
+REFORMATION_PAGE_URL = "https://telegra.ph/REFORMACIYA-EVANGELIE-PISANIE-I-SPORY-XVI-VEKA-04-11-02"
 DEFAULT_STATE_REF = "state/lordchrist-telegram"
 DEFAULT_STATE_REMOTE_REF = f"refs/remotes/origin/{DEFAULT_STATE_REF}"
 
@@ -279,6 +282,7 @@ def classify(
         "needs_reconciliation": [],
         "ledger_only": [],
     }
+    represented_receipt_ids: set[str] = set()
     for item in items:
         pid = item["publication_id"]
         record: dict[str, Any] = {
@@ -297,6 +301,31 @@ def classify(
             record["proposal_blockers"].append("queue_not_ready")
         if pid in PROPOSAL_ONLY_HOLDS:
             record["proposal_blockers"].append(PROPOSAL_ONLY_HOLDS[pid])
+        if pid == REFORMATION_QUEUE_ID:
+            record["historical_receipt_id"] = REFORMATION_RECEIPT_ID
+            record["proposal_blockers"].append("historical_article_no_replay")
+            entry = ledger.get(REFORMATION_RECEIPT_ID) if ledger is not None else None
+            status, published_on = _ordinary_receipt_status(entry, REFORMATION_RECEIPT_ID)
+            article = item.get("article")
+            if (
+                ledger is not None
+                and pid not in ledger
+                and isinstance(article, dict)
+                and article.get("git_blob_sha") == REFORMATION_QUEUE_BLOB
+                and status in {"legacy_receipt", "verified_receipt"}
+                and entry["telegram_message_id"] == REFORMATION_MESSAGE_ID
+                and entry["telegraph_url"] == REFORMATION_PAGE_URL
+            ):
+                record["receipt_status"] = status
+                record["telegram_message_id"] = REFORMATION_MESSAGE_ID
+                record["published_on_moscow"] = published_on
+                represented_receipt_ids.add(REFORMATION_RECEIPT_ID)
+                groups["published"].append(record)
+            else:
+                record["receipt_status"] = "unavailable" if ledger is None else "ambiguous"
+                record["proposal_blockers"].append("historical_receipt_requires_reconciliation")
+                groups["needs_reconciliation"].append(record)
+            continue
         if pid in calendar:
             binding = calendar[pid]
             record["calendar_date"] = binding["scheduled_on_moscow"]
@@ -360,7 +389,7 @@ def classify(
         if any(not isinstance(pid, str) or not pid for pid in ledger):
             raise SystemExit("ledger contains an invalid publication identity; no safe proposal")
         queue_ids = {item["publication_id"] for item in items}
-        for pid in sorted(ledger.keys() - queue_ids):
+        for pid in sorted(ledger.keys() - queue_ids - represented_receipt_ids):
             status, published_on = _ordinary_receipt_status(ledger[pid], pid)
             extra: dict[str, Any] = {
                 "publication_id": pid,
@@ -536,6 +565,14 @@ def render(plan: dict[str, Any]) -> str:
             lines.append(
                 f"  {r['publication_id']} — {r['calendar_date']}, удалённое сообщение "
                 f"{r['deleted_telegram_message_id']}, receipt={r['receipt_status']}; {blockers}"
+            )
+    aliases = [r for r in plan["published"] if r.get("historical_receipt_id")]
+    if aliases:
+        lines.append("\nИСТОРИЧЕСКИЕ КВИТАНЦИИ ПОД ПРЕЖНИМ ID (не планировать повтор):")
+        for r in aliases:
+            lines.append(
+                f"  {r['publication_id']} → {r['historical_receipt_id']}, "
+                f"Telegram #{r['telegram_message_id']}, {r['published_on_moscow']}"
             )
     if plan["ledger_only"]:
         lines.append("\nКВИТАНЦИИ ВНЕ ТЕКУЩЕЙ ОЧЕРЕДИ (не планировать повтор):")
