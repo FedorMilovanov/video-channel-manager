@@ -71,7 +71,7 @@ from video_channel_manager.youtube_release_provider import (
     playlist_rename_target,
 )
 
-from video_channel_manager.youtube_provider_semantics import canonical_srt_sha256, manual_caption_ids
+from video_channel_manager.youtube_provider_semantics import canonical_srt_sha256, manual_caption_ids, validate_caption_identity
 
 console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
@@ -645,8 +645,7 @@ def add_caption(
         if project is None or not video_id.strip():
             raise ValueError("Registered channel and exact video ID are required.")
         require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
-        if not language.strip() or language != language.strip() or len(name) > 150:
-            raise ValueError("Exact caption language and valid name are required.")
+        validate_caption_identity(language, name)
         if srt.suffix.lower() != ".srt" or srt.stat().st_size > 100_000_000:
             raise ValueError("Use a reviewed SRT within the provider's 100 MB limit.")
         data = srt.read_bytes()
