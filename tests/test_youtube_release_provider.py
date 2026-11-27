@@ -627,20 +627,18 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
                 value["snippet"]["channelId"] = "other"
             return httpx.Response(200, json={"items": [value]})
         assert intents == [True]
-        assert request.url.params["part"] == "snippet,localizations"
+        assert request.url.params["part"] == "snippet"
         body = json.loads(request.content)
         assert body == {
             "id": "playlist-1",
             "snippet": {"title": "New", "description": "Keep", "defaultLanguage": "ru"},
-            "localizations": {
-                "ru": {"title": "New", "description": "Keep"},
-                "en": {"title": "English", "description": "Keep English"},
-            },
         }
         if outcome == "timeout":
             raise httpx.ReadTimeout("unknown", request=request)
         raw["snippet"].update(body["snippet"])
-        raw["localizations"] = body["localizations"]
+        # Observed provider behavior on the actual New Year playlist:
+        # updating snippet also updates its exact default-language mirror.
+        raw["localizations"]["ru"]["title"] = body["snippet"]["title"]
         if outcome == "timeout_applied":
             raise httpx.ReadTimeout("response lost after update", request=request)
         if outcome == "drift":
@@ -671,5 +669,6 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
             assert result.provider_effect == ("verified" if outcome in {"verified", "timeout_applied"} else "may_exist")
             assert methods == ["GET", "PUT", "GET"]
             assert raw["status"] == before["status"]
+            assert raw["localizations"]["en"] == before["localizations"]["en"]
     finally:
         provider.close()
