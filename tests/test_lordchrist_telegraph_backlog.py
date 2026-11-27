@@ -168,18 +168,55 @@ def test_jude_date_is_not_suggested_while_old_run_target_is_unknown(tmp_path: Pa
     assert "queued_run_43098273140_target_unknown" in backlog.render(plan)
 
 
-def test_history_02_requires_owner_date_decision_not_an_automatic_suggestion(tmp_path: Path) -> None:
-    queue_path, _, _ = _fixture(tmp_path)
+@pytest.mark.parametrize(
+    "case", ["legacy", "verified", "missing", "wrong_blob", "wrong_message", "wrong_url", "conflict"]
+)
+def test_reformation_alias_never_becomes_a_new_release(tmp_path: Path, case: str) -> None:
+    queue_path, ledger_path, _ = _fixture(tmp_path)
     queue = json.loads(queue_path.read_text(encoding="utf-8"))
-    history = "lordchrist-telegraph-charnock-history-02"
-    queue["items"].append({"publication_id": history, "status": "ready"})
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    history = backlog.REFORMATION_QUEUE_ID
+    original = backlog.REFORMATION_RECEIPT_ID
+    queue["items"].append(
+        {
+            "publication_id": history,
+            "status": "ready",
+            "article": {"git_blob_sha": "0" * 40 if case == "wrong_blob" else backlog.REFORMATION_QUEUE_BLOB},
+        }
+    )
+    receipt = {
+        "publication_id": original,
+        "telegram_chat_id": backlog.LORDCHRIST_CHAT_ID,
+        "telegram_message_id": 1594 if case == "wrong_message" else backlog.REFORMATION_MESSAGE_ID,
+        "telegraph_url": "https://telegra.ph/another-page" if case == "wrong_url" else backlog.REFORMATION_PAGE_URL,
+        "telegram_published_at_utc": "2026-11-01T20:58:19+00:00",
+    }
+    if case == "verified":
+        receipt.update(state="published", provider_effect="verified", telegram_provider_effect="verified")
+    if case != "missing":
+        ledger["entries"][original] = receipt
+    if case == "conflict":
+        ledger["entries"][history] = {**receipt, "publication_id": history}
     _write(queue_path, queue)
+    _write(ledger_path, ledger)
+    before = ledger_path.read_bytes()
 
     plan = _plan_files(tmp_path, priority=(history,))
-    record = _record(plan, "undated", history)
-    assert "owner_date_not_selected" in record["proposal_blockers"]
+    if case in {"legacy", "verified"}:
+        record = _record(plan, "published", history)
+        assert record["receipt_status"] == f"{case}_receipt"
+        assert record["telegram_message_id"] == 1593
+        assert record["published_on_moscow"] == "2026-11-01"
+        assert not any(r["publication_id"] == original for r in plan["ledger_only"])
+        assert "Telegram #1593" in backlog.render(plan)
+    else:
+        record = _record(plan, "needs_reconciliation", history)
+        assert record["receipt_status"] == "ambiguous"
+        assert plan["proposal"] == []
+    assert record["historical_receipt_id"] == original
+    assert "historical_article_no_replay" in record["proposal_blockers"]
     assert history not in [slot["publication_id"] for slot in plan["proposal"]]
-    assert "owner_date_not_selected" in backlog.render(plan)
+    assert ledger_path.read_bytes() == before
 
 
 def test_reissue_spacing_uses_actual_send_date_not_verification_date(tmp_path: Path) -> None:
@@ -469,6 +506,77 @@ def test_real_repository_without_ledger_is_inert_and_does_not_invent_publication
     assert plan["proposal"] == []
     assert plan["editorial_holds"] == ["lordchrist-telegraph-charnock-13"]
     assert "Только чтение" in backlog.render(plan)
+
+
+def test_canonical_backlog_uses_v3_dates_and_preserves_legacy_09() -> None:
+    calendar = backlog.load_report_calendar(backlog.ROOT / backlog.MANIFEST_PATH, backlog.ROOT)
+    dates = {
+        6: "2026-12-08",
+        7: "2026-12-11",
+        8: "2026-12-15",
+        10: "2026-12-18",
+        11: "2026-11-27",
+        12: "2026-12-01",
+        13: "2026-12-04",
+    }
+    for number, day in dates.items():
+        binding = calendar[f"lordchrist-telegraph-charnock-{number:02}"]
+        assert binding["scheduled_on_moscow"] == day
+        assert binding["report_calendar_version"] == 3
+    assert calendar["lordchrist-telegraph-charnock-09"]["scheduled_on_moscow"] == "2026-11-20"
+    assert "report_calendar_version" not in calendar["lordchrist-telegraph-charnock-09"]
+
+    items = backlog.load_queue(backlog.ROOT / backlog.QUEUE_PATH)
+    ledger = {}
+    for pid, binding in calendar.items():
+        entry = {
+            "publication_id": pid,
+            "state": "published",
+            "provider_effect": "verified",
+            "telegram_chat_id": backlog.LORDCHRIST_CHAT_ID,
+            "telegram_message_id": binding["deleted_telegram_message_id"],
+            "telegraph_url": binding["verified_telegraph_url"],
+            "article_sha256": binding.get("historical_source_article_sha256", binding["source_article_sha256"]),
+            "github_sha": binding.get("original_github_sha"),
+            "cover_sha256": binding.get("original_cover_sha256"),
+            "telegram_published_at_utc": "2026-11-05T04:15:13+00:00",
+        }
+        ledger[pid] = entry
+    for number in (9, 11):
+        pid = f"lordchrist-telegraph-charnock-{number:02}"
+        binding = calendar[pid]
+        receipt = {
+            "state": "verified",
+            "provider_effect": "verified",
+            "new_message_id": 1630 if number == 9 else 1700,
+            "scheduled_on_moscow": binding["scheduled_on_moscow"],
+            "original_deleted_message_id": binding["deleted_telegram_message_id"],
+            "source_article_sha256": binding["source_article_sha256"],
+            "telegraph_url": binding["verified_telegraph_url"],
+            "sent_at_moscow": binding["scheduled_on_moscow"] + "T12:05:33+03:00",
+        }
+        if binding.get("binding_git_blob_sha"):
+            receipt["binding_git_blob_sha"] = binding["binding_git_blob_sha"]
+        ledger[pid]["scheduled_reissue"] = receipt
+
+    groups = backlog.classify(items, ledger, calendar, today=date(2026, 12, 19), root=backlog.ROOT)
+    for number in (6, 7, 8, 10, 12, 13):
+        pid = f"lordchrist-telegraph-charnock-{number:02}"
+        record = _record(groups, "calendar_owned", pid)
+        assert record["calendar_date"] == dates[number]
+        assert record["receipt_status"] == "unclaimed"
+        assert "queue_calendar_date_mismatch" not in record["proposal_blockers"]
+        assert "queue_calendar_blob_mismatch" not in record["proposal_blockers"]
+        assert "v3_calendar_owned_no_automatic_reschedule" in record["proposal_blockers"]
+        assert "v3_release_approval_missing" in record["proposal_blockers"]
+    assert _record(groups, "published", "lordchrist-telegraph-charnock-09")["telegram_message_id"] == 1630
+    assert _record(groups, "published", "lordchrist-telegraph-charnock-11")["telegram_message_id"] == 1700
+
+    # A terminal receipt for a different versioned binding is never accepted.
+    ledger["lordchrist-telegraph-charnock-11"]["scheduled_reissue"]["binding_git_blob_sha"] = "0" * 40
+    groups = backlog.classify(items, ledger, calendar, today=date(2026, 12, 19), root=backlog.ROOT)
+    record = _record(groups, "calendar_owned", "lordchrist-telegraph-charnock-11")
+    assert record["receipt_status"] == "ambiguous"
 
 
 def test_default_slot_is_daytime_and_never_catches_up_after_1400_moscow() -> None:
