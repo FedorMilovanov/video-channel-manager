@@ -1,10 +1,12 @@
 # Milovi Cake Telegram
 
-Owning issue: #353.
+Owning issue: [#809](https://github.com/FedorMilovanov/video-channel-manager/issues/809) (current feed); #353 is closed historical bootstrap evidence.
 
 This directory is the canonical Milovi Cake Telegram editorial/readiness area. Editorial approval, transport readiness and provider execution authority are separate gates.
 
 ## Current truth
+
+27 November 2026 protected-state checkpoint: `state/milovi-cake-telegram@8a5bea9f44b69a44feae05f4b037fb381a2a941a`, feed index blob `92418dd28d97ad4870802da28862a4f8a1147c52`, 23 indexed entries: three `published/verified` (#27 Paris-Brest, #28 historical article, #30 Books on 24 November), 20 `pending/impossible`, zero `may_exist`. The #28 receipt remains historical evidence despite public omission; do not substitute #29 or resend. The 20 pending IDs partition into a 15-video review reserve, two NO REPLAY source exclusions (20261108-001 -> #30 and 20261117-002 -> #27), and three separate holds (20261121-002, 20261125-001, 20260821-001). All old windows are elapsed. See [#809 reconciliation](https://github.com/FedorMilovanov/video-channel-manager/issues/809#issuecomment-7208369582). This is protected ledger evidence, not complete live channel history or new release authority.
 
 - Exact Telegram target: `@MiloviCake`, chat id `-1002215328390`.
 - Exact shared publisher bot: `8716602202 / @preaching_mp3_bot`.
@@ -44,7 +46,7 @@ Canonical rule: `editorial-brand-boundary-2026-08.md`.
 - `school-reading-wave-20261106.json` and [`docs/operations/milovi-school-telegram-reading-wave-20261106.md`](../../../docs/operations/milovi-school-telegram-reading-wave-20261106.md) — owner-requested exact three-post educational School promotion, with its own photo and source hashes, November 17/21/25 schedule, first-ten verified Cake video barrier and a single canonical publisher; no School post has been sent merely by preparing or initializing this wave;
 - `editorial-sequence-30-posts-2026-08.json` — long-horizon provider-inert editorial planning, not an execution queue;
 - `editorial-operating-plan-2026-08.md` — current channel-quality, reuse, cadence and acquisition rules;
-- `video-source-readiness-2026-08.json`, `video-conversion-contract-2026-08.json`, `video-output-records-2026-08.json`, `video-conversion-readiness-2026-08.md` — native-video lane; accepted MP4 outputs remain 0/16 until exact conversion evidence exists.
+- `video-source-readiness-2026-08.json`, `video-conversion-contract-2026-08.json`, `video-output-records-2026-08.json`, `video-conversion-readiness-2026-08.md` — native-video lane; historical initial readiness artifacts. All 16/16 accepted Telegram-ready MP4s are now proved by `video-conversion-evidence-2026-08.json`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`, protected ref `agent/milovi-video-accepted-73c578eff825` at `f4f5512d7b60f1b9c61c293c07620b128536df27`. Media readiness does not establish 16 publications or current release clearance.
 
 The exact historical canary/release/dispatch artifacts must remain immutable enough to explain what was actually sent. Do not “fix” an old caption in place and thereby falsify retained SHA-256 evidence. Correct future copy through a new candidate/release/publication identity.
 
