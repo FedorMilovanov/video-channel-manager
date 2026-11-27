@@ -671,3 +671,143 @@ def test_guarded_update_rechecks_full_state_before_intent_and_put(tmp_path: Path
         with pytest.raises(YouTubeCommentConflictError):
             apply()
         assert not calls
+
+
+# Replies use the same canonical HTTP transport, but a different provider
+# resource. Every successful write is checked against the exact parent.
+def _reply_record(cid: str = "reply-1", text: str = "Спасибо! ❤️", parent: str = "parent-1") -> dict[str, Any]:
+    item = _comment(cid, text)
+    item["snippet"]["parentId"] = parent
+    return item
+
+
+@pytest.mark.parametrize(
+    "case", ["ok", "delay", "wrong-parent", "changed-parent", "cannot-reply", "stale-map", "count", "unknown"]
+)
+def test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory(tmp_path: Path, case: str) -> None:
+    from video_channel_manager.platforms.youtube.comments import comment_text_sha256
+
+    replies: list[dict[str, Any]] = (
+        [_reply_record("earlier", "Old reply")] if case in {"ok", "delay", "stale-map"} else []
+    )
+    posts = []
+    intents = []
+    listing_calls = 0
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal listing_calls
+        params = request.url.params
+        path = request.url.path
+        if request.method == "POST":
+            assert path == "/comments"
+            assert intents == ["intent"]
+            body = json.loads(request.content)
+            assert body == {"snippet": {"parentId": "parent-1", "textOriginal": "Спасибо! ❤️"}}
+            posts.append(body)
+            if case == "unknown":
+                raise httpx.ReadTimeout("unknown", request=request)
+            item = _reply_record()
+            replies.append(item)
+            return httpx.Response(200, json=item)
+        if path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if path == "/commentThreads":
+            if params["moderationStatus"] != "published":
+                return httpx.Response(200, json={"items": []})
+            parent = _thread(
+                "parent-1", "Changed" if case == "changed-parent" else "Viewer text", author_channel_id="viewer"
+            )
+            parent["snippet"].update(
+                {
+                    "canReply": case != "cannot-reply",
+                    "totalReplyCount": len(replies) + (1 if case == "count" else 0),
+                }
+            )
+            return httpx.Response(200, json={"items": [parent]})
+        assert path == "/comments"
+        if params.get("id") == "parent-1":
+            parent = _comment("parent-1", "Viewer text", author_channel_id="viewer")
+            if case == "wrong-parent":
+                parent["snippet"]["parentId"] = "other"
+            return httpx.Response(200, json={"items": [parent]})
+        if params.get("id") == "reply-1":
+            return httpx.Response(200, json={"items": [_reply_record()]})
+        assert params["parentId"] == "parent-1"
+        listing_calls += 1
+        if case == "delay" and len(posts) == 1 and listing_calls == 2:
+            return httpx.Response(200, json={"items": replies[:-1]})
+        return httpx.Response(200, json={"items": replies})
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle), verify_delays_seconds=(0.0, 0.0))
+    expected = {"earlier": comment_text_sha256("Old reply")} if case in {"ok", "delay"} else {}
+    args = dict(
+        parent_id="parent-1",
+        video_id="video-1",
+        expected_channel_id="channel-1",
+        expected_video_title="Title",
+        expected_parent_author="viewer",
+        expected_parent_text="Viewer text",
+        expected_owned_replies=expected,
+        text="Спасибо! ❤️",
+        max_pages=2,
+        before_dispatch=lambda: intents.append("intent"),
+    )
+    if case in {"ok", "delay"}:
+        result = writer.create_reply(**args)
+        assert result.comment_id == "reply-1"
+        assert result.thread_id == "parent-1"
+        assert result.text == "Спасибо! ❤️"
+        assert len(posts) == len(intents) == 1
+        assert replies[0]["id"] == "earlier"
+        if case == "delay":
+            assert listing_calls == 3
+    else:
+        with pytest.raises(YouTubeCommentError):
+            writer.create_reply(**args)
+        assert len(posts) == len(intents) == (1 if case == "unknown" else 0)
+
+
+@pytest.mark.parametrize("case", ["complete", "cap", "repeated-token", "wrong-parent", "duplicate-id", "malformed"])
+def test_reply_inventory_requires_all_pages_and_exact_parent(tmp_path: Path, case: str) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.params["parentId"] == "parent-1"
+        page = request.url.params.get("pageToken")
+        if page is None:
+            return httpx.Response(200, json={"items": [_reply_record("first")], "nextPageToken": "next"})
+        payload = {"items": [_reply_record("second")]}
+        if case == "repeated-token":
+            payload["nextPageToken"] = "next"
+        elif case == "wrong-parent":
+            payload["items"] = [_reply_record("second", parent="other")]
+        elif case == "duplicate-id":
+            payload["items"] = [_reply_record("first")]
+        elif case == "malformed":
+            payload["items"] = [None]
+        return httpx.Response(200, json=payload)
+
+    writer = _writer(tmp_path, httpx.MockTransport(handle))
+    kwargs = dict(parent_id="parent-1", video_id="video-1", channel_id="channel-1", max_pages=1 if case == "cap" else 2)
+    if case == "complete":
+        assert [x.comment_id for x in writer.list_replies(**kwargs)] == ["first", "second"]
+    else:
+        with pytest.raises(YouTubeCommentError):
+            writer.list_replies(**kwargs)
+
+
+def test_reply_inventory_accepts_viewer_display_but_requires_owner_original(tmp_path: Path) -> None:
+    from video_channel_manager.platforms.youtube.store import quota_cost
+
+    assert quota_cost("POST", "comments") == ("shared", 50)
+    viewer = _reply_record("viewer-reply")
+    viewer["snippet"]["authorChannelId"]["value"] = "viewer"
+    viewer["snippet"]["textDisplay"] = viewer["snippet"].pop("textOriginal")
+    owner = _reply_record("owner-reply")
+    owner["snippet"]["textDisplay"] = owner["snippet"].pop("textOriginal")
+    items = [viewer]
+    writer = _writer(tmp_path, httpx.MockTransport(lambda _: httpx.Response(200, json={"items": items})))
+    args = dict(parent_id="parent-1", video_id="video-1", channel_id="channel-1", max_pages=1)
+    assert writer.list_replies(**args)[0].author_channel_id == "viewer"
+    items.append(owner)
+    with pytest.raises(YouTubeCommentError):
+        writer.list_replies(**args)

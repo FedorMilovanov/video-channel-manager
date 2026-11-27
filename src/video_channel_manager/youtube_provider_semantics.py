@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Literal, Mapping, Sequence
@@ -96,3 +99,54 @@ def exact_caption_inventory(payload: Mapping[str, Any], video_id: str) -> dict[s
     ):
         raise ValueError("Incomplete exact caption inventory; stop without replay.")
     return {row["id"]: row["snippet"] for row in rows}
+
+
+_SRT_TIME = r"(\d{2,}):([0-5]\d):([0-5]\d),(\d{3})"
+_SRT_RANGE = re.compile(rf"{_SRT_TIME}[ \t]+-->[ \t]+{_SRT_TIME}")
+
+
+def canonical_srt_sha256(data: bytes, *, duration_seconds: int | None = None) -> str:
+    """Validate timed UTF-8 cues; ignore BOM, line endings and trailing whitespace only."""
+    try:
+        text = data.decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n").strip("\n")
+    except UnicodeDecodeError as exc:
+        raise ValueError("SRT must be UTF-8.") from exc
+    cues = []
+    previous_start = -1
+    for index, block in enumerate(re.split(r"\n[ \t]*\n", text), 1):
+        lines = block.splitlines()
+        if len(lines) < 3 or lines[0].strip() != str(index):
+            raise ValueError(f"Invalid SRT cue number or missing text at cue {index}.")
+        match = _SRT_RANGE.fullmatch(lines[1].strip())
+        if match is None:
+            raise ValueError(f"Invalid SRT time range at cue {index}.")
+        times = tuple(int(value) for value in match.groups())
+        start = ((times[0] * 60 + times[1]) * 60 + times[2]) * 1000 + times[3]
+        end = ((times[4] * 60 + times[5]) * 60 + times[6]) * 1000 + times[7]
+        if start < previous_start or end <= start or (duration_seconds is not None and end > duration_seconds * 1000):
+            raise ValueError(f"SRT cue {index} is out of order or outside the video duration.")
+        body = "\n".join(line.rstrip() for line in lines[2:])
+        if not body.strip():
+            raise ValueError(f"Empty SRT text at cue {index}.")
+        cues.append((start, end, body))
+        previous_start = start
+    return hashlib.sha256(json.dumps(cues, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def validate_caption_identity(language: str, name: str) -> None:
+    if not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", language) or len(name) > 150:
+        raise ValueError("Invalid caption language or name.")
+
+
+def manual_caption_ids(tracks: Mapping[str, Any], language: str, name: str) -> list[str]:
+    """Find the exact manual language/name identity; ASR is not a manual track."""
+    ids = []
+    for track_id, snippet in tracks.items():
+        lang = snippet.get("language")
+        track_name = snippet.get("name", "")
+        kind = snippet.get("trackKind")
+        if not isinstance(lang, str) or not lang or not isinstance(track_name, str) or not isinstance(kind, str):
+            raise ValueError("Incomplete caption language/name/kind inventory.")
+        if kind != "ASR" and lang.casefold() == language.casefold() and track_name == name:
+            ids.append(track_id)
+    return ids
