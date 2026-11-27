@@ -170,3 +170,41 @@ def test_srt_does_not_authorize_archive_gap_or_different_fragment(tmp_path):
         _validated_chapter_appendix(
             review, _save(tmp_path, review), db, video_id=VIDEO, before=BEFORE, allow_archived_srt=True
         )
+
+
+@pytest.mark.parametrize(
+    ("replacement", "message"),
+    [
+        ("???????????", "Archived SRT boundary contains encoding corruption"),
+        ("Оправдание \ufffd верою", "Archived SRT boundary contains encoding corruption"),
+        ("English only", "Archived Russian SRT has no Cyrillic text"),
+    ],
+)
+def test_archived_srt_rejects_resealed_encoding_corruption(tmp_path, replacement, message):
+    review, after, srt, _ = _fixture(tmp_path)
+    raw = srt.read_text(encoding="utf-8-sig")
+    indices = range(len(CUES)) if replacement == "English only" else (1,)
+    for index in indices:
+        original = CUES[index][3]
+        raw = raw.replace(original, replacement)
+        review["chapters"][index]["boundary_evidence"]["cue"] = replacement
+    srt.write_text(raw, encoding="utf-8")
+    approval = review["semantic_review"]
+    approval["evidence_sha256"] = digest_file(srt)
+    approval["chapters_sha256"] = canonical_sha256(review["chapters"])
+    with pytest.raises(ValueError, match=message):
+        require_review(
+            review, _save(tmp_path, review), video_id=VIDEO, before=BEFORE, after=after, allow_archived_srt=True
+        )
+
+
+def test_archived_russian_srt_accepts_mixed_language_cue_and_normal_question_mark(tmp_path):
+    review, after, srt, _ = _fixture(tmp_path)
+    replacement = "What does this mean?"
+    raw = srt.read_text(encoding="utf-8-sig").replace(CUES[1][3], replacement)
+    srt.write_text(raw, encoding="utf-8")
+    review["chapters"][1]["boundary_evidence"]["cue"] = replacement
+    approval = review["semantic_review"]
+    approval["evidence_sha256"] = digest_file(srt)
+    approval["chapters_sha256"] = canonical_sha256(review["chapters"])
+    require_review(review, _save(tmp_path, review), video_id=VIDEO, before=BEFORE, after=after, allow_archived_srt=True)

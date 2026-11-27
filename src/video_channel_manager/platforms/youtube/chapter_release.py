@@ -133,6 +133,8 @@ def render_chapter_appendix(chapters: Any) -> str:
 
 _SRT_CLOCK = re.compile(r"(\d{2,}):([0-5]\d):([0-5]\d),(\d{3})")
 _ARCHIVED_SRT_BASIS = "exact_ru_archived_srt_boundaries"
+_ARCHIVED_CYRILLIC_RE = re.compile(r"[\u0400-\u04ff]")
+_ARCHIVED_ENCODING_CORRUPTION_RE = re.compile(r"\?{3,}|\ufffd")
 
 
 def _archived_srt_cues(path: Path) -> list[tuple[int, str]]:
@@ -165,6 +167,8 @@ def _archived_srt_cues(path: Path) -> list[tuple[int, str]]:
             raise ValueError("Invalid archived SRT cue timing or text")
         cues.append((start, text))
         previous = start
+    if not any(_ARCHIVED_CYRILLIC_RE.search(text) for _, text in cues):
+        raise ValueError("Archived Russian SRT has no Cyrillic text")
     return cues
 
 
@@ -271,6 +275,8 @@ def require_review(
             actual_ms, actual_text = archived_cues[index]
             if actual_ms != start_ms or actual_text != " ".join(cue.split()):
                 raise ValueError("Archived SRT boundary does not match exact cue bytes")
+            if _ARCHIVED_ENCODING_CORRUPTION_RE.search(actual_text):
+                raise ValueError("Archived SRT boundary contains encoding corruption")
         if events is not None:
             index = boundary.get("event_index")
             if type(index) is not int or not 0 <= index < len(events):

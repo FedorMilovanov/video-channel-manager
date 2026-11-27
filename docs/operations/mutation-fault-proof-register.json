@@ -265,6 +265,39 @@
       ]
     },
     {
+      "boundary_id": "youtube.comment.reply",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[changed-parent]",
+          "claim": "Changed reviewed parent prevents reply dispatch or intent."
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[unknown]",
+          "claim": "Lost reply response causes exactly one dispatch and one intent."
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_comments.py::test_guarded_reply_writes_exact_parent_and_verifies_complete_inventory[delay]",
+          "claim": "Lagging full parent reply inventory is retried within bounded verification; original reply retained and only one POST."
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_comment_add_cli.py::test_reply_cli_uses_same_lock_intent_and_recovery_without_replay[wrong-parent]",
+          "claim": "Wrong-parent direct readback refuses receipt; exact reconciliation verifies without replay."
+        }
+      ]
+    },
+    {
       "boundary_id": "youtube.comment.update",
       "proofs": [
         {
@@ -1169,6 +1202,53 @@
           ],
           "test_id": "tests/test_mutation_fault_stages_instagram_youtube.py::test_youtube_release_client_rejection_is_confirmed_absent[thumbnails.set]",
           "claim": "a 4xx is a recorded rejection with no provider effect, not an unknown"
+        }
+      ]
+    },
+    {
+      "boundary_id": "youtube.release.caption.insert",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[existing]",
+          "claim": "existing manual track prevents another POST"
+        },
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[wrong_owner]",
+          "claim": "foreign owner refuses before intent and POST"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[timeout]",
+          "claim": "lost response and no readback remain ambiguous with one POST"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[timeout_applied]",
+          "claim": "lost response after commit verified by exact content readback"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[wrong_text]",
+          "claim": "different downloaded content never counts as verified"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_youtube_release_provider.py::test_caption_insert_exact_post_and_no_replay[processing]",
+          "claim": "processing track is not complete"
         }
       ]
     },

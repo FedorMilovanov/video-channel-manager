@@ -71,6 +71,12 @@ from video_channel_manager.youtube_release_provider import (
     playlist_rename_target,
 )
 
+from video_channel_manager.youtube_provider_semantics import (
+    canonical_srt_sha256,
+    manual_caption_ids,
+    validate_caption_identity,
+)
+
 console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
 
@@ -625,6 +631,148 @@ def captions(
         raise typer.Exit(code=2) from exc
 
 
+@youtube_app.command("add-caption")
+def add_caption(
+    video_id: Annotated[str, typer.Argument(help="Exact existing video ID")],
+    srt: Annotated[Path, typer.Option("--srt", help="Reviewed source-aligned UTF-8 SRT")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    language: Annotated[str, typer.Option("--language")],
+    name: Annotated[str, typer.Option("--name")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Preview or add one manual subtitle; never replace or replay an existing track."""
+    prepare_windows_youtube_console()
+    try:
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None or not video_id.strip():
+            raise ValueError("Registered channel and exact video ID are required.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        validate_caption_identity(language, name)
+        if srt.suffix.lower() != ".srt" or srt.stat().st_size > 100_000_000:
+            raise ValueError("Use a reviewed SRT within the provider's 100 MB limit.")
+        data = srt.read_bytes()
+        digest = canonical_srt_sha256(data)
+        root = get_settings().data_dir
+        if execute and not root.is_absolute():
+            raise ValueError("Use the verified absolute VCM_DATA_DIR.")
+        store, config, api = _components(account, client_secret)
+        provider = YouTubeReleaseProvider(client_config=config, token_store=store, account_alias=account)
+        lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+        reports = root / "reports"
+        identity = [confirm_channel, video_id, language.casefold()]
+        key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
+        prefix = f"youtube-caption-insert-{key}-"
+        try:
+            with (
+                local_youtube_write_lock(lock, account=account, channel_id=confirm_channel)
+                if execute
+                else nullcontext()
+            ):
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                    raise ValueError("OAuth owner does not match the requested channel.")
+                video = api.get_video(video_id)
+                if video.ref.channel_id != confirm_channel or video.ref.remote_id != video_id:
+                    raise ValueError("Video does not belong to the requested channel.")
+                if not video.duration_seconds:
+                    raise ValueError("Exact video duration is required.")
+                canonical_srt_sha256(data, duration_seconds=video.duration_seconds)
+                tracks = provider.read_caption_inventory(video_id)
+                for path in sorted(reports.glob(f"{prefix}*.json")):
+                    prior = _read_optional_youtube_recovery_json(path)
+                    if (
+                        prior is None
+                        or prior.get("identity") != identity
+                        or prior.get("status") not in {"pending_reconciliation", "verified", "confirmed_absent"}
+                        or not isinstance(prior.get("name"), str)
+                        or not isinstance(prior.get("srt_sha256"), str)
+                        or not isinstance(prior.get("before_track_ids"), list)
+                        or not all(isinstance(track_id, str) for track_id in prior["before_track_ids"])
+                    ):
+                        raise ValueError("Invalid caption journal; reconcile without replay.")
+                    if prior["status"] == "verified":
+                        if prior["name"] == name and not manual_caption_ids(tracks, language, name):
+                            raise ValueError(
+                                "Previously verified caption is missing; no replay. Reconcile its removal."
+                            )
+                        continue
+                    if prior["status"] != "pending_reconciliation":
+                        continue
+                    verified = provider.verified_caption_id(
+                        tracks,
+                        language=language,
+                        name=prior["name"],
+                        srt_sha256=prior["srt_sha256"],
+                        expected_id=prior.get("caption_id"),
+                    )
+                    if verified is None or not set(prior["before_track_ids"]) <= set(tracks):
+                        raise ValueError("Earlier caption insertion is unresolved; no POST sent.")
+                    if execute:
+                        _write_json(path, {**prior, "status": "verified", "caption_id": verified})
+                existing = manual_caption_ids(tracks, language, name)
+                if existing:
+                    verified = provider.verified_caption_id(tracks, language=language, name=name, srt_sha256=digest)
+                    if verified is None:
+                        raise ValueError("Existing manual caption differs or is not serving; no replacement.")
+                    console.print_json(data={"status": "already_verified", "caption_id": verified})
+                    return
+                if not execute:
+                    console.print_json(
+                        data={
+                            "status": "dry_run_ready",
+                            "video_id": video_id,
+                            "srt_sha256": digest,
+                            "provider_writes": 0,
+                        }
+                    )
+                    return
+                path = reports / f"{prefix}{uuid.uuid4().hex}.json"
+                record = {
+                    "identity": identity,
+                    "name": name,
+                    "srt_sha256": digest,
+                    "source_sha256": hashlib.sha256(data).hexdigest(),
+                    "before_track_ids": sorted(tracks),
+                    "status": "pending_reconciliation",
+                }
+                result = provider.insert_caption_srt(
+                    video_id=video_id,
+                    channel_id=confirm_channel,
+                    language=language,
+                    name=name,
+                    srt=data,
+                    expected_before=tracks,
+                    before_dispatch=lambda: _write_json(path, record),
+                )
+                if path.exists():
+                    status = (
+                        result.provider_effect
+                        if result.provider_effect in {"verified", "confirmed_absent"}
+                        else "pending_reconciliation"
+                    )
+                    _write_json(
+                        path, {**record, "status": status, "caption_id": result.remote_id, "evidence": result.evidence}
+                    )
+                console.print_json(data={"provider_effect": result.provider_effect, "caption_id": result.remote_id})
+                if result.provider_effect != "verified":
+                    raise typer.Exit(code=2)
+        finally:
+            provider.close()
+            api.close()
+    except (
+        OSError,
+        ValueError,
+        AccountNotFoundError,
+        YouTubeApiError,
+        YouTubeWriteError,
+        YouTubeReleaseProviderError,
+    ) as exc:
+        console.print(f"[red]Caption insertion stopped:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 @youtube_app.command("rename-playlist")
 def rename_playlist(
     playlist_id: Annotated[str, typer.Argument(help="Exact existing playlist ID")],
@@ -1093,8 +1241,8 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
         operation = operations[0]
         if operation["video_id"] != video_id:
             continue
-        if first:
-            # A prior attempt (even verified) cannot be superseded by another first create.
+        if first and operation.get("action") != "reply":
+            # A prior top-level attempt cannot be superseded by another first create.
             raise ValueError("Earlier comment intent for this video requires reconciliation; no first POST sent.")
         result_path = path.with_name(path.name.removesuffix("-intent.json") + "-result.json")
         result = _read_optional_youtube_recovery_json(result_path)
@@ -1108,6 +1256,10 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
             or result.get("comment_sha256") != operation.get("comment_sha256")
             or (
                 operation.get("action") == "update" and result.get("comment_id") != operation.get("expected_comment_id")
+            )
+            or (
+                operation.get("action") == "reply"
+                and result.get("parent_comment_id") != operation.get("expected_comment_id")
             )
             or result.get("plan_sha256") != prior_plan.get("plan_sha256")
         ):
@@ -1156,6 +1308,28 @@ def apply_comment_update(
     )
 
 
+@youtube_app.command("apply-comment-reply")
+def apply_comment_reply(
+    plan: Annotated[Path, typer.Argument(help="Reviewed exact parent and owner reply inventory")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Reply once to an exact existing comment using the shared journal and channel lock."""
+    _apply_reviewed_comment(
+        plan,
+        account=account,
+        confirm_channel=confirm_channel,
+        confirm_plan_sha256=confirm_plan_sha256,
+        execute=execute,
+        client_secret=client_secret,
+        update_only=False,
+        reply_only=True,
+    )
+
+
 def _apply_reviewed_comment(
     plan: Path,
     *,
@@ -1165,6 +1339,7 @@ def _apply_reviewed_comment(
     execute: bool,
     client_secret: Path | None,
     update_only: bool,
+    reply_only: bool = False,
 ) -> None:
     prepare_windows_youtube_console()
     try:
@@ -1176,7 +1351,11 @@ def _apply_reviewed_comment(
             raise ValueError("; ".join(errors))
         mode = payload.get("mode")
         allowed_modes = (
-            ("reviewed-comment-update",) if update_only else ("reviewed-first-comment", "reviewed-additional-comment")
+            ("reviewed-comment-reply",)
+            if reply_only
+            else ("reviewed-comment-update",)
+            if update_only
+            else ("reviewed-first-comment", "reviewed-additional-comment")
         )
         if mode not in allowed_modes:
             raise ValueError(f"Expected plan mode: {', '.join(allowed_modes)}.")
@@ -1199,6 +1378,7 @@ def _apply_reviewed_comment(
         inventory_pages = 10
         first = mode == "reviewed-first-comment"
         update = mode == "reviewed-comment-update"
+        reply = mode == "reviewed-comment-reply"
         # First creation is a single channel/video effect, regardless of edited text.
         # All mutations share the same journal namespace and unresolved-video guard.
         effect_subject: str | list[str] = "first-comment" if first else operation["comment_sha256"]
@@ -1209,13 +1389,15 @@ def _apply_reviewed_comment(
                 operation["expected_comment_sha256"],
                 operation["comment_sha256"],
             ]
+        if reply:
+            effect_subject = ["reply", operation["expected_comment_id"], operation["comment_sha256"]]
         effect_key = hashlib.sha256(json.dumps([confirm_channel, video_id, effect_subject]).encode("utf-8")).hexdigest()
         reports = root / "reports"
         intent = reports / f"youtube-comment-add-{effect_key}-intent.json"
         receipt = reports / f"youtube-comment-add-{effect_key}-result.json"
         legacy_key = (
             effect_key
-            if update
+            if update or reply
             else hashlib.sha256(
                 json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
             ).hexdigest()
@@ -1227,6 +1409,19 @@ def _apply_reviewed_comment(
         writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
 
         def owned() -> list[Any]:
+            if reply:
+                return [
+                    item
+                    for item in writer.read_reply_context(
+                        parent_id=operation["expected_comment_id"],
+                        video_id=video_id,
+                        channel_id=confirm_channel,
+                        expected_parent_author=operation["expected_parent_author_channel_id"],
+                        expected_parent_text=operation["expected_comment_text"],
+                        max_pages=inventory_pages,
+                    )
+                    if item.author_channel_id == confirm_channel
+                ]
             return [
                 item
                 for item in writer.list_top_level_comments(
@@ -1250,6 +1445,14 @@ def _apply_reviewed_comment(
                 or verified.video_id != video_id
                 or not comments_equivalent(verified.text, text)
                 or verified.text_sha256 != operation["comment_sha256"]
+                or (
+                    reply
+                    and (
+                        verified.raw.get("snippet", {}).get("parentId") != operation["expected_comment_id"]
+                        or not isinstance(verified.raw.get("snippet", {}).get("textOriginal"), str)
+                        or verified.comment_id in expected
+                    )
+                )
             ):
                 raise ValueError("Independent comment verification failed; reconcile without replay.")
             after_map = {item.comment_id: item.text_sha256 for item in owned()}
@@ -1265,6 +1468,7 @@ def _apply_reviewed_comment(
                     "comment_sha256": verified.text_sha256,
                     "existing_preserved": sorted(cid for cid in expected if not update or cid != comment_id),
                     "plan_sha256": payload["plan_sha256"],
+                    **({"parent_comment_id": operation["expected_comment_id"]} if reply else {}),
                 },
             )
 
@@ -1274,7 +1478,11 @@ def _apply_reviewed_comment(
                 if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
                     raise ValueError("OAuth owner does not match reviewed channel.")
                 reservation = (
-                    writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    (
+                        writer.reserve_guarded_reply_wave(max_pages=inventory_pages)
+                        if reply
+                        else writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    )
                     if execute
                     else nullcontext()
                 )
@@ -1357,6 +1565,19 @@ def _apply_reviewed_comment(
                         )
                         if result.comment_id != operation["expected_comment_id"]:
                             raise ValueError("Unexpected update comment ID; reconcile without replay.")
+                    elif reply:
+                        result = writer.create_reply(
+                            parent_id=operation["expected_comment_id"],
+                            video_id=video_id,
+                            expected_channel_id=confirm_channel,
+                            expected_video_title=operation["video_title"],
+                            expected_parent_author=operation["expected_parent_author_channel_id"],
+                            expected_parent_text=operation["expected_comment_text"],
+                            expected_owned_replies=expected,
+                            text=text,
+                            max_pages=inventory_pages,
+                            before_dispatch=reserve_intent,
+                        )
                     else:
                         result = writer.create_top_level_comment(
                             video_id=video_id,
