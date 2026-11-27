@@ -71,6 +71,8 @@ from video_channel_manager.youtube_release_provider import (
     playlist_rename_target,
 )
 
+from video_channel_manager.youtube_provider_semantics import canonical_srt_sha256, manual_caption_ids
+
 console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
 
@@ -622,6 +624,137 @@ def captions(
             api.close()
     except (OSError, ValueError, AccountNotFoundError, YouTubeApiError, YouTubeReleaseProviderError) as exc:
         console.print(f"[red]Caption read stopped:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@youtube_app.command("add-caption")
+def add_caption(
+    video_id: Annotated[str, typer.Argument(help="Exact existing video ID")],
+    srt: Annotated[Path, typer.Option("--srt", help="Reviewed source-aligned UTF-8 SRT")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    language: Annotated[str, typer.Option("--language")],
+    name: Annotated[str, typer.Option("--name")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Preview or add one manual subtitle; never replace or replay an existing track."""
+    prepare_windows_youtube_console()
+    try:
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None or not video_id.strip():
+            raise ValueError("Registered channel and exact video ID are required.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        if not language.strip() or language != language.strip() or len(name) > 150:
+            raise ValueError("Exact caption language and valid name are required.")
+        if srt.suffix.lower() != ".srt" or srt.stat().st_size > 100_000_000:
+            raise ValueError("Use a reviewed SRT within the provider's 100 MB limit.")
+        data = srt.read_bytes()
+        digest = canonical_srt_sha256(data)
+        root = get_settings().data_dir
+        if execute and not root.is_absolute():
+            raise ValueError("Use the verified absolute VCM_DATA_DIR.")
+        store, config, api = _components(account, client_secret)
+        provider = YouTubeReleaseProvider(client_config=config, token_store=store, account_alias=account)
+        lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+        reports = root / "reports"
+        identity = [confirm_channel, video_id, language.casefold()]
+        key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
+        prefix = f"youtube-caption-insert-{key}-"
+        try:
+            with (
+                local_youtube_write_lock(lock, account=account, channel_id=confirm_channel)
+                if execute
+                else nullcontext()
+            ):
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                    raise ValueError("OAuth owner does not match the requested channel.")
+                video = api.get_video(video_id)
+                if video.ref.channel_id != confirm_channel or video.ref.remote_id != video_id:
+                    raise ValueError("Video does not belong to the requested channel.")
+                if not video.duration_seconds:
+                    raise ValueError("Exact video duration is required.")
+                canonical_srt_sha256(data, duration_seconds=video.duration_seconds)
+                tracks = provider.read_caption_inventory(video_id)
+                for path in sorted(reports.glob(f"{prefix}*.json")):
+                    prior = _read_optional_youtube_recovery_json(path)
+                    if (
+                        prior is None
+                        or prior.get("identity") != identity
+                        or prior.get("status") not in {"pending_reconciliation", "verified", "confirmed_absent"}
+                        or not isinstance(prior.get("name"), str)
+                        or not isinstance(prior.get("srt_sha256"), str)
+                    ):
+                        raise ValueError("Invalid caption journal; reconcile without replay.")
+                    if prior["status"] != "pending_reconciliation":
+                        continue
+                    verified = provider.verified_caption_id(
+                        tracks,
+                        language=language,
+                        name=prior["name"],
+                        srt_sha256=prior["srt_sha256"],
+                        expected_id=prior.get("caption_id"),
+                    )
+                    if verified is None:
+                        raise ValueError("Earlier caption insertion is unresolved; no POST sent.")
+                    if execute:
+                        _write_json(path, {**prior, "status": "verified", "caption_id": verified})
+                existing = manual_caption_ids(tracks, language, name)
+                if existing:
+                    verified = provider.verified_caption_id(
+                        tracks, language=language, name=name, srt_sha256=digest
+                    )
+                    if verified is None:
+                        raise ValueError("Existing manual caption differs or is not serving; no replacement.")
+                    console.print_json(data={"status": "already_verified", "caption_id": verified})
+                    return
+                if not execute:
+                    console.print_json(
+                        data={"status": "dry_run_ready", "video_id": video_id, "srt_sha256": digest, "provider_writes": 0}
+                    )
+                    return
+                path = reports / f"{prefix}{uuid.uuid4().hex}.json"
+                record = {
+                    "identity": identity,
+                    "name": name,
+                    "srt_sha256": digest,
+                    "source_sha256": hashlib.sha256(data).hexdigest(),
+                    "status": "pending_reconciliation",
+                }
+                result = provider.insert_caption_srt(
+                    video_id=video_id,
+                    channel_id=confirm_channel,
+                    language=language,
+                    name=name,
+                    srt=data,
+                    expected_before=tracks,
+                    before_dispatch=lambda: _write_json(path, record),
+                )
+                if path.exists():
+                    status = (
+                        result.provider_effect
+                        if result.provider_effect in {"verified", "confirmed_absent"}
+                        else "pending_reconciliation"
+                    )
+                    _write_json(
+                        path, {**record, "status": status, "caption_id": result.remote_id, "evidence": result.evidence}
+                    )
+                console.print_json(data={"provider_effect": result.provider_effect, "caption_id": result.remote_id})
+                if result.provider_effect != "verified":
+                    raise typer.Exit(code=2)
+        finally:
+            provider.close()
+            api.close()
+    except (
+        OSError,
+        ValueError,
+        AccountNotFoundError,
+        YouTubeApiError,
+        YouTubeWriteError,
+        YouTubeReleaseProviderError,
+    ) as exc:
+        console.print(f"[red]Caption insertion stopped:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
 
