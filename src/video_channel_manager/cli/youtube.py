@@ -599,7 +599,11 @@ def rename_playlist(
         key = hashlib.sha256(json.dumps([confirm_channel, playlist_id]).encode()).hexdigest()
         prefix = f"youtube-playlist-rename-{key}-"
         try:
-            with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel) if execute else nullcontext():
+            with (
+                local_youtube_write_lock(lock, account=account, channel_id=confirm_channel)
+                if execute
+                else nullcontext()
+            ):
                 channels = api.list_my_channels()
                 if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
                     raise ValueError("OAuth owner does not match the requested channel.")
@@ -659,7 +663,14 @@ def rename_playlist(
         finally:
             provider.close()
             api.close()
-    except (OSError, ValueError, AccountNotFoundError, YouTubeApiError, YouTubeWriteError, YouTubeReleaseProviderError) as exc:
+    except (
+        OSError,
+        ValueError,
+        AccountNotFoundError,
+        YouTubeApiError,
+        YouTubeWriteError,
+        YouTubeReleaseProviderError,
+    ) as exc:
         console.print(f"[red]Playlist rename stopped:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
