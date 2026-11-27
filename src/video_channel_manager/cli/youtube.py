@@ -685,6 +685,8 @@ def add_caption(
                         or prior.get("status") not in {"pending_reconciliation", "verified", "confirmed_absent"}
                         or not isinstance(prior.get("name"), str)
                         or not isinstance(prior.get("srt_sha256"), str)
+                        or not isinstance(prior.get("before_track_ids"), list)
+                        or not all(isinstance(track_id, str) for track_id in prior["before_track_ids"])
                     ):
                         raise ValueError("Invalid caption journal; reconcile without replay.")
                     if prior["status"] != "pending_reconciliation":
@@ -696,22 +698,25 @@ def add_caption(
                         srt_sha256=prior["srt_sha256"],
                         expected_id=prior.get("caption_id"),
                     )
-                    if verified is None:
+                    if verified is None or not set(prior["before_track_ids"]) <= set(tracks):
                         raise ValueError("Earlier caption insertion is unresolved; no POST sent.")
                     if execute:
                         _write_json(path, {**prior, "status": "verified", "caption_id": verified})
                 existing = manual_caption_ids(tracks, language, name)
                 if existing:
-                    verified = provider.verified_caption_id(
-                        tracks, language=language, name=name, srt_sha256=digest
-                    )
+                    verified = provider.verified_caption_id(tracks, language=language, name=name, srt_sha256=digest)
                     if verified is None:
                         raise ValueError("Existing manual caption differs or is not serving; no replacement.")
                     console.print_json(data={"status": "already_verified", "caption_id": verified})
                     return
                 if not execute:
                     console.print_json(
-                        data={"status": "dry_run_ready", "video_id": video_id, "srt_sha256": digest, "provider_writes": 0}
+                        data={
+                            "status": "dry_run_ready",
+                            "video_id": video_id,
+                            "srt_sha256": digest,
+                            "provider_writes": 0,
+                        }
                     )
                     return
                 path = reports / f"{prefix}{uuid.uuid4().hex}.json"
@@ -720,6 +725,7 @@ def add_caption(
                     "name": name,
                     "srt_sha256": digest,
                     "source_sha256": hashlib.sha256(data).hexdigest(),
+                    "before_track_ids": sorted(tracks),
                     "status": "pending_reconciliation",
                 }
                 result = provider.insert_caption_srt(
