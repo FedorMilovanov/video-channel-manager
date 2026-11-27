@@ -174,6 +174,7 @@ _QUOTA_COSTS = {
     ("PUT", "captions"): ("shared", 450),
     ("PUT", "captions.update"): ("shared", 450),
     ("POST", "commentThreads"): ("shared", 50),
+    ("POST", "comments"): ("shared", 50),
     ("PUT", "comments"): ("shared", 50),
     ("PUT", "videos"): ("shared", 50),
     ("PUT", "playlists"): ("shared", 50),
