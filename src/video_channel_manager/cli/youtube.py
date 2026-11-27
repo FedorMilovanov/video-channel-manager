@@ -65,6 +65,11 @@ from video_channel_manager.platforms.youtube.copy_output_safety import (
 )
 from video_channel_manager.platforms.youtube.store import ProjectQuotaGuard, YouTubeQuotaBlocked
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
+from video_channel_manager.youtube_release_provider import (
+    YouTubeReleaseProvider,
+    YouTubeReleaseProviderError,
+    playlist_rename_target,
+)
 
 console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
@@ -566,6 +571,97 @@ def scan(
         f"Videos: {len(package.videos)} | Playlists: {len(package.collections)} | "
         f"Memberships: {len(package.memberships)}"
     )
+
+
+@youtube_app.command("rename-playlist")
+def rename_playlist(
+    playlist_id: Annotated[str, typer.Argument(help="Exact existing playlist ID")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    title: Annotated[str, typer.Option("--title", help="Requested new primary title")],
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Preview or rename one owned playlist without touching videos or membership."""
+    prepare_windows_youtube_console()
+    try:
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None or not playlist_id.strip() or not title.strip():
+            raise ValueError("Registered channel, exact playlist ID and nonblank title are required.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        root = get_settings().data_dir
+        if execute and not root.is_absolute():
+            raise ValueError("Use the verified absolute VCM_DATA_DIR.")
+        store, config, api = _components(account, client_secret)
+        provider = YouTubeReleaseProvider(client_config=config, token_store=store, account_alias=account)
+        lock = root / "locks" / f"youtube-{account}-{confirm_channel}.lock"
+        reports = root / "reports"
+        key = hashlib.sha256(json.dumps([confirm_channel, playlist_id]).encode()).hexdigest()
+        prefix = f"youtube-playlist-rename-{key}-"
+        try:
+            with local_youtube_write_lock(lock, account=account, channel_id=confirm_channel) if execute else nullcontext():
+                channels = api.list_my_channels()
+                if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                    raise ValueError("OAuth owner does not match the requested channel.")
+                before = provider.read_playlist_metadata(playlist_id, channel_id=confirm_channel)
+                after = playlist_rename_target(before, title)
+                for path in sorted(reports.glob(f"{prefix}*.json")):
+                    prior = _read_optional_youtube_recovery_json(path)
+                    if (
+                        prior is None
+                        or prior.get("playlist_id") != playlist_id
+                        or prior.get("channel_id") != confirm_channel
+                        or prior.get("status") not in {"pending_reconciliation", "verified", "confirmed_absent"}
+                    ):
+                        raise ValueError("Invalid playlist rename journal; reconcile without replay.")
+                    if prior["status"] != "pending_reconciliation":
+                        continue
+                    if before != prior.get("after"):
+                        raise ValueError("Earlier playlist rename effect is unresolved; no PUT sent.")
+                    if execute:
+                        _write_json(path, {**prior, "status": "verified", "verified_by": "independent_readback"})
+                if not execute or before == after:
+                    console.print_json(
+                        data={
+                            "playlist_id": playlist_id,
+                            "before_title": before["snippet"]["title"],
+                            "after_title": title,
+                            "status": "already_verified" if before == after else "dry_run_ready",
+                            "provider_writes": 0,
+                        }
+                    )
+                    return
+                path = reports / f"{prefix}{uuid.uuid4().hex}.json"
+                record = {
+                    "playlist_id": playlist_id,
+                    "channel_id": confirm_channel,
+                    "before": before,
+                    "after": after,
+                    "status": "pending_reconciliation",
+                }
+                result = provider.rename_playlist(
+                    playlist_id=playlist_id,
+                    channel_id=confirm_channel,
+                    expected_before=before,
+                    new_title=title,
+                    before_dispatch=lambda: _write_json(path, record),
+                )
+                if path.exists():
+                    status = (
+                        result.provider_effect
+                        if result.provider_effect in {"verified", "confirmed_absent"}
+                        else "pending_reconciliation"
+                    )
+                    _write_json(path, {**record, "status": status, "evidence": result.evidence})
+                console.print_json(data={"playlist_id": playlist_id, "provider_effect": result.provider_effect})
+                if result.provider_effect != "verified":
+                    raise typer.Exit(code=2)
+        finally:
+            provider.close()
+            api.close()
+    except (OSError, ValueError, AccountNotFoundError, YouTubeApiError, YouTubeWriteError, YouTubeReleaseProviderError) as exc:
+        console.print(f"[red]Playlist rename stopped:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @youtube_app.command("apply-copy-fixes")
