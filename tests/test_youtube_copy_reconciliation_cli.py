@@ -435,3 +435,13 @@ def test_caption_cli_reconciles_pending_insert_without_second_post(
     run(True)
     provider.insert_caption_srt.assert_called_once()
     assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "verified"
+
+    # A previously verified manual track disappearing is drift, not a fresh insertion.
+    verified_record = journal.read_bytes()
+    provider.read_caption_inventory.return_value = {"auto": auto}
+    for execute in (False, True):
+        with pytest.raises(typer.Exit):
+            run(execute)
+    provider.insert_caption_srt.assert_called_once()
+    assert journal.read_bytes() == verified_record
+    assert list((tmp_path / "reports").glob("*.json")) == [journal]
