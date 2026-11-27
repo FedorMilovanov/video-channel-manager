@@ -306,8 +306,12 @@ def test_playlist_rename_reconciles_exact_pending_effect_without_second_put(
 
     def run(*, execute: bool) -> None:
         youtube_cli.rename_playlist(
-            "playlist-1", account=account, confirm_channel=channel, title="New",
-            execute=execute, client_secret=None,
+            "playlist-1",
+            account=account,
+            confirm_channel=channel,
+            title="New",
+            execute=execute,
+            client_secret=None,
         )
 
     run(execute=False)
