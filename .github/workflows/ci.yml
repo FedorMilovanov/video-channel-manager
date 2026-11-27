@@ -14,7 +14,78 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  fast-check:
+    name: Early lint and scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Classify exact PR merge scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+
+          # Only explicitly reviewed narrative Markdown paths qualify.
+          # All main pushes, code, new/deleted paths, unknown inputs and
+          # uncertain merge ancestry keep the full existing quality matrix.
+          allowed = {
+              b"docs/operations/current-state.md",
+              b"docs/youtube-description-rendering-standard.md",
+          }
+          docs_only = False
+          if os.environ.get("EVENT_NAME") == "pull_request":
+              base = os.environ.get("PR_BASE_SHA", "")
+              head = os.environ.get("PR_HEAD_SHA", "")
+              try:
+                  parents = subprocess.check_output(
+                      ["git", "rev-list", "--parents", "-n", "1", "HEAD"]
+                  ).decode("ascii").split()
+                  if base and head and parents[1:] == [base, head]:
+                      raw = subprocess.check_output(
+                          ["git", "diff", "--raw", "-z", "--no-renames", base, "HEAD", "--"]
+                      )
+                      fields = raw.split(b"\0")
+                      docs_only = (
+                          len(fields) > 2
+                          and fields[-1] == b""
+                          and len(fields) % 2 == 1
+                          and all(
+                              status.startswith(b":100644 100644 ") and status.endswith(b" M") and path in allowed
+                              for status, path in zip(fields[0:-1:2], fields[1:-1:2], strict=True)
+                          )
+                      )
+              except (OSError, ValueError, subprocess.CalledProcessError):
+                  pass
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"docs_only={str(docs_only).lower()}", file=output)
+          print("PR narrative-docs scope" if docs_only else "Full quality matrix")
+          PY
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install only the formatter and linter
+        run: python -m pip install "ruff>=0.9,<1"
+      - name: Fail early on lint or formatting errors
+        run: |
+          ruff check . --output-format=concise
+          ruff format --check .
+
   quality:
+    needs: fast-check
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -22,23 +93,35 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
+      - name: Require successful early check
+        if: needs.fast-check.result != 'success'
+        run: exit 1
+      - name: Explain narrative-docs-only scope
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only == 'true' && matrix.python-version != '3.11')
+        run: echo "Full Python 3.11 quality and other required workflow gates still run; main always runs the full matrix."
       - name: Check out repository
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Upgrade packaging toolchain
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         run: python -m pip install --upgrade "pip>=25" "setuptools>=83,<85" wheel
       - name: Install project
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         run: pip install -e ".[dev]"
       - name: Validate installed dependency graph
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         run: pip check
       - name: Compile Python sources and operational scripts
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         run: python -m compileall -q src scripts tests
       - name: Build isolated minimal Telegram runtime
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.11' && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         shell: bash
         run: |
           set -euo pipefail
@@ -50,7 +133,7 @@ jobs:
             -r requirements/telegram-publisher.txt
           "$runtime/bin/python" -m pip check
       - name: Smoke test guarded Telegram CLI without provider access
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.11' && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         shell: bash
         run: |
           set -euo pipefail
@@ -103,7 +186,7 @@ jobs:
           assert "<b>Дж. К. Райл</b>, <i>«Holiness»</i>" in preview["post"]["html_text"]
           PY
       - name: Audit every pinned production runtime
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.11' && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         shell: bash
         run: |
           set -euo pipefail
@@ -113,6 +196,7 @@ jobs:
           pip-audit -r requirements/telegram-publisher.txt --desc on
           pip-audit -r requirements/milovi-photo-publisher.txt --desc on
       - name: Dependency vulnerability gate
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         id: pip_audit
         continue-on-error: true
         shell: bash
@@ -120,13 +204,14 @@ jobs:
           set -o pipefail
           pip-audit --skip-editable --desc on 2>&1 | tee pip-audit.log
       - name: Upload dependency audit
-        if: always()
+        if: always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pip-audit-${{ matrix.python-version }}
           path: pip-audit.log
           if-no-files-found: error
       - name: Ruff correctness gate
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         id: ruff
         continue-on-error: true
         shell: bash
@@ -134,13 +219,14 @@ jobs:
           set -o pipefail
           ruff check . --output-format=concise 2>&1 | tee ruff.log
       - name: Upload Ruff report
-        if: always()
+        if: always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ruff-${{ matrix.python-version }}
           path: ruff.log
           if-no-files-found: error
       - name: Ruff formatting gate
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         id: format
         continue-on-error: true
         shell: bash
@@ -148,13 +234,14 @@ jobs:
           set -o pipefail
           ruff format --check . 2>&1 | tee ruff-format.log
       - name: Upload Ruff formatting report
-        if: always()
+        if: always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ruff-format-${{ matrix.python-version }}
           path: ruff-format.log
           if-no-files-found: error
       - name: Static typing
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         id: mypy
         continue-on-error: true
         shell: bash
@@ -162,13 +249,14 @@ jobs:
           set -o pipefail
           mypy src --show-error-codes 2>&1 | tee mypy.log
       - name: Upload static typing report
-        if: always()
+        if: always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mypy-${{ matrix.python-version }}
           path: mypy.log
           if-no-files-found: error
       - name: Tests
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         id: tests
         continue-on-error: true
         shell: bash
@@ -176,7 +264,7 @@ jobs:
           set -o pipefail
           python -m pytest --cov=video_channel_manager --cov-report=term-missing --cov-report=json:coverage.json 2>&1 | tee pytest.log
       - name: Upload test report
-        if: always()
+        if: always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pytest-${{ matrix.python-version }}
@@ -186,7 +274,7 @@ jobs:
           if-no-files-found: error
       - name: Coverage ratchet gate
         id: coverage_ratchet
-        if: always() && matrix.python-version == '3.11' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        if: always() && matrix.python-version == '3.11' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         continue-on-error: true
         shell: bash
         run: |
@@ -194,7 +282,7 @@ jobs:
           python scripts/coverage_ratchet.py --report coverage.json \
             --register docs/operations/coverage-ratchet.json 2>&1 | tee coverage-ratchet.log
       - name: Upload coverage ratchet report
-        if: always() && matrix.python-version == '3.11'
+        if: always() && matrix.python-version == '3.11' && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-ratchet-${{ matrix.python-version }}
@@ -202,7 +290,7 @@ jobs:
           if-no-files-found: warn
       - name: Enforce quality gates
         if: >-
-          always() && (
+          always() && needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true' || matrix.python-version == '3.11') && (
             steps.pip_audit.outcome == 'failure' ||
             steps.ruff.outcome == 'failure' ||
             steps.format.outcome == 'failure' ||
@@ -214,20 +302,32 @@ jobs:
 
   powershell-windows-51:
     name: PowerShell Windows 5.1
+    needs: fast-check
+    if: ${{ !cancelled() }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
+      - name: Require successful early check
+        if: needs.fast-check.result != 'success'
+        run: exit 1
+      - name: Explain narrative-docs-only scope
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only == 'true')
+        run: echo "Full Python 3.11 quality and other required workflow gates still run; main always runs the full matrix."
       - name: Check out repository
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python 3.11
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
       - name: Install project
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: powershell
         run: python -m pip install -e .
       - name: Install Pester 5.7.1
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -238,6 +338,7 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in Windows PowerShell 5.1
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -247,20 +348,32 @@ jobs:
 
   powershell-windows-7:
     name: PowerShell Windows 7
+    needs: fast-check
+    if: ${{ !cancelled() }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
+      - name: Require successful early check
+        if: needs.fast-check.result != 'success'
+        run: exit 1
+      - name: Explain narrative-docs-only scope
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only == 'true')
+        run: echo "Full Python 3.11 quality and other required workflow gates still run; main always runs the full matrix."
       - name: Check out repository
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python 3.11
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
       - name: Install project
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: python -m pip install -e .
       - name: Install Pester 5.7.1
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -270,6 +383,7 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in PowerShell 7 on Windows
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -279,20 +393,32 @@ jobs:
 
   powershell-linux-7:
     name: PowerShell Linux 7
+    needs: fast-check
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Require successful early check
+        if: needs.fast-check.result != 'success'
+        run: exit 1
+      - name: Explain narrative-docs-only scope
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only == 'true')
+        run: echo "Full Python 3.11 quality and other required workflow gates still run; main always runs the full matrix."
       - name: Check out repository
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python 3.11
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
       - name: Install project
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: python -m pip install -e .
       - name: Install Pester 5.7.1
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -302,6 +428,7 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in PowerShell 7 on Linux
+        if: needs.fast-check.result == 'success' && (needs.fast-check.outputs.docs_only != 'true')
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"

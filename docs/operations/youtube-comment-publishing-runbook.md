@@ -4,7 +4,7 @@ This is the current operator route for reviewed YouTube comments. Follow [AGENTS
 
 ## 1. Prove the execution route
 
-Resolve the exact current `main` commit and its successful required CI, then use a clean verified runtime at that commit. Do not switch to a historical feature branch or disturb another operator's worktree. Check the canonical absolute VCM data root, exact registered account/channel and official OAuth permissions. Do not copy tokens, force a login, or select another alias to evade a refusal. A dry-run or green CI is not execution authority.
+Resolve the exact current `main` commit and its existing successful required CI, then use a clean verified runtime at that commit. Reuse this admission within the same work wave while the runtime and applicable policy remain unchanged; do not launch CI for the comment or wait for unrelated open PRs. Do not switch to a historical feature branch or disturb another operator's worktree. Check the canonical absolute VCM data root, exact registered account/channel and official OAuth permissions. Do not copy tokens, force a login, or select another alias to evade a refusal. A dry-run or green CI is not execution authority.
 
 The historical standalone comment apply script is retired. Do not run its historical entrypoint or import it as an alternate executor.
 
@@ -28,20 +28,20 @@ Use canonical comment text digests, not a hash of an arbitrary raw HTTP response
 
 For bulk Panorama comment work, use the existing reviewed Wave operator contract only for its admitted scope; do not repurpose that route for other projects. Use the update mode only for the existing exact ID; it shares the canonical lock, quota and mutation history with creates. A replacement create is not an update.
 
-## 4. Canonical preflight (read-only)
+## 4. Optional standalone preflight (read-only)
 
 ```text
 video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID
 video-manager youtube apply-comment-update PLAN --account ALIAS --confirm-channel CHANNEL_ID
 ```
 
-Choose the command matching the reviewed plan mode; the two commands invoke the same guarded execution core.
+Choose the command matching the reviewed plan mode; the two commands invoke the same guarded execution core. For an ordinary owner-authorized operation with a reviewed exact plan, a separate dry-run is optional: the execute invocation performs these checks under lock before dispatch. Use standalone preflight for uncertainty, batch review or diagnosis, not as a second approval.
 
 The command validates the plan, project binding, public title/identity, current complete owner-comment set and earlier intent evidence under the channel lock. An existing exact match is skipped; changed state or incomplete evidence blocks dispatch. Inspect the actual result and exit status. Dry-run creates no receipt and performs no POST.
 
 ## 5. Execute the authorized exact mutation
 
-An explicit owner instruction to post or correct the requested comment supplies the bounded write scope; do not request the same permission again. Use the existing reviewed plan, verified runtime, successful preflight and shared quota admission/verification reserve. Derive the exact technical confirmation arguments internally. No new PR or CI run merely for a comment operation; actual code changes follow the normal engineering process. Draft-only requests and unresolved effects remain blocked:
+An explicit owner instruction to post or correct the requested comment supplies the bounded write scope; do not request the same permission again. Use the existing reviewed plan, verified runtime, integrated preflight and shared quota admission/verification reserve. Derive the exact technical confirmation arguments internally. No new PR or CI run merely for a comment operation; actual code changes follow the normal engineering process. Draft-only requests and unresolved effects remain blocked:
 
 ```text
 video-manager youtube apply-comment-add PLAN --account ALIAS --confirm-channel CHANNEL_ID --execute --confirm-plan-sha256 SHA
@@ -80,7 +80,7 @@ video-manager youtube apply-comment-reply PLAN --account ALIAS --confirm-channel
 video-manager youtube apply-comment-reply PLAN --account ALIAS --confirm-channel CHANNEL_ID --execute --confirm-plan-sha256 SHA
 \`\`\`
 
-The same channel lock, shared quota journal, reviewed plan, intent namespace and
+For an ordinary authorized reply, the first (dry-run) invocation is optional; the execute invocation performs integrated preflight before dispatch. The same channel lock, shared quota journal, reviewed plan, intent namespace and
 reconciliation rules apply. Reply effect identity binds channel/video/parent and
 text hash; changed text cannot escape an unresolved prior attempt on the video.
 Reserve the 50-unit reply POST and complete bounded verification reads. Verify
