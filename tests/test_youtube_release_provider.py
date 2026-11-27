@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -597,3 +599,67 @@ def test_mutation_empty_explicit_params_preserve_resumable_url(tmp_path: Path) -
         provider.close()
     assert failure is None
     assert response is not None and response.status_code == 201
+
+
+@pytest.mark.parametrize("outcome", ["verified", "drift", "timeout", "wrong_owner"])
+def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, outcome: str) -> None:
+    raw = {
+        "id": "playlist-1",
+        "snippet": {"channelId": "owner", "title": "Old", "description": "Keep", "defaultLanguage": "ru"},
+        "status": {"privacyStatus": "unlisted", "podcastStatus": "unspecified"},
+        "localizations": {
+            "ru": {"title": "Old", "description": "Keep"},
+            "en": {"title": "English", "description": "Keep English"},
+        },
+    }
+    before = copy.deepcopy(raw)
+    methods: list[str] = []
+    intents: list[bool] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        assert request.url.path.endswith("/playlists")
+        if request.method == "GET":
+            value = copy.deepcopy(raw)
+            if outcome == "wrong_owner":
+                value["snippet"]["channelId"] = "other"
+            return httpx.Response(200, json={"items": [value]})
+        assert intents == [True]
+        assert request.url.params["part"] == "snippet,localizations"
+        body = json.loads(request.content)
+        assert body == {
+            "id": "playlist-1",
+            "snippet": {"title": "New", "description": "Keep", "defaultLanguage": "ru"},
+            "localizations": {
+                "ru": {"title": "New", "description": "Keep"},
+                "en": {"title": "English", "description": "Keep English"},
+            },
+        }
+        if outcome == "timeout":
+            raise httpx.ReadTimeout("unknown", request=request)
+        raw["snippet"].update(body["snippet"])
+        raw["localizations"] = body["localizations"]
+        if outcome == "drift":
+            raw["snippet"]["description"] = ""
+        return httpx.Response(200, json=raw)
+
+    provider = _provider(tmp_path, handler)
+    try:
+        if outcome == "wrong_owner":
+            with pytest.raises(YouTubeReleaseProviderError, match="owner"):
+                provider.rename_playlist(
+                    playlist_id="playlist-1", channel_id="owner", expected_before=before,
+                    new_title="New", before_dispatch=lambda: intents.append(True),
+                )
+            assert methods == ["GET"]
+            assert not intents
+        else:
+            result = provider.rename_playlist(
+                playlist_id="playlist-1", channel_id="owner", expected_before=before,
+                new_title="New", before_dispatch=lambda: intents.append(True),
+            )
+            assert result.provider_effect == ("verified" if outcome == "verified" else "may_exist")
+            assert methods == (["GET", "PUT"] if outcome == "timeout" else ["GET", "PUT", "GET"])
+            assert raw["status"] == before["status"]
+    finally:
+        provider.close()
