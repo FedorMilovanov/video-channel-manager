@@ -242,6 +242,6 @@ def test_reader_revision_preserves_specific_semantic_corrections() -> None:
     assert "рабство у величайшего тирана" not in by_num[15]["proposed_quote_text_ru"]
     assert "выступал против таких наставников" in by_num[25]["proposed_quote_text_ru"]
     assert "Путь благодати" in by_num[25]["attribution_ru"]
-    assert "Тогда мы узнаём Бога как Пастыря" in by_num[28]["proposed_quote_text_ru"]
+    assert "Тогда мы узнаём, что Бог — наш Пастырь" in by_num[28]["proposed_quote_text_ru"]
     assert {n for n, item in by_num.items() if item["reader_review_remaining_context_hold"]} == {15, 18, 19, 23, 29}
     assert all(item["reader_review_note_ru"] and item["reader_review_source_comment"] for item in by_num.values())
