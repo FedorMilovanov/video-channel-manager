@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 import random
 import re
 import time
+import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,6 +25,7 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
+from video_channel_manager.platforms.youtube.client import _parse_duration
 from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
@@ -32,7 +35,13 @@ from video_channel_manager.platforms.youtube.store import (
     YouTubeQuotaBlocked,
     reserve_shared_quota,
 )
-from video_channel_manager.youtube_provider_semantics import exact_caption_inventory, playlist_item_video_id
+from video_channel_manager.youtube_provider_semantics import (
+    canonical_srt_sha256,
+    exact_caption_inventory,
+    manual_caption_ids,
+    playlist_item_video_id,
+    validate_caption_identity,
+)
 from video_channel_manager.youtube_release_state import ProviderEffect
 from video_channel_manager.youtube_upload_plan import canonical_sha256
 
@@ -324,6 +333,112 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if not re.match(r"^\s*1[ \t]*\r?\n\d{2,}:\d{2}:\d{2},\d{3}[ \t]+-->[ \t]+", text):
             raise YouTubeReleaseProviderError("Caption download has no initial SRT cue.")
         return response.content
+
+    def verified_caption_id(
+        self,
+        tracks: dict[str, Any],
+        *,
+        language: str,
+        name: str,
+        srt_sha256: str,
+        expected_id: str | None = None,
+    ) -> str | None:
+        ids = manual_caption_ids(tracks, language, name)
+        if len(ids) != 1 or (expected_id is not None and ids[0] != expected_id):
+            return None
+        track_id = ids[0]
+        snippet = tracks[track_id]
+        if snippet.get("status") != "serving" or snippet.get("isDraft") is not False:
+            return None
+        if snippet.get("trackKind") != "standard":
+            return None
+        return track_id if canonical_srt_sha256(self.download_caption_srt(track_id)) == srt_sha256 else None
+
+    def insert_caption_srt(
+        self,
+        *,
+        video_id: str,
+        channel_id: str,
+        language: str,
+        name: str,
+        srt: bytes,
+        expected_before: dict[str, Any],
+        before_dispatch: Callable[[], None],
+    ) -> ReleaseProviderResult:
+        """Insert one reviewed manual SRT; only exact serving-content readback proves completion."""
+        validate_caption_identity(language, name)
+        if len(srt) > 100_000_000:
+            raise ValueError("Caption exceeds the provider's 100 MB size limit.")
+        with reserve_shared_quota(
+            self._quota_guard, 400 + 301 * self.retry_policy.max_attempts, YouTubeReleaseProviderError
+        ):
+            video = self.read_video(video_id)
+            if (video.get("snippet") or {}).get("channelId") != channel_id:
+                raise YouTubeReleaseProviderError("Video owner changed; no caption POST sent.")
+            duration = _parse_duration((video.get("contentDetails") or {}).get("duration"))
+            if not duration:
+                raise ValueError("Exact video duration is required for SRT admission.")
+            digest = canonical_srt_sha256(srt, duration_seconds=duration)
+            before = self.read_caption_inventory(video_id)
+            if before != expected_before or manual_caption_ids(before, language, name):
+                raise YouTubeReleaseProviderError("Caption inventory changed or track already exists; no POST sent.")
+            self._token(require_write=True)
+            metadata = json.dumps(
+                {"snippet": {"videoId": video_id, "language": language, "name": name, "isDraft": False}},
+                ensure_ascii=False,
+            ).encode("utf-8")
+            boundary = "vcm-" + uuid.uuid4().hex
+            marker = ("--" + boundary).encode("ascii")
+            body = (
+                marker
+                + b"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"
+                + metadata
+                + b"\r\n"
+                + marker
+                + b"\r\nContent-Type: application/octet-stream\r\n\r\n"
+                + srt
+                + b"\r\n"
+                + marker
+                + b"--\r\n"
+            )
+            before_dispatch()
+            response, failure = self._mutation_request(
+                "POST",
+                f"{self.upload_api_base_url}/captions",
+                resource="captions.insert",
+                params={"part": "snippet", "uploadType": "multipart"},
+                headers={"Content-Type": f"multipart/related; boundary={boundary}"},
+                content=body,
+            )
+            # A conflict establishes an existing identity, not absence of a track.
+            # Reconcile it by GET; do not make a new insert eligible automatically.
+            if (
+                failure is not None
+                and failure.provider_effect != "may_exist"
+                and failure.evidence.get("http_status") != 409
+            ):
+                return failure
+            evidence = dict(failure.evidence) if failure is not None else {}
+            remote_id = (self._json_object(response) or {}).get("id") if response is not None else None
+            if not isinstance(remote_id, str) or not remote_id:
+                remote_id = None
+            try:
+                after = self.read_caption_inventory(video_id)
+                verified = (
+                    self.verified_caption_id(
+                        after, language=language, name=name, srt_sha256=digest, expected_id=remote_id
+                    )
+                    if set(before) <= set(after)
+                    else None
+                )
+            except (ValueError, YouTubeReleaseProviderError) as exc:
+                evidence["readback_error"] = str(exc)
+                verified = None
+            if verified is None:
+                evidence["reason"] = "Exact serving caption content not yet verified"
+                return ReleaseProviderResult(provider_effect="may_exist", remote_id=remote_id, evidence=evidence)
+            evidence["srt_sha256"] = digest
+            return ReleaseProviderResult(provider_effect="verified", remote_id=verified, evidence=evidence)
 
     def read_playlist_metadata(self, playlist_id: str, *, channel_id: str) -> dict[str, Any]:
         response = self._safe_request(
