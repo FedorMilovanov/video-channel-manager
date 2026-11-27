@@ -97,7 +97,7 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
         if number not in NEW_TRANSLATIONS | DERIVATIVE_LEGACY_EDITS:
             assert item["proposed_quote_text_ru"] in old_text
 
-    assert "избрание по свободной Божьей воле" in by_num[12]["proposed_quote_text_ru"]
+    assert "избрание по благодати, не зависящее от человеческих заслуг" in by_num[12]["proposed_quote_text_ru"]
     assert "распознать то, что Он открывает о Своих намерениях" in by_num[15]["proposed_quote_text_ru"]
     assert "верность совести" in by_num[15]["proposed_quote_text_ru"]
     assert "безусловно необходимы" in by_num[16]["proposed_quote_text_ru"]
@@ -109,7 +109,7 @@ def test_russian_retranslating_is_explicit_and_not_disguised_as_old_quote() -> N
             for check in entry["selected_lexical_checkpoints"]
         )
 
-    assert "новым творением во Христе" in by_num[17]["proposed_quote_text_ru"]
+    assert "творя человека заново во Христе" in by_num[17]["proposed_quote_text_ru"]
     assert "каждого христианина и каждой христианки" in by_num[18]["proposed_quote_text_ru"]
     assert "Во-первых, он смотрит вниз, на могилу" in by_num[19]["proposed_quote_text_ru"]
     for number in (17, 18, 19):
@@ -233,3 +233,15 @@ def test_both_preview_formats_preserve_exact_quote_text() -> None:
             rendered_markdown = markdown.split("\n*" + item["attribution_ru"] + "*", 1)[0]
         assert html.unescape(re.sub(r"</?[bi]>", "", rendered_html)) == expected, item["sequence"]
         assert rendered_markdown.replace("*", "") == expected, item["sequence"]
+
+
+def test_reader_revision_preserves_specific_semantic_corrections() -> None:
+    audit, _ = _data()
+    by_num = {entry["sequence"]: entry for entry in audit["entries"]}
+    assert "Распущенность порабощает даже величайшего тирана" in by_num[15]["proposed_quote_text_ru"]
+    assert "рабство у величайшего тирана" not in by_num[15]["proposed_quote_text_ru"]
+    assert "выступал против таких наставников" in by_num[25]["proposed_quote_text_ru"]
+    assert "Путь благодати" in by_num[25]["attribution_ru"]
+    assert "Тогда мы узнаём Бога как Пастыря" in by_num[28]["proposed_quote_text_ru"]
+    assert {n for n, item in by_num.items() if item["reader_review_remaining_context_hold"]} == {15, 18, 19, 23, 29}
+    assert all(item["reader_review_note_ru"] and item["reader_review_source_comment"] for item in by_num.values())
