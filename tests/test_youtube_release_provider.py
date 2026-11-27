@@ -601,7 +601,7 @@ def test_mutation_empty_explicit_params_preserve_resumable_url(tmp_path: Path) -
     assert response is not None and response.status_code == 201
 
 
-@pytest.mark.parametrize("outcome", ["verified", "drift", "timeout", "wrong_owner"])
+@pytest.mark.parametrize("outcome", ["verified", "drift", "timeout", "timeout_applied", "wrong_owner"])
 def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, outcome: str) -> None:
     raw = {
         "id": "playlist-1",
@@ -621,6 +621,8 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
         assert request.url.path.endswith("/playlists")
         if request.method == "GET":
             value = copy.deepcopy(raw)
+            value["snippet"]["tags"] = ["legacy-deprecated"]
+            value["snippet"]["localized"] = {"title": value["snippet"]["title"]}
             if outcome == "wrong_owner":
                 value["snippet"]["channelId"] = "other"
             return httpx.Response(200, json={"items": [value]})
@@ -639,6 +641,8 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
             raise httpx.ReadTimeout("unknown", request=request)
         raw["snippet"].update(body["snippet"])
         raw["localizations"] = body["localizations"]
+        if outcome == "timeout_applied":
+            raise httpx.ReadTimeout("response lost after update", request=request)
         if outcome == "drift":
             raw["snippet"]["description"] = ""
         return httpx.Response(200, json=raw)
@@ -664,8 +668,8 @@ def test_playlist_rename_preserves_metadata_and_never_retries(tmp_path: Path, ou
                 new_title="New",
                 before_dispatch=lambda: intents.append(True),
             )
-            assert result.provider_effect == ("verified" if outcome == "verified" else "may_exist")
-            assert methods == (["GET", "PUT"] if outcome == "timeout" else ["GET", "PUT", "GET"])
+            assert result.provider_effect == ("verified" if outcome in {"verified", "timeout_applied"} else "may_exist")
+            assert methods == ["GET", "PUT", "GET"]
             assert raw["status"] == before["status"]
     finally:
         provider.close()
