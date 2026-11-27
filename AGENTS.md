@@ -48,7 +48,7 @@ Current durable/provider state overrides old chats, screenshots, remembered coun
 Before implementation or provider-capable handoff, establish:
 
 - requested outcome independent of the old mechanism;
-- exact `project_key`, provider surface, target/object type, and owning issue;
+- exact `project_key`, provider surface, target/object type, and existing owning issue when relevant (no new issue for an ordinary owner-requested edit);
 - one transport per phase: `local_only`, `official_api_read`, `official_api_write`, `internal_web_read`, `browser_ui_read`, or `browser_ui_write`;
 - allowed and forbidden side effects;
 - current phase and provider-effect state: `impossible`, `not_dispatched`, `confirmed_absent`, `may_exist`, or `verified`;
@@ -78,7 +78,7 @@ Before YouTube API work, read [docs/operations/youtube-shared-project-quota.md](
 ## Provider mutation boundary
 Release/content approval and provider execution authority are separate gates. For YouTube release status and failure diagnosis, see [the release status runbook](docs/operations/routine-release-and-failure-ownership.md).
 
-**Bounded owner instruction = operational scope.** A clear owner request authorizes its exact business operations and necessary child steps; draft-only requests do not authorize publication. Routine YouTube titles, descriptions, tags, playlist metadata, verified subtitles and requested author comments use the supported official API: exact owner/object GET, field-scoped before/after, existing validation/intent/lock/quota guards, one mutation, exact postflight. Agents derive required plans, digests and technical confirmations internally; no repeat approval, per-object issue/PR, fresh CI run or release package merely for editing provider data. PR/CI cover actual repository changes, not routine provider edits; verified runtime admission, client/provider authorization and genuine release/rights/editorial gates remain mandatory. Never invent approval, expand scope, bypass a rejected call or revive retired writers. Scope HOLD to the affected object/resource; continue independent authorized work. Historical audits or inaccessible unrelated archives alone do not block fresh adequately evidenced work. Use the canonical grant-backed quota journal without arbitrary per-agent caps or daily manual permission. See [routine release and failure ownership](docs/operations/routine-release-and-failure-ownership.md).
+**Bounded owner instruction = operational scope.** A clear owner request authorizes its exact business operations and necessary child steps; draft-only requests do not authorize publication. Routine YouTube titles, descriptions, tags, playlist metadata, verified subtitles and requested author comments use the supported official API: exact owner/object GET, field-scoped before/after, existing validation/intent/lock/quota guards, one mutation, exact postflight. Agents derive required plans, digests and technical confirmations internally; no repeat approval, per-object issue/PR, fresh CI run or release package merely for editing provider data. Read applicable editorial rules once per work wave and re-read on relevant changes. Use integrated preflight inside the guarded execution; an extra standalone dry-run is optional for routine work when the executor rechecks everything before dispatch. No separate review agent or unrelated PR wait. PR/CI cover actual repository changes, not routine provider edits; verified runtime admission, client/provider authorization and genuine release/rights/editorial gates remain mandatory. Never invent approval, expand scope, bypass a rejected call or revive retired writers. Scope HOLD to the affected object/resource; continue independent authorized work. Historical audits or inaccessible unrelated archives alone do not block fresh adequately evidenced work. Use the canonical grant-backed quota journal without arbitrary per-agent caps or daily manual permission. See [routine release and failure ownership](docs/operations/routine-release-and-failure-ownership.md).
 
 Before any provider mutation:
 
@@ -149,7 +149,7 @@ Substantial work uses one `agent/{description}` branch and one focused PR.
 Merge only when all are true:
 
 - the branch is based on/reconciled with current `main`;
-- required full CI is green for the exact current PR head/synthetic merge;
+- required CI is green for the exact current PR head/synthetic merge; the full matrix remains mandatory for code, policy/workflow, unknown scope and every main push; only the explicitly allowlisted narrative-docs PR scope uses full Python 3.11 plus the existing external gates;
 - no quality threshold was weakened to obtain green;
 - the expected head has not moved;
 - scope/diff is reviewed;

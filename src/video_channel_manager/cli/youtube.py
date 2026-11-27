@@ -1241,8 +1241,8 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
         operation = operations[0]
         if operation["video_id"] != video_id:
             continue
-        if first:
-            # A prior attempt (even verified) cannot be superseded by another first create.
+        if first and operation.get("action") != "reply":
+            # A prior top-level attempt cannot be superseded by another first create.
             raise ValueError("Earlier comment intent for this video requires reconciliation; no first POST sent.")
         result_path = path.with_name(path.name.removesuffix("-intent.json") + "-result.json")
         result = _read_optional_youtube_recovery_json(result_path)
@@ -1256,6 +1256,10 @@ def _require_safe_comment_history(reports: Path, *, channel_id: str, video_id: s
             or result.get("comment_sha256") != operation.get("comment_sha256")
             or (
                 operation.get("action") == "update" and result.get("comment_id") != operation.get("expected_comment_id")
+            )
+            or (
+                operation.get("action") == "reply"
+                and result.get("parent_comment_id") != operation.get("expected_comment_id")
             )
             or result.get("plan_sha256") != prior_plan.get("plan_sha256")
         ):
@@ -1304,6 +1308,28 @@ def apply_comment_update(
     )
 
 
+@youtube_app.command("apply-comment-reply")
+def apply_comment_reply(
+    plan: Annotated[Path, typer.Argument(help="Reviewed exact parent and owner reply inventory")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    confirm_plan_sha256: Annotated[str, typer.Option("--confirm-plan-sha256")] = "",
+    execute: Annotated[bool, typer.Option("--execute")] = False,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """Reply once to an exact existing comment using the shared journal and channel lock."""
+    _apply_reviewed_comment(
+        plan,
+        account=account,
+        confirm_channel=confirm_channel,
+        confirm_plan_sha256=confirm_plan_sha256,
+        execute=execute,
+        client_secret=client_secret,
+        update_only=False,
+        reply_only=True,
+    )
+
+
 def _apply_reviewed_comment(
     plan: Path,
     *,
@@ -1313,6 +1339,7 @@ def _apply_reviewed_comment(
     execute: bool,
     client_secret: Path | None,
     update_only: bool,
+    reply_only: bool = False,
 ) -> None:
     prepare_windows_youtube_console()
     try:
@@ -1324,7 +1351,11 @@ def _apply_reviewed_comment(
             raise ValueError("; ".join(errors))
         mode = payload.get("mode")
         allowed_modes = (
-            ("reviewed-comment-update",) if update_only else ("reviewed-first-comment", "reviewed-additional-comment")
+            ("reviewed-comment-reply",)
+            if reply_only
+            else ("reviewed-comment-update",)
+            if update_only
+            else ("reviewed-first-comment", "reviewed-additional-comment")
         )
         if mode not in allowed_modes:
             raise ValueError(f"Expected plan mode: {', '.join(allowed_modes)}.")
@@ -1347,6 +1378,7 @@ def _apply_reviewed_comment(
         inventory_pages = 10
         first = mode == "reviewed-first-comment"
         update = mode == "reviewed-comment-update"
+        reply = mode == "reviewed-comment-reply"
         # First creation is a single channel/video effect, regardless of edited text.
         # All mutations share the same journal namespace and unresolved-video guard.
         effect_subject: str | list[str] = "first-comment" if first else operation["comment_sha256"]
@@ -1357,13 +1389,15 @@ def _apply_reviewed_comment(
                 operation["expected_comment_sha256"],
                 operation["comment_sha256"],
             ]
+        if reply:
+            effect_subject = ["reply", operation["expected_comment_id"], operation["comment_sha256"]]
         effect_key = hashlib.sha256(json.dumps([confirm_channel, video_id, effect_subject]).encode("utf-8")).hexdigest()
         reports = root / "reports"
         intent = reports / f"youtube-comment-add-{effect_key}-intent.json"
         receipt = reports / f"youtube-comment-add-{effect_key}-result.json"
         legacy_key = (
             effect_key
-            if update
+            if update or reply
             else hashlib.sha256(
                 json.dumps([confirm_channel, video_id, operation["comment_sha256"]]).encode("utf-8")
             ).hexdigest()
@@ -1375,6 +1409,19 @@ def _apply_reviewed_comment(
         writer = YouTubeCommentWriter(client_config=config, token_store=store, account_alias=account)
 
         def owned() -> list[Any]:
+            if reply:
+                return [
+                    item
+                    for item in writer.read_reply_context(
+                        parent_id=operation["expected_comment_id"],
+                        video_id=video_id,
+                        channel_id=confirm_channel,
+                        expected_parent_author=operation["expected_parent_author_channel_id"],
+                        expected_parent_text=operation["expected_comment_text"],
+                        max_pages=inventory_pages,
+                    )
+                    if item.author_channel_id == confirm_channel
+                ]
             return [
                 item
                 for item in writer.list_top_level_comments(
@@ -1398,6 +1445,14 @@ def _apply_reviewed_comment(
                 or verified.video_id != video_id
                 or not comments_equivalent(verified.text, text)
                 or verified.text_sha256 != operation["comment_sha256"]
+                or (
+                    reply
+                    and (
+                        verified.raw.get("snippet", {}).get("parentId") != operation["expected_comment_id"]
+                        or not isinstance(verified.raw.get("snippet", {}).get("textOriginal"), str)
+                        or verified.comment_id in expected
+                    )
+                )
             ):
                 raise ValueError("Independent comment verification failed; reconcile without replay.")
             after_map = {item.comment_id: item.text_sha256 for item in owned()}
@@ -1413,6 +1468,7 @@ def _apply_reviewed_comment(
                     "comment_sha256": verified.text_sha256,
                     "existing_preserved": sorted(cid for cid in expected if not update or cid != comment_id),
                     "plan_sha256": payload["plan_sha256"],
+                    **({"parent_comment_id": operation["expected_comment_id"]} if reply else {}),
                 },
             )
 
@@ -1422,7 +1478,11 @@ def _apply_reviewed_comment(
                 if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
                     raise ValueError("OAuth owner does not match reviewed channel.")
                 reservation = (
-                    writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    (
+                        writer.reserve_guarded_reply_wave(max_pages=inventory_pages)
+                        if reply
+                        else writer.reserve_guarded_comment_wave(max_pages_per_status=inventory_pages)
+                    )
                     if execute
                     else nullcontext()
                 )
@@ -1505,6 +1565,19 @@ def _apply_reviewed_comment(
                         )
                         if result.comment_id != operation["expected_comment_id"]:
                             raise ValueError("Unexpected update comment ID; reconcile without replay.")
+                    elif reply:
+                        result = writer.create_reply(
+                            parent_id=operation["expected_comment_id"],
+                            video_id=video_id,
+                            expected_channel_id=confirm_channel,
+                            expected_video_title=operation["video_title"],
+                            expected_parent_author=operation["expected_parent_author_channel_id"],
+                            expected_parent_text=operation["expected_comment_text"],
+                            expected_owned_replies=expected,
+                            text=text,
+                            max_pages=inventory_pages,
+                            before_dispatch=reserve_intent,
+                        )
                     else:
                         result = writer.create_top_level_comment(
                             video_id=video_id,
