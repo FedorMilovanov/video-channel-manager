@@ -823,3 +823,121 @@ def test_caption_download_original_language_only(tmp_path: Path, outcome: str) -
         assert calls == ([] if outcome == "blank" else ["GET"])
     finally:
         provider.close()
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        "verified",
+        "timeout",
+        "timeout_applied",
+        "processing",
+        "wrong_text",
+        "old_track_missing",
+        "readback_error",
+        "wrong_id",
+        "rejected",
+        "wrong_owner",
+        "drift",
+        "existing",
+        "bad_language",
+        "missing_duration",
+        "readonly",
+    ],
+)
+def test_caption_insert_exact_post_and_no_replay(tmp_path: Path, outcome: str) -> None:
+    srt = b"1\n00:00:00,000 --> 00:00:01,000\nTest\n"
+    old = {"videoId": "video-1", "language": "ru", "name": "", "trackKind": "ASR"}
+    before = {"auto": old}
+    created = {
+        "videoId": "video-1",
+        "language": "ru",
+        "name": "Lyrics",
+        "trackKind": "standard",
+        "status": "syncing" if outcome == "processing" else "serving",
+        "isDraft": False,
+    }
+    if outcome == "existing":
+        before["existing"] = created
+    calls: list[str] = []
+    intents: list[bool] = []
+    inserted = False
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal inserted
+        resource = request.url.path.rsplit("/", 1)[-1]
+        calls.append(f"{request.method}:{resource}")
+        if resource == "videos":
+            return httpx.Response(
+                200,
+                json={
+                    "items": [
+                        {
+                            "id": "video-1",
+                            "snippet": {"channelId": "foreign" if outcome == "wrong_owner" else "owner"},
+                            "contentDetails": {} if outcome == "missing_duration" else {"duration": "PT2S"},
+                        }
+                    ]
+                },
+            )
+        if request.method == "POST":
+            assert resource == "captions"
+            assert intents == [True]
+            assert dict(request.url.params) == {"part": "snippet", "uploadType": "multipart"}
+            assert request.headers["Content-Type"].startswith("multipart/related; boundary=")
+            assert b'"videoId": "video-1"' in request.content
+            assert b'"isDraft": false' in request.content
+            assert srt in request.content
+            if outcome == "rejected":
+                return httpx.Response(400, json={"error": {"message": "Invalid metadata"}})
+            if outcome == "timeout":
+                raise httpx.ReadTimeout("response lost", request=request)
+            inserted = True
+            if outcome == "timeout_applied":
+                raise httpx.ReadTimeout("response lost after dispatch", request=request)
+            return httpx.Response(200, json={"id": "wrong" if outcome == "wrong_id" else "manual"})
+        if resource == "captions":
+            rows = dict(before)
+            if outcome == "drift":
+                rows = {}
+            if inserted:
+                if outcome == "readback_error":
+                    return httpx.Response(404, json={"error": {"message": "Unavailable"}})
+                rows["manual"] = created
+                if outcome == "old_track_missing":
+                    rows.pop("auto")
+            return httpx.Response(200, json={"items": [{"id": k, "snippet": v} for k, v in rows.items()]})
+        assert resource == "manual"
+        return httpx.Response(200, content=srt.replace(b"Test", b"Other") if outcome == "wrong_text" else srt)
+
+    provider = _provider(tmp_path, handler, write_scope=outcome != "readonly")
+    try:
+        kwargs = dict(
+            video_id="video-1",
+            channel_id="owner",
+            language="?" if outcome == "bad_language" else "ru",
+            name="Lyrics",
+            srt=srt,
+            expected_before=before,
+            before_dispatch=lambda: intents.append(True),
+        )
+        if outcome in {"wrong_owner", "drift", "existing", "bad_language", "missing_duration", "readonly"}:
+            with pytest.raises((ValueError, YouTubeReleaseProviderError)):
+                provider.insert_caption_srt(**kwargs)
+            assert not intents
+            assert "POST:captions" not in calls
+        else:
+            result = provider.insert_caption_srt(**kwargs)
+            expected = (
+                "verified"
+                if outcome in {"verified", "timeout_applied"}
+                else "confirmed_absent"
+                if outcome == "rejected"
+                else "may_exist"
+            )
+            assert result.provider_effect == expected
+            assert calls.count("POST:captions") == 1
+            if expected == "verified":
+                assert result.remote_id == "manual"
+    finally:
+        provider.close()
