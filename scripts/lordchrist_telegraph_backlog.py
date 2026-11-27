@@ -26,14 +26,17 @@ MANIFEST_PATH = Path("content/telegram/lordchrist/telegraph-v1/charnock/charnock
 MOSCOW = ZoneInfo("Europe/Moscow")
 LORDCHRIST_CHAT_ID = -1001295216957
 EDITORIAL_HOLDS = frozenset({"lordchrist-telegraph-charnock-13"})
-# These are report-only holds, not publisher gates. The old run's inputs are
-# unknown; a missing Jude ledger entry does not resolve its target. History-02
-# also needs an owner date decision. Remove only after the respective evidence
-# and decision are independently established and reviewed.
+# Report-only hold for the old Jude run's unknown inputs. A missing ledger
+# entry does not resolve its target.
 PROPOSAL_ONLY_HOLDS = {
     "lordchrist-telegraph-jude-1-5-20261105": "queued_run_43098273140_target_unknown",
-    "lordchrist-telegraph-charnock-history-02": "owner_date_not_selected",
 }
+# Exact historical Reformation queue alias, not a second release identity.
+REFORMATION_QUEUE_ID = "lordchrist-telegraph-charnock-history-02"
+REFORMATION_RECEIPT_ID = "lordchrist-telegraph-history-reformation-1517-01"
+REFORMATION_QUEUE_BLOB = "b3f4f310157488f716bf38990f7b7da77589f5c8"
+REFORMATION_MESSAGE_ID = 1593
+REFORMATION_PAGE_URL = "https://telegra.ph/REFORMACIYA-EVANGELIE-PISANIE-I-SPORY-XVI-VEKA-04-11-02"
 DEFAULT_STATE_REF = "state/lordchrist-telegram"
 DEFAULT_STATE_REMOTE_REF = f"refs/remotes/origin/{DEFAULT_STATE_REF}"
 
@@ -153,6 +156,23 @@ def load_calendar_manifest(path: Path) -> dict[str, dict[str, Any]]:
     return result
 
 
+def load_report_calendar(path: Path, root: Path) -> dict[str, dict[str, Any]]:
+    """Use the production V3 resolver for the canonical report, retaining terminal legacy #09."""
+    calendar = load_calendar_manifest(path)
+    if path.resolve() != (root / MANIFEST_PATH).resolve():
+        # Explicit noncanonical manifest: historical/offline analysis only.
+        return calendar
+    from video_channel_manager.lordchrist_charnock_reschedule import V3_CALENDAR, load_recovery_calendar_v3
+
+    try:
+        resolved = load_recovery_calendar_v3(root, require_approved=False)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise SystemExit(f"{root / V3_CALENDAR}: invalid V3 calendar; no safe proposal: {exc}") from exc
+    for binding in resolved:
+        calendar[binding["publication_id"]] = {**binding, "report_calendar_version": 3}
+    return calendar
+
+
 def _published_date(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
@@ -207,7 +227,15 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
         or entry.get("telegram_chat_id") != LORDCHRIST_CHAT_ID
         or entry.get("telegram_message_id") != calendar["deleted_telegram_message_id"]
         or entry.get("telegraph_url") != calendar["verified_telegraph_url"]
-        or entry.get("article_sha256") != calendar["source_article_sha256"]
+        or entry.get("article_sha256")
+        != calendar.get("historical_source_article_sha256", calendar["source_article_sha256"])
+        or (
+            calendar.get("report_calendar_version") == 3
+            and (
+                entry.get("github_sha") != calendar["original_github_sha"]
+                or entry.get("cover_sha256") != calendar["original_cover_sha256"]
+            )
+        )
     ):
         return "ambiguous", None
     if "scheduled_reissue" not in entry:
@@ -219,6 +247,8 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
         "source_article_sha256": calendar["source_article_sha256"],
         "telegraph_url": calendar["verified_telegraph_url"],
     }
+    if calendar.get("binding_git_blob_sha"):
+        expected["binding_git_blob_sha"] = calendar["binding_git_blob_sha"]
     if (
         isinstance(receipt, dict)
         and receipt.get("state") == "verified"
@@ -236,13 +266,13 @@ def _calendar_receipt_status(entry: Any, calendar: dict[str, Any]) -> tuple[str,
 def _calendar_source_blockers(item: dict[str, Any], calendar: dict[str, Any], root: Path) -> list[str]:
     """Check queue/manifest/file bindings, not live page or rendered payload."""
     blockers: list[str] = []
-    if item.get("scheduled_on_moscow") != calendar["scheduled_on_moscow"]:
+    if item.get("scheduled_on_moscow") != calendar.get("previous_scheduled_on_moscow", calendar["scheduled_on_moscow"]):
         blockers.append("queue_calendar_date_mismatch")
     article = item.get("article")
     if not isinstance(article, dict):
         return [*blockers, "queue_article_missing"]
     queue_blob = article.get("git_blob_sha")
-    if queue_blob != calendar["article_git_blob_sha"]:
+    if queue_blob != calendar.get("queue_article_git_blob_sha", calendar["article_git_blob_sha"]):
         blockers.append("queue_calendar_blob_mismatch")
     raw_path = article.get("path")
     if not isinstance(raw_path, str) or not raw_path:
@@ -279,6 +309,7 @@ def classify(
         "needs_reconciliation": [],
         "ledger_only": [],
     }
+    represented_receipt_ids: set[str] = set()
     for item in items:
         pid = item["publication_id"]
         record: dict[str, Any] = {
@@ -297,10 +328,40 @@ def classify(
             record["proposal_blockers"].append("queue_not_ready")
         if pid in PROPOSAL_ONLY_HOLDS:
             record["proposal_blockers"].append(PROPOSAL_ONLY_HOLDS[pid])
+        if pid == REFORMATION_QUEUE_ID:
+            record["historical_receipt_id"] = REFORMATION_RECEIPT_ID
+            record["proposal_blockers"].append("historical_article_no_replay")
+            entry = ledger.get(REFORMATION_RECEIPT_ID) if ledger is not None else None
+            status, published_on = _ordinary_receipt_status(entry, REFORMATION_RECEIPT_ID)
+            article = item.get("article")
+            if (
+                ledger is not None
+                and pid not in ledger
+                and isinstance(article, dict)
+                and article.get("git_blob_sha") == REFORMATION_QUEUE_BLOB
+                and status in {"legacy_receipt", "verified_receipt"}
+                and entry["telegram_message_id"] == REFORMATION_MESSAGE_ID
+                and entry["telegraph_url"] == REFORMATION_PAGE_URL
+            ):
+                record["receipt_status"] = status
+                record["telegram_message_id"] = REFORMATION_MESSAGE_ID
+                record["published_on_moscow"] = published_on
+                represented_receipt_ids.add(REFORMATION_RECEIPT_ID)
+                groups["published"].append(record)
+            else:
+                record["receipt_status"] = "unavailable" if ledger is None else "ambiguous"
+                record["proposal_blockers"].append("historical_receipt_requires_reconciliation")
+                groups["needs_reconciliation"].append(record)
+            continue
         if pid in calendar:
             binding = calendar[pid]
             record["calendar_date"] = binding["scheduled_on_moscow"]
             record["deleted_telegram_message_id"] = binding["deleted_telegram_message_id"]
+            if binding.get("report_calendar_version") == 3:
+                record["calendar_version"] = 3
+                record["proposal_blockers"].append("v3_calendar_owned_no_automatic_reschedule")
+                if not binding.get("release_approval"):
+                    record["proposal_blockers"].append("v3_release_approval_missing")
             record["proposal_blockers"].extend(_calendar_source_blockers(item, binding, root))
             if ledger is None:
                 status, published_on = "unavailable", None
@@ -360,7 +421,7 @@ def classify(
         if any(not isinstance(pid, str) or not pid for pid in ledger):
             raise SystemExit("ledger contains an invalid publication identity; no safe proposal")
         queue_ids = {item["publication_id"] for item in items}
-        for pid in sorted(ledger.keys() - queue_ids):
+        for pid in sorted(ledger.keys() - queue_ids - represented_receipt_ids):
             status, published_on = _ordinary_receipt_status(ledger[pid], pid)
             extra: dict[str, Any] = {
                 "publication_id": pid,
@@ -436,7 +497,7 @@ def build_plan(
         ledger = None
     elif ledger is None:
         ledger_source = "absent"
-    calendar = load_calendar_manifest(manifest_path)
+    calendar = load_report_calendar(manifest_path, repo_root)
     if set(calendar) - {item["publication_id"] for item in items}:
         raise SystemExit("calendar contains publication identities missing from the queue")
     groups = classify(items, ledger, calendar, today=today, root=repo_root, holds=holds)
@@ -447,6 +508,9 @@ def build_plan(
     for records in groups.values():
         for record in records:
             for key in ("scheduled_on_moscow", "calendar_date", "published_on_moscow", "original_published_on_moscow"):
+                if key == "scheduled_on_moscow" and record.get("calendar_version") == 3:
+                    # Historical queue date is an immutable identity, not a second active V3 reservation.
+                    continue
                 if record.get(key):
                     occupied.add(date.fromisoformat(record[key]))
     waiting = [{**r, "source": "queue"} for key in ("overdue", "undated") for r in groups[key]]
@@ -536,6 +600,14 @@ def render(plan: dict[str, Any]) -> str:
             lines.append(
                 f"  {r['publication_id']} — {r['calendar_date']}, удалённое сообщение "
                 f"{r['deleted_telegram_message_id']}, receipt={r['receipt_status']}; {blockers}"
+            )
+    aliases = [r for r in plan["published"] if r.get("historical_receipt_id")]
+    if aliases:
+        lines.append("\nИСТОРИЧЕСКИЕ КВИТАНЦИИ ПОД ПРЕЖНИМ ID (не планировать повтор):")
+        for r in aliases:
+            lines.append(
+                f"  {r['publication_id']} → {r['historical_receipt_id']}, "
+                f"Telegram #{r['telegram_message_id']}, {r['published_on_moscow']}"
             )
     if plan["ledger_only"]:
         lines.append("\nКВИТАНЦИИ ВНЕ ТЕКУЩЕЙ ОЧЕРЕДИ (не планировать повтор):")

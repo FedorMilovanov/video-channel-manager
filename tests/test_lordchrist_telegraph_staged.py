@@ -176,6 +176,45 @@ def test_renaming_exact_jude_article_cannot_bypass_staged_hold(
     assert execution.ledger.read_bytes() == before
 
 
+@pytest.mark.parametrize("stage", ["prepare-page", "send-page", "prepare-telegram", "send-telegram"])
+@pytest.mark.parametrize(
+    "publication_id",
+    ["lordchrist-telegraph-history-reformation-1517-01", "lordchrist-telegraph-charnock-history-02"],
+)
+def test_reformation_retired_ids_cannot_enter_any_stage(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch, stage: str, publication_id: str
+) -> None:
+    execution.stage = stage
+    execution.publication_id = publication_id
+    before = execution.ledger.read_bytes()
+    monkeypatch.setattr(staged, "_ledger", lambda *_: pytest.fail("Retired ID must not access the ledger"))
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Retired ID must not access providers"))
+    with pytest.raises(RuntimeError, match="staged replay prohibited"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize("stage", ["prepare-page", "send-page", "prepare-telegram", "send-telegram"])
+def test_renaming_exact_reformation_queue_article_cannot_bypass_no_replay(
+    execution: argparse.Namespace, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, stage: str
+) -> None:
+    queue = json.loads((ROOT / execution.queue).read_text(encoding="utf-8"))
+    item = next(item for item in queue["items"] if item["publication_id"] == "lordchrist-telegraph-charnock-history-02")
+    assert item["article"]["git_blob_sha"] in staged.REFORMATION_RETIRED_BLOBS
+    item["publication_id"] = "lordchrist-renamed-reformation-test"
+    queue_path = tmp_path / "renamed-queue.json"
+    queue_path.write_text(json.dumps(queue, ensure_ascii=False), encoding="utf-8")
+    execution.queue = queue_path
+    execution.publication_id = item["publication_id"]
+    execution.stage = stage
+    before = execution.ledger.read_bytes()
+    monkeypatch.setattr(staged, "build_telegraph_payload", lambda *a, **kw: pytest.fail("Retired blob must not render"))
+    monkeypatch.setattr(staged, "HttpxLiveTransport", lambda: pytest.fail("Retired blob must not access providers"))
+    with pytest.raises(RuntimeError, match="staged replay prohibited"):
+        staged.execute(execution)
+    assert execution.ledger.read_bytes() == before
+
+
 def test_jude_hold_matches_readonly_planner_and_account_probe() -> None:
     from scripts import lordchrist_telegraph_backlog as backlog
     from video_channel_manager import lordchrist_jude_telegraph_readonly as probe
