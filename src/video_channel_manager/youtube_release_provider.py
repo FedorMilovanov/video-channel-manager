@@ -361,16 +361,14 @@ class YouTubeReleaseProvider(HttpClientOwner):
             self._token(require_write=True)
             snippet = {key: value for key, value in after["snippet"].items() if key != "channelId"}
             body = {"id": playlist_id, "snippet": snippet}
-            parts = "snippet"
-            if after["localizations"]:
-                body["localizations"] = after["localizations"]
-                parts += ",localizations"
+            # The primary-language mirror is maintained by YouTube when snippet
+            # changes. Do not rewrite the localization map for a title-only edit.
             before_dispatch()
             response, failure = self._mutation_request(
                 "PUT",
                 f"{self.api_base_url}/playlists",
                 resource="playlists.update",
-                params={"part": parts},
+                params={"part": "snippet"},
                 json_body=body,
             )
             if failure is not None and failure.provider_effect != "may_exist":
