@@ -573,6 +573,58 @@ def scan(
     )
 
 
+@youtube_app.command("captions")
+def captions(
+    video_id: Annotated[str, typer.Argument(help="Exact existing video ID")],
+    account: Annotated[str, typer.Option("--account", "-a")],
+    confirm_channel: Annotated[str, typer.Option("--confirm-channel")],
+    download_track: Annotated[str | None, typer.Option("--download-track", help="Exact existing caption ID")] = None,
+    output: Annotated[Path | None, typer.Option("--output", help="New SRT file; never overwritten")] = None,
+    client_secret: Annotated[Path | None, typer.Option("--client-secret")] = None,
+) -> None:
+    """List exact owner caption tracks, optionally download one; no provider writes."""
+    prepare_windows_youtube_console()
+    try:
+        project = CHANNEL_ID_TO_PROJECT_KEY.get(confirm_channel)
+        if project is None or not video_id.strip():
+            raise ValueError("Registered channel and exact video ID are required.")
+        require_youtube_project_identity(project_key=project, account_alias=account, channel_id=confirm_channel)
+        if (download_track is None) != (output is None):
+            raise ValueError("Use --download-track and --output together.")
+        if output is not None and (output.suffix.lower() != ".srt" or output.exists() or output.is_symlink()):
+            raise ValueError("Output must be a new SRT path.")
+        store, config, api = _components(account, client_secret)
+        provider = YouTubeReleaseProvider(client_config=config, token_store=store, account_alias=account)
+        try:
+            channels = api.list_my_channels()
+            if len(channels) != 1 or channels[0].ref.channel_id != confirm_channel:
+                raise ValueError("OAuth owner does not match the requested channel.")
+            video = api.get_video(video_id)
+            if video.ref.channel_id != confirm_channel or video.ref.remote_id != video_id:
+                raise ValueError("Video does not belong to the requested channel.")
+            tracks = provider.read_caption_inventory(video_id)
+            report = {"video_id": video_id, "channel_id": confirm_channel, "tracks": tracks, "provider_writes": 0}
+            if download_track is not None and output is not None:
+                if download_track not in tracks:
+                    raise ValueError("Caption ID is not in the exact video inventory.")
+                data = provider.download_caption_srt(download_track)
+                with output.open("xb") as stream:
+                    stream.write(data)
+                report["download"] = {
+                    "caption_id": download_track,
+                    "path": str(output),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                    "bytes": len(data),
+                }
+            console.print_json(data=report)
+        finally:
+            provider.close()
+            api.close()
+    except (OSError, ValueError, AccountNotFoundError, YouTubeApiError, YouTubeReleaseProviderError) as exc:
+        console.print(f"[red]Caption read stopped:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 @youtube_app.command("rename-playlist")
 def rename_playlist(
     playlist_id: Annotated[str, typer.Argument(help="Exact existing playlist ID")],
