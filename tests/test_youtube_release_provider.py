@@ -837,6 +837,8 @@ def test_caption_download_original_language_only(tmp_path: Path, outcome: str) -
         "readback_error",
         "wrong_id",
         "rejected",
+        "conflict",
+        "conflict_applied",
         "wrong_owner",
         "drift",
         "existing",
@@ -892,7 +894,11 @@ def test_caption_insert_exact_post_and_no_replay(tmp_path: Path, outcome: str) -
                 return httpx.Response(400, json={"error": {"message": "Invalid metadata"}})
             if outcome == "timeout":
                 raise httpx.ReadTimeout("response lost", request=request)
+            if outcome == "conflict":
+                return httpx.Response(409, json={"error": {"message": "captionExists"}})
             inserted = True
+            if outcome == "conflict_applied":
+                return httpx.Response(409, json={"error": {"message": "captionExists"}})
             if outcome == "timeout_applied":
                 raise httpx.ReadTimeout("response lost after dispatch", request=request)
             return httpx.Response(200, json={"id": "wrong" if outcome == "wrong_id" else "manual"})
@@ -930,7 +936,7 @@ def test_caption_insert_exact_post_and_no_replay(tmp_path: Path, outcome: str) -
             result = provider.insert_caption_srt(**kwargs)
             expected = (
                 "verified"
-                if outcome in {"verified", "timeout_applied"}
+                if outcome in {"verified", "timeout_applied", "conflict_applied"}
                 else "confirmed_absent"
                 if outcome == "rejected"
                 else "may_exist"
