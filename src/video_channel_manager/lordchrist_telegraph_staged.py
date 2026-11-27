@@ -63,15 +63,19 @@ def _require_jude_reconciled(publication_id: str, *, article_blob: str | None = 
 # under its original ID, while the current queue uses a different ID.
 # Neither ID nor an ID-only rename of the exact current/archived article
 # may enter a new staged publication. Preserve the historical receipt.
-REFORMATION_RETIRED_IDS = frozenset({
-    "lordchrist-telegraph-history-reformation-1517-01",
-    "lordchrist-telegraph-charnock-history-02",
-})
-REFORMATION_RETIRED_BLOBS = frozenset({
-    "b3f4f310157488f716bf38990f7b7da77589f5c8",
-    "8a74ebd3f69066c4b23f9b57a9275d6084a3d6df",
-    "1c4266288c67f976da07d28c44f9cca91bc29255",
-})
+REFORMATION_RETIRED_IDS = frozenset(
+    {
+        "lordchrist-telegraph-history-reformation-1517-01",
+        "lordchrist-telegraph-charnock-history-02",
+    }
+)
+REFORMATION_RETIRED_BLOBS = frozenset(
+    {
+        "b3f4f310157488f716bf38990f7b7da77589f5c8",
+        "8a74ebd3f69066c4b23f9b57a9275d6084a3d6df",
+        "1c4266288c67f976da07d28c44f9cca91bc29255",
+    }
+)
 
 
 def _require_not_reformation_replay(publication_id: str, *, article_blob: str | None = None) -> None:
