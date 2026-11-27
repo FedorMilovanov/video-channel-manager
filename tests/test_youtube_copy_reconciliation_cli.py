@@ -391,7 +391,8 @@ def test_caption_cli_reconciles_pending_insert_without_second_post(
         ref=SimpleNamespace(channel_id=channel, remote_id="video-1"), duration_seconds=2
     )
     provider = Mock()
-    provider.read_caption_inventory.return_value = {}
+    auto = {"videoId": "video-1", "language": "ru", "trackKind": "ASR"}
+    provider.read_caption_inventory.return_value = {"auto": auto}
     provider.verified_caption_id.return_value = None
 
     def ambiguous(**kwargs: Any) -> ReleaseProviderResult:
@@ -427,6 +428,10 @@ def test_caption_cli_reconciles_pending_insert_without_second_post(
         "manual": {"videoId": "video-1", "language": "ru", "name": "Lyrics", "trackKind": "standard"}
     }
     provider.verified_caption_id.return_value = "manual"
+    with pytest.raises(typer.Exit):
+        run(True)
+    assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "pending_reconciliation"
+    provider.read_caption_inventory.return_value["auto"] = auto
     run(True)
     provider.insert_caption_srt.assert_called_once()
     assert json.loads(journal.read_text(encoding="utf-8"))["status"] == "verified"
