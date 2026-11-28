@@ -4,6 +4,10 @@
 
 This is the single discovery/routing document for chat agents. Existing media/editorial implementation stays where it is: the MP3Bot repository's media libraries and direct-agent handbooks, and Video Channel Manager's `shortorez_routing.py` for provider-inert platform *planning*. Do not duplicate either engine or add a provider writer. Owning cross-platform issue: [VCM #940](https://github.com/FedorMilovanov/video-channel-manager/issues/940); platform specifics: [shortorez-publication-routing.md](shortorez-publication-routing.md).
 
+## Shepherds Conference archive restoration
+
+For Shepherds Conference archival restoration, Russian source reconciliation, corrected masters and follow-on Shorts, first read [the Shepherds Conference archive runbook](shepherds-conference-archive-shortorez.md). It records the owner-approved series naming, GS5 audio/echo incident, accepted source hashes, current publication IDs and exact outstanding media work. Do not apply a generic dubbing workflow or repeat superseded audio experiments.
+
 ## What the owner can ask
 
 Example: `SHORTOREZ: https://youtu.be/k2Fh8aJfhOA — разобрать все вопросы и ответы; сделать смысловые Shorts и подходящие длинные выпуски, без перевода и без публикации.`
