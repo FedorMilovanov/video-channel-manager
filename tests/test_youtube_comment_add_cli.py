@@ -543,3 +543,74 @@ def test_reply_quota_refusal_blocks_before_intent(tmp_path: Path, monkeypatch: p
         _run_reply(path, plan, execute=True)
     writer.create_reply.assert_not_called()
     assert not list((tmp_path / "reports").glob("*.json"))
+
+
+@pytest.mark.parametrize("drift", ["none", "wrong-map", "wrong-id", "missing-old", "wrong-readback", "new-extra"])
+def test_concurrent_owner_edit_positive_reconciliation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str
+) -> None:
+    from video_channel_manager.platforms.youtube.copy_plan import canonical_sha256
+
+    path, _, writer, inventory = _setup(tmp_path, monkeypatch)
+    first = _snapshot("Earlier comment")
+    inventory.append(first)
+    plan = _replan(path, text="Second comment", expected={first.comment_id: first.text_sha256})
+
+    def ambiguous(**kwargs: Any) -> None:
+        kwargs["before_dispatch"]()
+        raise ValueError("Postflight not completed")
+
+    writer.create_top_level_comment.side_effect = ambiguous
+    with pytest.raises(typer.Exit):
+        _run(path, plan, execute=True)
+    intent = next((tmp_path / "reports").glob("*-intent.json"))
+    frozen = intent.read_bytes()
+    inventory[0] = _snapshot("Manually revised earlier comment")
+    second = _snapshot("Second comment")
+    second.comment_id = "comment-2"
+    inventory.append(second)
+    writer.read_video_identity.return_value.title = "Renamed title"
+    writer.read_comment.return_value = second
+    if drift == "missing-old":
+        inventory.pop(0)
+    if drift == "new-extra":
+        extra = _snapshot("Unexpected extra comment")
+        extra.comment_id = "comment-3"
+        inventory.append(extra)
+    if drift == "wrong-readback":
+        writer.read_comment.return_value = _snapshot("Wrong direct text")
+    owner_map = {item.comment_id: item.text_sha256 for item in inventory}
+    args = {
+        "account": ACCOUNT,
+        "confirm_channel": CHANNEL,
+        "confirm_plan_sha256": plan["plan_sha256"],
+        "comment_id": "wrong-id" if drift == "wrong-id" else second.comment_id,
+        "current_title": "Renamed title",
+        "confirm_owner_map_sha256": "wrong-digest" if drift == "wrong-map" else canonical_sha256(owner_map),
+        "client_secret": None,
+    }
+    receipt = intent.with_name(intent.name.removesuffix("-intent.json") + "-result.json")
+    if drift != "none":
+        with pytest.raises(typer.Exit):
+            youtube_cli.reconcile_comment_add(path, record=True, **args)
+        assert not receipt.exists()
+    else:
+        youtube_cli.reconcile_comment_add(path, record=False, **args)
+        assert not receipt.exists()
+        youtube_cli.reconcile_comment_add(path, record=True, **args)
+        result = json.loads(receipt.read_text(encoding="utf-8"))
+        assert result["status"] == "verified"
+        assert result["provider_writes"] == 0
+        assert result["existing_preserved"] == []
+        assert result["existing_changed"] == {
+            first.comment_id: {"before_sha256": first.text_sha256, "observed_sha256": inventory[0].text_sha256}
+        }
+        youtube_cli._require_safe_comment_history(
+            tmp_path / "reports", channel_id=CHANNEL, video_id="video-1", first=False
+        )
+        with pytest.raises(typer.Exit):
+            youtube_cli.reconcile_comment_add(path, record=True, **args)
+    assert intent.read_bytes() == frozen
+    writer.create_top_level_comment.assert_called_once()
+    writer.update_top_level_comment.assert_not_called()
+    writer.create_reply.assert_not_called()
