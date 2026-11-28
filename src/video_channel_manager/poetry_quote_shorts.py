@@ -58,10 +58,28 @@ def _compact(value: str) -> str:
     return " ".join(value.split())
 
 
+def _contains_edition_lines(value: str, edition: list[str]) -> bool:
+    """Match consecutive verse lines, not merely a flattened string of words.
+
+    The v1 schema omits stanza separators and indentation; visual fidelity is
+    still an editorial check. Accept only optional whole-line native emphasis.
+    """
+    lines = []
+    for raw in value.splitlines():
+        line = unicodedata.normalize("NFC", raw.strip())
+        if not line:
+            continue
+        if len(line) > 2 and line[0] in "*_" and line[-1] == line[0]:
+            line = line[1:-1]
+        lines.append(line)
+    return any(lines[i : i + len(edition)] == edition for i in range(len(lines) - len(edition) + 1))
+
+
 def validate_poetry_quote_packet(
     packet: Mapping[str, object],
     *,
     require_audio_review: bool = False,
+    planned_comment: str | None = None,
 ) -> list[QuoteIssue]:
     """Check one selected edition, exact contiguous excerpt, TTS accents and two-comment copy.
 
@@ -263,7 +281,7 @@ def validate_poetry_quote_packet(
             fail("short_description", "Short description must be substantive and compact (60–900 chars).")
         if not isinstance(pin, str) or not pin.strip():
             fail("pin_required", "Pinned comment with the full selected text is required.")
-        elif text is not None and _compact("\n".join(text)) not in _compact(pin):
+        elif text is not None and not _contains_edition_lines(pin, text):
             fail("pin_text_missing", "Pinned comment does not contain the entire exact edition text.")
         elif edition_state != "complete" and "сохранивш" not in pin.casefold():
             fail("draft_disclosure", "Draft/fragment pin must say it is the surviving text, not a finalized poem.")
@@ -271,6 +289,11 @@ def validate_poetry_quote_packet(
             fail("history_comment", "Distinct, substantial historical commentary is required.")
         if isinstance(history, str) and text is not None and _compact("\n".join(text)) in _compact(history):
             fail("duplicated_poem", "Do not repeat the full poem in the history comment.")
+
+    if planned_comment is not None and (
+        mode != "short_two_comments" or planned_comment != packet.get("pinned_comment")
+    ):
+        fail("planned_comment_mismatch", "Exact reviewed comment text must equal the source-checked pinned_comment.")
 
     review = packet.get("audio_review", {})
     if not isinstance(review, Mapping):

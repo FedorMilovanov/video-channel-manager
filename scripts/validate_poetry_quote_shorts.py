@@ -22,6 +22,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("packet", type=Path, help="UTF-8 JSON packet for ONE edition and ONE Short")
     parser.add_argument("--require-audio-review", action="store_true")
+    parser.add_argument("--comment-plan", type=Path, help="Existing single-operation reviewed full-poem comment plan")
     args = parser.parse_args()
     try:
         data = json.loads(args.packet.read_text(encoding="utf-8"))
@@ -29,7 +30,28 @@ def main() -> int:
         parser.error(str(exc))
     if not isinstance(data, dict):
         parser.error("Expected a JSON object, not a list or scalar.")
-    issues = validate_poetry_quote_packet(data, require_audio_review=args.require_audio_review)
+    planned_comment = None
+    if args.comment_plan is not None:
+        try:
+            plan = json.loads(args.comment_plan.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        operations = plan.get("operations") if isinstance(plan, dict) else None
+        if not isinstance(operations, list) or len(operations) != 1 or not isinstance(operations[0], dict):
+            parser.error("Expected one existing reviewed comment operation.")
+        operation = operations[0]
+        if (
+            operation.get("action") not in ("create", "update")
+            or operation.get("channel_id") != "UC-78ys2S3cQ3lpqgXfo-SvQ"
+            or operation.get("review_status") != "approved"
+            or not isinstance(operation.get("comment_text"), str)
+            or not operation["comment_text"].strip()
+        ):
+            parser.error("Expected an approved Legendary Poet top-level comment operation with exact text.")
+        planned_comment = operation["comment_text"]
+    issues = validate_poetry_quote_packet(
+        data, require_audio_review=args.require_audio_review, planned_comment=planned_comment
+    )
     for issue in issues:
         print(f"[{issue.code}] {issue.detail}")
     if issues:

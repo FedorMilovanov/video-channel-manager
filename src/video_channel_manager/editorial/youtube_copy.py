@@ -85,6 +85,20 @@ def _restore_masks(text: str, replacements: list[tuple[str, str]]) -> str:
     return text
 
 
+def _share_preview_prefix(first: str) -> str:
+    """Keep a leading playlist block distinct from following social labels.
+
+    Legacy descriptions may omit the blank separator. Never strip emphasis
+    from a social link merely because it follows a single playlist.
+    """
+    playlist_lines = []
+    for line in first.splitlines(keepends=True):
+        if not re.fullmatch(r"[^\n]+?\s+https?://(?:www\.)?youtube\.com/playlist\?list=[\w-]+\s*", line):
+            break
+        playlist_lines.append(line)
+    return "".join(playlist_lines) if playlist_lines else first
+
+
 def _contains_emphasis(text: str) -> bool:
     masked, _ = _mask_non_markers(text)
     return BOLD_SPAN_RE.search(masked) is not None or ITALIC_SPAN_RE.search(masked) is not None
@@ -215,7 +229,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
         return [CopyFinding("empty_description", "error", "Описание пустое.")]
 
     first = paragraphs[0] if paragraphs else ""
-    if _contains_emphasis(first):
+    if _contains_emphasis(_share_preview_prefix(first)):
         findings.append(
             CopyFinding(
                 "share_preview_emphasis",
@@ -341,7 +355,8 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
     if first_match is not None:
         first = first_match.group("first")
         separator = first_match.group("separator")
-        clean_first = _strip_emphasis_markers(first)
+        prefix = _share_preview_prefix(first)
+        clean_first = _strip_emphasis_markers(prefix) + first[len(prefix) :]
         if clean_first != first:
             fixes.append(CopyFix("share_preview_emphasis", first, clean_first))
             updated = f"{clean_first}{separator}{updated[first_match.end() :]}"

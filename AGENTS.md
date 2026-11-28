@@ -35,6 +35,8 @@ For any task that researches, drafts, edits, formats, or hands off Telegram cont
 
 For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
 
+For owner-requested poetry-quote Shorts, including repairs of a full-poem comment, use the existing §5a source-locked packet and `scripts/validate_poetry_quote_shorts.py` before handoff; for a reviewed full-poem comment write, pass `--comment-plan` with its exact existing plan. A generic comment validator or matching line count is not a textological check. Keep stylization separate from authentic quotation; never claim audio, public formatting or pin verification from an API text readback.
+
 ### Lord God YouTube description source-preservation routing
 
 For any lord-god-strength YouTube Short, longform, title, comment, link, pin, or provider-side copy edit, first read [docs/operations/lord-god-youtube-agent-decision-contract.md](docs/operations/lord-god-youtube-agent-decision-contract.md): two clean first raw lines, verified full-Russian Short URL first among links, native punctuation, longform exceptions, locale/tag preservation; **do not use The Legendary Poet v3.1 playlist-first layout**. For source-preserving descriptions, also read

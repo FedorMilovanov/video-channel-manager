@@ -106,6 +106,10 @@ def validate_comment_text(value: str) -> str:
         raise ValueError(
             f"YouTube comment text is {len(normalized)} characters; the project safety limit is {_COMMENT_TEXT_LIMIT}."
         )
+    # A broken scheme can disappear from URL-based markup checks entirely.
+    # Reject only obvious delimiter/spacing damage; valid URL underscores remain literal.
+    if re.search(r"\bhttps?:\s*[*_]|\bhttps?:\s+//|\bhttps?:/\s+/|\bhttps?://(?=\s|$)", normalized, re.IGNORECASE):
+        raise ValueError("YouTube comment contains a broken URL scheme.")
     # YouTube-native emphasis is *bold* or _italic_, not Markdown **bold**.
     # A comma/period/colon belonging to a highlighted phrase must be INSIDE
     # its closing marker. Reject bad punctuation before any provider POST/PUT;
