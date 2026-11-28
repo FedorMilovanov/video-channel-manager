@@ -59,6 +59,30 @@ def _require_jude_reconciled(publication_id: str, *, article_blob: str | None = 
         raise RuntimeError("Jude article identity is immutable; renamed duplicate prohibited")
 
 
+# The historical Reformation article already has a Telegram receipt (#1593)
+# under its original ID, while the current queue uses a different ID.
+# Neither ID nor an ID-only rename of the exact current/archived article
+# may enter a new staged publication. Preserve the historical receipt.
+REFORMATION_RETIRED_IDS = frozenset(
+    {
+        "lordchrist-telegraph-history-reformation-1517-01",
+        "lordchrist-telegraph-charnock-history-02",
+    }
+)
+REFORMATION_RETIRED_BLOBS = frozenset(
+    {
+        "b3f4f310157488f716bf38990f7b7da77589f5c8",
+        "8a74ebd3f69066c4b23f9b57a9275d6084a3d6df",
+        "1c4266288c67f976da07d28c44f9cca91bc29255",
+    }
+)
+
+
+def _require_not_reformation_replay(publication_id: str, *, article_blob: str | None = None) -> None:
+    if publication_id in REFORMATION_RETIRED_IDS or article_blob in REFORMATION_RETIRED_BLOBS:
+        raise RuntimeError("Historical Reformation publication has receipt #1593; staged replay prohibited")
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -87,6 +111,7 @@ def _release(args: argparse.Namespace) -> tuple[Any, Any]:
     # both identity and reviewed bytes prevents a simple ID-only rename from
     # bypassing the hold; it cannot identify every edited or external copy.
     _require_jude_reconciled(item.publication_id, article_blob=item.article_blob)
+    _require_not_reformation_replay(item.publication_id, article_blob=item.article_blob)
     if not item.is_ready or item.is_canary:
         raise RuntimeError("Exact ready non-canary Telegraph article required")
     payload = build_telegraph_payload(root, item, media_base_url=args.media_base_url)
@@ -136,6 +161,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     # Every stage is blocked, preserving any existing receipt or claim for
     # separately reviewed reconciliation rather than resuming blindly.
     _require_jude_reconciled(args.publication_id)
+    _require_not_reformation_replay(args.publication_id)
     path, ledger = _ledger(args)
     item, payload = _release(args)
 
