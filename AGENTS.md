@@ -33,9 +33,7 @@ For any task that researches, drafts, edits, formats, or hands off Telegram cont
 
 ### @legendary-poet YouTube metadata routing
 
-For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write.
-
-For owner-requested poetry-quote Shorts, including repairs of a full-poem comment, use the existing §5a source-locked packet and `scripts/validate_poetry_quote_shorts.py` before handoff; for a reviewed full-poem comment write, pass `--comment-plan` with its exact existing plan. A generic comment validator or matching line count is not a textological check. Keep stylization separate from authentic quotation; never claim audio, public formatting or pin verification from an API text readback.
+For any request to prepare, correct, audit or hand off **YouTube titles, descriptions, Shorts text, pinned comments or tags** for `@TheLegendaryPoet`, first read [`docs/youtube-metadata-package-master-v3.1.md`](docs/youtube-metadata-package-master-v3.1.md). This owner's **five-block manual package** has a different title style and front-loaded playlist/social links from older legacy descriptions. Do not apply older examples to a new package; do not invent playlist IDs or facts. Exact project identities and playlist links continue to come from canonical registries. Drafting copy never authorizes a provider write. For poetry-quote Shorts and full-poem comment repairs, follow §5a, including its exact-plan validator; API readback is not audio, rendering or pin verification.
 
 ### Lord God YouTube description source-preservation routing
 
