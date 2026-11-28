@@ -232,3 +232,28 @@ def test_latin_lookalike_inside_cyrillic_source_word_is_held_for_review() -> Non
     candidate = packet()
     candidate["edition_lines"][0] = "Тебе, горный край, я поcвящаю строки,"  # Latin 'c'
     assert "mixed_script_word" in codes(candidate)
+
+
+def test_full_poem_requires_actual_verse_line_boundaries() -> None:
+    candidate = packet()
+    poem = "\n".join(candidate["edition_lines"])
+    candidate["pinned_comment"] = candidate["pinned_comment"].replace(poem, " ".join(candidate["edition_lines"]))
+    assert "pin_text_missing" in codes(candidate)
+
+
+def test_full_poem_allows_stanza_break_and_native_line_emphasis() -> None:
+    candidate = packet()
+    poem = "\n".join(candidate["edition_lines"])
+    rendered = "\n\n".join(f"_{line}_" for line in candidate["edition_lines"])
+    candidate["pinned_comment"] = candidate["pinned_comment"].replace(poem, rendered)
+    assert not codes(candidate)
+
+
+def test_reviewed_comment_payload_cannot_drift_from_checked_packet() -> None:
+    candidate = packet()
+    pin = candidate["pinned_comment"]
+    assert not validate_poetry_quote_packet(candidate, planned_comment=pin)
+    changed = pin.replace(candidate["edition_lines"][-1], "Другая строка.")
+    assert "planned_comment_mismatch" in {
+        issue.code for issue in validate_poetry_quote_packet(candidate, planned_comment=changed)
+    }

@@ -243,3 +243,16 @@ def test_autofix_is_idempotent() -> None:
     assert first_fixes
     assert fixed_twice == fixed_once
     assert second_fixes == []
+
+
+def test_share_playlist_prefix_never_strips_adjacent_social_label() -> None:
+    source = (
+        "*Плейлист «Поющие Поэты»:* https://www.youtube.com/playlist?list=PLabc_def\n"
+        "*VK:* https://vk.ru/thelegendarypoet\n\n"
+        "Первый абзац.\n\n_Смысл._"
+    )
+    fixed, fixes = autofix_youtube_description(source)
+    assert fixed == source.replace("*Плейлист «Поющие Поэты»:*", "Плейлист «Поющие Поэты»:")
+    assert any(fix.code == "share_preview_emphasis" for fix in fixes)
+    assert "share_preview_emphasis" not in _codes(fixed)
+    assert autofix_youtube_description(fixed)[0] == fixed

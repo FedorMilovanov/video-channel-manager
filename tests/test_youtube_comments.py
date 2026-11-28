@@ -811,3 +811,19 @@ def test_reply_inventory_accepts_viewer_display_but_requires_owner_original(tmp_
     items.append(owner)
     with pytest.raises(YouTubeCommentError):
         writer.list_replies(**args)
+
+
+@pytest.mark.parametrize(
+    "damaged",
+    [
+        "*The Legendary Poet: https:* thelegendarypoet.ru/",
+        "*Сайт:* https: //thelegendarypoet.ru/",
+        "*Сайт:* https:/ /thelegendarypoet.ru/",
+        "*Сайт:* https:// thelegendarypoet.ru/",
+    ],
+)
+def test_comment_rejects_broken_url_scheme(damaged: str) -> None:
+    with pytest.raises(ValueError, match="broken URL scheme"):
+        validate_comment_text(damaged)
+    valid = "*Сайт:* https://thelegendarypoet.ru/\n*Видео:* https://youtu.be/a_b-C"
+    assert validate_comment_text(valid) == valid

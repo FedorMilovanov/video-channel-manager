@@ -86,7 +86,8 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
     if first_match is not None:
         first = first_match.group("first")
         separator = first_match.group("separator")
-        clean_first = legacy._strip_emphasis_markers(first)
+        prefix = legacy._share_preview_prefix(first)
+        clean_first = legacy._strip_emphasis_markers(prefix) + first[len(prefix) :]
         if clean_first != first:
             fixes.append(CopyFix("share_preview_emphasis", first, clean_first))
             updated = f"{clean_first}{separator}{updated[first_match.end() :]}"
