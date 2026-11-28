@@ -813,7 +813,6 @@ def test_reply_inventory_accepts_viewer_display_but_requires_owner_original(tmp_
         writer.list_replies(**args)
 
 
-
 @pytest.mark.parametrize(
     "damaged",
     [

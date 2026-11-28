@@ -234,7 +234,6 @@ def test_latin_lookalike_inside_cyrillic_source_word_is_held_for_review() -> Non
     assert "mixed_script_word" in codes(candidate)
 
 
-
 def test_full_poem_requires_actual_verse_line_boundaries() -> None:
     candidate = packet()
     poem = "\n".join(candidate["edition_lines"])

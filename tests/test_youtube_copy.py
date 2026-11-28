@@ -245,7 +245,6 @@ def test_autofix_is_idempotent() -> None:
     assert second_fixes == []
 
 
-
 def test_share_playlist_prefix_never_strips_adjacent_social_label() -> None:
     source = (
         "*Плейлист «Поющие Поэты»:* https://www.youtube.com/playlist?list=PLabc_def\n"
